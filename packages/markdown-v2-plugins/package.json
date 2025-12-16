@@ -1,0 +1,83 @@
+{
+  "name": "@stream-mdx/plugins",
+  "version": "0.0.0",
+  "description": "Streaming Markdown V2 plugin suite (math, MDX, tables, callouts, footnotes, HTML helpers)",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./registry": {
+      "types": "./dist/plugins/registry.d.ts",
+      "import": "./dist/plugins/registry.mjs",
+      "require": "./dist/plugins/registry.cjs"
+    },
+    "./base": {
+      "types": "./dist/plugins/base.d.ts",
+      "import": "./dist/plugins/base.mjs",
+      "require": "./dist/plugins/base.cjs"
+    },
+    "./callouts": {
+      "types": "./dist/plugins/callouts/index.d.ts",
+      "import": "./dist/plugins/callouts/index.mjs",
+      "require": "./dist/plugins/callouts/index.cjs"
+    },
+    "./document": {
+      "types": "./dist/plugins/document.d.ts",
+      "import": "./dist/plugins/document.mjs",
+      "require": "./dist/plugins/document.cjs"
+    },
+    "./footnotes": {
+      "types": "./dist/plugins/footnotes/index.d.ts",
+      "import": "./dist/plugins/footnotes/index.mjs",
+      "require": "./dist/plugins/footnotes/index.cjs"
+    },
+    "./html": {
+      "types": "./dist/plugins/html/index.d.ts",
+      "import": "./dist/plugins/html/index.mjs",
+      "require": "./dist/plugins/html/index.cjs"
+    },
+    "./math": {
+      "types": "./dist/plugins/math/index.d.ts",
+      "import": "./dist/plugins/math/index.mjs",
+      "require": "./dist/plugins/math/index.cjs"
+    },
+    "./math/renderer": {
+      "types": "./dist/plugins/math/renderer.d.ts",
+      "import": "./dist/plugins/math/renderer.mjs",
+      "require": "./dist/plugins/math/renderer.cjs"
+    },
+    "./mdx": {
+      "types": "./dist/plugins/mdx/index.d.ts",
+      "import": "./dist/plugins/mdx/index.mjs",
+      "require": "./dist/plugins/mdx/index.cjs"
+    },
+    "./tables": {
+      "types": "./dist/plugins/tables/index.d.ts",
+      "import": "./dist/plugins/tables/index.mjs",
+      "require": "./dist/plugins/tables/index.cjs"
+    }
+  },
+  "files": ["dist"],
+  "sideEffects": false,
+  "dependencies": {
+    "@stream-mdx/core": "0.0.0"
+  },
+  "peerDependencies": {
+    "@stream-mdx/react": "0.0.0",
+    "react": ">=18.2.0"
+  },
+  "peerDependenciesMeta": {
+    "@stream-mdx/react": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
+  }
+}

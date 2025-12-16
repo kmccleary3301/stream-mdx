@@ -1,0 +1,132 @@
+@top Document { (Block | blankLine)* }
+
+Block {
+  ATXHeading |
+  Paragraph |
+  MathDisplay |
+  CodeBlock |
+  Blockquote |
+  BulletList |
+  OrderedList
+}
+
+ATXHeading {
+  atxHeadingMarker heading+ LineEnd?
+}
+
+Paragraph {
+  paraContent+
+}
+
+paraContent {
+  MathInline |
+  text |
+  softbreak
+}
+
+MathInline {
+  inlineMath
+}
+
+MathDisplay {
+  displayMath
+}
+
+CodeBlock {
+  FencedCodeBlock |
+  IndentedCodeBlock
+}
+
+FencedCodeBlock {
+  codeFenceStart codeText* codeFenceEnd
+}
+
+IndentedCodeBlock {
+  indentedCodeLine+
+}
+
+Blockquote {
+  blockquoteMarker blockquoteContent+
+}
+
+BulletList {
+  BulletListItem+
+}
+
+BulletListItem {
+  bulletListMarker listContent+
+}
+
+OrderedList {
+  OrderedListItem+
+}
+
+OrderedListItem {
+  orderedListMarker listContent+
+}
+
+listContent {
+  MathInline |
+  text |
+  softbreak
+}
+
+blockquoteContent {
+  MathInline |
+  MathDisplay |
+  text |
+  LineEnd
+}
+
+heading {
+  MathInline |
+  text
+}
+
+@external tokens mathTokenizer from "./plugins/math/tokenizer" {
+  inlineMath[@name="InlineMath"],
+  displayMath[@name="DisplayMath"]
+}
+
+@context mathContext from "./contexts/math-tracker"
+
+@tokens {
+  // Basic tokens
+  text { ![\n\r$*_`#>\- \t|\\!]+ }
+  space { " "+ }
+  LineEnd { "\n" | "\r\n" | "\r" }
+  blankLine { LineEnd }
+  softbreak { LineEnd ![\n\r] }
+  
+  // Heading tokens
+  atxHeadingMarker { "#"+ " " }
+  
+  // Code tokens
+  codeFenceStart { "```" ![\n\r]* LineEnd }
+  codeFenceEnd { "```" LineEnd? }
+  codeText { ![\n\r`]+ | "`" | LineEnd }
+  indentedCodeLine { ("    " | "\t") ![\n\r]* LineEnd }
+  
+  // Quote tokens
+  blockquoteMarker { ">" " "? }
+  
+  // List tokens
+  bulletListMarker { ("-" | "*" | "+") " " }
+  orderedListMarker { @digit+ ("." | ")") " " }
+  
+  // Special characters that need careful handling
+  "$" { "$" }
+  "*" { "*" }
+  "_" { "_" }
+  "`" { "`" }
+  "#" { "#" }
+  ">" { ">" }
+  "-" { "-" }
+  " " { " " }
+  "\t" { "\t" }
+  "|" { "|" }
+  "\\" { "\\" }
+  "!" { "!" }
+}
+
+@detectDelim

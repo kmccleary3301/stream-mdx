@@ -1,0 +1,13 @@
+{
+  "name": "stream-mdx-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "examples/*"
+  ],
+  "scripts": {
+    "build": "npm -ws --if-present run build",
+    "test": "npm -ws --if-present run test"
+  }
+}
+

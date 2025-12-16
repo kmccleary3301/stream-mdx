@@ -1,0 +1,76 @@
+{
+  "name": "@stream-mdx/react",
+  "version": "0.0.0",
+  "description": "React renderer, scheduler, and worker wiring for the Streaming Markdown V2 pipeline",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./streaming-markdown": {
+      "types": "./dist/streaming-markdown.d.ts",
+      "import": "./dist/streaming-markdown.mjs",
+      "require": "./dist/streaming-markdown.cjs"
+    },
+    "./renderer": {
+      "types": "./dist/renderer/index.d.ts",
+      "import": "./dist/renderer/index.mjs",
+      "require": "./dist/renderer/index.cjs"
+    },
+    "./renderer/patch-commit-scheduler": {
+      "types": "./dist/renderer/patch-commit-scheduler.d.ts",
+      "import": "./dist/renderer/patch-commit-scheduler.mjs",
+      "require": "./dist/renderer/patch-commit-scheduler.cjs"
+    },
+    "./renderer/patch-coalescing": {
+      "types": "./dist/renderer/patch-coalescing.d.ts",
+      "import": "./dist/renderer/patch-coalescing.mjs",
+      "require": "./dist/renderer/patch-coalescing.cjs"
+    },
+    "./renderer/patch-batching": {
+      "types": "./dist/renderer/patch-batching.d.ts",
+      "import": "./dist/renderer/patch-batching.mjs",
+      "require": "./dist/renderer/patch-batching.cjs"
+    },
+    "./renderer/store": {
+      "types": "./dist/renderer/store.d.ts",
+      "import": "./dist/renderer/store.mjs",
+      "require": "./dist/renderer/store.cjs"
+    },
+    "./mdx-client": {
+      "types": "./dist/mdx-client.d.ts",
+      "import": "./dist/mdx-client.mjs",
+      "require": "./dist/mdx-client.cjs"
+    },
+    "./mdx-coordinator": {
+      "types": "./dist/mdx-coordinator.d.ts",
+      "import": "./dist/mdx-coordinator.mjs",
+      "require": "./dist/mdx-coordinator.cjs"
+    },
+    "./math/display-wrapper": {
+      "types": "./dist/math/display-wrapper.d.ts",
+      "import": "./dist/math/display-wrapper.mjs",
+      "require": "./dist/math/display-wrapper.cjs"
+    },
+    "./contexts/math-tracker": {
+      "types": "./dist/contexts/math-tracker.d.ts",
+      "import": "./dist/contexts/math-tracker.mjs",
+      "require": "./dist/contexts/math-tracker.cjs"
+    }
+  },
+  "files": ["dist"],
+  "sideEffects": false,
+  "dependencies": {
+    "@stream-mdx/core": "0.0.0",
+    "@stream-mdx/worker": "0.0.0"
+  },
+  "peerDependencies": {
+    "react": ">=18.2.0",
+    "react-dom": ">=18.2.0"
+  }
+}

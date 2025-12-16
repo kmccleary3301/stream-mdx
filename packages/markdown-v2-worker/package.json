@@ -1,0 +1,42 @@
+{
+  "name": "@stream-mdx/worker",
+  "version": "0.0.0",
+  "description": "Worker client utilities and shared worker helpers for the Streaming Markdown V2 pipeline",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./worker-client": {
+      "types": "./dist/worker-client.d.ts",
+      "import": "./dist/worker-client.mjs",
+      "require": "./dist/worker-client.cjs"
+    },
+    "./streaming/custom-matcher": {
+      "types": "./dist/streaming/custom-matcher.d.ts",
+      "import": "./dist/streaming/custom-matcher.mjs",
+      "require": "./dist/streaming/custom-matcher.cjs"
+    }
+  },
+  "files": ["dist"],
+  "sideEffects": ["src/worker-dom-stub.ts"],
+  "dependencies": {
+    "@lezer/lr": "^1.4.2",
+    "@lezer/markdown": "^1.3.0",
+    "@stream-mdx/core": "0.0.0",
+    "@stream-mdx/plugins": "0.0.0",
+    "@mdx-js/mdx": "^3.1.0",
+    "@shikijs/engine-javascript": "^1.29.2",
+    "@shikijs/engine-oniguruma": "^1.29.2",
+    "character-entities": "^2.0.2",
+    "rehype-slug": "^6.0.0",
+    "remark-gfm": "^4.0.0",
+    "remark-math": "^6.0.0",
+    "shiki": "^1.29.2"
+  }
+}
