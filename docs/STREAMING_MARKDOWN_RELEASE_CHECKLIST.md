@@ -6,102 +6,110 @@ Use this checklist when cutting preview builds (0.9.x) or the eventual 1.0.0 rel
 
 ---
 
-## 1. Preflight
+## 1. Preflight (local)
 
-1. **Install deps, build packages, build hosted worker**
+1. **Install deps (clean)**
    ```bash
-   npm install
-   npm run worker:build
+   npm ci
+   ```
+2. **Build packages**
+   - `npm run build` runs all workspace builds (`npm -ws --if-present run build`).
+   ```bash
    npm run build
    ```
-2. **Run workspace tests**
+3. **Build the hosted worker + copy to examples**
+   ```bash
+   npm run worker:build
+   ```
+4. **Run tests**
    ```bash
    npm test
    ```
-3. **Sanity-check the hosted worker artifact**
-   - The hosted worker should be produced at `packages/markdown-v2-worker/dist/hosted/markdown-worker.js`.
-   - The helper copies it into the starter at `examples/streaming-markdown-starter/public/workers/markdown-worker.js` (via `npm run worker:build`).
-4. **External consumption sanity check (manual, until `release:verify` exists)**
-   - Pack tarballs:
+5. **Sanity-check hosted worker outputs**
+   - Built worker artifact:
+     - `packages/markdown-v2-worker/dist/hosted/markdown-worker.js`
+   - Copied artifact (for the example app):
+     - `examples/streaming-markdown-starter/public/workers/markdown-worker.js`
+
+---
+
+## 2. Pack + external install gate (high signal)
+
+This is the most reliable “will npm users succeed?” gate.
+
+1. **Pack tarballs locally**
      ```bash
      mkdir -p tmp/release-packs
-     for pkg in markdown-v2-core markdown-v2-plugins markdown-v2-worker markdown-v2-react stream-mdx; do
-       (cd packages/$pkg && npm pack --pack-destination ../../tmp/release-packs)
-     done
+     (cd packages/markdown-v2-core && npm pack --pack-destination ../../tmp/release-packs)
+     (cd packages/markdown-v2-plugins && npm pack --pack-destination ../../tmp/release-packs)
+     (cd packages/markdown-v2-worker && npm pack --pack-destination ../../tmp/release-packs)
+     (cd packages/markdown-v2-react && npm pack --pack-destination ../../tmp/release-packs)
+     (cd packages/stream-mdx && npm pack --pack-destination ../../tmp/release-packs)
      ```
-   - In a clean scratch dir, install from those tarballs and run a minimal build (or use `examples/streaming-markdown-starter` by pointing its deps at the tarballs). This is the highest-signal “will npm users succeed?” gate.
+2. **In a clean scratch dir, install from tarballs and build**
+   - Minimum expectation:
+     - `npm install ./tmp/release-packs/*.tgz` (or explicit paths)
+     - `next build` succeeds for a simple Next app using `stream-mdx` (or `@stream-mdx/react`)
+   - If you use the included starter:
+     - point the starter deps at the tarballs (no workspace/file links)
+     - ensure it can `npm install`, `npm run worker:build`, and `npm run build`
 
 ---
 
-## 2. Build the packages
+## 3. Versioning & tagging (Changesets)
 
-```bash
-npm run markdown-v2:build:packages
-```
+This repo is set up for Changesets.
 
-This emits `dist/` folders for:
-
-- `packages/markdown-v2-core`
-- `packages/markdown-v2-react`
-- `packages/markdown-v2-worker`
-- `packages/markdown-v2-plugins`
-
-Verify:
-
-- `dist/**/index.js`, `index.cjs`, and `index.d.ts` exist for each package.
-- Tree-shaking works: `packages/markdown-v2-plugins/dist/plugins/*` should contain individual modules.
-- File sizes stay within the documented budgets (see `docs/STREAMING_MARKDOWN_V2_STATUS.md §5`).
-- Copy the generated tarballs into a scratch project and ensure `npm install ./markdown-v2-react-*.tgz` works as expected (no workspace-only imports).
-
----
-
-## 3. Versioning & tagging
-
-1. Bump versions in each package `package.json`.
-   - Pre-release: `0.9.x`.
-   - Stable: `1.0.0`.
-2. Update the example template (`examples/streaming-markdown-starter/package.json`) so it references the new versions (or keeps `file:` links for local testing).
-3. Commit with a release summary:
-   ```
-   chore(streaming-v2): prepare 0.9.0
-   ```
-4. Tag and push:
+1. **Add changesets for the release**
    ```bash
-   git tag streaming-markdown-v2@0.9.0
-   git push origin streaming-markdown-v2@0.9.0
+   npm run changeset
    ```
+2. **Version packages**
+   ```bash
+   npm run changeset:version
+   ```
+3. **Commit**
+   - Example:
+     - `chore(release): version packages`
+4. **Tag (optional but recommended)**
+   - Prefer a single repo tag per release:
+     - `v0.0.1` / `v0.1.0` / `v1.0.0`
 
 ---
 
-## 4. Publish (when ready)
+## 4. Publish
 
-> Skip until the packages are public.
-
-```bash
-cd packages/markdown-v2-core && npm publish --access public
-cd ../markdown-v2-plugins && npm publish --access public
-cd ../markdown-v2-worker && npm publish --access public
-cd ../markdown-v2-react && npm publish --access public
-```
-
-Confirm each tarball contains only `dist/`, `package.json`, and README/LICENSE material.
-
----
-
-## 5. CI guardrails to enforce
-
-| Check | Command | Expected budget |
-| --- | --- | --- |
-| Coalescing reduction (snippets) | `npm run markdown-v2:test:snippets` | ≥10 % reduction, accumulator p95 ≤ 8 ms |
-| Patch scheduler stats | `npm run markdown-v2:test:patch-scheduler` | Queue depth avg ≤ 1.3 / p95 ≤ 2.0 |
-| Benchmark parity | `npm run markdown-v2:bench:coalescing` | Completion time ≤ baseline +5 % |
-| MDX modes | Playwright smoke (server + worker) | 0 pending MDX blocks post-stream |
-
-Push the analyzer/benchmark artifacts to CI (e.g., upload `tmp/snippet_analysis/**` and `tmp/renderer-benchmark.json`) so regressions are traceable.
+1. **Ensure you are logged into npm**
+   ```bash
+   npm whoami
+   ```
+2. **Publish via Changesets**
+   ```bash
+   npm run changeset:publish
+   ```
+3. **Confirm all five packages are published**
+   - `@stream-mdx/core`
+   - `@stream-mdx/plugins`
+   - `@stream-mdx/worker`
+   - `@stream-mdx/react`
+   - `stream-mdx`
 
 ---
 
-## 8. Remaining work to delegate (publication-plan gaps)
+## 5. CI gates (current repo)
+
+This repo’s CI (`.github/workflows/ci.yml`) enforces:
+
+- `npm ci`
+- `npm run build`
+- `npm test`
+- `npm -ws --if-present pack --dry-run`
+
+Before publishing, run the same commands locally (plus the external install gate in §2).
+
+---
+
+## 6. Remaining work / publication-plan gaps (if not already done)
 
 This section is intentionally concrete for automation (Codex CLI / scripts).
 
@@ -118,7 +126,7 @@ This section is intentionally concrete for automation (Codex CLI / scripts).
    - Goal: `@stream-mdx/core` stays React-free; `@stream-mdx/worker` and `@stream-mdx/plugins` must not depend on React at runtime.
    - Acceptance checks:
      - `grep -R "from 'react'\\|from \\\"react\\\"" packages/markdown-v2-core/src` returns nothing.
-     - `npm ls --workspaces --prod react react-dom` shows React only where expected (usually `@stream-mdx/react` and example apps).
+     - `npm ls --workspaces --prod react react-dom` shows React only where expected (usually `@stream-mdx/react`, `stream-mdx`, and example apps).
      - `packages/markdown-v2-core/package.json` has **no** `react`/`react-dom` in deps/peerDeps.
 
 3. **Phase 3 — stabilize public API + exports discipline**
@@ -137,15 +145,15 @@ This section is intentionally concrete for automation (Codex CLI / scripts).
 
 ---
 
-## 6. Docs & changelog
+## 7. Docs & release notes
 
 - Update `docs/STREAMING_MARKDOWN_V2_STATUS.md` metrics tables.
-- Append release notes to `docs/STREAMING_V2_NEXT_STEPS.md` or the public changelog.
-- When publishing packages, regenerate any README badges with the new version numbers.
+- Publish release notes via GitHub Releases (recommended), or add a `CHANGELOG.md` if you want a file-based changelog.
+- When publishing packages, regenerate any README badges with the new version numbers (if used).
 
 ---
 
-## 7. Rollback plan
+## 8. Rollback plan
 
-- Keep the previous worker bundle (`public/workers/markdown-worker.js`) committed so you can `git revert` quickly if a release regresses.
-- Maintain the legacy renderer feature flag in production until V2 is battle-tested.
+- Tag every release; rollback is typically “revert and republish as `-patch`” or “yank with `npm deprecate` + publish fix”.
+- Keep the hosted worker build deterministic so it can be regenerated from tags.

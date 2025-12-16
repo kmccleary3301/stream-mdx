@@ -28,6 +28,9 @@ export default defineConfig({
   sourcemap: true,
   splitting: false,
   clean: true,
+  banner: {
+    js: '"use client";',
+  },
   format: ["esm", "cjs"],
   outDir: join(__dirname, "dist"),
   target: "es2020",

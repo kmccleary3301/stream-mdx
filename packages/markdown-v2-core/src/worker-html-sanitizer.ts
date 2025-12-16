@@ -1,14 +1,20 @@
-import rehypeParse from "rehype-parse";
-import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
-import rehypeStringify from "rehype-stringify";
+import * as rehypeParse from "rehype-parse";
+import * as rehypeSanitize from "rehype-sanitize";
+import * as rehypeStringify from "rehype-stringify";
 import { unified } from "unified";
+
+const { defaultSchema } = rehypeSanitize;
 
 type Schema = typeof defaultSchema;
 type AttributeDefinition = string | [string, ...(string | number | boolean | RegExp | null | undefined)[]];
 
 const SANITIZED_SCHEMA: Schema = createSchema();
 
-const sanitizeProcessor = unified().use(rehypeParse, { fragment: true }).use(rehypeSanitize, SANITIZED_SCHEMA).use(rehypeStringify).freeze();
+const sanitizeProcessor = unified()
+  .use(rehypeParse.default, { fragment: true })
+  .use(rehypeSanitize.default, SANITIZED_SCHEMA)
+  .use(rehypeStringify.default)
+  .freeze();
 
 export function sanitizeHtmlInWorker(html: string): string {
   if (!html) return "";
