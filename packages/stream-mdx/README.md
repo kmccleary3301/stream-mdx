@@ -9,6 +9,12 @@ This is the **convenience** package:
 
 If you want maximum modularity / tree-shaking control, install the scoped packages directly. Otherwise, start here.
 
+## Full documentation
+
+The npm README is intentionally a “front page”. The full manual lives in the repo:
+
+- https://github.com/kmccleary3301/stream-mdx/blob/main/docs/COMPREHENSIVE_PROJECT_DOCUMENTATION.md
+
 ## Install
 
 ```bash
@@ -84,7 +90,7 @@ If you enable raw HTML, treat it as an XSS surface:
 
 Start from:
 - `docs/STREAMING_MARKDOWN_V2_STATUS.md`
-- `docs/STREAMING_CAPTURE_SOP.md`
+- `docs/STREAMING_MARKDOWN_RELEASE_CHECKLIST.md`
 
 ## Performance notes
 
