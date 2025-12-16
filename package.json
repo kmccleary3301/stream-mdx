@@ -6,11 +6,11 @@
     "examples/*"
   ],
   "scripts": {
-    "build": "npm -ws --if-present run build",
-    "test": "npm -ws --if-present run test",
-    "clean": "npm -ws --if-present run clean",
-    "markdown-v2:build:packages": "npm -ws --if-present run build",
-    "markdown-v2:test:packages": "npm -ws --if-present run test",
+    "build": "npm --workspaces --if-present run build",
+    "test": "npm --workspaces --if-present run test",
+    "clean": "npm --workspaces --if-present run clean",
+    "markdown-v2:build:packages": "npm --workspaces --if-present run build",
+    "markdown-v2:test:packages": "npm --workspaces --if-present run test",
     "worker:build": "npm -w @stream-mdx/worker run build:hosted && tsx scripts/copy-hosted-worker.ts",
     "changeset": "changeset",
     "changeset:version": "changeset version",
@@ -26,4 +26,3 @@
     "typescript": "^5.7.2"
   }
 }
-

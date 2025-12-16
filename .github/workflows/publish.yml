@@ -1,14 +1,16 @@
-name: CI
+name: Publish
 
 on:
-  push:
-    branches: [main]
-  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
-  build-test-pack:
+  publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -16,6 +18,9 @@ jobs:
         with:
           node-version: 20
           cache: npm
+
+      - name: Update npm (for trusted publishing)
+        run: npm install -g npm@latest
 
       - name: Install
         run: npm ci
@@ -26,6 +31,5 @@ jobs:
       - name: Test
         run: npm run test
 
-      - name: Pack (dry-run)
-        run: npm --workspaces --if-present pack --dry-run
-
+      - name: Publish (Changesets)
+        run: npm run changeset:publish
