@@ -2,6 +2,15 @@
   "name": "@stream-mdx/plugins",
   "version": "0.0.0",
   "description": "Streaming Markdown V2 plugin suite (math, MDX, tables, callouts, footnotes, HTML helpers)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kmccleary3301/stream-mdx.git",
+    "directory": "packages/markdown-v2-plugins"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -65,6 +74,11 @@
   },
   "files": ["dist"],
   "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf dist",
+    "prepack": "npm run build"
+  },
   "dependencies": {
     "@stream-mdx/core": "0.0.0"
   },

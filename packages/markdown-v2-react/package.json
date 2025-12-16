@@ -2,6 +2,15 @@
   "name": "@stream-mdx/react",
   "version": "0.0.0",
   "description": "React renderer, scheduler, and worker wiring for the Streaming Markdown V2 pipeline",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kmccleary3301/stream-mdx.git",
+    "directory": "packages/markdown-v2-react"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -65,6 +74,12 @@
   },
   "files": ["dist"],
   "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "test": "tsx __tests__/*.test.ts",
+    "clean": "rm -rf dist",
+    "prepack": "npm run build"
+  },
   "dependencies": {
     "@stream-mdx/core": "0.0.0",
     "@stream-mdx/worker": "0.0.0"

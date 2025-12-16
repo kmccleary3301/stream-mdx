@@ -2,6 +2,15 @@
   "name": "stream-mdx",
   "version": "0.0.0",
   "description": "StreamMDX convenience package (re-exports @stream-mdx/*).",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kmccleary3301/stream-mdx.git",
+    "directory": "packages/stream-mdx"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -35,6 +44,11 @@
   },
   "files": ["dist"],
   "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf dist",
+    "prepack": "npm run build"
+  },
   "dependencies": {
     "@stream-mdx/core": "0.0.0",
     "@stream-mdx/plugins": "0.0.0",

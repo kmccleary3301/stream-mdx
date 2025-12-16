@@ -7,7 +7,23 @@
   ],
   "scripts": {
     "build": "npm -ws --if-present run build",
-    "test": "npm -ws --if-present run test"
+    "test": "npm -ws --if-present run test",
+    "clean": "npm -ws --if-present run clean",
+    "markdown-v2:build:packages": "npm -ws --if-present run build",
+    "markdown-v2:test:packages": "npm -ws --if-present run test",
+    "worker:build": "npm -w @stream-mdx/worker run build:hosted && tsx scripts/copy-hosted-worker.ts",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "changeset:publish": "changeset publish"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.28.1",
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
   }
 }
 

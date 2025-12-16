@@ -8,11 +8,11 @@
     "start": "next start"
   },
   "dependencies": {
-    "@stream-mdx/core": "file:../../packages/markdown-v2-core",
-    "@stream-mdx/plugins": "file:../../packages/markdown-v2-plugins",
-    "@stream-mdx/react": "file:../../packages/markdown-v2-react",
-    "@stream-mdx/worker": "file:../../packages/markdown-v2-worker",
-    "next": "15.3.3",
+    "@stream-mdx/core": "0.0.0",
+    "@stream-mdx/plugins": "0.0.0",
+    "@stream-mdx/react": "0.0.0",
+    "@stream-mdx/worker": "0.0.0",
+    "next": "15.5.9",
     "react": "18.3.1",
     "react-dom": "18.3.1"
   }

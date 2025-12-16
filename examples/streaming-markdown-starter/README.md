@@ -7,9 +7,10 @@ This example mirrors the quick-start instructions in `docs/STREAMING_MARKDOWN_QU
 ```bash
 cd stream-mdx/examples/streaming-markdown-starter
 npm install
-# Build the worker bundle from the repo root first:
+# Build + copy the hosted worker bundle from the repo root first:
+cd ../../
 npm run worker:build
-cp ../../public/workers/markdown-worker.js public/workers/
+cd examples/streaming-markdown-starter
 npm run dev
 ```
 
@@ -17,4 +18,4 @@ Then open http://localhost:3000 to stream the sample article. Use the dropdown t
 
 > Set `NEXT_PUBLIC_STREAMING_WORKER_HELPER=true` in `.env.local` if you want the starter to instantiate the worker via `createDefaultWorker()` (the same helper used by the React package).
 
-> The package.json links the local `@stream-mdx/*` workspaces via `file:../../packages/...`. Update the versions if you publish the packages to npm.
+> This repo uses npm workspaces, so the starter depends on `@stream-mdx/*` via workspace versions (currently `0.0.0`). Update the versions if you publish the packages to npm.

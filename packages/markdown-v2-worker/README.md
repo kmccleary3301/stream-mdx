@@ -11,20 +11,23 @@ npm install @stream-mdx/worker
 ## Usage
 
 ```ts
-import { createWorker } from "@stream-mdx/worker";
-import type { WorkerMessageIn } from "@stream-mdx/core";
+import { MarkdownWorkerClient } from "@stream-mdx/worker";
 
-const worker = createWorker(); // defaults to module worker via Blob URL
-const init: WorkerMessageIn = { type: "INIT", text: "# Hello" };
-worker.postMessage(init);
-worker.onmessage = (event) => {
-  if (event.data.type === "PATCH") {
+const client = new MarkdownWorkerClient({
+  // For CSP-restricted environments, host the worker and point to it here:
+  workerUrl: "/workers/markdown-worker.js",
+});
+
+client.onMessage((msg) => {
+  if (msg.type === "PATCH") {
     // apply patches
   }
-};
+});
+
+client.init("# Hello");
 ```
 
-`createWorker()` accepts optional overrides (`{ url?: URL; name?: string }`). If you host the worker script yourself, skip `createWorker()` and instantiate `new Worker("/workers/markdown-worker.js", { type: "module" })`.
+`MarkdownWorkerClient` will try `createDefaultWorker()` first (Blob/inline), then fall back to a hosted worker URL (`/workers/markdown-worker.js` by default).
 
 > Keep `docPlugins` in sync with the renderer when enabling math+MDX. Follow the [cookbook recipe](../../docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md#5-math--mdx-workerrenderer-registration); the worker and React packages now ship tests enforcing it.
 
@@ -45,8 +48,8 @@ Exact shapes live in `@stream-mdx/core` (`WorkerMessageIn`, `WorkerMessageOut`).
 ## Hosting guidance
 
 - **Blob (default):** easiest for local dev, but CSP must allow `blob:` execution.
-- **Hosted URL:** copy `public/workers/markdown-worker.js` into your app’s static assets and pass the URL via `<StreamingMarkdown worker>`.
-- **Custom build:** run `npm run worker:build` to regenerate the bundle after modifying plugins or compile strategy.
+- **Hosted URL:** build the hosted worker bundle and copy it into your app’s static assets (e.g. `public/workers/markdown-worker.js`).
+- **Build hosted worker:** from the repo root, run `npm run worker:build`.
 
 For CSP-restricted environments, prehost the worker and set `Cross-Origin-Embedder-Policy` / `Cross-Origin-Opener-Policy` headers if you rely on SharedArrayBuffers.
 
