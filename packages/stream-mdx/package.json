@@ -42,7 +42,7 @@
       "require": "./dist/plugins.cjs"
     }
   },
-  "files": ["dist"],
+  "files": ["dist", "README.md"],
   "sideEffects": false,
   "scripts": {
     "build": "tsup",
@@ -60,4 +60,3 @@
     "react-dom": ">=18.2.0"
   }
 }
-
