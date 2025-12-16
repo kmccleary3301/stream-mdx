@@ -1,51 +1,35 @@
 # Streaming Markdown V2 — Release Checklist
 
-_Last updated: 2025-11-07_
+_Last updated: 2025-12-16_
 
-Use this checklist when cutting preview builds (0.9.x) or the eventual 1.0.0 release. It assumes the workspace layout introduced in Phase 2/3/4 plus the new package build pipeline (`npm run markdown-v2:build:packages`).
+Use this checklist when cutting preview builds (0.9.x) or the eventual 1.0.0 release from the extracted `stream-mdx/` repo. It assumes the current workspace scripts in `stream-mdx/package.json` (not the older `ql_homepage` scripts).
 
 ---
 
 ## 1. Preflight
 
-1. **Install deps & build worker**
+1. **Install deps, build packages, build hosted worker**
    ```bash
    npm install
    npm run worker:build
+   npm run build
    ```
-2. **Run the focused suites**
+2. **Run workspace tests**
    ```bash
-   npm run markdown-v2:test:packages
-   npm run markdown-v2:test:snippets
-   npm run markdown-v2:test:patch-scheduler
-   npm run markdown-v2:test:patch-coalescing
-   npm run markdown-v2:bench:coalescing
+   npm test
    ```
-   Capture JSON/CSV artifacts from `tmp/snippet_analysis/` and `tmp/renderer-benchmark.json`.
-3. **Smoke the demo in both MDX modes**
-   - `npm run dev`
-   - Visit `/examples/streaming`, toggle **Server** and **Worker** compile modes, confirm no pending MDX blocks remain at completion.
-   - Run the Puppeteer smoke test against the dev server for good measure:
-     ```bash
-     npm run worker:smoke -- http://127.0.0.1:3006/examples/streaming --length 400 --timeout 45000
-     ```
-4. **Worker helper sanity check**
-   - Set `NEXT_PUBLIC_STREAMING_WORKER_HELPER=true` (and optionally `NEXT_PUBLIC_STREAMING_WORKER_HELPER_MODE=blob`) in `.env.local`.
-   - Run `npm run dev:single` and load `/examples/streaming`; confirm the helper banner appears and streaming still completes in both MDX modes.
-   - Execute `npm run quick-test:streaming` (or `tsx scripts/quick-test-streaming.ts`) to exercise the helper wiring + `StreamingMarkdownHandle` pause/resume flow.
-5. **Packaged Playwright suite**
-   - Run `npm run markdown-v2:test:playwright-packaged`. This command builds/installs the tarballs into the dev app, drops the workspace-only TS path aliases, launches the demo on port **3006**, and runs the Playwright scripts (`test-mdx-preview` server + worker, `test-streaming-mixing`). Expect ~6–8 minutes of runtime.
-   - The helper banner must remain visible (the script sets `NEXT_PUBLIC_STREAMING_WORKER_HELPER=true` automatically); failures here usually mean the helper wiring regressed or the tarballs shipped stale dist files.
-6. **External consumption sanity check**
-   - After `npm run markdown-v2:build:packages`, pack each workspace into `tmp/release-packs/`:
+3. **Sanity-check the hosted worker artifact**
+   - The hosted worker should be produced at `packages/markdown-v2-worker/dist/hosted/markdown-worker.js`.
+   - The helper copies it into the starter at `examples/streaming-markdown-starter/public/workers/markdown-worker.js` (via `npm run worker:build`).
+4. **External consumption sanity check (manual, until `release:verify` exists)**
+   - Pack tarballs:
      ```bash
      mkdir -p tmp/release-packs
-     for pkg in core worker react plugins; do
-       (cd packages/markdown-v2-$pkg && npm pack --pack-destination ../../tmp/release-packs)
+     for pkg in markdown-v2-core markdown-v2-plugins markdown-v2-worker markdown-v2-react stream-mdx; do
+       (cd packages/$pkg && npm pack --pack-destination ../../tmp/release-packs)
      done
-   ```
-  - Copy `examples/streaming-markdown-starter` to a scratch dir (`tmp/release-starter`), point its dependencies to the generated tarballs (`"@stream-mdx/react": "file:../release-packs/markdown-v2-react-x.tgz"`), set `NEXT_PUBLIC_STREAMING_WORKER_HELPER=true`, and run `npm install && npm run build`. This verifies both the published shape and the helper wiring without relying on workspace-relative imports.
-  - For a fully automated sweep (build packages, pack tarballs, install the starter from those tarballs, run `next build`), execute `npm run markdown-v2:release:verify`. Artifacts land in `tmp/release-verify/**`; review `tmp/release-verify/manifest.json` plus the starter build logs before tagging.
+     ```
+   - In a clean scratch dir, install from those tarballs and run a minimal build (or use `examples/streaming-markdown-starter` by pointing its deps at the tarballs). This is the highest-signal “will npm users succeed?” gate.
 
 ---
 
@@ -114,6 +98,42 @@ Confirm each tarball contains only `dist/`, `package.json`, and README/LICENSE m
 | MDX modes | Playwright smoke (server + worker) | 0 pending MDX blocks post-stream |
 
 Push the analyzer/benchmark artifacts to CI (e.g., upload `tmp/snippet_analysis/**` and `tmp/renderer-benchmark.json`) so regressions are traceable.
+
+---
+
+## 8. Remaining work to delegate (publication-plan gaps)
+
+This section is intentionally concrete for automation (Codex CLI / scripts).
+
+1. **Add a `release:verify` script (root)**
+   - Goal: fully automated “ship check” that catches the most common npm failures.
+   - Requirements:
+     - Builds all workspaces
+     - Packs tarballs into `tmp/release-packs/`
+     - Installs the starter (or a scratch project) **from tarballs** (no workspace links)
+     - Runs `npm run worker:build` (or verifies the hosted worker is present) and then `next build`
+     - Writes a small manifest to `tmp/release-verify/manifest.json` (versions, tarball names, node/npm versions)
+
+2. **Phase 2 — tighten dependency boundaries**
+   - Goal: `@stream-mdx/core` stays React-free; `@stream-mdx/worker` and `@stream-mdx/plugins` must not depend on React at runtime.
+   - Acceptance checks:
+     - `grep -R "from 'react'\\|from \\\"react\\\"" packages/markdown-v2-core/src` returns nothing.
+     - `npm ls --workspaces --prod react react-dom` shows React only where expected (usually `@stream-mdx/react` and example apps).
+     - `packages/markdown-v2-core/package.json` has **no** `react`/`react-dom` in deps/peerDeps.
+
+3. **Phase 3 — stabilize public API + exports discipline**
+   - Goal: consumers import only documented entrypoints; deep imports are either supported intentionally or blocked.
+   - Tasks:
+     - Verify each package’s `exports` map matches the intended surface area.
+     - Decide whether any deep imports should be supported (and document them) or explicitly blocked.
+     - Ensure `types` + `typesVersions` (if used) line up with `exports`.
+
+4. **Release engineering follow-through (Changesets)**
+   - Current state: `.changeset/config.json` exists and CI runs install/build/test/pack.
+   - Remaining:
+     - Add first changeset(s) describing the initial public release for each package.
+     - Decide versioning strategy (single version vs independent) and set it in `.changeset/config.json`.
+     - Add a publish workflow (optional) or document the manual publish commands and ordering.
 
 ---
 
