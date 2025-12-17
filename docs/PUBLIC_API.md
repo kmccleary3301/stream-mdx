@@ -10,13 +10,14 @@ StreamMDX is published as both scoped packages and an unscoped convenience wrapp
 | --- | --- |
 | `stream-mdx` | You want a single dependency and stable import paths (recommended for apps). |
 | `@stream-mdx/react` | You want the React surface without the wrapper. |
-| `@stream-mdx/worker` | You want the worker client + hosted worker bundle. |
+| `@stream-mdx/worker` | You want the worker client + hosted worker bundle (browser + Node). |
 | `@stream-mdx/core` | You want types + perf/sanitization helpers (no React). |
 | `@stream-mdx/plugins/*` | You are building/customizing a worker bundle or need plugin primitives. |
 
 When you install `stream-mdx`, you can also import:
 
 - `stream-mdx/react`, `stream-mdx/worker`, `stream-mdx/core`
+- `stream-mdx/worker/node` (Node `worker_threads` helper)
 - `stream-mdx/plugins/*` (common plugin entrypoints; useful for pnpm users)
 
 ---
@@ -107,6 +108,15 @@ Worker ownership semantics:
 
 For advanced worker instantiation (CSP overrides, shared worker instances), see `createDefaultWorker()` in `stream-mdx/worker`.
 
+### Node / CLI runtimes
+
+To run the hosted worker bundle in Node (via `worker_threads`), use:
+
+- `@stream-mdx/worker/node` (scoped)
+- `stream-mdx/worker/node` (convenience wrapper)
+
+See `docs/CLI_USAGE.md` for an example that consumes `PATCH` messages into a `DocumentSnapshot`.
+
 ---
 
 ## 3) Features
@@ -186,4 +196,3 @@ If you need deeper control (custom tokenizers, custom streaming matchers, custom
 - `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`
 - `stream-mdx/plugins/*` (convenience package)
 - `@stream-mdx/plugins/*` (scoped packages)
-

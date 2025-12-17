@@ -11,6 +11,7 @@ export default defineConfig({
     "src/react.ts",
     "src/worker.ts",
     "src/worker/mdx-compile.ts",
+    "src/worker/node.ts",
     "src/plugins.ts",
     "src/plugins/base.ts",
     "src/plugins/callouts.ts",

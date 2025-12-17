@@ -11,6 +11,7 @@ Start here (in order):
 ## Topics
 
 - **Getting started**: `docs/GETTING_STARTED.md`
+- **CLI / Node usage**: `docs/CLI_USAGE.md`
 - **Configuration**: `docs/CONFIGURATION.md`
 - **Plugins & worker customization**: `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`
 - **Security model (HTML/CSP)**: `docs/SECURITY_MODEL.md`

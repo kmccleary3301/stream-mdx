@@ -10,6 +10,8 @@ export default defineConfig({
     resolve("src/worker-client.ts"),
     resolve("src/mdx-compile.ts"),
     resolve("src/streaming/custom-matcher.ts"),
+    resolve("src/node/index.ts"),
+    resolve("src/node/worker-thread-entry.ts"),
   ],
   dts: true,
   splitting: false,
