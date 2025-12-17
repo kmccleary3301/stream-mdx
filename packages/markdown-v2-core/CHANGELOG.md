@@ -1,5 +1,11 @@
 # @stream-mdx/core
 
+## 0.0.2
+
+### Patch Changes
+
+- 9e94660: Docs and release-quality improvements: ship package READMEs/CHANGELOGs, add pack+install smoke tests, expose MDX parity helper entrypoints, and add a deployable docs site workflow.
+
 ## 0.0.1
 
 ### Patch Changes
