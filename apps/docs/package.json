@@ -17,7 +17,7 @@
     "remark": "^15.0.1",
     "remark-gfm": "^4.0.1",
     "remark-rehype": "^11.1.2",
-    "stream-mdx": "0.0.1"
+    "stream-mdx": "0.0.2"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

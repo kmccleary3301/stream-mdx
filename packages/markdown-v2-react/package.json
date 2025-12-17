@@ -1,6 +1,6 @@
 {
   "name": "@stream-mdx/react",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "React renderer, scheduler, and worker wiring for the Streaming Markdown V2 pipeline",
   "license": "MIT",
   "repository": {
@@ -85,8 +85,8 @@
     "prepack": "npm run build"
   },
   "dependencies": {
-    "@stream-mdx/core": "0.0.1",
-    "@stream-mdx/worker": "0.0.1"
+    "@stream-mdx/core": "0.0.2",
+    "@stream-mdx/worker": "0.0.2"
   },
   "devDependencies": {
     "jsdom": "^26.0.0"
