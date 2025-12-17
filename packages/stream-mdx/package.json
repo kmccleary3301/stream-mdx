@@ -36,15 +36,71 @@
       "import": "./dist/worker.mjs",
       "require": "./dist/worker.cjs"
     },
+    "./worker/mdx-compile": {
+      "types": "./dist/worker/mdx-compile.d.ts",
+      "import": "./dist/worker/mdx-compile.mjs",
+      "require": "./dist/worker/mdx-compile.cjs"
+    },
     "./plugins": {
       "types": "./dist/plugins.d.ts",
       "import": "./dist/plugins.mjs",
       "require": "./dist/plugins.cjs"
+    },
+    "./plugins/base": {
+      "types": "./dist/plugins/base.d.ts",
+      "import": "./dist/plugins/base.mjs",
+      "require": "./dist/plugins/base.cjs"
+    },
+    "./plugins/registry": {
+      "types": "./dist/plugins/registry.d.ts",
+      "import": "./dist/plugins/registry.mjs",
+      "require": "./dist/plugins/registry.cjs"
+    },
+    "./plugins/callouts": {
+      "types": "./dist/plugins/callouts.d.ts",
+      "import": "./dist/plugins/callouts.mjs",
+      "require": "./dist/plugins/callouts.cjs"
+    },
+    "./plugins/document": {
+      "types": "./dist/plugins/document.d.ts",
+      "import": "./dist/plugins/document.mjs",
+      "require": "./dist/plugins/document.cjs"
+    },
+    "./plugins/footnotes": {
+      "types": "./dist/plugins/footnotes.d.ts",
+      "import": "./dist/plugins/footnotes.mjs",
+      "require": "./dist/plugins/footnotes.cjs"
+    },
+    "./plugins/html": {
+      "types": "./dist/plugins/html.d.ts",
+      "import": "./dist/plugins/html.mjs",
+      "require": "./dist/plugins/html.cjs"
+    },
+    "./plugins/math": {
+      "types": "./dist/plugins/math.d.ts",
+      "import": "./dist/plugins/math.mjs",
+      "require": "./dist/plugins/math.cjs"
+    },
+    "./plugins/math/renderer": {
+      "types": "./dist/plugins/math/renderer.d.ts",
+      "import": "./dist/plugins/math/renderer.mjs",
+      "require": "./dist/plugins/math/renderer.cjs"
+    },
+    "./plugins/mdx": {
+      "types": "./dist/plugins/mdx.d.ts",
+      "import": "./dist/plugins/mdx.mjs",
+      "require": "./dist/plugins/mdx.cjs"
+    },
+    "./plugins/tables": {
+      "types": "./dist/plugins/tables.d.ts",
+      "import": "./dist/plugins/tables.mjs",
+      "require": "./dist/plugins/tables.cjs"
     }
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "CHANGELOG.md"
   ],
   "sideEffects": false,
   "scripts": {

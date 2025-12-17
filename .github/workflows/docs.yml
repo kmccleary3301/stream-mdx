@@ -1,0 +1,54 @@
+name: Docs (GitHub Pages)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build packages
+        run: npm run build:packages
+
+      - name: Build docs (static export)
+        env:
+          NEXT_PUBLIC_BASE_PATH: /stream-mdx
+        run: npm run docs:build
+
+      - name: Disable Jekyll
+        run: touch apps/docs/out/.nojekyll
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/docs/out
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
+

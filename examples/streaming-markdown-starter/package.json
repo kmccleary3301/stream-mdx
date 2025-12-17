@@ -8,12 +8,15 @@
     "start": "next start"
   },
   "dependencies": {
-    "@stream-mdx/core": "0.0.1",
-    "@stream-mdx/plugins": "0.0.1",
-    "@stream-mdx/react": "0.0.1",
-    "@stream-mdx/worker": "0.0.1",
     "next": "15.5.9",
     "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "react-dom": "18.3.1",
+    "stream-mdx": "0.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "typescript": "^5.7.2"
   }
 }

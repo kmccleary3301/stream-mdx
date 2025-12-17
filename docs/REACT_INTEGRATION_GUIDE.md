@@ -1,4 +1,4 @@
-# React Integration Guide — Streaming Markdown V2
+# React Integration Guide — StreamMDX
 
 **Complete guide for React developers building streaming markdown experiences in web applications.**
 
@@ -23,7 +23,7 @@
 
 ## Overview
 
-Streaming Markdown V2 is a **high-performance, streaming-first React component** designed for real-time markdown rendering. Perfect for:
+StreamMDX is a **high-performance, streaming-first React component** designed for real-time markdown rendering. Perfect for:
 
 - ✅ **LLM chat interfaces** (Claude, ChatGPT-style streaming responses)
 - ✅ **Live documentation** (streaming tutorials, guides)
@@ -47,20 +47,30 @@ Streaming Markdown V2 is a **high-performance, streaming-first React component**
 ### Installation
 
 ```bash
-npm install @stream-mdx/react @stream-mdx/core @stream-mdx/worker
-# Optional: for plugins (math, MDX, tables, etc.)
-npm install @stream-mdx/plugins
+npm install stream-mdx
+```
+
+### Worker bundle placement
+
+In production you should host the worker bundle from static assets (stricter CSP, no `blob:`).
+
+After installing, copy the worker into your app:
+
+```bash
+mkdir -p public/workers
+cp node_modules/@stream-mdx/worker/dist/hosted/markdown-worker.js public/workers/markdown-worker.js
 ```
 
 ### Minimal Example
 
 ```tsx
-import { StreamingMarkdown } from "@stream-mdx/react";
+import { StreamingMarkdown } from "stream-mdx";
 
 export function MyComponent() {
   return (
     <StreamingMarkdown
       text="# Hello\n\nThis is **streaming** markdown!"
+      worker="/workers/markdown-worker.js"
     />
   );
 }
@@ -71,7 +81,7 @@ export function MyComponent() {
 ### With Streaming
 
 ```tsx
-import { StreamingMarkdown } from "@stream-mdx/react";
+import { StreamingMarkdown } from "stream-mdx";
 
 async function* streamChunks(text: string) {
   for (const word of text.split(" ")) {
@@ -84,6 +94,7 @@ export function StreamingComponent({ text }: { text: string }) {
   return (
     <StreamingMarkdown
       stream={streamChunks(text)}
+      worker="/workers/markdown-worker.js"
       prewarmLangs={["typescript", "bash"]}
     />
   );
@@ -108,13 +119,19 @@ export function StreamingComponent({ text }: { text: string }) {
 |------|------|-------------|
 | `text` | `string` | Static markdown content. Changing it restarts the session. |
 | `stream` | `AsyncIterable<string>` | Streaming markdown chunks. Use for live updates. |
-| `plugins` | `MarkdownV2Plugin[]` | Custom plugins (math, MDX, citations, etc.) |
-| `features` | `object` | Feature flags: `{ math, mdx, tables, html, callouts }` |
-| `components` | `object` | Override block components (headings, code, etc.) |
-| `inlineComponents` | `object` | Override inline components (bold, links, etc.) |
-| `prewarmLangs` | `string[]` | Shiki languages to load upfront |
-| `onMetrics` | `function` | Performance metrics callback |
-| `worker` | `Worker \| URL \| function` | Custom worker instance/URL/factory |
+| `worker` | `Worker \| URL \| string \| () => Worker` | Worker instance/URL/factory. Recommended: `"/workers/markdown-worker.js"`. |
+| `features` | `object` | Feature flags: `{ math?, mdx?, tables?, html?, callouts?, footnotes? }` |
+| `mdxCompileMode` | `"server" \| "worker"` | Enables MDX compilation/hydration and selects strategy. |
+| `mdxComponents` | `object` | Component map passed to hydrated MDX blocks. |
+| `components` | `object` | Override block components (headings, code, tables, etc.). |
+| `inlineComponents` | `object` | Override inline components (bold, links, code, etc.). |
+| `tableElements` | `object` | Override table tags (Shadcn table wrappers, etc.). |
+| `htmlElements` | `object` | Override HTML tag renders (when HTML is enabled). |
+| `prewarmLangs` | `string[]` | Shiki languages to load upfront. |
+| `scheduling` | `object` | Patch scheduler/backpressure knobs. |
+| `managedWorker` | `boolean` | When `true`, you drive `append/finalize` via the ref handle. |
+| `onMetrics` | `function` | Performance metrics callback after each flush. |
+| `onError` | `function` | Render-time error callback. |
 
 ### Streaming Behavior
 
@@ -130,7 +147,7 @@ export function StreamingComponent({ text }: { text: string }) {
 ### Pattern 1: Static Content
 
 ```tsx
-import { StreamingMarkdown } from "@stream-mdx/react";
+import { StreamingMarkdown } from "stream-mdx";
 
 const article = `
 # My Article
@@ -151,7 +168,7 @@ export function Article() {
 
 ```tsx
 import { useState } from "react";
-import { StreamingMarkdown } from "@stream-mdx/react";
+import { StreamingMarkdown } from "stream-mdx";
 
 export function Editor() {
   const [markdown, setMarkdown] = useState("");
@@ -173,7 +190,7 @@ export function Editor() {
 
 ```tsx
 import { useState, useEffect } from "react";
-import { StreamingMarkdown } from "@stream-mdx/react";
+import { StreamingMarkdown } from "stream-mdx";
 
 export function StreamingView() {
   const [content, setContent] = useState("");
@@ -207,7 +224,7 @@ export function StreamingView() {
 
 ```tsx
 import { useEffect, useState } from "react";
-import { StreamingMarkdown } from "@stream-mdx/react";
+import { StreamingMarkdown } from "stream-mdx";
 
 async function* streamFromAPI(prompt: string) {
   const response = await fetch("/api/llm/stream", {
@@ -250,7 +267,7 @@ export function LLMResponse({ prompt }: { prompt: string }) {
 
 ```tsx
 import { useEffect, useState, useRef } from "react";
-import { StreamingMarkdown } from "@stream-mdx/react";
+import { StreamingMarkdown } from "stream-mdx";
 
 export function WebSocketStream({ url }: { url: string }) {
   const [content, setContent] = useState("");
@@ -282,7 +299,7 @@ export function WebSocketStream({ url }: { url: string }) {
 
 ```tsx
 import { useEffect, useState } from "react";
-import { StreamingMarkdown } from "@stream-mdx/react";
+import { StreamingMarkdown } from "stream-mdx";
 
 export function SSEStream({ url }: { url: string }) {
   const [content, setContent] = useState("");
@@ -312,7 +329,7 @@ export function SSEStream({ url }: { url: string }) {
 
 ```tsx
 import { useState } from "react";
-import { StreamingMarkdown, type StreamingMarkdownHandle } from "@stream-mdx/react";
+import { StreamingMarkdown, type StreamingMarkdownHandle } from "stream-mdx";
 
 interface Message {
   id: string;
@@ -388,8 +405,8 @@ export function ChatInterface() {
 ### Override Block Components
 
 ```tsx
-import { StreamingMarkdown } from "@stream-mdx/react";
-import type { BlockComponents } from "@stream-mdx/react";
+import { StreamingMarkdown } from "stream-mdx";
+import type { BlockComponents } from "stream-mdx";
 
 const customComponents: Partial<BlockComponents> = {
   heading: ({ level, children, ...props }) => {
@@ -447,8 +464,8 @@ export function CustomStyledMarkdown({ text }: { text: string }) {
 ### Override Inline Components
 
 ```tsx
-import { StreamingMarkdown } from "@stream-mdx/react";
-import type { InlineComponents } from "@stream-mdx/react";
+import { StreamingMarkdown } from "stream-mdx";
+import type { InlineComponents } from "stream-mdx";
 
 const customInlineComponents: Partial<InlineComponents> = {
   strong: ({ children }) => (
@@ -490,7 +507,7 @@ export function CustomInlineMarkdown({ text }: { text: string }) {
 ### ShadCN Integration Example
 
 ```tsx
-import { StreamingMarkdown } from "@stream-mdx/react";
+import { StreamingMarkdown } from "stream-mdx";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -529,177 +546,30 @@ export function ShadCNMarkdown({ text }: { text: string }) {
 
 ## Custom Plugins
 
-### Example: Citation Plugin (`>>>FILE-1<<<`)
+StreamMDX supports two layers of customization:
 
-This example shows how to create a custom plugin for LLM outputs that include citations.
+1. **Rendering customization (React)**: use `components`, `inlineComponents`, `tableElements`, and `htmlElements`.
+2. **Syntax customization (Worker)**: adding new tokenizers/streaming matchers requires a custom worker bundle.
 
-**Step 1: Define the Plugin**
+`<StreamingMarkdown />` does **not** accept an arbitrary plugin array prop. Built-in capabilities are toggled via `features`.
 
-```ts
-// plugins/citations.ts
-import type { InlineNode } from "@stream-mdx/core/types";
-import type { MarkdownV2Plugin } from "@stream-mdx/plugins/base";
+If you need custom syntax (citations, mentions, domain-specific tags), the recommended path is:
 
-const citationRegex = />>>FILE-(\d+)<<<?/g;
+- Build a custom worker bundle that registers your plugins using `@stream-mdx/plugins/*`.
+- Host that worker (static asset) and pass its URL via the `worker` prop.
+- Render custom inline tokens via `inlineComponents` (once your worker emits them).
 
-export function createCitationPlugin(): MarkdownV2Plugin {
-  return {
-    id: "citations",
-    worker: (config) => ({
-      ...config,
-      inlinePlugins: [
-        ...(config.inlinePlugins ?? []),
-        {
-          id: "citations",
-          priority: 20, // Run after basic inline parsing
-          re: citationRegex,
-          toNode(match): InlineNode {
-            const index = Number(match[1]);
-            return { 
-              kind: "citation", 
-              id: `FILE-${index}`, 
-              index 
-            };
-          },
-        },
-      ],
-    }),
-    react: (config) => config, // No React-specific wiring needed
-  };
-}
-```
-
-**Step 2: Create the Citation Component**
+Example inline renderer (React side):
 
 ```tsx
-// components/CitationBubble.tsx
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
-
-interface CitationBubbleProps {
-  id: string;
-  index?: number;
-}
-
-export function CitationBubble({ id, index }: CitationBubbleProps) {
-  const label = index ?? id.replace(/^FILE-/, "");
-
-  return (
-    <HoverCard>
-      <HoverCardTrigger asChild>
-        <button
-          type="button"
-          className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[11px] font-medium text-primary-foreground align-baseline ml-1 hover:bg-primary/90"
-        >
-          {label}
-        </button>
-      </HoverCardTrigger>
-      <HoverCardContent className="w-80">
-        <div className="font-semibold mb-1">Source {label}</div>
-        <div className="text-sm text-muted-foreground">
-          This citation references <code className="font-mono text-xs">{id}</code>.
-          {/* Add your citation metadata lookup here */}
-        </div>
-      </HoverCardContent>
-    </HoverCard>
-  );
-}
-```
-
-**Step 3: Wire It Up**
-
-```tsx
-import { StreamingMarkdown } from "@stream-mdx/react";
-import { createCitationPlugin } from "@/plugins/citations";
-import { CitationBubble } from "@/components/CitationBubble";
-
 const inlineComponents = {
-  citation: ({ id, index }: { id: string; index?: number }) => (
-    <CitationBubble id={id} index={index} />
-  ),
+  citation: ({ id }: { id: string }) => <sup>[{id}]</sup>,
 };
 
-export function MarkdownWithCitations({ text }: { text: string }) {
-  return (
-    <StreamingMarkdown
-      text={text}
-      plugins={[createCitationPlugin()]}
-      inlineComponents={inlineComponents}
-    />
-  );
-}
+<StreamingMarkdown text={text} inlineComponents={inlineComponents} />;
 ```
 
-**Usage:**
-
-```tsx
-const llmOutput = `
-X is true because of Y >>>FILE-1<<<
-
-Y is true because of Z >>>FILE-2<<<
-
-Z is true because I say so >>>FILE-3<<<
-`;
-
-<MarkdownWithCitations text={llmOutput} />
-```
-
-### Example: Mention Plugin (`@username`)
-
-```ts
-// plugins/mentions.ts
-import type { InlineNode } from "@stream-mdx/core/types";
-import type { MarkdownV2Plugin } from "@stream-mdx/plugins/base";
-
-const mentionRegex = /@([a-zA-Z0-9_]+)/g;
-
-export function createMentionPlugin(): MarkdownV2Plugin {
-  return {
-    id: "mentions",
-    worker: (config) => ({
-      ...config,
-      inlinePlugins: [
-        ...(config.inlinePlugins ?? []),
-        {
-          id: "mentions",
-          priority: 15,
-          re: mentionRegex,
-          toNode(match): InlineNode {
-            return {
-              kind: "mention",
-              handle: match[1],
-            };
-          },
-        },
-      ],
-    }),
-    react: (config) => config,
-  };
-}
-```
-
-```tsx
-// Usage
-const inlineComponents = {
-  mention: ({ handle }: { handle: string }) => (
-    <a
-      href={`/users/${handle}`}
-      className="text-blue-600 hover:underline"
-    >
-      @{handle}
-    </a>
-  ),
-};
-
-<StreamingMarkdown
-  text="Hey @alice, check this out!"
-  plugins={[createMentionPlugin()]}
-  inlineComponents={inlineComponents}
-/>
-```
+For end-to-end worker plugin wiring and registration order, see `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`.
 
 ---
 
@@ -708,8 +578,7 @@ const inlineComponents = {
 ### Basic MDX Setup
 
 ```tsx
-import { StreamingMarkdown } from "@stream-mdx/react";
-import { mdxPlugin } from "@stream-mdx/plugins/mdx";
+import { StreamingMarkdown } from "stream-mdx";
 
 const mdxComponents = {
   h1: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
@@ -743,8 +612,10 @@ export function MDXMarkdown({ text }: { text: string }) {
   return (
     <StreamingMarkdown
       text={text}
-      plugins={[mdxPlugin({ components: mdxComponents })]}
-      features={{ mdx: true }}
+      worker="/workers/markdown-worker.js"
+      features={{ mdx: true, math: true, tables: true, html: true }}
+      mdxCompileMode="worker"
+      mdxComponents={mdxComponents}
     />
   );
 }
@@ -752,32 +623,30 @@ export function MDXMarkdown({ text }: { text: string }) {
 
 ### Server vs Worker MDX — Parity and Strategy
 
-Streaming Markdown V2 supports two MDX compilation strategies:
+StreamMDX supports two MDX compilation strategies:
 
 - `mdxCompileMode="server"` – MDX blocks are compiled via the `/api/mdx-compile-v2` endpoint.
 - `mdxCompileMode="worker"` – MDX is compiled inside the worker bundle itself.
 
-Both strategies share the **same MDX compilation pipeline**:
+Both strategies can share the **same MDX compilation pipeline** when you use the exported helper:
 
 - `remark-gfm` and `remark-math` for markdown + math parsing.
 - `rehype-slug` and `rehype-katex` for headings and math HTML.
-- `@mdx-js/mdx` with `outputFormat: "function-body"`, JSX runtime pointing at React, and the same pragma settings.
+- `@mdx-js/mdx` with `outputFormat: "function-body"` and the React JSX runtime.
 
-The worker and the server endpoint both call into a shared helper, so compiled modules are structurally equivalent regardless of whether you choose `"server"` or `"worker"`. Hydration always runs through the same MDX runtime (`mdx-client.ts`), which evaluates the compiled code in a controlled context and wires it into your React component tree.
+The worker compilation path uses the same pipeline; for server compilation, use `compileMdxContent` from `stream-mdx/worker/mdx-compile` (or `@stream-mdx/worker/mdx-compile`) to keep parity.
 
 For strict CSP or centralized caching, prefer **server** mode. For lower latency or offline scenarios, prefer **worker** mode. In either case, you can assume **matching HTML/DOM output and hydration behavior** for the same MDX source and `components` map.
 
 ### MDX with Server Compilation
 
 ```tsx
-import { StreamingMarkdown } from "@stream-mdx/react";
-import { mdxPlugin } from "@stream-mdx/plugins/mdx";
+import { StreamingMarkdown } from "stream-mdx";
 
 export function ServerMDX({ text }: { text: string }) {
   return (
     <StreamingMarkdown
       text={text}
-      plugins={[mdxPlugin({ components: customComponents })]}
       features={{ mdx: true }}
       mdxCompileMode="server" // Uses /api/mdx-compile-v2 endpoint
     />
@@ -789,16 +658,17 @@ export function ServerMDX({ text }: { text: string }) {
 
 ```ts
 import { NextRequest, NextResponse } from "next/server";
-import { compileMdxContent } from "../../../packages/markdown-v2-worker/src/mdx-compile";
+import { compileMdxContent } from "stream-mdx/worker/mdx-compile";
 
 export async function POST(request: NextRequest) {
-  const { content } = await request.json();
+  const { content, blockId } = await request.json();
   
   try {
     const compiled = await compileMdxContent(content);
 
     return NextResponse.json({
-      id: generateId(content), // Your ID generation logic
+      // `blockId` comes from the client and is used for caching.
+      id: blockId,
       code: compiled.code,
       dependencies: compiled.dependencies,
     });
@@ -810,8 +680,6 @@ export async function POST(request: NextRequest) {
   }
 }
 ```
-
-> Parity test: the repo includes `scripts/test-mdx-preview.ts` and `scripts/run-playwright-packaged.ts`, which run MDX preview tests in both server and worker modes against the **packed** tarballs and compare output to a canonical HTML reference. Any divergence is treated as a regression.
 
 ### Feature Flags: Math, HTML, MDX
 
@@ -841,13 +709,13 @@ Under the hood these flags drive worker doc plugins and React bindings for those
 
 By default:
 
-- Streaming Markdown math (`@stream-mdx/plugins/math`) treats `$…$` as inline math and `$$…$$` as display/block math.
+- Streaming math treats `$…$` as inline math and `$$…$$` as display/block math.
 - The MDX pipeline uses `remark-math`, which understands both `$`/`$$` and `\\(…\\)` / `\\[…\\]` syntaxes.
 
 If you need a different policy (for example, only `\\(…\\)` and `\\[…\\]` as used in ChatGPT’s renderer):
 
 - For **MDX**, you would adjust the `remark-math` options (e.g., `singleDollarTextMath: false`) in a fork or custom integration.
-- For **streaming Markdown**, you would customize or replace the math plugin to use different patterns/tokenizers.
+- For **streaming Markdown**, you would customize the worker bundle to use different patterns/tokenizers.
 
 These are plugin‑level customizations rather than runtime props, but the pipeline is modular enough to support them when needed.
 
@@ -875,8 +743,8 @@ These are plugin‑level customizations rather than runtime props, but the pipel
 ### 2. Monitor Performance
 
 ```tsx
-import { StreamingMarkdown } from "@stream-mdx/react";
-import type { RendererMetrics } from "@stream-mdx/react";
+import { StreamingMarkdown } from "stream-mdx";
+import type { RendererMetrics } from "stream-mdx";
 
 function onMetrics(metrics: RendererMetrics) {
   // Log performance data
@@ -910,8 +778,11 @@ function onMetrics(metrics: RendererMetrics) {
   text={content}
   scheduling={{
     batch: "rAF", // Use requestAnimationFrame
-    maxOpsPerFrame: 300, // Reduce for slower devices
-    frameBudgetMs: 9, // Tighter budget
+    frameBudgetMs: 8, // Smaller = more responsive, slower completion
+    lowPriorityFrameBudgetMs: 4,
+    maxBatchesPerFlush: 5,
+    maxLowPriorityBatchesPerFlush: 1,
+    urgentQueueThreshold: 3,
     historyLimit: 200, // Keep patch history manageable
   }}
 />
@@ -921,7 +792,7 @@ function onMetrics(metrics: RendererMetrics) {
 
 ```tsx
 import { useRef } from "react";
-import { StreamingMarkdown, type StreamingMarkdownHandle } from "@stream-mdx/react";
+import { StreamingMarkdown, type StreamingMarkdownHandle } from "stream-mdx";
 
 export function ControlledStreaming({ stream }: { stream: AsyncIterable<string> }) {
   const handleRef = useRef<StreamingMarkdownHandle>(null);
@@ -963,7 +834,7 @@ export function ControlledStreaming({ stream }: { stream: AsyncIterable<string> 
 
 ```tsx
 import { useState } from "react";
-import { StreamingMarkdown } from "@stream-mdx/react";
+import { StreamingMarkdown } from "stream-mdx";
 
 interface Message {
   id: string;
@@ -1033,8 +904,8 @@ export function ChatInterface() {
 ### Pattern 2: Code Block with Copy Button
 
 ```tsx
-import { StreamingMarkdown } from "@stream-mdx/react";
-import type { BlockComponents } from "@stream-mdx/react";
+import { StreamingMarkdown } from "stream-mdx";
+import type { BlockComponents } from "stream-mdx";
 
 const components: Partial<BlockComponents> = {
   code: ({ html, meta }) => {
@@ -1069,7 +940,7 @@ const components: Partial<BlockComponents> = {
 ### Pattern 3: Loading States
 
 ```tsx
-import { StreamingMarkdown, type StreamingMarkdownHandle } from "@stream-mdx/react";
+import { StreamingMarkdown, type StreamingMarkdownHandle } from "stream-mdx";
 import { useRef, useState, useEffect } from "react";
 
 export function StreamingWithLoading({ stream }: { stream: AsyncIterable<string> }) {
@@ -1108,7 +979,7 @@ export function StreamingWithLoading({ stream }: { stream: AsyncIterable<string>
 ### Pattern 4: Error Handling
 
 ```tsx
-import { StreamingMarkdown } from "@stream-mdx/react";
+import { StreamingMarkdown } from "stream-mdx";
 import { useState } from "react";
 
 export function StreamingWithErrorHandling({ stream }: { stream: AsyncIterable<string> }) {
@@ -1141,28 +1012,19 @@ export function StreamingWithErrorHandling({ stream }: { stream: AsyncIterable<s
 ### Example 1: Full-Featured Chat Interface
 
 ```tsx
-import { useState, useRef } from "react";
-import { StreamingMarkdown, type StreamingMarkdownHandle } from "@stream-mdx/react";
-import { mathPlugin } from "@stream-mdx/plugins/math";
-import { mdxPlugin } from "@stream-mdx/plugins/mdx";
-import { createCitationPlugin } from "@/plugins/citations";
-import { CitationBubble } from "@/components/CitationBubble";
+import { useState } from "react";
+import { StreamingMarkdown } from "stream-mdx";
 
 export function FullChatInterface() {
   const [messages, setMessages] = useState<Array<{ role: string; content: string }>>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState("");
 
-  const plugins = [
-    mathPlugin(),
-    mdxPlugin({ components: { YouTube, Callout } }),
-    createCitationPlugin(),
-  ];
-
-  const inlineComponents = {
-    citation: ({ id, index }: { id: string; index?: number }) => (
-      <CitationBubble id={id} index={index} />
-    ),
+  const markdownProps = {
+    worker: "/workers/markdown-worker.js",
+    features: { math: true, mdx: true, tables: true, html: true },
+    mdxCompileMode: "worker" as const,
+    prewarmLangs: ["typescript", "bash", "python"],
   };
 
   async function handleSubmit() {
@@ -1200,9 +1062,7 @@ export function FullChatInterface() {
           <div key={i} className={`message ${msg.role}`}>
             <StreamingMarkdown
               text={msg.content}
-              plugins={plugins}
-              inlineComponents={inlineComponents}
-              prewarmLangs={["typescript", "bash", "python"]}
+              {...markdownProps}
             />
           </div>
         ))}
@@ -1210,8 +1070,7 @@ export function FullChatInterface() {
           <div className="message assistant streaming">
             <StreamingMarkdown
               text={streaming}
-              plugins={plugins}
-              inlineComponents={inlineComponents}
+              {...markdownProps}
             />
           </div>
         )}
@@ -1234,7 +1093,7 @@ export function FullChatInterface() {
 
 ```tsx
 import { useState, useEffect } from "react";
-import { StreamingMarkdown } from "@stream-mdx/react";
+import { StreamingMarkdown } from "stream-mdx";
 
 export function DocumentationViewer({ url }: { url: string }) {
   const [content, setContent] = useState("");
@@ -1291,10 +1150,10 @@ export function DocumentationViewer({ url }: { url: string }) {
 **Problem**: Worker fails to initialize or CSP errors.
 
 **Solutions**:
-- Use a hosted worker URL instead of Blob:
+- Use a hosted worker URL instead of Blob (recommended):
   ```tsx
   <StreamingMarkdown
-    worker={new URL("/workers/markdown-worker.js", import.meta.url)}
+    worker="/workers/markdown-worker.js"
   />
   ```
 - Check CSP headers allow worker execution
@@ -1305,7 +1164,7 @@ export function DocumentationViewer({ url }: { url: string }) {
 **Problem**: Slow rendering or janky updates.
 
 **Solutions**:
-- Reduce `maxOpsPerFrame` in scheduling config
+- Reduce `frameBudgetMs` or add batch caps in `scheduling`
 - Prewarm common languages
 - Monitor metrics and adjust frame budget
 - Use virtualization for long documents
@@ -1315,20 +1174,19 @@ export function DocumentationViewer({ url }: { url: string }) {
 **Problem**: Custom syntax not being recognized.
 
 **Solutions**:
-- Ensure plugin is registered in both worker and React configs
-- Check plugin priority (lower = runs earlier)
-- Verify regex pattern matches your syntax
-- Check browser console for errors
+- StreamMDX only exposes built-in domains via `features` on `<StreamingMarkdown />`.
+- For custom syntax you need a custom worker bundle that registers your plugins; then pass that worker URL via `worker`.
+- Use `inlineComponents` / `components` to render any custom nodes emitted by your worker.
 
 ### MDX Not Compiling
 
 **Problem**: MDX blocks show as raw code.
 
 **Solutions**:
-- Ensure `mdxPlugin` is in plugins array
 - Set `features={{ mdx: true }}`
+- Set `mdxCompileMode="worker"` (no server) or `mdxCompileMode="server"` (requires `/api/mdx-compile-v2`)
 - Check MDX compilation endpoint is working
-- Verify components are passed to `mdxPlugin`
+- Verify you passed `mdxComponents` for your custom MDX components
 
 ### Colors Not Showing in Code Blocks
 
@@ -1344,10 +1202,11 @@ export function DocumentationViewer({ url }: { url: string }) {
 
 ## Next Steps
 
-1. **Read the Public API docs**: `docs/PUBLIC_API.md` for complete API reference
-2. **Explore plugins**: `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md` for advanced plugin development
-3. **Check performance guides**: `docs/PERFORMANCE_GUIDE.md` for optimization tips
-4. **Review examples**: Check `examples/` directory for more patterns
+1. **Read the Public API docs**: `docs/PUBLIC_API.md`
+2. **Worker + CSP notes**: `docs/STREAMING_MARKDOWN_V2_STATUS.md`
+3. **MDX + customization**: `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`
+4. **Release checklist**: `docs/STREAMING_MARKDOWN_RELEASE_CHECKLIST.md`
+5. **Review examples**: `examples/streaming-markdown-starter`
 
 ---
 
@@ -1355,11 +1214,11 @@ export function DocumentationViewer({ url }: { url: string }) {
 
 You now have everything you need to:
 
-✅ **Render streaming markdown** — Basic and advanced patterns  
-✅ **Stream from LLMs/APIs** — Fetch, WebSocket, SSE examples  
-✅ **Customize components** — Block and inline overrides  
-✅ **Build custom plugins** — Citations, mentions, and more  
-✅ **Integrate MDX** — Server and worker compilation  
-✅ **Optimize performance** — Metrics, scheduling, prewarming  
+- Render streaming markdown (basic and advanced patterns)
+- Stream from LLMs/APIs (fetch, WebSocket, SSE examples)
+- Customize components (block and inline overrides)
+- Extend syntax via custom worker bundles (advanced)
+- Integrate MDX (server and worker compilation)
+- Optimize performance (metrics, scheduling, prewarming)
 
-Streaming Markdown V2 is production-ready for React applications. Happy building! 🚀
+StreamMDX is designed for production React applications; start with the defaults, then tighten CSP and tuning knobs as you scale.

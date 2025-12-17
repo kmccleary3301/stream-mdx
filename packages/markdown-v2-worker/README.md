@@ -1,6 +1,8 @@
 # `@stream-mdx/worker`
 
-Web Worker entry point for the streaming renderer. Handles markdown parsing (Lezer), inline enrichment, Shiki highlighting, MDX detection, and patch emission. Consumers rarely interact with this package directly unless they need explicit control over worker instantiation or CSP compliance.
+Worker client utilities and hosted worker bundle used by StreamMDX.
+
+Most consumers interact with this package indirectly via `<StreamingMarkdown />`. You only need `@stream-mdx/worker` directly if you want explicit control over worker instantiation, MDX compilation parity helpers, or strict CSP setups.
 
 ## Install
 
@@ -8,53 +10,33 @@ Web Worker entry point for the streaming renderer. Handles markdown parsing (Lez
 npm install @stream-mdx/worker
 ```
 
-## Usage
+## Hosted worker bundle (recommended)
 
-```ts
-import { MarkdownWorkerClient } from "@stream-mdx/worker";
+For production, host the worker bundle from static assets (avoids `blob:` CSP requirements):
 
-const client = new MarkdownWorkerClient({
-  // For CSP-restricted environments, host the worker and point to it here:
-  workerUrl: "/workers/markdown-worker.js",
-});
-
-client.onMessage((msg) => {
-  if (msg.type === "PATCH") {
-    // apply patches
-  }
-});
-
-client.init("# Hello");
+```bash
+mkdir -p public/workers
+cp node_modules/@stream-mdx/worker/dist/hosted/markdown-worker.js public/workers/markdown-worker.js
 ```
 
-`MarkdownWorkerClient` will try `createDefaultWorker()` first (Blob/inline), then fall back to a hosted worker URL (`/workers/markdown-worker.js` by default).
+Then point StreamMDX at it:
 
-> Keep `docPlugins` in sync with the renderer when enabling math+MDX. Follow the [cookbook recipe](../../docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md#5-math--mdx-workerrenderer-registration); the worker and React packages now ship tests enforcing it.
+```tsx
+<StreamingMarkdown worker="/workers/markdown-worker.js" />
+```
 
-## Message unions
+## MDX compilation parity helper
 
-| Type | Direction | Payload |
-| --- | --- | --- |
-| `INIT` | Main → Worker | `{ text?: string; stream?: boolean; prewarmLangs?: string[]; plugins?: PluginConfig }` |
-| `APPEND` | Main → Worker | `{ chunk: string }` |
-| `FINALIZE` | Main → Worker | Flush + emit remaining patches. |
-| `RESET` | Main → Worker | Clear state (used on restart). |
-| `PATCH` | Worker → Main | `{ tx, at, patches: Patch[], notes }` |
-| `METRICS` | Worker → Main | Parse/highlight timings, block stats. |
-| `INITIALIZED`, `ERROR`, `DEBUG` | Worker → Main | Lifecycle events. |
+If you compile MDX on the server (e.g. Next.js API route), use the same compilation logic as the worker:
 
-Exact shapes live in `@stream-mdx/core` (`WorkerMessageIn`, `WorkerMessageOut`).
+```ts
+import { compileMdxContent } from "@stream-mdx/worker/mdx-compile";
+```
 
-## Hosting guidance
+See `docs/REACT_INTEGRATION_GUIDE.md` for the full wiring and parity notes.
 
-- **Blob (default):** easiest for local dev, but CSP must allow `blob:` execution.
-- **Hosted URL:** build the hosted worker bundle and copy it into your app’s static assets (e.g. `public/workers/markdown-worker.js`).
-- **Build hosted worker:** from the repo root, run `npm run worker:build`.
+## Docs
 
-For CSP-restricted environments, prehost the worker and set `Cross-Origin-Embedder-Policy` / `Cross-Origin-Opener-Policy` headers if you rely on SharedArrayBuffers.
-
-## Troubleshooting
-
-- **`setStreamLimit` missing** – ensure you updated the demo automation shim; the worker no longer exports legacy control messages.
-- **Import errors in worker bundle** – verify your bundler targets `type: "module"` workers and preserves ESM syntax. When in doubt, use the prebuilt `public/workers/markdown-worker.js`.
-- **MDX compilation issues** – match the worker’s plugin registry with the React side, and confirm you set `mdxCompileMode="worker"` if you expect in-worker compilation.
+- React integration guide: `docs/REACT_INTEGRATION_GUIDE.md`
+- Security model / CSP: `docs/SECURITY_MODEL.md`
+- Plugins & custom worker bundles: `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`

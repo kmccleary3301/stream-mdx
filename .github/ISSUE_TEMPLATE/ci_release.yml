@@ -1,0 +1,26 @@
+name: CI / release issue
+description: Report a CI failure, publishing issue, or release automation problem
+labels: ["ci"]
+body:
+  - type: input
+    id: run
+    attributes:
+      label: Link to failing run
+      placeholder: https://github.com/kmccleary3301/stream-mdx/actions/runs/...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      render: text
+    validations:
+      required: false
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Anything else that might be helpful (environment, recent merges, etc.)
+    validations:
+      required: false
+

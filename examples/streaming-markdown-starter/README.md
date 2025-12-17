@@ -1,6 +1,6 @@
 # Streaming Markdown Starter
 
-This example mirrors the quick-start instructions in `docs/STREAMING_MARKDOWN_QUICKSTART.md`. It is intentionally minimal so you can copy/paste the folder into a fresh Next.js project or run it in-place for manual testing.
+This example mirrors the quick-start instructions in `docs/GETTING_STARTED.md`. It is intentionally minimal so you can copy/paste the folder into a fresh Next.js project or run it in-place for manual testing.
 
 ## Usage
 
@@ -18,4 +18,4 @@ Then open http://localhost:3000 to stream the sample article. Use the dropdown t
 
 > Set `NEXT_PUBLIC_STREAMING_WORKER_HELPER=true` in `.env.local` if you want the starter to instantiate the worker via `createDefaultWorker()` (the same helper used by the React package).
 
-> This repo uses npm workspaces, so the starter depends on `@stream-mdx/*` via workspace versions (currently `0.0.0`). Update the versions if you publish the packages to npm.
+> This repo uses npm workspaces, so the starter depends on `stream-mdx` via workspace resolution. If you copy this folder into a standalone app, update the dependency versions to match the published packages.

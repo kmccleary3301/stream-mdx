@@ -1,8 +1,8 @@
-# Streaming Markdown V2 — Release Checklist
+# StreamMDX — Release Checklist
 
-_Last updated: 2025-12-16_
+_Last updated: 2025-12-17_
 
-Use this checklist when cutting preview builds (0.9.x) or the eventual 1.0.0 release from the extracted `stream-mdx/` repo. It assumes the current workspace scripts in `stream-mdx/package.json` (not the older `ql_homepage` scripts).
+Use this checklist when cutting releases from the `stream-mdx/` repo. It assumes the current workspace scripts in `package.json`.
 
 ---
 
@@ -17,15 +17,21 @@ Use this checklist when cutting preview builds (0.9.x) or the eventual 1.0.0 rel
    ```bash
    npm run build
    ```
-3. **Build the hosted worker + copy to examples**
+3. **Sourcemap policy sanity check**
+   - Default: **no sourcemaps** are emitted by package builds.
+   - Optional: enable sourcemaps for local debugging by setting `SOURCEMAP=1`.
+   ```bash
+   SOURCEMAP=1 npm run build
+   ```
+4. **Build the hosted worker + copy to examples**
    ```bash
    npm run worker:build
    ```
-4. **Run tests**
+5. **Run tests**
    ```bash
    npm test
    ```
-5. **Sanity-check hosted worker outputs**
+6. **Sanity-check hosted worker outputs**
    - Built worker artifact:
      - `packages/markdown-v2-worker/dist/hosted/markdown-worker.js`
    - Copied artifact (for the example app):
@@ -36,6 +42,16 @@ Use this checklist when cutting preview builds (0.9.x) or the eventual 1.0.0 rel
 ## 2. Pack + external install gate (high signal)
 
 This is the most reliable “will npm users succeed?” gate.
+
+### 2.1 CI-equivalent smoke test (recommended)
+
+Runs a fully automated pack+install+`next build` using the included starter (no workspace links):
+
+```bash
+npm run ci:pack-smoke
+```
+
+### 2.2 Manual pack (optional)
 
 1. **Pack tarballs locally**
      ```bash
@@ -83,11 +99,20 @@ This repo is set up for Changesets.
    ```bash
    npm whoami
    ```
-2. **Publish via Changesets**
+2. **Trusted Publishing (recommended)**
+   - Configure npm “Trusted Publisher” for:
+     - `@stream-mdx/core`, `@stream-mdx/plugins`, `@stream-mdx/worker`, `@stream-mdx/react`, `stream-mdx`
+   - Required workflow permissions:
+     - `id-token: write`
+   - Workflows:
+     - `.github/workflows/release.yml` (auto release PRs / publish)
+     - `.github/workflows/publish.yml` (manual workflow_dispatch)
+
+3. **Publish via Changesets**
    ```bash
    npm run changeset:publish
    ```
-3. **Confirm all five packages are published**
+4. **Confirm all five packages are published**
    - `@stream-mdx/core`
    - `@stream-mdx/plugins`
    - `@stream-mdx/worker`
@@ -104,52 +129,28 @@ This repo’s CI (`.github/workflows/ci.yml`) enforces:
 - `npm run build`
 - `npm test`
 - `npm -ws --if-present pack --dry-run`
+- `npm run ci:pack-smoke` (pack+install+`next build`)
 
 Before publishing, run the same commands locally (plus the external install gate in §2).
 
 ---
 
-## 6. Remaining work / publication-plan gaps (if not already done)
+## 6. Post-publish checks
 
-This section is intentionally concrete for automation (Codex CLI / scripts).
-
-1. **Add a `release:verify` script (root)**
-   - Goal: fully automated “ship check” that catches the most common npm failures.
-   - Requirements:
-     - Builds all workspaces
-     - Packs tarballs into `tmp/release-packs/`
-     - Installs the starter (or a scratch project) **from tarballs** (no workspace links)
-     - Runs `npm run worker:build` (or verifies the hosted worker is present) and then `next build`
-     - Writes a small manifest to `tmp/release-verify/manifest.json` (versions, tarball names, node/npm versions)
-
-2. **Phase 2 — tighten dependency boundaries**
-   - Goal: `@stream-mdx/core` stays React-free; `@stream-mdx/worker` and `@stream-mdx/plugins` must not depend on React at runtime.
-   - Acceptance checks:
-     - `grep -R "from 'react'\\|from \\\"react\\\"" packages/markdown-v2-core/src` returns nothing.
-     - `npm ls --workspaces --prod react react-dom` shows React only where expected (usually `@stream-mdx/react`, `stream-mdx`, and example apps).
-     - `packages/markdown-v2-core/package.json` has **no** `react`/`react-dom` in deps/peerDeps.
-
-3. **Phase 3 — stabilize public API + exports discipline**
-   - Goal: consumers import only documented entrypoints; deep imports are either supported intentionally or blocked.
-   - Tasks:
-     - Verify each package’s `exports` map matches the intended surface area.
-     - Decide whether any deep imports should be supported (and document them) or explicitly blocked.
-     - Ensure `types` + `typesVersions` (if used) line up with `exports`.
-
-4. **Release engineering follow-through (Changesets)**
-   - Current state: `.changeset/config.json` exists and CI runs install/build/test/pack.
-   - Remaining:
-     - Add first changeset(s) describing the initial public release for each package.
-     - Decide versioning strategy (single version vs independent) and set it in `.changeset/config.json`.
-     - Add a publish workflow (optional) or document the manual publish commands and ordering.
+1. **Verify npm README renders**
+   - `stream-mdx` should display `packages/stream-mdx/README.md` on npmjs.com.
+2. **Verify hosted worker guidance**
+   - The worker is expected at `/workers/markdown-worker.js` in most examples.
+3. **Confirm Trusted Publishing works**
+   - Once configured on npm, use `.github/workflows/publish.yml` (manual) or `.github/workflows/release.yml` (auto).
 
 ---
 
 ## 7. Docs & release notes
 
-- Update `docs/STREAMING_MARKDOWN_V2_STATUS.md` metrics tables.
+- Update `docs/STREAMING_MARKDOWN_V2_STATUS.md` as implementation details change.
 - Publish release notes via GitHub Releases (recommended), or add a `CHANGELOG.md` if you want a file-based changelog.
-- When publishing packages, regenerate any README badges with the new version numbers (if used).
+- When publishing packages, ensure badges and docs links remain correct.
 
 ---
 

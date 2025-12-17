@@ -1,8 +1,7 @@
 "use client";
 
-import { StreamingMarkdown, type StreamingMarkdownHandle } from "@stream-mdx/react";
-import type { RendererMetrics } from "@stream-mdx/react/streaming-markdown";
-import { createDefaultWorker } from "@stream-mdx/worker";
+import { StreamingMarkdown, type RendererMetrics, type StreamingMarkdownHandle } from "stream-mdx";
+import { createDefaultWorker } from "stream-mdx/worker";
 import { useMemo, useRef, useState } from "react";
 
 const ARTICLE = `# Streaming Markdown

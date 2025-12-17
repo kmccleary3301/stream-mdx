@@ -55,18 +55,15 @@ StreamMDX is a streaming Markdown/MDX renderer designed for:
 ```tsx
 "use client";
 
-import { useMemo } from "react";
 import { StreamingMarkdown } from "stream-mdx";
-import { createDefaultWorker, releaseDefaultWorker } from "stream-mdx/worker";
 
 export function StreamingArticle({ text }: { text: string }) {
-  const worker = useMemo(() => createDefaultWorker(), []);
-
   return (
     <StreamingMarkdown
-      value={text}
-      worker={worker}
-      onFinalize={() => releaseDefaultWorker(worker)}
+      text={text}
+      worker="/workers/markdown-worker.js"
+      features={{ html: true, tables: true, math: true, mdx: true }}
+      mdxCompileMode="worker"
     />
   );
 }
@@ -78,9 +75,12 @@ If you import `StreamingMarkdown` from a Next.js server component, you’ll typi
 
 In production you generally want to serve the hosted worker bundle from your app’s `/public` (or equivalent static assets):
 
-- build the hosted worker: `npm -w @stream-mdx/worker run build:hosted`
-- copy it into your app (the repo’s starter does this via `npm run worker:build` at the monorepo root)
-- reference it by URL in the worker client configuration
+- copy the hosted worker from `node_modules` into your app:
+  - `mkdir -p public/workers`
+  - `cp node_modules/@stream-mdx/worker/dist/hosted/markdown-worker.js public/workers/markdown-worker.js`
+- reference it by URL (recommended): `worker="/workers/markdown-worker.js"`
+
+If you’re developing inside this repo, `npm run worker:build` builds the hosted worker and copies it into the example app for you.
 
 If you’re using the included default worker helper (`createDefaultWorker`) it expects you to follow the project’s documented “hosted worker” pattern. Start from:
 
@@ -116,7 +116,7 @@ The full API reference lives in:
 The main things you’ll use:
 
 - `StreamingMarkdown` (React component)
-- a worker instance/client (usually via `createDefaultWorker`)
+- a worker instance/client (usually via a hosted worker URL in production)
 - optional plugin sets and render overrides (depending on your needs)
 
 ## 5. Modularity & Feature Toggles
@@ -125,14 +125,15 @@ The main things you’ll use:
 
 Yes, by design the system is modular:
 
-- **Math** can be omitted by not registering math plugins and/or disabling math features in worker/renderer configuration.
-- **Raw HTML** can be disabled (recommended by default for untrusted inputs), or enabled with sanitization.
-- **MDX** can be disabled if you only want Markdown + inline HTML.
+- **Math** can be disabled via `features={{ math: false }}`.
+- **Raw HTML** can be disabled via `features={{ html: false }}` (recommended for untrusted inputs), or enabled with sanitization.
+- **MDX** can be disabled via `features={{ mdx: false }}` (or left off entirely if you only want Markdown).
 
 Where the toggles live depends on which layer you’re configuring:
 
-- worker-side “document plugin” registration (what syntax/features are recognized)
-- renderer-side component mapping (how tags render)
+- `features` (high-level app config; drives worker + renderer behavior)
+- `docPlugins` (low-level worker init message; when you orchestrate the worker manually)
+- renderer-side component mapping (how blocks/inline nodes render)
 
 For the authoritative configuration surface and examples, see:
 - `docs/REACT_INTEGRATION_GUIDE.md`
@@ -302,4 +303,3 @@ If you’re building a library on top of StreamMDX, prefer the scoped packages.
 
 Release checklist:
 - `docs/STREAMING_MARKDOWN_RELEASE_CHECKLIST.md`
-

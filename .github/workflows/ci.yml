@@ -29,3 +29,10 @@ jobs:
       - name: Pack (dry-run)
         run: npm --workspaces --if-present pack --dry-run
 
+      - name: Pack + install smoke (Next.js)
+        run: npm run ci:pack-smoke
+
+      - name: Build docs site (static export)
+        env:
+          NEXT_PUBLIC_BASE_PATH: ""
+        run: npm run docs:build

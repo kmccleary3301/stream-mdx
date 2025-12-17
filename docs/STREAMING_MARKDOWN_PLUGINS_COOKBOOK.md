@@ -1,176 +1,174 @@
-# Streaming Markdown V2 — Plugin Cookbook
+# StreamMDX — Plugins & Worker Customization Cookbook
 
-_Last updated: 2025-11-07_
+_Last updated: 2025-12-17_
 
-This cookbook explains how to consume the `@stream-mdx/plugins` package, wire individual plugins into the worker/renderer pipeline, and verify tree-shaking so downstream bundles only pay for the features they enable. Use it alongside `docs/STREAMING_MARKDOWN_V2_STATUS.md` for architecture details.
+This cookbook focuses on the parts of the “plugins” story that are relevant to **real app integration**:
 
----
+- How built-in plugin domains (tables/html/mdx/math/footnotes/callouts) are toggled.
+- How the worker is configured (`docPlugins`, `mdxCompileMode`).
+- How to keep MDX compilation parity (server vs worker).
+- Where “custom plugins” actually live in the architecture (worker bundle customization).
 
-## 1. Package overview
-
-- **Entry point:** `@stream-mdx/plugins`
-- **Sub-path exports:** `@stream-mdx/plugins/{callouts,document,footnotes,html,math,math/renderer,mdx,tables}`
-- **Peer dependencies:** `react >= 18.2`, `@stream-mdx/react`
-- **Build:** `npm run markdown-v2:build:plugins` (tsup outputs ESM, CJS, and d.ts artifacts under `packages/markdown-v2-plugins/dist/`)
-
-Because each plugin lives under its own sub-path, bundlers can tree-shake unused features. After running the build command above you should see per-plugin bundles inside `packages/markdown-v2-plugins/dist/plugins/*`.
+If you are looking for the top-level React API, start with `docs/PUBLIC_API.md` and `docs/REACT_INTEGRATION_GUIDE.md`.
 
 ---
 
-## 2. Wiring plugins into `<StreamingMarkdown>`
+## 1) Package overview
 
-```ts
-import { useMemo } from "react";
-import { StreamingMarkdown } from "@stream-mdx/react";
-import {
-  createMathPlugin,
-  createMdxPlugin,
-  createTablePlugin,
-  defaultPluginRegistry,
-} from "@stream-mdx/plugins";
+StreamMDX publishes plugin primitives under:
 
-export function StreamingArticle({ stream }: { stream: AsyncIterable<string> }) {
-  const plugins = useMemo(() => {
-    const registry = defaultPluginRegistry();
-    registry.use(createMathPlugin());
-    registry.use(createMdxPlugin({ allowHTML: true }));
-    registry.use(createTablePlugin());
-    return registry;
-  }, []);
+- `@stream-mdx/plugins` (scoped)
+- `stream-mdx/plugins` (convenience wrapper)
 
-  return (
-    <StreamingMarkdown
-      stream={stream}
-      features={{
-        math: true,
-        mdx: true,
-        tables: true,
-        html: true,
-      }}
-      onMetrics={(metrics) => console.info("flush", metrics)}
-    />
-  );
-}
-```
+Most apps do **not** need to import plugin registries directly. Start with `<StreamingMarkdown features={...} />`.
 
-Worker-side consumers should mirror the same registry when instantiating `MarkdownRenderer` or the worker bundle. Each plugin exposes deterministic hooks so the worker and React renderer stay in sync.
+When you *do* need the plugin primitives (custom worker bundles, custom tokenizers/matchers), import subpaths:
+
+- `stream-mdx/plugins/document`
+- `stream-mdx/plugins/tables`
+- `stream-mdx/plugins/html`
+- `stream-mdx/plugins/mdx`
+- `stream-mdx/plugins/math`
+- `stream-mdx/plugins/math/renderer`
+
+Scoped equivalents are available at `@stream-mdx/plugins/*`.
 
 ---
 
-## 3. MDX hydration checklist
+## 2) Built-in “plugin domains” (most common path)
 
-| Step | Description | Source |
-| --- | --- | --- |
-| 1 | Import `createMdxPlugin` from `@stream-mdx/plugins/mdx`. | `packages/markdown-v2-plugins/src/plugins/mdx` |
-| 2 | Pass `{ compileStrategy: "server" | "worker" }` via `<StreamingMarkdown mdxCompileMode>` or `RendererConfig.mdx`. | `packages/markdown-v2-react/src/streaming-markdown.tsx` |
-| 3 | Register components with `@stream-mdx/react/mdx-client`. | `packages/markdown-v2-react/src/mdx-client.ts` |
-| 4 | Surface status badges via `data-mdx-status` (already in the demo). | `components/screens/streaming-markdown-demo-v2/index.tsx` |
-
-**Quick smoke:** run `/examples/streaming`, toggle the MDX compilation dropdown, and confirm `MDX pending…` never persists once the worker completes.
-
----
-
-## 4. Math / KaTeX integration
-
-1. Enable the feature flag: `<StreamingMarkdown features={{ math: true }} />`.
-2. Import helpers:
-
-```ts
-import {
-  createMathPlugin,
-  MathRenderer,
-  MathInlineRenderer,
-  MathDisplayRenderer,
-} from "@stream-mdx/plugins/math";
-```
-
-3. Provide KaTeX bindings if desired by overriding the renderer exports (e.g., `MathRenderer` that calls your KaTeX runtime).
-4. The worker will respect protected math ranges so MDX detection never claims brace-heavy expressions.
-
-**Verification:** `npm run markdown-v2:test:snippets` includes math-heavy fixtures; the analyzer will emit warnings if math placeholders leak into the DOM.
-
----
-
-## 5. Math + MDX worker/renderer registration
-
-MDX detection relies on the math plugin’s protected-range metadata so it can distinguish `<Component />` syntax from inline TeX. Keep the worker and renderer in sync whenever you enable either feature.
-
-1. **React side (`<StreamingMarkdown />` or `MarkdownRenderer`).**
+Built-in capabilities are toggled via `features` on `<StreamingMarkdown />`:
 
 ```tsx
-import { StreamingMarkdown } from "@stream-mdx/react";
+import { StreamingMarkdown } from "stream-mdx";
 
 <StreamingMarkdown
   text={text}
-  features={{ math: true, mdx: true, html: true }}
+  worker="/workers/markdown-worker.js"
+  features={{
+    tables: true,
+    html: true,
+    mdx: true,
+    math: true,
+    footnotes: true,
+    callouts: false,
+  }}
   mdxCompileMode="worker"
 />;
 ```
 
-`features` toggles the worker doc plugins under the hood, so this is everything you need when you rely on the packaged component.
+Notes:
 
-2. **Manual worker orchestration.** When you spawn a worker yourself (SSR pools, tests), forward the same flags via `docPlugins`:
+- `features` configures both the worker and the renderer.
+- `mdxCompileMode` enables MDX compilation/hydration and selects `"server"` vs `"worker"`.
+
+---
+
+## 3) Manual worker initialization (`docPlugins`)
+
+If you are not using `<StreamingMarkdown />` (e.g. you build a custom renderer loop), initialize the worker with matching flags:
 
 ```ts
-const worker = new Worker(new URL("./markdown-worker.js", import.meta.url), { type: "module" });
 worker.postMessage({
   type: "INIT",
-  docPlugins: { math: true, mdx: true, html: true, tables: true },
+  initialContent: "",
+  prewarmLangs: ["typescript", "bash"],
+  docPlugins: {
+    footnotes: true,
+    html: true,
+    mdx: true,
+    tables: true,
+    callouts: false,
+    math: true,
+  },
   mdx: { compileMode: "worker" },
 });
 ```
 
-Register math **before** MDX if you wire plugins manually (`globalDocumentPluginRegistry.register(MathPlugin); register(MDXDetectionPlugin);`). This order preserves math-protected ranges so `<Callout>$E=mc^2$</Callout>` never gets double-processed.
-
-3. **Verification.** The regression suite now includes:
-
-- `packages/markdown-v2-react/__tests__/renderer-plugin-forwarding.test.ts` – proves feature flags reach the worker `INIT` message.
-- `packages/markdown-v2-worker/__tests__/worker-mdx-math-registration.test.ts` – asserts MDX blocks and inline math survive the same snippet.
-
-If either side forgets to enable the matching plugin, these tests (and CI) fail immediately. Downstream apps should follow the same pattern; see `docs/PUBLIC_API.md` and `docs/STREAMING_MARKDOWN_QUICKSTART.md` for extended examples.
+The hosted worker bundle already includes StreamMDX’s built-in implementations for those domains. `docPlugins` controls what is enabled during parsing/aggregation.
 
 ---
 
-## 6. Lists, callouts, and table parity
+## 4) MDX parity (server vs worker)
 
-- **Callouts:** `@stream-mdx/plugins/callouts` exposes helpers to convert blockquotes with `> [!note]` syntax into semantic callout blocks. Pair with prose CSS for badge styling.
-- **Footnotes:** `@stream-mdx/plugins/footnotes` manages definitions and backlinks; the default components render superscripts with accessible anchors.
-- **Tables:** `@stream-mdx/plugins/tables` converts GitHub-flavored markdown tables into declarative block snapshots so incremental updates do not re-render the entire table.
-
-Example (GFM callout + table):
+StreamMDX is designed to keep server and worker compilation **equivalent**. For server compilation, use:
 
 ```ts
-import { createCalloutPlugin } from "@stream-mdx/plugins/callouts";
-import { createTablePlugin } from "@stream-mdx/plugins/tables";
-
-const registry = defaultPluginRegistry();
-registry.use(createCalloutPlugin());
-registry.use(createTablePlugin({ preferAppend: true }));
+import { compileMdxContent } from "stream-mdx/worker/mdx-compile";
 ```
 
-Run `npm run markdown-v2:test:tables` plus the streaming demo toggle to confirm bullets, numbering, and nested depths remain stable.
+This is the same pipeline used by the worker compilation path (remark/rehype stack + `@mdx-js/mdx` output as `function-body`).
+
+### Next.js route example
+
+```ts
+import { NextRequest, NextResponse } from "next/server";
+import { compileMdxContent } from "stream-mdx/worker/mdx-compile";
+
+export async function POST(request: NextRequest) {
+  const { content, blockId } = await request.json();
+  const compiled = await compileMdxContent(content);
+  return NextResponse.json({
+    id: blockId,
+    code: compiled.code,
+    dependencies: compiled.dependencies,
+  });
+}
+```
 
 ---
 
-## 7. Tree-shake verification recipe
+## 5) Tables (Shadcn wrappers)
 
-Use esbuild (already a project dependency) to bundle a single plugin sub-path:
+Tables are rendered via the table “elements” map, not by overriding raw HTML tags:
 
-```bash
-npx esbuild packages/markdown-v2-plugins/src/plugins/math/index.ts \
-  --bundle --format=esm --platform=browser --tree-shaking=true \
-  --external:react --external:@stream-mdx/react > /tmp/math.js
-wc -c /tmp/math.js  # expect < 25 KB
+```tsx
+import { StreamingMarkdown } from "stream-mdx";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
+const tableElements = {
+  Table,
+  Thead: TableHeader,
+  Tbody: TableBody,
+  Tr: TableRow,
+  Th: TableHead,
+  Td: TableCell,
+};
+
+<StreamingMarkdown text={text} tableElements={tableElements} />;
 ```
-
-Repeat for other plugins as needed. The dedicated files under `dist/plugins/*` ensure that only the imported plugin code is included in downstream bundles.
 
 ---
 
-## 8. Troubleshooting
+## 6) “Custom plugins” (custom syntax)
 
-- **TS5074 during build** – ensure you use `tsconfig.build.json` (incremental disabled) like the provided `packages/markdown-v2-plugins/tsconfig.build.json`.
-- **Missing types** – add the relevant path to the `exports` map in `package.json`. The cookbook assumes every plugin has both `.js`/`.cjs` and `.d.ts` artifacts.
-- **Bundlers pulling the whole suite** – confirm you import from sub-paths (`@stream-mdx/plugins/math`) instead of the root barrel export.
-- **Worker/react registry mismatch** – always register the same plugin set on both sides. `<StreamingMarkdown plugins={[...]} />` handles this automatically; if you instantiate `MarkdownRenderer` manually, wire the same registry into the worker client.
-- **CI analyzer noise** – if a snippet exercises a plugin that never emits coalescable patches (e.g., pure HTML sanitization), expect the analyzer to emit a warning (“No coalescable operations detected”) but not fail the run. Use the snippet filter env vars (`SNIPPET_FILTER`, `SNIPPET_SKIP`) to focus on plugin-relevant fixtures when debugging.
+Custom syntax (citations, mentions, bespoke tags) is a **worker-side concern**. The default hosted worker bundle only knows about built-in domains.
+
+The recommended approach is:
+
+1. Build a custom worker bundle that registers your tokenizers/matchers.
+2. Host it and pass it via the `worker` prop.
+3. Render any emitted nodes via `inlineComponents` / `components`.
+
+If you control the worker bundle, plugin primitives live under `@stream-mdx/plugins/base` and `@stream-mdx/plugins/registry`.
+
+---
+
+## 7) Tree-shaking and bundle size
+
+If you import plugin utilities in your app code, prefer subpath imports (`stream-mdx/plugins/math`) over the root barrel (`stream-mdx/plugins`) so bundlers can exclude unused modules.
+
+Quick sanity check:
+
+- `npm pack --dry-run` should include only `dist/**` and no `*.map` files.
+- Your app bundle should not pull worker-only dependencies into the main thread unless you imported them intentionally.
+
+---
+
+## 8) Troubleshooting
+
+- **MDX blocks show raw content**: set `features={{ mdx: true }}` and `mdxCompileMode="worker"` (or implement `/api/mdx-compile-v2` for `"server"`).
+- **Worker fails under strict CSP**: host the worker bundle and use `worker="/workers/markdown-worker.js"` (avoid `blob:`).
+- **Tables render as plain HTML**: provide `tableElements` (or ensure your CSS covers default table classes).
+- **Import errors on pnpm**: prefer `stream-mdx/plugins/*` / `stream-mdx/worker/*` / `stream-mdx/core/*` rather than importing transitive `@stream-mdx/*` deps.
+

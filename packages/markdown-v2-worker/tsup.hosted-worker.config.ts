@@ -1,6 +1,8 @@
 import { join } from "node:path";
 import { defineConfig } from "tsup";
 
+const sourcemap = process.env.SOURCEMAP === "1" || process.env.SOURCEMAP === "true";
+
 export default defineConfig({
   entry: {
     "markdown-worker": join(__dirname, "src/worker.ts"),
@@ -9,7 +11,7 @@ export default defineConfig({
   platform: "browser",
   target: "es2020",
   splitting: false,
-  sourcemap: true,
+  sourcemap,
   dts: false,
   minify: false,
   clean: true,

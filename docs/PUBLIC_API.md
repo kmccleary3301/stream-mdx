@@ -1,38 +1,42 @@
-# Public API — Streaming Markdown V2
+# Public API — StreamMDX
 
-_Last updated: 2025-11-14_
+_Last updated: 2025-12-17_
 
-The refactor splits the renderer into packages you can consume independently:
+## Packages & Entry Points
 
-| Package | Description |
+StreamMDX is published as both scoped packages and an unscoped convenience wrapper:
+
+| Package | Use when… |
 | --- | --- |
-| `@stream-mdx/core` | Patch/metrics types, AST helpers, sanitization primitives. No React, no DOM. |
-| `@stream-mdx/worker` | Worker entry point + message unions. Parses markdown/MDX, runs Shiki, emits `PATCH` batches + metrics. |
-| `@stream-mdx/react` | React bindings (`<StreamingMarkdown />`), renderer store, patch scheduler, node views, virtualization. |
-| `@stream-mdx/plugins/*` | Optional plugins (math, mdx, tables, html, callouts). Each exports both worker + React hooks. |
+| `stream-mdx` | You want a single dependency and stable import paths (recommended for apps). |
+| `@stream-mdx/react` | You want the React surface without the wrapper. |
+| `@stream-mdx/worker` | You want the worker client + hosted worker bundle. |
+| `@stream-mdx/core` | You want types + perf/sanitization helpers (no React). |
+| `@stream-mdx/plugins/*` | You are building/customizing a worker bundle or need plugin primitives. |
 
-Everything below assumes you import from those packages rather than the demo app.
+When you install `stream-mdx`, you can also import:
+
+- `stream-mdx/react`, `stream-mdx/worker`, `stream-mdx/core`
+- `stream-mdx/plugins/*` (common plugin entrypoints; useful for pnpm users)
 
 ---
 
-## 1. React Component
+## 1) `<StreamingMarkdown />`
 
 ```tsx
-import { StreamingMarkdown, type StreamingMarkdownHandle } from "@stream-mdx/react";
-import { mathPlugin } from "@stream-mdx/plugins/math";
-import { mdxPlugin } from "@stream-mdx/plugins/mdx";
+"use client";
 
-const handle = useRef<StreamingMarkdownHandle>(null);
+import { StreamingMarkdown, type StreamingMarkdownHandle } from "stream-mdx";
+
+const ref = useRef<StreamingMarkdownHandle>(null);
 
 <StreamingMarkdown
-  ref={handle}
+  ref={ref}
   text="## Hello\n\nStreaming **markdown**"
-  plugins={[mathPlugin(), mdxPlugin({ components: customComponents })]}
+  worker="/workers/markdown-worker.js"
+  features={{ tables: true, html: true, math: true, mdx: true }}
+  mdxCompileMode="worker"
   prewarmLangs={["python", "bash"]}
-  worker={customWorker}          // optional (see §2)
-  features={{ tables: true, callouts: true }}
-  scheduling={{ batch: "rAF", maxOpsPerFrame: 300 }}
-  components={{ heading: HeadingView, code: CodeFence }}
   onMetrics={(m) => console.table(m.queueDelay)}
   onError={(err) => reportError(err)}
 />;
@@ -43,16 +47,20 @@ const handle = useRef<StreamingMarkdownHandle>(null);
 | Prop | Type | Notes |
 | --- | --- | --- |
 | `text` | `string` | Static markdown. Mutating it restarts the session. |
-| `stream` | `AsyncIterable<string>` | Alternative to `text`. Append-only stream; exactly one of `text` or `stream`. |
-| `worker` | `Worker \| URL \| () => Worker` | Provide your own worker instance/URL/factory. Defaults to Blob-backed worker bundle. |
-| `prewarmLangs` | `string[]` | Shiki languages to load up front inside the worker. |
-| `plugins` | `MarkdownV2Plugin[]` | Functions from `@stream-mdx/plugins/*`. |
-| `features` | `{ footnotes?, html?, mdx?, tables?, callouts?, math? }` | Toggle built-in feature flags without importing plugins. `math` gates remark-math/KateX. |
-| `components` | `Partial<BlockComponents>` | Override block renders. |
+| `stream` | `AsyncIterable<string>` | Append-only stream; provide **either** `text` or `stream`. |
+| `worker` | `Worker \| URL \| string \| () => Worker` | Worker instance/URL/factory. When omitted, the component uses the default worker strategy and falls back to `/workers/markdown-worker.js`. |
+| `managedWorker` | `boolean` | When `true`, the component attaches the worker but does not auto-`restart/append/finalize` for you (use the ref handle). |
+| `prewarmLangs` | `string[]` | Shiki languages to load inside the worker. |
+| `features` | `{ footnotes?, html?, mdx?, tables?, callouts?, math? }` | Toggles built-in feature flags. |
+| `mdxCompileMode` | `"server" \| "worker"` | Enables MDX compilation/hydration and selects the compile strategy. |
+| `components` | `Partial<BlockComponents>` | Override block renders (wrap code/math without affecting the patch scheduler). |
 | `inlineComponents` | `Partial<InlineComponents>` | Override inline renders. |
-| `scheduling` | `{ batch?, maxOpsPerFrame?, lowPriorityFrameBudgetMs?, historyLimit? }` | Patch scheduler knobs (defaults match the demo). |
-| `onMetrics` | `(metrics: RendererMetrics) => void` | Invoked for every flush. Includes queue depth, durations, adaptive state. |
-| `onError` | `(error: Error) => void` | Render-time errors (worker errors bubble through `error` events separately). |
+| `tableElements` | `Partial<TableElements>` | Override table tags (e.g. Shadcn table wrappers). |
+| `htmlElements` | `Partial<HtmlElements>` | Override HTML tag renders (when HTML is enabled). |
+| `mdxComponents` | `Record<string, ComponentType>` | Component registry used when hydrating MDX. |
+| `scheduling` | `StreamingSchedulerOptions` | Patch scheduler/backpressure knobs. |
+| `onMetrics` | `(metrics: RendererMetrics) => void` | Invoked after each flush (queue depth, timings, adaptive budget state, worker metrics). |
+| `onError` | `(error: Error) => void` | Render-time errors. (Worker runtime errors surface via `error` events on the Worker.) |
 | `className`, `style` | React props forwarded to the root container. |
 
 ### Imperative Handle
@@ -63,119 +71,96 @@ type StreamingMarkdownHandle = {
   resume(): void;
   restart(): void;
   finalize(): void;
-  waitForIdle(): Promise<void>;
+  append(text: string): void;
+  setCredits(value: number): void;
   flushPending(): PatchFlushResult | null;
-  getState(): {
-    blocks: ReadonlyArray<Block>;
-    queueDepth: number;
-    pendingBatches: number;
-    isPaused: boolean;
-    rendererVersion: number;
-    store: RendererStore;
-    lastMetrics: RendererMetrics | null;
-  };
-  getPatchHistory(limit?: number): ReadonlyArray<PatchFlushResult>;
+  waitForIdle(): Promise<void>;
+  onFlush(listener: (result: PatchFlushResult) => void): () => void;
+  getState(): RendererStateSnapshot;
+  getPatchHistory(limit?: number): ReadonlyArray<RendererMetrics>;
 };
 ```
 
-The demo’s `window.__STREAMING_DEMO__` shim forwards to this handle so automation/tests keep working, but package consumers should rely on the ref directly.
-
 ---
 
-## 2. Worker Options
+## 2) Worker Hosting + CSP
 
-The `worker` prop accepts:
+Recommended production setup is to host the worker bundle from static assets and point the component at it:
 
-1. **Default / Blob** – omit the prop and the component instantiates a Blob URL pointing to the bundled worker (`@stream-mdx/worker`). CSP must allow `blob:` execution.
-2. **URL** – pass `new URL("./markdown-worker.js", import.meta.url)` when you host the worker file yourself (stricter CSP / CDN deployment).
-3. **Factory or Instance** – pass a `() => new Worker(url, { type: "module" })` factory or an already-created `Worker`. Useful for SSR, custom pools, or tests.
+```bash
+mkdir -p public/workers
+cp node_modules/@stream-mdx/worker/dist/hosted/markdown-worker.js public/workers/markdown-worker.js
+```
 
 ```tsx
-const workerUrl = new URL("../public/workers/markdown-worker.js", import.meta.url);
-
-<StreamingMarkdown
-  worker={() => new Worker(workerUrl, { type: "module", name: "markdown-v2" })}
-/>;
+<StreamingMarkdown worker="/workers/markdown-worker.js" />
 ```
 
-**Security/CSP tips**
+Worker ownership semantics:
 
-- Hosted/factory workers avoid `blob:` requirements; use them when your CSP is restrictive.
-- Serve worker bundles from the same origin with `Cross-Origin-Embedder-Policy: require-corp` / `Cross-Origin-Opener-Policy: same-origin` if you need SharedArrayBuffers.
-- Raw HTML is sanitized by default (see `@stream-mdx/core/security`); extend the schema only for trusted content.
+- `worker="/.../markdown-worker.js"` or `worker={new URL(...)}`
+  - StreamMDX creates + terminates the Worker instance for you.
+- `worker={existingWorker}` or `worker={() => existingWorker}`
+  - StreamMDX treats the Worker as externally managed and will not terminate it.
+- `worker={undefined}`
+  - StreamMDX uses the default worker strategy and falls back to `/workers/markdown-worker.js`.
 
-> Helper reminder: `createDefaultWorker({ url?, mode? })` from `@stream-mdx/worker` encapsulates the logic above and respects `<script data-markdown-v2-worker-url>` / `<meta name="markdown-v2:worker">` overrides. Pass the helper’s factory to the `worker` prop or rely on the component’s default instantiation.
+For advanced worker instantiation (CSP overrides, shared worker instances), see `createDefaultWorker()` in `stream-mdx/worker`.
 
 ---
 
-## 3. Plugins
+## 3) Features
 
-Each plugin exports a descriptor with worker + React hooks. Example: math + MDX.
+`features` toggles built-in capabilities in the worker + renderer:
 
-```ts
-import { mathPlugin } from "@stream-mdx/plugins/math";
-import { mdxPlugin } from "@stream-mdx/plugins/mdx";
-
-const plugins = [
-  mathPlugin({ katexOptions: { macros: { "\\RR": "\\mathbb{R}" } } }),
-  mdxPlugin({ components: { YouTube, Callout } }),
-];
-
-<StreamingMarkdown text={text} plugins={plugins} />;
-```
-
-Plugins can inspect the feature flags you pass via `features` if they need to coordinate with the worker.
-
-> **Automation API:** The demo still exposes `window.__STREAMING_DEMO__` for Playwright/StageRunner. Consumers should rely on the `StreamingMarkdownHandle` ref; the global shim will be removed once downstream automation migrates. The shim attaches automatically only in development builds—set `NEXT_PUBLIC_STREAMING_DEMO_API=true` if you must enable it elsewhere.
-
-> **Reference:** Follow the [Math + MDX worker/renderer recipe](STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md#5-math--mdx-workerrenderer-registration) to keep `features`/`docPlugins` in sync; CI now enforces this path via dedicated tests.
+- `tables`: GitHub-flavored markdown tables → table block snapshots (`tableElements` controls rendering).
+- `html`: enables inline/raw HTML (sanitized by default; `htmlElements` controls rendering).
+- `mdx`: recognizes MDX blocks (requires `mdxCompileMode` to compile/hydrate).
+- `math`: recognizes inline + display math (default delimiters: `$…$` and `$$…$$`).
+- `footnotes`: enables footnote aggregation.
+- `callouts`: enables callout blockquote syntax (disabled by default in the worker).
 
 ---
 
-## 4. Metrics
+## 4) MDX Compilation Modes
 
-`onMetrics` receives a summarized version of every patch flush:
+`mdxCompileMode` selects how MDX blocks are compiled:
 
-```ts
-type RendererMetrics = {
-  tx?: number | null;
-  receivedAt: number;
-  committedAt: number;
-  durationMs: number;         // flush duration (React + DOM)
-  patchToDomMs: number;       // committedAt - receivedAt
-  totalPatches: number;
-  appliedPatches: number;
-  queueDepthBefore: number;
-  remainingQueueSize: number;
-  batchCount: number;
-  queueDelay: { avg: number; p95: number; max: number };
-  priorities: Array<"high" | "low">;
-  adaptiveBudget?: AdaptiveBudgetState; // adaptive throttling state
-  flush: PatchFlushResult;    // includes per-batch coalescing metrics + adaptive flags
-};
-```
+- `"worker"`: compilation happens client-side in the worker.
+- `"server"`: compilation requests go to `/api/mdx-compile-v2` by default (you must implement this endpoint in your app).
 
-`AdaptiveBudgetState` captures whether adaptive throttling is active, the current batch caps, and the p95 thresholds (6 ms to activate, 4 ms to deactivate). Both types are exported from `@stream-mdx/react`.
-
-```ts
-import type { RendererMetrics } from "@stream-mdx/react";
-
-function onMetrics(metric: RendererMetrics) {
-  if (metric.adaptiveBudget?.active) {
-    console.info("Adaptive mode engaged", metric.adaptiveBudget);
-  }
-}
-```
-
-The starter (`examples/streaming-markdown-starter/components/StreamingDemo.tsx`) stores the last metrics payload and renders `queueDelay` + `adaptiveBudget` so you can copy the wiring into dashboards.
-
-Use this hook to feed dashboards, regressions, or adaptive back-pressure in your host app. The demo also exposes `api.getPerf()` for automation scripts; consumers should stick to `onMetrics`.
+See `docs/REACT_INTEGRATION_GUIDE.md` for a complete Next.js wiring guide and parity notes.
 
 ---
 
-## 5. Streaming Data Sources
+## 5) Metrics & Scheduling
 
-You can stream text via an `AsyncIterable<string>` instead of `text`:
+### `onMetrics`
+
+`onMetrics` receives `RendererMetrics` after each flush. The payload includes queue depth, queue delay distribution, worker patch metrics, and the adaptive throttling state.
+
+Adaptive throttling is based on coalescing p95 thresholds:
+
+- activates when coalescing p95 > **6ms**
+- deactivates when coalescing p95 < **4ms**
+
+### `scheduling`
+
+`scheduling` (a subset of the patch scheduler options) includes:
+
+- `frameBudgetMs` (default: 8)
+- `lowPriorityFrameBudgetMs` (default: half the frame budget, min 2)
+- `maxBatchesPerFlush` (default: unlimited; governed by frame budget)
+- `maxLowPriorityBatchesPerFlush` (default: 1)
+- `urgentQueueThreshold` (default: 3)
+- `batch` (`"rAF" | "timeout" | "microtask"`, default: `"rAF"` when available)
+- `historyLimit` (default: 200)
+
+---
+
+## 6) Streaming Sources
+
+You can stream text via an `AsyncIterable<string>`:
 
 ```ts
 async function* chunksFromReadable(readable: ReadableStreamDefaultReader<Uint8Array>) {
@@ -190,37 +175,15 @@ async function* chunksFromReadable(readable: ReadableStreamDefaultReader<Uint8Ar
 <StreamingMarkdown stream={chunksFromReadable(response.body!.getReader())} />;
 ```
 
-The worker maintains a single “dirty tail” block; finalized blocks never change, so React renders remain stable.
-
 ---
 
-## 6. Scheduling & Virtualization
+## 7) Plugins & Extensibility
 
-Scheduling defaults (matching the demo):
+Most consumers should start with `features` rather than wiring plugin registries directly.
 
-```ts
-{
-  batch: "rAF",
-  frameBudgetMs: 9,
-  lowPriorityFrameBudgetMs: 4,
-  maxBatchesPerFlush: 5,
-  maxLowPriorityBatchesPerFlush: 3,
-  urgentQueueThreshold: 3,
-  historyLimit: 200,
-}
-```
+If you need deeper control (custom tokenizers, custom streaming matchers, custom worker bundles), see:
 
-Override via the `scheduling` prop. The scheduler automatically toggles into “adaptive” mode when coalescing itself becomes expensive (p95 > 6 ms); in that state it halves batch counts until p95 < 4 ms again.
+- `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`
+- `stream-mdx/plugins/*` (convenience package)
+- `@stream-mdx/plugins/*` (scoped packages)
 
-Virtualization is automatic for code blocks once they exceed the configured line threshold (default 200). Override via `components.code` or by passing a `virtualizedCode` config through the `components` override if you need bespoke behavior.
-
----
-
-## 7. Automation & Testing Helpers
-
-- `StreamingMarkdownHandle` + the automation shim expose `flushPending()`, `waitForIdle()`, `getPatchHistory()`, etc. Use those in Playwright/StageRunner tests.
-- `scripts/analyze-test-snippets.ts` and `scripts/benchmark-renderers.ts` consume the public API exclusively as part of the refactor; treat them as reference tooling.
-
----
-
-Questions? Ping the `STREAMING_MARKDOWN_V2_STATUS.md` handbook for the latest knobs, or file follow-ups in the “Refactor Phase 5” milestone. This doc should evolve whenever the exported API changes.*** End Patch***

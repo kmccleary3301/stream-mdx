@@ -3,16 +3,22 @@
   "private": true,
   "workspaces": [
     "packages/*",
-    "examples/*"
+    "examples/*",
+    "apps/*"
   ],
   "scripts": {
     "build": "npm run build:packages && npm -w streaming-markdown-starter run build",
     "build:packages": "npm -w @stream-mdx/core run build && npm -w @stream-mdx/plugins run build && npm -w @stream-mdx/worker run build && npm -w @stream-mdx/react run build && npm -w stream-mdx run build",
+    "ci:pack-smoke": "tsx scripts/ci-pack-smoke.ts",
     "test": "npm --workspaces --if-present run test",
     "clean": "npm --workspaces --if-present run clean",
     "markdown-v2:build:packages": "npm run build:packages",
     "markdown-v2:test:packages": "npm --workspaces --if-present run test",
     "worker:build": "npm -w @stream-mdx/worker run build:hosted && tsx scripts/copy-hosted-worker.ts",
+    "docs:worker:build": "npm -w @stream-mdx/worker run build:hosted && tsx scripts/copy-hosted-worker.ts --to apps/docs/public/workers/markdown-worker.js",
+    "docs:dev": "npm run docs:worker:build && npm -w stream-mdx-docs run dev",
+    "docs:build": "npm run docs:worker:build && npm -w stream-mdx-docs run build",
+    "docs:start": "npm -w stream-mdx-docs run start",
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "changeset:publish": "changeset publish"

@@ -2,6 +2,7 @@ import { join } from "node:path";
 import { defineConfig } from "tsup";
 
 const resolve = (p: string) => join(__dirname, p);
+const sourcemap = process.env.SOURCEMAP === "1" || process.env.SOURCEMAP === "true";
 
 const entries = [
   "src/index.ts",
@@ -25,7 +26,7 @@ const entries = [
 export default defineConfig({
   entry: entries,
   dts: true,
-  sourcemap: true,
+  sourcemap,
   splitting: false,
   clean: true,
   banner: {

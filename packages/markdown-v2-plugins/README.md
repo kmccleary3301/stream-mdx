@@ -1,38 +1,48 @@
 # `@stream-mdx/plugins`
 
-Tree-shakable feature plugins for Streaming Markdown V2. Each plugin exports worker + React hooks so you can opt into math, MDX, tables, HTML, or callouts without pulling the entire surface area.
+Plugin primitives and registries used by StreamMDX.
 
-## Packages
+Most app consumers **do not** need to import this package directly. Start with:
 
-- `@stream-mdx/plugins/math`
-- `@stream-mdx/plugins/mdx`
-- `@stream-mdx/plugins/tables`
-- `@stream-mdx/plugins/html`
-- `@stream-mdx/plugins/callouts`
+- `stream-mdx` (recommended)
+- `docs/GETTING_STARTED.md`
 
-Every plugin exposes a `createXPlugin()` function returning a descriptor that the renderer wires into both the worker and React registries.
+Use `@stream-mdx/plugins` when you are:
 
-## Usage
+- building a **custom worker bundle** (custom tokenizers, extra document plugins, custom streaming matchers)
+- integrating StreamMDX into another library and you want explicit control over the worker-side feature set
 
-```tsx
-import { StreamingMarkdown } from "@stream-mdx/react";
-import { mathPlugin } from "@stream-mdx/plugins/math";
-import { mdxPlugin } from "@stream-mdx/plugins/mdx";
+## Install
 
-const plugins = [mathPlugin(), mdxPlugin({ components: { YouTube } })];
-
-<StreamingMarkdown text={markdown} plugins={plugins} features={{ html: true }} />;
+```bash
+npm install @stream-mdx/plugins
 ```
 
-Pair plugin usage with the relevant feature flags if you want belt-and-suspenders toggles.
+## Entry points
 
-## Resources
+- `@stream-mdx/plugins` (root)
+- `@stream-mdx/plugins/registry`
+- `@stream-mdx/plugins/base`
+- `@stream-mdx/plugins/document`
+- `@stream-mdx/plugins/tables`
+- `@stream-mdx/plugins/html`
+- `@stream-mdx/plugins/math`
+- `@stream-mdx/plugins/math/renderer`
+- `@stream-mdx/plugins/mdx`
+- `@stream-mdx/plugins/footnotes`
+- `@stream-mdx/plugins/callouts`
 
-- Cookbook: `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md` (examples, tree-shaking tips).
-- Math + MDX worker/renderer recipe: `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md#5-math--mdx-workerrenderer-registration`.
-- Public API: `docs/PUBLIC_API.md#plugins`.
+## Important note about “plugins”
 
-## Status
+The primary way to enable/disable capabilities in StreamMDX is the `features` prop on `<StreamingMarkdown />`:
 
-- [ ] Document per-plugin options & defaults inline.
-- [ ] Publish bundle size notes (math vs mdx vs tables).*** End Patch*** End Patch to packages/markdown-v2-plugins/README.md
+```tsx
+<StreamingMarkdown features={{ tables: true, html: true, math: true, mdx: true }} />
+```
+
+If you need **custom syntax**, you generally need a **custom worker bundle** rather than “passing plugins as a prop”.
+
+## Docs
+
+- Plugins & worker cookbook: `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`
+- Public API: `docs/PUBLIC_API.md`

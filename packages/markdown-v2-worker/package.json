@@ -26,6 +26,11 @@
       "import": "./dist/worker-client.mjs",
       "require": "./dist/worker-client.cjs"
     },
+    "./mdx-compile": {
+      "types": "./dist/mdx-compile.d.ts",
+      "import": "./dist/mdx-compile.mjs",
+      "require": "./dist/mdx-compile.cjs"
+    },
     "./streaming/custom-matcher": {
       "types": "./dist/streaming/custom-matcher.d.ts",
       "import": "./dist/streaming/custom-matcher.mjs",
@@ -33,7 +38,9 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "CHANGELOG.md"
   ],
   "sideEffects": [
     "src/worker-dom-stub.ts"

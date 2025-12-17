@@ -7,7 +7,7 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["streaming-markdown-starter"]
+  "ignore": ["streaming-markdown-starter", "stream-mdx-docs"]
 }
 
 

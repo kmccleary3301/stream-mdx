@@ -1,19 +1,14 @@
 # `stream-mdx`
 
-High-performance streaming Markdown/MDX renderer for React with a worker-first pipeline, incremental patching, and backpressure/guardrails.
+High-performance streaming Markdown/MDX renderer for React with a worker-first pipeline, incremental patching, and backpressure guardrails.
 
 This is the **convenience** package:
 
-- `stream-mdx` (root) re-exports the main React API from `@stream-mdx/react`
-- `stream-mdx/core`, `stream-mdx/plugins`, `stream-mdx/worker`, `stream-mdx/react` map to the scoped packages
+- `stream-mdx` re-exports the main React API from `@stream-mdx/react`
+- `stream-mdx/{core,react,worker,plugins}` proxy to the scoped packages
+- `stream-mdx/plugins/*` proxies the common plugin entrypoints (helpful for pnpm users)
 
-If you want maximum modularity / tree-shaking control, install the scoped packages directly. Otherwise, start here.
-
-## Full documentation
-
-The npm README is intentionally a “front page”. The full manual lives in the repo:
-
-- https://github.com/kmccleary3301/stream-mdx/blob/main/docs/COMPREHENSIVE_PROJECT_DOCUMENTATION.md
+If you want maximum modularity (or you’re publishing your own library), install the scoped packages directly. Otherwise, start here.
 
 ## Install
 
@@ -21,90 +16,99 @@ The npm README is intentionally a “front page”. The full manual lives in the
 npm install stream-mdx
 ```
 
-## Quickstart (Next.js / React)
+## Quickstart
 
-`StreamingMarkdown` is a **client component**. Import it from a client file (or add `"use client"` at the top of your component file).
+### 1) Copy the hosted worker bundle
+
+In production you should host the worker bundle from static assets (stricter CSP, no `blob:`).
+
+After installing, copy the worker into your app:
+
+```bash
+mkdir -p public/workers
+cp node_modules/@stream-mdx/worker/dist/hosted/markdown-worker.js public/workers/markdown-worker.js
+```
+
+### Next.js (App Router)
+
+`StreamingMarkdown` is a **client component**. Import it behind a `"use client"` boundary.
 
 ```tsx
 "use client";
 
-import { useMemo } from "react";
 import { StreamingMarkdown } from "stream-mdx";
-import { createDefaultWorker, releaseDefaultWorker } from "stream-mdx/worker";
 
 export function Demo({ text }: { text: string }) {
-  const worker = useMemo(() => createDefaultWorker(), []);
-
   return (
     <StreamingMarkdown
-      worker={worker}
-      value={text}
-      onFinalize={() => releaseDefaultWorker(worker)}
+      text={text}
+      worker="/workers/markdown-worker.js"
+      features={{ html: true, tables: true, math: true, mdx: true }}
+      mdxCompileMode="worker"
     />
   );
 }
 ```
 
-If you’re in Next.js App Router and you accidentally import `StreamingMarkdown` from a **server component**, you’ll typically see `useRef is not a function` (React Server condition). Fix by moving the import into a `"use client"` boundary.
+If you import `StreamingMarkdown` from a server component, you’ll typically see `useRef is not a function`. Fix by moving the import behind a `"use client"` boundary.
 
-## What you can customize (high level)
+### Vite React
 
-`stream-mdx` is designed to be modular:
+```tsx
+import { StreamingMarkdown } from "stream-mdx";
 
-- Disable features: math, raw HTML, MDX compilation/hydration, etc (exact flags depend on your chosen plugin set + worker config).
-- Swap rendering for tags: override `a`, `code`, `pre`, `table`, `thead`, `tr`, `td`, etc (e.g. Shadcn wrappers).
-- Wrap expensive blocks (code blocks, math blocks) in your own containers (e.g. horizontal scroll) without touching the internal incremental rendering/backpressure logic.
-- Change math delimiters: provide a different math tokenizer/config via plugins if you prefer `\\(...\\)` and `\\[...\\]` instead of `$...$` / `$$...$$`.
+export default function App() {
+  return (
+    <StreamingMarkdown
+      text="## Hello\n\nStreaming **markdown**"
+      worker="/workers/markdown-worker.js"
+      features={{ html: true, tables: true, math: true }}
+    />
+  );
+}
+```
+
+## Configuration at a glance
+
+- `text` / `stream`: provide a full string or an append-only `AsyncIterable<string>`.
+- `worker`: a `Worker`, `URL`, URL string, or factory; defaults to the built-in worker strategy and falls back to `/workers/markdown-worker.js`.
+- `features`: `{ html?, tables?, mdx?, math?, footnotes?, callouts? }`.
+- `mdxCompileMode`: `"worker"` (no server) or `"server"` (requires an endpoint; see docs).
+- `components` / `inlineComponents`: override block + inline renders (wrap code/math without losing incremental rendering).
+- `tableElements`: override table tags (e.g. Shadcn table wrappers).
+- `htmlElements`: override HTML tag renders (when HTML is enabled).
+- `mdxComponents`: MDX component registry (when MDX compilation is enabled).
+- `scheduling`: patch scheduler/backpressure knobs.
 
 ## Plugins
 
-Plugins live in `stream-mdx/plugins` (or `@stream-mdx/plugins`). Common entrypoints:
+Common entrypoints (convenience package):
 
-- `@stream-mdx/plugins/document` – recommended default “doc plugins” bundle
-- `@stream-mdx/plugins/tables` – table handling
-- `@stream-mdx/plugins/html` – inline/raw HTML handling + sanitization hooks
-- `@stream-mdx/plugins/math` – math tokenization + rendering
-- `@stream-mdx/plugins/mdx` – MDX compilation/hydration helpers
+- `stream-mdx/plugins/document`
+- `stream-mdx/plugins/tables`
+- `stream-mdx/plugins/html`
+- `stream-mdx/plugins/math`
+- `stream-mdx/plugins/mdx`
 
-For an end-to-end walkthrough (worker + renderer registration, CSP notes, math/MDX examples), see the repo docs:
-- https://github.com/kmccleary3301/stream-mdx/tree/main/docs
+Scoped equivalents:
 
-## MDX compilation parity (server vs worker)
+- `@stream-mdx/plugins/document` (etc)
 
-The project aims for **identical MDX compilation results** whether MDX is compiled:
+## Docs
 
-- in the worker, or
-- on the server (API endpoint) and hydrated on the client.
-
-This avoids “it looks different depending on where it compiled” drift. Start from:
-- `docs/REACT_INTEGRATION_GUIDE.md` (repo)
-- `docs/PUBLIC_API.md` (repo)
-
-## Security / HTML
-
-If you enable raw HTML, treat it as an XSS surface:
-
-- Use the worker to isolate parsing.
-- Keep sanitization enabled (or provide your own schema).
-- Set a CSP appropriate for your deployment (especially if you allow embeds).
-
-Start from:
-- `docs/STREAMING_MARKDOWN_V2_STATUS.md`
-- `docs/STREAMING_MARKDOWN_RELEASE_CHECKLIST.md`
-
-## Performance notes
-
-The renderer is optimized for incremental updates (streaming text), coalesced patch application, and backpressure to prevent UI lockups on large documents.
-
-If you’re benchmarking, start from:
-- `docs/STREAMING_V2_BENCHMARKS.md`
-- `docs/SNIPPET_ANALYSIS.md`
+- Docs site: https://kmccleary3301.github.io/stream-mdx/
+- Manual: `docs/COMPREHENSIVE_PROJECT_DOCUMENTATION.md`
+- API: `docs/PUBLIC_API.md`
+- React integration: `docs/REACT_INTEGRATION_GUIDE.md`
+- Plugins cookbook: `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`
+- Status/architecture notes: `docs/STREAMING_MARKDOWN_V2_STATUS.md`
+- Release checklist: `docs/STREAMING_MARKDOWN_RELEASE_CHECKLIST.md`
 
 ## Package map
 
-If you need lower-level entrypoints, use:
-
-- `stream-mdx/react` – React renderer + scheduler + types
+- `stream-mdx` – React surface (`@stream-mdx/react`)
+- `stream-mdx/react` – React renderer + types
 - `stream-mdx/worker` – worker client + default worker helpers
-- `stream-mdx/plugins` – plugin modules (math/MDX/tables/etc)
+- `stream-mdx/plugins` – plugin registry + helpers
+- `stream-mdx/plugins/*` – common plugin entrypoints
 - `stream-mdx/core` – structured-clone-safe types + perf utilities

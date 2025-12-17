@@ -1,0 +1,56 @@
+name: Bug report
+description: Report a reproducible problem with StreamMDX
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug. Please include a minimal reproduction when possible.
+  - type: input
+    id: version
+    attributes:
+      label: StreamMDX version
+      description: Output of `npm ls stream-mdx` (or the scoped package version if applicable)
+      placeholder: "stream-mdx@0.0.x"
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options:
+        - Next.js (App Router)
+        - Next.js (Pages Router)
+        - Vite (React)
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the behavior you observed.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: Link to a repo, a CodeSandbox, or paste a minimal snippet.
+      render: ts
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / console output
+      render: text
+    validations:
+      required: false
+
