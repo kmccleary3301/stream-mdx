@@ -35,7 +35,14 @@
       "types": "./dist/streaming/custom-matcher.d.ts",
       "import": "./dist/streaming/custom-matcher.mjs",
       "require": "./dist/streaming/custom-matcher.cjs"
-    }
+    },
+    "./node": {
+      "types": "./dist/node/index.d.ts",
+      "import": "./dist/node/index.mjs",
+      "require": "./dist/node/index.cjs"
+    },
+    "./hosted/markdown-worker.js": "./dist/hosted/markdown-worker.js",
+    "./dist/hosted/markdown-worker.js": "./dist/hosted/markdown-worker.js"
   },
   "files": [
     "dist",

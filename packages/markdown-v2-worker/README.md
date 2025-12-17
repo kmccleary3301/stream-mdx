@@ -25,6 +25,16 @@ Then point StreamMDX at it:
 <StreamingMarkdown worker="/workers/markdown-worker.js" />
 ```
 
+## Node / CLI worker threads
+
+To run the hosted worker bundle in Node (e.g., Ink TUIs), use:
+
+```ts
+import { createWorkerThread } from "@stream-mdx/worker/node";
+```
+
+This spawns a `worker_threads` worker and installs WebWorker-like shims so the hosted bundle can run under Node.
+
 ## MDX compilation parity helper
 
 If you compile MDX on the server (e.g. Next.js API route), use the same compilation logic as the worker:

@@ -41,6 +41,11 @@
       "import": "./dist/worker/mdx-compile.mjs",
       "require": "./dist/worker/mdx-compile.cjs"
     },
+    "./worker/node": {
+      "types": "./dist/worker/node.d.ts",
+      "import": "./dist/worker/node.mjs",
+      "require": "./dist/worker/node.cjs"
+    },
     "./plugins": {
       "types": "./dist/plugins.d.ts",
       "import": "./dist/plugins.mjs",
