@@ -1,6 +1,6 @@
 {
   "name": "@stream-mdx/core",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Core types, snapshot utilities, and perf helpers for the Streaming Markdown V2 stack",
   "license": "MIT",
   "repository": {
@@ -77,7 +77,9 @@
       "require": "./dist/streaming/custom-matcher.cjs"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "sideEffects": false,
   "scripts": {
     "build": "tsup",

@@ -1,6 +1,6 @@
 {
   "name": "@stream-mdx/plugins",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Streaming Markdown V2 plugin suite (math, MDX, tables, callouts, footnotes, HTML helpers)",
   "license": "MIT",
   "repository": {
@@ -72,7 +72,9 @@
       "require": "./dist/plugins/tables/index.cjs"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "sideEffects": false,
   "scripts": {
     "build": "tsup",
@@ -80,7 +82,7 @@
     "prepack": "npm run build"
   },
   "dependencies": {
-    "@stream-mdx/core": "0.0.0"
+    "@stream-mdx/core": "0.0.1"
   },
   "peerDependencies": {
     "react": ">=18.2.0"

@@ -1,6 +1,6 @@
 {
   "name": "@stream-mdx/react",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "React renderer, scheduler, and worker wiring for the Streaming Markdown V2 pipeline",
   "license": "MIT",
   "repository": {
@@ -72,7 +72,9 @@
       "require": "./dist/contexts/math-tracker.cjs"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "sideEffects": false,
   "scripts": {
     "build": "tsup",
@@ -81,8 +83,8 @@
     "prepack": "npm run build"
   },
   "dependencies": {
-    "@stream-mdx/core": "0.0.0",
-    "@stream-mdx/worker": "0.0.0"
+    "@stream-mdx/core": "0.0.1",
+    "@stream-mdx/worker": "0.0.1"
   },
   "devDependencies": {
     "jsdom": "^26.0.0"
