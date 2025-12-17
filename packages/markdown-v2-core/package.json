@@ -70,6 +70,11 @@
       "types": "./dist/security.d.ts",
       "import": "./dist/security.mjs",
       "require": "./dist/security.cjs"
+    },
+    "./streaming/custom-matcher": {
+      "types": "./dist/streaming/custom-matcher.d.ts",
+      "import": "./dist/streaming/custom-matcher.mjs",
+      "require": "./dist/streaming/custom-matcher.cjs"
     }
   },
   "files": ["dist"],

@@ -1,7 +1,7 @@
 // Base plugin interfaces and types for Lezer-native plugin system
 
 import type { ContextTracker, ExternalTokenizer } from "@lezer/lr";
-import { CustomStreamingMatcher } from "@stream-mdx/worker/streaming/custom-matcher";
+import { CustomStreamingMatcher } from "@stream-mdx/core/streaming/custom-matcher";
 
 /**
  * Core plugin interface that all markdown plugins must implement

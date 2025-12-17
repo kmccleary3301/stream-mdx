@@ -8,3 +8,4 @@ export * from "./inline-parser";
 export * from "./worker-html-sanitizer";
 export * from "./perf/backpressure";
 export * from "./perf/patch-coalescing";
+export * from "./streaming/custom-matcher";

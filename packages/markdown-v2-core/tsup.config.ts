@@ -15,6 +15,7 @@ const entries = [
   "src/perf/patch-batching.ts",
   "src/perf/patch-coalescing.ts",
   "src/security.ts",
+  "src/streaming/custom-matcher.ts",
 ].map(resolve);
 
 export default defineConfig({
