@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "build": "npm run build:packages && npm -w streaming-markdown-starter run build",
-    "build:packages": "npm -w @stream-mdx/core run build && npm -w @stream-mdx/plugins run build && npm -w @stream-mdx/worker run build && npm -w @stream-mdx/react run build && npm -w stream-mdx run build",
+    "build:packages": "npm -w @stream-mdx/core run build && npm -w @stream-mdx/plugins run build && npm -w @stream-mdx/worker run build && npm -w @stream-mdx/react run build && npm -w @stream-mdx/mermaid run build && npm -w stream-mdx run build",
     "ci:pack-smoke": "tsx scripts/ci-pack-smoke.ts",
     "test": "npm --workspaces --if-present run test",
     "clean": "npm --workspaces --if-present run clean",

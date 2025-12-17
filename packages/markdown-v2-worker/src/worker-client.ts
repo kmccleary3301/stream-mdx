@@ -86,7 +86,7 @@ export class MarkdownWorkerClient {
   init(
     initialContent?: string,
     prewarmLangs?: string[],
-    docPlugins?: { footnotes?: boolean; html?: boolean; mdx?: boolean; tables?: boolean; callouts?: boolean; math?: boolean },
+    docPlugins?: { footnotes?: boolean; html?: boolean; mdx?: boolean; tables?: boolean; callouts?: boolean; math?: boolean; formatAnticipation?: boolean },
     mdxOptions?: { compileMode?: "server" | "worker" },
   ) {
     this.post({

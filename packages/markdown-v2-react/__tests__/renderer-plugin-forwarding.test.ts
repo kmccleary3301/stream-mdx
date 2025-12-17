@@ -14,7 +14,7 @@ class MockWorker {
 
 function testPluginForwarding(): void {
   const renderer = new MarkdownRenderer({
-    plugins: { math: true, mdx: true, html: true, tables: true, callouts: true },
+    plugins: { math: true, mdx: true, html: true, tables: true, callouts: true, formatAnticipation: true },
     mdx: { compileStrategy: "worker" },
   });
   const worker = new MockWorker();
@@ -24,7 +24,7 @@ function testPluginForwarding(): void {
   assert.ok(init, "Streaming renderer should send INIT message with docPlugins");
   assert.deepStrictEqual(
     init?.docPlugins,
-    { footnotes: true, html: true, mdx: true, tables: true, callouts: true, math: true },
+    { footnotes: true, html: true, mdx: true, tables: true, callouts: true, math: true, formatAnticipation: true },
     "docPlugins must mirror renderer.feature flags",
   );
   assert.strictEqual(init?.mdx?.compileMode, "worker", "mdx compile mode should propagate to worker");

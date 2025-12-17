@@ -84,6 +84,7 @@ export interface RendererConfig {
     tables?: boolean;
     callouts?: boolean;
     math?: boolean;
+    formatAnticipation?: boolean;
   };
   performance?: {
     frameBudgetMs?: number;

@@ -7,6 +7,7 @@ import type {
   Block,
   CompiledMdxModule,
   InlineNode,
+  InlineStreamingInlineStatus,
   NodeSnapshot,
   Patch,
   PatchMetrics,
@@ -37,6 +38,7 @@ import {
   generateBlockId,
   normalizeBlockquoteText,
   parseCodeFenceInfo,
+  prepareInlineStreamingContent,
   removeHeadingMarkers,
 } from "@stream-mdx/core";
 import { InlineParser, dedentIndentedCode, sanitizeHtmlInWorker, stripCodeFence } from "@stream-mdx/core";
@@ -65,6 +67,7 @@ const CODE_HIGHLIGHT_CACHE = new Map<string, { html: string; lang: string }>();
 const MAX_CODE_HIGHLIGHT_CACHE_ENTRIES = 200;
 type WorkerMdxMode = "server" | "worker";
 let mdxCompileMode: WorkerMdxMode = "server";
+let enableFormatAnticipation = false;
 const WORKER_MDX_CACHE = new Map<string, CompiledMdxModule>();
 const WORKER_MDX_INFLIGHT = new Map<string, Promise<CompiledMdxModule>>();
 const MAX_WORKER_MDX_CACHE_ENTRIES = 128;
@@ -403,56 +406,27 @@ function mapToHighlightRecord(map: Map<string, { time: number; count: number }>)
   return result;
 }
 
+type InlineStreamingParseResult = { inline: InlineNode[]; status: InlineStreamingInlineStatus };
+
 /**
- * Safe inline parsing for streaming content that may have incomplete expressions
+ * Safe inline parsing for streaming content that may have incomplete expressions.
+ *
+ * When `enableFormatAnticipation` is on, this will append missing closers (e.g. `*`, `**`, `` ` ``, `~~`)
+ * to allow the inline parser to withhold leading markers while streaming.
  */
+function parseInlineStreaming(content: string): InlineStreamingParseResult {
+  const prepared = prepareInlineStreamingContent(content, { formatAnticipation: enableFormatAnticipation });
+  if (prepared.kind === "raw") {
+    return { inline: [{ kind: "text", text: content }], status: prepared.status };
+  }
+  return {
+    inline: inlineParser.parse(prepared.content, { cache: false }),
+    status: prepared.status,
+  };
+}
+
 function parseInlineStreamingSafe(content: string): InlineNode[] {
-  // Fast parity checks (avoid regex allocations on hot path).
-  let dollarCount = 0;
-  let backtickCount = 0;
-  let starCount = 0;
-  let doubleStarCount = 0;
-
-  for (let i = 0; i < content.length; i++) {
-    const code = content.charCodeAt(i);
-    // '$'
-    if (code === 36) {
-      dollarCount += 1;
-      continue;
-    }
-    // '`'
-    if (code === 96) {
-      backtickCount += 1;
-      continue;
-    }
-    // '*'
-    if (code === 42) {
-      if (i + 1 < content.length && content.charCodeAt(i + 1) === 42) {
-        doubleStarCount += 1;
-        starCount += 2;
-        i += 1;
-      } else {
-        starCount += 1;
-      }
-    }
-  }
-
-  const hasIncompleteMath = dollarCount % 2 !== 0;
-  if (hasIncompleteMath) {
-    return [{ kind: "text", text: content }];
-  }
-
-  const hasIncompleteCode = backtickCount % 2 !== 0;
-  const hasIncompleteStrong = doubleStarCount % 2 !== 0;
-  const singleStarCount = starCount - doubleStarCount * 2;
-  const hasIncompleteEmphasis = singleStarCount % 2 !== 0;
-
-  if (hasIncompleteCode || hasIncompleteStrong || hasIncompleteEmphasis) {
-    return [{ kind: "text", text: content }];
-  }
-
-  // Safe to parse with full inline parser; avoid caching intermediate streaming states.
-  return inlineParser.parse(content, { cache: false });
+  return parseInlineStreaming(content).inline;
 }
 
 /**
@@ -468,6 +442,7 @@ async function initialize(
     tables?: boolean;
     callouts?: boolean;
     math?: boolean;
+    formatAnticipation?: boolean;
   },
   mdxOptions?: { compileMode?: WorkerMdxMode },
 ) {
@@ -499,6 +474,7 @@ async function initialize(
     tables: docPlugins?.tables ?? true,
     callouts: docPlugins?.callouts ?? false,
     math: docPlugins?.math ?? true,
+    formatAnticipation: docPlugins?.formatAnticipation ?? false,
   };
 
   if (enable.footnotes) registerFootnotesPlugin();
@@ -506,6 +482,8 @@ async function initialize(
   if (enable.callouts) globalDocumentPluginRegistry.register(CalloutsPlugin);
   if (enable.html) globalDocumentPluginRegistry.register(HTMLBlockPlugin);
   if (enable.mdx) globalDocumentPluginRegistry.register(MDXDetectionPlugin);
+
+  enableFormatAnticipation = enable.formatAnticipation;
 
   performanceTimer.mark("highlighter-init");
 
@@ -783,8 +761,15 @@ async function enrichBlock(block: Block) {
       if (block.isFinalized) {
         block.payload.raw = normalizedHeading;
         block.payload.inline = inlineParser.parse(normalizedHeading);
+        if (enableFormatAnticipation && block.payload.meta) {
+          (block.payload.meta as Record<string, unknown>).inlineStatus = undefined;
+        }
       } else {
-        block.payload.inline = parseInlineStreamingSafe(normalizedHeading);
+        const parsed = parseInlineStreaming(normalizedHeading);
+        block.payload.inline = parsed.inline;
+        if (enableFormatAnticipation && block.payload.meta) {
+          (block.payload.meta as Record<string, unknown>).inlineStatus = parsed.status;
+        }
       }
       break;
     }
@@ -792,7 +777,9 @@ async function enrichBlock(block: Block) {
     case "blockquote": {
       const normalized = normalizeBlockquoteText(block.payload.raw ?? "");
       block.payload.raw = normalized;
-      const segments = extractMixedContentSegments(normalized, undefined, (value) => inlineParser.parse(value));
+      const streamingParsed = !block.isFinalized ? parseInlineStreaming(normalized) : null;
+      const inlineParse = block.isFinalized ? (value: string) => inlineParser.parse(value) : (value: string) => parseInlineStreaming(value).inline;
+      const segments = extractMixedContentSegments(normalized, undefined, inlineParse);
       const currentMeta = (block.payload.meta ?? {}) as Record<string, unknown>;
       const nextMeta: Record<string, unknown> = {
         ...currentMeta,
@@ -803,6 +790,9 @@ async function enrichBlock(block: Block) {
       } else {
         nextMeta.mixedSegments = undefined;
       }
+      if (enableFormatAnticipation) {
+        nextMeta.inlineStatus = block.isFinalized ? undefined : streamingParsed?.status;
+      }
       if (Object.keys(nextMeta).length > 0) {
         block.payload.meta = nextMeta;
       } else {
@@ -812,20 +802,38 @@ async function enrichBlock(block: Block) {
       if (block.isFinalized) {
         block.payload.inline = inlineParser.parse(normalized);
       } else {
-        block.payload.inline = parseInlineStreamingSafe(normalized);
+        block.payload.inline = streamingParsed?.inline ?? [{ kind: "text", text: normalized }];
       }
       break;
     }
 
     case "paragraph": {
       const rawParagraph = typeof block.payload.raw === "string" ? block.payload.raw : "";
+      const streamingParsed = !block.isFinalized ? parseInlineStreaming(rawParagraph) : null;
       // Parse inline content, but be careful with incomplete expressions during streaming
-      const inlineParse = block.isFinalized ? (value: string) => inlineParser.parse(value) : parseInlineStreamingSafe;
-      block.payload.inline = inlineParse(rawParagraph);
+      const inlineParse =
+        block.isFinalized ? (value: string) => inlineParser.parse(value) : (value: string) => parseInlineStreaming(value).inline;
+      block.payload.inline = block.isFinalized ? inlineParse(rawParagraph) : streamingParsed?.inline ?? [{ kind: "text", text: rawParagraph }];
 
       const currentMeta = (block.payload.meta ?? {}) as Record<string, unknown>;
       const nextMeta: Record<string, unknown> = { ...currentMeta };
       let metaChanged = false;
+
+      if (enableFormatAnticipation) {
+        const desired = block.isFinalized ? undefined : streamingParsed?.status;
+        if (desired !== undefined) {
+          if (!Object.prototype.hasOwnProperty.call(nextMeta, "inlineStatus") || nextMeta.inlineStatus !== desired) {
+            nextMeta.inlineStatus = desired;
+            metaChanged = true;
+          }
+        } else if (Object.prototype.hasOwnProperty.call(nextMeta, "inlineStatus")) {
+          nextMeta.inlineStatus = undefined;
+          metaChanged = true;
+        }
+      } else if (Object.prototype.hasOwnProperty.call(nextMeta, "inlineStatus")) {
+        nextMeta.inlineStatus = undefined;
+        metaChanged = true;
+      }
 
       const mathRanges = collectMathProtectedRanges(rawParagraph);
       if (mathRanges.length > 0) {

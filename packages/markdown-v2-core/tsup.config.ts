@@ -17,6 +17,7 @@ const entries = [
   "src/perf/patch-coalescing.ts",
   "src/security.ts",
   "src/streaming/custom-matcher.ts",
+  "src/streaming/inline-streaming.ts",
 ].map(resolve);
 
 export default defineConfig({

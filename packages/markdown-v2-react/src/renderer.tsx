@@ -105,6 +105,7 @@ export class MarkdownRenderer implements Renderer {
           tables: this.config.plugins?.tables ?? true,
           callouts: this.config.plugins?.callouts ?? false,
           math: this.config.plugins?.math ?? true,
+          formatAnticipation: this.config.plugins?.formatAnticipation ?? false,
         },
         mdx: {
           compileMode: this.config.mdx?.compileStrategy ?? "server",
@@ -177,6 +178,7 @@ export class MarkdownRenderer implements Renderer {
           tables: this.config.plugins?.tables ?? true,
           callouts: this.config.plugins?.callouts ?? false,
           math: this.config.plugins?.math ?? true,
+          formatAnticipation: this.config.plugins?.formatAnticipation ?? false,
         },
         mdx: {
           compileMode: this.config.mdx?.compileStrategy ?? "server",

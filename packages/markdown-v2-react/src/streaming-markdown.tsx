@@ -42,6 +42,7 @@ export interface StreamingFeatureFlags {
   tables?: boolean;
   callouts?: boolean;
   math?: boolean;
+  formatAnticipation?: boolean;
 }
 
 /**
