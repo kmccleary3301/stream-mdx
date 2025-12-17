@@ -6,10 +6,11 @@
     "examples/*"
   ],
   "scripts": {
-    "build": "npm --workspaces --if-present run build",
+    "build": "npm run build:packages && npm -w streaming-markdown-starter run build",
+    "build:packages": "npm -w @stream-mdx/core run build && npm -w @stream-mdx/plugins run build && npm -w @stream-mdx/worker run build && npm -w @stream-mdx/react run build && npm -w stream-mdx run build",
     "test": "npm --workspaces --if-present run test",
     "clean": "npm --workspaces --if-present run clean",
-    "markdown-v2:build:packages": "npm --workspaces --if-present run build",
+    "markdown-v2:build:packages": "npm run build:packages",
     "markdown-v2:test:packages": "npm --workspaces --if-present run test",
     "worker:build": "npm -w @stream-mdx/worker run build:hosted && tsx scripts/copy-hosted-worker.ts",
     "changeset": "changeset",

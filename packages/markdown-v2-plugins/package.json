@@ -83,13 +83,9 @@
     "@stream-mdx/core": "0.0.0"
   },
   "peerDependencies": {
-    "@stream-mdx/react": "0.0.0",
     "react": ">=18.2.0"
   },
   "peerDependenciesMeta": {
-    "@stream-mdx/react": {
-      "optional": true
-    },
     "react": {
       "optional": true
     }

@@ -8,6 +8,21 @@ type DOMPurifyInstance = {
   addHook?: (name: string, hook: (node: unknown) => unknown) => void;
 };
 
+type TrustedTypePolicyLike = {
+  createHTML: (input: string) => string;
+};
+
+type TrustedTypePolicyFactoryLike = {
+  createPolicy: (
+    name: string,
+    rules: {
+      createHTML: (input: string) => string;
+      createScript?: (input: string) => string;
+      createScriptURL?: (input: string) => string;
+    },
+  ) => TrustedTypePolicyLike;
+};
+
 let domPurifyInstance: DOMPurifyInstance | null = null;
 
 function resolveDOMPurify(): DOMPurifyInstance {
@@ -28,7 +43,7 @@ function resolveDOMPurify(): DOMPurifyInstance {
 /**
  * Trusted Types policy for safe HTML rendering
  */
-let trustedTypesPolicy: TrustedTypePolicy | undefined;
+let trustedTypesPolicy: TrustedTypePolicyLike | undefined;
 
 /**
  * Initialize Trusted Types policy
@@ -37,7 +52,7 @@ export function initializeTrustedTypesPolicy(): void {
   if (typeof window === "undefined" || trustedTypesPolicy) {
     return;
   }
-  const trustedWindow = window as typeof window & { trustedTypes?: TrustedTypePolicyFactory };
+  const trustedWindow = window as typeof window & { trustedTypes?: TrustedTypePolicyFactoryLike };
   const factory = trustedWindow.trustedTypes;
   if (!factory || trustedTypesPolicy) {
     return;
@@ -131,7 +146,7 @@ export function initializeTrustedTypesPolicy(): void {
 /**
  * Create trusted HTML using DOMPurify and Trusted Types
  */
-export function createTrustedHTML(html: string): TrustedHTML | string {
+export function createTrustedHTML(html: string): string {
   // Initialize policy if not already done
   initializeTrustedTypesPolicy();
 
@@ -140,7 +155,7 @@ export function createTrustedHTML(html: string): TrustedHTML | string {
   }
 
   // Fallback to DOMPurify without Trusted Types
-  return resolveDOMPurify().sanitize(html, getSanitizationConfig()) as unknown as string | TrustedHTML;
+  return sanitizeHTML(html);
 }
 
 /**

@@ -1,11 +1,8 @@
 {
-  "extends": "../../../tsconfig.json",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "incremental": false,
-    "tsBuildInfoFile": "./dist/tsconfig.build.tsbuildinfo",
-    "paths": {
-      "@lezer/common": ["../../../node_modules/@lezer/common"]
-    }
+    "tsBuildInfoFile": "./dist/tsconfig.build.tsbuildinfo"
   },
   "include": ["src/**/*"]
 }

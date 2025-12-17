@@ -1,7 +1,10 @@
 // React components for rendering math expressions
 
-import { DisplayMathWrapper } from "@stream-mdx/react/math/display-wrapper";
 import React from "react";
+
+const DisplayMathWrapper: React.FC<{ className?: string; children: React.ReactNode }> = ({ className = "", children }) => (
+  <div className={`katex-block-wrapper ${className}`.trim()}>{children}</div>
+);
 
 /**
  * Props for math rendering components

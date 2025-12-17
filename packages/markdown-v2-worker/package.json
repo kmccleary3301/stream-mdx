@@ -42,6 +42,7 @@
     "prepack": "npm run build && npm run build:hosted"
   },
   "dependencies": {
+    "@lezer/common": "^1.2.3",
     "@lezer/lr": "^1.4.2",
     "@lezer/markdown": "^1.3.0",
     "@stream-mdx/core": "0.0.0",

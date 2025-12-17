@@ -1,6 +1,5 @@
 // Lezer-native streaming handler for math expressions
 
-import { type MathContext, MathContextUtils } from "@stream-mdx/react/contexts/math-tracker";
 import { BaseIncrementalMatchHandler, type CompleteMatchResult, type PartialMatchResult, type PluginContext } from "../base";
 import { extractMathContent, validateMathExpression } from "./tokenizer";
 
@@ -19,27 +18,8 @@ export class LezerMathStreamingHandler extends BaseIncrementalMatchHandler {
   }
 
   checkPartialMatch(content: string, context?: PluginContext): PartialMatchResult {
-    // With Lezer, partial matching is handled by the parser itself
-    // We just need to provide confidence based on current state
-
-    const mathContext = this.extractMathContext(context);
-
-    if (mathContext && MathContextUtils.isInMath(mathContext)) {
-      const currentMathType = MathContextUtils.getMathType(mathContext);
-
-      if (currentMathType === this.mathType) {
-        // We're in the right type of math context
-        return {
-          hasPartialMatch: true,
-          type: `${this.mathType}-math`,
-          confidence: this.calculateLezerConfidence(mathContext, content),
-          expectedNext: this.getExpectedNext(mathContext),
-          likelyToComplete: !MathContextUtils.hasErrors(mathContext),
-        };
-      }
-    }
-
-    // Check if we're starting a new math expression
+    // In the current build, we do not rely on renderer-side math contexts here.
+    // Streaming confidence is derived from a conservative prefix check.
     if (this.couldStartMath(content)) {
       return {
         hasPartialMatch: true,
@@ -72,10 +52,9 @@ export class LezerMathStreamingHandler extends BaseIncrementalMatchHandler {
 
       const mathContent = extractMathContent(match[0], this.mathType === "display");
       const validation = validateMathExpression(mathContent);
-      const mathContext = this.extractMathContext(context);
 
       return {
-        success: validation.valid && (!mathContext || !MathContextUtils.hasErrors(mathContext)),
+        success: validation.valid,
         content: match[0],
         metadata: {
           start: match.index || 0,
@@ -89,8 +68,6 @@ export class LezerMathStreamingHandler extends BaseIncrementalMatchHandler {
             valid: validation.valid,
             errors: validation.errors,
             mathType: this.mathType,
-            contextValid: !mathContext || !MathContextUtils.hasErrors(mathContext),
-            balanced: !mathContext || MathContextUtils.isBalanced(mathContext),
           },
         },
         processingTime: performance.now() - startTime,
@@ -102,68 +79,6 @@ export class LezerMathStreamingHandler extends BaseIncrementalMatchHandler {
 
   protected getMinimumLength(): number {
     return this.mathType === "inline" ? 3 : 5; // $x$ or $$x$$
-  }
-
-  /**
-   * Extract math context from plugin context
-   */
-  private extractMathContext(context?: PluginContext): MathContext | null {
-    if (!context || !context.parseState) return null;
-
-    // This would extract the math context from Lezer's parse state
-    // For now, return null as the exact implementation depends on Lezer integration
-    return null;
-  }
-
-  /**
-   * Calculate confidence based on Lezer context
-   */
-  private calculateLezerConfidence(mathContext: MathContext, content: string): number {
-    let confidence = 0.5; // Base confidence
-
-    // Higher confidence if we're properly balanced
-    if (MathContextUtils.isBalanced(mathContext)) {
-      confidence += 0.2;
-    }
-
-    // Higher confidence for LaTeX commands
-    if (content.includes("\\")) {
-      confidence += 0.2;
-    }
-
-    // Lower confidence if we have errors
-    if (MathContextUtils.hasErrors(mathContext)) {
-      confidence -= 0.3;
-    }
-
-    // Higher confidence for longer, more structured content
-    const lengthBonus = Math.min(0.2, content.length / 50);
-    confidence += lengthBonus;
-
-    return Math.max(0, Math.min(1, confidence));
-  }
-
-  /**
-   * Get expected next characters based on context
-   */
-  private getExpectedNext(mathContext: MathContext): string[] {
-    const expected: string[] = [];
-
-    if (this.mathType === "inline") {
-      expected.push("$"); // Closing dollar
-    } else {
-      expected.push("$$"); // Closing double dollar
-    }
-
-    // Always expect math symbols
-    expected.push("\\", "{", "}", "^", "_", "math symbols");
-
-    // For display math, newlines are allowed
-    if (this.mathType === "display") {
-      expected.push("newline");
-    }
-
-    return expected;
   }
 
   /**
