@@ -51,6 +51,7 @@
     "@shikijs/engine-javascript": "^1.29.2",
     "@shikijs/engine-oniguruma": "^1.29.2",
     "character-entities": "^2.0.2",
+    "rehype-katex": "^7.0.1",
     "rehype-slug": "^6.0.0",
     "remark-gfm": "^4.0.0",
     "remark-math": "^6.0.0",

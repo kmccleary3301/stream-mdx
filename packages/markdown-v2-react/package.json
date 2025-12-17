@@ -84,6 +84,9 @@
     "@stream-mdx/core": "0.0.0",
     "@stream-mdx/worker": "0.0.0"
   },
+  "devDependencies": {
+    "jsdom": "^26.0.0"
+  },
   "peerDependencies": {
     "react": ">=18.2.0",
     "react-dom": ">=18.2.0"
