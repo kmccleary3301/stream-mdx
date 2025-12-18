@@ -19,6 +19,7 @@
     "docs:dev": "npm run docs:worker:build && npm -w stream-mdx-docs run dev",
     "docs:build": "npm run docs:worker:build && npm -w stream-mdx-docs run build",
     "docs:start": "npm -w stream-mdx-docs run start",
+    "docs:css:snapshot": "tsx scripts/css-snapshot-docs.ts",
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "changeset:publish": "changeset publish"
