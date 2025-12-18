@@ -1,9 +1,12 @@
 import type { ReactNode } from "react";
 
+import { Breadcrumb } from "@/components/layout/breadcrumb";
+
 export default function Layout({ children }: { children: ReactNode }) {
   return (
-    <main className="mx-auto max-w-screen-sm overflow-x-hidden px-6 py-24 md:overflow-x-visible">
+    <>
+      <Breadcrumb />
       {children}
-    </main>
+    </>
   );
 }

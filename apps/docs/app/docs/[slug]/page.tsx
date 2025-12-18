@@ -14,9 +14,5 @@ export default async function DocPage({ params }: { params: Promise<{ slug: stri
   const markdown = await readDocFile(doc.file);
   const html = await renderMarkdownToHtml(markdown);
 
-  return (
-    <main style={{ maxWidth: 720, margin: "0 auto", padding: "96px 24px" }}>
-      <article className="prose" dangerouslySetInnerHTML={{ __html: html }} />
-    </main>
-  );
+  return <div className="prose markdown flex flex-col space-y-3 text-theme-primary" dangerouslySetInnerHTML={{ __html: html }} />;
 }
