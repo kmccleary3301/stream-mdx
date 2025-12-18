@@ -1,6 +1,7 @@
 "use client";
 
-import type { Block, HtmlElements, InlineNode, Patch, PerformanceMetrics, TableElements } from "@stream-mdx/core";
+import type { Block, InlineNode, Patch, PerformanceMetrics } from "@stream-mdx/core";
+import type { HtmlElements, TableElements } from "@stream-mdx/react";
 import type { CoalescingMetrics } from "@stream-mdx/react/renderer/patch-coalescing";
 import type { PatchFlushResult } from "@stream-mdx/react/renderer/patch-commit-scheduler";
 import type { RendererStore } from "@stream-mdx/react/renderer/store";
@@ -19,7 +20,7 @@ import { registerMDXComponents } from "@stream-mdx/react/mdx-client";
 import { MarkdownWorkerClient, type MarkdownWorkerClientOptions } from "@stream-mdx/worker/worker-client";
 import type { DefaultWorkerMode } from "@stream-mdx/worker";
 
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { Fragment, createElement, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 const METRIC_SAMPLE_LIMIT = 1000;
 const COALESCING_RECENT_BATCH_COUNT = 8;
@@ -88,6 +89,15 @@ type PatchEnqueueDebugEvent = {
   priority: "high" | "low";
 };
 
+type PatchBufferDebugEvent = {
+  at: number;
+  type: "PATCH_BUFFER";
+  tx: number;
+  patchCount: number;
+  queueSize: number;
+  priority: "high" | "low";
+};
+
 type PatchFlushDebugEvent = {
   at: number;
   type: "PATCH_FLUSH";
@@ -122,14 +132,16 @@ type FlushBatchSample = {
   coalescing?: CoalescingMetrics | null;
 };
 
-type DebugEvent = AppendDebugEvent | PatchEnqueueDebugEvent | PatchFlushDebugEvent;
+type DebugEvent = AppendDebugEvent | PatchEnqueueDebugEvent | PatchBufferDebugEvent | PatchFlushDebugEvent;
 
 export type StreamingDemoAutomationApiV2 = {
   setRate?: (value: number) => void;
   setTick?: (value: number) => void;
   setMode?: (mode: "classic" | "worker") => void;
   setMdxEnabled?: (enabled: boolean) => void;
+  setMdxStrategy?: (mode: "server" | "worker") => void;
   setStreamLimit?: (limit: number | null) => void;
+  fastForward?: () => Promise<void>;
   restart?: () => void;
   pause?: () => void;
   resume?: () => void;
@@ -1991,7 +2003,7 @@ export function StreamingMarkdownDemoV2({
         const renderCells = (cells: InlineNode[][], tag: "th" | "td", rowIdx: number) =>
           cells.map((cell, i) => {
             const columnAlign = align?.[i] ?? undefined;
-            const cellStyle = columnAlign ? ({ textAlign: columnAlign } satisfies React.CSSProperties) : undefined;
+            const cellStyle = columnAlign ? ({ textAlign: columnAlign } satisfies CSSProperties) : undefined;
             const Comp = tag === "th" ? El.Th : El.Td;
             return (
               <Comp key={`${rowIdx}-${i}`} style={cellStyle} align={columnAlign ?? undefined}>
@@ -2005,7 +2017,7 @@ export function StreamingMarkdownDemoV2({
             <div className="min-w-max">
               <El.Table className="w-full caption-bottom text-base">
                 {header && header.length > 0 ? <El.Thead>{<El.Tr>{renderCells(header, "th", -1)}</El.Tr>}</El.Thead> : null}
-                <El.Tbody>{rows.map((row, r) => React.createElement(El.Tr, { key: r }, renderCells(row, "td", r)))}</El.Tbody>
+                <El.Tbody>{rows.map((row, r) => createElement(El.Tr, { key: r }, renderCells(row, "td", r)))}</El.Tbody>
               </El.Table>
             </div>
           </ScrollAreaHorizontal>
@@ -2424,7 +2436,7 @@ export function StreamingMarkdownDemoV2({
             <div className="text-right text-muted text-xs">
               <div>duration total {formatMs(coalescingTotalsSnapshot.durationMs, 2)}</div>
               <div>append lines {formatCount(coalescingTotalsSnapshot.appendLines, 0)}</div>
-              <Button size="xs" variant="ghost" className="mt-2" onClick={handleResetCoalescing}>
+              <Button size="sm" variant="ghost" className="mt-2" onClick={handleResetCoalescing}>
                 Reset
               </Button>
             </div>
@@ -2630,7 +2642,7 @@ export function StreamingMarkdownDemoV2({
           features={docPluginConfigRef.current}
           scheduling={rendererScheduling}
           mdxCompileMode={mdxStrategy}
-          mdxComponents={sharedMdxComponents}
+          mdxComponents={sharedMdxComponents as unknown as Record<string, ComponentType<unknown>>}
           prewarmLangs={prewarm ? PREWARM_LANGS : []}
           components={componentRegistry.current.getBlockComponentMap()}
           inlineComponents={componentRegistry.current.getInlineComponentMap()}
