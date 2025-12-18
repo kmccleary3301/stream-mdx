@@ -7,6 +7,7 @@ import type {
   Block,
   CompiledMdxModule,
   InlineNode,
+  InlineStreamingInlineStatus,
   NodeSnapshot,
   Patch,
   PatchMetrics,
@@ -37,6 +38,7 @@ import {
   generateBlockId,
   normalizeBlockquoteText,
   parseCodeFenceInfo,
+  prepareInlineStreamingContent,
   removeHeadingMarkers,
 } from "@stream-mdx/core";
 import { InlineParser, dedentIndentedCode, sanitizeHtmlInWorker, stripCodeFence } from "@stream-mdx/core";
@@ -65,6 +67,9 @@ const CODE_HIGHLIGHT_CACHE = new Map<string, { html: string; lang: string }>();
 const MAX_CODE_HIGHLIGHT_CACHE_ENTRIES = 200;
 type WorkerMdxMode = "server" | "worker";
 let mdxCompileMode: WorkerMdxMode = "server";
+let enableFormatAnticipation = false;
+let enableLiveCodeHighlighting = false;
+let enableMath = true;
 const WORKER_MDX_CACHE = new Map<string, CompiledMdxModule>();
 const WORKER_MDX_INFLIGHT = new Map<string, Promise<CompiledMdxModule>>();
 const MAX_WORKER_MDX_CACHE_ENTRIES = 128;
@@ -403,56 +408,27 @@ function mapToHighlightRecord(map: Map<string, { time: number; count: number }>)
   return result;
 }
 
+type InlineStreamingParseResult = { inline: InlineNode[]; status: InlineStreamingInlineStatus };
+
 /**
- * Safe inline parsing for streaming content that may have incomplete expressions
+ * Safe inline parsing for streaming content that may have incomplete expressions.
+ *
+ * When `enableFormatAnticipation` is on, this will append missing closers (e.g. `*`, `**`, `` ` ``, `~~`)
+ * to allow the inline parser to withhold leading markers while streaming.
  */
+function parseInlineStreaming(content: string): InlineStreamingParseResult {
+  const prepared = prepareInlineStreamingContent(content, { formatAnticipation: enableFormatAnticipation, math: enableMath });
+  if (prepared.kind === "raw") {
+    return { inline: [{ kind: "text", text: content }], status: prepared.status };
+  }
+  return {
+    inline: inlineParser.parse(prepared.content, { cache: false }),
+    status: prepared.status,
+  };
+}
+
 function parseInlineStreamingSafe(content: string): InlineNode[] {
-  // Fast parity checks (avoid regex allocations on hot path).
-  let dollarCount = 0;
-  let backtickCount = 0;
-  let starCount = 0;
-  let doubleStarCount = 0;
-
-  for (let i = 0; i < content.length; i++) {
-    const code = content.charCodeAt(i);
-    // '$'
-    if (code === 36) {
-      dollarCount += 1;
-      continue;
-    }
-    // '`'
-    if (code === 96) {
-      backtickCount += 1;
-      continue;
-    }
-    // '*'
-    if (code === 42) {
-      if (i + 1 < content.length && content.charCodeAt(i + 1) === 42) {
-        doubleStarCount += 1;
-        starCount += 2;
-        i += 1;
-      } else {
-        starCount += 1;
-      }
-    }
-  }
-
-  const hasIncompleteMath = dollarCount % 2 !== 0;
-  if (hasIncompleteMath) {
-    return [{ kind: "text", text: content }];
-  }
-
-  const hasIncompleteCode = backtickCount % 2 !== 0;
-  const hasIncompleteStrong = doubleStarCount % 2 !== 0;
-  const singleStarCount = starCount - doubleStarCount * 2;
-  const hasIncompleteEmphasis = singleStarCount % 2 !== 0;
-
-  if (hasIncompleteCode || hasIncompleteStrong || hasIncompleteEmphasis) {
-    return [{ kind: "text", text: content }];
-  }
-
-  // Safe to parse with full inline parser; avoid caching intermediate streaming states.
-  return inlineParser.parse(content, { cache: false });
+  return parseInlineStreaming(content).inline;
 }
 
 /**
@@ -468,13 +444,12 @@ async function initialize(
     tables?: boolean;
     callouts?: boolean;
     math?: boolean;
+    formatAnticipation?: boolean;
+    liveCodeHighlighting?: boolean;
   },
   mdxOptions?: { compileMode?: WorkerMdxMode },
 ) {
   performanceTimer = new PerformanceTimer();
-  inlineParser = new InlineParser();
-  // Make inline parser available to document plugins (e.g., for footnote definition parsing)
-  documentPluginState.inlineParser = inlineParser;
   blocks = [];
   lastTree = null;
   currentContent = "";
@@ -499,7 +474,17 @@ async function initialize(
     tables: docPlugins?.tables ?? true,
     callouts: docPlugins?.callouts ?? false,
     math: docPlugins?.math ?? true,
+    formatAnticipation: docPlugins?.formatAnticipation ?? false,
+    liveCodeHighlighting: docPlugins?.liveCodeHighlighting ?? false,
   };
+
+  enableMath = enable.math;
+  enableFormatAnticipation = enable.formatAnticipation;
+  enableLiveCodeHighlighting = enable.liveCodeHighlighting;
+
+  inlineParser = new InlineParser({ enableMath });
+  // Make inline parser available to document plugins (e.g., for footnote definition parsing)
+  documentPluginState.inlineParser = inlineParser;
 
   if (enable.footnotes) registerFootnotesPlugin();
   if (enable.tables) globalDocumentPluginRegistry.register(TablesPlugin);
@@ -783,8 +768,15 @@ async function enrichBlock(block: Block) {
       if (block.isFinalized) {
         block.payload.raw = normalizedHeading;
         block.payload.inline = inlineParser.parse(normalizedHeading);
+        if (enableFormatAnticipation && block.payload.meta) {
+          (block.payload.meta as Record<string, unknown>).inlineStatus = undefined;
+        }
       } else {
-        block.payload.inline = parseInlineStreamingSafe(normalizedHeading);
+        const parsed = parseInlineStreaming(normalizedHeading);
+        block.payload.inline = parsed.inline;
+        if (enableFormatAnticipation && block.payload.meta) {
+          (block.payload.meta as Record<string, unknown>).inlineStatus = parsed.status;
+        }
       }
       break;
     }
@@ -792,7 +784,9 @@ async function enrichBlock(block: Block) {
     case "blockquote": {
       const normalized = normalizeBlockquoteText(block.payload.raw ?? "");
       block.payload.raw = normalized;
-      const segments = extractMixedContentSegments(normalized, undefined, (value) => inlineParser.parse(value));
+      const streamingParsed = !block.isFinalized ? parseInlineStreaming(normalized) : null;
+      const inlineParse = block.isFinalized ? (value: string) => inlineParser.parse(value) : (value: string) => parseInlineStreaming(value).inline;
+      const segments = extractMixedContentSegments(normalized, undefined, inlineParse);
       const currentMeta = (block.payload.meta ?? {}) as Record<string, unknown>;
       const nextMeta: Record<string, unknown> = {
         ...currentMeta,
@@ -803,6 +797,9 @@ async function enrichBlock(block: Block) {
       } else {
         nextMeta.mixedSegments = undefined;
       }
+      if (enableFormatAnticipation) {
+        nextMeta.inlineStatus = block.isFinalized ? undefined : streamingParsed?.status;
+      }
       if (Object.keys(nextMeta).length > 0) {
         block.payload.meta = nextMeta;
       } else {
@@ -812,22 +809,40 @@ async function enrichBlock(block: Block) {
       if (block.isFinalized) {
         block.payload.inline = inlineParser.parse(normalized);
       } else {
-        block.payload.inline = parseInlineStreamingSafe(normalized);
+        block.payload.inline = streamingParsed?.inline ?? [{ kind: "text", text: normalized }];
       }
       break;
     }
 
     case "paragraph": {
       const rawParagraph = typeof block.payload.raw === "string" ? block.payload.raw : "";
+      const streamingParsed = !block.isFinalized ? parseInlineStreaming(rawParagraph) : null;
       // Parse inline content, but be careful with incomplete expressions during streaming
-      const inlineParse = block.isFinalized ? (value: string) => inlineParser.parse(value) : parseInlineStreamingSafe;
-      block.payload.inline = inlineParse(rawParagraph);
+      const inlineParse =
+        block.isFinalized ? (value: string) => inlineParser.parse(value) : (value: string) => parseInlineStreaming(value).inline;
+      block.payload.inline = block.isFinalized ? inlineParse(rawParagraph) : streamingParsed?.inline ?? [{ kind: "text", text: rawParagraph }];
 
       const currentMeta = (block.payload.meta ?? {}) as Record<string, unknown>;
       const nextMeta: Record<string, unknown> = { ...currentMeta };
       let metaChanged = false;
 
-      const mathRanges = collectMathProtectedRanges(rawParagraph);
+      if (enableFormatAnticipation) {
+        const desired = block.isFinalized ? undefined : streamingParsed?.status;
+        if (desired !== undefined) {
+          if (!Object.prototype.hasOwnProperty.call(nextMeta, "inlineStatus") || nextMeta.inlineStatus !== desired) {
+            nextMeta.inlineStatus = desired;
+            metaChanged = true;
+          }
+        } else if (Object.prototype.hasOwnProperty.call(nextMeta, "inlineStatus")) {
+          nextMeta.inlineStatus = undefined;
+          metaChanged = true;
+        }
+      } else if (Object.prototype.hasOwnProperty.call(nextMeta, "inlineStatus")) {
+        nextMeta.inlineStatus = undefined;
+        metaChanged = true;
+      }
+
+      const mathRanges = enableMath ? collectMathProtectedRanges(rawParagraph) : [];
       if (mathRanges.length > 0) {
         nextMeta.protectedRanges = mathRanges;
         metaChanged = true;
@@ -999,9 +1014,9 @@ function collectMathProtectedRanges(content: string): ProtectedRange[] {
 /**
  * Enrich code blocks with syntax highlighting
  */
-async function enrichCodeBlock(block: Block) {
-  performanceTimer.mark("highlight-code");
-  const metrics = getActiveMetricsCollector();
+	async function enrichCodeBlock(block: Block) {
+	  performanceTimer.mark("highlight-code");
+	  const metrics = getActiveMetricsCollector();
 
   const raw = block.payload.raw ?? "";
   const { code, info, hadFence } = stripCodeFence(raw);
@@ -1011,16 +1026,16 @@ async function enrichCodeBlock(block: Block) {
   let resolvedLanguage = requestedLanguage;
   let cachedHighlight = getHighlightCacheEntry(requestedLanguage, codeBody);
 
-  // Avoid expensive/highly-variable syntax highlighting while a code block is still streaming (dirty tail).
-  // This keeps the worker from stalling on large/incomplete code fragments; highlighting is restored once finalized.
-  if (!block.isFinalized) {
-    block.payload.highlightedHtml = undefined;
-    block.payload.meta = {
-      ...meta,
-      lang: resolvedLanguage,
-    };
-    return;
-  }
+	  // Avoid expensive/highly-variable syntax highlighting while a code block is still streaming (dirty tail),
+	  // unless the caller explicitly opted into "live" highlighting for demo/testing.
+	  if (!block.isFinalized && !enableLiveCodeHighlighting) {
+	    block.payload.highlightedHtml = undefined;
+	    block.payload.meta = {
+	      ...meta,
+	      lang: resolvedLanguage,
+	    };
+	    return;
+	  }
 
   if (!cachedHighlight && highlighter && codeBody.trim()) {
     try {
@@ -1043,17 +1058,19 @@ async function enrichCodeBlock(block: Block) {
         defaultColor: false,
       });
 
-      const enhanced = enhanceHighlightedHtml(highlighted, resolvedLanguage);
-      block.payload.highlightedHtml = enhanced;
-      setHighlightCacheEntry(resolvedLanguage, codeBody, enhanced);
-      if (resolvedLanguage !== requestedLanguage) {
-        setHighlightCacheEntry(requestedLanguage, codeBody, enhanced);
-      }
-      cachedHighlight = getHighlightCacheEntry(resolvedLanguage, codeBody);
-    } catch (error) {
-      console.warn("Highlighting failed for", requestedLanguage, error);
-      resolvedLanguage = "text";
-    }
+	      const enhanced = enhanceHighlightedHtml(highlighted, resolvedLanguage);
+	      block.payload.highlightedHtml = enhanced;
+	      if (block.isFinalized) {
+	        setHighlightCacheEntry(resolvedLanguage, codeBody, enhanced);
+	        if (resolvedLanguage !== requestedLanguage) {
+	          setHighlightCacheEntry(requestedLanguage, codeBody, enhanced);
+	        }
+	      }
+	      cachedHighlight = getHighlightCacheEntry(resolvedLanguage, codeBody);
+	    } catch (error) {
+	      console.warn("Highlighting failed for", requestedLanguage, error);
+	      resolvedLanguage = "text";
+	    }
   }
 
   if (cachedHighlight) {

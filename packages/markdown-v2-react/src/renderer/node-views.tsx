@@ -1,4 +1,4 @@
-import type { Block, InlineNode, MixedContentSegment } from "@stream-mdx/core";
+import { stripCodeFence, type Block, type InlineNode, type MixedContentSegment } from "@stream-mdx/core";
 import React from "react";
 import { renderInlineNodes, renderParagraphMixedSegments } from "../components";
 import type { ComponentRegistry } from "../components";
@@ -40,8 +40,39 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
     return null;
   }
 
+  const inlineComponents = registry.getInlineComponents();
+
   if (!block.isFinalized) {
     const raw = typeof block.payload.raw === "string" ? block.payload.raw : "";
+    const meta = (block.payload.meta ?? {}) as { inlineStatus?: string; mixedSegments?: MixedContentSegment[] };
+    const segments = Array.isArray(meta.mixedSegments) ? meta.mixedSegments : [];
+    // Preserve the existing behavior for MDX/HTML-mixed paragraphs while streaming.
+    if (segments.length > 0) {
+      return <p className="markdown-paragraph streaming-partial">{raw}</p>;
+    }
+
+    if (meta.inlineStatus === "complete" || meta.inlineStatus === "anticipated") {
+      const inlineNodes = block.payload.inline ?? [];
+      const containsDisplayMath = inlineNodes.some((node) => node.kind === "math-display");
+      if (containsDisplayMath) {
+        const derivedSegments: MixedContentSegment[] = [
+          {
+            kind: "text",
+            value: raw,
+            inline: inlineNodes,
+          },
+        ];
+        const structured = renderParagraphMixedSegments(derivedSegments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS);
+        if (structured.length === 1) {
+          const [single] = structured;
+          return React.isValidElement(single) ? single : single;
+        }
+        return structured;
+      }
+
+      return <p className="markdown-paragraph streaming-partial">{renderInlineNodes(inlineNodes, inlineComponents)}</p>;
+    }
+
     return <p className="markdown-paragraph streaming-partial">{raw}</p>;
   }
 
@@ -55,7 +86,6 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
     return <p className="markdown-paragraph">{raw}</p>;
   }
 
-  const inlineComponents = registry.getInlineComponents();
   const segments = Array.isArray((block.payload.meta as { mixedSegments?: MixedContentSegment[] } | undefined)?.mixedSegments)
     ? ((block.payload.meta as { mixedSegments?: MixedContentSegment[] }).mixedSegments as MixedContentSegment[])
     : undefined;
@@ -633,37 +663,46 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
   );
 
   const codeFrameClass = "not-prose my-3 flex flex-col rounded-lg border border-input pt-1 font-mono text-sm";
-  const scrollShimStyle = { minWidth: "100%", display: "table" } as const;
 
-  // For virtualized code, wrap in scrollable container with spacer elements
-  if (shouldVirtualize) {
-    const { containerRef, window, handleScroll, lineHeight } = virtualization;
-    const spacerTop = window.startIndex * lineHeight;
-    const spacerBottom = (window.totalLines - window.endIndex) * lineHeight;
+  const codeView = shouldVirtualize ? (
+    (() => {
+      const { containerRef, window, handleScroll, lineHeight } = virtualization;
+      const spacerTop = window.startIndex * lineHeight;
+      const spacerBottom = (window.totalLines - window.endIndex) * lineHeight;
+      return (
+        <pre className={codeFrameClass}>
+          <div
+            ref={containerRef}
+            className="markdown-code-block-container relative"
+            style={{ overflowY: "auto", overflowX: "hidden", maxHeight: "600px" }}
+            onScroll={handleScroll}
+          >
+            <div style={{ height: spacerTop }} aria-hidden="true" />
+            {rendered}
+            <div style={{ height: spacerBottom }} aria-hidden="true" />
+          </div>
+        </pre>
+      );
+    })()
+  ) : (
+    <pre className={codeFrameClass}>{rendered}</pre>
+  );
 
-    return (
-      <pre className={codeFrameClass}>
-        <div
-          ref={containerRef}
-          className="markdown-code-block-container relative"
-          style={{ overflowY: "auto", overflowX: "auto", maxHeight: "600px" }}
-          onScroll={handleScroll}
-        >
-          <div style={{ height: spacerTop }} aria-hidden="true" />
-          <div style={scrollShimStyle}>{rendered}</div>
-          <div style={{ height: spacerBottom }} aria-hidden="true" />
-        </div>
-      </pre>
-    );
+  const blockComponentMap = registry.getBlockComponentMap() as Record<string, unknown>;
+  const MermaidComponent = Object.prototype.hasOwnProperty.call(blockComponentMap, "mermaid") ? (blockComponentMap as any).mermaid : null;
+  if ((lang ?? "").toLowerCase() === "mermaid" && MermaidComponent) {
+    const raw = typeof node.block.payload.raw === "string" ? node.block.payload.raw : "";
+    const fenced = stripCodeFence(raw);
+    const code = fenced.hadFence ? fenced.code : raw;
+    return React.createElement(MermaidComponent as React.ComponentType<any>, {
+      code,
+      renderCode: codeView,
+      meta: node.block.payload.meta,
+      isFinalized: node.block.isFinalized,
+    });
   }
 
-  return (
-    <pre className={codeFrameClass}>
-      <div className="markdown-code-block-container relative min-w-0 overflow-x-auto">
-        <div style={scrollShimStyle}>{rendered}</div>
-      </div>
-    </pre>
-  );
+  return codeView;
 });
 
 CodeBlockView.displayName = "CodeBlockView";

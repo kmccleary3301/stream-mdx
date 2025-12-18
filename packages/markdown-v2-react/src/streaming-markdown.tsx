@@ -42,6 +42,8 @@ export interface StreamingFeatureFlags {
   tables?: boolean;
   callouts?: boolean;
   math?: boolean;
+  formatAnticipation?: boolean;
+  liveCodeHighlighting?: boolean;
 }
 
 /**
@@ -74,6 +76,7 @@ export interface RendererStateSnapshot {
   queueDepth: number;
   pendingBatches: number;
   isPaused: boolean;
+  workerReady: boolean;
   rendererVersion: number;
   store: RendererStore;
   lastMetrics: RendererMetrics | null;
@@ -451,6 +454,7 @@ function StreamingMarkdownComponent(
           queueDepth: renderer.getPendingQueueSize(),
           pendingBatches: renderer.getPendingQueueSize(),
           isPaused: renderer.isPaused(),
+          workerReady: workerReadyRef.current,
           rendererVersion: store.getVersion(),
           store,
           lastMetrics: lastMetricsRef.current,

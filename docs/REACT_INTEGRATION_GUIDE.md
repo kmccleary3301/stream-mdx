@@ -120,7 +120,7 @@ export function StreamingComponent({ text }: { text: string }) {
 | `text` | `string` | Static markdown content. Changing it restarts the session. |
 | `stream` | `AsyncIterable<string>` | Streaming markdown chunks. Use for live updates. |
 | `worker` | `Worker \| URL \| string \| () => Worker` | Worker instance/URL/factory. Recommended: `"/workers/markdown-worker.js"`. |
-| `features` | `object` | Feature flags: `{ math?, mdx?, tables?, html?, callouts?, footnotes? }` |
+| `features` | `object` | Feature flags: `{ math?, mdx?, tables?, html?, callouts?, footnotes?, formatAnticipation? }` |
 | `mdxCompileMode` | `"server" \| "worker"` | Enables MDX compilation/hydration and selects strategy. |
 | `mdxComponents` | `object` | Component map passed to hydrated MDX blocks. |
 | `components` | `object` | Override block components (headings, code, tables, etc.). |
@@ -461,6 +461,27 @@ export function CustomStyledMarkdown({ text }: { text: string }) {
 }
 ```
 
+### Mermaid Diagrams (Optional)
+
+StreamMDX treats fenced ` ```mermaid ` code blocks as normal code blocks by default.
+
+To render Mermaid diagrams (with a Diagram/Code toggle), install the add-on and register the `mermaid` block component:
+
+```bash
+npm install @stream-mdx/mermaid
+```
+
+```tsx
+import { StreamingMarkdown } from "stream-mdx";
+import { MermaidBlock } from "@stream-mdx/mermaid";
+
+export function MermaidDemo({ text }: { text: string }) {
+  return <StreamingMarkdown text={text} components={{ mermaid: MermaidBlock }} />;
+}
+```
+
+The Code view uses the same optimized code rendering path (including incremental updates and virtualization) because StreamMDX passes the standard code renderer into the Mermaid component.
+
 ### Override Inline Components
 
 ```tsx
@@ -681,7 +702,7 @@ export async function POST(request: NextRequest) {
 }
 ```
 
-### Feature Flags: Math, HTML, MDX
+### Feature Flags: Math, HTML, MDX, Format Anticipation
 
 The `features` prop on `<StreamingMarkdown />` controls built‑in domains:
 
@@ -695,6 +716,7 @@ The `features` prop on `<StreamingMarkdown />` controls built‑in domains:
     tables: true,
     callouts: true,
     footnotes: true,
+    formatAnticipation: false,
   }}
 />
 ```
@@ -702,6 +724,7 @@ The `features` prop on `<StreamingMarkdown />` controls built‑in domains:
 - Set `math: false` to disable math detection/rendering and treat math as plain text.
 - Set `mdx: false` to skip MDX detection/compilation and render MDX markup as regular markdown/text.
 - Set `html: false` to avoid inline/block HTML plugins beyond the core sanitization path.
+- Set `formatAnticipation: true` to withhold formatting markers while streaming (initial support: `*`, `**`, `` ` ``, `~~`).
 
 Under the hood these flags drive worker doc plugins and React bindings for those domains without you having to touch internal APIs.
 

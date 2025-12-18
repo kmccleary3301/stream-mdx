@@ -1,75 +1,36 @@
-"use client";
+import fs from "node:fs";
+import path from "node:path";
 
-import { useMemo, useState } from "react";
-import { StreamingMarkdown } from "stream-mdx";
+import type { Metadata } from "next";
+import { StreamingMarkdownDemoV2 } from "@/components/screens/streaming-markdown-demo-v2";
 
-const sample = `# StreamMDX demo
+export const metadata: Metadata = {
+  title: "Streaming Markdown Demo",
+  description: "Stream the Naive Bayes article into the renderer to evaluate incremental performance.",
+};
 
-This page renders streaming **Markdown**.
-
-- tables
-- math: $R_{\\rho\\sigma\\mu\\nu}$
-- code:
-
-\`\`\`python
-print("hello world")
-\`\`\`
-`;
+function readNaiveBayesDoc(): string {
+  const filePath = path.join(process.cwd(), "app", "demo", "naive-bayes-classifier.mdx");
+  try {
+    const raw = fs.readFileSync(filePath, "utf-8");
+    if (raw.startsWith("---")) {
+      const end = raw.indexOf("\n---", 3);
+      if (end !== -1) return raw.slice(end + 4);
+    }
+    return raw;
+  } catch {
+    return "# Missing test document\nCould not read naive-bayes-classifier.mdx";
+  }
+}
 
 export default function DemoPage() {
-  const [text, setText] = useState(sample);
-  const [features, setFeatures] = useState(() => ({ tables: true, html: true, math: true, mdx: true }));
-  const mdxCompileMode = useMemo(() => (features.mdx ? ("worker" as const) : undefined), [features.mdx]);
-  const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-  const workerUrl = `${basePath}/workers/markdown-worker.js`;
+  const testString = readNaiveBayesDoc();
 
   return (
-    <main style={{ maxWidth: 960, margin: "0 auto", padding: 24, display: "grid", gap: 16 }}>
-      <h1>Demo</h1>
-      <p>
-        This demo expects a hosted worker at <code>{workerUrl}</code>.
-      </p>
-      <fieldset style={{ border: "1px solid rgba(0,0,0,.12)", borderRadius: 8, padding: 12 }}>
-        <legend style={{ padding: "0 6px" }}>Features</legend>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-          {(
-            [
-              ["tables", "Tables"],
-              ["html", "HTML"],
-              ["math", "Math"],
-              ["mdx", "MDX"],
-            ] as const
-          ).map(([key, label]) => (
-            <label key={key} style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <input
-                type="checkbox"
-                checked={features[key]}
-                onChange={(e) => setFeatures((prev) => ({ ...prev, [key]: e.target.checked }))}
-              />
-              {label}
-            </label>
-          ))}
-        </div>
-        {features.mdx ? (
-          <div style={{ marginTop: 8, fontSize: 13, opacity: 0.8 }}>
-            MDX compile mode: <code>{mdxCompileMode}</code>
-          </div>
-        ) : null}
-      </fieldset>
-      <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        rows={10}
-        style={{ width: "100%", padding: 12, borderRadius: 8, border: "1px solid rgba(0,0,0,.2)" }}
-      />
-      <div style={{ border: "1px solid rgba(0,0,0,.12)", borderRadius: 8, padding: 16 }}>
-        <StreamingMarkdown
-          text={text}
-          worker={workerUrl}
-          features={features}
-          mdxCompileMode={mdxCompileMode}
-        />
-      </div>
-    </main>
+    <div className="container mx-auto max-w-4xl py-8">
+      <h1 className="mb-2 text-2xl font-bold">Streaming Markdown Demo</h1>
+      <p className="mb-6 text-muted">Stream the Naive Bayes article into the renderer to evaluate incremental performance.</p>
+      <StreamingMarkdownDemoV2 fullText={testString} />
+    </div>
   );
 }

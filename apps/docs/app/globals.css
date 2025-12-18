@@ -1,74 +1,562 @@
-:root {
-  color-scheme: light;
+@import url("@radix-ui/colors/gray.css");
+@import url("@radix-ui/colors/gray-alpha.css");
+@import url("@radix-ui/colors/gray-dark.css");
+@import url("@radix-ui/colors/gray-dark-alpha.css");
+@import url("@radix-ui/colors/pink.css");
+@import url("@radix-ui/colors/pink-alpha.css");
+@import url("@radix-ui/colors/pink-dark.css");
+@import url("@radix-ui/colors/pink-dark-alpha.css");
+@import url("@radix-ui/colors/yellow.css");
+@import url("@radix-ui/colors/yellow-alpha.css");
+@import url("@radix-ui/colors/yellow-dark.css");
+@import url("@radix-ui/colors/yellow-dark-alpha.css");
+@import url("@radix-ui/colors/black-alpha.css");
+@import url("@radix-ui/colors/white-alpha.css");
+
+@import "./prose.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
-body {
-  margin: 0;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
-    "Segoe UI Emoji";
-  line-height: 1.5;
+@layer components {
+  .markdown-v2-output h1,
+  .markdown-v2-output h2,
+  .markdown-v2-output h3,
+  .markdown-v2-output h4,
+  .markdown-v2-output h5,
+  .markdown-v2-output h6 {
+    font-weight: 700;
+    color: var(--tw-prose-headings, var(--foreground));
+    letter-spacing: -0.01em;
+  }
+
+  .markdown-v2-output h1 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    font-size: 2rem;
+    line-height: 1.3;
+  }
+
+  .markdown-v2-output h2 {
+    margin-top: 1.5em;
+    margin-bottom: 0.75em;
+    font-size: 1.5em;
+    line-height: 1.333;
+  }
+
+  .markdown-v2-output h3 {
+    margin-top: 1.5em;
+    margin-bottom: 0.75em;
+    font-size: 1.25em;
+    line-height: 1.6;
+  }
+
+  .markdown-v2-output h4 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    font-size: 1.125em;
+    line-height: 1.55;
+  }
+
+  .markdown-v2-output h5 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    font-size: 1.0625em;
+    line-height: 1.5;
+  }
+
+  .markdown-v2-output h6 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    font-size: 1em;
+    line-height: 1.5;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .markdown-v2-output h1 + h2,
+  .markdown-v2-output h2 + h3,
+  .markdown-v2-output h3 + h4 {
+    margin-top: 0.75em;
+  }
+
+  .markdown-v2-output p + h1,
+  .markdown-v2-output p + h2,
+  .markdown-v2-output p + h3,
+  .markdown-v2-output p + h4,
+  .markdown-v2-output p + h5,
+  .markdown-v2-output p + h6 {
+    margin-top: 1.5em;
+  }
+
+  .markdown-v2-output .markdown-list {
+    --list-indent: 2.5rem;
+
+    display: flex;
+    flex-direction: column;
+    padding-left: var(--list-indent, 2.5rem);
+    margin: 1.25em 0;
+    list-style: none;
+  }
+
+  .markdown-v2-output .markdown-list[data-list-depth="1"] {
+    --list-indent: 2rem;
+  }
+
+  .markdown-v2-output .markdown-list[data-list-depth="2"],
+  .markdown-v2-output .markdown-list[data-list-depth="3"] {
+    --list-indent: 1.5rem;
+  }
+
+  .markdown-v2-output .markdown-list .markdown-list {
+    margin-top: 0.25rem;
+    margin-left: 1rem;
+  }
+
+  .markdown-v2-output .markdown-list-item {
+    position: relative;
+    display: block;
+    padding-left: 0;
+    margin: 0.1rem 0;
+  }
+
+  .markdown-v2-output .markdown-list-item::before {
+    position: absolute;
+    top: 0;
+    left: calc(-1 * var(--list-indent, 2.5rem));
+    width: calc(var(--list-indent, 2.5rem) - 0.5rem);
+    padding-right: 0.5rem;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    content: attr(data-counter-text);
+    opacity: 0.6;
+  }
+
+  .markdown-v2-output .markdown-list.ordered > .markdown-list-item::before {
+    content: attr(data-counter-text) " ";
+  }
+
+  .markdown-v2-output .markdown-list.unordered > .markdown-list-item::before {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    width: calc(var(--list-indent, 2.5rem) - 1rem);
+    font-size: 1.1em;
+    opacity: 0.7;
+  }
+
+  .markdown-v2-output .markdown-list-item.markdown-list-item-task::before {
+    content: none;
+  }
+
+  .markdown-v2-output .markdown-list-item > * {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .markdown-v2-output .markdown-list-virtualization-sentinel {
+    height: 1px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    visibility: hidden;
+  }
 }
 
-a {
-  color: inherit;
+@layer base {
+  /*
+  * We are using the Radix UI Colors package to generate a set of color variables that can be used in the project.
+  * @see: https://colors.radix-ui.com/
+  */
+
+  :root {
+    --bg: var(--gray-1);
+    --fg: var(--gray-12);
+    --muted-old: var(--gray-8);
+    --border-old: var(--gray-4);
+    --muted: var(--gray-8);
+    --border: var(--gray-4);
+    --scrollbar-thumb: var(--gray-4);
+    --scrollbar-track: transparent;
+    --selection-background: var(--pink-3);
+    --selection-foreground: var(--pink-11);
+    --kbd-background: var(--gray-3);
+    --kbd-foreground: var(--gray-11);
+    --kbd-border: var(--gray-4);
+    --highlight-background: var(--yellow-3);
+    --highlight-foreground: var(--yellow-11);
+    --radius-small: 4px;
+    --radius-base: 8px;
+    --radius-large: 12px;
+    --background: var(--gray-1);
+    --foreground: var(--gray-12);
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 3.9%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  * {
+    --webkit-font-smoothing: antialiased;
+    --moz-osx-font-smoothing: grayscale;
+
+    font-variant-ligatures: common-ligatures;
+
+    /* text-wrap: pretty; /* This causes wrapping inside code blocks on chrome, even with scroll */
+
+    text-rendering: optimizelegibility;
+  }
+
+  *::selection {
+    color: var(--selection-foreground);
+    background-color: var(--selection-background);
+  }
+
+  html {
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scroll-behavior: smooth;
+  }
+
+  html {
+    @apply text-default text-foreground bg-background;
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      @apply font-medium;
+    }
+
+    h2,
+    h3,
+    sub,
+    sup {
+      @apply text-muted;
+    }
+
+    sub {
+      @apply text-small;
+    }
+
+    a {
+      @apply transition hover:opacity-50;
+    }
+
+    ol {
+      @apply list-decimal;
+    }
+
+    ul {
+      @apply list-disc;
+    }
+
+    kbd {
+      @apply mx-1;
+
+      display: inline-block;
+      min-width: 20px;
+      height: 20px;
+      min-height: 20px;
+      padding: 0 6px;
+      font-size: 12px;
+      line-height: 20px;
+      text-align: center;
+      background: var(--kbd-background);
+      border-radius: 4px;
+      box-shadow: 0 0 0 1px var(--kbd-border);
+    }
+
+    kbd code {
+      display: inline !important;
+      padding: 0;
+      margin: 0;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+
+    kbd code[data-theme*=" "] span[data-line] {
+      display: inline !important;
+    }
+  }
+
+  article {
+    h1 + h2 {
+      margin-top: 4px !important;
+    }
+
+    h1 + p,
+    h2 + p {
+      margin-top: 8px !important;
+    }
+
+    figure + h1,
+    p + h1 {
+      margin-top: 48px !important;
+    }
+
+    p:not(:first-child),
+    h1:not(:first-child),
+    h2:not(:first-child),
+    h3:not(:first-child),
+    h4:not(:first-child),
+    h5:not(:first-child),
+    h6:not(:first-child),
+    blockquote:not(:first-child),
+    ul:not(:first-child),
+    ol:not(:first-child),
+    pre:not(:first-child),
+    figure:not(:first-child) {
+      /* margin-top: 24px; */
+    }
+
+    /*
+    * This handles our highlighting on selection of a table of contents item.
+    */
+
+    [data-highlight] {
+      @apply relative;
+    }
+
+    [data-highlight]::before {
+      @apply absolute inset-0 -inset-x-1 -z-10 bg-transparent transition scale-y-[1.1] content-[""] duration-500;
+    }
+
+    [data-highlight="true"]::before {
+      @apply bg-highlight-background text-highlight-foreground scale-y-110 !important;
+    }
+
+    [data-highlight="false"]::before {
+      @apply bg-transparent scale-y-100;
+    }
+
+    /* 
+    * Here we are setting up the styles for our footnotes and references.
+    */
+
+    .footnotes {
+      position: relative;
+      padding-top: 16px;
+      margin-top: 64px !important;
+      border-top: 1px solid var(--border);
+    }
+
+    .footnotes ol {
+      position: relative;
+      display: block;
+      padding: 0 0 0 4px;
+      margin-top: 16px !important;
+      list-style: none;
+    }
+
+    .footnotes li {
+      margin-top: 0 !important;
+    }
+
+    .footnotes ol li {
+      position: relative;
+      padding-top: 4px;
+      padding-left: 6px;
+      font-size: 12px;
+      color: var(--muted);
+      counter-increment: list;
+    }
+
+    .footnotes ol li::before {
+      position: absolute;
+      top: 0;
+      right: 100%;
+      font-size: 8px;
+      content: counter(list);
+    }
+
+    .footnotes ol li p a {
+      z-index: 2;
+    }
+  }
+
+  /* 
+  * We are using rehypye-pretty to style the code blocks in the project.
+  * rehype-pretty-code is a Rehype plugin powered by the shiki syntax highlighter that provides beautiful code blocks for Markdown or MDX. 
+  * It works on both the server at build-time (avoiding runtime syntax highlighting) and on the client for dynamic highlighting.
+  * @see: https://rehype-pretty.pages.dev/
+  */
+
+  /* 
+  * Here we are setting up the styles needed to enable theme-aware code blocks.
+  * @see: https://rehype-pretty.pages.dev/#multiple-themes-dark-and-light-mode
+  */
+
+  html {
+    code[data-theme*=" "],
+    code[data-theme*=" "] span {
+      min-height: 1.25rem;
+      color: var(--shiki-light);
+      background-color: var(--shiki-light-bg);
+    }
+
+    &.dark {
+      code[data-theme*=" "],
+      code[data-theme*=" "] span {
+        color: var(--shiki-dark);
+        background-color: var(--shiki-dark-bg);
+      }
+    }
+  }
+
+  /* 
+  * Here we are setting up the styles needed to enable line numbers in code blocks.
+  * @see: https://rehype-pretty.pages.dev/#line-numbers
+  */
+
+  html {
+    code[data-line-numbers] {
+      counter-reset: line;
+    }
+
+    code[data-line-numbers] > [data-line]::before {
+      display: inline-block;
+      width: 12px;
+      margin-right: 2rem;
+      color: gray;
+      text-align: right;
+      content: counter(line);
+      counter-increment: line;
+    }
+
+    code[data-line-numbers-max-digits="2"] > [data-line]::before {
+      width: 1.25rem;
+    }
+
+    code[data-line-numbers-max-digits="3"] > [data-line]::before {
+      width: 1.75rem;
+    }
+
+    code[data-line-numbers-max-digits="4"] > [data-line]::before {
+      width: 2.25rem;
+    }
+
+    p [data-line] {
+      padding: 2px 4px;
+      margin-right: 2px;
+      margin-left: 2px;
+      text-align: center;
+      background-color: var(--kbd-background) !important;
+      border-radius: 4px;
+      box-shadow: 0 0 0 1px var(--kbd-border);
+    }
+  }
+
+  /* 
+  * Here we are just some additional styles to make the code blocks look better.
+  * @see: https://rehype-pretty.pages.dev/#styles
+  */
+
+  * {
+    pre {
+      padding: 0;
+      overflow-x: auto;
+      font-size: 12px;
+
+      [data-line] {
+        margin-top: 0 !important;
+      }
+    }
+
+    figure {
+      width: 100%;
+      margin-top: 4px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-base);
+    }
+  }
+
+  .dark {
+    --background: var(--gray-1);
+    --foreground: var(--gray-12);
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: var(--gray-8);
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: var(--gray-4);
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
 }
 
-code,
-pre {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-}
+/*
+  ---break---
+  */
 
-pre {
-  overflow-x: auto;
-  padding: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.03);
-}
+@layer base {
+  * {
+    @apply border-border;
+  }
 
-code {
-  background: rgba(0, 0, 0, 0.06);
-  border-radius: 6px;
-  padding: 0.1em 0.3em;
+  body {
+    @apply bg-background text-foreground;
+  }
 }
-
-.markdown {
-  max-width: 960px;
-}
-
-.markdown h1,
-.markdown h2,
-.markdown h3 {
-  line-height: 1.2;
-  margin-top: 1.4em;
-}
-
-.markdown h1 {
-  margin-top: 0;
-}
-
-.markdown table {
-  border-collapse: collapse;
-  width: 100%;
-}
-
-.markdown th,
-.markdown td {
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  padding: 8px 10px;
-  vertical-align: top;
-}
-
-.markdown blockquote {
-  margin-left: 0;
-  padding-left: 12px;
-  border-left: 3px solid rgba(0, 0, 0, 0.2);
-  color: rgba(0, 0, 0, 0.75);
-}
-
-.markdown hr {
-  border: 0;
-  border-top: 1px solid rgba(0, 0, 0, 0.12);
-  margin: 24px 0;
-}
-

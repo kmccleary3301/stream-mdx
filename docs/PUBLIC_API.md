@@ -12,6 +12,7 @@ StreamMDX is published as both scoped packages and an unscoped convenience wrapp
 | `@stream-mdx/react` | You want the React surface without the wrapper. |
 | `@stream-mdx/worker` | You want the worker client + hosted worker bundle (browser + Node). |
 | `@stream-mdx/core` | You want types + perf/sanitization helpers (no React). |
+| `@stream-mdx/mermaid` | You want optional Mermaid diagrams for fenced ` ```mermaid ` code blocks. |
 | `@stream-mdx/plugins/*` | You are building/customizing a worker bundle or need plugin primitives. |
 
 When you install `stream-mdx`, you can also import:
@@ -52,7 +53,7 @@ const ref = useRef<StreamingMarkdownHandle>(null);
 | `worker` | `Worker \| URL \| string \| () => Worker` | Worker instance/URL/factory. When omitted, the component uses the default worker strategy and falls back to `/workers/markdown-worker.js`. |
 | `managedWorker` | `boolean` | When `true`, the component attaches the worker but does not auto-`restart/append/finalize` for you (use the ref handle). |
 | `prewarmLangs` | `string[]` | Shiki languages to load inside the worker. |
-| `features` | `{ footnotes?, html?, mdx?, tables?, callouts?, math? }` | Toggles built-in feature flags. |
+| `features` | `{ footnotes?, html?, mdx?, tables?, callouts?, math?, formatAnticipation? }` | Toggles built-in feature flags. |
 | `mdxCompileMode` | `"server" \| "worker"` | Enables MDX compilation/hydration and selects the compile strategy. |
 | `components` | `Partial<BlockComponents>` | Override block renders (wrap code/math without affecting the patch scheduler). |
 | `inlineComponents` | `Partial<InlineComponents>` | Override inline renders. |
@@ -129,8 +130,25 @@ See `docs/CLI_USAGE.md` for an example that consumes `PATCH` messages into a `Do
 - `math`: recognizes inline + display math (default delimiters: `$…$` and `$$…$$`).
 - `footnotes`: enables footnote aggregation.
 - `callouts`: enables callout blockquote syntax (disabled by default in the worker).
+- `formatAnticipation`: (opt-in) withholds formatting markers while streaming (initial support: `*`, `**`, `` ` ``, `~~`). Final output is unchanged.
 
 ---
+
+## 3.1) Mermaid (optional)
+
+Mermaid diagrams are provided as an **opt-in addon** via `@stream-mdx/mermaid`.
+
+```bash
+npm install @stream-mdx/mermaid
+```
+
+```tsx
+import { MermaidBlock } from "@stream-mdx/mermaid";
+
+<StreamingMarkdown components={{ mermaid: MermaidBlock }} />;
+```
+
+When registered, fenced ` ```mermaid ` code blocks render as diagrams (with a Diagram/Code toggle). All other code blocks remain unchanged.
 
 ## 4) MDX Compilation Modes
 

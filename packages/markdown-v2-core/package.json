@@ -75,6 +75,11 @@
       "types": "./dist/streaming/custom-matcher.d.ts",
       "import": "./dist/streaming/custom-matcher.mjs",
       "require": "./dist/streaming/custom-matcher.cjs"
+    },
+    "./streaming/inline-streaming": {
+      "types": "./dist/streaming/inline-streaming.d.ts",
+      "import": "./dist/streaming/inline-streaming.mjs",
+      "require": "./dist/streaming/inline-streaming.cjs"
     }
   },
   "files": [

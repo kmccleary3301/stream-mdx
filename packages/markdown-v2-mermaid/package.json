@@ -1,0 +1,45 @@
+{
+  "name": "@stream-mdx/mermaid",
+  "version": "0.0.2",
+  "description": "Mermaid diagram rendering addon for StreamMDX (Streaming Markdown V2)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kmccleary3301/stream-mdx.git",
+    "directory": "packages/markdown-v2-mermaid"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "test": "tsx __tests__/*.test.ts",
+    "clean": "rm -rf dist",
+    "prepack": "npm run build"
+  },
+  "dependencies": {
+    "mermaid": "^11.12.2"
+  },
+  "peerDependencies": {
+    "react": ">=18.2.0",
+    "react-dom": ">=18.2.0"
+  }
+}
+

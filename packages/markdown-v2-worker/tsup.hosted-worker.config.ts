@@ -16,7 +16,9 @@ export default defineConfig({
   minify: false,
   clean: true,
   outDir: join(__dirname, "dist/hosted"),
-  // NOTE: Do not externalize deps; this must be a self-contained file for static hosting.
+  // NOTE: This must be a single self-contained file for static hosting (no bare
+  // module specifiers like `import "character-entities"`).
+  noExternal: [/.*/],
   external: [],
   outExtension() {
     return { js: ".js" };
