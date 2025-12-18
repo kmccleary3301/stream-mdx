@@ -24,7 +24,16 @@ function testPluginForwarding(): void {
   assert.ok(init, "Streaming renderer should send INIT message with docPlugins");
   assert.deepStrictEqual(
     init?.docPlugins,
-    { footnotes: true, html: true, mdx: true, tables: true, callouts: true, math: true, formatAnticipation: true },
+    {
+      footnotes: true,
+      html: true,
+      mdx: true,
+      tables: true,
+      callouts: true,
+      math: true,
+      formatAnticipation: true,
+      liveCodeHighlighting: false,
+    },
     "docPlugins must mirror renderer.feature flags",
   );
   assert.strictEqual(init?.mdx?.compileMode, "worker", "mdx compile mode should propagate to worker");

@@ -5,6 +5,8 @@ export default async function DocsIndexPage() {
   const html = await renderMarkdownToHtml(markdown);
 
   return (
-    <article className="markdown" dangerouslySetInnerHTML={{ __html: html }} />
+    <main style={{ maxWidth: 720, margin: "0 auto", padding: "96px 24px" }}>
+      <article className="prose" dangerouslySetInnerHTML={{ __html: html }} />
+    </main>
   );
 }

@@ -68,6 +68,8 @@ const MAX_CODE_HIGHLIGHT_CACHE_ENTRIES = 200;
 type WorkerMdxMode = "server" | "worker";
 let mdxCompileMode: WorkerMdxMode = "server";
 let enableFormatAnticipation = false;
+let enableLiveCodeHighlighting = false;
+let enableMath = true;
 const WORKER_MDX_CACHE = new Map<string, CompiledMdxModule>();
 const WORKER_MDX_INFLIGHT = new Map<string, Promise<CompiledMdxModule>>();
 const MAX_WORKER_MDX_CACHE_ENTRIES = 128;
@@ -415,7 +417,7 @@ type InlineStreamingParseResult = { inline: InlineNode[]; status: InlineStreamin
  * to allow the inline parser to withhold leading markers while streaming.
  */
 function parseInlineStreaming(content: string): InlineStreamingParseResult {
-  const prepared = prepareInlineStreamingContent(content, { formatAnticipation: enableFormatAnticipation });
+  const prepared = prepareInlineStreamingContent(content, { formatAnticipation: enableFormatAnticipation, math: enableMath });
   if (prepared.kind === "raw") {
     return { inline: [{ kind: "text", text: content }], status: prepared.status };
   }
@@ -443,13 +445,11 @@ async function initialize(
     callouts?: boolean;
     math?: boolean;
     formatAnticipation?: boolean;
+    liveCodeHighlighting?: boolean;
   },
   mdxOptions?: { compileMode?: WorkerMdxMode },
 ) {
   performanceTimer = new PerformanceTimer();
-  inlineParser = new InlineParser();
-  // Make inline parser available to document plugins (e.g., for footnote definition parsing)
-  documentPluginState.inlineParser = inlineParser;
   blocks = [];
   lastTree = null;
   currentContent = "";
@@ -475,15 +475,22 @@ async function initialize(
     callouts: docPlugins?.callouts ?? false,
     math: docPlugins?.math ?? true,
     formatAnticipation: docPlugins?.formatAnticipation ?? false,
+    liveCodeHighlighting: docPlugins?.liveCodeHighlighting ?? false,
   };
+
+  enableMath = enable.math;
+  enableFormatAnticipation = enable.formatAnticipation;
+  enableLiveCodeHighlighting = enable.liveCodeHighlighting;
+
+  inlineParser = new InlineParser({ enableMath });
+  // Make inline parser available to document plugins (e.g., for footnote definition parsing)
+  documentPluginState.inlineParser = inlineParser;
 
   if (enable.footnotes) registerFootnotesPlugin();
   if (enable.tables) globalDocumentPluginRegistry.register(TablesPlugin);
   if (enable.callouts) globalDocumentPluginRegistry.register(CalloutsPlugin);
   if (enable.html) globalDocumentPluginRegistry.register(HTMLBlockPlugin);
   if (enable.mdx) globalDocumentPluginRegistry.register(MDXDetectionPlugin);
-
-  enableFormatAnticipation = enable.formatAnticipation;
 
   performanceTimer.mark("highlighter-init");
 
@@ -835,7 +842,7 @@ async function enrichBlock(block: Block) {
         metaChanged = true;
       }
 
-      const mathRanges = collectMathProtectedRanges(rawParagraph);
+      const mathRanges = enableMath ? collectMathProtectedRanges(rawParagraph) : [];
       if (mathRanges.length > 0) {
         nextMeta.protectedRanges = mathRanges;
         metaChanged = true;
@@ -1007,9 +1014,9 @@ function collectMathProtectedRanges(content: string): ProtectedRange[] {
 /**
  * Enrich code blocks with syntax highlighting
  */
-async function enrichCodeBlock(block: Block) {
-  performanceTimer.mark("highlight-code");
-  const metrics = getActiveMetricsCollector();
+	async function enrichCodeBlock(block: Block) {
+	  performanceTimer.mark("highlight-code");
+	  const metrics = getActiveMetricsCollector();
 
   const raw = block.payload.raw ?? "";
   const { code, info, hadFence } = stripCodeFence(raw);
@@ -1019,16 +1026,16 @@ async function enrichCodeBlock(block: Block) {
   let resolvedLanguage = requestedLanguage;
   let cachedHighlight = getHighlightCacheEntry(requestedLanguage, codeBody);
 
-  // Avoid expensive/highly-variable syntax highlighting while a code block is still streaming (dirty tail).
-  // This keeps the worker from stalling on large/incomplete code fragments; highlighting is restored once finalized.
-  if (!block.isFinalized) {
-    block.payload.highlightedHtml = undefined;
-    block.payload.meta = {
-      ...meta,
-      lang: resolvedLanguage,
-    };
-    return;
-  }
+	  // Avoid expensive/highly-variable syntax highlighting while a code block is still streaming (dirty tail),
+	  // unless the caller explicitly opted into "live" highlighting for demo/testing.
+	  if (!block.isFinalized && !enableLiveCodeHighlighting) {
+	    block.payload.highlightedHtml = undefined;
+	    block.payload.meta = {
+	      ...meta,
+	      lang: resolvedLanguage,
+	    };
+	    return;
+	  }
 
   if (!cachedHighlight && highlighter && codeBody.trim()) {
     try {
@@ -1051,17 +1058,19 @@ async function enrichCodeBlock(block: Block) {
         defaultColor: false,
       });
 
-      const enhanced = enhanceHighlightedHtml(highlighted, resolvedLanguage);
-      block.payload.highlightedHtml = enhanced;
-      setHighlightCacheEntry(resolvedLanguage, codeBody, enhanced);
-      if (resolvedLanguage !== requestedLanguage) {
-        setHighlightCacheEntry(requestedLanguage, codeBody, enhanced);
-      }
-      cachedHighlight = getHighlightCacheEntry(resolvedLanguage, codeBody);
-    } catch (error) {
-      console.warn("Highlighting failed for", requestedLanguage, error);
-      resolvedLanguage = "text";
-    }
+	      const enhanced = enhanceHighlightedHtml(highlighted, resolvedLanguage);
+	      block.payload.highlightedHtml = enhanced;
+	      if (block.isFinalized) {
+	        setHighlightCacheEntry(resolvedLanguage, codeBody, enhanced);
+	        if (resolvedLanguage !== requestedLanguage) {
+	          setHighlightCacheEntry(requestedLanguage, codeBody, enhanced);
+	        }
+	      }
+	      cachedHighlight = getHighlightCacheEntry(resolvedLanguage, codeBody);
+	    } catch (error) {
+	      console.warn("Highlighting failed for", requestedLanguage, error);
+	      resolvedLanguage = "text";
+	    }
   }
 
   if (cachedHighlight) {

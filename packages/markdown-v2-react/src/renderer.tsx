@@ -106,6 +106,7 @@ export class MarkdownRenderer implements Renderer {
           callouts: this.config.plugins?.callouts ?? false,
           math: this.config.plugins?.math ?? true,
           formatAnticipation: this.config.plugins?.formatAnticipation ?? false,
+          liveCodeHighlighting: this.config.plugins?.liveCodeHighlighting ?? false,
         },
         mdx: {
           compileMode: this.config.mdx?.compileStrategy ?? "server",
@@ -179,6 +180,7 @@ export class MarkdownRenderer implements Renderer {
           callouts: this.config.plugins?.callouts ?? false,
           math: this.config.plugins?.math ?? true,
           formatAnticipation: this.config.plugins?.formatAnticipation ?? false,
+          liveCodeHighlighting: this.config.plugins?.liveCodeHighlighting ?? false,
         },
         mdx: {
           compileMode: this.config.mdx?.compileStrategy ?? "server",

@@ -8,6 +8,12 @@ export interface InlineParserOptions {
    * parsing many intermediate states.
    */
   maxCacheEntries?: number;
+
+  /**
+   * Enable parsing `$...$` and `$$...$$` math nodes.
+   * Defaults to `true`.
+   */
+  enableMath?: boolean;
 }
 
 export interface InlineParseOptions {
@@ -29,7 +35,7 @@ export class InlineParser {
   constructor(options: InlineParserOptions = {}) {
     this.maxCacheEntries = Number.isFinite(options.maxCacheEntries ?? Number.NaN) ? Math.max(0, options.maxCacheEntries ?? 0) : 2000;
     // Register default plugins
-    this.registerDefaultPlugins();
+    this.registerDefaultPlugins({ enableMath: options.enableMath !== false });
   }
 
   /**
@@ -117,11 +123,33 @@ export class InlineParser {
    * Register default plugins with proper precedence ordering
    * Lower priority numbers = higher precedence (run first)
    */
-  private registerDefaultPlugins(): void {
-    // Handle escaped punctuation before other plugins consume the characters
+  private registerDefaultPlugins(options: { enableMath: boolean }): void {
+    // HIGHEST PRECEDENCE: Math must run before escape processing so TeX sequences like `\\`
+    // (line breaks inside `$$...$$`) aren't split apart by the escape plugin.
+    if (options.enableMath) {
+      this.registerPlugin({
+        id: "math-display",
+        priority: 0,
+        re: /\$\$([\s\S]+?)\$\$/g,
+        toNode: (match) => ({ kind: "math-display", tex: match[1].trim() }),
+        fastCheck: (text) => text.indexOf("$$") !== -1,
+      } as RegexInlinePlugin);
+
+      // Inline math (shorter pattern, runs after display math)
+      this.registerPlugin({
+        id: "math-inline",
+        priority: 1,
+        re: /\$([^$\n]+?)\$/g, // Non-greedy to prevent spanning multiple expressions
+        toNode: (match) => ({ kind: "math-inline", tex: match[1].trim() }),
+        fastCheck: (text) => text.indexOf("$") !== -1,
+      } as RegexInlinePlugin);
+    }
+
+    // Handle escaped punctuation before other plugins consume the characters.
+    // Runs after math so math nodes remain intact.
     this.registerPlugin({
       id: "escaped-character",
-      priority: 0,
+      priority: 2,
       re: /\\([\\`*_{}\[\]()#+\-.!>])/g,
       toNode: (match) => ({
         kind: "text",
@@ -130,22 +158,15 @@ export class InlineParser {
       fastCheck: (text) => text.indexOf("\\") !== -1,
     } as RegexInlinePlugin);
 
-    // HIGHEST PRECEDENCE: Display math first (longer pattern)
+    // Hard line breaks:
+    // - CommonMark: two (or more) trailing spaces + newline
+    // - CommonMark: backslash + newline
     this.registerPlugin({
-      id: "math-display",
-      priority: 1,
-      re: /\$\$([^$]+?)\$\$/g,
-      toNode: (match) => ({ kind: "math-display", tex: match[1].trim() }),
-      fastCheck: (text) => text.indexOf("$$") !== -1,
-    } as RegexInlinePlugin);
-
-    // Inline math (shorter pattern, runs after display math)
-    this.registerPlugin({
-      id: "math-inline",
+      id: "hard-break",
       priority: 2,
-      re: /\$([^$\n]+?)\$/g, // Non-greedy to prevent spanning multiple expressions
-      toNode: (match) => ({ kind: "math-inline", tex: match[1].trim() }),
-      fastCheck: (text) => text.indexOf("$") !== -1,
+      re: /\\\r?\n| {2,}\r?\n/g,
+      toNode: (_match) => ({ kind: "br" }),
+      fastCheck: (text) => text.indexOf("\n") !== -1 || text.indexOf("\r") !== -1,
     } as RegexInlinePlugin);
 
     // Code spans (high precedence to avoid conflicts with other syntax)

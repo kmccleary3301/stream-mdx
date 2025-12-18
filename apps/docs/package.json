@@ -8,7 +8,16 @@
     "start": "next start"
   },
   "dependencies": {
+    "@stream-mdx/mermaid": "0.0.2",
+    "@radix-ui/colors": "^3.0.0",
+    "@radix-ui/react-scroll-area": "^1.2.2",
+    "@radix-ui/react-slider": "^1.2.2",
+    "@radix-ui/react-slot": "^1.1.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "katex": "^0.16.22",
     "next": "15.5.9",
+    "react-markdown": "^10.1.0",
     "rehype-autolink-headings": "^7.1.0",
     "rehype-slug": "^6.0.0",
     "rehype-stringify": "^10.0.1",
@@ -17,12 +26,18 @@
     "remark": "^15.0.1",
     "remark-gfm": "^4.0.1",
     "remark-rehype": "^11.1.2",
-    "stream-mdx": "0.0.2"
+    "streamdown": "^1.6.10",
+    "stream-mdx": "0.0.2",
+    "tailwind-merge": "^3.3.1",
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "postcss": "^8.5.6",
+    "postcss-nested": "^6.2.0",
+    "tailwindcss": "^3.4.17",
     "typescript": "^5.7.2"
   }
 }

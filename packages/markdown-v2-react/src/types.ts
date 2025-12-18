@@ -85,6 +85,7 @@ export interface RendererConfig {
     callouts?: boolean;
     math?: boolean;
     formatAnticipation?: boolean;
+    liveCodeHighlighting?: boolean;
   };
   performance?: {
     frameBudgetMs?: number;

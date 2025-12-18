@@ -13,8 +13,12 @@ export type InlineStreamingPrepareResult =
       appended: string;
     };
 
-export function prepareInlineStreamingContent(content: string, options?: { formatAnticipation?: boolean }): InlineStreamingPrepareResult {
+export function prepareInlineStreamingContent(
+  content: string,
+  options?: { formatAnticipation?: boolean; math?: boolean },
+): InlineStreamingPrepareResult {
   const enableAnticipation = Boolean(options?.formatAnticipation);
+  const enableMath = options?.math !== false;
 
   // Fast parity checks (avoid regex allocations on hot path).
   let dollarCount = 0;
@@ -55,7 +59,7 @@ export function prepareInlineStreamingContent(content: string, options?: { forma
     }
   }
 
-  const hasIncompleteMath = dollarCount % 2 !== 0;
+  const hasIncompleteMath = enableMath && dollarCount % 2 !== 0;
   if (hasIncompleteMath) {
     // Math anticipation is tabled (we do not append "$" / "$$" yet).
     return { kind: "raw", status: "raw", reason: "incomplete-math" };
@@ -85,4 +89,3 @@ export function prepareInlineStreamingContent(content: string, options?: { forma
 
   return { kind: "parse", status: "anticipated", content: content + appended, appended };
 }
-

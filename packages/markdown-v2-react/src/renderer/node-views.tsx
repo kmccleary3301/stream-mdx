@@ -663,7 +663,6 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
   );
 
   const codeFrameClass = "not-prose my-3 flex flex-col rounded-lg border border-input pt-1 font-mono text-sm";
-  const scrollShimStyle = { minWidth: "100%", display: "table" } as const;
 
   const codeView = shouldVirtualize ? (
     (() => {
@@ -675,22 +674,18 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
           <div
             ref={containerRef}
             className="markdown-code-block-container relative"
-            style={{ overflowY: "auto", overflowX: "auto", maxHeight: "600px" }}
+            style={{ overflowY: "auto", overflowX: "hidden", maxHeight: "600px" }}
             onScroll={handleScroll}
           >
             <div style={{ height: spacerTop }} aria-hidden="true" />
-            <div style={scrollShimStyle}>{rendered}</div>
+            {rendered}
             <div style={{ height: spacerBottom }} aria-hidden="true" />
           </div>
         </pre>
       );
     })()
   ) : (
-    <pre className={codeFrameClass}>
-      <div className="markdown-code-block-container relative min-w-0 overflow-x-auto">
-        <div style={scrollShimStyle}>{rendered}</div>
-      </div>
-    </pre>
+    <pre className={codeFrameClass}>{rendered}</pre>
   );
 
   const blockComponentMap = registry.getBlockComponentMap() as Record<string, unknown>;

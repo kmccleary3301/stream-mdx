@@ -2,6 +2,12 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "jsx": "preserve",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    },
     "plugins": [
       {
         "name": "next"

@@ -82,7 +82,16 @@ export type WorkerIn =
       type: "INIT";
       initialContent?: string;
       prewarmLangs?: string[];
-      docPlugins?: { footnotes?: boolean; html?: boolean; mdx?: boolean; tables?: boolean; callouts?: boolean; math?: boolean; formatAnticipation?: boolean };
+      docPlugins?: {
+        footnotes?: boolean;
+        html?: boolean;
+        mdx?: boolean;
+        tables?: boolean;
+        callouts?: boolean;
+        math?: boolean;
+        formatAnticipation?: boolean;
+        liveCodeHighlighting?: boolean;
+      };
       mdx?: { compileMode?: "server" | "worker" };
     }
   | { type: "APPEND"; text: string }
