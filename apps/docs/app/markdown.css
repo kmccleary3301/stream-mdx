@@ -203,38 +203,28 @@ ol li::before {
   border-right-width: 1px;
 }
 
-.markdown tr:last-child td:first-child {
+.markdown tbody tr:last-child td:first-child {
   border-bottom-left-radius: 0.375rem;
 }
 
-.markdown tr:last-child td:last-child {
+.markdown tbody tr:last-child td:last-child {
   border-bottom-right-radius: 0.375rem;
 }
 
-.markdown tr:last-child td {
-  border-bottom-width: 1px;
+.markdown a {
+  font-weight: 400;
+  color: #2964aa;
+  color: var(--link);
+  text-decoration-line: none;
 }
 
-.markdown p {
-  margin: 0;
+.markdown a:hover {
+  color: #749ac8;
+  color: var(--link-hover);
 }
 
-.markdown p:not(:first-child) {
-  margin-top: 0.75rem;
+.gizmo .markdown > :not(pre),
+.gizmo .markdown > :not(pre) > :not(a) {
+  color: #0d0d0d;
+  color: var(--text-primary);
 }
-
-.markdown p:has(+ ul),
-.markdown p:has(+ ol) {
-  margin-bottom: 0.5rem;
-}
-
-.markdown pre,
-.markdown figure {
-  margin: 0;
-}
-
-.markdown pre:not(:first-child),
-.markdown figure:not(:first-child) {
-  margin-top: 0.75rem;
-}
-
