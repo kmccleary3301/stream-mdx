@@ -2208,6 +2208,22 @@ async function finalizeAllBlocks() {
     }
   }
 
+  if (deferredPatchQueue.length > 0) {
+    const previousCredits = workerCredits;
+    workerCredits = 1;
+    const maxIterations = Math.ceil(deferredPatchQueue.length / MAX_DEFERRED_FLUSH_PATCHES) + 8;
+
+    for (let i = 0; i < maxIterations && deferredPatchQueue.length > 0; i++) {
+      const before = deferredPatchQueue.length;
+      flushDeferredPatches();
+      if (deferredPatchQueue.length >= before) {
+        break;
+      }
+    }
+
+    workerCredits = previousCredits;
+  }
+
   if (getActiveMetricsCollector() === metricsCollector) {
     setActiveMetricsCollector(null);
   }
