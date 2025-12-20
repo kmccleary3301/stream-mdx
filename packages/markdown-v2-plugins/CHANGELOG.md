@@ -1,5 +1,13 @@
 # @stream-mdx/plugins
 
+## 0.0.3
+
+### Patch Changes
+
+- Updated dependencies [47d1374]
+- Updated dependencies [7c79f09]
+  - @stream-mdx/core@0.0.3
+
 ## 0.0.2
 
 ### Patch Changes

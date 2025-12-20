@@ -1,6 +1,6 @@
 {
   "name": "@stream-mdx/core",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Core types, snapshot utilities, and perf helpers for the Streaming Markdown V2 stack",
   "license": "MIT",
   "repository": {
