@@ -1,6 +1,6 @@
 import assert from "node:assert";
 
-import type { Block, InlineNode } from "@stream-mdx/core";
+import type { Block, InlineNode, MixedContentSegment } from "@stream-mdx/core";
 import { JSDOM } from "jsdom";
 import React from "react";
 import { createRoot } from "react-dom/client";
@@ -74,8 +74,34 @@ async function runStreamingParagraphAnticipationTest(): Promise<void> {
   assert.ok(!container2.textContent?.includes("*italic"), "expected marker to be withheld when anticipated");
   assert.ok(container2.querySelector("em"), "expected <em> element to be rendered");
   root2.unmount();
+
+  // With allowMixedStreaming, mixed segments render during streaming.
+  const window3 = await setupDom();
+  const mixedSegments: MixedContentSegment[] = [
+    { kind: "text", value: "Hello ", inline: [{ kind: "text", text: "Hello " }] },
+    { kind: "html", value: "<strong>world</strong>", sanitized: "<strong>world</strong>" },
+  ];
+  const blockMixed: Block = {
+    id: "p-mixed",
+    type: "paragraph",
+    isFinalized: false,
+    payload: {
+      raw: "Hello <strong>world</strong>",
+      inline: [{ kind: "text", text: "Hello <strong>world</strong>" }] satisfies InlineNode[],
+      meta: { mixedSegments, allowMixedStreaming: true, inlineStatus: "anticipated" },
+    },
+  };
+  const store3 = createRendererStore([blockMixed]);
+  const container3 = window3.document.getElementById("root");
+  assert.ok(container3, "missing mixed streaming test root container");
+  const root3 = createRoot(container3);
+  root3.render(React.createElement(BlockNodeRenderer, { store: store3, blockId: blockMixed.id, registry }));
+  await sleep(30);
+
+  assert.ok(container3.querySelector("strong"), "expected HTML segment to render during streaming");
+  assert.ok(container3.textContent?.includes("Hello"), "expected mixed segment text to render");
+  root3.unmount();
 }
 
 await runStreamingParagraphAnticipationTest();
 console.log("streaming paragraph anticipation test passed");
-

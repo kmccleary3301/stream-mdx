@@ -1,0 +1,2007 @@
+# Stream-MDX DevX Catalog (Full Feature Map)
+
+This MDX file is intentionally exhaustive and visual. It is designed to be reused for docs, blog posts,
+and landing pages. Each section focuses on developer experience patterns, how to use them, and what
+you can expect while streaming.
+
+Guiding idea: show every feature in a small, copy-pastable example, then follow with an explanation
+and additional variants.
+
+## Table of Contents
+
+- Quickstart
+- Packages and Modularity
+- Architecture and Streaming Modes
+- Feature Flags and Doc Plugins
+- Format Anticipation
+- Markdown Basics
+- Lists, Tables, and Footnotes
+- Code Blocks and Syntax Highlighting
+- Math (Inline and Block)
+- HTML and MDX
+- Custom MDX Components
+- Custom Regex Plugins
+- Custom Renderers and ShadCN Overrides
+- Styling and Theming
+- Performance and Backpressure
+- Metrics and Telemetry
+- Worker Hosting and CSP
+- Security Model
+- Testing and Regression Harness
+- Appendix: Feature Gallery
+
+## Quickstart
+
+Stream-MDX ships as modular packages plus a convenience bundle. Choose the level of control you need.
+
+```bash
+npm install stream-mdx
+# or the modular packages:
+npm install @stream-mdx/react @stream-mdx/worker @stream-mdx/core @stream-mdx/plugins
+```
+
+Minimal client usage with the worker and the React component:
+
+```tsx
+import { StreamingMarkdown } from "@stream-mdx/react";
+
+export default function Demo() {
+  return (
+    <StreamingMarkdown
+      initialContent="# Hello"
+      content="# Hello\nThis updates as text streams in."
+    />
+  );
+}
+```
+
+## Packages and Modularity
+
+Each package is small, focused, and composable.
+
+- @stream-mdx/core - parsing, inline tokens, streaming diff logic, patch coalescing
+- @stream-mdx/worker - the worker runtime (parsing, highlighting, MDX compile parity)
+- @stream-mdx/react - React renderer, worker orchestration, metrics
+- @stream-mdx/plugins - optional plugins (regex, html, math, tables, etc)
+- stream-mdx - convenience bundle that re-exports the common surface
+
+Recommended paths:
+
+- Simple app: use stream-mdx or @stream-mdx/react + @stream-mdx/worker
+- Custom editor: use @stream-mdx/core directly for inline parsing and patches
+- Server-only render: use @stream-mdx/worker in server compile mode
+
+## Architecture and Streaming Modes
+
+Stream-MDX can compile MDX in a worker or on the server. Both modes share the same compiler helper,
+so outputs match.
+
+```tsx
+<StreamingMarkdown
+  mdxCompileMode="worker"
+  content={streamedText}
+  mdxComponents={{ Preview, YouTube, Image }}
+/>
+```
+
+Server compile mode example:
+
+```tsx
+<StreamingMarkdown
+  mdxCompileMode="server"
+  content={streamedText}
+  mdxComponents={{ Preview, YouTube, Image }}
+/>
+```
+
+**Note:** Worker mode is preferred for max throughput and minimal UI thread work.
+
+## Feature Flags and Doc Plugins
+
+Doc plugins allow you to enable or disable classes of behavior.
+
+```tsx
+<StreamingMarkdown
+  docPlugins={{
+    math: true,
+    html: true,
+    mdx: true,
+    tables: true,
+    footnotes: true,
+    formatAnticipation: { inline: true, mathInline: true },
+    liveCodeHighlighting: false,
+  }}
+/>
+```
+
+**Tip:** Keep features minimal for untrusted content. Enable additional parsing only when needed.
+
+## Format Anticipation
+
+Format anticipation is optional and gives you streamdown-like partial rendering: bold, italic, or math
+segments can appear before their closing delimiters arrive.
+
+```tsx
+docPlugins={{
+  formatAnticipation: {
+    inline: true,
+    mathInline: true,
+    mathBlock: true,
+    html: true,
+    mdx: true,
+    regex: true,
+  },
+}}
+```
+
+Streaming examples (input on the left, expected render on the right):
+
+```text
+*This is incomplete text  ->  <em>This is incomplete text</em>
+**This is incomplete text ->  <strong>This is incomplete text</strong>
+$$x = y               ->  block math renders, until newline threshold
+{cite:5              ->  citation placeholder auto-closes to {cite:5}
+```
+
+## Markdown Basics
+
+Basic markdown is always supported, even with all plugins disabled.
+
+```md
+# Heading 1
+## Heading 2
+### Heading 3
+
+Paragraphs are separated by blank lines.
+
+**Bold**, *italic*, and ~~strike~~ are supported.
+
+Inline code uses backticks: `like this`.
+```
+
+## Lists, Tables, and Footnotes
+
+```md
+- Unordered list
+- Another item
+  - Nested item
+
+1. Ordered list
+2. Second item
+
+- [x] Task list
+- [ ] Another task
+
+| A | B | C |
+|---|---|---|
+| 1 | 2 | 3 |
+| 4 | 5 | 6 |
+
+Footnote reference here [^1].
+
+[^1]: Footnote definition here.
+```
+
+## Code Blocks and Syntax Highlighting
+
+Stream-MDX uses Shiki for syntax highlighting. You can toggle live highlighting while streaming.
+
+````md
+```ts
+type Config = {
+  mode: "worker" | "server";
+};
+```
+````
+
+```tsx
+<StreamingMarkdown
+  docPlugins={{ liveCodeHighlighting: true }}
+/>
+```
+
+**Note:** Live highlighting costs more; keep it off for max throughput.
+
+## Math (Inline and Block)
+
+Inline math uses single dollars. Block math uses double dollars.
+
+```md
+Inline: $E = mc^2$
+
+$$
+\int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}
+$$
+```
+
+Custom delimiters can be supported with an inline regex plugin (example below).
+
+## HTML and MDX
+
+Inline HTML and block HTML are supported and sanitized.
+
+```md
+<div class="p-2 border">Raw HTML block</div>
+<kbd>Inline kbd</kbd>
+```
+
+MDX components are supported in both worker and server compile modes.
+
+```mdx
+<Preview>
+  <PreviewExample />
+</Preview>
+
+<YouTube videoId="dQw4w9WgXcQ" caption="Example Video" />
+
+<Image src="https://avatar.vercel.sh/sylph" alt="Avatar" caption="Example image" />
+```
+
+## Custom MDX Components
+
+Register MDX components and stream-mdx will resolve them during compile.
+
+```tsx
+const mdxComponents = { Preview, YouTube, Image, Callout };
+<StreamingMarkdown mdxComponents={mdxComponents} />
+```
+
+Components can be used inline and nested.
+
+## Custom Regex Plugins
+
+Regex plugins let you add domain syntax without forking the parser.
+
+```ts
+import { InlineParser } from "@stream-mdx/core";
+
+const parser = new InlineParser();
+parser.addRegexPlugin({
+  id: "citation",
+  priority: 30,
+  re: /\{cite:([^}]+)\}/g,
+  toNode: (match) => ({ kind: "citation", id: match[1] }),
+  anticipation: {
+    start: /\{cite:/,
+    full: /\{cite:[^}]+\}/,
+    append: "}",
+  },
+});
+```
+
+Example usage: `See {cite:smith2024} for details.`
+
+## Custom Renderers and ShadCN Overrides
+
+Map HTML tags to design-system components for a polished look. This does not break streaming.
+
+```tsx
+const components = {
+  table: (props) => <Table {...props} />,
+  thead: (props) => <TableHeader {...props} />,
+  tbody: (props) => <TableBody {...props} />,
+  tr: (props) => <TableRow {...props} />,
+  th: (props) => <TableHead {...props} />,
+  td: (props) => <TableCell {...props} />,
+  blockquote: (props) => <Blockquote {...props} />,
+};
+
+<StreamingMarkdown components={components} />
+```
+
+## Styling and Theming
+
+Use your existing design tokens. The renderer emits stable classes (mdx-*, markdown-*).
+
+```css
+.markdown-root {
+  font-size: 16px;
+  line-height: 1.6;
+}
+.markdown-root code {
+  background: var(--muted);
+  padding: 0 0.2rem;
+}
+.markdown-root table {
+  width: 100%;
+}
+```
+
+You can also pass className or style to wrap content.
+
+## Performance and Backpressure
+
+Backpressure keeps UI responsive when high-frequency updates arrive.
+
+```tsx
+<StreamingMarkdown
+  backpressure={{
+    maxPendingChars: 4000,
+    maxPendingBlocks: 50,
+    updateIntervalMs: 16,
+  }}
+/>
+```
+
+## Metrics and Telemetry
+
+StreamingMarkdown can emit metrics about parse and render time.
+
+```tsx
+<StreamingMarkdown
+  onMetrics={(metrics) => {
+    console.log(metrics.parseMs, metrics.diffMs, metrics.shikiMs);
+  }}
+/>
+```
+
+## Worker Hosting and CSP
+
+For strict CSPs, host the worker yourself.
+
+```bash
+npm -w @stream-mdx/worker run build:hosted
+# copy dist/hosted/markdown-worker.js to your public/ directory
+```
+
+```tsx
+<StreamingMarkdown workerOptions={{ workerUrl: "/workers/markdown-worker.js" }} />
+```
+
+## Security Model
+
+HTML is sanitized. Allowlists are applied for tags and attributes. If you enable raw HTML, keep
+sanitizers on and avoid unsafe plugins.
+
+```ts
+const features = { html: true };
+// Sanitization is handled internally for HTML and code highlighting.
+```
+
+## Testing and Regression Harness
+
+Stream-MDX ships with regression tests for patch coalescing, backpressure, and streaming edge cases.
+
+```bash
+npm run markdown-v2:test:packages
+npm run markdown-v2:nightly
+```
+
+## Appendix: Feature Gallery
+
+Each block below is designed to render a specific element or edge case.
+
+### Gallery Example 1: Emphasis + Links
+
+```mdx
+Paragraph with **bold** and *italic* and a [link](https://example.com).
+
+Another line with ~~strike~~ and `inline code`.
+```
+
+### Gallery Example 2: Blockquote
+
+```mdx
+> A short quote block.
+>
+> With a second line.
+```
+
+### Gallery Example 3: List
+
+```mdx
+- Item one
+- Item two
+  - Nested item
+- Item three
+```
+
+### Gallery Example 4: Task List
+
+```mdx
+- [x] Completed task
+- [ ] Pending task
+```
+
+### Gallery Example 5: Table
+
+```mdx
+| A | B | C |
+|---|---|---|
+| 1 | 2 | 3 |
+| 4 | 5 | 6 |
+```
+
+### Gallery Example 6: Inline Math
+
+```mdx
+Inline math like $E=mc^2$ should render without delay.
+```
+
+### Gallery Example 7: Block Math
+
+```mdx
+$$
+x = \frac{a}{b}
+$$
+```
+
+### Gallery Example 8: Code Fence
+
+```mdx
+```js
+const value = 42;
+console.log(value);
+```
+```
+
+### Gallery Example 9: Footnote
+
+```mdx
+Footnote here [^1].
+
+[^1]: Footnote text.
+```
+
+### Gallery Example 10: HTML Inline
+
+```mdx
+Use <kbd>CTRL</kbd> + <kbd>K</kbd>.
+```
+
+### Gallery Example 11: MDX Preview
+
+```mdx
+<Preview>
+  <PreviewExample />
+</Preview>
+```
+
+### Gallery Example 12: Image
+
+```mdx
+<Image src="https://avatar.vercel.sh/sylph" caption="Avatar" />
+```
+
+### Gallery Example 13: YouTube
+
+```mdx
+<YouTube videoId="dQw4w9WgXcQ" caption="Example Video" />
+```
+
+### Gallery Example 14: Citation Regex
+
+```mdx
+See {cite:smith2024} for details.
+```
+
+### Gallery Example 15: Inline HTML
+
+```mdx
+<span class="text-muted">Muted HTML span</span>
+```
+
+### Gallery Example 16: Emphasis + Links
+
+```mdx
+Paragraph with **bold** and *italic* and a [link](https://example.com).
+
+Another line with ~~strike~~ and `inline code`.
+```
+
+### Gallery Example 17: Blockquote
+
+```mdx
+> A short quote block.
+>
+> With a second line.
+```
+
+### Gallery Example 18: List
+
+```mdx
+- Item one
+- Item two
+  - Nested item
+- Item three
+```
+
+### Gallery Example 19: Task List
+
+```mdx
+- [x] Completed task
+- [ ] Pending task
+```
+
+### Gallery Example 20: Table
+
+```mdx
+| A | B | C |
+|---|---|---|
+| 1 | 2 | 3 |
+| 4 | 5 | 6 |
+```
+
+### Gallery Example 21: Inline Math
+
+```mdx
+Inline math like $E=mc^2$ should render without delay.
+```
+
+### Gallery Example 22: Block Math
+
+```mdx
+$$
+x = \frac{a}{b}
+$$
+```
+
+### Gallery Example 23: Code Fence
+
+```mdx
+```js
+const value = 42;
+console.log(value);
+```
+```
+
+### Gallery Example 24: Footnote
+
+```mdx
+Footnote here [^1].
+
+[^1]: Footnote text.
+```
+
+### Gallery Example 25: HTML Inline
+
+```mdx
+Use <kbd>CTRL</kbd> + <kbd>K</kbd>.
+```
+
+### Gallery Example 26: MDX Preview
+
+```mdx
+<Preview>
+  <PreviewExample />
+</Preview>
+```
+
+### Gallery Example 27: Image
+
+```mdx
+<Image src="https://avatar.vercel.sh/sylph" caption="Avatar" />
+```
+
+### Gallery Example 28: YouTube
+
+```mdx
+<YouTube videoId="dQw4w9WgXcQ" caption="Example Video" />
+```
+
+### Gallery Example 29: Citation Regex
+
+```mdx
+See {cite:smith2024} for details.
+```
+
+### Gallery Example 30: Inline HTML
+
+```mdx
+<span class="text-muted">Muted HTML span</span>
+```
+
+### Gallery Example 31: Emphasis + Links
+
+```mdx
+Paragraph with **bold** and *italic* and a [link](https://example.com).
+
+Another line with ~~strike~~ and `inline code`.
+```
+
+### Gallery Example 32: Blockquote
+
+```mdx
+> A short quote block.
+>
+> With a second line.
+```
+
+### Gallery Example 33: List
+
+```mdx
+- Item one
+- Item two
+  - Nested item
+- Item three
+```
+
+### Gallery Example 34: Task List
+
+```mdx
+- [x] Completed task
+- [ ] Pending task
+```
+
+### Gallery Example 35: Table
+
+```mdx
+| A | B | C |
+|---|---|---|
+| 1 | 2 | 3 |
+| 4 | 5 | 6 |
+```
+
+### Gallery Example 36: Inline Math
+
+```mdx
+Inline math like $E=mc^2$ should render without delay.
+```
+
+### Gallery Example 37: Block Math
+
+```mdx
+$$
+x = \frac{a}{b}
+$$
+```
+
+### Gallery Example 38: Code Fence
+
+```mdx
+```js
+const value = 42;
+console.log(value);
+```
+```
+
+### Gallery Example 39: Footnote
+
+```mdx
+Footnote here [^1].
+
+[^1]: Footnote text.
+```
+
+### Gallery Example 40: HTML Inline
+
+```mdx
+Use <kbd>CTRL</kbd> + <kbd>K</kbd>.
+```
+
+### Gallery Example 41: MDX Preview
+
+```mdx
+<Preview>
+  <PreviewExample />
+</Preview>
+```
+
+### Gallery Example 42: Image
+
+```mdx
+<Image src="https://avatar.vercel.sh/sylph" caption="Avatar" />
+```
+
+### Gallery Example 43: YouTube
+
+```mdx
+<YouTube videoId="dQw4w9WgXcQ" caption="Example Video" />
+```
+
+### Gallery Example 44: Citation Regex
+
+```mdx
+See {cite:smith2024} for details.
+```
+
+### Gallery Example 45: Inline HTML
+
+```mdx
+<span class="text-muted">Muted HTML span</span>
+```
+
+### Gallery Example 46: Emphasis + Links
+
+```mdx
+Paragraph with **bold** and *italic* and a [link](https://example.com).
+
+Another line with ~~strike~~ and `inline code`.
+```
+
+### Gallery Example 47: Blockquote
+
+```mdx
+> A short quote block.
+>
+> With a second line.
+```
+
+### Gallery Example 48: List
+
+```mdx
+- Item one
+- Item two
+  - Nested item
+- Item three
+```
+
+### Gallery Example 49: Task List
+
+```mdx
+- [x] Completed task
+- [ ] Pending task
+```
+
+### Gallery Example 50: Table
+
+```mdx
+| A | B | C |
+|---|---|---|
+| 1 | 2 | 3 |
+| 4 | 5 | 6 |
+```
+
+### Gallery Example 51: Inline Math
+
+```mdx
+Inline math like $E=mc^2$ should render without delay.
+```
+
+### Gallery Example 52: Block Math
+
+```mdx
+$$
+x = \frac{a}{b}
+$$
+```
+
+### Gallery Example 53: Code Fence
+
+```mdx
+```js
+const value = 42;
+console.log(value);
+```
+```
+
+### Gallery Example 54: Footnote
+
+```mdx
+Footnote here [^1].
+
+[^1]: Footnote text.
+```
+
+### Gallery Example 55: HTML Inline
+
+```mdx
+Use <kbd>CTRL</kbd> + <kbd>K</kbd>.
+```
+
+### Gallery Example 56: MDX Preview
+
+```mdx
+<Preview>
+  <PreviewExample />
+</Preview>
+```
+
+### Gallery Example 57: Image
+
+```mdx
+<Image src="https://avatar.vercel.sh/sylph" caption="Avatar" />
+```
+
+### Gallery Example 58: YouTube
+
+```mdx
+<YouTube videoId="dQw4w9WgXcQ" caption="Example Video" />
+```
+
+### Gallery Example 59: Citation Regex
+
+```mdx
+See {cite:smith2024} for details.
+```
+
+### Gallery Example 60: Inline HTML
+
+```mdx
+<span class="text-muted">Muted HTML span</span>
+```
+
+### Gallery Example 61: Emphasis + Links
+
+```mdx
+Paragraph with **bold** and *italic* and a [link](https://example.com).
+
+Another line with ~~strike~~ and `inline code`.
+```
+
+### Gallery Example 62: Blockquote
+
+```mdx
+> A short quote block.
+>
+> With a second line.
+```
+
+### Gallery Example 63: List
+
+```mdx
+- Item one
+- Item two
+  - Nested item
+- Item three
+```
+
+### Gallery Example 64: Task List
+
+```mdx
+- [x] Completed task
+- [ ] Pending task
+```
+
+### Gallery Example 65: Table
+
+```mdx
+| A | B | C |
+|---|---|---|
+| 1 | 2 | 3 |
+| 4 | 5 | 6 |
+```
+
+### Gallery Example 66: Inline Math
+
+```mdx
+Inline math like $E=mc^2$ should render without delay.
+```
+
+### Gallery Example 67: Block Math
+
+```mdx
+$$
+x = \frac{a}{b}
+$$
+```
+
+### Gallery Example 68: Code Fence
+
+```mdx
+```js
+const value = 42;
+console.log(value);
+```
+```
+
+### Gallery Example 69: Footnote
+
+```mdx
+Footnote here [^1].
+
+[^1]: Footnote text.
+```
+
+### Gallery Example 70: HTML Inline
+
+```mdx
+Use <kbd>CTRL</kbd> + <kbd>K</kbd>.
+```
+
+### Gallery Example 71: MDX Preview
+
+```mdx
+<Preview>
+  <PreviewExample />
+</Preview>
+```
+
+### Gallery Example 72: Image
+
+```mdx
+<Image src="https://avatar.vercel.sh/sylph" caption="Avatar" />
+```
+
+### Gallery Example 73: YouTube
+
+```mdx
+<YouTube videoId="dQw4w9WgXcQ" caption="Example Video" />
+```
+
+### Gallery Example 74: Citation Regex
+
+```mdx
+See {cite:smith2024} for details.
+```
+
+### Gallery Example 75: Inline HTML
+
+```mdx
+<span class="text-muted">Muted HTML span</span>
+```
+
+### Gallery Example 76: Emphasis + Links
+
+```mdx
+Paragraph with **bold** and *italic* and a [link](https://example.com).
+
+Another line with ~~strike~~ and `inline code`.
+```
+
+### Gallery Example 77: Blockquote
+
+```mdx
+> A short quote block.
+>
+> With a second line.
+```
+
+### Gallery Example 78: List
+
+```mdx
+- Item one
+- Item two
+  - Nested item
+- Item three
+```
+
+### Gallery Example 79: Task List
+
+```mdx
+- [x] Completed task
+- [ ] Pending task
+```
+
+### Gallery Example 80: Table
+
+```mdx
+| A | B | C |
+|---|---|---|
+| 1 | 2 | 3 |
+| 4 | 5 | 6 |
+```
+
+### Gallery Example 81: Inline Math
+
+```mdx
+Inline math like $E=mc^2$ should render without delay.
+```
+
+### Gallery Example 82: Block Math
+
+```mdx
+$$
+x = \frac{a}{b}
+$$
+```
+
+### Gallery Example 83: Code Fence
+
+```mdx
+```js
+const value = 42;
+console.log(value);
+```
+```
+
+### Gallery Example 84: Footnote
+
+```mdx
+Footnote here [^1].
+
+[^1]: Footnote text.
+```
+
+### Gallery Example 85: HTML Inline
+
+```mdx
+Use <kbd>CTRL</kbd> + <kbd>K</kbd>.
+```
+
+### Gallery Example 86: MDX Preview
+
+```mdx
+<Preview>
+  <PreviewExample />
+</Preview>
+```
+
+### Gallery Example 87: Image
+
+```mdx
+<Image src="https://avatar.vercel.sh/sylph" caption="Avatar" />
+```
+
+### Gallery Example 88: YouTube
+
+```mdx
+<YouTube videoId="dQw4w9WgXcQ" caption="Example Video" />
+```
+
+### Gallery Example 89: Citation Regex
+
+```mdx
+See {cite:smith2024} for details.
+```
+
+### Gallery Example 90: Inline HTML
+
+```mdx
+<span class="text-muted">Muted HTML span</span>
+```
+
+### Gallery Example 91: Emphasis + Links
+
+```mdx
+Paragraph with **bold** and *italic* and a [link](https://example.com).
+
+Another line with ~~strike~~ and `inline code`.
+```
+
+### Gallery Example 92: Blockquote
+
+```mdx
+> A short quote block.
+>
+> With a second line.
+```
+
+### Gallery Example 93: List
+
+```mdx
+- Item one
+- Item two
+  - Nested item
+- Item three
+```
+
+### Gallery Example 94: Task List
+
+```mdx
+- [x] Completed task
+- [ ] Pending task
+```
+
+### Gallery Example 95: Table
+
+```mdx
+| A | B | C |
+|---|---|---|
+| 1 | 2 | 3 |
+| 4 | 5 | 6 |
+```
+
+### Gallery Example 96: Inline Math
+
+```mdx
+Inline math like $E=mc^2$ should render without delay.
+```
+
+### Gallery Example 97: Block Math
+
+```mdx
+$$
+x = \frac{a}{b}
+$$
+```
+
+### Gallery Example 98: Code Fence
+
+```mdx
+```js
+const value = 42;
+console.log(value);
+```
+```
+
+### Gallery Example 99: Footnote
+
+```mdx
+Footnote here [^1].
+
+[^1]: Footnote text.
+```
+
+### Gallery Example 100: HTML Inline
+
+```mdx
+Use <kbd>CTRL</kbd> + <kbd>K</kbd>.
+```
+
+### Gallery Example 101: MDX Preview
+
+```mdx
+<Preview>
+  <PreviewExample />
+</Preview>
+```
+
+### Gallery Example 102: Image
+
+```mdx
+<Image src="https://avatar.vercel.sh/sylph" caption="Avatar" />
+```
+
+### Gallery Example 103: YouTube
+
+```mdx
+<YouTube videoId="dQw4w9WgXcQ" caption="Example Video" />
+```
+
+### Gallery Example 104: Citation Regex
+
+```mdx
+See {cite:smith2024} for details.
+```
+
+### Gallery Example 105: Inline HTML
+
+```mdx
+<span class="text-muted">Muted HTML span</span>
+```
+
+### Gallery Example 106: Emphasis + Links
+
+```mdx
+Paragraph with **bold** and *italic* and a [link](https://example.com).
+
+Another line with ~~strike~~ and `inline code`.
+```
+
+### Gallery Example 107: Blockquote
+
+```mdx
+> A short quote block.
+>
+> With a second line.
+```
+
+### Gallery Example 108: List
+
+```mdx
+- Item one
+- Item two
+  - Nested item
+- Item three
+```
+
+### Gallery Example 109: Task List
+
+```mdx
+- [x] Completed task
+- [ ] Pending task
+```
+
+### Gallery Example 110: Table
+
+```mdx
+| A | B | C |
+|---|---|---|
+| 1 | 2 | 3 |
+| 4 | 5 | 6 |
+```
+
+### Gallery Example 111: Inline Math
+
+```mdx
+Inline math like $E=mc^2$ should render without delay.
+```
+
+### Gallery Example 112: Block Math
+
+```mdx
+$$
+x = \frac{a}{b}
+$$
+```
+
+### Gallery Example 113: Code Fence
+
+```mdx
+```js
+const value = 42;
+console.log(value);
+```
+```
+
+### Gallery Example 114: Footnote
+
+```mdx
+Footnote here [^1].
+
+[^1]: Footnote text.
+```
+
+### Gallery Example 115: HTML Inline
+
+```mdx
+Use <kbd>CTRL</kbd> + <kbd>K</kbd>.
+```
+
+### Gallery Example 116: MDX Preview
+
+```mdx
+<Preview>
+  <PreviewExample />
+</Preview>
+```
+
+### Gallery Example 117: Image
+
+```mdx
+<Image src="https://avatar.vercel.sh/sylph" caption="Avatar" />
+```
+
+### Gallery Example 118: YouTube
+
+```mdx
+<YouTube videoId="dQw4w9WgXcQ" caption="Example Video" />
+```
+
+### Gallery Example 119: Citation Regex
+
+```mdx
+See {cite:smith2024} for details.
+```
+
+### Gallery Example 120: Inline HTML
+
+```mdx
+<span class="text-muted">Muted HTML span</span>
+```
+
+### Appendix Extra Example 1
+
+```md
+Example line 1: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 2
+
+```md
+Example line 2: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 3
+
+```md
+Example line 3: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 4
+
+```md
+Example line 4: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 5
+
+```md
+Example line 5: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 6
+
+```md
+Example line 6: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 7
+
+```md
+Example line 7: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 8
+
+```md
+Example line 8: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 9
+
+```md
+Example line 9: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 10
+
+```md
+Example line 10: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 11
+
+```md
+Example line 11: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 12
+
+```md
+Example line 12: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 13
+
+```md
+Example line 13: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 14
+
+```md
+Example line 14: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 15
+
+```md
+Example line 15: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 16
+
+```md
+Example line 16: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 17
+
+```md
+Example line 17: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 18
+
+```md
+Example line 18: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 19
+
+```md
+Example line 19: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 20
+
+```md
+Example line 20: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 21
+
+```md
+Example line 21: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 22
+
+```md
+Example line 22: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 23
+
+```md
+Example line 23: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 24
+
+```md
+Example line 24: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 25
+
+```md
+Example line 25: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 26
+
+```md
+Example line 26: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 27
+
+```md
+Example line 27: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 28
+
+```md
+Example line 28: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 29
+
+```md
+Example line 29: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 30
+
+```md
+Example line 30: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 31
+
+```md
+Example line 31: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 32
+
+```md
+Example line 32: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 33
+
+```md
+Example line 33: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 34
+
+```md
+Example line 34: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 35
+
+```md
+Example line 35: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 36
+
+```md
+Example line 36: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 37
+
+```md
+Example line 37: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 38
+
+```md
+Example line 38: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 39
+
+```md
+Example line 39: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 40
+
+```md
+Example line 40: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 41
+
+```md
+Example line 41: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 42
+
+```md
+Example line 42: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 43
+
+```md
+Example line 43: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 44
+
+```md
+Example line 44: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 45
+
+```md
+Example line 45: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 46
+
+```md
+Example line 46: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 47
+
+```md
+Example line 47: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 48
+
+```md
+Example line 48: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 49
+
+```md
+Example line 49: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 50
+
+```md
+Example line 50: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 51
+
+```md
+Example line 51: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 52
+
+```md
+Example line 52: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 53
+
+```md
+Example line 53: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 54
+
+```md
+Example line 54: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 55
+
+```md
+Example line 55: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 56
+
+```md
+Example line 56: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 57
+
+```md
+Example line 57: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+
+### Appendix Extra Example 58
+
+```md
+Example line 58: **bold**, *italic*, and `code`.
+
+- bullet item
+- another item
+
+$$
+x = y
+$$
+```
+

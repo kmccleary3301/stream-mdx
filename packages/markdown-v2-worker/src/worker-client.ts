@@ -1,7 +1,7 @@
 // V2 Worker Client for Markdown Renderer
 // Similar interface to the V1 streaming worker client
 
-import type { WorkerIn, WorkerOut } from "@stream-mdx/core";
+import type { FormatAnticipationConfig, WorkerIn, WorkerOut } from "@stream-mdx/core";
 import { createDefaultWorker, releaseDefaultWorker, type CreateDefaultWorkerOptions } from "./create-default-worker";
 
 export interface MarkdownWorkerClientOptions {
@@ -93,8 +93,9 @@ export class MarkdownWorkerClient {
       tables?: boolean;
       callouts?: boolean;
       math?: boolean;
-      formatAnticipation?: boolean;
+      formatAnticipation?: FormatAnticipationConfig;
       liveCodeHighlighting?: boolean;
+      mdxComponentNames?: string[];
     },
     mdxOptions?: { compileMode?: "server" | "worker" },
   ) {

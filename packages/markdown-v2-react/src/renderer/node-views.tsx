@@ -48,7 +48,16 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
     const segments = Array.isArray(meta.mixedSegments) ? meta.mixedSegments : [];
     // Preserve the existing behavior for MDX/HTML-mixed paragraphs while streaming.
     if (segments.length > 0) {
-      return <p className="markdown-paragraph streaming-partial">{raw}</p>;
+      const allowMixedStreaming = Boolean((meta as { allowMixedStreaming?: boolean }).allowMixedStreaming);
+      if (!allowMixedStreaming) {
+        return <p className="markdown-paragraph streaming-partial">{raw}</p>;
+      }
+      const structured = renderParagraphMixedSegments(segments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS);
+      if (structured.length === 1) {
+        const [single] = structured;
+        return React.isValidElement(single) ? single : single;
+      }
+      return structured;
     }
 
     if (meta.inlineStatus === "complete" || meta.inlineStatus === "anticipated") {

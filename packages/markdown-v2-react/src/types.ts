@@ -1,6 +1,6 @@
 import type React from "react";
 
-import type { Block, CompiledMdxModule, InlineHtmlDescriptor, InlineNode } from "@stream-mdx/core";
+import type { Block, CompiledMdxModule, FormatAnticipationConfig, InlineHtmlDescriptor, InlineNode } from "@stream-mdx/core";
 import type { ComponentRegistry } from "./components";
 
 export type GenericComponent = React.ComponentType<any>;
@@ -84,7 +84,7 @@ export interface RendererConfig {
     tables?: boolean;
     callouts?: boolean;
     math?: boolean;
-    formatAnticipation?: boolean;
+    formatAnticipation?: FormatAnticipationConfig;
     liveCodeHighlighting?: boolean;
   };
   performance?: {

@@ -3,17 +3,33 @@ import * as rehypeSanitize from "rehype-sanitize";
 import * as rehypeStringify from "rehype-stringify";
 import { unified } from "unified";
 
-const { defaultSchema } = rehypeSanitize;
-
+type RehypeSanitizeModule = typeof import("rehype-sanitize");
+const rehypeSanitizeModule = rehypeSanitize as RehypeSanitizeModule;
+const defaultSchema = rehypeSanitizeModule.defaultSchema;
 type Schema = typeof defaultSchema;
+
+const resolvePlugin = (mod: unknown): unknown => {
+  if (typeof mod === "function") return mod;
+  if (mod && typeof (mod as { default?: unknown }).default === "function") {
+    return (mod as { default?: unknown }).default;
+  }
+  if (mod && typeof (mod as { default?: { default?: unknown } }).default?.default === "function") {
+    return (mod as { default?: { default?: unknown } }).default?.default;
+  }
+  return mod;
+};
+
+const rehypeParsePlugin = resolvePlugin(rehypeParse);
+const rehypeSanitizePlugin = resolvePlugin(rehypeSanitizeModule);
+const rehypeStringifyPlugin = resolvePlugin(rehypeStringify);
 type AttributeDefinition = string | [string, ...(string | number | boolean | RegExp | null | undefined)[]];
 
 const SANITIZED_SCHEMA: Schema = createSchema();
 
 const sanitizeProcessor = unified()
-  .use(rehypeParse.default, { fragment: true })
-  .use(rehypeSanitize.default, SANITIZED_SCHEMA)
-  .use(rehypeStringify.default)
+  .use(rehypeParsePlugin as any, { fragment: true })
+  .use(rehypeSanitizePlugin as any, SANITIZED_SCHEMA)
+  .use(rehypeStringifyPlugin as any)
   .freeze();
 
 export function sanitizeHtmlInWorker(html: string): string {

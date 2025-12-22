@@ -7,6 +7,12 @@ export type ShowcaseItem = {
 
 export const SHOWCASE_ITEMS: ShowcaseItem[] = [
   {
+    slug: "stream-mdx-devx-catalog",
+    title: "Stream-MDX DevX Catalog",
+    file: "stream-mdx-devx-catalog.mdx",
+    description: "Exhaustive MDX-based tutorial covering every Stream-MDX feature and pattern.",
+  },
+  {
     slug: "html-overrides",
     title: "HTML Overrides (ShadCN)",
     file: "html-overrides.md",
@@ -25,4 +31,3 @@ export const SHOWCASE_ITEMS: ShowcaseItem[] = [
     description: "Notes on MDX compilation modes and runtime components.",
   },
 ];
-

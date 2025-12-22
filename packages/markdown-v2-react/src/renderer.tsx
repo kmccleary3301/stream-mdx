@@ -37,6 +37,19 @@ const WORKER_DEBUG_ENABLED =
     return false;
   })() || false;
 
+function isLikelyMdxComponentName(name: string): boolean {
+  if (!name) return false;
+  const first = name.charAt(0);
+  return first.toUpperCase() === first && first.toLowerCase() !== first;
+}
+
+function getMdxComponentNames(config: RendererConfig): string[] | undefined {
+  const components = config.mdx?.components;
+  if (!components) return undefined;
+  const names = Object.keys(components).filter(isLikelyMdxComponentName);
+  return names.length > 0 ? names : undefined;
+}
+
 /**
  * Main renderer class
  */
@@ -94,20 +107,24 @@ export class MarkdownRenderer implements Renderer {
 
     if (!options?.skipInit) {
       // Initialize worker
+      const mdxComponentNames = getMdxComponentNames(this.config);
+      const docPlugins = {
+        footnotes: this.config.plugins?.footnotes ?? true,
+        html: this.config.plugins?.html ?? true,
+        mdx: this.config.plugins?.mdx ?? true,
+        tables: this.config.plugins?.tables ?? true,
+        callouts: this.config.plugins?.callouts ?? false,
+        math: this.config.plugins?.math ?? true,
+        formatAnticipation: this.config.plugins?.formatAnticipation ?? false,
+        liveCodeHighlighting: this.config.plugins?.liveCodeHighlighting ?? false,
+        ...(mdxComponentNames ? { mdxComponentNames } : {}),
+      };
+
       this.worker.postMessage({
         type: "INIT",
         initialContent: "",
         prewarmLangs: this.config.highlight?.langs || [],
-        docPlugins: {
-          footnotes: this.config.plugins?.footnotes ?? true,
-          html: this.config.plugins?.html ?? true,
-          mdx: this.config.plugins?.mdx ?? true,
-          tables: this.config.plugins?.tables ?? true,
-          callouts: this.config.plugins?.callouts ?? false,
-          math: this.config.plugins?.math ?? true,
-          formatAnticipation: this.config.plugins?.formatAnticipation ?? false,
-          liveCodeHighlighting: this.config.plugins?.liveCodeHighlighting ?? false,
-        },
+        docPlugins,
         mdx: {
           compileMode: this.config.mdx?.compileStrategy ?? "server",
         },
@@ -168,20 +185,24 @@ export class MarkdownRenderer implements Renderer {
 
       this.worker.addEventListener("message", handleMessage);
 
+      const mdxComponentNames = getMdxComponentNames(this.config);
+      const docPlugins = {
+        footnotes: this.config.plugins?.footnotes ?? true,
+        html: this.config.plugins?.html ?? true,
+        mdx: this.config.plugins?.mdx ?? true,
+        tables: this.config.plugins?.tables ?? true,
+        callouts: this.config.plugins?.callouts ?? false,
+        math: this.config.plugins?.math ?? true,
+        formatAnticipation: this.config.plugins?.formatAnticipation ?? false,
+        liveCodeHighlighting: this.config.plugins?.liveCodeHighlighting ?? false,
+        ...(mdxComponentNames ? { mdxComponentNames } : {}),
+      };
+
       this.worker.postMessage({
         type: "INIT",
         initialContent: text,
         prewarmLangs: this.config.highlight?.langs || [],
-        docPlugins: {
-          footnotes: this.config.plugins?.footnotes ?? true,
-          html: this.config.plugins?.html ?? true,
-          mdx: this.config.plugins?.mdx ?? true,
-          tables: this.config.plugins?.tables ?? true,
-          callouts: this.config.plugins?.callouts ?? false,
-          math: this.config.plugins?.math ?? true,
-          formatAnticipation: this.config.plugins?.formatAnticipation ?? false,
-          liveCodeHighlighting: this.config.plugins?.liveCodeHighlighting ?? false,
-        },
+        docPlugins,
         mdx: {
           compileMode: this.config.mdx?.compileStrategy ?? "server",
         },

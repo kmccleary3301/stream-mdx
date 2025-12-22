@@ -37,6 +37,17 @@ export interface MixedContentSegment {
   error?: string;
 }
 
+export type FormatAnticipationConfig =
+  | boolean
+  | {
+      inline?: boolean;
+      mathInline?: boolean;
+      mathBlock?: boolean;
+      html?: boolean;
+      mdx?: boolean;
+      regex?: boolean;
+    };
+
 export interface InlineHtmlDescriptor {
   tagName: string;
   attributes: Record<string, string>;
@@ -89,8 +100,9 @@ export type WorkerIn =
         tables?: boolean;
         callouts?: boolean;
         math?: boolean;
-        formatAnticipation?: boolean;
+        formatAnticipation?: FormatAnticipationConfig;
         liveCodeHighlighting?: boolean;
+        mdxComponentNames?: string[];
       };
       mdx?: { compileMode?: "server" | "worker" };
     }
@@ -132,6 +144,18 @@ export interface RegexInlinePlugin extends InlinePlugin {
    * the regex is skipped for that node.
    */
   fastCheck?: (text: string) => boolean;
+  /**
+   * Optional streaming anticipation config. Only used when formatAnticipation.regex is enabled.
+   */
+  anticipation?: RegexAnticipationPattern;
+}
+
+export interface RegexAnticipationPattern {
+  start: RegExp;
+  end: RegExp;
+  full?: RegExp;
+  append: string | ((match: RegExpExecArray, content: string) => string);
+  maxScanChars?: number;
 }
 
 export interface ASTInlinePlugin extends InlinePlugin {

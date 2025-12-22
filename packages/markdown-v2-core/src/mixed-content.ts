@@ -1,13 +1,50 @@
 import type { InlineNode, MixedContentSegment } from "./types";
 import { sanitizeHtmlInWorker } from "./worker-html-sanitizer";
 
+export interface MixedContentAutoCloseHtmlOptions {
+  autoClose?: boolean;
+  maxNewlines?: number;
+  allowTags?: Iterable<string>;
+}
+
+export interface MixedContentAutoCloseMdxOptions {
+  autoClose?: boolean;
+  maxNewlines?: number;
+  componentAllowlist?: Iterable<string>;
+}
+
+export interface MixedContentOptions {
+  html?: MixedContentAutoCloseHtmlOptions;
+  mdx?: MixedContentAutoCloseMdxOptions;
+}
+
+const DEFAULT_INLINE_HTML_AUTOCLOSE_TAGS = new Set([
+  "span",
+  "em",
+  "strong",
+  "code",
+  "kbd",
+  "del",
+  "s",
+  "mark",
+  "sub",
+  "sup",
+  "i",
+  "b",
+  "u",
+  "small",
+  "abbr",
+  "a",
+]);
+
 export function extractMixedContentSegments(
   raw: string,
   baseOffset: number | undefined,
   parseInline: (content: string) => InlineNode[],
+  options?: MixedContentOptions,
 ): MixedContentSegment[] {
   if (!raw) return [];
-  const initial = splitByTagSegments(raw, baseOffset, parseInline);
+  const initial = splitByTagSegments(raw, baseOffset, parseInline, options);
   const expanded: MixedContentSegment[] = [];
   for (const segment of initial) {
     if (segment.kind === "text") {
@@ -19,24 +56,66 @@ export function extractMixedContentSegments(
   return mergeAdjacentTextSegments(expanded, parseInline);
 }
 
-function splitByTagSegments(source: string, baseOffset: number | undefined, parseInline: (content: string) => InlineNode[]): MixedContentSegment[] {
+function splitByTagSegments(
+  source: string,
+  baseOffset: number | undefined,
+  parseInline: (content: string) => InlineNode[],
+  options?: MixedContentOptions,
+): MixedContentSegment[] {
   const segments: MixedContentSegment[] = [];
   const lowerSource = source.toLowerCase();
   const tagPattern = /<([A-Za-z][\w:-]*)([^<>]*?)\/?>/g;
   let cursor = 0;
   let match: RegExpExecArray | null = tagPattern.exec(source);
   const baseIsFinite = typeof baseOffset === "number" && Number.isFinite(baseOffset);
+  const htmlAllowTags = normalizeHtmlAllowlist(options?.html?.allowTags);
+  const htmlAutoClose = options?.html?.autoClose === true;
+  const htmlMaxNewlines = normalizeNewlineLimit(options?.html?.maxNewlines);
+  const mdxAutoClose = options?.mdx?.autoClose === true;
+  const mdxMaxNewlines = normalizeNewlineLimit(options?.mdx?.maxNewlines);
+  const mdxAllowlist = normalizeComponentAllowlist(options?.mdx?.componentAllowlist);
 
   while (match !== null) {
     const start = match.index;
     const tagName = match[1];
     const matchText = match[0];
-    const isSelfClosing = matchText.endsWith("/>") || isVoidHtmlTag(tagName);
+    const tagNameLower = tagName.toLowerCase();
+    const isSelfClosing = matchText.endsWith("/>") || isVoidHtmlTag(tagNameLower);
+    const mdxCandidate = isLikelyMdxComponent(tagName);
+    const mdxAllowed = mdxCandidate && (!mdxAllowlist || mdxAllowlist.has(tagName));
+    if (mdxCandidate && mdxAllowlist && !mdxAllowed) {
+      // If a component isn't allowlisted, keep it as text until fully closed.
+      tagPattern.lastIndex = start + 1;
+      match = tagPattern.exec(source);
+      continue;
+    }
     let end = tagPattern.lastIndex;
 
-    if (!isSelfClosing && !isLikelyMdxComponent(tagName)) {
+    if (!isSelfClosing && !mdxAllowed) {
       const closingIndex = findClosingHtmlTag(lowerSource, tagName.toLowerCase(), end);
       if (closingIndex === -1) {
+        if (htmlAutoClose && htmlAllowTags.has(tagNameLower)) {
+          const tail = source.slice(end);
+          const newlineCount = countNewlines(tail, htmlMaxNewlines + 1);
+          if (newlineCount <= htmlMaxNewlines) {
+            if (start > cursor) {
+              const absoluteFrom = baseIsFinite ? (baseOffset as number) + cursor : undefined;
+              const absoluteTo = baseIsFinite ? (baseOffset as number) + start : undefined;
+              pushTextSegment(segments, source.slice(cursor, start), absoluteFrom, absoluteTo, parseInline);
+            }
+            const rawSegment = source.slice(start);
+            const closedValue = `${rawSegment}</${tagName}>`;
+            const segment: MixedContentSegment = {
+              kind: "html",
+              value: closedValue,
+              range: createSegmentRange(baseOffset, start, source.length),
+              sanitized: sanitizeHtmlInWorker(closedValue),
+            };
+            segments.push(segment);
+            cursor = source.length;
+            break;
+          }
+        }
         // Tag not closed (common during streaming). Treat it as plain text and
         // continue scanning after the "<" so we don't get stuck on the same match.
         tagPattern.lastIndex = start + 1;
@@ -52,8 +131,8 @@ function splitByTagSegments(source: string, baseOffset: number | undefined, pars
       pushTextSegment(segments, source.slice(cursor, start), absoluteFrom, absoluteTo, parseInline);
     }
 
-    const rawSegment = source.slice(start, end);
-    const kind: MixedContentSegment["kind"] = isLikelyMdxComponent(tagName) ? "mdx" : "html";
+    let rawSegment = source.slice(start, end);
+    const kind: MixedContentSegment["kind"] = mdxAllowed ? "mdx" : "html";
     const segment: MixedContentSegment = {
       kind,
       value: rawSegment,
@@ -62,6 +141,18 @@ function splitByTagSegments(source: string, baseOffset: number | undefined, pars
     if (kind === "html") {
       segment.sanitized = sanitizeHtmlInWorker(rawSegment);
     } else {
+      const tail = source.slice(end);
+      const newlineCount = countNewlines(tail, mdxMaxNewlines + 1);
+      if (mdxAutoClose && newlineCount > mdxMaxNewlines) {
+        // Too many newlines after an unclosed MDX tag; defer to text to avoid swallowing content.
+        tagPattern.lastIndex = start + 1;
+        match = tagPattern.exec(source);
+        continue;
+      }
+      if (mdxAutoClose && !rawSegment.endsWith("/>")) {
+        rawSegment = selfCloseTag(rawSegment);
+        segment.value = rawSegment;
+      }
       segment.status = "pending";
     }
     segments.push(segment);
@@ -203,6 +294,53 @@ const VOID_HTML_TAGS = new Set(["br", "hr", "img", "meta", "input", "link", "sou
 
 function isVoidHtmlTag(tagName: string): boolean {
   return VOID_HTML_TAGS.has(tagName.toLowerCase());
+}
+
+function normalizeNewlineLimit(value: number | undefined): number {
+  if (!Number.isFinite(value ?? Number.NaN)) {
+    return 2;
+  }
+  return Math.max(0, value ?? 0);
+}
+
+function normalizeHtmlAllowlist(value: Iterable<string> | undefined): Set<string> {
+  if (!value) return DEFAULT_INLINE_HTML_AUTOCLOSE_TAGS;
+  const tags = new Set<string>();
+  for (const tag of value) {
+    if (tag) {
+      tags.add(tag.toLowerCase());
+    }
+  }
+  return tags.size > 0 ? tags : DEFAULT_INLINE_HTML_AUTOCLOSE_TAGS;
+}
+
+function normalizeComponentAllowlist(value: Iterable<string> | undefined): Set<string> | null {
+  if (!value) return null;
+  const tags = new Set<string>();
+  for (const tag of value) {
+    if (tag) tags.add(tag);
+  }
+  return tags.size > 0 ? tags : null;
+}
+
+function countNewlines(value: string, limit?: number): number {
+  let count = 0;
+  for (let i = 0; i < value.length; i++) {
+    if (value.charCodeAt(i) === 10) {
+      count += 1;
+      if (limit !== undefined && count >= limit) {
+        return count;
+      }
+    }
+  }
+  return count;
+}
+
+function selfCloseTag(rawTag: string): string {
+  if (rawTag.endsWith("/>")) return rawTag;
+  const closeIndex = rawTag.lastIndexOf(">");
+  if (closeIndex === -1) return rawTag;
+  return `${rawTag.slice(0, closeIndex)}/>`;
 }
 
 export function isLikelyMdxComponent(tagName: string): boolean {
