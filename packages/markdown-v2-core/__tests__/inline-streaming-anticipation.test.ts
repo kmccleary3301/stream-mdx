@@ -48,9 +48,31 @@ function testMathAlwaysRaw() {
   assert.deepStrictEqual(result, { kind: "raw", status: "raw", reason: "incomplete-math" });
 }
 
+function testMathAnticipation() {
+  const inline = prepareInlineStreamingContent("$x", { formatAnticipation: { mathInline: true }, math: true });
+  assert.strictEqual(inline.kind, "parse");
+  if (inline.kind !== "parse") throw new Error("expected parse result");
+  assert.strictEqual(inline.status, "anticipated");
+  assert.strictEqual(inline.appended, "$");
+  assert.strictEqual(inline.content, "$x$");
+
+  const display = prepareInlineStreamingContent("$$x", { formatAnticipation: { mathBlock: true }, math: true });
+  assert.strictEqual(display.kind, "parse");
+  if (display.kind !== "parse") throw new Error("expected parse result");
+  assert.strictEqual(display.status, "anticipated");
+  assert.strictEqual(display.appended, "$$");
+  assert.strictEqual(display.content, "$$x$$");
+}
+
+function testMathBlockNewlineBoundary() {
+  const display = prepareInlineStreamingContent("$$x\nmore", { formatAnticipation: { mathBlock: true }, math: true });
+  assert.deepStrictEqual(display, { kind: "raw", status: "raw", reason: "incomplete-math" });
+}
+
 testWithoutAnticipation();
 testWithAnticipation();
 testComplete();
 testMathAlwaysRaw();
+testMathAnticipation();
+testMathBlockNewlineBoundary();
 console.log("inline streaming anticipation tests passed");
-

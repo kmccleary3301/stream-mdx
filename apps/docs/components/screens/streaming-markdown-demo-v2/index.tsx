@@ -1,6 +1,6 @@
 "use client";
 
-import type { Block, InlineNode, Patch, PerformanceMetrics } from "@stream-mdx/core";
+import type { Block, FormatAnticipationConfig, InlineNode, Patch, PerformanceMetrics, WorkerIn } from "@stream-mdx/core";
 import type { HtmlElements, TableElements } from "@stream-mdx/react";
 import type { CoalescingMetrics } from "@stream-mdx/react/renderer/patch-coalescing";
 import type { PatchFlushResult } from "@stream-mdx/react/renderer/patch-commit-scheduler";
@@ -33,6 +33,8 @@ const ENABLE_WORKER_HELPER = process.env.NEXT_PUBLIC_STREAMING_WORKER_HELPER ===
 const WORKER_HELPER_MODE: DefaultWorkerMode = process.env.NEXT_PUBLIC_STREAMING_WORKER_HELPER_MODE === "blob" ? "blob" : "auto";
 
 type PatchSummary = { tx: number; count: number; byOp: Record<string, number> };
+type FormatAnticipationOptions = Exclude<FormatAnticipationConfig, boolean>;
+type DocPluginConfig = NonNullable<Extract<WorkerIn, { type: "INIT" }>["docPlugins"]>;
 type AutomationState = {
   idx: number;
   total: number;
@@ -552,6 +554,14 @@ export function StreamingMarkdownDemoV2({
   const [showInspector, setShowInspector] = useState<boolean>(false);
   const [showCodeMeta, setShowCodeMeta] = useState<boolean>(false);
   const [formatAnticipationEnabled, setFormatAnticipationEnabled] = useState<boolean>(true);
+  const [formatAnticipationConfig, setFormatAnticipationConfig] = useState<FormatAnticipationOptions>({
+    inline: true,
+    mathInline: true,
+    mathBlock: true,
+    html: true,
+    mdx: true,
+    regex: false,
+  });
   const [liveCodeHighlightingEnabled, setLiveCodeHighlightingEnabled] = useState<boolean>(false);
   const debugTimingRef = useRef(debugTiming);
   const showInspectorRef = useRef(showInspector);
@@ -670,13 +680,13 @@ export function StreamingMarkdownDemoV2({
   const pendingWorkerInitRef = useRef<MarkdownWorkerClient | null>(null);
   const componentRegistry = useRef(new ComponentRegistry());
   const hasPatchPipelineRef = useRef(false);
-  const docPluginConfigRef = useRef({
+  const docPluginConfigRef = useRef<DocPluginConfig>({
     footnotes: true,
     html: true,
     mdx: true,
     tables: true,
     callouts: true,
-    formatAnticipation: true,
+    formatAnticipation: formatAnticipationConfig,
     liveCodeHighlighting: false,
   });
   const finalizedOnceRef = useRef(false);
@@ -2321,11 +2331,124 @@ export function StreamingMarkdownDemoV2({
               onChange={(e) => {
                 const enabled = e.target.checked;
                 setFormatAnticipationEnabled(enabled);
-                docPluginConfigRef.current = { ...docPluginConfigRef.current, formatAnticipation: enabled };
+                docPluginConfigRef.current = {
+                  ...docPluginConfigRef.current,
+                  formatAnticipation: enabled ? formatAnticipationConfig : false,
+                };
                 onRestart();
               }}
             />
           </div>
+        </div>
+
+        <div className="flex flex-col gap-2 pl-4 text-muted text-xs">
+          <label className="flex items-center justify-between gap-2">
+            <span>Inline (em/strong/code/strike)</span>
+            <input
+              type="checkbox"
+              disabled={!formatAnticipationEnabled}
+              checked={formatAnticipationConfig.inline}
+              onChange={(e) => {
+                const updated = { ...formatAnticipationConfig, inline: e.target.checked };
+                setFormatAnticipationConfig(updated);
+                docPluginConfigRef.current = {
+                  ...docPluginConfigRef.current,
+                  formatAnticipation: formatAnticipationEnabled ? updated : false,
+                };
+                onRestart();
+              }}
+            />
+          </label>
+
+          <label className="flex items-center justify-between gap-2">
+            <span>Math inline ($...$)</span>
+            <input
+              type="checkbox"
+              disabled={!formatAnticipationEnabled}
+              checked={formatAnticipationConfig.mathInline}
+              onChange={(e) => {
+                const updated = { ...formatAnticipationConfig, mathInline: e.target.checked };
+                setFormatAnticipationConfig(updated);
+                docPluginConfigRef.current = {
+                  ...docPluginConfigRef.current,
+                  formatAnticipation: formatAnticipationEnabled ? updated : false,
+                };
+                onRestart();
+              }}
+            />
+          </label>
+
+          <label className="flex items-center justify-between gap-2">
+            <span>Math block ($$...$$)</span>
+            <input
+              type="checkbox"
+              disabled={!formatAnticipationEnabled}
+              checked={formatAnticipationConfig.mathBlock}
+              onChange={(e) => {
+                const updated = { ...formatAnticipationConfig, mathBlock: e.target.checked };
+                setFormatAnticipationConfig(updated);
+                docPluginConfigRef.current = {
+                  ...docPluginConfigRef.current,
+                  formatAnticipation: formatAnticipationEnabled ? updated : false,
+                };
+                onRestart();
+              }}
+            />
+          </label>
+
+          <label className="flex items-center justify-between gap-2">
+            <span>HTML segments</span>
+            <input
+              type="checkbox"
+              disabled={!formatAnticipationEnabled}
+              checked={formatAnticipationConfig.html}
+              onChange={(e) => {
+                const updated = { ...formatAnticipationConfig, html: e.target.checked };
+                setFormatAnticipationConfig(updated);
+                docPluginConfigRef.current = {
+                  ...docPluginConfigRef.current,
+                  formatAnticipation: formatAnticipationEnabled ? updated : false,
+                };
+                onRestart();
+              }}
+            />
+          </label>
+
+          <label className="flex items-center justify-between gap-2">
+            <span>MDX segments</span>
+            <input
+              type="checkbox"
+              disabled={!formatAnticipationEnabled}
+              checked={formatAnticipationConfig.mdx}
+              onChange={(e) => {
+                const updated = { ...formatAnticipationConfig, mdx: e.target.checked };
+                setFormatAnticipationConfig(updated);
+                docPluginConfigRef.current = {
+                  ...docPluginConfigRef.current,
+                  formatAnticipation: formatAnticipationEnabled ? updated : false,
+                };
+                onRestart();
+              }}
+            />
+          </label>
+
+          <label className="flex items-center justify-between gap-2">
+            <span>Regex plugins</span>
+            <input
+              type="checkbox"
+              disabled={!formatAnticipationEnabled}
+              checked={formatAnticipationConfig.regex}
+              onChange={(e) => {
+                const updated = { ...formatAnticipationConfig, regex: e.target.checked };
+                setFormatAnticipationConfig(updated);
+                docPluginConfigRef.current = {
+                  ...docPluginConfigRef.current,
+                  formatAnticipation: formatAnticipationEnabled ? updated : false,
+                };
+                onRestart();
+              }}
+            />
+          </label>
         </div>
 
         <div className="flex items-center justify-between text-muted text-xs">

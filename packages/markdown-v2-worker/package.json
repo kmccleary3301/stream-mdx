@@ -55,7 +55,7 @@
   "scripts": {
     "build": "tsup",
     "build:hosted": "tsup --config tsup.hosted-worker.config.ts",
-    "test": "tsx __tests__/*.test.ts",
+    "test": "tsx ../../scripts/run-tests.ts __tests__",
     "clean": "rm -rf dist",
     "prepack": "npm run build && npm run build:hosted"
   },

@@ -6,6 +6,7 @@ import "./worker-dom-stub";
 import type {
   Block,
   CompiledMdxModule,
+  FormatAnticipationConfig,
   InlineNode,
   InlineStreamingInlineStatus,
   NodeSnapshot,
@@ -37,6 +38,7 @@ import {
   extractMixedContentSegments,
   generateBlockId,
   normalizeBlockquoteText,
+  normalizeFormatAnticipation,
   parseCodeFenceInfo,
   prepareInlineStreamingContent,
   removeHeadingMarkers,
@@ -67,14 +69,16 @@ const CODE_HIGHLIGHT_CACHE = new Map<string, { html: string; lang: string }>();
 const MAX_CODE_HIGHLIGHT_CACHE_ENTRIES = 200;
 type WorkerMdxMode = "server" | "worker";
 let mdxCompileMode: WorkerMdxMode = "server";
-let enableFormatAnticipation = false;
+let formatAnticipationConfig = normalizeFormatAnticipation(false);
 let enableLiveCodeHighlighting = false;
 let enableMath = true;
+let mdxComponentAllowlist: Set<string> | null = null;
 const WORKER_MDX_CACHE = new Map<string, CompiledMdxModule>();
 const WORKER_MDX_INFLIGHT = new Map<string, Promise<CompiledMdxModule>>();
 const MAX_WORKER_MDX_CACHE_ENTRIES = 128;
 let loggedMdxSkipCount = 0;
 const MAX_MDX_SKIP_LOGS = 20;
+const MIXED_CONTENT_AUTOCLOSE_NEWLINES = 2;
 
 // Debug toggles (controlled via env or global flag to avoid noisy consoles in dev)
 function isDebugEnabled(flag: "mdx" | "worker"): boolean {
@@ -98,6 +102,10 @@ function isDebugEnabled(flag: "mdx" | "worker"): boolean {
 const DEBUG_MDX = isDebugEnabled("mdx");
 
 const sharedTextEncoder: TextEncoder | null = typeof TextEncoder !== "undefined" ? new TextEncoder() : null;
+
+const shouldTrackInlineStatus = () =>
+  formatAnticipationConfig.inline || formatAnticipationConfig.mathInline || formatAnticipationConfig.mathBlock;
+const shouldAllowMixedStreaming = () => formatAnticipationConfig.html || formatAnticipationConfig.mdx;
 
 function now(): number {
   return typeof performance !== "undefined" && typeof performance.now === "function" ? performance.now() : Date.now();
@@ -413,17 +421,27 @@ type InlineStreamingParseResult = { inline: InlineNode[]; status: InlineStreamin
 /**
  * Safe inline parsing for streaming content that may have incomplete expressions.
  *
- * When `enableFormatAnticipation` is on, this will append missing closers (e.g. `*`, `**`, `` ` ``, `~~`)
+ * When format anticipation is on, this will append missing closers (e.g. `*`, `**`, `` ` ``, `~~`, `$`)
  * to allow the inline parser to withhold leading markers while streaming.
  */
 function parseInlineStreaming(content: string): InlineStreamingParseResult {
-  const prepared = prepareInlineStreamingContent(content, { formatAnticipation: enableFormatAnticipation, math: enableMath });
+  const prepared = prepareInlineStreamingContent(content, { formatAnticipation: formatAnticipationConfig, math: enableMath });
   if (prepared.kind === "raw") {
     return { inline: [{ kind: "text", text: content }], status: prepared.status };
   }
+  let preparedContent = prepared.content;
+  let appended = prepared.appended;
+  if (formatAnticipationConfig.regex) {
+    const regexAppend = inlineParser.getRegexAnticipationAppend(content);
+    if (regexAppend) {
+      preparedContent += regexAppend;
+      appended += regexAppend;
+    }
+  }
+  const status = appended.length > 0 ? "anticipated" : prepared.status;
   return {
-    inline: inlineParser.parse(prepared.content, { cache: false }),
-    status: prepared.status,
+    inline: inlineParser.parse(preparedContent, { cache: false }),
+    status,
   };
 }
 
@@ -444,8 +462,9 @@ async function initialize(
     tables?: boolean;
     callouts?: boolean;
     math?: boolean;
-    formatAnticipation?: boolean;
+    formatAnticipation?: FormatAnticipationConfig;
     liveCodeHighlighting?: boolean;
+    mdxComponentNames?: string[];
   },
   mdxOptions?: { compileMode?: WorkerMdxMode },
 ) {
@@ -479,8 +498,13 @@ async function initialize(
   };
 
   enableMath = enable.math;
-  enableFormatAnticipation = enable.formatAnticipation;
+  formatAnticipationConfig = normalizeFormatAnticipation(enable.formatAnticipation);
   enableLiveCodeHighlighting = enable.liveCodeHighlighting;
+  if (Array.isArray(docPlugins?.mdxComponentNames) && docPlugins?.mdxComponentNames.length > 0) {
+    mdxComponentAllowlist = new Set(docPlugins.mdxComponentNames);
+  } else {
+    mdxComponentAllowlist = null;
+  }
 
   inlineParser = new InlineParser({ enableMath });
   // Make inline parser available to document plugins (e.g., for footnote definition parsing)
@@ -768,13 +792,13 @@ async function enrichBlock(block: Block) {
       if (block.isFinalized) {
         block.payload.raw = normalizedHeading;
         block.payload.inline = inlineParser.parse(normalizedHeading);
-        if (enableFormatAnticipation && block.payload.meta) {
+        if (shouldTrackInlineStatus() && block.payload.meta) {
           (block.payload.meta as Record<string, unknown>).inlineStatus = undefined;
         }
       } else {
         const parsed = parseInlineStreaming(normalizedHeading);
         block.payload.inline = parsed.inline;
-        if (enableFormatAnticipation && block.payload.meta) {
+        if (shouldTrackInlineStatus() && block.payload.meta) {
           (block.payload.meta as Record<string, unknown>).inlineStatus = parsed.status;
         }
       }
@@ -786,7 +810,16 @@ async function enrichBlock(block: Block) {
       block.payload.raw = normalized;
       const streamingParsed = !block.isFinalized ? parseInlineStreaming(normalized) : null;
       const inlineParse = block.isFinalized ? (value: string) => inlineParser.parse(value) : (value: string) => parseInlineStreaming(value).inline;
-      const segments = extractMixedContentSegments(normalized, undefined, inlineParse);
+      const mixedOptions =
+        !block.isFinalized && shouldAllowMixedStreaming()
+          ? {
+              html: formatAnticipationConfig.html ? { autoClose: true, maxNewlines: MIXED_CONTENT_AUTOCLOSE_NEWLINES } : undefined,
+              mdx: formatAnticipationConfig.mdx
+                ? { autoClose: true, maxNewlines: MIXED_CONTENT_AUTOCLOSE_NEWLINES, componentAllowlist: mdxComponentAllowlist ?? undefined }
+                : undefined,
+            }
+          : undefined;
+      const segments = extractMixedContentSegments(normalized, undefined, inlineParse, mixedOptions);
       const currentMeta = (block.payload.meta ?? {}) as Record<string, unknown>;
       const nextMeta: Record<string, unknown> = {
         ...currentMeta,
@@ -797,7 +830,7 @@ async function enrichBlock(block: Block) {
       } else {
         nextMeta.mixedSegments = undefined;
       }
-      if (enableFormatAnticipation) {
+      if (shouldTrackInlineStatus()) {
         nextMeta.inlineStatus = block.isFinalized ? undefined : streamingParsed?.status;
       }
       if (Object.keys(nextMeta).length > 0) {
@@ -825,8 +858,9 @@ async function enrichBlock(block: Block) {
       const currentMeta = (block.payload.meta ?? {}) as Record<string, unknown>;
       const nextMeta: Record<string, unknown> = { ...currentMeta };
       let metaChanged = false;
+      const allowMixedStreaming = shouldAllowMixedStreaming();
 
-      if (enableFormatAnticipation) {
+      if (shouldTrackInlineStatus()) {
         const desired = block.isFinalized ? undefined : streamingParsed?.status;
         if (desired !== undefined) {
           if (!Object.prototype.hasOwnProperty.call(nextMeta, "inlineStatus") || nextMeta.inlineStatus !== desired) {
@@ -854,17 +888,41 @@ async function enrichBlock(block: Block) {
       const shouldExtractSegments = typeof rawParagraph === "string" && (rawParagraph.includes("<") || rawParagraph.includes("{"));
       if (shouldExtractSegments) {
         const baseOffset = typeof block.payload.range?.from === "number" ? block.payload.range.from : undefined;
-        const segments = extractMixedContentSegments(rawParagraph, baseOffset, (value) => inlineParse(value));
+        const mixedOptions =
+          !block.isFinalized && shouldAllowMixedStreaming()
+            ? {
+                html: formatAnticipationConfig.html ? { autoClose: true, maxNewlines: MIXED_CONTENT_AUTOCLOSE_NEWLINES } : undefined,
+                mdx: formatAnticipationConfig.mdx
+                  ? { autoClose: true, maxNewlines: MIXED_CONTENT_AUTOCLOSE_NEWLINES, componentAllowlist: mdxComponentAllowlist ?? undefined }
+                  : undefined,
+              }
+            : undefined;
+        const segments = extractMixedContentSegments(rawParagraph, baseOffset, (value) => inlineParse(value), mixedOptions);
         if (segments.length > 0) {
           nextMeta.mixedSegments = segments;
           metaChanged = true;
+          if (allowMixedStreaming) {
+            nextMeta.allowMixedStreaming = true;
+            metaChanged = true;
+          } else if (Object.prototype.hasOwnProperty.call(nextMeta, "allowMixedStreaming")) {
+            nextMeta.allowMixedStreaming = undefined;
+            metaChanged = true;
+          }
         } else if (Object.prototype.hasOwnProperty.call(nextMeta, "mixedSegments")) {
           nextMeta.mixedSegments = undefined;
           metaChanged = true;
+          if (Object.prototype.hasOwnProperty.call(nextMeta, "allowMixedStreaming")) {
+            nextMeta.allowMixedStreaming = undefined;
+            metaChanged = true;
+          }
         }
       } else if (Object.prototype.hasOwnProperty.call(nextMeta, "mixedSegments")) {
         nextMeta.mixedSegments = undefined;
         metaChanged = true;
+        if (Object.prototype.hasOwnProperty.call(nextMeta, "allowMixedStreaming")) {
+          nextMeta.allowMixedStreaming = undefined;
+          metaChanged = true;
+        }
       }
 
       if (metaChanged) {
@@ -2206,6 +2264,22 @@ async function finalizeAllBlocks() {
     if (finalizeSetProps.length > 0) {
       dispatchPatchBatch(finalizeSetProps, metricsCollector);
     }
+  }
+
+  if (deferredPatchQueue.length > 0) {
+    const previousCredits = workerCredits;
+    workerCredits = 1;
+    const maxIterations = Math.ceil(deferredPatchQueue.length / MAX_DEFERRED_FLUSH_PATCHES) + 8;
+
+    for (let i = 0; i < maxIterations && deferredPatchQueue.length > 0; i++) {
+      const before = deferredPatchQueue.length;
+      flushDeferredPatches();
+      if (deferredPatchQueue.length >= before) {
+        break;
+      }
+    }
+
+    workerCredits = previousCredits;
   }
 
   if (getActiveMetricsCollector() === metricsCollector) {

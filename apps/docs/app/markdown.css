@@ -1,0 +1,230 @@
+ol {
+  list-style: none;
+  counter-reset: my-awesome-counter;
+}
+
+ol li {
+  counter-increment: my-awesome-counter;
+}
+
+ol li::before {
+  content: counter(my-awesome-counter) ". ";
+}
+
+.markdown {
+  max-width: none;
+}
+
+.markdown h1 {
+  margin-top: 2rem;
+  font-weight: 600;
+}
+
+/* .markdown h1:first-child {
+  margin-top: 0;
+} */
+
+.markdown h2 {
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.markdown h2:first-child {
+  margin-top: 0;
+}
+
+.markdown h3 {
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.markdown h3:first-child {
+  margin-top: 0;
+}
+
+.markdown h4 {
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.markdown h4:first-child {
+  margin-top: 0;
+}
+
+.markdown h5 {
+  font-weight: 600;
+}
+
+.markdown h5:first-child {
+  margin-top: 0;
+}
+
+.markdown blockquote {
+  --tw-border-opacity: 1;
+
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  padding-left: 1rem;
+  margin: 0;
+  line-height: 1.5rem;
+  border-color: rgb(155 155 155 / var(--tw-border-opacity));
+  border-left-width: 2px;
+}
+
+.markdown blockquote > p {
+  margin: 0;
+}
+
+.markdown blockquote > p::after,
+.markdown blockquote > p::before {
+  display: none;
+}
+
+.markdown ol {
+  display: flex;
+  flex-direction: column;
+  padding-left: 0;
+  list-style-type: none;
+  counter-reset: list-number;
+}
+
+.markdown ol:first-child > li {
+  padding-left: 1.25rem;
+}
+
+.markdown ol > li {
+  display: block;
+  min-height: 28px;
+  margin-top: 0;
+  margin-bottom: 0;
+  counter-increment: list-number;
+}
+
+.markdown ol > li::before {
+  --tw-translate-x: -100%;
+  --tw-numeric-spacing: tabular-nums;
+
+  position: absolute;
+  padding-right: 0.5rem;
+  font-variant-numeric: var(--tw-ordinal) var(--tw-slashed-zero) var(--tw-numeric-figure) var(--tw-numeric-spacing) var(--tw-numeric-fraction);
+  color: #9b9b9b;
+  color: var(--text-tertiary);
+  content: counters(list-number, ".") ".";
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y))
+    scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.markdown ul {
+  display: flex;
+  flex-direction: column;
+  padding-left: 0;
+}
+
+.markdown ul:first-child > li {
+  padding-left: 1.25rem;
+}
+
+.markdown ul > li {
+  display: block;
+  min-height: 28px;
+  margin: 0;
+}
+
+.markdown ul > li::before {
+  --tw-translate-x: -100%;
+
+  position: absolute;
+  padding-right: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  content: "\2022";
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y))
+    scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.markdown ol li > p,
+.markdown ul li > p {
+  margin: 0;
+}
+
+.markdown ol li > pre,
+.markdown ul li > pre {
+  margin-top: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.markdown ol ol,
+.markdown ol ul,
+.markdown ul ol,
+.markdown ul ul {
+  margin-top: 0;
+  margin-bottom: 0;
+  margin-left: 1rem;
+}
+
+.markdown table {
+  --tw-border-spacing-x: 0px;
+  --tw-border-spacing-y: 0px;
+
+  width: 100%;
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+  border-spacing: var(--tw-border-spacing-x) var(--tw-border-spacing-y);
+  border-collapse: separate;
+}
+
+.markdown th {
+  padding: 0.25rem 0.75rem;
+  background-color: hsl(0deg 0% 93% / 20%);
+  border-top-width: 1px;
+  border-bottom-width: 1px;
+  border-left-width: 1px;
+}
+
+.markdown th:first-child {
+  border-top-left-radius: 0.375rem;
+}
+
+.markdown th:last-child {
+  border-right-width: 1px;
+  border-top-right-radius: 0.375rem;
+}
+
+.markdown td {
+  padding: 0.25rem 0.75rem;
+  border-bottom-width: 1px;
+  border-left-width: 1px;
+}
+
+.markdown td:last-child {
+  border-right-width: 1px;
+}
+
+.markdown tbody tr:last-child td:first-child {
+  border-bottom-left-radius: 0.375rem;
+}
+
+.markdown tbody tr:last-child td:last-child {
+  border-bottom-right-radius: 0.375rem;
+}
+
+.markdown a {
+  font-weight: 400;
+  color: #2964aa;
+  color: var(--link);
+  text-decoration-line: none;
+}
+
+.markdown a:hover {
+  color: #749ac8;
+  color: var(--link-hover);
+}
+
+.gizmo .markdown > :not(pre),
+.gizmo .markdown > :not(pre) > :not(a) {
+  color: #0d0d0d;
+  color: var(--text-primary);
+}

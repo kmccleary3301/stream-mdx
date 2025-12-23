@@ -24,6 +24,41 @@ export interface InlineParseOptions {
   cache?: boolean;
 }
 
+function ensureGlobal(pattern: RegExp): RegExp {
+  if (pattern.global) return pattern;
+  const flags = pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`;
+  return new RegExp(pattern.source, flags);
+}
+
+function findLastMatch(pattern: RegExp, value: string): RegExpExecArray | null {
+  const re = ensureGlobal(pattern);
+  let match: RegExpExecArray | null = null;
+  let next: RegExpExecArray | null;
+  while ((next = re.exec(value)) !== null) {
+    match = next;
+  }
+  return match;
+}
+
+function findMatchAfter(pattern: RegExp, value: string, startIndex: number): RegExpExecArray | null {
+  const re = ensureGlobal(pattern);
+  re.lastIndex = Math.max(0, startIndex);
+  return re.exec(value);
+}
+
+function isSamePattern(a: RegExp, b: RegExp): boolean {
+  return a.source === b.source && a.flags === b.flags;
+}
+
+function countMatches(pattern: RegExp, value: string): number {
+  const re = ensureGlobal(pattern);
+  let count = 0;
+  while (re.exec(value)) {
+    count += 1;
+  }
+  return count;
+}
+
 /**
  * Main inline parser that combines Lezer parsing with plugins
  */
@@ -90,6 +125,51 @@ export class InlineParser {
     }
 
     return result;
+  }
+
+  /**
+   * Streaming regex anticipation helper. Returns an append string if a plugin
+   * declares an incomplete match at the end of the buffer.
+   */
+  getRegexAnticipationAppend(content: string): string | null {
+    if (!content || this.plugins.length === 0) {
+      return null;
+    }
+
+    for (const plugin of this.plugins) {
+      if (!("re" in plugin)) continue;
+      const regexPlugin = plugin as RegexInlinePlugin;
+      const anticipation = regexPlugin.anticipation;
+      if (!anticipation) continue;
+
+      const maxScanChars = Number.isFinite(anticipation.maxScanChars ?? Number.NaN) ? Math.max(1, anticipation.maxScanChars ?? 0) : 240;
+      const scan = content.slice(Math.max(0, content.length - maxScanChars));
+      if (regexPlugin.fastCheck && !regexPlugin.fastCheck(scan)) {
+        continue;
+      }
+
+      const lastStart = findLastMatch(anticipation.start, scan);
+      if (!lastStart) continue;
+
+      if (isSamePattern(anticipation.start, anticipation.end)) {
+        const occurrences = countMatches(anticipation.start, scan);
+        if (occurrences % 2 === 0) {
+          continue;
+        }
+      } else {
+        const startIndex = lastStart.index + lastStart[0].length;
+        const hasEnd = Boolean(findMatchAfter(anticipation.end, scan, startIndex));
+        if (hasEnd) continue;
+      }
+
+      const appendValue =
+        typeof anticipation.append === "function" ? anticipation.append(lastStart, content) : anticipation.append;
+      if (!appendValue) continue;
+
+      return appendValue;
+    }
+
+    return null;
   }
 
   /**
@@ -249,13 +329,20 @@ export class InlineParser {
       fastCheck: (text) => text.indexOf("*") !== -1,
     } as RegexInlinePlugin);
 
-    // Citations plugin: [^id] or @cite{...}
+    // Citations plugin: [^id], @cite{...}, or {cite:...}
     this.registerPlugin({
       id: "citations",
       priority: 10,
-      re: /\[\^([^\]]+)\]|@cite\{([^}]+)\}/g,
-      toNode: (match) => ({ kind: "citation", id: match[1] || match[2] }),
-      fastCheck: (text) => text.indexOf("@") !== -1 || text.indexOf("[^") !== -1,
+      re: /\[\^([^\]\n]+)\]|@cite\{([^}\n]+)\}|\{cite:([^}\n]+)\}/g,
+      toNode: (match) => ({ kind: "citation", id: match[1] || match[2] || match[3] }),
+      fastCheck: (text) => text.indexOf("@cite") !== -1 || text.indexOf("[^") !== -1 || text.indexOf("{cite:") !== -1,
+      anticipation: {
+        start: /@cite\{|\{cite:/g,
+        end: /\}/g,
+        full: /@cite\{[^}\n]+?\}|\{cite:[^}\n]+?\}/g,
+        append: "}",
+        maxScanChars: 120,
+      },
     } as RegexInlinePlugin);
 
     // Mentions plugin: @username (lower precedence)

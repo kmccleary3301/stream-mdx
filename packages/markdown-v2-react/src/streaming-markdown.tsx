@@ -1,7 +1,7 @@
 import type React from "react";
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 
-import type { Block, PatchMetrics } from "@stream-mdx/core";
+import type { Block, FormatAnticipationConfig, PatchMetrics } from "@stream-mdx/core";
 import { MarkdownRenderer } from "./renderer";
 import { MarkdownBlocksRenderer } from "./renderer";
 import { useMdxCoordinator } from "./mdx-coordinator";
@@ -22,6 +22,7 @@ interface StreamingMarkdownConfigSignature {
   prewarm: string[];
   scheduling: StreamingSchedulerOptions | undefined;
   mdxStrategy?: "server" | "worker";
+  mdxComponentKeys: string[];
 }
 
 export interface StreamingSchedulerOptions {
@@ -42,7 +43,7 @@ export interface StreamingFeatureFlags {
   tables?: boolean;
   callouts?: boolean;
   math?: boolean;
-  formatAnticipation?: boolean;
+  formatAnticipation?: FormatAnticipationConfig;
   liveCodeHighlighting?: boolean;
 }
 
@@ -191,8 +192,9 @@ function StreamingMarkdownComponent(
         prewarm: prewarmLangs,
         scheduling,
         mdxStrategy: mdxCompileMode,
+        mdxComponentKeys: mdxComponents ? Object.keys(mdxComponents).sort() : [],
       }),
-    [features, prewarmLangs, scheduling, mdxCompileMode],
+    [features, prewarmLangs, scheduling, mdxCompileMode, mdxComponents],
   );
 
   const rendererRef = useRef<{ renderer: MarkdownRenderer; signature: string }>();
@@ -200,6 +202,13 @@ function StreamingMarkdownComponent(
   const rendererKey = `${configSignature}:${session}`;
 
   if (!rendererRef.current || rendererRef.current.signature !== rendererKey) {
+    const mdxConfig =
+      mdxCompileMode || mdxComponents
+        ? {
+            compileStrategy: mdxCompileMode ?? "server",
+            components: mdxComponents,
+          }
+        : undefined;
     const rendererConfig: RendererConfig = {
       highlight: prewarmLangs.length > 0 ? { langs: prewarmLangs } : undefined,
       plugins: features,
@@ -213,8 +222,8 @@ function StreamingMarkdownComponent(
         batch: scheduling?.batch,
         historyLimit: scheduling?.historyLimit,
       },
-          mdx: mdxCompileMode ? { compileStrategy: mdxCompileMode, components: mdxComponents } : undefined,
-        };
+      mdx: mdxConfig,
+    };
     rendererRef.current = {
       renderer: new MarkdownRenderer(rendererConfig),
       signature: rendererKey,

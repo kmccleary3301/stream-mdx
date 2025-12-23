@@ -3,6 +3,11 @@ import { Inter } from "next/font/google";
 
 import "./globals.css";
 
+import { Providers } from "@/components/providers";
+import { SiteHeader } from "@/components/layout/site-header";
+
+import clsx from "clsx";
+
 export const metadata: Metadata = {
   title: "StreamMDX Docs",
   description: "Documentation and demo for StreamMDX.",
@@ -15,8 +20,15 @@ const inter = Inter({
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.className} suppressHydrationWarning>
-      <body>{children}</body>
+    <html lang="en" className={clsx(inter.className)} suppressHydrationWarning>
+      <body>
+        <Providers>
+          <SiteHeader />
+          <main className="mx-auto max-w-screen-sm overflow-x-hidden px-6 py-24 md:overflow-x-visible">
+            <article className="article">{children}</article>
+          </main>
+        </Providers>
+      </body>
     </html>
   );
 }
