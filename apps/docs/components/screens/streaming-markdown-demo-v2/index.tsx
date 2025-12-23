@@ -1,6 +1,6 @@
 "use client";
 
-import type { Block, FormatAnticipationConfig, InlineNode, Patch, PerformanceMetrics } from "@stream-mdx/core";
+import type { Block, FormatAnticipationConfig, InlineNode, Patch, PerformanceMetrics, WorkerIn } from "@stream-mdx/core";
 import type { HtmlElements, TableElements } from "@stream-mdx/react";
 import type { CoalescingMetrics } from "@stream-mdx/react/renderer/patch-coalescing";
 import type { PatchFlushResult } from "@stream-mdx/react/renderer/patch-commit-scheduler";
@@ -34,6 +34,7 @@ const WORKER_HELPER_MODE: DefaultWorkerMode = process.env.NEXT_PUBLIC_STREAMING_
 
 type PatchSummary = { tx: number; count: number; byOp: Record<string, number> };
 type FormatAnticipationOptions = Exclude<FormatAnticipationConfig, boolean>;
+type DocPluginConfig = NonNullable<Extract<WorkerIn, { type: "INIT" }>["docPlugins"]>;
 type AutomationState = {
   idx: number;
   total: number;
@@ -679,7 +680,7 @@ export function StreamingMarkdownDemoV2({
   const pendingWorkerInitRef = useRef<MarkdownWorkerClient | null>(null);
   const componentRegistry = useRef(new ComponentRegistry());
   const hasPatchPipelineRef = useRef(false);
-  const docPluginConfigRef = useRef({
+  const docPluginConfigRef = useRef<DocPluginConfig>({
     footnotes: true,
     html: true,
     mdx: true,
