@@ -1,5 +1,11 @@
 # @stream-mdx/core
 
+## 0.1.0
+
+### Minor Changes
+
+- 294e557: Release StreamMDX 0.1.0 across all published packages.
+
 ## 0.0.3
 
 ### Patch Changes
