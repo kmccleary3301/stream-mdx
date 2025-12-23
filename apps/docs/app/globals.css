@@ -383,7 +383,7 @@
     }
 
     .footnotes > hr {
-      border-color: var(--border);
+      display: none;
     }
 
     .footnotes ol {
