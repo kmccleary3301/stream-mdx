@@ -62,6 +62,31 @@ const documentPluginState: DocumentState = {};
 let txCounter = 0;
 const workerGrammarEngine: "js" | "wasm" = "js";
 let workerCredits = 1;
+let lastDiffSummary:
+  | {
+      prevCount: number;
+      nextCount: number;
+      prefix: number;
+      removeCount: number;
+      addCount: number;
+      structuralPatches: number;
+      contentPatches: number;
+      immediatePatches: number;
+      deferredQueue: number;
+    }
+  | null = null;
+let lastStructuralDiffSummary: typeof lastDiffSummary = null;
+let maxEmittedBlockCount = 0;
+let maxDeferredQueueSize = 0;
+let maxStructuralBlockCount = 0;
+let lastHighCountNoStructural:
+  | {
+      nextCount: number;
+      sliceStart: number;
+      prevSlice: Array<{ id: string; type: string; raw: string }>;
+      nextSlice: Array<{ id: string; type: string; raw: string }>;
+    }
+  | null = null;
 const MAX_DEFERRED_PATCHES = 400;
 let deferredPatchQueue: Patch[] = [];
 const MAX_DEFERRED_FLUSH_PATCHES = 120;
@@ -79,6 +104,56 @@ const MAX_WORKER_MDX_CACHE_ENTRIES = 128;
 let loggedMdxSkipCount = 0;
 const MAX_MDX_SKIP_LOGS = 20;
 const MIXED_CONTENT_AUTOCLOSE_NEWLINES = 2;
+const DEFAULT_APPEND_CHUNK_SIZE = 1400;
+const DEFAULT_APPEND_BATCH_MS = 12;
+const MIN_APPEND_CHUNK_SIZE = 256;
+const MAX_APPEND_CHUNK_SIZE = 12000;
+const MIN_APPEND_BATCH_MS = 4;
+const MAX_APPEND_BATCH_MS = 50;
+const APPEND_NEWLINE_GRACE = 200;
+
+function clampInt(value: number, min: number, max: number): number {
+  if (!Number.isFinite(value)) return min;
+  return Math.min(max, Math.max(min, Math.floor(value)));
+}
+
+function readNumericEnv(key: string): number | null {
+  try {
+    if (typeof process !== "undefined" && process.env && process.env[key]) {
+      const parsed = Number(process.env[key]);
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+  } catch {
+    // ignore env read errors
+  }
+  return null;
+}
+
+const APPEND_CHUNK_SIZE = clampInt(
+  readNumericEnv("NEXT_PUBLIC_STREAMING_APPEND_CHUNK") ?? DEFAULT_APPEND_CHUNK_SIZE,
+  MIN_APPEND_CHUNK_SIZE,
+  MAX_APPEND_CHUNK_SIZE,
+);
+const APPEND_BATCH_MS = clampInt(
+  readNumericEnv("NEXT_PUBLIC_STREAMING_APPEND_BATCH_MS") ?? DEFAULT_APPEND_BATCH_MS,
+  MIN_APPEND_BATCH_MS,
+  MAX_APPEND_BATCH_MS,
+);
+
+function sliceAppendChunk(text: string, maxChars: number): { chunk: string; rest: string } {
+  if (text.length <= maxChars) {
+    return { chunk: text, rest: "" };
+  }
+  const newlineIndex = text.lastIndexOf("\n", maxChars);
+  const cut = newlineIndex > 0 && maxChars - newlineIndex <= APPEND_NEWLINE_GRACE ? newlineIndex + 1 : maxChars;
+  return { chunk: text.slice(0, cut), rest: text.slice(cut) };
+}
+
+function waitForNextTick(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
 
 // Debug toggles (controlled via env or global flag to avoid noisy consoles in dev)
 function isDebugEnabled(flag: "mdx" | "worker"): boolean {
@@ -327,8 +402,26 @@ function partitionPatchesForCredits(patches: Patch[], maxImmediate?: number): Pa
   const deferred: Patch[] = [];
 
   let heavyBudget = computeHeavyPatchBudget(workerCredits);
+  let nonStructuralImmediate = 0;
+
+  const isStructuralPatch = (patch: Patch): boolean => {
+    switch (patch.op) {
+      case "insertChild":
+      case "deleteChild":
+      case "replaceChild":
+      case "reorder":
+        return true;
+      default:
+        return false;
+    }
+  };
 
   for (const patch of combined) {
+    if (isStructuralPatch(patch)) {
+      immediate.push(patch);
+      continue;
+    }
+
     const heavy = isHeavyPatch(patch);
     if (heavy) {
       if (heavyBudget <= 0) {
@@ -340,15 +433,17 @@ function partitionPatchesForCredits(patches: Patch[], maxImmediate?: number): Pa
         heavyBudget -= 1;
       }
     }
+
+    if (typeof maxImmediate === "number" && nonStructuralImmediate >= maxImmediate) {
+      deferred.push(patch);
+      continue;
+    }
+
     immediate.push(patch);
+    nonStructuralImmediate += 1;
   }
 
-  if (typeof maxImmediate === "number" && immediate.length > maxImmediate) {
-    const overflow = immediate.splice(maxImmediate);
-    deferredPatchQueue = overflow.concat(deferred);
-  } else {
-    deferredPatchQueue = deferred;
-  }
+  deferredPatchQueue = deferred;
   return immediate;
 }
 
@@ -554,31 +649,44 @@ async function initialize(
  * Handle append operations for streaming
  */
 async function handleAppend(text: string) {
-  performanceTimer.mark("append-operation");
+  let remaining = text;
+  let batchStartedAt = now();
 
-  const metricsCollector = new WorkerMetricsCollector(workerGrammarEngine);
-  setActiveMetricsCollector(metricsCollector);
+  while (remaining.length > 0) {
+    const { chunk, rest } = sliceAppendChunk(remaining, APPEND_CHUNK_SIZE);
+    remaining = rest;
 
-  await appendAndReparse(text, metricsCollector);
-  const hadPatchMetrics = metricsCollector.patchCount > 0;
+    performanceTimer.mark("append-operation");
 
-  const totalTime = performanceTimer.measure("append-operation");
+    const metricsCollector = new WorkerMetricsCollector(workerGrammarEngine);
+    setActiveMetricsCollector(metricsCollector);
 
-  if (getActiveMetricsCollector() === metricsCollector) {
-    setActiveMetricsCollector(null);
-  }
+    await appendAndReparse(chunk, metricsCollector);
+    const hadPatchMetrics = metricsCollector.patchCount > 0;
 
-  // Maintain legacy parse timing for compatibility
-  if (!hadPatchMetrics && totalTime !== null && Number.isFinite(totalTime)) {
-    postMessage({
-      type: "METRICS",
-      metrics: {
-        parseMs: roundMetric(totalTime),
-        parseTime: roundMetric(totalTime),
-        blocksProduced: blocks.length,
-        grammarEngine: workerGrammarEngine,
-      } as PerformanceMetrics,
-    } as WorkerOut);
+    const totalTime = performanceTimer.measure("append-operation");
+
+    if (getActiveMetricsCollector() === metricsCollector) {
+      setActiveMetricsCollector(null);
+    }
+
+    // Maintain legacy parse timing for compatibility
+    if (!hadPatchMetrics && totalTime !== null && Number.isFinite(totalTime)) {
+      postMessage({
+        type: "METRICS",
+        metrics: {
+          parseMs: roundMetric(totalTime),
+          parseTime: roundMetric(totalTime),
+          blocksProduced: blocks.length,
+          grammarEngine: workerGrammarEngine,
+        } as PerformanceMetrics,
+      } as WorkerOut);
+    }
+
+    if (remaining.length > 0 && now() - batchStartedAt >= APPEND_BATCH_MS) {
+      await waitForNextTick();
+      batchStartedAt = now();
+    }
   }
 }
 
@@ -626,11 +734,26 @@ async function appendAndReparse(appendedText: string, metrics?: WorkerMetricsCol
   const changeRanges = computeChangedRanges(currentContent, newContent);
 
   // Use Lezer incremental parsing with fragments
-  const newTree = lastTree ? mdParser.parse(newContent, lastTree.fragments) : mdParser.parse(newContent);
+  let newTree = lastTree ? mdParser.parse(newContent, lastTree.fragments) : mdParser.parse(newContent);
 
   // Find the changed region
   let changedBlocks = await extractBlocks(newTree, newContent);
   changedBlocks = runDocumentPlugins(changedBlocks, newContent);
+  const lastRange = changedBlocks.length > 0 ? changedBlocks[changedBlocks.length - 1]?.payload?.range : undefined;
+  const lastTo = typeof lastRange?.to === "number" ? lastRange.to : 0;
+  if (lastTo < newContent.length - 1) {
+    const tail = newContent.slice(lastTo).trim();
+    if (tail.length > 0) {
+      const fullTree = mdParser.parse(newContent);
+      let fullBlocks = await extractBlocks(fullTree, newContent);
+      fullBlocks = runDocumentPlugins(fullBlocks, newContent);
+      const fullLast = fullBlocks.length > 0 ? fullBlocks[fullBlocks.length - 1]?.payload?.range?.to ?? 0 : 0;
+      if (fullLast >= newContent.length - 1 || fullBlocks.length >= changedBlocks.length) {
+        newTree = fullTree;
+        changedBlocks = fullBlocks;
+      }
+    }
+  }
   const prevBlocks = blocks;
 
   // Update our state
@@ -1644,6 +1767,53 @@ async function emitBlockDiffPatches(previousBlocks: Block[], nextBlocks: Block[]
     });
   }
   const immediatePatches = partitionPatchesForCredits(combined, paragraphLimit === null ? undefined : paragraphLimit);
+  if (deferredPatchQueue.length > maxDeferredQueueSize) {
+    maxDeferredQueueSize = deferredPatchQueue.length;
+  }
+
+  let structuralCount = 0;
+  for (const patch of patches) {
+    if (patch.op === "insertChild" || patch.op === "deleteChild" || patch.op === "replaceChild" || patch.op === "reorder") {
+      structuralCount += 1;
+    }
+  }
+  lastDiffSummary = {
+    prevCount: previousBlocks.length,
+    nextCount: nextBlocks.length,
+    prefix,
+    removeCount,
+    addCount,
+    structuralPatches: structuralCount,
+    contentPatches: contentPatches.length,
+    immediatePatches: immediatePatches.length,
+    deferredQueue: deferredPatchQueue.length,
+  };
+  if (addCount > 0 || removeCount > 0 || structuralCount > 0 || deferredPatchQueue.length > 0) {
+    lastStructuralDiffSummary = { ...lastDiffSummary };
+  }
+
+  if (immediatePatches.length > 0) {
+    maxEmittedBlockCount = Math.max(maxEmittedBlockCount, nextBlocks.length);
+  }
+  if (structuralCount > 0) {
+    maxStructuralBlockCount = Math.max(maxStructuralBlockCount, nextBlocks.length);
+  }
+
+  if (nextBlocks.length >= 60 && removeCount === 0 && addCount === 0) {
+    const sliceStart = Math.max(0, Math.min(55, nextBlocks.length - 1));
+    const sliceEnd = Math.min(nextBlocks.length, sliceStart + 8);
+    const toPreview = (block: Block) => ({
+      id: block.id,
+      type: block.type,
+      raw: typeof block.payload.raw === "string" ? block.payload.raw.slice(0, 80) : "",
+    });
+    lastHighCountNoStructural = {
+      nextCount: nextBlocks.length,
+      sliceStart,
+      prevSlice: previousBlocks.slice(sliceStart, sliceEnd).map(toPreview),
+      nextSlice: nextBlocks.slice(sliceStart, sliceEnd).map(toPreview),
+    };
+  }
 
   if (immediatePatches.length === 0) {
     if (metrics) {
@@ -2340,6 +2510,104 @@ async function processWorkerMessage(msg: WorkerIn) {
     case "FINALIZE":
       await finalizeAllBlocks();
       return;
+    case "DEBUG_STATE": {
+      const blockTypeCounts: Record<string, number> = {};
+      for (const block of blocks) {
+        const key = block.type ?? "unknown";
+        blockTypeCounts[key] = (blockTypeCounts[key] || 0) + 1;
+      }
+      let lastBlockType: string | undefined;
+      let lastBlockRange: { from: number; to: number } | undefined;
+      let lastBlockRawTail: string | undefined;
+      const headingTexts: string[] = [];
+      const tailBlocks: Array<{ id: string; type: string; raw: string }> = [];
+      const headBlocks: Array<{ id: string; type: string; raw: string }> = [];
+      const duplicateBlockIds: string[] = [];
+      const seenBlockIds = new Set<string>();
+      const headingIndices: Record<string, number> = {};
+      for (const block of blocks) {
+        if (seenBlockIds.has(block.id)) {
+          if (duplicateBlockIds.length < 8) {
+            duplicateBlockIds.push(block.id);
+          }
+        } else {
+          seenBlockIds.add(block.id);
+        }
+      }
+      if (blocks.length > 0) {
+        const lastBlock = blocks[blocks.length - 1];
+        lastBlockType = lastBlock.type;
+        const range = lastBlock.payload.range;
+        if (range && typeof range.from === "number" && typeof range.to === "number") {
+          lastBlockRange = { from: range.from, to: range.to };
+        }
+        const raw = typeof lastBlock.payload.raw === "string" ? lastBlock.payload.raw : "";
+        lastBlockRawTail = raw ? raw.slice(Math.max(0, raw.length - 240)) : undefined;
+        for (const block of blocks) {
+          if (block.type === "heading" && typeof block.payload.raw === "string") {
+            headingTexts.push(block.payload.raw);
+          }
+        }
+        const targets = ["HTML and MDX Testing", "Inline Code", "Code Blocks", "Media", "Tables", "Footnotes"];
+        for (let i = 0; i < blocks.length; i++) {
+          const block = blocks[i];
+          if (block.type === "heading" && typeof block.payload.raw === "string") {
+            if (targets.includes(block.payload.raw)) {
+              headingIndices[block.payload.raw] = i;
+            }
+          }
+        }
+        const tailStart = Math.max(0, blocks.length - 8);
+        for (let i = tailStart; i < blocks.length; i++) {
+          const block = blocks[i];
+          const raw = typeof block.payload.raw === "string" ? block.payload.raw : "";
+          tailBlocks.push({
+            id: block.id,
+            type: block.type,
+            raw: raw.slice(0, 120),
+          });
+        }
+        const headEnd = Math.min(8, blocks.length);
+        for (let i = 0; i < headEnd; i++) {
+          const block = blocks[i];
+          const raw = typeof block.payload.raw === "string" ? block.payload.raw : "";
+          headBlocks.push({
+            id: block.id,
+            type: block.type,
+            raw: raw.slice(0, 120),
+          });
+        }
+      }
+      const contentTail = currentContent.slice(Math.max(0, currentContent.length - 500));
+      postMessage({
+        type: "DEBUG_STATE",
+        state: {
+          contentLength: currentContent.length,
+          contentTail,
+          blockCount: blocks.length,
+          blockTypeCounts,
+          lastBlockType,
+          lastBlockRange,
+          lastBlockRawTail,
+          headingTexts,
+          headBlocks,
+          tailBlocks,
+          headingIndices,
+          lastDiffSummary,
+          lastStructuralDiffSummary,
+          maxEmittedBlockCount,
+          maxDeferredQueueSize,
+          maxStructuralBlockCount,
+          lastHighCountNoStructural,
+          duplicateBlockIds,
+          duplicateBlockCount: duplicateBlockIds.length,
+          hasInlineCodeHeading: currentContent.includes("# Inline Code"),
+          hasCodeBlocksHeading: currentContent.includes("# Code Blocks"),
+          hasMediaHeading: currentContent.includes("# Media"),
+        },
+      } as WorkerOut);
+      return;
+    }
     case "MDX_COMPILED":
       handleMdxStatus(msg.blockId, {
         compiledRef: { id: msg.compiledId },

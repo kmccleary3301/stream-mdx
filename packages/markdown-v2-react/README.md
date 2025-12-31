@@ -45,3 +45,7 @@ export function Demo({ text }: { text: string }) {
 - API reference: `docs/PUBLIC_API.md`
 - React integration guide: `docs/REACT_INTEGRATION_GUIDE.md`
 - Plugins & worker customization: `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`
+
+## Addons
+
+- `@stream-mdx/mermaid` (optional Mermaid diagram renderer)

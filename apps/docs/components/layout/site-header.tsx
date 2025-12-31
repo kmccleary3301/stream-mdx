@@ -16,6 +16,9 @@ export function SiteHeader() {
           <Link className="hover:opacity-50 transition" href="/docs">
             Docs
           </Link>
+          <Link className="hover:opacity-50 transition" href="/articles">
+            Articles
+          </Link>
           <Link className="hover:opacity-50 transition" href="/showcase">
             Showcase
           </Link>

@@ -42,7 +42,7 @@ export function TableOfContents() {
       debouncedUpdateHeadings();
     });
 
-    mutationObserver.observe(contentRoot, { childList: true, subtree: true });
+    mutationObserver.observe(contentRoot, { childList: true, subtree: true, attributes: true, attributeFilter: ["id"] });
 
     return () => {
       mutationObserver.disconnect();
@@ -171,4 +171,3 @@ export function TableOfContents() {
     </motion.nav>
   );
 }
-

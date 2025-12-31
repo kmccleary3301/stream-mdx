@@ -112,12 +112,16 @@
     list-style: none;
   }
 
-  .markdown-v2-output .markdown-list[data-list-depth="1"] {
+  .markdown-v2-output .markdown-list.unordered {
+    --list-indent: 1.5rem;
+  }
+
+  .markdown-v2-output .markdown-list.ordered[data-list-depth="1"] {
     --list-indent: 2rem;
   }
 
-  .markdown-v2-output .markdown-list[data-list-depth="2"],
-  .markdown-v2-output .markdown-list[data-list-depth="3"] {
+  .markdown-v2-output .markdown-list.ordered[data-list-depth="2"],
+  .markdown-v2-output .markdown-list.ordered[data-list-depth="3"] {
     --list-indent: 1.5rem;
   }
 
@@ -136,13 +140,13 @@
   .markdown-v2-output .markdown-list-item::before {
     position: absolute;
     top: 0;
-    left: calc(-1 * var(--list-indent, 2.5rem));
-    width: calc(var(--list-indent, 2.5rem) - 0.5rem);
+    right: 100%;
+    width: var(--list-indent, 2.5rem);
     padding-right: 0.5rem;
-    font-variant-numeric: tabular-nums;
+    font-variant-numeric: var(--tw-ordinal) var(--tw-slashed-zero) var(--tw-numeric-figure) tabular-nums var(--tw-numeric-fraction);
     text-align: right;
-    content: attr(data-counter-text);
-    opacity: 0.6;
+    content: attr(data-counter-text) " ";
+    opacity: 0.5;
   }
 
   .markdown-v2-output .markdown-list.ordered > .markdown-list-item::before {
@@ -153,8 +157,12 @@
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    width: calc(var(--list-indent, 2.5rem) - 1rem);
-    font-size: 1.1em;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-top: -0.1rem;
+    font-size: 1.25rem;
+    padding-right: 0;
+    content: "\2022";
     opacity: 0.7;
   }
 
@@ -165,6 +173,19 @@
   .markdown-v2-output .markdown-list-item > * {
     width: 100%;
     max-width: 100%;
+  }
+
+  .markdown-v2-output .markdown-mdx:has(> figure[data-with-codeblock="true"]) + pre,
+  .markdown-v2-output .markdown-mdx:has(> figure[data-with-codeblock="true"]) + figure {
+    margin-top: 0 !important;
+    border-top-width: 0 !important;
+    border-top-left-radius: 0 !important;
+    border-top-right-radius: 0 !important;
+  }
+
+  .markdown-v2-output pre {
+    margin-top: 0.75rem;
+    margin-bottom: 0.75rem;
   }
 
   .markdown-v2-output .markdown-list-virtualization-sentinel {
@@ -188,6 +209,7 @@
     --muted-old: var(--gray-8);
     --border-old: var(--gray-4);
     --muted: var(--gray-8);
+    --note-muted: #606060;
     --border: var(--gray-4);
     --scrollbar-thumb: var(--gray-4);
     --scrollbar-track: transparent;
@@ -403,7 +425,7 @@
       padding-top: 4px;
       padding-left: 6px;
       font-size: 12px;
-      color: var(--muted);
+      color: var(--note-muted);
       counter-increment: list;
     }
 
@@ -528,6 +550,7 @@
     --secondary: 0 0% 14.9%;
     --secondary-foreground: 0 0% 98%;
     --muted: var(--gray-8);
+    --note-muted: #606060;
     --muted-foreground: 0 0% 63.9%;
     --accent: 0 0% 14.9%;
     --accent-foreground: 0 0% 98%;

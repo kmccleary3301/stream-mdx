@@ -38,6 +38,7 @@ export function Demo({ text }: { text: string }) {
 
 - `stream-mdx` (recommended for apps)
 - `@stream-mdx/{core,react,worker,plugins}` (modular building blocks)
+- `@stream-mdx/mermaid` (optional Mermaid diagram addon)
 
 ## Docs
 

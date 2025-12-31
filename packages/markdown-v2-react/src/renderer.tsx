@@ -297,7 +297,18 @@ export class MarkdownRenderer implements Renderer {
           const receivedAt = typeof performance !== "undefined" && typeof performance.now === "function" ? performance.now() : Date.now();
           const batches = splitPatchBatch(message.patches);
           batches.forEach((batch, index) => {
-            const priority: "high" | "low" = batch.some(isHeavyPatch) ? "low" : "high";
+            const hasStructural = batch.some((patch) => {
+              switch (patch.op) {
+                case "insertChild":
+                case "replaceChild":
+                case "deleteChild":
+                case "reorder":
+                  return true;
+                default:
+                  return false;
+              }
+            });
+            const priority: "high" | "low" = hasStructural ? "high" : batch.some(isHeavyPatch) ? "low" : "high";
             this.patchScheduler.enqueue({
               patches: batch,
               meta: {
@@ -324,6 +335,10 @@ export class MarkdownRenderer implements Renderer {
           error: message.error,
           meta: message.meta,
         });
+        break;
+
+      case "DEBUG_STATE":
+        // Debug-only worker payloads; ignore in the renderer.
         break;
 
       default:

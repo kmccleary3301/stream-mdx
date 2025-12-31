@@ -1,5 +1,30 @@
 # stream-mdx
 
+## 0.1.1
+
+### Patch Changes
+
+- Refine streaming scheduling and list layout, add worker append batching/debug state support, and refresh docs/README examples.
+- Updated dependencies
+  - @stream-mdx/core@0.1.1
+  - @stream-mdx/react@0.1.1
+  - @stream-mdx/worker@0.1.1
+  - @stream-mdx/plugins@0.1.1
+
+## 0.1.0
+
+### Minor Changes
+
+- 294e557: Release StreamMDX 0.1.0 across all published packages.
+
+### Patch Changes
+
+- Updated dependencies [294e557]
+  - @stream-mdx/core@0.1.0
+  - @stream-mdx/react@0.1.0
+  - @stream-mdx/worker@0.1.0
+  - @stream-mdx/plugins@0.1.0
+
 ## 0.0.3
 
 ### Patch Changes

@@ -325,8 +325,8 @@
   --tw-prose-counters: var(--text-tertiary);
   --tw-prose-bullets: var(--text-tertiary);
   --tw-prose-hr: var(--border-xheavy);
-  --tw-prose-quotes: var(--text-primary);
-  --tw-prose-quote-borders: #e5e7eb;
+  --tw-prose-quotes: var(--note-muted);
+  --tw-prose-quote-borders: var(--border);
   --tw-prose-captions: var(--text-secondary);
   --tw-prose-code: var(--text-primary);
   --tw-prose-pre-code: #e5e7eb;
@@ -341,8 +341,8 @@
   --tw-prose-invert-counters: var(--text-tertiary);
   --tw-prose-invert-bullets: var(--text-tertiary);
   --tw-prose-invert-hr: var(--border-xheavy);
-  --tw-prose-invert-quotes: var(--text-primary);
-  --tw-prose-invert-quote-borders: #374151;
+  --tw-prose-invert-quotes: var(--note-muted);
+  --tw-prose-invert-quote-borders: var(--border);
   --tw-prose-invert-captions: var(--text-secondary);
   --tw-prose-invert-code: var(--text-primary);
   --tw-prose-invert-pre-code: #d1d5db;

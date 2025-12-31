@@ -41,3 +41,9 @@ export function makeConfig(overrides?: Partial<typeof DEFAULT_BACKPRESSURE_CONFI
 
 - API reference: `docs/PUBLIC_API.md`
 - Security model: `docs/SECURITY_MODEL.md`
+
+## Related packages
+
+- `@stream-mdx/react` for the React renderer
+- `@stream-mdx/worker` for hosted worker bundles
+- `@stream-mdx/mermaid` for Mermaid diagram rendering (optional)

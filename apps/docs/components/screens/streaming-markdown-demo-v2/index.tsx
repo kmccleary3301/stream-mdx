@@ -169,6 +169,7 @@ export type StreamingDemoAutomationApiV2 = {
   waitForIdle?: () => Promise<void>;
   waitForWorker?: () => Promise<void>;
   getHandle?: () => StreamingMarkdownHandle | null;
+  getWorker?: () => Worker | null;
   getPerf?: () => {
     summary: TimingSummary;
     samples: {
@@ -633,6 +634,7 @@ export function StreamingMarkdownDemoV2({
   const maxLen = fullText.length;
   const effectiveTotal = streamLimit ?? maxLen;
   const finished = idx >= effectiveTotal;
+  const [isFinalizing, setIsFinalizing] = useState(false);
   const current = useMemo(() => fullText.slice(0, Math.min(idx, effectiveTotal)), [fullText, idx, effectiveTotal]);
   const handleRendererError = useCallback((error: Error) => {
     console.error("StreamingMarkdown render error", error);
@@ -733,6 +735,7 @@ export function StreamingMarkdownDemoV2({
     lastTx: 0,
   });
   const pendingDrainRef = useRef(false);
+  const finalizeDrainTimerRef = useRef<NodeJS.Timeout | null>(null);
   const patchDurationsRef = useRef<number[]>([]);
   const longTaskDurationsRef = useRef<number[]>([]);
   const recvToFlushRef = useRef<number[]>([]);
@@ -991,6 +994,32 @@ export function StreamingMarkdownDemoV2({
     workerCreditsRef.current = clamped;
     workerRef.current?.setCredits?.(clamped);
     streamingRef.current?.setCredits(clamped);
+  }, []);
+
+  const startFinalizeDrain = useCallback(() => {
+    if (finalizeDrainTimerRef.current) {
+      clearTimeout(finalizeDrainTimerRef.current);
+      finalizeDrainTimerRef.current = null;
+    }
+    setIsFinalizing(true);
+    const drainStart = Date.now();
+    const MAX_FINALIZE_DRAIN_MS = 1000;
+    const drain = () => {
+      const handle = streamingRef.current;
+      if (!handle) return;
+      handle.flushPending();
+      const queueDepth = handle.getState?.().queueDepth ?? 0;
+      const elapsed = Date.now() - drainStart;
+      if (elapsed >= MAX_FINALIZE_DRAIN_MS) {
+        setIsFinalizing(false);
+      }
+      if (elapsed >= MAX_FINALIZE_DRAIN_MS && queueDepth <= 0) {
+        finalizeDrainTimerRef.current = null;
+        return;
+      }
+      finalizeDrainTimerRef.current = setTimeout(drain, 16);
+    };
+    finalizeDrainTimerRef.current = setTimeout(drain, 0);
   }, []);
 
   useEffect(() => {
@@ -1589,11 +1618,13 @@ export function StreamingMarkdownDemoV2({
     if (finished && !finalizedOnceRef.current) {
       workerRef.current.finalize();
       streamingRef.current?.finalize();
+      updateWorkerCredits(1);
+      startFinalizeDrain();
       finalizedOnceRef.current = true;
     } else if (!finished && finalizedOnceRef.current) {
       finalizedOnceRef.current = false;
     }
-  }, [finished, effectiveTotal, workerInitEpoch]);
+  }, [finished, effectiveTotal, workerInitEpoch, updateWorkerCredits, startFinalizeDrain]);
 
   useEffect(() => {
     if (finished) {
@@ -1649,6 +1680,11 @@ export function StreamingMarkdownDemoV2({
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
+    if (finalizeDrainTimerRef.current) {
+      clearTimeout(finalizeDrainTimerRef.current);
+      finalizeDrainTimerRef.current = null;
+    }
+    setIsFinalizing(false);
     setIdx(0);
     setRenderTimes([]);
     workerSentIdxRef.current = 0;
@@ -2123,6 +2159,7 @@ export function StreamingMarkdownDemoV2({
       streamingRef.current?.finalize();
     };
     api.getHandle = () => streamingRef.current;
+    api.getWorker = () => workerRef.current?.getWorker() ?? null;
     api.flushPending = async () => {
       streamingRef.current?.flushPending();
       await streamingRef.current?.waitForIdle?.();
@@ -2184,6 +2221,7 @@ export function StreamingMarkdownDemoV2({
       isPending,
       fullTextLength: fullTextRef.current.length,
       finished,
+      isFinalizing,
       streamLimit: streamLimitRef.current,
       workerSentIdx: workerSentIdxRef.current,
       workerCredits: workerCreditsRef.current,
@@ -2501,7 +2539,7 @@ export function StreamingMarkdownDemoV2({
           <span>
             Progress: {idx.toLocaleString()} / {maxLen.toLocaleString()} chars
           </span>
-          <span>{finished ? "Completed" : !isRunning ? "Paused" : showRendering ? "Rendering…" : "Streaming"}</span>
+          <span>{finished ? (isFinalizing ? "Finalizing…" : "Completed") : !isRunning ? "Paused" : showRendering ? "Rendering…" : "Streaming"}</span>
         </div>
 
         {debugTiming && (

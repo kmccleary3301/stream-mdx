@@ -94,6 +94,19 @@ Scoped equivalents:
 
 - `@stream-mdx/plugins/document` (etc)
 
+## Addons
+
+- `@stream-mdx/mermaid` (optional Mermaid diagram renderer)
+
+Example:
+
+```tsx
+import { StreamingMarkdown } from "stream-mdx";
+import { MermaidBlock } from "@stream-mdx/mermaid";
+
+<StreamingMarkdown text={content} components={{ mermaid: MermaidBlock }} />;
+```
+
 ## Docs
 
 - Docs site: https://kmccleary3301.github.io/stream-mdx/

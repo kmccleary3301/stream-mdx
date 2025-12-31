@@ -108,6 +108,7 @@ export type WorkerIn =
     }
   | { type: "APPEND"; text: string }
   | { type: "FINALIZE" }
+  | { type: "DEBUG_STATE" }
   | { type: "MDX_COMPILED"; blockId: string; compiledId: string }
   | { type: "MDX_ERROR"; blockId: string; error?: string }
   | { type: "SET_CREDITS"; credits: number };
@@ -125,6 +126,21 @@ export type WorkerOut =
   | { type: "PATCH"; tx: number; patches: Patch[]; metrics?: PatchMetrics }
   | { type: "RESET"; reason: string }
   | { type: "METRICS"; metrics: PerformanceMetrics }
+  | {
+      type: "DEBUG_STATE";
+      state: {
+        contentLength: number;
+        contentTail: string;
+        blockCount: number;
+        blockTypeCounts: Record<string, number>;
+        lastBlockType?: string;
+        lastBlockRange?: { from: number; to: number };
+        lastBlockRawTail?: string;
+        hasInlineCodeHeading: boolean;
+        hasCodeBlocksHeading: boolean;
+        hasMediaHeading: boolean;
+      };
+    }
   | { type: "ERROR"; phase: WorkerPhase; error: WorkerErrorPayload; blockId?: string; meta?: Record<string, unknown>; timestamp?: number };
 
 /**

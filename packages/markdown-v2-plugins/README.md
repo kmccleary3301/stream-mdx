@@ -42,6 +42,10 @@ The primary way to enable/disable capabilities in StreamMDX is the `features` pr
 
 If you need **custom syntax**, you generally need a **custom worker bundle** rather than “passing plugins as a prop”.
 
+## Addons
+
+- `@stream-mdx/mermaid` is an opt-in diagram renderer that plugs in at the component layer.
+
 ## Docs
 
 - Plugins & worker cookbook: `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`

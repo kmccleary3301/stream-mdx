@@ -399,8 +399,26 @@ const ListBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
     const inlineComponents = registry.getInlineComponents();
     const ordered = Boolean(node?.props?.ordered ?? block?.payload.meta?.ordered);
     const Tag = ordered ? "ol" : "ul";
+    const listStyle = React.useMemo(() => {
+      if (!ordered || childIds.length === 0) return undefined;
+      let maxDigits = 1;
+      childIds.forEach((childId, index) => {
+        const childNode = store.getNode(childId);
+        const raw = typeof childNode?.block?.payload?.raw === "string" ? childNode.block.payload.raw : undefined;
+        const markerMatch = raw ? raw.match(/^([^\s]+)\s+/) : null;
+        const marker = markerMatch?.[1]?.trim();
+        const text = marker ?? `${index + 1}.`;
+        const digitMatch = text.match(/\d/g);
+        const digits = digitMatch ? digitMatch.length : text.length;
+        if (digits > maxDigits) maxDigits = digits;
+      });
+      const baseIndent = depth === 0 ? "2.5rem" : depth === 1 ? "2rem" : "1.5rem";
+      return {
+        ["--list-indent" as const]: `calc(${baseIndent} + ${maxDigits}ch)`,
+      } as React.CSSProperties;
+    }, [ordered, childIds, store, depth]);
     return (
-      <Tag className={`markdown-list ${ordered ? "ordered" : "unordered"}`} data-list-depth={depth}>
+      <Tag className={`markdown-list ${ordered ? "ordered" : "unordered"}`} data-list-depth={depth} style={listStyle}>
         {childIds.map((childId, index) => (
           <ListItemView
             key={childId}
@@ -671,7 +689,7 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
     />
   );
 
-  const codeFrameClass = "not-prose my-3 flex flex-col rounded-lg border border-input pt-1 font-mono text-sm";
+  const codeFrameClass = "not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm";
 
   const codeView = shouldVirtualize ? (
     (() => {

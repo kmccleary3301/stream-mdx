@@ -57,9 +57,42 @@ function extractLanguage(className: unknown): string | undefined {
 }
 
 function extractCodeText(value: unknown): string | undefined {
-  if (typeof value === "string") return value;
-  if (Array.isArray(value) && value.every((entry) => typeof entry === "string")) {
-    return value.join("");
+  if (typeof value === "string" || typeof value === "number") return String(value);
+  if (Array.isArray(value)) {
+    const parts: string[] = [];
+    for (const entry of value) {
+      const part = extractCodeText(entry);
+      if (part === undefined) return undefined;
+      parts.push(part);
+    }
+    return parts.join("");
+  }
+  if (React.isValidElement(value)) {
+    return extractCodeText(value.props?.children);
+  }
+  return undefined;
+}
+
+function isCodeElement(
+  child: React.ReactNode,
+): child is React.ReactElement<{ className?: string; children?: unknown }> {
+  if (!React.isValidElement(child)) return false;
+  if (child.type === "code") return true;
+  const mdxType = (child.props as { mdxType?: string; originalType?: string }).mdxType ?? child.props?.originalType;
+  return mdxType === "code";
+}
+
+function findCodeElement(
+  children: React.ReactNode,
+): React.ReactElement<{ className?: string; children?: unknown }> | undefined {
+  for (const child of React.Children.toArray(children)) {
+    if (isCodeElement(child)) {
+      return child;
+    }
+    if (React.isValidElement(child)) {
+      const nested = findCodeElement(child.props?.children);
+      if (nested) return nested;
+    }
   }
   return undefined;
 }
@@ -76,29 +109,34 @@ export const components: MDXComponents = {
   YouTube,
   Image,
   pre: ({ children, className, ...props }) => {
-    const maybeCode = React.Children.toArray(children).find(
-      (child) => React.isValidElement(child) && child.type === "code",
-    ) as React.ReactElement<{ className?: string; children?: unknown }> | undefined;
-
+    const maybeCode = findCodeElement(children);
     const codeText = maybeCode ? extractCodeText(maybeCode.props.children) : undefined;
 
     if (!maybeCode || codeText === undefined) {
       return (
-        <pre className={cn("mdx-pre", className)} {...props}>
-          {children}
+        <pre
+          className={cn("not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm", className)}
+          {...props}
+        >
+          <ScrollAreaHorizontal className="min-w-auto">
+            <pre className="min-w-max font-mono p-[16px]">{children}</pre>
+          </ScrollAreaHorizontal>
         </pre>
       );
     }
 
     const lang = extractLanguage(maybeCode.props.className);
     const trimmed = codeText.endsWith("\n") ? codeText.slice(0, -1) : codeText;
+    const codeClassName = cn(
+      maybeCode.props.className,
+      lang && !maybeCode.props.className?.includes("language-") ? `language-${lang}` : undefined,
+    );
+    const codeElement = React.cloneElement(maybeCode, { className: codeClassName }, trimmed);
 
     return (
-      <pre className={cn("not-prose my-3 flex flex-col rounded-lg border border-input pt-1 font-mono text-sm", className)}>
+      <pre className={cn("not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm", className)}>
         <ScrollAreaHorizontal className="min-w-auto">
-          <pre className="min-w-max font-mono p-[16px]">
-            <code className={lang ? `language-${lang}` : undefined}>{trimmed}</code>
-          </pre>
+          <pre className="min-w-max font-mono p-[16px]">{codeElement}</pre>
         </ScrollAreaHorizontal>
       </pre>
     );

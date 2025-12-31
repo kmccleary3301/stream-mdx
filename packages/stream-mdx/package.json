@@ -1,6 +1,6 @@
 {
   "name": "stream-mdx",
-  "version": "0.0.3",
+  "version": "0.1.1",
   "description": "StreamMDX convenience package (re-exports @stream-mdx/*).",
   "license": "MIT",
   "repository": {
@@ -114,10 +114,10 @@
     "prepack": "npm run build"
   },
   "dependencies": {
-    "@stream-mdx/core": "0.0.3",
-    "@stream-mdx/plugins": "0.0.3",
-    "@stream-mdx/react": "0.0.3",
-    "@stream-mdx/worker": "0.0.3"
+    "@stream-mdx/core": "0.1.1",
+    "@stream-mdx/plugins": "0.1.1",
+    "@stream-mdx/react": "0.1.1",
+    "@stream-mdx/worker": "0.1.1"
   },
   "peerDependencies": {
     "react": ">=18.2.0",
