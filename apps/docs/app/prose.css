@@ -295,7 +295,7 @@
 }
 
 .prose :where(tbody tr):not(:where([class~="not-prose"] *)) {
-  border-bottom-color: var(--tw-prose-td-borders);
+  border-bottom-color: var(--border);
   border-bottom-width: 1px;
 }
 

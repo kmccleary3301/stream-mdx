@@ -1,6 +1,6 @@
 import type React from "react";
 
-import type { Block, CompiledMdxModule, FormatAnticipationConfig, InlineHtmlDescriptor, InlineNode } from "@stream-mdx/core";
+import type { Block, CodeHighlightingMode, CompiledMdxModule, FormatAnticipationConfig, InlineHtmlDescriptor, InlineNode } from "@stream-mdx/core";
 import type { ComponentRegistry } from "./components";
 
 export type GenericComponent = React.ComponentType<any>;
@@ -46,6 +46,7 @@ export interface BlockComponents {
     status?: "pending" | "compiled" | "error";
     errorMessage?: string;
   }>;
+  hr: React.FC<React.HTMLAttributes<HTMLHRElement>>;
   table: React.FC<{ header?: InlineNode[][]; rows: InlineNode[][][]; align?: Array<"left" | "center" | "right" | null>; elements?: Partial<TableElements> }>;
   [k: string]: GenericComponent;
 }
@@ -85,6 +86,7 @@ export interface RendererConfig {
     callouts?: boolean;
     math?: boolean;
     formatAnticipation?: FormatAnticipationConfig;
+    codeHighlighting?: CodeHighlightingMode;
     liveCodeHighlighting?: boolean;
   };
   performance?: {

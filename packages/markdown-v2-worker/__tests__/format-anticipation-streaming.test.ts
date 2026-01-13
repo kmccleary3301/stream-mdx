@@ -1,5 +1,5 @@
 import assert from "node:assert";
-import type { InlineNode, Patch, WorkerOut } from "@stream-mdx/core";
+import { PATCH_ROOT_ID, type InlineNode, type Patch, type WorkerOut } from "@stream-mdx/core";
 import { createRendererStore } from "@stream-mdx/react/renderer/store";
 import { createWorkerHarness } from "./worker-test-harness";
 
@@ -14,6 +14,28 @@ function flattenInline(nodes: InlineNode[], kinds: Set<string>, texts: string[])
       flattenInline(((node as { children?: InlineNode[] }).children ?? []) as InlineNode[], kinds, texts);
     }
   }
+}
+
+function collectListItems(store: ReturnType<typeof createRendererStore>): Array<{ inline?: InlineNode[]; text?: string }> {
+  const root = store.getNode(PATCH_ROOT_ID);
+  if (!root) return [];
+  const results: Array<{ inline?: InlineNode[]; text?: string }> = [];
+  const stack = [root.id];
+  while (stack.length > 0) {
+    const id = stack.pop();
+    if (!id) continue;
+    const node = store.getNode(id);
+    if (!node) continue;
+    if (node.type === "list-item") {
+      const inline = Array.isArray(node.props.inline) ? (node.props.inline as InlineNode[]) : undefined;
+      const text = typeof node.props.text === "string" ? (node.props.text as string) : undefined;
+      results.push({ inline, text });
+    }
+    for (const childId of node.children) {
+      stack.push(childId);
+    }
+  }
+  return results;
 }
 
 async function runFormatAnticipationStreamingTest(): Promise<void> {
@@ -60,6 +82,25 @@ async function runFormatAnticipationStreamingTest(): Promise<void> {
   const paragraph2 = store.getBlocks().find((block) => block.type === "paragraph" && block.payload.raw.includes("italic"));
   assert.ok(paragraph2, "expected paragraph block after second append");
   assert.strictEqual(paragraph2.payload?.meta?.inlineStatus, "complete", "expected inlineStatus=complete once delimiter is balanced");
+
+  // List items should also honor anticipation.
+  const listMessages = await harness.send({ type: "APPEND", text: "\n- *List item" });
+  const listPatches = listMessages.filter((msg): msg is Extract<WorkerOut, { type: "PATCH" }> => msg.type === "PATCH");
+  assert.ok(listPatches.length > 0, "expected PATCH response from list item append");
+  for (const msg of listPatches) {
+    store.applyPatches(msg.patches as Patch[], { captureMetrics: false });
+  }
+
+  const listItems = collectListItems(store);
+  assert.ok(listItems.length > 0, "expected list item nodes after list append");
+  const targetItem = listItems.find((item) => item.text?.includes("List item"));
+  assert.ok(targetItem, "expected list item with streamed text");
+  const listInlineNodes = Array.isArray(targetItem.inline) ? targetItem.inline : [];
+  const listKinds = new Set<string>();
+  const listTexts: string[] = [];
+  flattenInline(listInlineNodes, listKinds, listTexts);
+  assert(!listKinds.has("em"), "unexpected anticipation inside list item");
+  assert(listTexts.some((text) => text.includes("*")), `expected raw '*' to remain inside list item: ${listTexts.join(" | ")}`);
 }
 
 async function runMathAnticipationStreamingTest(): Promise<void> {

@@ -92,10 +92,28 @@ let deferredPatchQueue: Patch[] = [];
 const MAX_DEFERRED_FLUSH_PATCHES = 120;
 const CODE_HIGHLIGHT_CACHE = new Map<string, { html: string; lang: string }>();
 const MAX_CODE_HIGHLIGHT_CACHE_ENTRIES = 200;
+type CodeHighlightingMode = "final" | "incremental" | "live";
+type ShikiTokenStyle = {
+  color?: string;
+  fontStyle?: number;
+};
+type ShikiThemedToken = {
+  content: string;
+  variants: Record<string, ShikiTokenStyle | undefined>;
+};
+type IncrementalHighlightState = {
+  lang: string;
+  processedLength: number;
+  pendingLine: string;
+  highlightedLines: Array<string | null>;
+  grammarState?: unknown;
+};
+const incrementalHighlightStates = new Map<string, IncrementalHighlightState>();
+const CODE_HIGHLIGHT_THEMES = { dark: "github-dark", light: "github-light" } as const;
 type WorkerMdxMode = "server" | "worker";
 let mdxCompileMode: WorkerMdxMode = "server";
 let formatAnticipationConfig = normalizeFormatAnticipation(false);
-let enableLiveCodeHighlighting = false;
+let codeHighlightingMode: CodeHighlightingMode = "final";
 let enableMath = true;
 let mdxComponentAllowlist: Set<string> | null = null;
 const WORKER_MDX_CACHE = new Map<string, CompiledMdxModule>();
@@ -558,6 +576,7 @@ async function initialize(
     callouts?: boolean;
     math?: boolean;
     formatAnticipation?: FormatAnticipationConfig;
+    codeHighlighting?: CodeHighlightingMode;
     liveCodeHighlighting?: boolean;
     mdxComponentNames?: string[];
   },
@@ -568,6 +587,7 @@ async function initialize(
   lastTree = null;
   currentContent = "";
   deferredPatchQueue = [];
+  resetIncrementalHighlightState();
 
   mdxCompileMode = mdxOptions?.compileMode ?? "server";
   try {
@@ -589,12 +609,17 @@ async function initialize(
     callouts: docPlugins?.callouts ?? false,
     math: docPlugins?.math ?? true,
     formatAnticipation: docPlugins?.formatAnticipation ?? false,
+    codeHighlighting: docPlugins?.codeHighlighting,
     liveCodeHighlighting: docPlugins?.liveCodeHighlighting ?? false,
   };
 
   enableMath = enable.math;
   formatAnticipationConfig = normalizeFormatAnticipation(enable.formatAnticipation);
-  enableLiveCodeHighlighting = enable.liveCodeHighlighting;
+  if (enable.codeHighlighting === "incremental" || enable.codeHighlighting === "live" || enable.codeHighlighting === "final") {
+    codeHighlightingMode = enable.codeHighlighting;
+  } else {
+    codeHighlightingMode = enable.liveCodeHighlighting ? "live" : "final";
+  }
   if (Array.isArray(docPlugins?.mdxComponentNames) && docPlugins?.mdxComponentNames.length > 0) {
     mdxComponentAllowlist = new Set(docPlugins.mdxComponentNames);
   } else {
@@ -1192,6 +1217,95 @@ function collectMathProtectedRanges(content: string): ProtectedRange[] {
   return ranges;
 }
 
+const FONT_STYLE_ITALIC = 1;
+const FONT_STYLE_BOLD = 2;
+const FONT_STYLE_UNDERLINE = 4;
+const FONT_STYLE_STRIKETHROUGH = 8;
+
+function escapeHtmlText(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function renderShikiToken(token: ShikiThemedToken): string {
+  const dark = token.variants.dark;
+  const light = token.variants.light;
+  const styles: string[] = [];
+  if (dark?.color) {
+    styles.push(`--shiki-dark:${dark.color}`);
+  }
+  if (light?.color) {
+    styles.push(`--shiki-light:${light.color}`);
+  }
+  const fontStyle = light?.fontStyle ?? dark?.fontStyle;
+  if (typeof fontStyle === "number" && fontStyle > 0) {
+    if (fontStyle & FONT_STYLE_ITALIC) {
+      styles.push("font-style: italic");
+    }
+    if (fontStyle & FONT_STYLE_BOLD) {
+      styles.push("font-weight: bold");
+    }
+    const decorations: string[] = [];
+    if (fontStyle & FONT_STYLE_UNDERLINE) {
+      decorations.push("underline");
+    }
+    if (fontStyle & FONT_STYLE_STRIKETHROUGH) {
+      decorations.push("line-through");
+    }
+    if (decorations.length > 0) {
+      styles.push(`text-decoration: ${decorations.join(" ")}`);
+    }
+  }
+  const styleAttr = styles.length > 0 ? ` style="${styles.join(";")}"` : "";
+  return `<span${styleAttr}>${escapeHtmlText(token.content)}</span>`;
+}
+
+function renderShikiLines(tokens: ShikiThemedToken[][]): Array<string | null> {
+  return tokens.map((lineTokens) => lineTokens.map(renderShikiToken).join(""));
+}
+
+function resetIncrementalHighlightState(blockId?: string) {
+  if (blockId) {
+    incrementalHighlightStates.delete(blockId);
+    return;
+  }
+  incrementalHighlightStates.clear();
+}
+
+function getIncrementalHighlightState(blockId: string, lang: string): IncrementalHighlightState {
+  const existing = incrementalHighlightStates.get(blockId);
+  if (!existing || existing.lang !== lang) {
+    const fresh: IncrementalHighlightState = {
+      lang,
+      processedLength: 0,
+      pendingLine: "",
+      highlightedLines: [],
+      grammarState: undefined,
+    };
+    incrementalHighlightStates.set(blockId, fresh);
+    return fresh;
+  }
+  return existing;
+}
+
+async function resolveHighlightLanguage(requestedLanguage: string): Promise<string> {
+  if (!highlighter) return "text";
+  const loadedLangs = highlighter.getLoadedLanguages();
+  if (!loadedLangs.includes(requestedLanguage)) {
+    try {
+      await highlighter.loadLanguage(requestedLanguage);
+    } catch (loadError) {
+      console.warn(`Failed to load language ${requestedLanguage}, falling back to text:`, loadError);
+    }
+  }
+  const nextLangs = highlighter.getLoadedLanguages();
+  return nextLangs.includes(requestedLanguage) ? requestedLanguage : "text";
+}
+
 /**
  * Enrich code blocks with syntax highlighting
  */
@@ -1204,54 +1318,96 @@ function collectMathProtectedRanges(content: string): ProtectedRange[] {
   const { lang, meta } = parseCodeFenceInfo(info);
   const requestedLanguage = lang || "text";
   const codeBody = hadFence ? code : dedentIndentedCode(raw);
+  const baseMeta = (block.payload.meta ?? {}) as Record<string, unknown>;
   let resolvedLanguage = requestedLanguage;
-  let cachedHighlight = getHighlightCacheEntry(requestedLanguage, codeBody);
+  const hasHighlighter = Boolean(highlighter);
+  const hasHighlightableContent = codeBody.trim().length > 0;
 
-	  // Avoid expensive/highly-variable syntax highlighting while a code block is still streaming (dirty tail),
-	  // unless the caller explicitly opted into "live" highlighting for demo/testing.
-	  if (!block.isFinalized && !enableLiveCodeHighlighting) {
-	    block.payload.highlightedHtml = undefined;
-	    block.payload.meta = {
-	      ...meta,
-	      lang: resolvedLanguage,
-	    };
-	    return;
-	  }
+  if (!block.isFinalized) {
+    if (codeHighlightingMode === "final" || !hasHighlighter || !hasHighlightableContent) {
+      resetIncrementalHighlightState(block.id);
+      block.payload.highlightedHtml = undefined;
+      const nextMeta = { ...baseMeta, ...meta, lang: resolvedLanguage } as Record<string, unknown>;
+      if ("highlightedLines" in nextMeta) {
+        delete nextMeta.highlightedLines;
+      }
+      block.payload.meta = nextMeta;
+      return;
+    }
 
-  if (!cachedHighlight && highlighter && codeBody.trim()) {
-    try {
-      const loadedLangs = highlighter.getLoadedLanguages();
-      if (!loadedLangs.includes(requestedLanguage)) {
-        try {
-          await highlighter.loadLanguage(requestedLanguage);
-        } catch (loadError) {
-          console.warn(`Failed to load language ${requestedLanguage}, falling back to text:`, loadError);
-        }
+    if (codeHighlightingMode === "incremental") {
+      resolvedLanguage = await resolveHighlightLanguage(requestedLanguage);
+      let state = getIncrementalHighlightState(block.id, resolvedLanguage);
+      if (codeBody.length < state.processedLength) {
+        resetIncrementalHighlightState(block.id);
+        state = getIncrementalHighlightState(block.id, resolvedLanguage);
       }
 
-      resolvedLanguage = loadedLangs.includes(requestedLanguage) ? requestedLanguage : "text";
+      const appended = codeBody.slice(state.processedLength);
+      const combined = state.pendingLine + appended;
+      if (combined.length > 0) {
+        const parts = combined.split("\n");
+        const completeLines = parts.slice(0, -1);
+        const tail = parts.length > 0 ? parts[parts.length - 1] ?? "" : "";
+        if (completeLines.length > 0) {
+          try {
+            const tokens = highlighter?.codeToTokensWithThemes(completeLines.join("\n"), {
+              lang: resolvedLanguage,
+              themes: CODE_HIGHLIGHT_THEMES,
+              grammarState: state.grammarState as any,
+            }) as ShikiThemedToken[][];
+            const htmlLines = renderShikiLines(tokens);
+            state.highlightedLines.push(...htmlLines);
+            state.grammarState = highlighter?.getLastGrammarState(tokens as any);
+          } catch (error) {
+            console.warn("Incremental highlighting failed for", requestedLanguage, error);
+            state.highlightedLines.push(...completeLines.map(() => null));
+          }
+        }
+        state.pendingLine = tail ?? "";
+      }
+      state.processedLength = codeBody.length;
+      state.lang = resolvedLanguage;
+      block.payload.highlightedHtml = undefined;
+      block.payload.meta = {
+        ...baseMeta,
+        ...meta,
+        lang: resolvedLanguage,
+        highlightedLines: state.highlightedLines,
+      };
+
+      const highlightDuration = performanceTimer.measure("highlight-code");
+      metrics?.recordShiki(highlightDuration);
+      metrics?.recordHighlightForLanguage(resolvedLanguage, highlightDuration);
+      return;
+    }
+  }
+
+  resetIncrementalHighlightState(block.id);
+
+  let cachedHighlight = block.isFinalized ? getHighlightCacheEntry(requestedLanguage, codeBody) : null;
+  if (!cachedHighlight && highlighter && hasHighlightableContent) {
+    try {
+      resolvedLanguage = await resolveHighlightLanguage(requestedLanguage);
       const highlighted = highlighter.codeToHtml(codeBody, {
         lang: resolvedLanguage,
-        themes: {
-          dark: "github-dark",
-          light: "github-light",
-        },
+        themes: CODE_HIGHLIGHT_THEMES,
         defaultColor: false,
       });
 
-	      const enhanced = enhanceHighlightedHtml(highlighted, resolvedLanguage);
-	      block.payload.highlightedHtml = enhanced;
-	      if (block.isFinalized) {
-	        setHighlightCacheEntry(resolvedLanguage, codeBody, enhanced);
-	        if (resolvedLanguage !== requestedLanguage) {
-	          setHighlightCacheEntry(requestedLanguage, codeBody, enhanced);
-	        }
-	      }
-	      cachedHighlight = getHighlightCacheEntry(resolvedLanguage, codeBody);
-	    } catch (error) {
-	      console.warn("Highlighting failed for", requestedLanguage, error);
-	      resolvedLanguage = "text";
-	    }
+      const enhanced = enhanceHighlightedHtml(highlighted, resolvedLanguage);
+      block.payload.highlightedHtml = enhanced;
+      if (block.isFinalized) {
+        setHighlightCacheEntry(resolvedLanguage, codeBody, enhanced);
+        if (resolvedLanguage !== requestedLanguage) {
+          setHighlightCacheEntry(requestedLanguage, codeBody, enhanced);
+        }
+      }
+      cachedHighlight = getHighlightCacheEntry(resolvedLanguage, codeBody);
+    } catch (error) {
+      console.warn("Highlighting failed for", requestedLanguage, error);
+      resolvedLanguage = "text";
+    }
   }
 
   if (cachedHighlight) {
@@ -1259,10 +1415,11 @@ function collectMathProtectedRanges(content: string): ProtectedRange[] {
     block.payload.highlightedHtml = cachedHighlight.html;
   }
 
-  block.payload.meta = {
-    ...meta,
-    lang: resolvedLanguage,
-  };
+  const nextMeta = { ...baseMeta, ...meta, lang: resolvedLanguage } as Record<string, unknown>;
+  if ("highlightedLines" in nextMeta) {
+    delete nextMeta.highlightedLines;
+  }
+  block.payload.meta = nextMeta;
 
   const highlightDuration = performanceTimer.measure("highlight-code");
   metrics?.recordShiki(highlightDuration);

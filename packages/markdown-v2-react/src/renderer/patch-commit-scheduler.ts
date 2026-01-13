@@ -86,6 +86,9 @@ const DEFAULT_TIMEOUT_MS = 16;
 const COALESCING_DURATION_SAMPLE_LIMIT = 60;
 const COALESCING_DURATION_ACTIVATE_MS = 6;
 const COALESCING_DURATION_DEACTIVATE_MS = 4;
+const RETAIN_TOUCHED_IN_HISTORY =
+  typeof process !== "undefined" && process.env ? process.env.NODE_ENV !== "production" : true;
+const EMPTY_TOUCHED_SET = new Set<string>();
 
 function getDefaultNow(): NowFn {
   if (typeof performance !== "undefined" && typeof performance.now === "function") {
@@ -117,16 +120,16 @@ function getDefaultCancelRaf(): typeof cancelAnimationFrame | null {
 export class PatchCommitScheduler {
   private readonly store: RendererStore;
   private readonly onFlush: (result: PatchFlushResult) => void;
-  private readonly frameBudgetMs: number;
-  private readonly maxBatchesPerFlush?: number;
+  private frameBudgetMs: number;
+  private maxBatchesPerFlush?: number;
   private readonly now: NowFn;
   private readonly raf: typeof requestAnimationFrame | null;
   private readonly cancelRaf: typeof cancelAnimationFrame | null;
   private readonly timeoutMs: number;
 
-  private readonly lowPriorityFrameBudgetMs: number;
-  private readonly maxLowPriorityBatchesPerFlush?: number;
-  private readonly urgentQueueThreshold: number;
+  private lowPriorityFrameBudgetMs: number;
+  private maxLowPriorityBatchesPerFlush?: number;
+  private urgentQueueThreshold: number;
 
   private highQueue: PatchBatchInternal[] = [];
   private lowQueue: PatchBatchInternal[] = [];
@@ -153,15 +156,18 @@ export class PatchCommitScheduler {
   }) {
     this.store = params.store;
     this.onFlush = params.onFlush;
-    this.frameBudgetMs = Math.max(1, params.options?.frameBudgetMs ?? 8);
-    this.maxBatchesPerFlush = params.options?.maxBatchesPerFlush;
+    this.frameBudgetMs = Math.max(1, params.options?.frameBudgetMs ?? 10);
+    this.maxBatchesPerFlush = params.options?.maxBatchesPerFlush ?? 12;
     this.now = params.options?.now ?? getDefaultNow();
     this.raf = params.options?.raf ?? getDefaultRaf();
     this.cancelRaf = params.options?.cancelRaf ?? getDefaultCancelRaf();
     this.timeoutMs = Math.max(1, params.options?.timeoutMs ?? DEFAULT_TIMEOUT_MS);
-    this.lowPriorityFrameBudgetMs = Math.max(1, params.options?.lowPriorityFrameBudgetMs ?? Math.max(2, Math.floor(this.frameBudgetMs / 2)));
-    this.maxLowPriorityBatchesPerFlush = params.options?.maxLowPriorityBatchesPerFlush ?? 1;
-    this.urgentQueueThreshold = Math.max(1, params.options?.urgentQueueThreshold ?? 3);
+    this.lowPriorityFrameBudgetMs = Math.max(
+      1,
+      params.options?.lowPriorityFrameBudgetMs ?? Math.max(2, Math.floor(this.frameBudgetMs * 0.6)),
+    );
+    this.maxLowPriorityBatchesPerFlush = params.options?.maxLowPriorityBatchesPerFlush ?? 2;
+    this.urgentQueueThreshold = Math.max(1, params.options?.urgentQueueThreshold ?? 4);
     this.historyLimit = Math.max(1, params.options?.historyLimit ?? 200);
     const requestedBatch = params.options?.batch;
     if (requestedBatch === "microtask") {
@@ -171,7 +177,7 @@ export class PatchCommitScheduler {
     } else if (requestedBatch === "rAF") {
       this.batchStrategy = this.raf ? "rAF" : "timeout";
     } else {
-      this.batchStrategy = this.raf ? "rAF" : "timeout";
+      this.batchStrategy = "microtask";
     }
     if (this.batchStrategy === "microtask" && typeof queueMicrotask !== "function") {
       this.batchStrategy = this.raf ? "rAF" : "timeout";
@@ -516,7 +522,18 @@ export class PatchCommitScheduler {
   }
 
   private recordHistory(result: PatchFlushResult) {
-    this.history.push(result);
+    if (RETAIN_TOUCHED_IN_HISTORY) {
+      this.history.push(result);
+    } else {
+      const trimmed: PatchFlushResult = {
+        ...result,
+        batches: result.batches.map((batch) => ({
+          ...batch,
+          touched: EMPTY_TOUCHED_SET,
+        })),
+      };
+      this.history.push(trimmed);
+    }
     if (this.history.length > this.historyLimit) {
       this.history.splice(0, this.history.length - this.historyLimit);
     }
@@ -571,6 +588,54 @@ export class PatchCommitScheduler {
     this.historyLimit = Math.max(1, limit);
     if (this.history.length > this.historyLimit) {
       this.history.splice(0, this.history.length - this.historyLimit);
+    }
+  }
+
+  updateOptions(options: PatchCommitSchedulerOptions): void {
+    if (!options) return;
+    let shouldReschedule = false;
+
+    if (typeof options.frameBudgetMs !== "undefined") {
+      this.frameBudgetMs = Math.max(1, options.frameBudgetMs);
+      shouldReschedule = true;
+    }
+    if (typeof options.maxBatchesPerFlush !== "undefined") {
+      this.maxBatchesPerFlush = options.maxBatchesPerFlush;
+      shouldReschedule = true;
+    }
+    if (typeof options.lowPriorityFrameBudgetMs !== "undefined") {
+      this.lowPriorityFrameBudgetMs = Math.max(1, options.lowPriorityFrameBudgetMs);
+      shouldReschedule = true;
+    }
+    if (typeof options.maxLowPriorityBatchesPerFlush !== "undefined") {
+      this.maxLowPriorityBatchesPerFlush = options.maxLowPriorityBatchesPerFlush;
+      shouldReschedule = true;
+    }
+    if (typeof options.urgentQueueThreshold !== "undefined") {
+      this.urgentQueueThreshold = Math.max(1, options.urgentQueueThreshold);
+      shouldReschedule = true;
+    }
+    if (typeof options.historyLimit !== "undefined") {
+      this.setHistoryLimit(options.historyLimit);
+    }
+    if (typeof options.batch !== "undefined") {
+      const requestedBatch = options.batch;
+      if (requestedBatch === "microtask") {
+        this.batchStrategy = "microtask";
+      } else if (requestedBatch === "timeout") {
+        this.batchStrategy = "timeout";
+      } else if (requestedBatch === "rAF") {
+        this.batchStrategy = this.raf ? "rAF" : "timeout";
+      }
+      if (this.batchStrategy === "microtask" && typeof queueMicrotask !== "function") {
+        this.batchStrategy = this.raf ? "rAF" : "timeout";
+      }
+      shouldReschedule = true;
+    }
+
+    if (shouldReschedule && !this.paused && !this.flushing && this.getPendingCount() > 0) {
+      this.cancelScheduled();
+      this.schedule();
     }
   }
 

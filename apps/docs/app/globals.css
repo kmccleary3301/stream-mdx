@@ -188,6 +188,13 @@
     margin-bottom: 0.75rem;
   }
 
+  .markdown-v2-output .markdown-hr {
+    margin: 2rem 0;
+    border: 0;
+    border-top: 1px solid var(--border);
+    clear: both;
+  }
+
   .markdown-v2-output .markdown-list-virtualization-sentinel {
     height: 1px;
     padding: 0;

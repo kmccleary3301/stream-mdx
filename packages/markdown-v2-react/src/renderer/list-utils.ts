@@ -26,6 +26,29 @@ export function normalizeAllListDepths(map: NodeMap, touched: Set<string>, rootI
   }
 }
 
+export function normalizeListDepthsForIds(
+  map: NodeMap,
+  touched: Set<string>,
+  listIds: Set<string>,
+  rootId = "__root__",
+): void {
+  if (listIds.size === 0) {
+    normalizeAllListDepths(map, touched, rootId);
+    return;
+  }
+
+  const visited = new Set<string>();
+  for (const listId of listIds) {
+    const base = map.get(listId);
+    if (!base) continue;
+    const listNode = base.type === "list" ? base : findNearestListAncestor(map, base);
+    if (!listNode || visited.has(listNode.id)) continue;
+    visited.add(listNode.id);
+    const depth = computeListDepth(map, listNode, rootId);
+    normalizeListDepthRecursive(map, listNode, depth, touched);
+  }
+}
+
 function normalizeListDepthRecursive(map: NodeMap, listNode: NodeRecord, depth: number, touched: Set<string>) {
   if (!listNode) return;
   if (updateNodeDepth(listNode, depth)) {
@@ -49,4 +72,28 @@ function normalizeListDepthRecursive(map: NodeMap, listNode: NodeRecord, depth: 
       normalizeListDepthRecursive(map, child, depth + 1, touched);
     }
   }
+}
+
+function findNearestListAncestor(map: NodeMap, node: NodeRecord): NodeRecord | undefined {
+  let current: NodeRecord | undefined = node;
+  while (current) {
+    if (current.type === "list") return current;
+    if (!current.parentId) return undefined;
+    current = map.get(current.parentId);
+  }
+  return undefined;
+}
+
+function computeListDepth(map: NodeMap, listNode: NodeRecord, rootId: string): number {
+  let depth = 0;
+  let current: NodeRecord | undefined = listNode;
+  while (current && current.parentId && current.parentId !== rootId) {
+    const parent = map.get(current.parentId);
+    if (!parent) break;
+    if (parent.type === "list") {
+      depth += 1;
+    }
+    current = parent;
+  }
+  return depth;
 }

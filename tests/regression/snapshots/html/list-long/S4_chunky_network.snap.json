@@ -1,0 +1,381 @@
+{
+  "fixtureId": "list-long",
+  "fixtureTitle": "Long Lists",
+  "scenarioId": "S4_chunky_network",
+  "scenario": {
+    "id": "S4_chunky_network",
+    "label": "Chunky network",
+    "updateIntervalMs": 100,
+    "charRateCps": 5000,
+    "maxChunkChars": 2000
+  },
+  "totalLength": 295,
+  "checkpoints": [
+    {
+      "id": "after-first-chunk",
+      "appendedChars": 295,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Long Lists\">Long Lists</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" style=\"--list-indent: calc(2.5rem + 2ch);\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second item</li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Third item</li><li class=\"markdown-list-item\" data-counter-text=\"4.\" data-list-depth=\"0\">Fourth item</li><li class=\"markdown-list-item\" data-counter-text=\"5.\" data-list-depth=\"0\">Fifth item</li><li class=\"markdown-list-item\" data-counter-text=\"6.\" data-list-depth=\"0\">Sixth item</li><li class=\"markdown-list-item\" data-counter-text=\"7.\" data-list-depth=\"0\">Seventh item</li><li class=\"markdown-list-item\" data-counter-text=\"8.\" data-list-depth=\"0\">Eighth item</li><li class=\"markdown-list-item\" data-counter-text=\"9.\" data-list-depth=\"0\">Ninth item</li><li class=\"markdown-list-item\" data-counter-text=\"10.\" data-list-depth=\"0\">Tenth item</li><li class=\"markdown-list-item\" data-counter-text=\"11.\" data-list-depth=\"0\">Eleventh item</li><li class=\"markdown-list-item\" data-counter-text=\"12.\" data-list-depth=\"0\">Twelfth item</li></ol><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Bullet one</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Bullet two with nested items<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet A</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet B</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Bullet three</li></ul></div>",
+      "textSample": "Long ListsFirst itemSecond itemThird itemFourth itemFifth itemSixth itemSeventh itemEighth itemNinth itemTenth itemEleventh itemTwelfth itemBullet oneBullet two with nested itemsNested bullet ANested ",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-15",
+      "appendedChars": 295,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Long Lists\">Long Lists</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" style=\"--list-indent: calc(2.5rem + 2ch);\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second item</li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Third item</li><li class=\"markdown-list-item\" data-counter-text=\"4.\" data-list-depth=\"0\">Fourth item</li><li class=\"markdown-list-item\" data-counter-text=\"5.\" data-list-depth=\"0\">Fifth item</li><li class=\"markdown-list-item\" data-counter-text=\"6.\" data-list-depth=\"0\">Sixth item</li><li class=\"markdown-list-item\" data-counter-text=\"7.\" data-list-depth=\"0\">Seventh item</li><li class=\"markdown-list-item\" data-counter-text=\"8.\" data-list-depth=\"0\">Eighth item</li><li class=\"markdown-list-item\" data-counter-text=\"9.\" data-list-depth=\"0\">Ninth item</li><li class=\"markdown-list-item\" data-counter-text=\"10.\" data-list-depth=\"0\">Tenth item</li><li class=\"markdown-list-item\" data-counter-text=\"11.\" data-list-depth=\"0\">Eleventh item</li><li class=\"markdown-list-item\" data-counter-text=\"12.\" data-list-depth=\"0\">Twelfth item</li></ol><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Bullet one</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Bullet two with nested items<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet A</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet B</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Bullet three</li></ul></div>",
+      "textSample": "Long ListsFirst itemSecond itemThird itemFourth itemFifth itemSixth itemSeventh itemEighth itemNinth itemTenth itemEleventh itemTwelfth itemBullet oneBullet two with nested itemsNested bullet ANested ",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-30",
+      "appendedChars": 295,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Long Lists\">Long Lists</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" style=\"--list-indent: calc(2.5rem + 2ch);\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second item</li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Third item</li><li class=\"markdown-list-item\" data-counter-text=\"4.\" data-list-depth=\"0\">Fourth item</li><li class=\"markdown-list-item\" data-counter-text=\"5.\" data-list-depth=\"0\">Fifth item</li><li class=\"markdown-list-item\" data-counter-text=\"6.\" data-list-depth=\"0\">Sixth item</li><li class=\"markdown-list-item\" data-counter-text=\"7.\" data-list-depth=\"0\">Seventh item</li><li class=\"markdown-list-item\" data-counter-text=\"8.\" data-list-depth=\"0\">Eighth item</li><li class=\"markdown-list-item\" data-counter-text=\"9.\" data-list-depth=\"0\">Ninth item</li><li class=\"markdown-list-item\" data-counter-text=\"10.\" data-list-depth=\"0\">Tenth item</li><li class=\"markdown-list-item\" data-counter-text=\"11.\" data-list-depth=\"0\">Eleventh item</li><li class=\"markdown-list-item\" data-counter-text=\"12.\" data-list-depth=\"0\">Twelfth item</li></ol><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Bullet one</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Bullet two with nested items<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet A</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet B</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Bullet three</li></ul></div>",
+      "textSample": "Long ListsFirst itemSecond itemThird itemFourth itemFifth itemSixth itemSeventh itemEighth itemNinth itemTenth itemEleventh itemTwelfth itemBullet oneBullet two with nested itemsNested bullet ANested ",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-74",
+      "appendedChars": 295,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Long Lists\">Long Lists</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" style=\"--list-indent: calc(2.5rem + 2ch);\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second item</li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Third item</li><li class=\"markdown-list-item\" data-counter-text=\"4.\" data-list-depth=\"0\">Fourth item</li><li class=\"markdown-list-item\" data-counter-text=\"5.\" data-list-depth=\"0\">Fifth item</li><li class=\"markdown-list-item\" data-counter-text=\"6.\" data-list-depth=\"0\">Sixth item</li><li class=\"markdown-list-item\" data-counter-text=\"7.\" data-list-depth=\"0\">Seventh item</li><li class=\"markdown-list-item\" data-counter-text=\"8.\" data-list-depth=\"0\">Eighth item</li><li class=\"markdown-list-item\" data-counter-text=\"9.\" data-list-depth=\"0\">Ninth item</li><li class=\"markdown-list-item\" data-counter-text=\"10.\" data-list-depth=\"0\">Tenth item</li><li class=\"markdown-list-item\" data-counter-text=\"11.\" data-list-depth=\"0\">Eleventh item</li><li class=\"markdown-list-item\" data-counter-text=\"12.\" data-list-depth=\"0\">Twelfth item</li></ol><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Bullet one</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Bullet two with nested items<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet A</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet B</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Bullet three</li></ul></div>",
+      "textSample": "Long ListsFirst itemSecond itemThird itemFourth itemFifth itemSixth itemSeventh itemEighth itemNinth itemTenth itemEleventh itemTwelfth itemBullet oneBullet two with nested itemsNested bullet ANested ",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-148",
+      "appendedChars": 295,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Long Lists\">Long Lists</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" style=\"--list-indent: calc(2.5rem + 2ch);\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second item</li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Third item</li><li class=\"markdown-list-item\" data-counter-text=\"4.\" data-list-depth=\"0\">Fourth item</li><li class=\"markdown-list-item\" data-counter-text=\"5.\" data-list-depth=\"0\">Fifth item</li><li class=\"markdown-list-item\" data-counter-text=\"6.\" data-list-depth=\"0\">Sixth item</li><li class=\"markdown-list-item\" data-counter-text=\"7.\" data-list-depth=\"0\">Seventh item</li><li class=\"markdown-list-item\" data-counter-text=\"8.\" data-list-depth=\"0\">Eighth item</li><li class=\"markdown-list-item\" data-counter-text=\"9.\" data-list-depth=\"0\">Ninth item</li><li class=\"markdown-list-item\" data-counter-text=\"10.\" data-list-depth=\"0\">Tenth item</li><li class=\"markdown-list-item\" data-counter-text=\"11.\" data-list-depth=\"0\">Eleventh item</li><li class=\"markdown-list-item\" data-counter-text=\"12.\" data-list-depth=\"0\">Twelfth item</li></ol><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Bullet one</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Bullet two with nested items<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet A</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet B</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Bullet three</li></ul></div>",
+      "textSample": "Long ListsFirst itemSecond itemThird itemFourth itemFifth itemSixth itemSeventh itemEighth itemNinth itemTenth itemEleventh itemTwelfth itemBullet oneBullet two with nested itemsNested bullet ANested ",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-221",
+      "appendedChars": 295,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Long Lists\">Long Lists</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" style=\"--list-indent: calc(2.5rem + 2ch);\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second item</li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Third item</li><li class=\"markdown-list-item\" data-counter-text=\"4.\" data-list-depth=\"0\">Fourth item</li><li class=\"markdown-list-item\" data-counter-text=\"5.\" data-list-depth=\"0\">Fifth item</li><li class=\"markdown-list-item\" data-counter-text=\"6.\" data-list-depth=\"0\">Sixth item</li><li class=\"markdown-list-item\" data-counter-text=\"7.\" data-list-depth=\"0\">Seventh item</li><li class=\"markdown-list-item\" data-counter-text=\"8.\" data-list-depth=\"0\">Eighth item</li><li class=\"markdown-list-item\" data-counter-text=\"9.\" data-list-depth=\"0\">Ninth item</li><li class=\"markdown-list-item\" data-counter-text=\"10.\" data-list-depth=\"0\">Tenth item</li><li class=\"markdown-list-item\" data-counter-text=\"11.\" data-list-depth=\"0\">Eleventh item</li><li class=\"markdown-list-item\" data-counter-text=\"12.\" data-list-depth=\"0\">Twelfth item</li></ol><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Bullet one</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Bullet two with nested items<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet A</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet B</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Bullet three</li></ul></div>",
+      "textSample": "Long ListsFirst itemSecond itemThird itemFourth itemFifth itemSixth itemSeventh itemEighth itemNinth itemTenth itemEleventh itemTwelfth itemBullet oneBullet two with nested itemsNested bullet ANested ",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-266",
+      "appendedChars": 295,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Long Lists\">Long Lists</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" style=\"--list-indent: calc(2.5rem + 2ch);\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second item</li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Third item</li><li class=\"markdown-list-item\" data-counter-text=\"4.\" data-list-depth=\"0\">Fourth item</li><li class=\"markdown-list-item\" data-counter-text=\"5.\" data-list-depth=\"0\">Fifth item</li><li class=\"markdown-list-item\" data-counter-text=\"6.\" data-list-depth=\"0\">Sixth item</li><li class=\"markdown-list-item\" data-counter-text=\"7.\" data-list-depth=\"0\">Seventh item</li><li class=\"markdown-list-item\" data-counter-text=\"8.\" data-list-depth=\"0\">Eighth item</li><li class=\"markdown-list-item\" data-counter-text=\"9.\" data-list-depth=\"0\">Ninth item</li><li class=\"markdown-list-item\" data-counter-text=\"10.\" data-list-depth=\"0\">Tenth item</li><li class=\"markdown-list-item\" data-counter-text=\"11.\" data-list-depth=\"0\">Eleventh item</li><li class=\"markdown-list-item\" data-counter-text=\"12.\" data-list-depth=\"0\">Twelfth item</li></ol><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Bullet one</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Bullet two with nested items<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet A</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet B</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Bullet three</li></ul></div>",
+      "textSample": "Long ListsFirst itemSecond itemThird itemFourth itemFifth itemSixth itemSeventh itemEighth itemNinth itemTenth itemEleventh itemTwelfth itemBullet oneBullet two with nested itemsNested bullet ANested ",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-295",
+      "appendedChars": 295,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Long Lists\">Long Lists</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" style=\"--list-indent: calc(2.5rem + 2ch);\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second item</li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Third item</li><li class=\"markdown-list-item\" data-counter-text=\"4.\" data-list-depth=\"0\">Fourth item</li><li class=\"markdown-list-item\" data-counter-text=\"5.\" data-list-depth=\"0\">Fifth item</li><li class=\"markdown-list-item\" data-counter-text=\"6.\" data-list-depth=\"0\">Sixth item</li><li class=\"markdown-list-item\" data-counter-text=\"7.\" data-list-depth=\"0\">Seventh item</li><li class=\"markdown-list-item\" data-counter-text=\"8.\" data-list-depth=\"0\">Eighth item</li><li class=\"markdown-list-item\" data-counter-text=\"9.\" data-list-depth=\"0\">Ninth item</li><li class=\"markdown-list-item\" data-counter-text=\"10.\" data-list-depth=\"0\">Tenth item</li><li class=\"markdown-list-item\" data-counter-text=\"11.\" data-list-depth=\"0\">Eleventh item</li><li class=\"markdown-list-item\" data-counter-text=\"12.\" data-list-depth=\"0\">Twelfth item</li></ol><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Bullet one</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Bullet two with nested items<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet A</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet B</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Bullet three</li></ul></div>",
+      "textSample": "Long ListsFirst itemSecond itemThird itemFourth itemFifth itemSixth itemSeventh itemEighth itemNinth itemTenth itemEleventh itemTwelfth itemBullet oneBullet two with nested itemsNested bullet ANested ",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    }
+  ],
+  "final": {
+    "id": "after-finalize",
+    "appendedChars": 295,
+    "rootChildCount": 1,
+    "selectors": {
+      "hasTable": false,
+      "hasPre": false,
+      "hasFootnotes": false,
+      "hasMdxPending": false,
+      "hasMdxCompiled": false,
+      "hasBlockquote": false,
+      "hasMath": false
+    },
+    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Long Lists\">Long Lists</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" style=\"--list-indent: calc(2.5rem + 2ch);\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second item</li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Third item</li><li class=\"markdown-list-item\" data-counter-text=\"4.\" data-list-depth=\"0\">Fourth item</li><li class=\"markdown-list-item\" data-counter-text=\"5.\" data-list-depth=\"0\">Fifth item</li><li class=\"markdown-list-item\" data-counter-text=\"6.\" data-list-depth=\"0\">Sixth item</li><li class=\"markdown-list-item\" data-counter-text=\"7.\" data-list-depth=\"0\">Seventh item</li><li class=\"markdown-list-item\" data-counter-text=\"8.\" data-list-depth=\"0\">Eighth item</li><li class=\"markdown-list-item\" data-counter-text=\"9.\" data-list-depth=\"0\">Ninth item</li><li class=\"markdown-list-item\" data-counter-text=\"10.\" data-list-depth=\"0\">Tenth item</li><li class=\"markdown-list-item\" data-counter-text=\"11.\" data-list-depth=\"0\">Eleventh item</li><li class=\"markdown-list-item\" data-counter-text=\"12.\" data-list-depth=\"0\">Twelfth item</li></ol><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Bullet one</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Bullet two with nested items<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet A</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet B</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Bullet three</li></ul></div>",
+    "structure": {
+      "topLevelTags": [
+        "div"
+      ],
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      }
+    },
+    "children": [
+      {
+        "index": 0,
+        "tag": "div",
+        "hash": "0f52bbe6b6a1f69c8effb64f92b2b07e1682a291ae8c3a4b9d5d1926a398e5e3",
+        "textSample": "Long ListsFirst itemSecond itemThird itemFourth itemFifth itemSixth itemSeventh itemEighth itemNinth itemTenth itemEleve"
+      }
+    ]
+  }
+}

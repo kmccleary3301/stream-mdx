@@ -78,7 +78,7 @@ export function extractHighlightedLines(html: string, fallbackLength: number): H
   return manualExtractHighlightedLines(html, fallbackLength);
 }
 
-function normalizeHighlightedLines(lines: HighlightedLine[], fallbackLength: number): HighlightedLine[] {
+export function normalizeHighlightedLines(lines: HighlightedLine[], fallbackLength: number): HighlightedLine[] {
   if (!lines || lines.length === 0) {
     return new Array(Math.max(0, fallbackLength)).fill(null);
   }
@@ -140,6 +140,29 @@ function manualExtractHighlightedLines(html: string, fallbackLength: number): Hi
   }
 
   return normalizeHighlightedLines(lines, fallbackLength);
+}
+
+export function getDefaultCodeWrapperAttributes(
+  lang?: string,
+  themes: { dark: string; light: string } = { dark: "github-dark", light: "github-light" },
+): {
+  preAttrs: Record<string, string>;
+  codeAttrs: Record<string, string>;
+} {
+  const language = lang && typeof lang === "string" && lang.length > 0 ? lang : "text";
+  const themeLabel = `${themes.dark} ${themes.light}`;
+  return {
+    preAttrs: {
+      class: `shiki shiki-themes ${themeLabel}`,
+      "data-language": language,
+      style: "--shiki-dark-bg: transparent; --shiki-light-bg: transparent",
+    },
+    codeAttrs: {
+      "data-language": language,
+      "data-theme": themeLabel,
+      style: "display: grid;",
+    },
+  };
 }
 
 export function dedentIndentedCode(raw: string): string {

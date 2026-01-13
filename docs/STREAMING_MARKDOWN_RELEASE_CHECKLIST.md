@@ -31,7 +31,18 @@ Use this checklist when cutting releases from the `stream-mdx/` repo. It assumes
    ```bash
    npm test
    ```
-6. **Sanity-check hosted worker outputs**
+6. **Local regression baselines (local-only, recommended)**
+   ```bash
+   npm run test:regression:html
+   npm run test:regression:styles
+   ```
+7. **Perf baseline capture (optional, local)**
+   ```bash
+   NEXT_PUBLIC_STREAMING_DEMO_API=true npm run docs:dev
+   npm run perf:demo -- --rate 12000 --tick 5 --runs 1
+   ```
+   - Output includes a `longTasks` summary (count, total duration, max, p95).
+8. **Sanity-check hosted worker outputs**
    - Built worker artifact:
      - `packages/markdown-v2-worker/dist/hosted/markdown-worker.js`
    - Copied artifact (for the example app):

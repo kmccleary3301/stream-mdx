@@ -48,6 +48,8 @@ export type FormatAnticipationConfig =
       regex?: boolean;
     };
 
+export type CodeHighlightingMode = "final" | "incremental" | "live";
+
 export interface InlineHtmlDescriptor {
   tagName: string;
   attributes: Record<string, string>;
@@ -101,6 +103,7 @@ export type WorkerIn =
         callouts?: boolean;
         math?: boolean;
         formatAnticipation?: FormatAnticipationConfig;
+        codeHighlighting?: CodeHighlightingMode;
         liveCodeHighlighting?: boolean;
         mdxComponentNames?: string[];
       };

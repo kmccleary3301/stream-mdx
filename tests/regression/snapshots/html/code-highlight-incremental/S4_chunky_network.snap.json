@@ -1,0 +1,422 @@
+{
+  "fixtureId": "code-highlight-incremental",
+  "fixtureTitle": "Incremental Code Highlighting",
+  "scenarioId": "S4_chunky_network",
+  "scenario": {
+    "id": "S4_chunky_network",
+    "label": "Chunky network",
+    "updateIntervalMs": 100,
+    "charRateCps": 5000,
+    "maxChunkChars": 2000
+  },
+  "totalLength": 276,
+  "checkpoints": [
+    {
+      "id": "after-first-chunk",
+      "appendedChars": 276,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": true,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 2,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Incremental Code Highlighting\">Incremental Code Highlighting</h3><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre><code><span class=\"line\" data-line=\"1\">const label = \"incremental\";</span>\n<span class=\"line\" data-line=\"2\">const items = [</span>\n<span class=\"line\" data-line=\"3\">  \"alpha\",</span>\n<span class=\"line\" data-line=\"4\">  \"beta\",</span>\n<span class=\"line\" data-line=\"5\">  \"gamma\",</span>\n<span class=\"line\" data-line=\"6\">];</span>\n<span class=\"line\" data-line=\"7\"></span>\n<span class=\"line\" data-line=\"8\">function format(list) {</span>\n<span class=\"line\" data-line=\"9\">  /* multi-line</span>\n<span class=\"line\" data-line=\"10\">     comment */</span>\n<span class=\"line\" data-line=\"11\">  return list.map((value, index) =&gt; `${index + 1}: ${value}`);</span>\n<span class=\"line\" data-line=\"12\">}</span>\n<span class=\"line\" data-line=\"13\"></span>\n<span class=\"line\" data-line=\"14\">console.log(format(items));</span>\n</code></pre></div></div></div></div></div></div></pre></div>",
+      "textSample": "Incremental Code Highlighting[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{displ",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 2,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-14",
+      "appendedChars": 276,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": true,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 2,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Incremental Code Highlighting\">Incremental Code Highlighting</h3><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre><code><span class=\"line\" data-line=\"1\">const label = \"incremental\";</span>\n<span class=\"line\" data-line=\"2\">const items = [</span>\n<span class=\"line\" data-line=\"3\">  \"alpha\",</span>\n<span class=\"line\" data-line=\"4\">  \"beta\",</span>\n<span class=\"line\" data-line=\"5\">  \"gamma\",</span>\n<span class=\"line\" data-line=\"6\">];</span>\n<span class=\"line\" data-line=\"7\"></span>\n<span class=\"line\" data-line=\"8\">function format(list) {</span>\n<span class=\"line\" data-line=\"9\">  /* multi-line</span>\n<span class=\"line\" data-line=\"10\">     comment */</span>\n<span class=\"line\" data-line=\"11\">  return list.map((value, index) =&gt; `${index + 1}: ${value}`);</span>\n<span class=\"line\" data-line=\"12\">}</span>\n<span class=\"line\" data-line=\"13\"></span>\n<span class=\"line\" data-line=\"14\">console.log(format(items));</span>\n</code></pre></div></div></div></div></div></div></pre></div>",
+      "textSample": "Incremental Code Highlighting[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{displ",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 2,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-28",
+      "appendedChars": 276,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": true,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 2,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Incremental Code Highlighting\">Incremental Code Highlighting</h3><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre><code><span class=\"line\" data-line=\"1\">const label = \"incremental\";</span>\n<span class=\"line\" data-line=\"2\">const items = [</span>\n<span class=\"line\" data-line=\"3\">  \"alpha\",</span>\n<span class=\"line\" data-line=\"4\">  \"beta\",</span>\n<span class=\"line\" data-line=\"5\">  \"gamma\",</span>\n<span class=\"line\" data-line=\"6\">];</span>\n<span class=\"line\" data-line=\"7\"></span>\n<span class=\"line\" data-line=\"8\">function format(list) {</span>\n<span class=\"line\" data-line=\"9\">  /* multi-line</span>\n<span class=\"line\" data-line=\"10\">     comment */</span>\n<span class=\"line\" data-line=\"11\">  return list.map((value, index) =&gt; `${index + 1}: ${value}`);</span>\n<span class=\"line\" data-line=\"12\">}</span>\n<span class=\"line\" data-line=\"13\"></span>\n<span class=\"line\" data-line=\"14\">console.log(format(items));</span>\n</code></pre></div></div></div></div></div></div></pre></div>",
+      "textSample": "Incremental Code Highlighting[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{displ",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 2,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-69",
+      "appendedChars": 276,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": true,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 2,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Incremental Code Highlighting\">Incremental Code Highlighting</h3><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre><code><span class=\"line\" data-line=\"1\">const label = \"incremental\";</span>\n<span class=\"line\" data-line=\"2\">const items = [</span>\n<span class=\"line\" data-line=\"3\">  \"alpha\",</span>\n<span class=\"line\" data-line=\"4\">  \"beta\",</span>\n<span class=\"line\" data-line=\"5\">  \"gamma\",</span>\n<span class=\"line\" data-line=\"6\">];</span>\n<span class=\"line\" data-line=\"7\"></span>\n<span class=\"line\" data-line=\"8\">function format(list) {</span>\n<span class=\"line\" data-line=\"9\">  /* multi-line</span>\n<span class=\"line\" data-line=\"10\">     comment */</span>\n<span class=\"line\" data-line=\"11\">  return list.map((value, index) =&gt; `${index + 1}: ${value}`);</span>\n<span class=\"line\" data-line=\"12\">}</span>\n<span class=\"line\" data-line=\"13\"></span>\n<span class=\"line\" data-line=\"14\">console.log(format(items));</span>\n</code></pre></div></div></div></div></div></div></pre></div>",
+      "textSample": "Incremental Code Highlighting[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{displ",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 2,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-138",
+      "appendedChars": 276,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": true,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 2,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Incremental Code Highlighting\">Incremental Code Highlighting</h3><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre><code><span class=\"line\" data-line=\"1\">const label = \"incremental\";</span>\n<span class=\"line\" data-line=\"2\">const items = [</span>\n<span class=\"line\" data-line=\"3\">  \"alpha\",</span>\n<span class=\"line\" data-line=\"4\">  \"beta\",</span>\n<span class=\"line\" data-line=\"5\">  \"gamma\",</span>\n<span class=\"line\" data-line=\"6\">];</span>\n<span class=\"line\" data-line=\"7\"></span>\n<span class=\"line\" data-line=\"8\">function format(list) {</span>\n<span class=\"line\" data-line=\"9\">  /* multi-line</span>\n<span class=\"line\" data-line=\"10\">     comment */</span>\n<span class=\"line\" data-line=\"11\">  return list.map((value, index) =&gt; `${index + 1}: ${value}`);</span>\n<span class=\"line\" data-line=\"12\">}</span>\n<span class=\"line\" data-line=\"13\"></span>\n<span class=\"line\" data-line=\"14\">console.log(format(items));</span>\n</code></pre></div></div></div></div></div></div></pre></div>",
+      "textSample": "Incremental Code Highlighting[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{displ",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 2,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-207",
+      "appendedChars": 276,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": true,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 2,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Incremental Code Highlighting\">Incremental Code Highlighting</h3><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre><code><span class=\"line\" data-line=\"1\">const label = \"incremental\";</span>\n<span class=\"line\" data-line=\"2\">const items = [</span>\n<span class=\"line\" data-line=\"3\">  \"alpha\",</span>\n<span class=\"line\" data-line=\"4\">  \"beta\",</span>\n<span class=\"line\" data-line=\"5\">  \"gamma\",</span>\n<span class=\"line\" data-line=\"6\">];</span>\n<span class=\"line\" data-line=\"7\"></span>\n<span class=\"line\" data-line=\"8\">function format(list) {</span>\n<span class=\"line\" data-line=\"9\">  /* multi-line</span>\n<span class=\"line\" data-line=\"10\">     comment */</span>\n<span class=\"line\" data-line=\"11\">  return list.map((value, index) =&gt; `${index + 1}: ${value}`);</span>\n<span class=\"line\" data-line=\"12\">}</span>\n<span class=\"line\" data-line=\"13\"></span>\n<span class=\"line\" data-line=\"14\">console.log(format(items));</span>\n</code></pre></div></div></div></div></div></div></pre></div>",
+      "textSample": "Incremental Code Highlighting[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{displ",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 2,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-248",
+      "appendedChars": 276,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": true,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 2,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Incremental Code Highlighting\">Incremental Code Highlighting</h3><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre><code><span class=\"line\" data-line=\"1\">const label = \"incremental\";</span>\n<span class=\"line\" data-line=\"2\">const items = [</span>\n<span class=\"line\" data-line=\"3\">  \"alpha\",</span>\n<span class=\"line\" data-line=\"4\">  \"beta\",</span>\n<span class=\"line\" data-line=\"5\">  \"gamma\",</span>\n<span class=\"line\" data-line=\"6\">];</span>\n<span class=\"line\" data-line=\"7\"></span>\n<span class=\"line\" data-line=\"8\">function format(list) {</span>\n<span class=\"line\" data-line=\"9\">  /* multi-line</span>\n<span class=\"line\" data-line=\"10\">     comment */</span>\n<span class=\"line\" data-line=\"11\">  return list.map((value, index) =&gt; `${index + 1}: ${value}`);</span>\n<span class=\"line\" data-line=\"12\">}</span>\n<span class=\"line\" data-line=\"13\"></span>\n<span class=\"line\" data-line=\"14\">console.log(format(items));</span>\n</code></pre></div></div></div></div></div></div></pre></div>",
+      "textSample": "Incremental Code Highlighting[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{displ",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 2,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-276",
+      "appendedChars": 276,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": true,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 2,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Incremental Code Highlighting\">Incremental Code Highlighting</h3><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre><code><span class=\"line\" data-line=\"1\">const label = \"incremental\";</span>\n<span class=\"line\" data-line=\"2\">const items = [</span>\n<span class=\"line\" data-line=\"3\">  \"alpha\",</span>\n<span class=\"line\" data-line=\"4\">  \"beta\",</span>\n<span class=\"line\" data-line=\"5\">  \"gamma\",</span>\n<span class=\"line\" data-line=\"6\">];</span>\n<span class=\"line\" data-line=\"7\"></span>\n<span class=\"line\" data-line=\"8\">function format(list) {</span>\n<span class=\"line\" data-line=\"9\">  /* multi-line</span>\n<span class=\"line\" data-line=\"10\">     comment */</span>\n<span class=\"line\" data-line=\"11\">  return list.map((value, index) =&gt; `${index + 1}: ${value}`);</span>\n<span class=\"line\" data-line=\"12\">}</span>\n<span class=\"line\" data-line=\"13\"></span>\n<span class=\"line\" data-line=\"14\">console.log(format(items));</span>\n</code></pre></div></div></div></div></div></div></pre></div>",
+      "textSample": "Incremental Code Highlighting[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{displ",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 2,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "event-hasPre",
+      "appendedChars": 276,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": true,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 2,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Incremental Code Highlighting\">Incremental Code Highlighting</h3><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre><code><span class=\"line\" data-line=\"1\">const label = \"incremental\";</span>\n<span class=\"line\" data-line=\"2\">const items = [</span>\n<span class=\"line\" data-line=\"3\">  \"alpha\",</span>\n<span class=\"line\" data-line=\"4\">  \"beta\",</span>\n<span class=\"line\" data-line=\"5\">  \"gamma\",</span>\n<span class=\"line\" data-line=\"6\">];</span>\n<span class=\"line\" data-line=\"7\"></span>\n<span class=\"line\" data-line=\"8\">function format(list) {</span>\n<span class=\"line\" data-line=\"9\">  /* multi-line</span>\n<span class=\"line\" data-line=\"10\">     comment */</span>\n<span class=\"line\" data-line=\"11\">  return list.map((value, index) =&gt; `${index + 1}: ${value}`);</span>\n<span class=\"line\" data-line=\"12\">}</span>\n<span class=\"line\" data-line=\"13\"></span>\n<span class=\"line\" data-line=\"14\">console.log(format(items));</span>\n</code></pre></div></div></div></div></div></div></pre></div>",
+      "textSample": "Incremental Code Highlighting[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{displ",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 2,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    }
+  ],
+  "final": {
+    "id": "after-finalize",
+    "appendedChars": 276,
+    "rootChildCount": 1,
+    "selectors": {
+      "hasTable": false,
+      "hasPre": true,
+      "hasFootnotes": false,
+      "hasMdxPending": false,
+      "hasMdxCompiled": false,
+      "hasBlockquote": false,
+      "hasMath": false
+    },
+    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Incremental Code Highlighting\">Incremental Code Highlighting</h3><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre><code><span class=\"line\" data-line=\"1\">const label = \"incremental\";</span>\n<span class=\"line\" data-line=\"2\">const items = [</span>\n<span class=\"line\" data-line=\"3\">  \"alpha\",</span>\n<span class=\"line\" data-line=\"4\">  \"beta\",</span>\n<span class=\"line\" data-line=\"5\">  \"gamma\",</span>\n<span class=\"line\" data-line=\"6\">];</span>\n<span class=\"line\" data-line=\"7\"></span>\n<span class=\"line\" data-line=\"8\">function format(list) {</span>\n<span class=\"line\" data-line=\"9\">  /* multi-line</span>\n<span class=\"line\" data-line=\"10\">     comment */</span>\n<span class=\"line\" data-line=\"11\">  return list.map((value, index) =&gt; `${index + 1}: ${value}`);</span>\n<span class=\"line\" data-line=\"12\">}</span>\n<span class=\"line\" data-line=\"13\"></span>\n<span class=\"line\" data-line=\"14\">console.log(format(items));</span>\n</code></pre></div></div></div></div></div></div></pre></div>",
+    "structure": {
+      "topLevelTags": [
+        "div"
+      ],
+      "counts": {
+        "table": 0,
+        "pre": 2,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      }
+    },
+    "children": [
+      {
+        "index": 0,
+        "tag": "div",
+        "hash": "81c703c8cc1ed7484e81f9f702af391b32bb3355c8220a7916a1ac9e7cc10e3f",
+        "textSample": "Incremental Code Highlighting[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-over"
+      }
+    ]
+  }
+}

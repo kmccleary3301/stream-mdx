@@ -1,0 +1,381 @@
+{
+  "fixtureId": "line-breaks",
+  "fixtureTitle": "Line Breaks",
+  "scenarioId": "S4_chunky_network",
+  "scenario": {
+    "id": "S4_chunky_network",
+    "label": "Chunky network",
+    "updateIntervalMs": 100,
+    "charRateCps": 5000,
+    "maxChunkChars": 2000
+  },
+  "totalLength": 200,
+  "checkpoints": [
+    {
+      "id": "after-first-chunk",
+      "appendedChars": 200,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Line Breaks\">Line Breaks</h1><p class=\"markdown-paragraph\">Soft break line one\nsoft break line two (same paragraph).</p><p class=\"markdown-paragraph\">Hard break with two spaces<br>line after two spaces.</p><p class=\"markdown-paragraph\">Hard break with backslash<br>line after backslash.</p><p class=\"markdown-paragraph streaming-partial\">Paragraph break above.</p></div>",
+      "textSample": "Line BreaksSoft break line one\nsoft break line two (same paragraph).Hard break with two spacesline after two spaces.Hard break with backslashline after backslash.Paragraph break above.",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-10",
+      "appendedChars": 200,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Line Breaks\">Line Breaks</h1><p class=\"markdown-paragraph\">Soft break line one\nsoft break line two (same paragraph).</p><p class=\"markdown-paragraph\">Hard break with two spaces<br>line after two spaces.</p><p class=\"markdown-paragraph\">Hard break with backslash<br>line after backslash.</p><p class=\"markdown-paragraph streaming-partial\">Paragraph break above.</p></div>",
+      "textSample": "Line BreaksSoft break line one\nsoft break line two (same paragraph).Hard break with two spacesline after two spaces.Hard break with backslashline after backslash.Paragraph break above.",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-20",
+      "appendedChars": 200,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Line Breaks\">Line Breaks</h1><p class=\"markdown-paragraph\">Soft break line one\nsoft break line two (same paragraph).</p><p class=\"markdown-paragraph\">Hard break with two spaces<br>line after two spaces.</p><p class=\"markdown-paragraph\">Hard break with backslash<br>line after backslash.</p><p class=\"markdown-paragraph streaming-partial\">Paragraph break above.</p></div>",
+      "textSample": "Line BreaksSoft break line one\nsoft break line two (same paragraph).Hard break with two spacesline after two spaces.Hard break with backslashline after backslash.Paragraph break above.",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-50",
+      "appendedChars": 200,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Line Breaks\">Line Breaks</h1><p class=\"markdown-paragraph\">Soft break line one\nsoft break line two (same paragraph).</p><p class=\"markdown-paragraph\">Hard break with two spaces<br>line after two spaces.</p><p class=\"markdown-paragraph\">Hard break with backslash<br>line after backslash.</p><p class=\"markdown-paragraph streaming-partial\">Paragraph break above.</p></div>",
+      "textSample": "Line BreaksSoft break line one\nsoft break line two (same paragraph).Hard break with two spacesline after two spaces.Hard break with backslashline after backslash.Paragraph break above.",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-100",
+      "appendedChars": 200,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Line Breaks\">Line Breaks</h1><p class=\"markdown-paragraph\">Soft break line one\nsoft break line two (same paragraph).</p><p class=\"markdown-paragraph\">Hard break with two spaces<br>line after two spaces.</p><p class=\"markdown-paragraph\">Hard break with backslash<br>line after backslash.</p><p class=\"markdown-paragraph streaming-partial\">Paragraph break above.</p></div>",
+      "textSample": "Line BreaksSoft break line one\nsoft break line two (same paragraph).Hard break with two spacesline after two spaces.Hard break with backslashline after backslash.Paragraph break above.",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-150",
+      "appendedChars": 200,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Line Breaks\">Line Breaks</h1><p class=\"markdown-paragraph\">Soft break line one\nsoft break line two (same paragraph).</p><p class=\"markdown-paragraph\">Hard break with two spaces<br>line after two spaces.</p><p class=\"markdown-paragraph\">Hard break with backslash<br>line after backslash.</p><p class=\"markdown-paragraph streaming-partial\">Paragraph break above.</p></div>",
+      "textSample": "Line BreaksSoft break line one\nsoft break line two (same paragraph).Hard break with two spacesline after two spaces.Hard break with backslashline after backslash.Paragraph break above.",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-180",
+      "appendedChars": 200,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Line Breaks\">Line Breaks</h1><p class=\"markdown-paragraph\">Soft break line one\nsoft break line two (same paragraph).</p><p class=\"markdown-paragraph\">Hard break with two spaces<br>line after two spaces.</p><p class=\"markdown-paragraph\">Hard break with backslash<br>line after backslash.</p><p class=\"markdown-paragraph streaming-partial\">Paragraph break above.</p></div>",
+      "textSample": "Line BreaksSoft break line one\nsoft break line two (same paragraph).Hard break with two spacesline after two spaces.Hard break with backslashline after backslash.Paragraph break above.",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-200",
+      "appendedChars": 200,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Line Breaks\">Line Breaks</h1><p class=\"markdown-paragraph\">Soft break line one\nsoft break line two (same paragraph).</p><p class=\"markdown-paragraph\">Hard break with two spaces<br>line after two spaces.</p><p class=\"markdown-paragraph\">Hard break with backslash<br>line after backslash.</p><p class=\"markdown-paragraph streaming-partial\">Paragraph break above.</p></div>",
+      "textSample": "Line BreaksSoft break line one\nsoft break line two (same paragraph).Hard break with two spacesline after two spaces.Hard break with backslashline after backslash.Paragraph break above.",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    }
+  ],
+  "final": {
+    "id": "after-finalize",
+    "appendedChars": 200,
+    "rootChildCount": 1,
+    "selectors": {
+      "hasTable": false,
+      "hasPre": false,
+      "hasFootnotes": false,
+      "hasMdxPending": false,
+      "hasMdxCompiled": false,
+      "hasBlockquote": false,
+      "hasMath": false
+    },
+    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Line Breaks\">Line Breaks</h1><p class=\"markdown-paragraph\">Soft break line one\nsoft break line two (same paragraph).</p><p class=\"markdown-paragraph\">Hard break with two spaces<br>line after two spaces.</p><p class=\"markdown-paragraph\">Hard break with backslash<br>line after backslash.</p><p class=\"markdown-paragraph\">Paragraph break above.</p></div>",
+    "structure": {
+      "topLevelTags": [
+        "div"
+      ],
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      }
+    },
+    "children": [
+      {
+        "index": 0,
+        "tag": "div",
+        "hash": "164fc24ce4fac76b144a5859d39808dec708743463181ba7f7b32b8108a29075",
+        "textSample": "Line BreaksSoft break line one\nsoft break line two (same paragraph).Hard break with two spacesline after two spaces.Hard"
+      }
+    ]
+  }
+}

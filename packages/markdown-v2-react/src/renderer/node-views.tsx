@@ -399,10 +399,20 @@ const ListBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
     const inlineComponents = registry.getInlineComponents();
     const ordered = Boolean(node?.props?.ordered ?? block?.payload.meta?.ordered);
     const Tag = ordered ? "ol" : "ul";
+    const listItemIds = React.useMemo(() => {
+      const ids: string[] = [];
+      for (const childId of childIds) {
+        const childNode = store.getNode(childId);
+        if (childNode?.type === "list-item") {
+          ids.push(childId);
+        }
+      }
+      return ids;
+    }, [childIds, store]);
     const listStyle = React.useMemo(() => {
-      if (!ordered || childIds.length === 0) return undefined;
+      if (!ordered || listItemIds.length === 0) return undefined;
       let maxDigits = 1;
-      childIds.forEach((childId, index) => {
+      listItemIds.forEach((childId, index) => {
         const childNode = store.getNode(childId);
         const raw = typeof childNode?.block?.payload?.raw === "string" ? childNode.block.payload.raw : undefined;
         const markerMatch = raw ? raw.match(/^([^\s]+)\s+/) : null;
@@ -416,10 +426,11 @@ const ListBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
       return {
         ["--list-indent" as const]: `calc(${baseIndent} + ${maxDigits}ch)`,
       } as React.CSSProperties;
-    }, [ordered, childIds, store, depth]);
+    }, [ordered, listItemIds, store, depth]);
+    if (listItemIds.length === 0) return null;
     return (
       <Tag className={`markdown-list ${ordered ? "ordered" : "unordered"}`} data-list-depth={depth} style={listStyle}>
-        {childIds.map((childId, index) => (
+        {listItemIds.map((childId, index) => (
           <ListItemView
             key={childId}
             store={store}

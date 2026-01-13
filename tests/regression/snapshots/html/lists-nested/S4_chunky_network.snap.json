@@ -1,0 +1,381 @@
+{
+  "fixtureId": "lists-nested",
+  "fixtureTitle": "Lists Nested",
+  "scenarioId": "S4_chunky_network",
+  "scenario": {
+    "id": "S4_chunky_network",
+    "label": "Chunky network",
+    "updateIntervalMs": 100,
+    "charRateCps": 5000,
+    "maxChunkChars": 2000
+  },
+  "totalLength": 170,
+  "checkpoints": [
+    {
+      "id": "after-first-chunk",
+      "appendedChars": 170,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Lists Nested\">Lists Nested</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" style=\"--list-indent: calc(2.5rem + 1ch);\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">Item one</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Item two<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Bullet a</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Bullet b<div class=\"markdown-list-item-children\"><ol class=\"markdown-list ordered\" data-list-depth=\"2\" style=\"--list-indent: calc(1.5rem + 1ch);\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"2\">Sub item 1</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"2\">Sub item 2</li></ol></div></li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Item three</li></ol><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Alpha</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Beta<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Beta one</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Beta two</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Gamma</li></ul></div>",
+      "textSample": "Lists NestedItem oneItem twoBullet aBullet bSub item 1Sub item 2Item threeAlphaBetaBeta oneBeta twoGamma",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-9",
+      "appendedChars": 170,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Lists Nested\">Lists Nested</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" style=\"--list-indent: calc(2.5rem + 1ch);\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">Item one</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Item two<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Bullet a</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Bullet b<div class=\"markdown-list-item-children\"><ol class=\"markdown-list ordered\" data-list-depth=\"2\" style=\"--list-indent: calc(1.5rem + 1ch);\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"2\">Sub item 1</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"2\">Sub item 2</li></ol></div></li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Item three</li></ol><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Alpha</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Beta<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Beta one</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Beta two</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Gamma</li></ul></div>",
+      "textSample": "Lists NestedItem oneItem twoBullet aBullet bSub item 1Sub item 2Item threeAlphaBetaBeta oneBeta twoGamma",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-17",
+      "appendedChars": 170,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Lists Nested\">Lists Nested</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" style=\"--list-indent: calc(2.5rem + 1ch);\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">Item one</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Item two<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Bullet a</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Bullet b<div class=\"markdown-list-item-children\"><ol class=\"markdown-list ordered\" data-list-depth=\"2\" style=\"--list-indent: calc(1.5rem + 1ch);\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"2\">Sub item 1</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"2\">Sub item 2</li></ol></div></li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Item three</li></ol><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Alpha</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Beta<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Beta one</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Beta two</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Gamma</li></ul></div>",
+      "textSample": "Lists NestedItem oneItem twoBullet aBullet bSub item 1Sub item 2Item threeAlphaBetaBeta oneBeta twoGamma",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-43",
+      "appendedChars": 170,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Lists Nested\">Lists Nested</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" style=\"--list-indent: calc(2.5rem + 1ch);\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">Item one</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Item two<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Bullet a</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Bullet b<div class=\"markdown-list-item-children\"><ol class=\"markdown-list ordered\" data-list-depth=\"2\" style=\"--list-indent: calc(1.5rem + 1ch);\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"2\">Sub item 1</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"2\">Sub item 2</li></ol></div></li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Item three</li></ol><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Alpha</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Beta<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Beta one</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Beta two</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Gamma</li></ul></div>",
+      "textSample": "Lists NestedItem oneItem twoBullet aBullet bSub item 1Sub item 2Item threeAlphaBetaBeta oneBeta twoGamma",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-85",
+      "appendedChars": 170,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Lists Nested\">Lists Nested</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" style=\"--list-indent: calc(2.5rem + 1ch);\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">Item one</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Item two<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Bullet a</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Bullet b<div class=\"markdown-list-item-children\"><ol class=\"markdown-list ordered\" data-list-depth=\"2\" style=\"--list-indent: calc(1.5rem + 1ch);\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"2\">Sub item 1</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"2\">Sub item 2</li></ol></div></li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Item three</li></ol><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Alpha</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Beta<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Beta one</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Beta two</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Gamma</li></ul></div>",
+      "textSample": "Lists NestedItem oneItem twoBullet aBullet bSub item 1Sub item 2Item threeAlphaBetaBeta oneBeta twoGamma",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-128",
+      "appendedChars": 170,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Lists Nested\">Lists Nested</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" style=\"--list-indent: calc(2.5rem + 1ch);\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">Item one</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Item two<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Bullet a</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Bullet b<div class=\"markdown-list-item-children\"><ol class=\"markdown-list ordered\" data-list-depth=\"2\" style=\"--list-indent: calc(1.5rem + 1ch);\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"2\">Sub item 1</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"2\">Sub item 2</li></ol></div></li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Item three</li></ol><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Alpha</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Beta<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Beta one</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Beta two</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Gamma</li></ul></div>",
+      "textSample": "Lists NestedItem oneItem twoBullet aBullet bSub item 1Sub item 2Item threeAlphaBetaBeta oneBeta twoGamma",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-153",
+      "appendedChars": 170,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Lists Nested\">Lists Nested</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" style=\"--list-indent: calc(2.5rem + 1ch);\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">Item one</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Item two<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Bullet a</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Bullet b<div class=\"markdown-list-item-children\"><ol class=\"markdown-list ordered\" data-list-depth=\"2\" style=\"--list-indent: calc(1.5rem + 1ch);\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"2\">Sub item 1</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"2\">Sub item 2</li></ol></div></li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Item three</li></ol><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Alpha</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Beta<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Beta one</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Beta two</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Gamma</li></ul></div>",
+      "textSample": "Lists NestedItem oneItem twoBullet aBullet bSub item 1Sub item 2Item threeAlphaBetaBeta oneBeta twoGamma",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-170",
+      "appendedChars": 170,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Lists Nested\">Lists Nested</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" style=\"--list-indent: calc(2.5rem + 1ch);\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">Item one</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Item two<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Bullet a</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Bullet b<div class=\"markdown-list-item-children\"><ol class=\"markdown-list ordered\" data-list-depth=\"2\" style=\"--list-indent: calc(1.5rem + 1ch);\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"2\">Sub item 1</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"2\">Sub item 2</li></ol></div></li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Item three</li></ol><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Alpha</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Beta<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Beta one</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Beta two</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Gamma</li></ul></div>",
+      "textSample": "Lists NestedItem oneItem twoBullet aBullet bSub item 1Sub item 2Item threeAlphaBetaBeta oneBeta twoGamma",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    }
+  ],
+  "final": {
+    "id": "after-finalize",
+    "appendedChars": 170,
+    "rootChildCount": 1,
+    "selectors": {
+      "hasTable": false,
+      "hasPre": false,
+      "hasFootnotes": false,
+      "hasMdxPending": false,
+      "hasMdxCompiled": false,
+      "hasBlockquote": false,
+      "hasMath": false
+    },
+    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Lists Nested\">Lists Nested</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" style=\"--list-indent: calc(2.5rem + 1ch);\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">Item one</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Item two<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Bullet a</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Bullet b<div class=\"markdown-list-item-children\"><ol class=\"markdown-list ordered\" data-list-depth=\"2\" style=\"--list-indent: calc(1.5rem + 1ch);\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"2\">Sub item 1</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"2\">Sub item 2</li></ol></div></li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Item three</li></ol><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Alpha</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Beta<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Beta one</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Beta two</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Gamma</li></ul></div>",
+    "structure": {
+      "topLevelTags": [
+        "div"
+      ],
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      }
+    },
+    "children": [
+      {
+        "index": 0,
+        "tag": "div",
+        "hash": "f2c193d20479bf6aa8d710aedd61f6a2ddd8df42ea6d11ae872e9cd3161abce5",
+        "textSample": "Lists NestedItem oneItem twoBullet aBullet bSub item 1Sub item 2Item threeAlphaBetaBeta oneBeta twoGamma"
+      }
+    ]
+  }
+}

@@ -1,28 +1,25 @@
 "use client";
 
-import type { Block, FormatAnticipationConfig, InlineNode, Patch, PerformanceMetrics, WorkerIn } from "@stream-mdx/core";
-import type { HtmlElements, TableElements } from "@stream-mdx/react";
+import type { Block, CodeHighlightingMode, FormatAnticipationConfig, InlineNode, Patch, PerformanceMetrics, WorkerIn } from "@stream-mdx/core";
 import type { CoalescingMetrics } from "@stream-mdx/react/renderer/patch-coalescing";
 import type { PatchFlushResult } from "@stream-mdx/react/renderer/patch-commit-scheduler";
 import type { RendererStore } from "@stream-mdx/react/renderer/store";
-import type { CSSProperties, ComponentType, HTMLAttributes, ReactNode } from "react";
+import type { ComponentType } from "react";
 
-import { BlockMath, InlineMath } from "@/components/markdown/Math";
 import { Button } from "@/components/ui/button";
-import { ScrollAreaHorizontal } from "@/components/ui/scroll-area";
 import { Slider } from "@/components/ui/slider";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { components as sharedMdxComponents } from "@/mdx-components";
+import { configureDemoRegistry, createDemoHtmlElements, createDemoTableElements } from "@/lib/streaming-demo-registry";
 import { DEFAULT_BACKPRESSURE_CONFIG, calculateSmoothedCredit, clampCredit } from "@stream-mdx/core";
-import { StreamingMarkdown, type StreamingMarkdownHandle, ComponentRegistry, renderInlineNodes } from "@stream-mdx/react";
+import { StreamingMarkdown, type StreamingMarkdownHandle, ComponentRegistry } from "@stream-mdx/react";
 import { registerMDXComponents } from "@stream-mdx/react/mdx-client";
 import { MarkdownWorkerClient, type MarkdownWorkerClientOptions } from "@stream-mdx/worker/worker-client";
 import type { DefaultWorkerMode } from "@stream-mdx/worker";
 
-import { Fragment, createElement, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 
-const METRIC_SAMPLE_LIMIT = 1000;
+const METRIC_SAMPLE_LIMIT = process.env.NODE_ENV === "production" ? 300 : 1000;
 const COALESCING_RECENT_BATCH_COUNT = 8;
 const COALESCING_SPARKLINE_POINTS = 24;
 const COALESCING_WARN_REDUCTION_PCT = 5;
@@ -40,6 +37,7 @@ type AutomationState = {
   total: number;
   isRunning: boolean;
   mode: "classic" | "worker";
+  schedulingPreset?: "latency" | "throughput";
   rate: number;
   tickMs: number;
   renderer?: { version: number; patchMode: boolean };
@@ -140,6 +138,7 @@ export type StreamingDemoAutomationApiV2 = {
   setRate?: (value: number) => void;
   setTick?: (value: number) => void;
   setMode?: (mode: "classic" | "worker") => void;
+  setSchedulingPreset?: (preset: "latency" | "throughput") => void;
   setMdxEnabled?: (enabled: boolean) => void;
   setMdxStrategy?: (mode: "server" | "worker") => void;
   setStreamLimit?: (limit: number | null) => void;
@@ -434,40 +433,28 @@ function createEmptyTimingSummary(): TimingSummary {
   };
 }
 
-function attrsToProps(attrs?: Record<string, string>): HTMLAttributes<HTMLElement> & Record<string, unknown> {
-  if (!attrs) return {} as HTMLAttributes<HTMLElement> & Record<string, unknown>;
-  const out: HTMLAttributes<HTMLElement> & Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(attrs)) {
-    if (key === "class") {
-      out.className = value;
-    } else if (key === "style") {
-      out.style = parseStyleAttribute(value);
-    } else {
-      out[key] = value;
-    }
-  }
-  return out;
-}
+// moved to streaming-demo-registry helper
 
-function parseStyleAttribute(value: string): CSSProperties & Record<string, string> {
-  const style: Record<string, string> = {};
-  if (!value) return style;
-  const parts = value.split(";");
-  for (const part of parts) {
-    if (!part.trim()) continue;
-    const [prop, val] = part.split(":");
-    if (!prop || !val) continue;
-    const property = prop.trim();
-    const trimmedValue = val.trim();
-    if (property.startsWith("--")) {
-      style[property] = trimmedValue;
-    } else {
-      const camelProp = property.replace(/-([a-z])/g, (_, char: string) => char.toUpperCase());
-      style[camelProp] = trimmedValue;
-    }
-  }
-  return style as CSSProperties & Record<string, string>;
-}
+const SCHEDULING_PRESETS = {
+  latency: {
+    batch: "rAF",
+    frameBudgetMs: 6,
+    maxBatchesPerFlush: 4,
+    lowPriorityFrameBudgetMs: 3,
+    maxLowPriorityBatchesPerFlush: 1,
+    urgentQueueThreshold: 2,
+  },
+  throughput: {
+    batch: "microtask",
+    frameBudgetMs: 10,
+    maxBatchesPerFlush: 12,
+    lowPriorityFrameBudgetMs: 6,
+    maxLowPriorityBatchesPerFlush: 2,
+    urgentQueueThreshold: 4,
+  },
+} as const;
+
+type SchedulingPreset = keyof typeof SCHEDULING_PRESETS;
 
 export function StreamingMarkdownDemoV2({
   fullText,
@@ -476,67 +463,13 @@ export function StreamingMarkdownDemoV2({
   fullText: string;
   className?: string;
 }) {
-  const tableElements = useMemo<TableElements>(
-    () => ({
-      Table,
-      Thead: TableHeader,
-      Tbody: TableBody,
-      Tr: TableRow,
-      Th: TableHead,
-      Td: TableCell,
-    }),
-    [],
-  );
-  const htmlElements = useMemo<Partial<HtmlElements>>(
-    () => ({
-      table: ({ className, children, ...props }: HTMLAttributes<HTMLTableElement>) => (
-        <div className="my-6 w-full overflow-hidden overflow-y-auto">
-          <Table className={className} {...props}>
-            {children}
-          </Table>
-        </div>
-      ),
-      thead: ({ className, children, ...props }: HTMLAttributes<HTMLTableSectionElement>) => (
-        <TableHeader className={className} {...props}>
-          {children}
-        </TableHeader>
-      ),
-      tbody: ({ className, children, ...props }: HTMLAttributes<HTMLTableSectionElement>) => (
-        <TableBody className={cn("border border-border px-4 py-2 text-left [&[align=center]]:text-center [&[align=right]]:text-right", className)} {...props}>
-          {children}
-        </TableBody>
-      ),
-      tr: ({ className, children, ...props }: HTMLAttributes<HTMLTableRowElement>) => (
-        <TableRow className={cn("border border-border px-4 py-2 text-left [&[align=center]]:text-center [&[align=right]]:text-right", className)} {...props}>
-          {children}
-        </TableRow>
-      ),
-      th: ({ className, children, ...props }: HTMLAttributes<HTMLTableCellElement>) => (
-        <TableHead
-          className={cn("border border-border px-4 py-2 text-left font-bold [&[align=center]]:text-center [&[align=right]]:text-right", className)}
-          {...props}
-        >
-          {children}
-        </TableHead>
-      ),
-      td: ({ className, children, ...props }: HTMLAttributes<HTMLTableCellElement>) => (
-        <TableCell className={cn("border border-border px-4 py-2 text-left [&[align=center]]:text-center [&[align=right]]:text-right", className)} {...props}>
-          {children}
-        </TableCell>
-      ),
-    }),
-    [],
-  );
+  const tableElements = useMemo(() => createDemoTableElements(), []);
+  const htmlElements = useMemo(() => createDemoHtmlElements(), []);
   const PREWARM_LANGS = useMemo(() => ["typescript", "tsx", "javascript", "json", "python", "bash", "html", "css", "sql", "yaml", "markdown"], []);
+  const [schedulingPreset, setSchedulingPreset] = useState<SchedulingPreset>("throughput");
   const rendererScheduling = useMemo(
-    () => ({
-      frameBudgetMs: 9,
-      maxBatchesPerFlush: 5,
-      lowPriorityFrameBudgetMs: 4,
-      maxLowPriorityBatchesPerFlush: 1,
-      urgentQueueThreshold: 2,
-    }),
-    [],
+    () => SCHEDULING_PRESETS[schedulingPreset],
+    [schedulingPreset],
   );
   const [idx, setIdx] = useState<number>(0);
   const [rate, setRate] = useState<number>(500); // characters per second
@@ -563,7 +496,8 @@ export function StreamingMarkdownDemoV2({
     mdx: true,
     regex: false,
   });
-  const [liveCodeHighlightingEnabled, setLiveCodeHighlightingEnabled] = useState<boolean>(false);
+  const [codeHighlightingMode, setCodeHighlightingMode] = useState<CodeHighlightingMode>("incremental");
+  const liveCodeHighlightingEnabled = codeHighlightingMode === "live";
   const debugTimingRef = useRef(debugTiming);
   const showInspectorRef = useRef(showInspector);
   const modeRef = useRef<"classic" | "worker">("worker");
@@ -571,6 +505,7 @@ export function StreamingMarkdownDemoV2({
   // Default to worker-side MDX compilation so the demo renders MDX blocks without server help.
   const [mdxStrategy, setMdxStrategy] = useState<"server" | "worker">("worker");
   const mdxStrategyRef = useRef<"server" | "worker">("worker");
+  const schedulingPresetRef = useRef<SchedulingPreset>(schedulingPreset);
 
   useEffect(() => {
     debugTimingRef.current = debugTiming;
@@ -680,7 +615,16 @@ export function StreamingMarkdownDemoV2({
   const workerCleanupRef = useRef<(() => void) | null>(null);
   const workerInitTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pendingWorkerInitRef = useRef<MarkdownWorkerClient | null>(null);
-  const componentRegistry = useRef(new ComponentRegistry());
+  const componentRegistry = useMemo(() => {
+    const registry = new ComponentRegistry();
+    configureDemoRegistry({
+      registry,
+      tableElements,
+      htmlElements,
+      showCodeMeta,
+    });
+    return registry;
+  }, [tableElements, htmlElements, showCodeMeta]);
   const hasPatchPipelineRef = useRef(false);
   const docPluginConfigRef = useRef<DocPluginConfig>({
     footnotes: true,
@@ -689,6 +633,7 @@ export function StreamingMarkdownDemoV2({
     tables: true,
     callouts: true,
     formatAnticipation: formatAnticipationConfig,
+    codeHighlighting: "incremental",
     liveCodeHighlighting: false,
   });
   const finalizedOnceRef = useRef(false);
@@ -1725,6 +1670,12 @@ export function StreamingMarkdownDemoV2({
     setupWorker();
   }, [isRunning, setupWorker, bumpRunToken]);
 
+  useEffect(() => {
+    if (schedulingPresetRef.current === schedulingPreset) return;
+    schedulingPresetRef.current = schedulingPreset;
+    onRestart();
+  }, [onRestart, schedulingPreset]);
+
   const getCodeBlockSnapshot = useCallback(
     (options?: {
       blockId?: string;
@@ -1839,243 +1790,6 @@ export function StreamingMarkdownDemoV2({
     }
   };
 
-  // Custom components for V2 renderer
-  useEffect(() => {
-    componentRegistry.current.setInlineComponents({
-      mention: ({ handle }: { handle: string }) => (
-        <a href={`https://x.com/${handle}`} className="text-[#A68AEB] underline-offset-4 hover:underline">
-          @{handle}
-        </a>
-      ),
-      "math-inline": ({ tex }: { tex: string }) => <InlineMath math={tex} />,
-      "math-display": ({ tex }: { tex: string }) => <BlockMath math={tex} />,
-    });
-
-    const renderWithInline = (nodes: InlineNode[]) => renderInlineNodes(nodes, componentRegistry.current.getInlineComponents());
-
-    componentRegistry.current.setBlockComponents({
-      paragraph: ({
-        inlines,
-        raw,
-      }: {
-        inlines: InlineNode[];
-        raw?: string;
-      }) => {
-        const filteredInlines = inlines.length > 0 && raw ? inlines.filter((node) => !(node.kind === "text" && node.text === raw)) : inlines;
-        const baseInlines: InlineNode[] = filteredInlines.length > 0 ? filteredInlines : raw ? ([{ kind: "text", text: raw }] as InlineNode[]) : [];
-        let hasDisplayMath = false;
-        let key = 0;
-        const segments: ReactNode[] = [];
-        let buffer: InlineNode[] = [];
-
-        const flushBuffer = () => {
-          if (buffer.length === 0) return;
-          segments.push(
-            <p key={`segment-${key++}`} className="markdown-paragraph">
-              {renderWithInline(buffer)}
-            </p>,
-          );
-          buffer = [];
-        };
-
-        for (const node of baseInlines) {
-          if (node.kind === "math-display") {
-            hasDisplayMath = true;
-            flushBuffer();
-            segments.push(<BlockMath key={`math-${key++}`} math={node.tex} />);
-          } else {
-            buffer.push(node);
-          }
-        }
-        flushBuffer();
-
-        if (!hasDisplayMath) {
-          return <p className="markdown-paragraph">{renderWithInline(baseInlines)}</p>;
-        }
-
-        return <div className="markdown-paragraph">{segments}</div>;
-      },
-      heading: ({
-        level,
-        inlines,
-        text,
-      }: {
-        level: 1 | 2 | 3 | 4 | 5 | 6;
-        inlines: InlineNode[];
-        text?: string;
-      }) => {
-        const Tag = `h${level}` as const;
-        const headingProps: Record<string, unknown> = {
-          className: `markdown-heading markdown-h${level}`,
-        };
-        if (text && text.length > 0) {
-          headingProps["data-heading-text"] = text;
-        }
-        return <Tag {...headingProps}>{renderWithInline(inlines)}</Tag>;
-      },
-      blockquote: ({
-        inlines,
-        renderedContent,
-      }: {
-        inlines: InlineNode[];
-        renderedContent?: ReactNode;
-      }) => <blockquote className="markdown-blockquote">{renderedContent ?? renderWithInline(inlines)}</blockquote>,
-      list: ({
-        ordered,
-        items,
-      }: {
-        ordered: boolean;
-        items: InlineNode[][];
-      }) => {
-        const Tag = ordered ? "ol" : "ul";
-        return (
-          <Tag className={`markdown-list ${ordered ? "ordered" : "unordered"}`}>
-            {items.map((item, index) => {
-              const synthesizedKey = item
-                .map((node) => {
-                  switch (node.kind) {
-                    case "text":
-                    case "code":
-                      return `${node.kind}:${node.text}`;
-                    case "link":
-                      return `${node.kind}:${node.href ?? ""}:${node.title ?? ""}`;
-                    case "image":
-                      return `${node.kind}:${node.src}`;
-                    case "mention":
-                      return `${node.kind}:${node.handle}`;
-                    default:
-                      return node.kind;
-                  }
-                })
-                .join("|");
-              const key = synthesizedKey.length > 0 ? synthesizedKey : `list-item-${index}`;
-              return (
-                <li key={key} className="markdown-list-item">
-                  {renderWithInline(item)}
-                </li>
-              );
-            })}
-          </Tag>
-        );
-      },
-      code: ({
-        html,
-        raw,
-        meta,
-        lang,
-        lines,
-        preAttrs,
-        codeAttrs,
-      }: {
-        html: string;
-        raw?: string;
-        meta?: Record<string, unknown>;
-        lang?: string;
-        lines?: ReadonlyArray<{
-          id: string;
-          index: number;
-          text: string;
-          html?: string | null;
-        }>;
-        preAttrs?: Record<string, string>;
-        codeAttrs?: Record<string, string>;
-      }) => {
-        // Prefer explicit lines; otherwise derive from meta.code, else strip fences from raw.
-        const fenced = typeof meta?.code === "string" && meta.code.length > 0 ? meta.code : raw ?? "";
-        const stripFence = (value: string): string => {
-          if (!value) return "";
-          const trimmed = value.trimStart();
-          if (!trimmed.startsWith("```")) return value;
-          const parts = trimmed.split("\n");
-          if (parts.length <= 1) return value;
-          // Drop first fence line; drop last fence if present
-          if (parts[parts.length - 1].trim().startsWith("```")) {
-            return parts.slice(1, -1).join("\n");
-          }
-          return parts.slice(1).join("\n");
-        };
-        const rawCode = stripFence(fenced);
-        const rawCodeLines = rawCode ? rawCode.split("\n") : [];
-        const incomingLines = Array.isArray(lines) ? lines.map((l) => l.text ?? "") : [];
-        const effectiveLines = rawCodeLines.length > 0 ? rawCodeLines : incomingLines;
-        const languageLabel = typeof (lang ?? meta?.lang) === "string" && String(lang ?? meta?.lang).length > 0 ? String(lang ?? meta?.lang) : null;
-        const showLabel = Boolean(showCodeMeta && languageLabel);
-
-        return (
-          <div className="flex flex-col">
-            {showLabel ? (
-              <div className="border-border/60 border-b bg-muted/40 px-3 py-1 font-mono text-muted-foreground text-xs">{languageLabel}</div>
-            ) : null}
-            <ScrollAreaHorizontal className="min-w-auto">
-              <div className="min-w-max p-4">
-                {html ? (
-                  <div
-                    className="[&_pre]:m-0 [&_pre]:overflow-x-visible [&_pre]:bg-transparent [&_pre]:p-0"
-                    /* biome-ignore lint/security/noDangerouslySetInnerHtml: HTML is sanitized upstream */
-                    dangerouslySetInnerHTML={{ __html: html }}
-                  />
-                ) : effectiveLines.length > 0 ? (
-                  <pre className="m-0" {...attrsToProps(preAttrs)}>
-                    <code {...attrsToProps(codeAttrs)}>
-                      {effectiveLines.map((text, idx) => (
-                        <span
-                          key={`line-${idx}`}
-                          className="line"
-                          dangerouslySetInnerHTML={{
-                            __html: text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"),
-                          }}
-                        />
-                      ))}
-                    </code>
-                  </pre>
-                ) : null}
-              </div>
-            </ScrollAreaHorizontal>
-          </div>
-        );
-      },
-      table: ({
-        header,
-        rows,
-        align,
-        elements,
-      }: {
-        header?: InlineNode[][];
-        rows: InlineNode[][][];
-        align?: Array<"left" | "center" | "right" | null>;
-        elements?: Partial<TableElements>;
-      }) => {
-        const El: TableElements = { ...tableElements, ...(elements || {}) };
-        const renderCells = (cells: InlineNode[][], tag: "th" | "td", rowIdx: number) =>
-          cells.map((cell, i) => {
-            const columnAlign = align?.[i] ?? undefined;
-            const cellStyle = columnAlign ? ({ textAlign: columnAlign } satisfies CSSProperties) : undefined;
-            const Comp = tag === "th" ? El.Th : El.Td;
-            return (
-              <Comp key={`${rowIdx}-${i}`} style={cellStyle} align={columnAlign ?? undefined}>
-                {renderWithInline(cell)}
-              </Comp>
-            );
-          });
-
-        return (
-          <ScrollAreaHorizontal className="my-6 w-full rounded border border-border">
-            <div className="min-w-max">
-              <El.Table className="w-full caption-bottom text-base">
-                {header && header.length > 0 ? <El.Thead>{<El.Tr>{renderCells(header, "th", -1)}</El.Tr>}</El.Thead> : null}
-                <El.Tbody>{rows.map((row, r) => createElement(El.Tr, { key: r }, renderCells(row, "td", r)))}</El.Tbody>
-              </El.Table>
-            </div>
-          </ScrollAreaHorizontal>
-        );
-      },
-    });
-
-    // Use ShadCN table components for both structured tables and HTML tables
-    componentRegistry.current.setTableElements(tableElements);
-    componentRegistry.current.setHtmlElements(htmlElements);
-  }, [showCodeMeta, tableElements, htmlElements]);
-
   useEffect(() => {
     if (!SHOULD_EXPOSE_AUTOMATION_API) return;
     if (typeof window === "undefined") return;
@@ -2108,6 +1822,9 @@ export function StreamingMarkdownDemoV2({
     };
     api.setMode = (mode: "classic" | "worker") => {
       modeRef.current = mode;
+    };
+    api.setSchedulingPreset = (preset: "latency" | "throughput") => {
+      setSchedulingPreset(preset);
     };
     api.fastForward = async () => {
       // Ensure worker is ready before forcing a full append
@@ -2227,6 +1944,7 @@ export function StreamingMarkdownDemoV2({
       workerCredits: workerCreditsRef.current,
       timerActive: Boolean(timerRef.current),
       mode: modeRef.current,
+      schedulingPreset,
       rate,
       tickMs,
       renderer: {
@@ -2336,6 +2054,32 @@ export function StreamingMarkdownDemoV2({
           <span>Pre-warm languages</span>
           <div className="flex items-center gap-2">
             <input type="checkbox" checked={prewarm} onChange={(e) => setPrewarm(e.target.checked)} />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between text-muted text-xs">
+          <span>Scheduling preset</span>
+          <div className="flex items-center gap-2">
+            <label className="inline-flex items-center gap-2 text-xs">
+              <input
+                type="radio"
+                name="scheduling-preset"
+                value="latency"
+                checked={schedulingPreset === "latency"}
+                onChange={() => setSchedulingPreset("latency")}
+              />
+              <span>Latency</span>
+            </label>
+            <label className="inline-flex items-center gap-2 text-xs">
+              <input
+                type="radio"
+                name="scheduling-preset"
+                value="throughput"
+                checked={schedulingPreset === "throughput"}
+                onChange={() => setSchedulingPreset("throughput")}
+              />
+              <span>Throughput</span>
+            </label>
           </div>
         </div>
 
@@ -2497,8 +2241,13 @@ export function StreamingMarkdownDemoV2({
               checked={liveCodeHighlightingEnabled}
               onChange={(e) => {
                 const enabled = e.target.checked;
-                setLiveCodeHighlightingEnabled(enabled);
-                docPluginConfigRef.current = { ...docPluginConfigRef.current, liveCodeHighlighting: enabled };
+                const nextMode: CodeHighlightingMode = enabled ? "live" : "incremental";
+                setCodeHighlightingMode(nextMode);
+                docPluginConfigRef.current = {
+                  ...docPluginConfigRef.current,
+                  codeHighlighting: nextMode,
+                  liveCodeHighlighting: enabled,
+                };
                 onRestart();
               }}
             />
@@ -2805,8 +2554,8 @@ export function StreamingMarkdownDemoV2({
           mdxCompileMode={mdxStrategy}
           mdxComponents={sharedMdxComponents as unknown as Record<string, ComponentType<unknown>>}
           prewarmLangs={prewarm ? PREWARM_LANGS : []}
-          components={componentRegistry.current.getBlockComponentMap()}
-          inlineComponents={componentRegistry.current.getInlineComponentMap()}
+          components={componentRegistry.getBlockComponentMap()}
+          inlineComponents={componentRegistry.getInlineComponentMap()}
           tableElements={tableElements}
           htmlElements={htmlElements}
           style={{ contain: "content" }}

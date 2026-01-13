@@ -1,7 +1,7 @@
 import type { Block, PatchMetrics, WorkerIn, WorkerOut } from "@stream-mdx/core";
 // Main V2 Markdown Renderer
 // Client-side renderer with component registry and worker integration
-import type { PatchFlushResult } from "./renderer/patch-commit-scheduler";
+import type { PatchCommitSchedulerOptions, PatchFlushResult } from "./renderer/patch-commit-scheduler";
 import type { BlockComponents, InlineComponents, Renderer, RendererConfig } from "./types";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -116,6 +116,7 @@ export class MarkdownRenderer implements Renderer {
         callouts: this.config.plugins?.callouts ?? false,
         math: this.config.plugins?.math ?? true,
         formatAnticipation: this.config.plugins?.formatAnticipation ?? false,
+        codeHighlighting: this.config.plugins?.codeHighlighting,
         liveCodeHighlighting: this.config.plugins?.liveCodeHighlighting ?? false,
         ...(mdxComponentNames ? { mdxComponentNames } : {}),
       };
@@ -194,6 +195,7 @@ export class MarkdownRenderer implements Renderer {
         callouts: this.config.plugins?.callouts ?? false,
         math: this.config.plugins?.math ?? true,
         formatAnticipation: this.config.plugins?.formatAnticipation ?? false,
+        codeHighlighting: this.config.plugins?.codeHighlighting,
         liveCodeHighlighting: this.config.plugins?.liveCodeHighlighting ?? false,
         ...(mdxComponentNames ? { mdxComponentNames } : {}),
       };
@@ -401,6 +403,10 @@ export class MarkdownRenderer implements Renderer {
 
   clearPatchHistory(): void {
     this.patchScheduler.clearHistory();
+  }
+
+  setSchedulingOptions(options: PatchCommitSchedulerOptions): void {
+    this.patchScheduler.updateOptions(options);
   }
 
   getPendingQueueSize(): number {

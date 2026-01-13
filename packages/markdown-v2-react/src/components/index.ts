@@ -295,6 +295,7 @@ export const defaultBlockComponents: BlockComponents = {
       },
       renderedContent ?? renderInlineNodes(inlines, defaultInlineComponents),
     ),
+  hr: (props: React.HTMLAttributes<HTMLHRElement>) => React.createElement("hr", props),
 
   list: ({ ordered, items }) => {
     const tag = ordered ? "ol" : "ul";
@@ -627,6 +628,15 @@ export class ComponentRegistry {
         return {
           inlines: block.payload.inline || [],
         };
+
+      case "hr": {
+        const range = block.payload.range;
+        return {
+          className: "markdown-hr",
+          "data-start": typeof range?.from === "number" ? range.from : undefined,
+          "data-end": typeof range?.to === "number" ? range.to : undefined,
+        };
+      }
 
       case "code":
         return {

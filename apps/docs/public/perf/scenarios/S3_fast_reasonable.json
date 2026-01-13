@@ -1,0 +1,7 @@
+{
+  "id": "S3_fast_reasonable",
+  "label": "Fast but reasonable",
+  "updateIntervalMs": 8,
+  "charRateCps": 3000,
+  "maxChunkChars": 512
+}

@@ -1,0 +1,325 @@
+{
+  "fixtureId": "kitchen-sink",
+  "fixtureTitle": "Kitchen Sink",
+  "scenarioId": "S2_typical",
+  "scenario": {
+    "id": "S2_typical",
+    "label": "Typical streaming",
+    "updateIntervalMs": 16,
+    "charRateCps": 1200,
+    "maxChunkChars": 256
+  },
+  "targets": {
+    "h1": {
+      "selector": "#regression-root h1",
+      "computed": {
+        "font-family": "Inter, \"Inter Fallback\"",
+        "font-size": "28px",
+        "font-weight": "700",
+        "font-style": "normal",
+        "line-height": "36.4px",
+        "letter-spacing": "-0.28px",
+        "color": "rgb(32, 32, 32)",
+        "margin-top": "42px",
+        "margin-bottom": "14px"
+      }
+    },
+    "h2": {
+      "selector": "#regression-root h2",
+      "computed": {
+        "font-family": "Inter, \"Inter Fallback\"",
+        "font-size": "21px",
+        "font-weight": "700",
+        "font-style": "normal",
+        "line-height": "27.993px",
+        "letter-spacing": "-0.21px",
+        "color": "rgb(32, 32, 32)",
+        "margin-top": "31.5px",
+        "margin-bottom": "15.75px"
+      }
+    },
+    "p": {
+      "selector": "#regression-root p",
+      "computed": {
+        "font-family": "Inter, \"Inter Fallback\"",
+        "font-size": "14px",
+        "font-weight": "400",
+        "font-style": "normal",
+        "line-height": "21px",
+        "letter-spacing": "-0.09px",
+        "color": "rgb(32, 32, 32)",
+        "margin-top": "8px",
+        "margin-bottom": "0px"
+      }
+    },
+    "blockquote": {
+      "selector": "#regression-root blockquote",
+      "computed": {
+        "font-family": "Inter, \"Inter Fallback\"",
+        "font-size": "14px",
+        "font-weight": "500",
+        "font-style": "normal",
+        "line-height": "21px",
+        "letter-spacing": "-0.09px",
+        "color": "rgb(96, 96, 96)",
+        "margin-top": "0px",
+        "margin-bottom": "0px",
+        "display": "block",
+        "padding-top": "7px",
+        "padding-right": "0px",
+        "padding-bottom": "7px",
+        "padding-left": "14px",
+        "border-top-width": "0px",
+        "border-right-width": "0px",
+        "border-bottom-width": "0px",
+        "border-left-width": "2px",
+        "border-top-color": "rgb(155, 155, 155)",
+        "border-right-color": "rgb(155, 155, 155)",
+        "border-bottom-color": "rgb(155, 155, 155)",
+        "border-left-color": "rgb(155, 155, 155)",
+        "border-top-left-radius": "0px",
+        "border-top-right-radius": "0px",
+        "border-bottom-left-radius": "0px",
+        "border-bottom-right-radius": "0px",
+        "background-color": "rgba(0, 0, 0, 0)",
+        "box-shadow": "none",
+        "overflow": "visible",
+        "overflow-x": "visible",
+        "overflow-y": "visible"
+      }
+    },
+    "code-pre": {
+      "selector": "#regression-root pre",
+      "computed": {
+        "display": "flex",
+        "padding-top": "3.5px",
+        "padding-right": "0px",
+        "padding-bottom": "0px",
+        "padding-left": "0px",
+        "margin-top": "10.5px",
+        "margin-bottom": "10.5px",
+        "border-top-width": "1px",
+        "border-right-width": "1px",
+        "border-bottom-width": "1px",
+        "border-left-width": "1px",
+        "border-top-color": "rgb(229, 229, 229)",
+        "border-right-color": "rgb(229, 229, 229)",
+        "border-bottom-color": "rgb(229, 229, 229)",
+        "border-left-color": "rgb(229, 229, 229)",
+        "border-top-left-radius": "7px",
+        "border-top-right-radius": "7px",
+        "border-bottom-left-radius": "7px",
+        "border-bottom-right-radius": "7px",
+        "background-color": "rgba(0, 0, 0, 0)",
+        "box-shadow": "none",
+        "overflow": "auto",
+        "overflow-x": "auto",
+        "overflow-y": "auto",
+        "font-family": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+        "font-size": "12.25px",
+        "white-space": "pre"
+      }
+    },
+    "table": {
+      "selector": "#regression-root table",
+      "computed": {
+        "border-collapse": "separate",
+        "border-spacing": "0px",
+        "table-layout": "auto",
+        "display": "table",
+        "padding-top": "0px",
+        "padding-right": "0px",
+        "padding-bottom": "0px",
+        "padding-left": "0px",
+        "margin-top": "3.5px",
+        "margin-bottom": "3.5px",
+        "border-top-width": "0px",
+        "border-right-width": "0px",
+        "border-bottom-width": "0px",
+        "border-left-width": "0px",
+        "border-top-color": "rgb(232, 232, 232)",
+        "border-right-color": "rgb(232, 232, 232)",
+        "border-bottom-color": "rgb(232, 232, 232)",
+        "border-left-color": "rgb(232, 232, 232)",
+        "border-top-left-radius": "0px",
+        "border-top-right-radius": "0px",
+        "border-bottom-left-radius": "0px",
+        "border-bottom-right-radius": "0px",
+        "background-color": "rgba(0, 0, 0, 0)",
+        "box-shadow": "none",
+        "overflow": "visible",
+        "overflow-x": "visible",
+        "overflow-y": "visible"
+      }
+    },
+    "table-th": {
+      "selector": "#regression-root th",
+      "computed": {
+        "padding-top": "3.5px",
+        "padding-right": "14px",
+        "padding-bottom": "3.5px",
+        "padding-left": "14px",
+        "text-align": "left",
+        "vertical-align": "middle",
+        "border-bottom-width": "1px",
+        "border-bottom-color": "rgb(232, 232, 232)"
+      }
+    },
+    "table-td": {
+      "selector": "#regression-root td",
+      "computed": {
+        "padding-top": "14px",
+        "padding-right": "14px",
+        "padding-bottom": "14px",
+        "padding-left": "14px",
+        "text-align": "left",
+        "vertical-align": "middle",
+        "border-bottom-width": "1px",
+        "border-bottom-color": "rgb(232, 232, 232)"
+      }
+    },
+    "list-ol": {
+      "selector": "#regression-root ol",
+      "computed": {
+        "display": "flex",
+        "padding-top": "0px",
+        "padding-right": "0px",
+        "padding-bottom": "0px",
+        "padding-left": "44px",
+        "margin-top": "17.5px",
+        "margin-bottom": "17.5px",
+        "border-top-width": "0px",
+        "border-right-width": "0px",
+        "border-bottom-width": "0px",
+        "border-left-width": "0px",
+        "border-top-color": "rgb(232, 232, 232)",
+        "border-right-color": "rgb(232, 232, 232)",
+        "border-bottom-color": "rgb(232, 232, 232)",
+        "border-left-color": "rgb(232, 232, 232)",
+        "border-top-left-radius": "0px",
+        "border-top-right-radius": "0px",
+        "border-bottom-left-radius": "0px",
+        "border-bottom-right-radius": "0px",
+        "background-color": "rgba(0, 0, 0, 0)",
+        "box-shadow": "none",
+        "overflow": "visible",
+        "overflow-x": "visible",
+        "overflow-y": "visible"
+      }
+    },
+    "list-ol-li": {
+      "selector": "#regression-root ol > li",
+      "computed": {
+        "margin-top": "1.4px",
+        "margin-bottom": "1.4px",
+        "padding-left": "0px",
+        "position": "relative",
+        "line-height": "21px"
+      },
+      "pseudo": {
+        "::before": {
+          "content": "\"1. \"",
+          "position": "absolute",
+          "left": "-44px",
+          "right": "554px",
+          "top": "0px",
+          "width": "44px",
+          "height": "21px",
+          "margin-top": "0px",
+          "padding-right": "7px",
+          "font-size": "14px",
+          "color": "rgb(32, 32, 32)",
+          "opacity": "0.5",
+          "display": "block"
+        }
+      }
+    },
+    "list-ul-li": {
+      "missing": true,
+      "selector": "#regression-root ul > li"
+    },
+    "footnotes": {
+      "selector": "#regression-root .footnotes",
+      "computed": {
+        "display": "block",
+        "padding-top": "16px",
+        "padding-right": "0px",
+        "padding-bottom": "0px",
+        "padding-left": "0px",
+        "margin-top": "64px",
+        "margin-bottom": "0px",
+        "border-top-width": "1px",
+        "border-right-width": "0px",
+        "border-bottom-width": "0px",
+        "border-left-width": "0px",
+        "border-top-color": "rgb(232, 232, 232)",
+        "border-right-color": "rgb(232, 232, 232)",
+        "border-bottom-color": "rgb(232, 232, 232)",
+        "border-left-color": "rgb(232, 232, 232)",
+        "border-top-left-radius": "0px",
+        "border-top-right-radius": "0px",
+        "border-bottom-left-radius": "0px",
+        "border-bottom-right-radius": "0px",
+        "background-color": "rgba(0, 0, 0, 0)",
+        "box-shadow": "none",
+        "overflow": "visible",
+        "overflow-x": "visible",
+        "overflow-y": "visible",
+        "color": "rgb(32, 32, 32)",
+        "font-size": "14px",
+        "line-height": "21px"
+      }
+    },
+    "preview-pre-adjacent": {
+      "missing": true,
+      "selector": "#regression-root .markdown-mdx + pre"
+    },
+    "mdx-block": {
+      "missing": true,
+      "selector": "#regression-root .markdown-mdx"
+    },
+    "math-inline": {
+      "selector": "#regression-root .katex",
+      "computed": {
+        "font-family": "KaTeX_Main, \"Times New Roman\", serif",
+        "font-size": "16.94px",
+        "font-weight": "400",
+        "font-style": "normal",
+        "line-height": "20.328px",
+        "letter-spacing": "-0.09px",
+        "color": "rgb(32, 32, 32)",
+        "margin-top": "0px",
+        "margin-bottom": "0px"
+      }
+    },
+    "math-display": {
+      "selector": "#regression-root .katex-display",
+      "computed": {
+        "display": "block",
+        "padding-top": "0px",
+        "padding-right": "0px",
+        "padding-bottom": "0px",
+        "padding-left": "0px",
+        "margin-top": "14px",
+        "margin-bottom": "14px",
+        "border-top-width": "0px",
+        "border-right-width": "0px",
+        "border-bottom-width": "0px",
+        "border-left-width": "0px",
+        "border-top-color": "rgb(232, 232, 232)",
+        "border-right-color": "rgb(232, 232, 232)",
+        "border-bottom-color": "rgb(232, 232, 232)",
+        "border-left-color": "rgb(232, 232, 232)",
+        "border-top-left-radius": "0px",
+        "border-top-right-radius": "0px",
+        "border-bottom-left-radius": "0px",
+        "border-bottom-right-radius": "0px",
+        "background-color": "rgba(0, 0, 0, 0)",
+        "box-shadow": "none",
+        "overflow": "visible",
+        "overflow-x": "visible",
+        "overflow-y": "visible"
+      }
+    }
+  }
+}

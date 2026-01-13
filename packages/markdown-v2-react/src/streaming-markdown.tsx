@@ -1,7 +1,7 @@
 import type React from "react";
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 
-import type { Block, FormatAnticipationConfig, PatchMetrics } from "@stream-mdx/core";
+import type { Block, CodeHighlightingMode, FormatAnticipationConfig, PatchMetrics } from "@stream-mdx/core";
 import { MarkdownRenderer } from "./renderer";
 import { MarkdownBlocksRenderer } from "./renderer";
 import { useMdxCoordinator } from "./mdx-coordinator";
@@ -34,6 +34,8 @@ export interface StreamingSchedulerOptions {
   urgentQueueThreshold?: number;
   batch?: "rAF" | "microtask" | "timeout";
   historyLimit?: number;
+  adaptiveSwitch?: boolean;
+  adaptiveQueueThreshold?: number;
 }
 
 export interface StreamingFeatureFlags {
@@ -44,6 +46,7 @@ export interface StreamingFeatureFlags {
   callouts?: boolean;
   math?: boolean;
   formatAnticipation?: FormatAnticipationConfig;
+  codeHighlighting?: CodeHighlightingMode;
   liveCodeHighlighting?: boolean;
 }
 
@@ -129,7 +132,25 @@ interface WorkerInstance {
   release?: () => void;
 }
 
-const DEFAULT_HISTORY_LIMIT = 200;
+const DEFAULT_HISTORY_LIMIT =
+  typeof process !== "undefined" && process.env && process.env.NODE_ENV === "production" ? 80 : 200;
+const DEFAULT_SCHEDULING: StreamingSchedulerOptions = {
+  batch: "microtask",
+  frameBudgetMs: 10,
+  maxBatchesPerFlush: 12,
+  lowPriorityFrameBudgetMs: 6,
+  maxLowPriorityBatchesPerFlush: 2,
+  urgentQueueThreshold: 4,
+};
+const DEFAULT_SCHEDULING_SMOOTH: StreamingSchedulerOptions = {
+  batch: "rAF",
+  frameBudgetMs: 6,
+  maxBatchesPerFlush: 4,
+  lowPriorityFrameBudgetMs: 3,
+  maxLowPriorityBatchesPerFlush: 1,
+  urgentQueueThreshold: 2,
+};
+const DEFAULT_ADAPTIVE_QUEUE_THRESHOLD = 12;
 
 type StreamingDebugFlags = {
   worker?: boolean;
@@ -185,21 +206,31 @@ function StreamingMarkdownComponent(
     throw new Error("StreamingMarkdown expects either `text` or `stream`, not both.");
   }
 
+  const effectiveScheduling = scheduling ?? DEFAULT_SCHEDULING;
+  const adaptiveSwitchEnabled =
+    effectiveScheduling.batch === "microtask" && (scheduling?.adaptiveSwitch ?? true);
+  const adaptiveQueueThreshold =
+    scheduling?.adaptiveQueueThreshold ??
+    (typeof effectiveScheduling.maxBatchesPerFlush === "number"
+      ? effectiveScheduling.maxBatchesPerFlush
+      : DEFAULT_ADAPTIVE_QUEUE_THRESHOLD);
   const configSignature = useMemo(
     () =>
       createConfigSignature({
         features,
         prewarm: prewarmLangs,
-        scheduling,
+        scheduling: effectiveScheduling,
         mdxStrategy: mdxCompileMode,
         mdxComponentKeys: mdxComponents ? Object.keys(mdxComponents).sort() : [],
       }),
-    [features, prewarmLangs, scheduling, mdxCompileMode, mdxComponents],
+    [features, prewarmLangs, effectiveScheduling, mdxCompileMode, mdxComponents],
   );
 
   const rendererRef = useRef<{ renderer: MarkdownRenderer; signature: string }>();
   const [session, setSession] = useState(0);
   const rendererKey = `${configSignature}:${session}`;
+
+  const historyLimit = effectiveScheduling.historyLimit ?? DEFAULT_HISTORY_LIMIT;
 
   if (!rendererRef.current || rendererRef.current.signature !== rendererKey) {
     const mdxConfig =
@@ -213,14 +244,14 @@ function StreamingMarkdownComponent(
       highlight: prewarmLangs.length > 0 ? { langs: prewarmLangs } : undefined,
       plugins: features,
       performance: {
-        frameBudgetMs: scheduling?.frameBudgetMs,
-        flushTimeoutMs: scheduling?.flushTimeoutMs,
-        maxBatchesPerFlush: scheduling?.maxBatchesPerFlush,
-        maxLowPriorityBatchesPerFlush: scheduling?.maxLowPriorityBatchesPerFlush,
-        lowPriorityFrameBudgetMs: scheduling?.lowPriorityFrameBudgetMs,
-        urgentQueueThreshold: scheduling?.urgentQueueThreshold,
-        batch: scheduling?.batch,
-        historyLimit: scheduling?.historyLimit,
+        frameBudgetMs: effectiveScheduling.frameBudgetMs,
+        flushTimeoutMs: effectiveScheduling.flushTimeoutMs,
+        maxBatchesPerFlush: effectiveScheduling.maxBatchesPerFlush,
+        maxLowPriorityBatchesPerFlush: effectiveScheduling.maxLowPriorityBatchesPerFlush,
+        lowPriorityFrameBudgetMs: effectiveScheduling.lowPriorityFrameBudgetMs,
+        urgentQueueThreshold: effectiveScheduling.urgentQueueThreshold,
+        batch: effectiveScheduling.batch,
+        historyLimit,
       },
       mdx: mdxConfig,
     };
@@ -231,8 +262,9 @@ function StreamingMarkdownComponent(
   }
 
   const renderer = rendererRef.current.renderer;
-  const historyLimit = scheduling?.historyLimit ?? DEFAULT_HISTORY_LIMIT;
   const store = renderer.getStore();
+  const adaptiveSwitchedRef = useRef(false);
+  const adaptiveFirstFlushRef = useRef(false);
   const mdxMode: "server" | "worker" = mdxCompileMode ?? "server";
   const [workerReady, setWorkerReady] = useState(false);
   const workerReadyRef = useRef(false);
@@ -254,6 +286,34 @@ function StreamingMarkdownComponent(
       setSession((prev) => prev + 1);
     }
   }, [stream]);
+
+  useEffect(() => {
+    adaptiveSwitchedRef.current = false;
+    adaptiveFirstFlushRef.current = false;
+  }, [renderer]);
+
+  useEffect(() => {
+    if (!adaptiveSwitchEnabled) return undefined;
+    const unsubscribe = renderer.addFlushListener((result) => {
+      if (adaptiveSwitchedRef.current) return;
+      if (!adaptiveFirstFlushRef.current) {
+        adaptiveFirstFlushRef.current = true;
+        return;
+      }
+      if (result.remainingQueueSize <= adaptiveQueueThreshold) {
+        renderer.setSchedulingOptions({
+          frameBudgetMs: DEFAULT_SCHEDULING_SMOOTH.frameBudgetMs,
+          maxBatchesPerFlush: DEFAULT_SCHEDULING_SMOOTH.maxBatchesPerFlush,
+          lowPriorityFrameBudgetMs: DEFAULT_SCHEDULING_SMOOTH.lowPriorityFrameBudgetMs,
+          maxLowPriorityBatchesPerFlush: DEFAULT_SCHEDULING_SMOOTH.maxLowPriorityBatchesPerFlush,
+          urgentQueueThreshold: DEFAULT_SCHEDULING_SMOOTH.urgentQueueThreshold,
+          batch: DEFAULT_SCHEDULING_SMOOTH.batch,
+        });
+        adaptiveSwitchedRef.current = true;
+      }
+    });
+    return unsubscribe;
+  }, [renderer, adaptiveSwitchEnabled, adaptiveQueueThreshold]);
 
   useEffect(() => {
     lastMetricsRef.current = null;

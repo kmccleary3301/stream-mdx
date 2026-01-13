@@ -1,8 +1,18 @@
-import { cloneBlock, createBlockSnapshot } from "@stream-mdx/core";
-import { extractCodeWrapperAttributes } from "@stream-mdx/core";
-import { sanitizeCodeHTML, sanitizeHTML } from "@stream-mdx/core";
-import { type Block, type NodePath, type NodeSnapshot, PATCH_ROOT_ID, type Patch, type SetPropsBatchEntry } from "@stream-mdx/core";
-import { normalizeAllListDepths } from "./list-utils";
+import {
+  cloneBlock,
+  createBlockSnapshot,
+  extractCodeWrapperAttributes,
+  getDefaultCodeWrapperAttributes,
+  sanitizeCodeHTML,
+  sanitizeHTML,
+  type Block,
+  type NodePath,
+  type NodeSnapshot,
+  PATCH_ROOT_ID,
+  type Patch,
+  type SetPropsBatchEntry,
+} from "@stream-mdx/core";
+import { normalizeAllListDepths, normalizeListDepthsForIds } from "./list-utils";
 import { type CoalescingMetrics, DEFAULT_COALESCE_CONFIG, coalescePatchesWithMetrics } from "./patch-coalescing";
 
 export interface NodeRecord {
@@ -49,6 +59,20 @@ type NodeMap = Map<string, NodeRecord>;
 
 const nodeSnapshotCache = new Map<string, { version: number; node?: NodeRecord }>();
 const childrenSnapshotCache = new Map<string, { version: number; children: ReadonlyArray<string> }>();
+const NODE_SNAPSHOT_CACHE_LIMIT = 50000;
+const CHILDREN_SNAPSHOT_CACHE_LIMIT = 50000;
+const NODE_SNAPSHOT_CACHE_BUFFER = Math.max(200, Math.floor(NODE_SNAPSHOT_CACHE_LIMIT * 0.1));
+const CHILDREN_SNAPSHOT_CACHE_BUFFER = Math.max(200, Math.floor(CHILDREN_SNAPSHOT_CACHE_LIMIT * 0.1));
+
+function pruneCache<T>(cache: Map<string, T>, max: number, buffer: number) {
+  if (cache.size <= max + buffer) return;
+  let remaining = cache.size - max;
+  for (const key of cache.keys()) {
+    cache.delete(key);
+    remaining -= 1;
+    if (remaining <= 0) break;
+  }
+}
 const EMPTY_CHILDREN: ReadonlyArray<string> = Object.freeze([]);
 const EMPTY_NODE_SNAPSHOT = Object.freeze<{ version: number; node?: NodeRecord }>({ version: -1, node: undefined });
 const EMPTY_CHILDREN_SNAPSHOT = Object.freeze<{ version: number; children: ReadonlyArray<string> }>({
@@ -73,6 +97,182 @@ const CODE_BLOCK_DEBUG_ENABLED =
     }
     return false;
   })() || false;
+
+const CODE_BLOCK_VALIDATION_ENABLED =
+  typeof process !== "undefined" && process.env ? process.env.NODE_ENV !== "production" : true;
+
+type PatchPerfOpSummary = {
+  count: number;
+  durationMs: number;
+};
+
+type PatchPerfSummary = {
+  timestamp: string;
+  totalMs: number;
+  applyMs: number;
+  coalesceMs: number;
+  listNormalizeMs: number;
+  patches: number;
+  coalescedPatches: number;
+  touchedCount: number;
+  mutatedBlocks: boolean;
+  ops: Record<string, PatchPerfOpSummary>;
+  setPropsByType?: Record<string, PatchPerfOpSummary>;
+  setPropsBySize?: Record<string, PatchPerfOpSummary>;
+};
+
+type PatchPerfTotals = {
+  calls: number;
+  totalMs: number;
+  applyMs: number;
+  coalesceMs: number;
+  listNormalizeMs: number;
+  patches: number;
+  coalescedPatches: number;
+  ops: Record<string, PatchPerfOpSummary>;
+  setPropsByType: Record<string, PatchPerfOpSummary>;
+  setPropsBySize: Record<string, PatchPerfOpSummary>;
+};
+
+const PATCH_PERF_HISTORY_LIMIT = 120;
+const getPerfNow = (() => {
+  if (typeof performance !== "undefined" && typeof performance.now === "function") {
+    return () => performance.now();
+  }
+  return () => Date.now();
+})();
+
+function isPatchPerfDebugEnabled(): boolean {
+  try {
+    if (typeof process !== "undefined" && process.env) {
+      const value = process.env.NEXT_PUBLIC_STREAMING_DEBUG_PATCH_PERF;
+      if (value === "1" || value === "true") {
+        return true;
+      }
+    }
+  } catch {
+    // ignore env read errors
+  }
+  try {
+    const debug = (globalThis as { __STREAMING_DEBUG__?: { patchPerf?: boolean } }).__STREAMING_DEBUG__;
+    if (debug?.patchPerf) {
+      return true;
+    }
+  } catch {
+    // ignore global read errors
+  }
+  return false;
+}
+
+function recordPatchPerf(summary: PatchPerfSummary): void {
+  try {
+    if (typeof globalThis === "undefined") return;
+    const root = globalThis as {
+      __STREAM_MDX_PATCH_STATS__?: PatchPerfSummary[];
+      __STREAM_MDX_PATCH_STATS_LAST__?: PatchPerfSummary;
+      __STREAM_MDX_PATCH_STATS_TOTALS__?: PatchPerfTotals;
+    };
+    const history = root.__STREAM_MDX_PATCH_STATS__ ?? [];
+    history.push(summary);
+    if (history.length > PATCH_PERF_HISTORY_LIMIT) {
+      history.splice(0, history.length - PATCH_PERF_HISTORY_LIMIT);
+    }
+    root.__STREAM_MDX_PATCH_STATS__ = history;
+    root.__STREAM_MDX_PATCH_STATS_LAST__ = summary;
+
+    const totals = root.__STREAM_MDX_PATCH_STATS_TOTALS__ ?? {
+      calls: 0,
+      totalMs: 0,
+      applyMs: 0,
+      coalesceMs: 0,
+      listNormalizeMs: 0,
+      patches: 0,
+      coalescedPatches: 0,
+      ops: {},
+      setPropsByType: {},
+      setPropsBySize: {},
+    };
+
+    totals.calls += 1;
+    totals.totalMs += summary.totalMs;
+    totals.applyMs += summary.applyMs;
+    totals.coalesceMs += summary.coalesceMs;
+    totals.listNormalizeMs += summary.listNormalizeMs;
+    totals.patches += summary.patches;
+    totals.coalescedPatches += summary.coalescedPatches;
+
+    for (const [op, stats] of Object.entries(summary.ops)) {
+      const entry = totals.ops[op] ?? { count: 0, durationMs: 0 };
+      entry.count += stats.count;
+      entry.durationMs += stats.durationMs;
+      totals.ops[op] = entry;
+    }
+
+    if (summary.setPropsByType) {
+      for (const [key, stats] of Object.entries(summary.setPropsByType)) {
+        const entry = totals.setPropsByType[key] ?? { count: 0, durationMs: 0 };
+        entry.count += stats.count;
+        entry.durationMs += stats.durationMs;
+        totals.setPropsByType[key] = entry;
+      }
+    }
+
+    if (summary.setPropsBySize) {
+      for (const [key, stats] of Object.entries(summary.setPropsBySize)) {
+        const entry = totals.setPropsBySize[key] ?? { count: 0, durationMs: 0 };
+        entry.count += stats.count;
+        entry.durationMs += stats.durationMs;
+        totals.setPropsBySize[key] = entry;
+      }
+    }
+
+    root.__STREAM_MDX_PATCH_STATS_TOTALS__ = totals;
+  } catch {
+    // ignore perf recording failures
+  }
+}
+
+function estimateBlockPayloadSize(block: Block): number {
+  if (!block || !block.payload) return 0;
+  let size = 0;
+  const payload = block.payload;
+  if (typeof payload.raw === "string") size += payload.raw.length;
+  if (typeof payload.highlightedHtml === "string") size += payload.highlightedHtml.length;
+  if (typeof payload.sanitizedHtml === "string") size += payload.sanitizedHtml.length;
+  if (typeof payload.compiledMdxModule?.code === "string") size += payload.compiledMdxModule.code.length;
+  if (Array.isArray(payload.inline)) size += payload.inline.length * 8;
+  return size;
+}
+
+function estimatePropsSize(props?: Record<string, unknown>, block?: Block): number {
+  let size = 0;
+  if (props) {
+    for (const [key, value] of Object.entries(props)) {
+      if (key === "block") continue;
+      if (typeof value === "string") {
+        size += value.length;
+      } else if (typeof value === "number") {
+        size += 8;
+      } else if (typeof value === "boolean") {
+        size += 4;
+      } else if (Array.isArray(value)) {
+        size += value.length * 4;
+      }
+    }
+  }
+  if (block) {
+    size += estimateBlockPayloadSize(block);
+  }
+  return size;
+}
+
+function bucketBySize(size: number): string {
+  if (size < 1024) return "<1k";
+  if (size < 10 * 1024) return "1-10k";
+  if (size < 50 * 1024) return "10-50k";
+  if (size < 200 * 1024) return "50-200k";
+  return ">=200k";
+}
 
 function debugCodeBlock(event: string, payload: Record<string, unknown>) {
   if (!CODE_BLOCK_DEBUG_ENABLED) return;
@@ -309,7 +509,7 @@ function normalizeCodeBlockChildren(nodes: NodeMap, parent: NodeRecord, touched:
     }
 
     const normalizedProps = normalizeCodeLineProps({ index: idx, text: node.props?.text, html: node.props?.html }, node.props);
-    if (node.props?.index !== normalizedProps.index || node.props?.text !== normalizedProps.text || node.props?.html !== normalizedProps.html) {
+    if (normalizedProps !== node.props) {
       node.props = normalizedProps;
       node.version++;
       touched.add(node.id);
@@ -361,30 +561,41 @@ function normalizeCodeBlockChildren(nodes: NodeMap, parent: NodeRecord, touched:
     });
   }
 
-  const validation = validateCodeBlockChildren(nodes, parent);
-  if (!validation.ok) {
-    debugCodeBlock("code-block-validation-failed", {
-      parentId: parent.id,
-      issues: validation.issues,
-    });
-    if (!rebuildCodeBlockFromSnapshot(nodes, parent, touched, validation.issues)) {
-      console.warn("[renderer-store] unable to fully normalize code block", {
+  if (CODE_BLOCK_VALIDATION_ENABLED) {
+    const validation = validateCodeBlockChildren(nodes, parent);
+    if (!validation.ok) {
+      debugCodeBlock("code-block-validation-failed", {
         parentId: parent.id,
         issues: validation.issues,
       });
+      if (!rebuildCodeBlockFromSnapshot(nodes, parent, touched, validation.issues)) {
+        console.warn("[renderer-store] unable to fully normalize code block", {
+          parentId: parent.id,
+          issues: validation.issues,
+        });
+      }
     }
   }
 }
 
 function normalizeCodeLineProps(incoming: Record<string, unknown>, previous?: Record<string, unknown>): Record<string, unknown> {
-  const index = typeof incoming.index === "number" ? incoming.index : typeof previous?.index === "number" ? (previous?.index as number) : 0;
+  const previousIndex = typeof previous?.index === "number" ? (previous?.index as number) : 0;
+  const index = typeof incoming.index === "number" ? (incoming.index as number) : previousIndex;
   const previousText = typeof previous?.text === "string" ? (previous?.text as string) : "";
   const previousHtml = typeof previous?.html === "string" ? (previous?.html as string) : null;
   const hasIncomingText = typeof incoming.text === "string";
+  const hasIncomingHtml = typeof incoming.html === "string";
   const rawText = hasIncomingText ? (incoming.text as string) : previousText;
 
+  if (previous && !hasIncomingHtml && index === previousIndex && (!hasIncomingText || rawText === previousText)) {
+    return previous;
+  }
+  if (previous && hasIncomingHtml && incoming.html === previousHtml && index === previousIndex && (!hasIncomingText || rawText === previousText)) {
+    return previous;
+  }
+
   let highlight: string | null = null;
-  if (typeof incoming.html === "string") {
+  if (hasIncomingHtml) {
     highlight = incoming.html as string;
   } else if (!hasIncomingText || rawText === previousText) {
     highlight = previousHtml;
@@ -454,8 +665,13 @@ function mergeInlineSegmentProps(previous: Record<string, unknown> | undefined, 
 function applyCodeBlockMetadata(record: NodeRecord) {
   const block = record.block;
   const highlightedHtml = block?.payload.highlightedHtml ?? "";
-  const { preAttrs, codeAttrs } = extractCodeWrapperAttributes(highlightedHtml);
   const lang = typeof block?.payload.meta?.lang === "string" ? (block?.payload.meta?.lang as string) : record.props?.lang;
+  let { preAttrs, codeAttrs } = extractCodeWrapperAttributes(highlightedHtml);
+  if (!preAttrs || !codeAttrs) {
+    const defaults = getDefaultCodeWrapperAttributes(typeof lang === "string" ? lang : undefined);
+    preAttrs = preAttrs ?? defaults.preAttrs;
+    codeAttrs = codeAttrs ?? defaults.codeAttrs;
+  }
 
   record.props = {
     ...(record.props ?? {}),
@@ -789,6 +1005,14 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
         return touched;
       }
 
+      const perfEnabled = isPatchPerfDebugEnabled();
+      const perfStart = perfEnabled ? getPerfNow() : 0;
+      const opStats: Record<string, PatchPerfOpSummary> = perfEnabled ? {} : {};
+      const setPropsByType: Record<string, PatchPerfOpSummary> = perfEnabled ? {} : {};
+      const setPropsBySize: Record<string, PatchPerfOpSummary> = perfEnabled ? {} : {};
+      let applyMs = 0;
+      let listNormalizeMs = 0;
+
       let coalescedPatches = patches;
       let metrics: CoalescingMetrics | null = options?.metrics ?? null;
 
@@ -807,35 +1031,98 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
 
       let mutatedBlocks = false;
       let listDepthDirty = false;
+      const listDepthDirtyNodes = new Set<string>();
+
+      const isListRelated = (type: string | undefined) => type === "list" || type === "list-item";
+
+      const findNearestListNode = (nodeId: string | undefined): NodeRecord | undefined => {
+        if (!nodeId) return undefined;
+        let current = nodes.get(nodeId);
+        while (current) {
+          if (current.type === "list") return current;
+          if (!current.parentId) return undefined;
+          current = nodes.get(current.parentId);
+        }
+        return undefined;
+      };
+
+      const markListDepthDirty = (nodeId: string | undefined) => {
+        const listNode = findNearestListNode(nodeId);
+        if (listNode) {
+          listDepthDirtyNodes.add(listNode.id);
+        } else {
+          listDepthDirty = true;
+        }
+      };
 
       const applyPropsUpdate = (at: NodePath, props: Record<string, unknown> | undefined) => {
+        const perfStartLocal = perfEnabled ? getPerfNow() : 0;
         const targetId = at.nodeId ?? at.blockId;
         if (!targetId) return;
         const target = nodes.get(targetId);
         if (!target) return;
 
-        const nextProps = props ? { ...props } : {};
-        const incomingBlock = nextProps.block;
-        if (incomingBlock !== undefined) {
-          nextProps.block = undefined;
-        }
-
         let propsChanged = false;
         if (target.type === "code-line") {
-          const normalized = normalizeCodeLineProps(nextProps, target.props);
-          if (!shallowEqualRecords(target.props as Record<string, unknown> | undefined, normalized)) {
+          const normalized = normalizeCodeLineProps(
+            {
+              index: props?.index,
+              text: props?.text,
+              html: props?.html,
+            },
+            target.props,
+          );
+          if (normalized !== target.props) {
             target.props = normalized;
             propsChanged = true;
           }
+          if (propsChanged) {
+            target.version++;
+            touched.add(target.id);
+            const parent = target.parentId ? nodes.get(target.parentId) : undefined;
+            if (parent) {
+              parent.version++;
+              touched.add(parent.id);
+              if (parent.type === "code") {
+                normalizeCodeBlockChildren(nodes, parent, touched);
+              }
+            }
+          }
+          if (perfEnabled) {
+            const duration = getPerfNow() - perfStartLocal;
+            const typeKey = target.type || "unknown";
+            const sizeKey = bucketBySize(estimatePropsSize(props, undefined));
+            const typeEntry = setPropsByType[typeKey] ?? { count: 0, durationMs: 0 };
+            typeEntry.count += 1;
+            typeEntry.durationMs += duration;
+            setPropsByType[typeKey] = typeEntry;
+            const sizeEntry = setPropsBySize[sizeKey] ?? { count: 0, durationMs: 0 };
+            sizeEntry.count += 1;
+            sizeEntry.durationMs += duration;
+            setPropsBySize[sizeKey] = sizeEntry;
+          }
+          return;
         } else if (isInlineSegmentType(target.type)) {
+          const nextProps = props ? { ...props } : {};
+          if ("block" in nextProps) {
+            delete (nextProps as Record<string, unknown>).block;
+          }
           const mergedSegments = mergeInlineSegmentProps(target.props, nextProps);
           if (!shallowEqualRecords(target.props as Record<string, unknown> | undefined, mergedSegments)) {
             target.props = mergedSegments;
             propsChanged = true;
           }
         } else {
+          const nextProps = props ? { ...props } : {};
+          if ("block" in nextProps) {
+            delete (nextProps as Record<string, unknown>).block;
+          }
           const base = target.props ? { ...target.props } : {};
           let localChanged = false;
+          if (Object.prototype.hasOwnProperty.call(base, "block")) {
+            delete (base as Record<string, unknown>).block;
+            localChanged = true;
+          }
           for (const [key, value] of Object.entries(nextProps)) {
             if (value === undefined) {
               if (Object.prototype.hasOwnProperty.call(base, key)) {
@@ -854,6 +1141,7 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
         }
 
         let blockChanged = false;
+        const incomingBlock = props?.block as Block | undefined;
         if (incomingBlock && typeof incomingBlock === "object") {
           target.block = cloneBlock(incomingBlock as Block);
           if (target.type === "code") {
@@ -887,13 +1175,27 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
             normalizeCodeBlockChildren(nodes, parentForNormalization, touched);
           }
           const parentType = target.parentId ? nodes.get(target.parentId)?.type : undefined;
-          if (target.type === "list" || target.type === "list-item" || parentType === "list" || parentType === "list-item") {
-            listDepthDirty = true;
+          if (isListRelated(target.type) || isListRelated(parentType)) {
+            markListDepthDirty(target.id);
           }
+        }
+
+        if (perfEnabled) {
+          const duration = getPerfNow() - perfStartLocal;
+          const typeKey = target.type || "unknown";
+          const sizeKey = bucketBySize(estimatePropsSize(props, incomingBlock && typeof incomingBlock === "object" ? (incomingBlock as Block) : undefined));
+          const typeEntry = setPropsByType[typeKey] ?? { count: 0, durationMs: 0 };
+          typeEntry.count += 1;
+          typeEntry.durationMs += duration;
+          setPropsByType[typeKey] = typeEntry;
+          const sizeEntry = setPropsBySize[sizeKey] ?? { count: 0, durationMs: 0 };
+          sizeEntry.count += 1;
+          sizeEntry.durationMs += duration;
+          setPropsBySize[sizeKey] = sizeEntry;
         }
       };
 
-      for (const patch of coalescedPatches) {
+      const applyPatch = (patch: Patch) => {
         switch (patch.op) {
           case "insertChild": {
             const parent = resolveParent(nodes, patch.at);
@@ -903,12 +1205,11 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
                 touched.add(id);
               }
               mutatedBlocks = true;
-              if (
-                inserted.record.type === "list" ||
-                inserted.record.type === "list-item" ||
-                (parent && (parent.type === "list" || parent.type === "list-item"))
-              ) {
-                listDepthDirty = true;
+              if (isListRelated(inserted.record.type) || isListRelated(parent?.type)) {
+                markListDepthDirty(inserted.record.id);
+                if (parent) {
+                  markListDepthDirty(parent.id);
+                }
               }
             }
             break;
@@ -926,8 +1227,8 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
               touched.add(parent.id);
               ensureUniqueChildren(parent, touched);
               mutatedBlocks = true;
-              if (parent.type === "list" || parent.type === "list-item" || removedNode?.type === "list" || removedNode?.type === "list-item") {
-                listDepthDirty = true;
+              if (isListRelated(parent.type) || isListRelated(removedNode?.type)) {
+                markListDepthDirty(parent.id);
               }
             }
             break;
@@ -939,8 +1240,8 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
             replaceSnapshotAt(nodes, parent, patch.index, patch.node, touched);
             touched.add(parent.id);
             mutatedBlocks = true;
-            if (parent.type === "list" || parent.type === "list-item") {
-              listDepthDirty = true;
+            if (isListRelated(parent.type)) {
+              markListDepthDirty(parent.id);
             }
             break;
           }
@@ -969,6 +1270,9 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
               touched.add(target.id);
               mutatedBlocks = true;
             }
+            if (isListRelated(target.type)) {
+              markListDepthDirty(target.id);
+            }
             break;
           }
 
@@ -987,8 +1291,8 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
             parent.children.splice(to, 0, ...moved);
             parent.version++;
             touched.add(parent.id);
-            if (parent.type === "list" || parent.type === "list-item") {
-              listDepthDirty = true;
+            if (isListRelated(parent.type)) {
+              markListDepthDirty(parent.id);
             }
             break;
           }
@@ -1069,7 +1373,7 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
                 const child = nodes.get(childId);
                 if (child && child.type === "code-line") {
                   const normalized = normalizeCodeLineProps({ index: idx, text: child.props?.text, html: child.props?.html }, child.props);
-                  if (!shallowEqualRecords(child.props as Record<string, unknown> | undefined, normalized)) {
+                  if (normalized !== child.props) {
                     child.props = normalized;
                     child.version++;
                     touched.add(child.id);
@@ -1116,6 +1420,24 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
           default:
             break;
         }
+      };
+
+      if (perfEnabled) {
+        const loopStart = getPerfNow();
+        for (const patch of coalescedPatches) {
+          const opStart = getPerfNow();
+          applyPatch(patch);
+          const opDuration = getPerfNow() - opStart;
+          const entry = opStats[patch.op] ?? { count: 0, durationMs: 0 };
+          entry.count += 1;
+          entry.durationMs += opDuration;
+          opStats[patch.op] = entry;
+        }
+        applyMs = getPerfNow() - loopStart;
+      } else {
+        for (const patch of coalescedPatches) {
+          applyPatch(patch);
+        }
       }
 
       if (mutatedBlocks) {
@@ -1123,7 +1445,21 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
       }
 
       if (listDepthDirty) {
-        normalizeAllListDepths(nodes, touched, PATCH_ROOT_ID);
+        if (perfEnabled) {
+          const start = getPerfNow();
+          normalizeAllListDepths(nodes, touched, PATCH_ROOT_ID);
+          listNormalizeMs = getPerfNow() - start;
+        } else {
+          normalizeAllListDepths(nodes, touched, PATCH_ROOT_ID);
+        }
+      } else if (listDepthDirtyNodes.size > 0) {
+        if (perfEnabled) {
+          const start = getPerfNow();
+          normalizeListDepthsForIds(nodes, touched, listDepthDirtyNodes, PATCH_ROOT_ID);
+          listNormalizeMs = getPerfNow() - start;
+        } else {
+          normalizeListDepthsForIds(nodes, touched, listDepthDirtyNodes, PATCH_ROOT_ID);
+        }
       }
 
       if (touched.size > 0 || mutatedBlocks) {
@@ -1132,6 +1468,26 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
         // Use rAF (or fallback) to align with frame updates
         scheduleNotify();
       }
+
+      if (perfEnabled) {
+        const totalMs = getPerfNow() - perfStart;
+        const coalesceMs = typeof metrics?.durationMs === "number" ? metrics.durationMs : 0;
+        recordPatchPerf({
+          timestamp: new Date().toISOString(),
+          totalMs,
+          applyMs,
+          coalesceMs,
+          listNormalizeMs,
+          patches: patches.length,
+          coalescedPatches: coalescedPatches.length,
+          touchedCount: touched.size,
+          mutatedBlocks,
+          ops: opStats,
+          setPropsByType,
+          setPropsBySize,
+        });
+      }
+
       return touched;
     },
 
@@ -1168,6 +1524,7 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
       }
       const snapshot = { version: record.version, node: record } as { version: number; node?: NodeRecord };
       nodeSnapshotCache.set(id, snapshot);
+      pruneCache(nodeSnapshotCache, NODE_SNAPSHOT_CACHE_LIMIT, NODE_SNAPSHOT_CACHE_BUFFER);
       return snapshot;
     },
 
@@ -1191,6 +1548,7 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
         children: ReadonlyArray<string>;
       };
       childrenSnapshotCache.set(id, snapshot);
+      pruneCache(childrenSnapshotCache, CHILDREN_SNAPSHOT_CACHE_LIMIT, CHILDREN_SNAPSHOT_CACHE_BUFFER);
       return snapshot;
     },
 

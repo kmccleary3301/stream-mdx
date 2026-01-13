@@ -120,7 +120,7 @@ export function StreamingComponent({ text }: { text: string }) {
 | `text` | `string` | Static markdown content. Changing it restarts the session. |
 | `stream` | `AsyncIterable<string>` | Streaming markdown chunks. Use for live updates. |
 | `worker` | `Worker \| URL \| string \| () => Worker` | Worker instance/URL/factory. Recommended: `"/workers/markdown-worker.js"`. |
-| `features` | `object` | Feature flags: `{ math?, mdx?, tables?, html?, callouts?, footnotes?, formatAnticipation? }` |
+| `features` | `object` | Feature flags: `{ math?, mdx?, tables?, html?, callouts?, footnotes?, formatAnticipation?, codeHighlighting? }` |
 | `mdxCompileMode` | `"server" \| "worker"` | Enables MDX compilation/hydration and selects strategy. |
 | `mdxComponents` | `object` | Component map passed to hydrated MDX blocks. |
 | `components` | `object` | Override block components (headings, code, tables, etc.). |
@@ -717,6 +717,7 @@ The `features` prop on `<StreamingMarkdown />` controls built‑in domains:
     callouts: true,
     footnotes: true,
     formatAnticipation: false,
+    codeHighlighting: "incremental",
   }}
 />
 ```
@@ -725,6 +726,10 @@ The `features` prop on `<StreamingMarkdown />` controls built‑in domains:
 - Set `mdx: false` to skip MDX detection/compilation and render MDX markup as regular markdown/text.
 - Set `html: false` to avoid inline/block HTML plugins beyond the core sanitization path.
 - Set `formatAnticipation: true` to withhold formatting markers while streaming (initial support: `*`, `**`, `` ` ``, `~~`).
+- Set `codeHighlighting: "final" | "incremental" | "live"` to control Shiki behavior:
+  - `"final"` (default): highlight only after a code block finalizes.
+  - `"incremental"`: highlight completed lines as they arrive.
+  - `"live"`: re-highlight on every update (slowest, highest fidelity).
 
 Under the hood these flags drive worker doc plugins and React bindings for those domains without you having to touch internal APIs.
 
@@ -800,12 +805,13 @@ function onMetrics(metrics: RendererMetrics) {
 <StreamingMarkdown
   text={content}
   scheduling={{
-    batch: "rAF", // Use requestAnimationFrame
-    frameBudgetMs: 8, // Smaller = more responsive, slower completion
-    lowPriorityFrameBudgetMs: 4,
-    maxBatchesPerFlush: 5,
-    maxLowPriorityBatchesPerFlush: 1,
-    urgentQueueThreshold: 3,
+    batch: "microtask", // Lowest latency; falls back when unavailable
+    frameBudgetMs: 10, // Smaller = more responsive, slower completion
+    lowPriorityFrameBudgetMs: 6,
+    maxBatchesPerFlush: 12,
+    maxLowPriorityBatchesPerFlush: 2,
+    urgentQueueThreshold: 4,
+    adaptiveSwitch: false, // Disable auto-switching to smooth scheduling
     historyLimit: 200, // Keep patch history manageable
   }}
 />

@@ -1,0 +1,8 @@
+{
+  "id": "S6_extreme",
+  "label": "Extreme throughput",
+  "updateIntervalMs": 1,
+  "charRateCps": 20000,
+  "maxChunkChars": 200,
+  "includeTags": ["stress"]
+}

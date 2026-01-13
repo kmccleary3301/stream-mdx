@@ -37,6 +37,18 @@ export const ARTICLE_ITEMS: ArticleItem[] = [
     description: "Scheduling, queue control, metrics, and how to tune for latency or throughput.",
   },
   {
+    slug: "format-anticipation",
+    title: "Format Anticipation",
+    file: "format-anticipation.md",
+    description: "Render formatting early while streaming, with safe per-feature toggles.",
+  },
+  {
+    slug: "testing-and-baselines",
+    title: "Testing and Baselines",
+    file: "testing-and-baselines.md",
+    description: "Local-only HTML/style snapshot baselines and perf capture workflow.",
+  },
+  {
     slug: "deployment-and-security",
     title: "Deployment and Security",
     file: "deployment-and-security.md",

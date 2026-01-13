@@ -40,6 +40,7 @@ Thumbs.db
 tmp/
 *.tmp
 *.log
+tests/regression/artifacts/
 
 # Package manager locks
 # - keep package-lock.json (npm workspaces)

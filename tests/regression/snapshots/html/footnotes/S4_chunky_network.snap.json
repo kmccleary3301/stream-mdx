@@ -1,0 +1,381 @@
+{
+  "fixtureId": "footnotes",
+  "fixtureTitle": "Footnotes",
+  "scenarioId": "S4_chunky_network",
+  "scenario": {
+    "id": "S4_chunky_network",
+    "label": "Chunky network",
+    "updateIntervalMs": 100,
+    "charRateCps": 5000,
+    "maxChunkChars": 2000
+  },
+  "totalLength": 182,
+  "checkpoints": [
+    {
+      "id": "after-first-chunk",
+      "appendedChars": 182,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"1\">1</a></sup></p><p class=\"markdown-paragraph\">Another sentence with a second reference.<sup class=\"footnote-ref\"><a href=\"#fn:2\" id=\"fnref:2\" data-label=\"second\">2</a></sup></p></div>",
+      "textSample": "FootnotesA sentence with a footnote reference.1Another sentence with a second reference.2",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-9",
+      "appendedChars": 182,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"1\">1</a></sup></p><p class=\"markdown-paragraph\">Another sentence with a second reference.<sup class=\"footnote-ref\"><a href=\"#fn:2\" id=\"fnref:2\" data-label=\"second\">2</a></sup></p></div>",
+      "textSample": "FootnotesA sentence with a footnote reference.1Another sentence with a second reference.2",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-18",
+      "appendedChars": 182,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"1\">1</a></sup></p><p class=\"markdown-paragraph\">Another sentence with a second reference.<sup class=\"footnote-ref\"><a href=\"#fn:2\" id=\"fnref:2\" data-label=\"second\">2</a></sup></p></div>",
+      "textSample": "FootnotesA sentence with a footnote reference.1Another sentence with a second reference.2",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-46",
+      "appendedChars": 182,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"1\">1</a></sup></p><p class=\"markdown-paragraph\">Another sentence with a second reference.<sup class=\"footnote-ref\"><a href=\"#fn:2\" id=\"fnref:2\" data-label=\"second\">2</a></sup></p></div>",
+      "textSample": "FootnotesA sentence with a footnote reference.1Another sentence with a second reference.2",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-91",
+      "appendedChars": 182,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"1\">1</a></sup></p><p class=\"markdown-paragraph\">Another sentence with a second reference.<sup class=\"footnote-ref\"><a href=\"#fn:2\" id=\"fnref:2\" data-label=\"second\">2</a></sup></p></div>",
+      "textSample": "FootnotesA sentence with a footnote reference.1Another sentence with a second reference.2",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-137",
+      "appendedChars": 182,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"1\">1</a></sup></p><p class=\"markdown-paragraph\">Another sentence with a second reference.<sup class=\"footnote-ref\"><a href=\"#fn:2\" id=\"fnref:2\" data-label=\"second\">2</a></sup></p></div>",
+      "textSample": "FootnotesA sentence with a footnote reference.1Another sentence with a second reference.2",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-164",
+      "appendedChars": 182,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"1\">1</a></sup></p><p class=\"markdown-paragraph\">Another sentence with a second reference.<sup class=\"footnote-ref\"><a href=\"#fn:2\" id=\"fnref:2\" data-label=\"second\">2</a></sup></p></div>",
+      "textSample": "FootnotesA sentence with a footnote reference.1Another sentence with a second reference.2",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-182",
+      "appendedChars": 182,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"1\">1</a></sup></p><p class=\"markdown-paragraph\">Another sentence with a second reference.<sup class=\"footnote-ref\"><a href=\"#fn:2\" id=\"fnref:2\" data-label=\"second\">2</a></sup></p></div>",
+      "textSample": "FootnotesA sentence with a footnote reference.1Another sentence with a second reference.2",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    }
+  ],
+  "final": {
+    "id": "after-finalize",
+    "appendedChars": 182,
+    "rootChildCount": 1,
+    "selectors": {
+      "hasTable": false,
+      "hasPre": false,
+      "hasFootnotes": true,
+      "hasMdxPending": false,
+      "hasMdxCompiled": false,
+      "hasBlockquote": false,
+      "hasMath": false
+    },
+    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"1\">1</a></sup></p><p class=\"markdown-paragraph\">Another sentence with a second reference.<sup class=\"footnote-ref\"><a href=\"#fn:2\" id=\"fnref:2\" data-label=\"second\">2</a></sup></p><section class=\"footnotes\"><hr><ol><li id=\"fn:1\">First footnote text. <a href=\"#fnref:1\" class=\"footnote-backref\" aria-label=\"Back to content\">↩</a></li><li id=\"fn:2\"> <a href=\"#fnref:2\" class=\"footnote-backref\" aria-label=\"Back to content\">↩</a></li></ol></section></div>",
+    "structure": {
+      "topLevelTags": [
+        "div"
+      ],
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 1,
+        "hr": 1
+      }
+    },
+    "children": [
+      {
+        "index": 0,
+        "tag": "div",
+        "hash": "5ba3fb36dfd86b575279db8bee820401427367227925041e1ae2862197bdeaf3",
+        "textSample": "FootnotesA sentence with a footnote reference.1Another sentence with a second reference.2First footnote text. ↩ ↩"
+      }
+    ]
+  }
+}

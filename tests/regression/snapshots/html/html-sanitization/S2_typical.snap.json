@@ -1,0 +1,381 @@
+{
+  "fixtureId": "html-sanitization",
+  "fixtureTitle": "HTML Sanitization",
+  "scenarioId": "S2_typical",
+  "scenario": {
+    "id": "S2_typical",
+    "label": "Typical streaming",
+    "updateIntervalMs": 16,
+    "charRateCps": 1200,
+    "maxChunkChars": 256
+  },
+  "totalLength": 372,
+  "checkpoints": [
+    {
+      "id": "after-first-chunk",
+      "appendedChars": 19,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1></div>",
+      "textSample": "HTML Sanitization",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-19",
+      "appendedChars": 19,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1></div>",
+      "textSample": "HTML Sanitization",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-37",
+      "appendedChars": 38,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph streaming-partial\">Normal inline HTM</p></div>",
+      "textSample": "HTML SanitizationNormal inline HTM",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-93",
+      "appendedChars": 95,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph\">Normal inline HTML should render:</p><div class=\"markdown-html\"><kbd>Ctrl</kbd> + <kbd>K</kbd></div><p class=\"markdown-paragraph streaming-partial\">Disallo</p></div>",
+      "textSample": "HTML SanitizationNormal inline HTML should render:Ctrl + KDisallo",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-186",
+      "appendedChars": 190,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph\">Normal inline HTML should render:</p><div class=\"markdown-html\"><kbd>Ctrl</kbd> + <kbd>K</kbd></div><p class=\"markdown-paragraph\">Disallowed HTML should be removed or escaped:</p><div class=\"markdown-html\"></div><p class=\"markdown-paragraph\">&lt;img src=\"data:image/gif</p></div>",
+      "textSample": "HTML SanitizationNormal inline HTML should render:Ctrl + KDisallowed HTML should be removed or escaped:<img src=\"data:image/gif",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-279",
+      "appendedChars": 285,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph\">Normal inline HTML should render:</p><div class=\"markdown-html\"><kbd>Ctrl</kbd> + <kbd>K</kbd></div><p class=\"markdown-paragraph\">Disallowed HTML should be removed or escaped:</p><div class=\"markdown-html\"></div><div class=\"markdown-html\"><img src=\"data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=\"></div><p class=\"markdown-paragraph\">&lt;a href=\"https://examp</p></div>",
+      "textSample": "HTML SanitizationNormal inline HTML should render:Ctrl + KDisallowed HTML should be removed or escaped:<a href=\"https://examp",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-335",
+      "appendedChars": 342,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph\">Normal inline HTML should render:</p><div class=\"markdown-html\"><kbd>Ctrl</kbd> + <kbd>K</kbd></div><p class=\"markdown-paragraph\">Disallowed HTML should be removed or escaped:</p><div class=\"markdown-html\"></div><div class=\"markdown-html\"><img src=\"data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=\"></div><div class=\"markdown-html\"><a href=\"https://example.com\">safe link</a></div><div class=\"markdown-html\"></div></div>",
+      "textSample": "HTML SanitizationNormal inline HTML should render:Ctrl + KDisallowed HTML should be removed or escaped:safe link",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    },
+    {
+      "id": "progress-372",
+      "appendedChars": 372,
+      "rootChildCount": 1,
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph\">Normal inline HTML should render:</p><div class=\"markdown-html\"><kbd>Ctrl</kbd> + <kbd>K</kbd></div><p class=\"markdown-paragraph\">Disallowed HTML should be removed or escaped:</p><div class=\"markdown-html\"></div><div class=\"markdown-html\"><img src=\"data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=\"></div><div class=\"markdown-html\"><a href=\"https://example.com\">safe link</a></div><div class=\"markdown-html\"><div>Styled div</div></div></div>",
+      "textSample": "HTML SanitizationNormal inline HTML should render:Ctrl + KDisallowed HTML should be removed or escaped:safe linkStyled div",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      }
+    }
+  ],
+  "final": {
+    "id": "after-finalize",
+    "appendedChars": 372,
+    "rootChildCount": 1,
+    "selectors": {
+      "hasTable": false,
+      "hasPre": false,
+      "hasFootnotes": false,
+      "hasMdxPending": false,
+      "hasMdxCompiled": false,
+      "hasBlockquote": false,
+      "hasMath": false
+    },
+    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph\">Normal inline HTML should render:</p><div class=\"markdown-html\"><kbd>Ctrl</kbd> + <kbd>K</kbd></div><p class=\"markdown-paragraph\">Disallowed HTML should be removed or escaped:</p><div class=\"markdown-html\"></div><div class=\"markdown-html\"><img src=\"data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=\"></div><div class=\"markdown-html\"><a href=\"https://example.com\">safe link</a></div><div class=\"markdown-html\"><div>Styled div</div></div></div>",
+    "structure": {
+      "topLevelTags": [
+        "div"
+      ],
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      }
+    },
+    "children": [
+      {
+        "index": 0,
+        "tag": "div",
+        "hash": "dd7148c13980d86d9829a1e75394f2c5ea4eee3816d2a431b2f18c865c9ef99c",
+        "textSample": "HTML SanitizationNormal inline HTML should render:Ctrl + KDisallowed HTML should be removed or escaped:safe linkStyled d"
+      }
+    ]
+  }
+}

@@ -30,9 +30,23 @@ cp node_modules/@stream-mdx/worker/dist/hosted/markdown-worker.js public/workers
 import { StreamingMarkdown } from "stream-mdx";
 
 export function Demo({ text }: { text: string }) {
-  return <StreamingMarkdown text={text} worker="/workers/markdown-worker.js" />;
+  return (
+    <StreamingMarkdown
+      text={text}
+      worker="/workers/markdown-worker.js"
+      features={{ codeHighlighting: "incremental" }}
+    />
+  );
 }
 ```
+
+### Code highlighting modes
+
+Use `features.codeHighlighting` to control Shiki behavior for fenced code blocks:
+
+- `"final"` (default): highlight only after a block finalizes.
+- `"incremental"`: highlight completed lines as they arrive.
+- `"live"`: re-highlight on every update (slowest).
 
 ## Packages
 
@@ -55,5 +69,7 @@ export function Demo({ text }: { text: string }) {
 - Build: `npm run build`
 - Test: `npm test`
 - Pack+install smoke test: `npm run ci:pack-smoke`
+- Local regression baselines: `docs/REGRESSION_TESTING.md`
+- Perf capture (demo): `npm run perf:demo` (requires `NEXT_PUBLIC_STREAMING_DEMO_API=true`)
 
 See `CONTRIBUTING.md` for more.

@@ -1,5 +1,13 @@
 import { parser as mdParser } from "@lezer/markdown";
-import { extractCodeLines, extractCodeWrapperAttributes, extractHighlightedLines, stripCodeFence } from "./code-highlighting";
+import {
+  extractCodeLines,
+  extractCodeWrapperAttributes,
+  extractHighlightedLines,
+  getDefaultCodeWrapperAttributes,
+  normalizeHighlightedLines,
+  stripCodeFence,
+  type HighlightedLine,
+} from "./code-highlighting";
 import { InlineParser } from "./inline-parser";
 import { extractMixedContentSegments } from "./mixed-content";
 import type {
@@ -190,7 +198,10 @@ function buildListItemSnapshot(
       } else if (name === "BulletList" || name === "OrderedList") {
         const nestedId = `${id}::list:${subListIndex++}`;
         const nestedOrdered = name === "OrderedList";
-        childSnapshots.push(buildListNodeSnapshot(block, cursor.node, nestedOrdered, nestedId, baseOffset, raw));
+        const nestedSnapshot = buildListNodeSnapshot(block, cursor.node, nestedOrdered, nestedId, baseOffset, raw);
+        if (Array.isArray(nestedSnapshot.children) && nestedSnapshot.children.length > 0) {
+          childSnapshots.push(nestedSnapshot);
+        }
       } else if (name === "Blockquote") {
         const quoteId = `${id}::blockquote:${blockquoteIndex++}`;
         childSnapshots.push(buildBlockquoteSnapshot(block, cursor.node, quoteId, baseOffset, raw));
@@ -585,10 +596,21 @@ function enrichTableSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot
 function enrichCodeSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot {
   const source = typeof block.payload.meta?.code === "string" ? (block.payload.meta?.code as string) : (block.payload.raw ?? "");
   const lines = extractCodeLines(source);
+  const meta = block.payload.meta as { highlightedLines?: HighlightedLine[]; lang?: string } | undefined;
   const highlightedHtml = block.payload.highlightedHtml ?? "";
-  const highlightedLines = extractHighlightedLines(highlightedHtml, lines.length);
-  const { preAttrs, codeAttrs } = extractCodeWrapperAttributes(highlightedHtml);
-  const lang = typeof block.payload.meta?.lang === "string" ? String(block.payload.meta?.lang) : undefined;
+  const hasBlockHighlight = typeof block.payload.highlightedHtml === "string" && block.payload.highlightedHtml.length > 0;
+  const metaLines = Array.isArray(meta?.highlightedLines) ? (meta?.highlightedLines as HighlightedLine[]) : null;
+  const includeLineHtml = metaLines ? true : !hasBlockHighlight || lines.length >= 200;
+  const highlightedLines = metaLines
+    ? normalizeHighlightedLines(metaLines, lines.length)
+    : extractHighlightedLines(highlightedHtml, lines.length);
+  const lang = typeof meta?.lang === "string" ? String(meta.lang) : undefined;
+  let { preAttrs, codeAttrs } = extractCodeWrapperAttributes(highlightedHtml);
+  if (!preAttrs || !codeAttrs) {
+    const defaults = getDefaultCodeWrapperAttributes(lang);
+    preAttrs = preAttrs ?? defaults.preAttrs;
+    codeAttrs = codeAttrs ?? defaults.codeAttrs;
+  }
   snapshot.props = {
     ...(snapshot.props ?? {}),
     lang,
@@ -601,7 +623,7 @@ function enrichCodeSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot 
     props: {
       index,
       text: line,
-      html: highlightedLines[index] ?? null,
+      html: includeLineHtml ? (highlightedLines[index] ?? null) : null,
     },
     children: [],
   }));
