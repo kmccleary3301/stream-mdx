@@ -99,8 +99,8 @@ async function runFormatAnticipationStreamingTest(): Promise<void> {
   const listKinds = new Set<string>();
   const listTexts: string[] = [];
   flattenInline(listInlineNodes, listKinds, listTexts);
-  assert(!listKinds.has("em"), "unexpected anticipation inside list item");
-  assert(listTexts.some((text) => text.includes("*")), `expected raw '*' to remain inside list item: ${listTexts.join(" | ")}`);
+  assert(listKinds.has("em"), "missing anticipated emphasis node inside list item");
+  assert(listTexts.every((text) => !text.includes("*")), `raw '*' leaked into list inline nodes: ${listTexts.join(" | ")}`);
 }
 
 async function runMathAnticipationStreamingTest(): Promise<void> {

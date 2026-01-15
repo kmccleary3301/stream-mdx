@@ -9,6 +9,8 @@ import {
   type HighlightedLine,
 } from "./code-highlighting";
 import { InlineParser } from "./inline-parser";
+import { normalizeFormatAnticipation, prepareInlineStreamingContent } from "./streaming/inline-streaming";
+import type { FormatAnticipationConfig } from "./types";
 import { extractMixedContentSegments } from "./mixed-content";
 import type {
   Block,
@@ -166,7 +168,12 @@ function buildListItemSnapshot(
       }
       if (name === "Paragraph") {
         const paragraphRaw = raw.slice(cursor.from, cursor.to);
-        const paragraphData = processListItemParagraph(paragraphRaw);
+        const meta = (block.payload.meta ?? {}) as { formatAnticipation?: FormatAnticipationConfig; mathEnabled?: boolean };
+        const paragraphData = processListItemParagraph(paragraphRaw, {
+          formatAnticipation: meta.formatAnticipation,
+          math: meta.mathEnabled,
+          streaming: !block.isFinalized,
+        });
         const parsedInline = paragraphData.inline;
         if (!paragraphHandled) {
           inlineNodes = parsedInline;
@@ -246,11 +253,38 @@ interface ListItemParagraphData {
   task?: { checked: boolean };
 }
 
-function processListItemParagraph(raw: string): ListItemParagraphData {
+type ListItemInlineOptions = {
+  formatAnticipation?: FormatAnticipationConfig;
+  math?: boolean;
+  streaming?: boolean;
+};
+
+function parseListInline(raw: string, options?: ListItemInlineOptions): InlineNode[] {
+  if (!options?.streaming || !options.formatAnticipation) {
+    return listInlineParser.parse(raw);
+  }
+  const prepared = prepareInlineStreamingContent(raw, { formatAnticipation: options.formatAnticipation, math: options.math });
+  if (prepared.kind === "raw") {
+    return [{ kind: "text", text: raw }];
+  }
+  let preparedContent = prepared.content;
+  let appended = prepared.appended;
+  const normalized = normalizeFormatAnticipation(options.formatAnticipation);
+  if (normalized.regex) {
+    const regexAppend = listInlineParser.getRegexAnticipationAppend(raw);
+    if (regexAppend) {
+      preparedContent += regexAppend;
+      appended += regexAppend;
+    }
+  }
+  return listInlineParser.parse(preparedContent, { cache: false });
+}
+
+function processListItemParagraph(raw: string, options?: ListItemInlineOptions): ListItemParagraphData {
   const normalized = normalizeParagraphText(raw);
   const { content, task } = stripTaskMarker(normalized);
-  const inline = listInlineParser.parse(content);
-  const segments = extractMixedContentSegments(content, undefined, (value) => listInlineParser.parse(value));
+  const inline = parseListInline(content, options);
+  const segments = extractMixedContentSegments(content, undefined, (value) => parseListInline(value, options));
   return {
     inline,
     segments,

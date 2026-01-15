@@ -49,6 +49,18 @@ export const ARTICLE_ITEMS: ArticleItem[] = [
     description: "Local-only HTML/style snapshot baselines and perf capture workflow.",
   },
   {
+    slug: "comparisons-and-benchmarks",
+    title: "Comparisons and Benchmarks",
+    file: "comparisons-and-benchmarks.md",
+    description: "How to compare StreamMDX against alternatives and interpret perf results.",
+  },
+  {
+    slug: "architecture-and-internals",
+    title: "Architecture and Internals",
+    file: "architecture-and-internals.md",
+    description: "Patch coalescing, worker pipeline, and rendering invariants.",
+  },
+  {
     slug: "deployment-and-security",
     title: "Deployment and Security",
     file: "deployment-and-security.md",

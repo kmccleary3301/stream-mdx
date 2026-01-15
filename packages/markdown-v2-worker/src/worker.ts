@@ -1722,7 +1722,12 @@ function enrichListBlock(block: Block) {
 
   const items: InlineNode[][] = itemsRaw.map((raw) => inlineParser.parse(raw));
   const isOrdered = /^\d+\./.test(lines[0]?.trimStart() || "");
-  block.payload.meta = { ordered: isOrdered, items };
+  block.payload.meta = {
+    ordered: isOrdered,
+    items,
+    formatAnticipation: block.isFinalized ? undefined : formatAnticipationConfig,
+    mathEnabled: enableMath,
+  };
 }
 
 /**

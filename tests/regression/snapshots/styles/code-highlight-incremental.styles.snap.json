@@ -1,0 +1,106 @@
+{
+  "fixtureId": "code-highlight-incremental",
+  "fixtureTitle": "Incremental Code Highlighting",
+  "scenarioId": "S2_typical",
+  "scenario": {
+    "id": "S2_typical",
+    "label": "Typical streaming",
+    "updateIntervalMs": 16,
+    "charRateCps": 1200,
+    "maxChunkChars": 256
+  },
+  "targets": {
+    "h1": {
+      "missing": true,
+      "selector": "#regression-root h1"
+    },
+    "h2": {
+      "missing": true,
+      "selector": "#regression-root h2"
+    },
+    "p": {
+      "missing": true,
+      "selector": "#regression-root p"
+    },
+    "blockquote": {
+      "missing": true,
+      "selector": "#regression-root blockquote"
+    },
+    "code-pre": {
+      "selector": "#regression-root pre",
+      "computed": {
+        "display": "flex",
+        "padding-top": "3.5px",
+        "padding-right": "0px",
+        "padding-bottom": "0px",
+        "padding-left": "0px",
+        "margin-top": "10.5px",
+        "margin-bottom": "10.5px",
+        "border-top-width": "1px",
+        "border-right-width": "1px",
+        "border-bottom-width": "1px",
+        "border-left-width": "1px",
+        "border-top-color": "rgb(229, 229, 229)",
+        "border-right-color": "rgb(229, 229, 229)",
+        "border-bottom-color": "rgb(229, 229, 229)",
+        "border-left-color": "rgb(229, 229, 229)",
+        "border-top-left-radius": "7px",
+        "border-top-right-radius": "7px",
+        "border-bottom-left-radius": "7px",
+        "border-bottom-right-radius": "7px",
+        "background-color": "rgba(0, 0, 0, 0)",
+        "box-shadow": "none",
+        "overflow": "auto",
+        "overflow-x": "auto",
+        "overflow-y": "auto",
+        "font-family": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+        "font-size": "12.25px",
+        "white-space": "pre"
+      }
+    },
+    "table": {
+      "missing": true,
+      "selector": "#regression-root table"
+    },
+    "table-th": {
+      "missing": true,
+      "selector": "#regression-root th"
+    },
+    "table-td": {
+      "missing": true,
+      "selector": "#regression-root td"
+    },
+    "list-ol": {
+      "missing": true,
+      "selector": "#regression-root ol"
+    },
+    "list-ol-li": {
+      "missing": true,
+      "selector": "#regression-root ol > li"
+    },
+    "list-ul-li": {
+      "missing": true,
+      "selector": "#regression-root ul > li"
+    },
+    "footnotes": {
+      "missing": true,
+      "selector": "#regression-root .footnotes"
+    },
+    "preview-pre-adjacent": {
+      "missing": true,
+      "selector": "#regression-root .markdown-mdx + pre"
+    },
+    "mdx-block": {
+      "missing": true,
+      "selector": "#regression-root .markdown-mdx"
+    },
+    "math-inline": {
+      "missing": true,
+      "selector": "#regression-root .katex"
+    },
+    "math-display": {
+      "missing": true,
+      "selector": "#regression-root .katex-display"
+    }
+  }
+}
