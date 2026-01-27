@@ -1,6 +1,16 @@
 import type React from "react";
 
-import type { Block, CodeHighlightingMode, CompiledMdxModule, FormatAnticipationConfig, InlineHtmlDescriptor, InlineNode } from "@stream-mdx/core";
+import type {
+  Block,
+  CodeHighlightOutputMode,
+  CodeHighlightingMode,
+  CompiledMdxModule,
+  FormatAnticipationConfig,
+  InlineHtmlDescriptor,
+  InlineNode,
+  LazyTokenizationPriority,
+  TokenLineV1,
+} from "@stream-mdx/core";
 import type { ComponentRegistry } from "./components";
 
 export type GenericComponent = React.ComponentType<any>;
@@ -32,7 +42,7 @@ export interface BlockComponents {
   code: React.FC<{
     html: string;
     meta?: Record<string, unknown>;
-    lines?: ReadonlyArray<{ id: string; index: number; text: string; html?: string | null }>;
+    lines?: ReadonlyArray<{ id: string; index: number; text: string; html?: string | null; tokens?: TokenLineV1 | null }>;
     lang?: string;
     preAttrs?: Record<string, string>;
     codeAttrs?: Record<string, string>;
@@ -45,6 +55,7 @@ export interface BlockComponents {
     compiledModule?: CompiledMdxModule | null;
     status?: "pending" | "compiled" | "error";
     errorMessage?: string;
+    raw?: string;
   }>;
   hr: React.FC<React.HTMLAttributes<HTMLHRElement>>;
   table: React.FC<{ header?: InlineNode[][]; rows: InlineNode[][][]; align?: Array<"left" | "center" | "right" | null>; elements?: Partial<TableElements> }>;
@@ -87,7 +98,11 @@ export interface RendererConfig {
     math?: boolean;
     formatAnticipation?: FormatAnticipationConfig;
     codeHighlighting?: CodeHighlightingMode;
+    outputMode?: CodeHighlightOutputMode;
     liveCodeHighlighting?: boolean;
+    liveTokenization?: boolean;
+    emitHighlightTokens?: boolean;
+    emitDiffBlocks?: boolean;
   };
   performance?: {
     frameBudgetMs?: number;
@@ -108,6 +123,13 @@ export interface RendererStore {
   subscribe(listener: () => void): () => void;
 }
 
+export type CodeHighlightRangeRequest = {
+  blockId: string;
+  startLine: number;
+  endLine: number;
+  priority?: LazyTokenizationPriority;
+};
+
 export interface Renderer {
   attachWorker(worker: Worker, options?: { skipInit?: boolean }): void;
   append(text: string): void;
@@ -118,4 +140,5 @@ export interface Renderer {
   setMdxComponents(map: Record<string, GenericComponent>): void;
   getComponentRegistry(): ComponentRegistry;
   getStore(): RendererStore;
+  requestCodeHighlightRange(request: CodeHighlightRangeRequest): void;
 }

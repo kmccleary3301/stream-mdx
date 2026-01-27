@@ -89,3 +89,54 @@ For CLI UIs that need ANSI-colored diffs:
 
 - **Today**: use Shiki directly (e.g. highlight unified diffs as language `"diff"`), or implement a small adapter that converts Shiki tokens to ANSI in your TUI.
 - **Potential future addition**: a dedicated helper (likely a separate package) that produces Shiki-tokenized diff segments and/or ANSI output without pulling React into CLI builds.
+
+## 6) Diff tokens → ANSI (minimal example)
+
+When using the worker, enable token output and (optionally) diff blocks:
+
+```ts
+docPlugins: {
+  outputMode: "tokens",
+  emitHighlightTokens: true,
+  emitDiffBlocks: true,
+  liveTokenization: false, // final-only tokens by default
+}
+```
+
+Then render `code-line` nodes with `diffKind`, `oldNo`, `newNo`, and `tokens`:
+
+```ts
+import type { TokenLineV1, DiffKind } from "@stream-mdx/core";
+
+const ANSI_RESET = "\u001b[0m";
+const BG_ADD = "\u001b[42m";
+const BG_DEL = "\u001b[41m";
+
+function fg(hex?: string | null): string {
+  if (!hex) return "";
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `\u001b[38;2;${r};${g};${b}m`;
+}
+
+function renderTokenLine(tokens: TokenLineV1 | null): string {
+  if (!tokens) return "";
+  return tokens.spans
+    .map((span) => {
+      const color = span.s?.fg ?? span.v?.dark?.fg ?? span.v?.light?.fg ?? null;
+      return `${fg(color)}${span.t}`;
+    })
+    .join("");
+}
+
+function renderDiffLine(text: string, tokens: TokenLineV1 | null, kind?: DiffKind | null): string {
+  const bg = kind === "add" ? BG_ADD : kind === "remove" ? BG_DEL : "";
+  return `${bg}${renderTokenLine(tokens) || text}${ANSI_RESET}`;
+}
+```
+
+Notes:
+- `tokens` is **foreground only**; background stays transparent so the TUI can decide.
+- For diff fences, StreamMDX also emits `diffKind`, `oldNo`, `newNo` per line.
+- If you enable `emitDiffBlocks`, you can also read `block.payload.meta.diffBlocks` for structured per-file diffs.

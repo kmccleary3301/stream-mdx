@@ -1,7 +1,10 @@
 "use client";
 
+import type { BlockComponents } from "@stream-mdx/react";
 import { StreamingMarkdown } from "@stream-mdx/react";
 import { useEffect, useMemo, useRef } from "react";
+
+import { DocsCodeBlock } from "@/components/markdown/docs-code-block";
 
 function slugify(value: string): string {
   return value
@@ -15,6 +18,7 @@ function slugify(value: string): string {
 
 export function StreamingArticle({ content }: { content: string }) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const components = useMemo<Partial<BlockComponents>>(() => ({ code: DocsCodeBlock }), []);
 
   const assignHeadingIds = useMemo(() => {
     return () => {
@@ -55,11 +59,12 @@ export function StreamingArticle({ content }: { content: string }) {
     <div
       id="article-content-wrapper"
       ref={wrapperRef}
-      className="prose markdown flex flex-col space-y-3 text-theme-primary"
+      className="prose markdown flex w-full max-w-3xl flex-col space-y-3 text-theme-primary"
     >
       <StreamingMarkdown
         text={content}
         className="markdown-v2-output"
+        components={components}
         worker="/workers/markdown-worker.js"
         mdxCompileMode="worker"
         features={{
@@ -69,6 +74,7 @@ export function StreamingArticle({ content }: { content: string }) {
           mdx: true,
           footnotes: true,
           callouts: true,
+          codeHighlighting: "final",
         }}
       />
     </div>

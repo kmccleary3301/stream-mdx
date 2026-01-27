@@ -1,6 +1,6 @@
 {
   "name": "@stream-mdx/mermaid",
-  "version": "0.1.1",
+  "version": "0.3.0",
   "description": "Mermaid diagram rendering addon for StreamMDX (Streaming Markdown V2)",
   "license": "MIT",
   "repository": {

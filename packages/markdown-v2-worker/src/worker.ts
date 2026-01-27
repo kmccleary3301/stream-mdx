@@ -5,15 +5,26 @@ import "./worker-dom-stub";
 
 import type {
   Block,
+  CodeHighlightOutputMode,
   CompiledMdxModule,
+  DiffBlock,
+  DiffKind,
+  DiffLine,
+  DiffLineKind,
   FormatAnticipationConfig,
   InlineNode,
   InlineStreamingInlineStatus,
+  MixedContentSegment,
   NodeSnapshot,
   Patch,
   PatchMetrics,
   PerformanceMetrics,
   ProtectedRange,
+  ThemedLine,
+  ThemedToken,
+  TokenLineV1,
+  TokenSpan,
+  TokenStyle,
   WorkerErrorPayload,
   WorkerIn,
   WorkerOut,
@@ -35,8 +46,10 @@ import {
   cloneBlock,
   createBlockSnapshot,
   detectMDX,
+  extractCodeLines,
   extractMixedContentSegments,
   generateBlockId,
+  normalizeLang,
   normalizeBlockquoteText,
   normalizeFormatAnticipation,
   parseCodeFenceInfo,
@@ -50,6 +63,14 @@ import { CalloutsPlugin, HTMLBlockPlugin, MDXDetectionPlugin, TablesPlugin, glob
 import type { DocumentState } from "@stream-mdx/plugins/document";
 import { isBlockLevelNode, mapLezerNodeToBlockType } from "./parser/block-types";
 import { computeParagraphPatchLimit } from "./perf/patch-heuristics";
+import {
+  clampLazyRange,
+  compareLazyPriority,
+  lazyRequestRangeSize,
+  mergeLazyRequests,
+  type LazyTokenizationPriority,
+  type LazyTokenizationRequest,
+} from "./lazy-tokenization";
 
 // Worker state
 let highlighter: Awaited<ReturnType<typeof createHighlighter>> | null = null;
@@ -103,17 +124,53 @@ type ShikiThemedToken = {
 };
 type IncrementalHighlightState = {
   lang: string;
+  tokenLang?: string;
   processedLength: number;
   pendingLine: string;
   highlightedLines: Array<string | null>;
+  tokenLines: Array<TokenLineV1 | null>;
+  diffKind: Array<DiffKind | null>;
+  oldNo: Array<number | null>;
+  newNo: Array<number | null>;
+  diffCursor?: DiffCursorState;
+  diffGrammar?: DiffGrammarState;
   grammarState?: unknown;
 };
 const incrementalHighlightStates = new Map<string, IncrementalHighlightState>();
+
+type LazyTokenizationState = {
+  signature: string;
+  lang: string;
+  tokenLang?: string;
+  processedLines: number;
+  highlightedLines: Array<string | null>;
+  tokenLines: Array<TokenLineV1 | null>;
+  diffKind: Array<DiffKind | null>;
+  oldNo: Array<number | null>;
+  newNo: Array<number | null>;
+  diffCursor?: DiffCursorState;
+  diffGrammar?: DiffGrammarState;
+  grammarState?: unknown;
+};
+
+const lazyTokenizationStates = new Map<string, LazyTokenizationState>();
+const lazyTokenizationQueue = new Map<string, LazyTokenizationRequest>();
+let lazyTokenizationScheduled = false;
+let lazyTokenizationProcessing = false;
+const DEFAULT_LAZY_TOKENIZATION_THRESHOLD = 200;
+const MIN_LAZY_TOKENIZATION_THRESHOLD = 50;
+const MAX_LAZY_TOKENIZATION_THRESHOLD = 10000;
+let lazyTokenizationEnabled = true;
+let lazyTokenizationThresholdLines = DEFAULT_LAZY_TOKENIZATION_THRESHOLD;
 const CODE_HIGHLIGHT_THEMES = { dark: "github-dark", light: "github-light" } as const;
 type WorkerMdxMode = "server" | "worker";
 let mdxCompileMode: WorkerMdxMode = "server";
 let formatAnticipationConfig = normalizeFormatAnticipation(false);
 let codeHighlightingMode: CodeHighlightingMode = "final";
+let highlightOutputMode: CodeHighlightOutputMode = "html";
+let emitHighlightTokens = true;
+let emitDiffBlocks = false;
+let liveTokenizationEnabled = true;
 let enableMath = true;
 let mdxComponentAllowlist: Set<string> | null = null;
 const WORKER_MDX_CACHE = new Map<string, CompiledMdxModule>();
@@ -234,6 +291,12 @@ class WorkerMetricsCollector {
   appendLineBatchCount = 0;
   appendLineTotalLines = 0;
   appendLineMaxLines = 0;
+  lazyTokenizationRequests = 0;
+  lazyTokenizationRangeTotal = 0;
+  lazyTokenizationRangeMax = 0;
+  lazyTokenizationLatencyTotal = 0;
+  lazyTokenizationLatencyMax = 0;
+  lazyTokenizationMaxQueue = 0;
 
   constructor(grammarEngine: "js" | "wasm") {
     this.grammarEngine = grammarEngine;
@@ -298,6 +361,30 @@ class WorkerMetricsCollector {
     this.appendLineTotalLines += normalized;
     if (normalized > this.appendLineMaxLines) {
       this.appendLineMaxLines = normalized;
+    }
+  }
+
+  recordLazyTokenization(rangeLines: number | null | undefined, latencyMs: number | null | undefined, queueDepth: number | null | undefined): void {
+    if (Number.isFinite(rangeLines ?? Number.NaN)) {
+      const normalized = Math.max(0, Math.floor(Number(rangeLines)));
+      this.lazyTokenizationRequests += 1;
+      this.lazyTokenizationRangeTotal += normalized;
+      if (normalized > this.lazyTokenizationRangeMax) {
+        this.lazyTokenizationRangeMax = normalized;
+      }
+    }
+    if (Number.isFinite(latencyMs ?? Number.NaN)) {
+      const normalizedLatency = Math.max(0, Number(latencyMs));
+      this.lazyTokenizationLatencyTotal += normalizedLatency;
+      if (normalizedLatency > this.lazyTokenizationLatencyMax) {
+        this.lazyTokenizationLatencyMax = normalizedLatency;
+      }
+    }
+    if (Number.isFinite(queueDepth ?? Number.NaN)) {
+      const normalizedQueue = Math.max(0, Math.floor(Number(queueDepth)));
+      if (normalizedQueue > this.lazyTokenizationMaxQueue) {
+        this.lazyTokenizationMaxQueue = normalizedQueue;
+      }
     }
   }
 
@@ -371,6 +458,17 @@ class WorkerMetricsCollector {
       appendLineBatches: this.appendLineBatchCount || undefined,
       appendLineTotalLines: this.appendLineTotalLines || undefined,
       appendLineMaxLines: this.appendLineMaxLines || undefined,
+      lazyTokenization:
+        this.lazyTokenizationRequests > 0
+          ? {
+              requests: this.lazyTokenizationRequests,
+              avgRangeLines: roundMetric(this.lazyTokenizationRangeTotal / this.lazyTokenizationRequests),
+              maxRangeLines: this.lazyTokenizationRangeMax,
+              avgLatencyMs: roundMetric(this.lazyTokenizationLatencyTotal / this.lazyTokenizationRequests),
+              maxLatencyMs: roundMetric(this.lazyTokenizationLatencyMax),
+              maxQueue: this.lazyTokenizationMaxQueue,
+            }
+          : undefined,
     };
   }
 }
@@ -577,6 +675,7 @@ async function initialize(
     math?: boolean;
     formatAnticipation?: FormatAnticipationConfig;
     codeHighlighting?: CodeHighlightingMode;
+    outputMode?: CodeHighlightOutputMode;
     liveCodeHighlighting?: boolean;
     mdxComponentNames?: string[];
   },
@@ -588,6 +687,10 @@ async function initialize(
   currentContent = "";
   deferredPatchQueue = [];
   resetIncrementalHighlightState();
+  lazyTokenizationStates.clear();
+  lazyTokenizationQueue.clear();
+  lazyTokenizationScheduled = false;
+  lazyTokenizationProcessing = false;
 
   mdxCompileMode = mdxOptions?.compileMode ?? "server";
   try {
@@ -611,6 +714,9 @@ async function initialize(
     formatAnticipation: docPlugins?.formatAnticipation ?? false,
     codeHighlighting: docPlugins?.codeHighlighting,
     liveCodeHighlighting: docPlugins?.liveCodeHighlighting ?? false,
+    liveTokenization: docPlugins?.liveTokenization ?? true,
+    emitHighlightTokens: docPlugins?.emitHighlightTokens ?? true,
+    emitDiffBlocks: docPlugins?.emitDiffBlocks ?? false,
   };
 
   enableMath = enable.math;
@@ -619,6 +725,22 @@ async function initialize(
     codeHighlightingMode = enable.codeHighlighting;
   } else {
     codeHighlightingMode = enable.liveCodeHighlighting ? "live" : "final";
+  }
+  if (docPlugins?.outputMode === "html" || docPlugins?.outputMode === "tokens" || docPlugins?.outputMode === "both") {
+    highlightOutputMode = docPlugins.outputMode;
+  } else {
+    highlightOutputMode = "html";
+  }
+  emitHighlightTokens = enable.emitHighlightTokens;
+  emitDiffBlocks = enable.emitDiffBlocks;
+  liveTokenizationEnabled = enable.liveTokenization;
+  if (docPlugins?.lazyTokenization) {
+    lazyTokenizationEnabled = docPlugins.lazyTokenization.enabled ?? true;
+    const desiredThreshold = docPlugins.lazyTokenization.thresholdLines ?? DEFAULT_LAZY_TOKENIZATION_THRESHOLD;
+    lazyTokenizationThresholdLines = clampInt(desiredThreshold, MIN_LAZY_TOKENIZATION_THRESHOLD, MAX_LAZY_TOKENIZATION_THRESHOLD);
+  } else {
+    lazyTokenizationEnabled = true;
+    lazyTokenizationThresholdLines = DEFAULT_LAZY_TOKENIZATION_THRESHOLD;
   }
   if (Array.isArray(docPlugins?.mdxComponentNames) && docPlugins?.mdxComponentNames.length > 0) {
     mdxComponentAllowlist = new Set(docPlugins.mdxComponentNames);
@@ -639,7 +761,7 @@ async function initialize(
   performanceTimer.mark("highlighter-init");
 
   // Core languages that should always be available
-  const coreLangs = ["javascript", "typescript", "json", "text", "markdown"];
+  const coreLangs = ["javascript", "typescript", "json", "text", "markdown", "diff"];
   const initialLangs = [...coreLangs, ...prewarmLangs];
 
   // Initialize Shiki with JS engine for browser compatibility
@@ -785,6 +907,7 @@ async function appendAndReparse(appendedText: string, metrics?: WorkerMetricsCol
   blocks = changedBlocks;
   lastTree = newTree;
   currentContent = newContent;
+  pruneLazyTokenizationStates(blocks);
 
   performanceTimer.measure("incremental-parse");
   metrics?.markParseEnd();
@@ -1024,18 +1147,18 @@ async function enrichBlock(block: Block) {
         metaChanged = true;
       }
 
-      const mathRanges = enableMath ? collectMathProtectedRanges(rawParagraph) : [];
-      if (mathRanges.length > 0) {
-        nextMeta.protectedRanges = mathRanges;
-        metaChanged = true;
-      } else if (Object.prototype.hasOwnProperty.call(nextMeta, "protectedRanges")) {
-        nextMeta.protectedRanges = undefined;
-        metaChanged = true;
+      const baseOffset = typeof block.payload.range?.from === "number" ? block.payload.range.from : undefined;
+      const protectedRanges: ProtectedRange[] = [];
+      if (enableMath) {
+        protectedRanges.push(...collectMathProtectedRanges(rawParagraph));
+      }
+      const autolinkRanges = collectAutolinkProtectedRanges(rawParagraph);
+      if (autolinkRanges.length > 0) {
+        protectedRanges.push(...autolinkRanges);
       }
 
       const shouldExtractSegments = typeof rawParagraph === "string" && (rawParagraph.includes("<") || rawParagraph.includes("{"));
       if (shouldExtractSegments) {
-        const baseOffset = typeof block.payload.range?.from === "number" ? block.payload.range.from : undefined;
         const mixedOptions =
           !block.isFinalized && shouldAllowMixedStreaming()
             ? {
@@ -1045,7 +1168,26 @@ async function enrichBlock(block: Block) {
                   : undefined,
               }
             : undefined;
-        const segments = extractMixedContentSegments(rawParagraph, baseOffset, (value) => inlineParse(value), mixedOptions);
+        const protectedRangesAbsolute =
+          typeof baseOffset === "number" && protectedRanges.length > 0
+            ? protectedRanges.map((range) => ({
+                ...range,
+                from: baseOffset + range.from,
+                to: baseOffset + range.to,
+              }))
+            : undefined;
+        const mixedSegmentOptions =
+          mixedOptions || protectedRangesAbsolute
+            ? {
+                ...mixedOptions,
+                protectedRanges: protectedRangesAbsolute,
+              }
+            : undefined;
+        const segments = extractMixedContentSegments(rawParagraph, baseOffset, (value) => inlineParse(value), mixedSegmentOptions);
+        const htmlRanges = collectHtmlProtectedRangesFromSegments(segments, baseOffset);
+        if (htmlRanges.length > 0) {
+          protectedRanges.push(...htmlRanges);
+        }
         if (segments.length > 0) {
           nextMeta.mixedSegments = segments;
           metaChanged = true;
@@ -1073,6 +1215,14 @@ async function enrichBlock(block: Block) {
         }
       }
 
+      if (protectedRanges.length > 0) {
+        nextMeta.protectedRanges = protectedRanges;
+        metaChanged = true;
+      } else if (Object.prototype.hasOwnProperty.call(nextMeta, "protectedRanges")) {
+        nextMeta.protectedRanges = undefined;
+        metaChanged = true;
+      }
+
       if (metaChanged) {
         if (Object.keys(nextMeta).length > 0) {
           block.payload.meta = nextMeta;
@@ -1090,9 +1240,14 @@ async function enrichBlock(block: Block) {
       break;
 
     case "html": {
-      const sanitized = sanitizeHtmlInWorker(block.payload.raw);
+      const rawHtml = typeof block.payload.raw === "string" ? block.payload.raw : "";
+      const sanitized = sanitizeHtmlInWorker(rawHtml);
       block.payload.sanitizedHtml = sanitized;
-      block.payload.meta = { ...(block.payload.meta || {}), sanitized: true };
+      const nextMeta = { ...(block.payload.meta || {}), sanitized: true };
+      if (rawHtml) {
+        nextMeta.protectedRanges = [{ from: 0, to: rawHtml.length, kind: "html-block" }];
+      }
+      block.payload.meta = nextMeta;
       break;
     }
 
@@ -1119,8 +1274,12 @@ async function enrichBlock(block: Block) {
       normalizedRanges && normalizedRanges.length > 0 ? { protectedRanges: normalizedRanges, baseOffset } : baseOffset ? { baseOffset } : undefined;
     const mdxDetectStart = now();
     let shouldConvertToMDX = detectMDX(block.payload.raw, mdxOptions);
+    if (!shouldConvertToMDX && block.type === "html") {
+      const fallbackOptions = baseOffset ? { baseOffset } : undefined;
+      shouldConvertToMDX = detectMDX(block.payload.raw, fallbackOptions);
+    }
     metrics?.recordMdxDetect(now() - mdxDetectStart);
-    if (shouldConvertToMDX && protectedRanges && protectedRanges.length > 0) {
+    if (shouldConvertToMDX && protectedRanges && protectedRanges.length > 0 && block.type !== "html") {
       const exprPattern = /\{[^{}]+\}/g;
       let match: RegExpExecArray | null;
       while (true) {
@@ -1217,10 +1376,59 @@ function collectMathProtectedRanges(content: string): ProtectedRange[] {
   return ranges;
 }
 
+function collectAutolinkProtectedRanges(content: string): ProtectedRange[] {
+  if (!content) return [];
+  const ranges: ProtectedRange[] = [];
+  const autolinkPattern = /<((?:https?:\/\/|mailto:)[^>\s]+)>/gi;
+  let match: RegExpExecArray | null = autolinkPattern.exec(content);
+  while (match !== null) {
+    ranges.push({ from: match.index, to: match.index + match[0].length, kind: "autolink" });
+    match = autolinkPattern.exec(content);
+  }
+  return ranges;
+}
+
+function collectHtmlProtectedRangesFromSegments(segments: MixedContentSegment[], baseOffset: number | undefined): ProtectedRange[] {
+  if (!segments || segments.length === 0) return [];
+  if (typeof baseOffset !== "number" || !Number.isFinite(baseOffset)) {
+    return [];
+  }
+  const ranges: ProtectedRange[] = [];
+  for (const segment of segments) {
+    if (segment.kind !== "html") continue;
+    const range = segment.range;
+    if (!range) continue;
+    const from = range.from - baseOffset;
+    const to = range.to - baseOffset;
+    if (!Number.isFinite(from) || !Number.isFinite(to) || to <= from) continue;
+    ranges.push({ from, to, kind: "html-inline" });
+  }
+  return ranges;
+}
+
 const FONT_STYLE_ITALIC = 1;
 const FONT_STYLE_BOLD = 2;
 const FONT_STYLE_UNDERLINE = 4;
 const FONT_STYLE_STRIKETHROUGH = 8;
+
+type DiffCursorState = {
+  oldLine: number | null;
+  newLine: number | null;
+};
+
+type DiffGrammarState = {
+  old?: unknown;
+  new?: unknown;
+};
+
+type DiffLineInfo = {
+  text: string;
+  kind: DiffKind;
+  prefix: string;
+  content: string;
+  oldNo: number | null;
+  newNo: number | null;
+};
 
 function escapeHtmlText(text: string): string {
   return text
@@ -1264,8 +1472,460 @@ function renderShikiToken(token: ShikiThemedToken): string {
   return `<span${styleAttr}>${escapeHtmlText(token.content)}</span>`;
 }
 
+function getTokenFontStyle(token: ShikiThemedToken): number {
+  const dark = token.variants?.dark?.fontStyle ?? 0;
+  const light = token.variants?.light?.fontStyle ?? 0;
+  return (typeof dark === "number" ? dark : 0) | (typeof light === "number" ? light : 0);
+}
+
+function mergeWhitespaceTokens(tokens: ShikiThemedToken[][]): ShikiThemedToken[][] {
+  return tokens.map((line) => {
+    const merged: ShikiThemedToken[] = [];
+    let carryContent = "";
+    let carryOffset = 0;
+    let carryVariants: ShikiThemedToken["variants"] | null = null;
+
+    line.forEach((token, idx) => {
+      const fontStyle = getTokenFontStyle(token);
+      const couldMerge = (fontStyle & FONT_STYLE_UNDERLINE) === 0;
+      if (couldMerge && /^\s+$/.test(token.content) && line[idx + 1]) {
+        if (!carryContent) {
+          carryOffset = token.offset ?? 0;
+          carryVariants = token.variants;
+        }
+        carryContent += token.content;
+        return;
+      }
+
+      if (carryContent) {
+        if (couldMerge) {
+          merged.push({ ...token, offset: carryOffset, content: carryContent + token.content });
+        } else {
+          merged.push({ content: carryContent, offset: carryOffset, variants: carryVariants ?? token.variants });
+          merged.push(token);
+        }
+        carryContent = "";
+        carryOffset = 0;
+        carryVariants = null;
+        return;
+      }
+
+      merged.push(token);
+    });
+
+    return merged;
+  });
+}
+
 function renderShikiLines(tokens: ShikiThemedToken[][]): Array<string | null> {
-  return tokens.map((lineTokens) => lineTokens.map(renderShikiToken).join(""));
+  const merged = mergeWhitespaceTokens(tokens);
+  return merged.map((lineTokens) => lineTokens.map(renderShikiToken).join(""));
+}
+
+function detectDiffLanguage(lang: string, meta: Record<string, unknown>): { isDiff: boolean; diffLang: string; baseLang: string | null } {
+  const normalized = (lang || "").trim().toLowerCase();
+  if (!normalized) {
+    return { isDiff: false, diffLang: "diff", baseLang: null };
+  }
+  let baseLang: string | null = null;
+  if (normalized === "diff" || normalized === "udiff" || normalized === "diff-unified") {
+    baseLang = null;
+  } else if (normalized.startsWith("diff-")) {
+    baseLang = normalized.slice("diff-".length) || null;
+  } else if (normalized.endsWith("-diff")) {
+    baseLang = normalized.slice(0, Math.max(0, normalized.length - "-diff".length)) || null;
+  } else {
+    return { isDiff: false, diffLang: "diff", baseLang: null };
+  }
+
+  if (!baseLang) {
+    const metaLang = typeof meta.lang === "string" ? meta.lang : typeof meta.language === "string" ? meta.language : typeof meta.base === "string" ? meta.base : null;
+    if (metaLang) {
+      baseLang = metaLang;
+    } else {
+      const metaKeys = Object.keys(meta);
+      if (metaKeys.length > 0) {
+        baseLang = metaKeys[0] ?? null;
+      }
+    }
+  }
+
+  return {
+    isDiff: true,
+    diffLang: "diff",
+    baseLang: baseLang ? normalizeLang(String(baseLang)) : null,
+  };
+}
+
+function parseDiffHunkHeader(line: string): { oldStart: number; newStart: number } | null {
+  const match = line.match(/^@@\s+-(\d+)(?:,(\d+))?\s+\+(\d+)(?:,(\d+))?\s+@@/);
+  if (!match) return null;
+  return {
+    oldStart: Number.parseInt(match[1] ?? "0", 10),
+    newStart: Number.parseInt(match[3] ?? "0", 10),
+  };
+}
+
+function isDiffMetaLine(line: string): boolean {
+  if (!line) return false;
+  return (
+    line.startsWith("diff ") ||
+    line.startsWith("index ") ||
+    line.startsWith("new file") ||
+    line.startsWith("deleted file") ||
+    line.startsWith("similarity index") ||
+    line.startsWith("rename from") ||
+    line.startsWith("rename to") ||
+    line.startsWith("mode ") ||
+    line.startsWith("\\\\ No newline")
+  );
+}
+
+function parseUnifiedDiffLine(line: string, cursor: DiffCursorState): DiffLineInfo {
+  if (line.startsWith("@@")) {
+    const header = parseDiffHunkHeader(line);
+    if (header) {
+      cursor.oldLine = header.oldStart;
+      cursor.newLine = header.newStart;
+    }
+    return { text: line, kind: "hunk", prefix: "", content: line, oldNo: null, newNo: null };
+  }
+  if (line.startsWith("--- ") || line.startsWith("+++ ") || isDiffMetaLine(line)) {
+    return { text: line, kind: "meta", prefix: "", content: line, oldNo: null, newNo: null };
+  }
+  if (line.startsWith("+")) {
+    if (line.startsWith("+++")) {
+      return { text: line, kind: "meta", prefix: "", content: line, oldNo: null, newNo: null };
+    }
+    const newNo = cursor.newLine;
+    if (cursor.newLine !== null) cursor.newLine += 1;
+    return { text: line, kind: "add", prefix: "+", content: line.slice(1), oldNo: null, newNo };
+  }
+  if (line.startsWith("-")) {
+    if (line.startsWith("---")) {
+      return { text: line, kind: "meta", prefix: "", content: line, oldNo: null, newNo: null };
+    }
+    const oldNo = cursor.oldLine;
+    if (cursor.oldLine !== null) cursor.oldLine += 1;
+    return { text: line, kind: "remove", prefix: "-", content: line.slice(1), oldNo, newNo: null };
+  }
+  if (line.startsWith(" ")) {
+    const oldNo = cursor.oldLine;
+    const newNo = cursor.newLine;
+    if (cursor.oldLine !== null) cursor.oldLine += 1;
+    if (cursor.newLine !== null) cursor.newLine += 1;
+    return { text: line, kind: "context", prefix: " ", content: line.slice(1), oldNo, newNo };
+  }
+  return { text: line, kind: "meta", prefix: "", content: line, oldNo: null, newNo: null };
+}
+
+function normalizeDiffPath(value: string | null): string | null {
+  if (!value) return null;
+  let path = value.trim();
+  if (!path || path === "/dev/null") return null;
+  if ((path.startsWith("\"") && path.endsWith("\"")) || (path.startsWith("'") && path.endsWith("'"))) {
+    path = path.slice(1, -1);
+  }
+  if (path.startsWith("a/") || path.startsWith("b/")) {
+    path = path.slice(2);
+  }
+  return path || null;
+}
+
+function extractDiffFilePath(line: string): string | null {
+  if (line.startsWith("diff --git")) {
+    const match = line.match(/^diff --git\\s+(\\S+)\\s+(\\S+)/);
+    if (match) {
+      return normalizeDiffPath(match[2] ?? match[1] ?? null);
+    }
+  }
+  if (line.startsWith("+++ ") || line.startsWith("--- ")) {
+    const path = normalizeDiffPath(line.slice(4));
+    return path;
+  }
+  if (line.startsWith("rename to ")) {
+    return normalizeDiffPath(line.slice("rename to ".length));
+  }
+  return null;
+}
+
+function looksLikeUnifiedDiff(lines: string[]): boolean {
+  if (lines.length === 0) return false;
+  for (const line of lines) {
+    if (line.startsWith("diff --git") || line.startsWith("@@") || line.startsWith("+++ ") || line.startsWith("--- ")) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function guessLanguageFromPath(filePath: string | null): string | null {
+  if (!filePath) return null;
+  const parts = filePath.split(/[\\\\/]/);
+  const file = parts[parts.length - 1] ?? "";
+  const idx = file.lastIndexOf(".");
+  if (idx <= 0 || idx >= file.length - 1) return null;
+  const ext = file.slice(idx + 1);
+  return normalizeLang(ext);
+}
+
+function guessLanguageFromDiffLines(lines: string[]): string | null {
+  for (const line of lines) {
+    const filePath = extractDiffFilePath(line);
+    if (filePath) {
+      const guessed = guessLanguageFromPath(filePath);
+      if (guessed) return guessed;
+    }
+  }
+  return null;
+}
+
+function toDiffLineKind(kind: DiffKind): DiffLineKind {
+  if (kind === "remove") return "del";
+  return kind;
+}
+
+function toThemedLine(tokenLine: TokenLineV1 | null, theme: keyof typeof CODE_HIGHLIGHT_THEMES): ThemedLine | null {
+  if (!tokenLine) return null;
+  return tokenLine.spans.map((span) => {
+    const style = span.s ?? span.v?.[theme];
+    const color = typeof style?.fg === "string" ? style.fg : null;
+    const fontStyle = typeof style?.fs === "number" ? style.fs : null;
+    return {
+      content: span.t,
+      color,
+      fontStyle,
+    } satisfies ThemedToken;
+  });
+}
+
+function stripPrefixFromThemedLine(tokens: ThemedLine | null, prefix: string): ThemedLine | null {
+  if (!tokens || !prefix) return tokens;
+  if (tokens.length === 0) return tokens;
+  const first = tokens[0];
+  if (first.content === prefix) {
+    return tokens.slice(1);
+  }
+  if (first.content.startsWith(prefix)) {
+    const trimmed = first.content.slice(prefix.length);
+    const next = trimmed ? [{ ...first, content: trimmed }, ...tokens.slice(1)] : tokens.slice(1);
+    return next;
+  }
+  return tokens;
+}
+
+function buildDiffBlocksFromLines(
+  lines: DiffLineInfo[],
+  rawLines: string[],
+  tokenLines: Array<TokenLineV1 | null> | null,
+  defaultLanguage: string | null,
+): DiffBlock[] {
+  const blocks: DiffBlock[] = [];
+  let current: DiffBlock | null = null;
+  let currentRaw: string[] = [];
+  let additions = 0;
+  let deletions = 0;
+
+  const finalize = () => {
+    if (!current) return;
+    current.additions = additions;
+    current.deletions = deletions;
+    if (currentRaw.length > 0) {
+      current.unified = currentRaw.join("\n");
+    }
+    blocks.push(current);
+    current = null;
+    currentRaw = [];
+    additions = 0;
+    deletions = 0;
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const raw = rawLines[i] ?? line.text;
+    const filePath = extractDiffFilePath(raw);
+
+    if (raw.startsWith("diff --git")) {
+      finalize();
+    }
+    if (!current) {
+      current = {
+        kind: "diff",
+        filePath: filePath ?? null,
+        language: filePath ? guessLanguageFromPath(filePath) ?? defaultLanguage : defaultLanguage,
+        lines: [],
+        additions: null,
+        deletions: null,
+        unified: null,
+      };
+    } else if (filePath && !current.filePath) {
+      current.filePath = filePath;
+      if (!current.language) {
+        current.language = guessLanguageFromPath(filePath) ?? defaultLanguage;
+      }
+    }
+
+    if (line.kind === "add") additions += 1;
+    if (line.kind === "remove") deletions += 1;
+
+    let themed = tokenLines ? toThemedLine(tokenLines[i] ?? null, "dark") : null;
+    if (line.kind === "add" || line.kind === "remove" || line.kind === "context") {
+      themed = stripPrefixFromThemedLine(themed, line.prefix);
+    }
+
+    const entry: DiffLine = {
+      kind: toDiffLineKind(line.kind),
+      oldNo: line.oldNo ?? null,
+      newNo: line.newNo ?? null,
+      raw,
+      tokens: themed ?? null,
+    };
+    current.lines.push(entry);
+    currentRaw.push(raw);
+  }
+
+  finalize();
+  return blocks;
+}
+
+function tokenizeDiffRun(
+  lines: DiffLineInfo[],
+  language: string,
+  grammarState: unknown,
+): { tokens: ShikiThemedToken[][]; nextGrammarState: unknown } {
+  if (!highlighter) {
+    return { tokens: [], nextGrammarState: grammarState };
+  }
+  const content = lines.map((line) => line.content).join("\\n");
+  if (!content && lines.length > 0) {
+    return { tokens: lines.map(() => []), nextGrammarState: grammarState };
+  }
+  const tokens = highlighter.codeToTokensWithThemes(content, {
+    lang: language,
+    themes: CODE_HIGHLIGHT_THEMES,
+    grammarState: grammarState as any,
+  }) as ShikiThemedToken[][];
+  const nextGrammarState = highlighter.getLastGrammarState(tokens as any);
+  return { tokens, nextGrammarState };
+}
+
+function buildDiffTokenLines(
+  lines: DiffLineInfo[],
+  language: string,
+  grammarState: DiffGrammarState,
+): { tokenLines: Array<TokenLineV1 | null>; grammarState: DiffGrammarState } {
+  const output: Array<TokenLineV1 | null> = [];
+  let idx = 0;
+  let nextOldState = grammarState.old;
+  let nextNewState = grammarState.new;
+
+  while (idx < lines.length) {
+    const line = lines[idx];
+    if (line.kind === "meta" || line.kind === "hunk") {
+      output.push({ spans: [{ t: line.text }] });
+      idx += 1;
+      continue;
+    }
+
+    const runKind = line.kind;
+    const run: DiffLineInfo[] = [];
+    while (idx < lines.length && lines[idx].kind === runKind) {
+      run.push(lines[idx]);
+      idx += 1;
+    }
+
+    try {
+      if (runKind === "add") {
+        const { tokens, nextGrammarState } = tokenizeDiffRun(run, language, nextNewState);
+        nextNewState = nextGrammarState;
+        const tokenLines = renderTokenLines(tokens);
+        for (let i = 0; i < run.length; i++) {
+          const prefixSpan = { t: run[i].prefix };
+          const lineTokens = tokenLines[i] ?? null;
+          if (!lineTokens || lineTokens.spans.length === 0) {
+            const fullText = `${run[i].prefix}${run[i].content}`;
+            output.push(fullText.length > 0 ? { spans: [{ t: fullText }] } : { spans: [] });
+          } else {
+            output.push({ spans: [prefixSpan, ...lineTokens.spans] });
+          }
+        }
+        continue;
+      }
+
+      if (runKind === "remove") {
+        const { tokens, nextGrammarState } = tokenizeDiffRun(run, language, nextOldState);
+        nextOldState = nextGrammarState;
+        const tokenLines = renderTokenLines(tokens);
+        for (let i = 0; i < run.length; i++) {
+          const prefixSpan = { t: run[i].prefix };
+          const lineTokens = tokenLines[i] ?? null;
+          if (!lineTokens || lineTokens.spans.length === 0) {
+            const fullText = `${run[i].prefix}${run[i].content}`;
+            output.push(fullText.length > 0 ? { spans: [{ t: fullText }] } : { spans: [] });
+          } else {
+            output.push({ spans: [prefixSpan, ...lineTokens.spans] });
+          }
+        }
+        continue;
+      }
+
+      if (runKind === "context") {
+        const { tokens, nextGrammarState } = tokenizeDiffRun(run, language, nextNewState);
+        nextNewState = nextGrammarState;
+        if (run.length > 0) {
+          const oldResult = tokenizeDiffRun(run, language, nextOldState);
+          nextOldState = oldResult.nextGrammarState;
+        }
+        const tokenLines = renderTokenLines(tokens);
+        for (let i = 0; i < run.length; i++) {
+          const prefixSpan = { t: run[i].prefix };
+          const lineTokens = tokenLines[i] ?? null;
+          if (!lineTokens || lineTokens.spans.length === 0) {
+            const fullText = `${run[i].prefix}${run[i].content}`;
+            output.push(fullText.length > 0 ? { spans: [{ t: fullText }] } : { spans: [] });
+          } else {
+            output.push({ spans: [prefixSpan, ...lineTokens.spans] });
+          }
+        }
+        continue;
+      }
+    } catch (error) {
+      console.warn("Diff tokenization failed for", language, error);
+    }
+
+    for (let i = 0; i < run.length; i++) {
+      const fullText = run[i].text;
+      output.push(fullText.length > 0 ? { spans: [{ t: fullText }] } : { spans: [] });
+    }
+  }
+
+  return { tokenLines: output, grammarState: { old: nextOldState, new: nextNewState } };
+}
+
+function toTokenStyle(style: ShikiTokenStyle | undefined): TokenStyle | undefined {
+  if (!style) return undefined;
+  const fg = typeof style.color === "string" ? style.color : undefined;
+  const fs = typeof style.fontStyle === "number" && style.fontStyle > 0 ? style.fontStyle : undefined;
+  if (!fg && fs === undefined) return undefined;
+  return { fg, fs };
+}
+
+function toTokenSpan(token: ShikiThemedToken): TokenSpan {
+  const dark = toTokenStyle(token.variants.dark);
+  const light = toTokenStyle(token.variants.light);
+  const span: TokenSpan = { t: token.content };
+  if (dark || light) {
+    span.v = {};
+    if (dark) span.v.dark = dark;
+    if (light) span.v.light = light;
+  }
+  return span;
+}
+
+function renderTokenLines(tokens: ShikiThemedToken[][]): Array<TokenLineV1 | null> {
+  return tokens.map((lineTokens) => ({
+    spans: lineTokens.map((token) => toTokenSpan(token)),
+  }));
 }
 
 function resetIncrementalHighlightState(blockId?: string) {
@@ -1281,9 +1941,16 @@ function getIncrementalHighlightState(blockId: string, lang: string): Incrementa
   if (!existing || existing.lang !== lang) {
     const fresh: IncrementalHighlightState = {
       lang,
+      tokenLang: undefined,
       processedLength: 0,
       pendingLine: "",
       highlightedLines: [],
+      tokenLines: [],
+      diffKind: [],
+      oldNo: [],
+      newNo: [],
+      diffCursor: undefined,
+      diffGrammar: undefined,
       grammarState: undefined,
     };
     incrementalHighlightStates.set(blockId, fresh);
@@ -1306,6 +1973,296 @@ async function resolveHighlightLanguage(requestedLanguage: string): Promise<stri
   return nextLangs.includes(requestedLanguage) ? requestedLanguage : "text";
 }
 
+function makeLazySignature(codeBody: string, lang: string, tokenLang: string, diffEnabled: boolean): string {
+  const head = codeBody.slice(0, 32);
+  const tail = codeBody.slice(Math.max(0, codeBody.length - 32));
+  return `${lang}|${tokenLang}|${diffEnabled ? "diff" : "plain"}|${codeBody.length}|${head}|${tail}`;
+}
+
+function getOrInitLazyState(
+  blockId: string,
+  signature: string,
+  lineCount: number,
+  lang: string,
+  tokenLang: string,
+  diffEnabled: boolean,
+): LazyTokenizationState {
+  const existing = lazyTokenizationStates.get(blockId);
+  if (existing && existing.signature === signature && existing.highlightedLines.length === lineCount) {
+    return existing;
+  }
+  const fresh: LazyTokenizationState = {
+    signature,
+    lang,
+    tokenLang,
+    processedLines: 0,
+    highlightedLines: new Array(lineCount).fill(null),
+    tokenLines: new Array(lineCount).fill(null),
+    diffKind: new Array(lineCount).fill(null),
+    oldNo: new Array(lineCount).fill(null),
+    newNo: new Array(lineCount).fill(null),
+    diffCursor: diffEnabled ? { oldLine: null, newLine: null } : undefined,
+    diffGrammar: diffEnabled ? {} : undefined,
+    grammarState: undefined,
+  };
+  lazyTokenizationStates.set(blockId, fresh);
+  return fresh;
+}
+
+function shouldLazyTokenizeBlock(lineCount: number, hasHighlighter: boolean, hasHighlightableContent: boolean): boolean {
+  if (!lazyTokenizationEnabled) return false;
+  if (!hasHighlighter || !hasHighlightableContent) return false;
+  return lineCount >= lazyTokenizationThresholdLines;
+}
+
+function pruneLazyTokenizationStates(nextBlocks: Block[]): void {
+  if (lazyTokenizationStates.size === 0) return;
+  const ids = new Set(nextBlocks.map((block) => block.id));
+  for (const key of lazyTokenizationStates.keys()) {
+    if (!ids.has(key)) {
+      lazyTokenizationStates.delete(key);
+    }
+  }
+}
+
+function enqueueLazyTokenization(request: LazyTokenizationRequest): void {
+  if (!lazyTokenizationEnabled) return;
+  const existing = lazyTokenizationQueue.get(request.blockId);
+  const next = existing ? mergeLazyRequests(existing, request) : request;
+  lazyTokenizationQueue.set(request.blockId, next);
+  if (!lazyTokenizationScheduled) {
+    lazyTokenizationScheduled = true;
+    setTimeout(() => {
+      lazyTokenizationScheduled = false;
+      void processLazyTokenizationQueue();
+    }, 0);
+  }
+}
+
+function selectNextLazyRequest(): LazyTokenizationRequest | null {
+  let selected: LazyTokenizationRequest | null = null;
+  for (const request of lazyTokenizationQueue.values()) {
+    if (!selected) {
+      selected = request;
+      continue;
+    }
+    const priorityDiff = compareLazyPriority(request.priority, selected.priority);
+    if (priorityDiff > 0) {
+      selected = request;
+      continue;
+    }
+    if (priorityDiff === 0 && request.requestedAt < selected.requestedAt) {
+      selected = request;
+    }
+  }
+  return selected;
+}
+
+async function processLazyTokenizationQueue(): Promise<void> {
+  if (lazyTokenizationProcessing) return;
+  lazyTokenizationProcessing = true;
+  try {
+    while (lazyTokenizationQueue.size > 0) {
+      const next = selectNextLazyRequest();
+      if (!next) break;
+      lazyTokenizationQueue.delete(next.blockId);
+      await handleLazyTokenizationRequest(next);
+    }
+  } finally {
+    lazyTokenizationProcessing = false;
+  }
+}
+
+async function handleLazyTokenizationRequest(request: LazyTokenizationRequest): Promise<void> {
+  if (!lazyTokenizationEnabled || !highlighter) return;
+  const index = blocks.findIndex((block) => block.id === request.blockId);
+  if (index === -1) return;
+  const block = blocks[index];
+  if (block.type !== "code" || !block.isFinalized) return;
+
+  const raw = block.payload.raw ?? "";
+  const { code, info, hadFence } = stripCodeFence(raw);
+  const { lang, meta } = parseCodeFenceInfo(info);
+  const codeBody = hadFence ? code : dedentIndentedCode(raw);
+  const codeLines = extractCodeLines(raw);
+  let diffInfo = detectDiffLanguage(lang, meta);
+  if (!diffInfo.isDiff && emitDiffBlocks && looksLikeUnifiedDiff(codeLines)) {
+    diffInfo = {
+      isDiff: true,
+      diffLang: "diff",
+      baseLang: guessLanguageFromDiffLines(codeLines),
+    };
+  }
+  const requestedLanguage = diffInfo.isDiff ? diffInfo.diffLang : lang || "text";
+  const tokenLanguage = diffInfo.isDiff ? diffInfo.baseLang ?? "text" : requestedLanguage;
+  const hasHighlightableContent = codeBody.trim().length > 0;
+  if (!shouldLazyTokenizeBlock(codeLines.length, Boolean(highlighter), hasHighlightableContent)) {
+    return;
+  }
+
+  const wantsHtml = highlightOutputMode === "html" || highlightOutputMode === "both";
+  const wantsTokens = (highlightOutputMode === "tokens" || highlightOutputMode === "both") && emitHighlightTokens;
+  const diffEnabled = diffInfo.isDiff && wantsTokens;
+  if (!wantsHtml && !wantsTokens) return;
+
+  const { startLine, endLine } = clampLazyRange(request.startLine, request.endLine, codeLines.length);
+  if (endLine <= startLine) return;
+
+  let resolvedLanguage = requestedLanguage;
+  let resolvedTokenLanguage = tokenLanguage;
+  if (wantsHtml) {
+    resolvedLanguage = await resolveHighlightLanguage(requestedLanguage);
+  }
+  if (wantsTokens) {
+    resolvedTokenLanguage = await resolveHighlightLanguage(tokenLanguage);
+  }
+
+  const signature = makeLazySignature(codeBody, resolvedLanguage, resolvedTokenLanguage, diffEnabled);
+  const state = getOrInitLazyState(block.id, signature, codeLines.length, resolvedLanguage, resolvedTokenLanguage, diffEnabled);
+  if (state.processedLines < 0 || state.processedLines > codeLines.length) {
+    state.processedLines = 0;
+  }
+
+  const targetEnd = Math.min(endLine, codeLines.length);
+  if (targetEnd <= state.processedLines) {
+    return;
+  }
+
+  const metricsCollector = new WorkerMetricsCollector(workerGrammarEngine);
+  setActiveMetricsCollector(metricsCollector);
+  metricsCollector.setBlocksProduced(blocks.length);
+  const prevSnapshot = await blockToNodeSnapshot(block);
+
+  const tokenizationStart = now();
+  const segmentLines = codeLines.slice(state.processedLines, targetEnd);
+
+  if (segmentLines.length > 0) {
+    if (wantsHtml || (wantsTokens && !diffEnabled)) {
+      try {
+        const sharedLanguage = wantsHtml ? resolvedLanguage : resolvedTokenLanguage;
+        const tokens = highlighter.codeToTokensWithThemes(segmentLines.join("\n"), {
+          lang: sharedLanguage,
+          themes: CODE_HIGHLIGHT_THEMES,
+          grammarState: state.grammarState as any,
+        }) as ShikiThemedToken[][];
+        if (wantsHtml) {
+          const htmlLines = renderShikiLines(tokens);
+          for (let i = 0; i < htmlLines.length; i += 1) {
+            state.highlightedLines[state.processedLines + i] = htmlLines[i] ?? null;
+          }
+        }
+        if (wantsTokens && !diffEnabled) {
+          const tokenLines = renderTokenLines(tokens);
+          for (let i = 0; i < tokenLines.length; i += 1) {
+            state.tokenLines[state.processedLines + i] = tokenLines[i] ?? null;
+          }
+        }
+        state.grammarState = highlighter.getLastGrammarState(tokens as any);
+      } catch (error) {
+        console.warn("Lazy tokenization failed for", requestedLanguage, error);
+        if (wantsHtml) {
+          for (let i = 0; i < segmentLines.length; i += 1) {
+            state.highlightedLines[state.processedLines + i] = null;
+          }
+        }
+        if (wantsTokens && !diffEnabled) {
+          for (let i = 0; i < segmentLines.length; i += 1) {
+            state.tokenLines[state.processedLines + i] = null;
+          }
+        }
+      }
+    }
+
+    if (wantsTokens && diffEnabled) {
+      const cursor = state.diffCursor ?? { oldLine: null, newLine: null };
+      const diffLines = segmentLines.map((line) => parseUnifiedDiffLine(line, cursor));
+      for (let i = 0; i < diffLines.length; i += 1) {
+        const line = diffLines[i];
+        const idx = state.processedLines + i;
+        state.diffKind[idx] = line.kind;
+        state.oldNo[idx] = line.oldNo ?? null;
+        state.newNo[idx] = line.newNo ?? null;
+      }
+      try {
+        const { tokenLines, grammarState } = buildDiffTokenLines(diffLines, resolvedTokenLanguage, state.diffGrammar ?? {});
+        for (let i = 0; i < tokenLines.length; i += 1) {
+          state.tokenLines[state.processedLines + i] = tokenLines[i] ?? null;
+        }
+        state.diffGrammar = grammarState;
+      } catch (error) {
+        console.warn("Lazy diff tokenization failed for", tokenLanguage, error);
+        for (let i = 0; i < diffLines.length; i += 1) {
+          const idx = state.processedLines + i;
+          const line = diffLines[i];
+          state.tokenLines[idx] = line.text.length > 0 ? { spans: [{ t: line.text }] } : { spans: [] };
+        }
+      }
+      state.diffCursor = cursor;
+    }
+  }
+
+  state.processedLines = targetEnd;
+
+  const tokenizationDuration = now() - tokenizationStart;
+  metricsCollector.recordShiki(tokenizationDuration);
+  metricsCollector.recordHighlightForLanguage(resolvedLanguage, tokenizationDuration);
+  metricsCollector.recordLazyTokenization(
+    lazyRequestRangeSize({ ...request, startLine, endLine }),
+    now() - request.requestedAt,
+    lazyTokenizationQueue.size,
+  );
+
+  const updated = cloneBlock(block);
+  updated.payload.highlightedHtml = undefined;
+  const effectiveLang = wantsHtml ? resolvedLanguage : resolvedTokenLanguage;
+  const nextMeta = { ...(updated.payload.meta ?? {}), ...meta, lang: effectiveLang } as Record<string, unknown>;
+  nextMeta.lazyTokenization = true;
+  nextMeta.lazyTokenizedUntil = state.processedLines;
+  if (wantsHtml) {
+    nextMeta.highlightedLines = state.highlightedLines;
+  } else if ("highlightedLines" in nextMeta) {
+    delete nextMeta.highlightedLines;
+  }
+  if (wantsTokens) {
+    nextMeta.tokenLines = state.tokenLines;
+    if (diffEnabled) {
+      nextMeta.diffKind = state.diffKind;
+      nextMeta.oldNo = state.oldNo;
+      nextMeta.newNo = state.newNo;
+    } else {
+      if ("diffKind" in nextMeta) delete nextMeta.diffKind;
+      if ("oldNo" in nextMeta) delete nextMeta.oldNo;
+      if ("newNo" in nextMeta) delete nextMeta.newNo;
+    }
+  } else if ("tokenLines" in nextMeta) {
+    delete nextMeta.tokenLines;
+    if ("diffKind" in nextMeta) delete nextMeta.diffKind;
+    if ("oldNo" in nextMeta) delete nextMeta.oldNo;
+    if ("newNo" in nextMeta) delete nextMeta.newNo;
+  }
+  if (emitDiffBlocks && diffInfo.isDiff) {
+    const cursor: DiffCursorState = { oldLine: null, newLine: null };
+    const diffLines = codeLines.map((line) => parseUnifiedDiffLine(line, cursor));
+    nextMeta.diffBlocks = buildDiffBlocksFromLines(diffLines, codeLines, wantsTokens ? state.tokenLines : null, diffInfo.baseLang ?? null);
+  } else if ("diffBlocks" in nextMeta) {
+    delete nextMeta.diffBlocks;
+  }
+  updated.payload.meta = nextMeta;
+  blocks[index] = updated;
+
+  const nextSnapshot = await blockToNodeSnapshot(updated);
+  const patches: Patch[] = [];
+  diffNodeSnapshot(updated.id, prevSnapshot, nextSnapshot, patches, metricsCollector);
+  if (patches.length > 0) {
+    dispatchPatchBatch(patches, metricsCollector);
+  } else {
+    emitMetricsSample(metricsCollector);
+    if (getActiveMetricsCollector() === metricsCollector) {
+      setActiveMetricsCollector(null);
+    }
+  }
+}
+
 /**
  * Enrich code blocks with syntax highlighting
  */
@@ -1316,12 +2273,26 @@ async function resolveHighlightLanguage(requestedLanguage: string): Promise<stri
   const raw = block.payload.raw ?? "";
   const { code, info, hadFence } = stripCodeFence(raw);
   const { lang, meta } = parseCodeFenceInfo(info);
-  const requestedLanguage = lang || "text";
+  let diffInfo = detectDiffLanguage(lang, meta);
   const codeBody = hadFence ? code : dedentIndentedCode(raw);
+  const codeLines = extractCodeLines(raw);
+  if (!diffInfo.isDiff && emitDiffBlocks && looksLikeUnifiedDiff(codeLines)) {
+    diffInfo = {
+      isDiff: true,
+      diffLang: "diff",
+      baseLang: guessLanguageFromDiffLines(codeLines),
+    };
+  }
+  const requestedLanguage = diffInfo.isDiff ? diffInfo.diffLang : lang || "text";
+  const tokenLanguage = diffInfo.isDiff ? diffInfo.baseLang ?? "text" : requestedLanguage;
   const baseMeta = (block.payload.meta ?? {}) as Record<string, unknown>;
   let resolvedLanguage = requestedLanguage;
+  let resolvedTokenLanguage = tokenLanguage;
   const hasHighlighter = Boolean(highlighter);
   const hasHighlightableContent = codeBody.trim().length > 0;
+  const wantsHtml = highlightOutputMode === "html" || highlightOutputMode === "both";
+  const wantsTokens = (highlightOutputMode === "tokens" || highlightOutputMode === "both") && emitHighlightTokens;
+  const wantsTokensNow = wantsTokens && (block.isFinalized || liveTokenizationEnabled);
 
   if (!block.isFinalized) {
     if (codeHighlightingMode === "final" || !hasHighlighter || !hasHighlightableContent) {
@@ -1331,37 +2302,98 @@ async function resolveHighlightLanguage(requestedLanguage: string): Promise<stri
       if ("highlightedLines" in nextMeta) {
         delete nextMeta.highlightedLines;
       }
+      if ("tokenLines" in nextMeta) {
+        delete nextMeta.tokenLines;
+      }
+      if ("diffKind" in nextMeta) {
+        delete nextMeta.diffKind;
+      }
+      if ("oldNo" in nextMeta) {
+        delete nextMeta.oldNo;
+      }
+      if ("newNo" in nextMeta) {
+        delete nextMeta.newNo;
+      }
+      if ("diffBlocks" in nextMeta) {
+        delete nextMeta.diffBlocks;
+      }
       block.payload.meta = nextMeta;
       return;
     }
 
     if (codeHighlightingMode === "incremental") {
-      resolvedLanguage = await resolveHighlightLanguage(requestedLanguage);
+      if (hasHighlighter) {
+        if (wantsHtml) {
+          resolvedLanguage = await resolveHighlightLanguage(requestedLanguage);
+        }
+        if (wantsTokens) {
+          resolvedTokenLanguage = await resolveHighlightLanguage(tokenLanguage);
+        }
+      }
       let state = getIncrementalHighlightState(block.id, resolvedLanguage);
+      if (wantsTokens && state.tokenLang && state.tokenLang !== resolvedTokenLanguage) {
+        resetIncrementalHighlightState(block.id);
+        state = getIncrementalHighlightState(block.id, resolvedLanguage);
+      }
       if (codeBody.length < state.processedLength) {
         resetIncrementalHighlightState(block.id);
         state = getIncrementalHighlightState(block.id, resolvedLanguage);
       }
+      state.tokenLang = wantsTokens ? resolvedTokenLanguage : undefined;
 
       const appended = codeBody.slice(state.processedLength);
       const combined = state.pendingLine + appended;
+      const diffEnabled = diffInfo.isDiff && wantsTokensNow;
       if (combined.length > 0) {
         const parts = combined.split("\n");
         const completeLines = parts.slice(0, -1);
         const tail = parts.length > 0 ? parts[parts.length - 1] ?? "" : "";
         if (completeLines.length > 0) {
-          try {
-            const tokens = highlighter?.codeToTokensWithThemes(completeLines.join("\n"), {
-              lang: resolvedLanguage,
-              themes: CODE_HIGHLIGHT_THEMES,
-              grammarState: state.grammarState as any,
-            }) as ShikiThemedToken[][];
-            const htmlLines = renderShikiLines(tokens);
-            state.highlightedLines.push(...htmlLines);
-            state.grammarState = highlighter?.getLastGrammarState(tokens as any);
-          } catch (error) {
-            console.warn("Incremental highlighting failed for", requestedLanguage, error);
-            state.highlightedLines.push(...completeLines.map(() => null));
+          if (wantsHtml || (wantsTokensNow && !diffEnabled)) {
+            try {
+              const sharedLanguage = wantsHtml ? resolvedLanguage : resolvedTokenLanguage;
+              const tokens = highlighter?.codeToTokensWithThemes(completeLines.join("\n"), {
+                lang: sharedLanguage,
+                themes: CODE_HIGHLIGHT_THEMES,
+                grammarState: state.grammarState as any,
+              }) as ShikiThemedToken[][];
+              if (wantsHtml) {
+                const htmlLines = renderShikiLines(tokens);
+                state.highlightedLines.push(...htmlLines);
+              }
+              if (wantsTokensNow && !diffEnabled) {
+                const tokenLines = renderTokenLines(tokens);
+                state.tokenLines.push(...tokenLines);
+              }
+              state.grammarState = highlighter?.getLastGrammarState(tokens as any);
+            } catch (error) {
+              console.warn("Incremental highlighting failed for", requestedLanguage, error);
+              if (wantsHtml) {
+                state.highlightedLines.push(...completeLines.map(() => null));
+              }
+              if (wantsTokensNow && !diffEnabled) {
+                state.tokenLines.push(...completeLines.map(() => null));
+              }
+            }
+          }
+
+          if (wantsTokensNow && diffEnabled) {
+            const cursor = state.diffCursor ?? { oldLine: null, newLine: null };
+            const diffLines = completeLines.map((line) => parseUnifiedDiffLine(line, cursor));
+            state.diffCursor = cursor;
+            state.diffKind.push(...diffLines.map((line) => line.kind));
+            state.oldNo.push(...diffLines.map((line) => line.oldNo ?? null));
+            state.newNo.push(...diffLines.map((line) => line.newNo ?? null));
+            try {
+              const { tokenLines, grammarState } = buildDiffTokenLines(diffLines, resolvedTokenLanguage, state.diffGrammar ?? {});
+              state.tokenLines.push(...tokenLines);
+              state.diffGrammar = grammarState;
+            } catch (error) {
+              console.warn("Incremental diff tokenization failed for", tokenLanguage, error);
+              state.tokenLines.push(
+                ...diffLines.map((line) => (line.text.length > 0 ? { spans: [{ t: line.text }] } : { spans: [] })),
+              );
+            }
           }
         }
         state.pendingLine = tail ?? "";
@@ -1369,12 +2401,38 @@ async function resolveHighlightLanguage(requestedLanguage: string): Promise<stri
       state.processedLength = codeBody.length;
       state.lang = resolvedLanguage;
       block.payload.highlightedHtml = undefined;
-      block.payload.meta = {
-        ...baseMeta,
-        ...meta,
-        lang: resolvedLanguage,
-        highlightedLines: state.highlightedLines,
-      };
+      const effectiveLang = wantsHtml ? resolvedLanguage : resolvedTokenLanguage;
+      const nextMeta = { ...baseMeta, ...meta, lang: effectiveLang } as Record<string, unknown>;
+      if (wantsHtml) {
+        nextMeta.highlightedLines = state.highlightedLines;
+      } else if ("highlightedLines" in nextMeta) {
+        delete nextMeta.highlightedLines;
+      }
+      if (wantsTokensNow) {
+        nextMeta.tokenLines = state.tokenLines;
+        if (diffEnabled) {
+          nextMeta.diffKind = state.diffKind;
+          nextMeta.oldNo = state.oldNo;
+          nextMeta.newNo = state.newNo;
+        } else {
+          if ("diffKind" in nextMeta) delete nextMeta.diffKind;
+          if ("oldNo" in nextMeta) delete nextMeta.oldNo;
+          if ("newNo" in nextMeta) delete nextMeta.newNo;
+        }
+      } else if ("tokenLines" in nextMeta) {
+        delete nextMeta.tokenLines;
+        if ("diffKind" in nextMeta) delete nextMeta.diffKind;
+        if ("oldNo" in nextMeta) delete nextMeta.oldNo;
+        if ("newNo" in nextMeta) delete nextMeta.newNo;
+      }
+      if (emitDiffBlocks && diffInfo.isDiff && liveTokenizationEnabled) {
+        const cursor: DiffCursorState = { oldLine: null, newLine: null };
+        const diffLines = codeLines.map((line) => parseUnifiedDiffLine(line, cursor));
+        nextMeta.diffBlocks = buildDiffBlocksFromLines(diffLines, codeLines, wantsTokensNow ? state.tokenLines : null, diffInfo.baseLang ?? null);
+      } else if ("diffBlocks" in nextMeta) {
+        delete nextMeta.diffBlocks;
+      }
+      block.payload.meta = nextMeta;
 
       const highlightDuration = performanceTimer.measure("highlight-code");
       metrics?.recordShiki(highlightDuration);
@@ -1385,39 +2443,169 @@ async function resolveHighlightLanguage(requestedLanguage: string): Promise<stri
 
   resetIncrementalHighlightState(block.id);
 
-  let cachedHighlight = block.isFinalized ? getHighlightCacheEntry(requestedLanguage, codeBody) : null;
-  if (!cachedHighlight && highlighter && hasHighlightableContent) {
-    try {
-      resolvedLanguage = await resolveHighlightLanguage(requestedLanguage);
-      const highlighted = highlighter.codeToHtml(codeBody, {
-        lang: resolvedLanguage,
-        themes: CODE_HIGHLIGHT_THEMES,
-        defaultColor: false,
-      });
+  if (
+    block.isFinalized &&
+    shouldLazyTokenizeBlock(codeLines.length, hasHighlighter, hasHighlightableContent) &&
+    (wantsHtml || wantsTokens)
+  ) {
+    if (hasHighlighter) {
+      if (wantsHtml) {
+        resolvedLanguage = await resolveHighlightLanguage(requestedLanguage);
+      }
+      if (wantsTokens) {
+        resolvedTokenLanguage = await resolveHighlightLanguage(tokenLanguage);
+      }
+    }
+    const diffEnabled = diffInfo.isDiff && wantsTokens;
+    const signature = makeLazySignature(codeBody, resolvedLanguage, resolvedTokenLanguage, diffEnabled);
+    const state = getOrInitLazyState(block.id, signature, codeLines.length, resolvedLanguage, resolvedTokenLanguage, diffEnabled);
+    const effectiveLang = wantsHtml ? resolvedLanguage : resolvedTokenLanguage;
+    const nextMeta = { ...baseMeta, ...meta, lang: effectiveLang } as Record<string, unknown>;
+    nextMeta.lazyTokenization = true;
+    nextMeta.lazyTokenizedUntil = state.processedLines;
+    if (wantsHtml) {
+      nextMeta.highlightedLines = state.highlightedLines;
+    } else if ("highlightedLines" in nextMeta) {
+      delete nextMeta.highlightedLines;
+    }
+    if (wantsTokens) {
+      nextMeta.tokenLines = state.tokenLines;
+      if (diffEnabled) {
+        nextMeta.diffKind = state.diffKind;
+        nextMeta.oldNo = state.oldNo;
+        nextMeta.newNo = state.newNo;
+      } else {
+        if ("diffKind" in nextMeta) delete nextMeta.diffKind;
+        if ("oldNo" in nextMeta) delete nextMeta.oldNo;
+        if ("newNo" in nextMeta) delete nextMeta.newNo;
+      }
+    } else if ("tokenLines" in nextMeta) {
+      delete nextMeta.tokenLines;
+      if ("diffKind" in nextMeta) delete nextMeta.diffKind;
+      if ("oldNo" in nextMeta) delete nextMeta.oldNo;
+      if ("newNo" in nextMeta) delete nextMeta.newNo;
+    }
+    if (emitDiffBlocks && diffInfo.isDiff) {
+      const cursor: DiffCursorState = { oldLine: null, newLine: null };
+      const diffLines = codeLines.map((line) => parseUnifiedDiffLine(line, cursor));
+      nextMeta.diffBlocks = buildDiffBlocksFromLines(diffLines, codeLines, wantsTokens ? state.tokenLines : null, diffInfo.baseLang ?? null);
+    } else if ("diffBlocks" in nextMeta) {
+      delete nextMeta.diffBlocks;
+    }
+    block.payload.highlightedHtml = undefined;
+    block.payload.meta = nextMeta;
+    return;
+  }
 
-      const enhanced = enhanceHighlightedHtml(highlighted, resolvedLanguage);
-      block.payload.highlightedHtml = enhanced;
-      if (block.isFinalized) {
-        setHighlightCacheEntry(resolvedLanguage, codeBody, enhanced);
-        if (resolvedLanguage !== requestedLanguage) {
-          setHighlightCacheEntry(requestedLanguage, codeBody, enhanced);
+  let tokenLines: Array<TokenLineV1 | null> | undefined;
+  let diffKind: Array<DiffKind | null> | undefined;
+  let diffOldNo: Array<number | null> | undefined;
+  let diffNewNo: Array<number | null> | undefined;
+
+  if (wantsHtml) {
+    let cachedHighlight = block.isFinalized ? getHighlightCacheEntry(requestedLanguage, codeBody) : null;
+    if (!cachedHighlight && highlighter && hasHighlightableContent) {
+      try {
+        resolvedLanguage = await resolveHighlightLanguage(requestedLanguage);
+        const highlighted = highlighter.codeToHtml(codeBody, {
+          lang: resolvedLanguage,
+          themes: CODE_HIGHLIGHT_THEMES,
+          defaultColor: false,
+        });
+
+        const enhanced = enhanceHighlightedHtml(highlighted, resolvedLanguage);
+        block.payload.highlightedHtml = enhanced;
+        if (block.isFinalized) {
+          setHighlightCacheEntry(resolvedLanguage, codeBody, enhanced);
+          if (resolvedLanguage !== requestedLanguage) {
+            setHighlightCacheEntry(requestedLanguage, codeBody, enhanced);
+          }
+        }
+        cachedHighlight = getHighlightCacheEntry(resolvedLanguage, codeBody);
+      } catch (error) {
+        console.warn("Highlighting failed for", requestedLanguage, error);
+        resolvedLanguage = "text";
+      }
+    }
+
+    if (cachedHighlight) {
+      resolvedLanguage = cachedHighlight.lang;
+      block.payload.highlightedHtml = cachedHighlight.html;
+    }
+  } else {
+    block.payload.highlightedHtml = undefined;
+  }
+
+  if (wantsTokens) {
+    if (diffInfo.isDiff) {
+      if (hasHighlighter) {
+        resolvedTokenLanguage = await resolveHighlightLanguage(tokenLanguage);
+      }
+      const diffLines = codeBody.length > 0 ? codeBody.split("\n") : [];
+      const cursor: DiffCursorState = { oldLine: null, newLine: null };
+      const diffInfoLines = diffLines.map((line) => parseUnifiedDiffLine(line, cursor));
+      diffKind = diffInfoLines.map((line) => line.kind);
+      diffOldNo = diffInfoLines.map((line) => line.oldNo ?? null);
+      diffNewNo = diffInfoLines.map((line) => line.newNo ?? null);
+      if (!hasHighlighter || !hasHighlightableContent) {
+        tokenLines = diffInfoLines.map((line) => (line.text.length > 0 ? { spans: [{ t: line.text }] } : { spans: [] }));
+      } else {
+        try {
+          const result = buildDiffTokenLines(diffInfoLines, resolvedTokenLanguage, {});
+          tokenLines = result.tokenLines;
+        } catch (error) {
+          console.warn("Diff tokenization failed for", tokenLanguage, error);
+          tokenLines = diffInfoLines.map((line) => (line.text.length > 0 ? { spans: [{ t: line.text }] } : { spans: [] }));
         }
       }
-      cachedHighlight = getHighlightCacheEntry(resolvedLanguage, codeBody);
-    } catch (error) {
-      console.warn("Highlighting failed for", requestedLanguage, error);
-      resolvedLanguage = "text";
+    } else {
+      const lineCount = codeBody.length > 0 ? codeBody.split("\n").length : 0;
+      if (!hasHighlighter || !hasHighlightableContent) {
+        tokenLines = new Array(lineCount).fill(null);
+      } else {
+        try {
+          resolvedTokenLanguage = await resolveHighlightLanguage(tokenLanguage);
+          const tokens = highlighter?.codeToTokensWithThemes(codeBody, {
+            lang: resolvedTokenLanguage,
+            themes: CODE_HIGHLIGHT_THEMES,
+          }) as ShikiThemedToken[][];
+          tokenLines = renderTokenLines(tokens);
+        } catch (error) {
+          console.warn("Tokenization failed for", requestedLanguage, error);
+          tokenLines = new Array(lineCount).fill(null);
+        }
+      }
     }
   }
 
-  if (cachedHighlight) {
-    resolvedLanguage = cachedHighlight.lang;
-    block.payload.highlightedHtml = cachedHighlight.html;
-  }
-
-  const nextMeta = { ...baseMeta, ...meta, lang: resolvedLanguage } as Record<string, unknown>;
+  const effectiveLang = wantsHtml ? resolvedLanguage : resolvedTokenLanguage;
+  const nextMeta = { ...baseMeta, ...meta, lang: effectiveLang } as Record<string, unknown>;
   if ("highlightedLines" in nextMeta) {
     delete nextMeta.highlightedLines;
+  }
+  if (wantsTokens) {
+    nextMeta.tokenLines = tokenLines ?? [];
+    if (diffKind) {
+      nextMeta.diffKind = diffKind;
+      nextMeta.oldNo = diffOldNo ?? [];
+      nextMeta.newNo = diffNewNo ?? [];
+    } else {
+      if ("diffKind" in nextMeta) delete nextMeta.diffKind;
+      if ("oldNo" in nextMeta) delete nextMeta.oldNo;
+      if ("newNo" in nextMeta) delete nextMeta.newNo;
+    }
+  } else if ("tokenLines" in nextMeta) {
+    delete nextMeta.tokenLines;
+    if ("diffKind" in nextMeta) delete nextMeta.diffKind;
+    if ("oldNo" in nextMeta) delete nextMeta.oldNo;
+    if ("newNo" in nextMeta) delete nextMeta.newNo;
+  }
+  if (emitDiffBlocks && diffInfo.isDiff) {
+    const cursor: DiffCursorState = { oldLine: null, newLine: null };
+    const diffLines = codeLines.map((line) => parseUnifiedDiffLine(line, cursor));
+    nextMeta.diffBlocks = buildDiffBlocksFromLines(diffLines, codeLines, wantsTokens ? tokenLines ?? null : null, diffInfo.baseLang ?? null);
+  } else if ("diffBlocks" in nextMeta) {
+    delete nextMeta.diffBlocks;
   }
   block.payload.meta = nextMeta;
 
@@ -2155,6 +3343,10 @@ function diffNodeSnapshot(blockId: string, prevNode: NodeSnapshot, nextNode: Nod
     if (onlyAppend && nextChildren.length > prevChildren.length) {
       const startIndex = prevChildren.length;
       const appended = nextChildren.slice(startIndex);
+      const hasTokenLines = appended.some((child) => Object.prototype.hasOwnProperty.call(child.props ?? {}, "tokens"));
+      const hasDiffKind = appended.some((child) => Object.prototype.hasOwnProperty.call(child.props ?? {}, "diffKind"));
+      const hasOldNo = appended.some((child) => Object.prototype.hasOwnProperty.call(child.props ?? {}, "oldNo"));
+      const hasNewNo = appended.some((child) => Object.prototype.hasOwnProperty.call(child.props ?? {}, "newNo"));
       patches.push({
         op: "appendLines",
         at: { blockId, nodeId: prevNode.id },
@@ -2164,6 +3356,34 @@ function diffNodeSnapshot(blockId: string, prevNode: NodeSnapshot, nextNode: Nod
           return text;
         }),
         highlight: appended.map((child) => (typeof child.props?.html === "string" ? (child.props?.html as string) : null)),
+        ...(hasTokenLines
+          ? {
+              tokens: appended.map((child) =>
+                Object.prototype.hasOwnProperty.call(child.props ?? {}, "tokens") ? (child.props?.tokens as TokenLineV1 | null) : null,
+              ),
+            }
+          : {}),
+        ...(hasDiffKind
+          ? {
+              diffKind: appended.map((child) =>
+                Object.prototype.hasOwnProperty.call(child.props ?? {}, "diffKind") ? (child.props?.diffKind as DiffKind | null) : null,
+              ),
+            }
+          : {}),
+        ...(hasOldNo
+          ? {
+              oldNo: appended.map((child) =>
+                Object.prototype.hasOwnProperty.call(child.props ?? {}, "oldNo") ? (child.props?.oldNo as number | null) : null,
+              ),
+            }
+          : {}),
+        ...(hasNewNo
+          ? {
+              newNo: appended.map((child) =>
+                Object.prototype.hasOwnProperty.call(child.props ?? {}, "newNo") ? (child.props?.newNo as number | null) : null,
+              ),
+            }
+          : {}),
       });
       metrics?.recordAppendLines(appended.length);
       return;
@@ -2768,6 +3988,17 @@ async function processWorkerMessage(msg: WorkerIn) {
           hasMediaHeading: currentContent.includes("# Media"),
         },
       } as WorkerOut);
+      return;
+    }
+    case "TOKENIZE_RANGE": {
+      const priority: LazyTokenizationPriority = msg.priority === "prefetch" ? "prefetch" : "visible";
+      enqueueLazyTokenization({
+        blockId: msg.blockId,
+        startLine: msg.startLine,
+        endLine: msg.endLine,
+        priority,
+        requestedAt: now(),
+      });
       return;
     }
     case "MDX_COMPILED":

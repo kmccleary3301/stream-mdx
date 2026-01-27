@@ -49,6 +49,7 @@ export type FormatAnticipationConfig =
     };
 
 export type CodeHighlightingMode = "final" | "incremental" | "live";
+export type CodeHighlightOutputMode = "html" | "tokens" | "both";
 
 export interface InlineHtmlDescriptor {
   tagName: string;
@@ -87,6 +88,53 @@ export type InlineNode =
   | { kind: "math-display"; tex: string }
   | { kind: "footnote-ref"; label: string; number?: number };
 
+export type TokenStyle = {
+  fg?: string;
+  bg?: string;
+  fs?: number;
+};
+
+export type TokenSpan = {
+  t: string;
+  v?: { dark?: TokenStyle; light?: TokenStyle };
+  s?: TokenStyle;
+};
+
+export type TokenLineV1 = {
+  spans: TokenSpan[];
+};
+
+export type DiffKind = "add" | "remove" | "context" | "hunk" | "meta";
+export type DiffLineKind = "meta" | "hunk" | "add" | "del" | "context";
+
+export type ThemedToken = {
+  content: string;
+  color?: string | null;
+  fontStyle?: number | null;
+};
+
+export type ThemedLine = ThemedToken[];
+
+export type DiffLine = {
+  kind: DiffLineKind;
+  oldNo?: number | null;
+  newNo?: number | null;
+  raw: string;
+  tokens?: ThemedLine | null;
+};
+
+export type DiffBlock = {
+  kind: "diff";
+  filePath?: string | null;
+  language?: string | null;
+  lines: DiffLine[];
+  additions?: number | null;
+  deletions?: number | null;
+  unified?: string | null;
+};
+
+export type LazyTokenizationPriority = "visible" | "prefetch";
+
 /**
  * Worker communication protocol
  */
@@ -104,14 +152,23 @@ export type WorkerIn =
         math?: boolean;
         formatAnticipation?: FormatAnticipationConfig;
         codeHighlighting?: CodeHighlightingMode;
+        outputMode?: CodeHighlightOutputMode;
         liveCodeHighlighting?: boolean;
+        liveTokenization?: boolean;
+        emitHighlightTokens?: boolean;
+        emitDiffBlocks?: boolean;
         mdxComponentNames?: string[];
+        lazyTokenization?: {
+          enabled?: boolean;
+          thresholdLines?: number;
+        };
       };
       mdx?: { compileMode?: "server" | "worker" };
     }
   | { type: "APPEND"; text: string }
   | { type: "FINALIZE" }
   | { type: "DEBUG_STATE" }
+  | { type: "TOKENIZE_RANGE"; blockId: string; startLine: number; endLine: number; priority?: LazyTokenizationPriority }
   | { type: "MDX_COMPILED"; blockId: string; compiledId: string }
   | { type: "MDX_ERROR"; blockId: string; error?: string }
   | { type: "SET_CREDITS"; credits: number };
@@ -224,6 +281,14 @@ export interface PerformanceMetrics {
   appendLineBatches?: number;
   appendLineTotalLines?: number;
   appendLineMaxLines?: number;
+  lazyTokenization?: {
+    requests: number;
+    avgRangeLines: number;
+    maxRangeLines: number;
+    avgLatencyMs: number;
+    maxLatencyMs: number;
+    maxQueue: number;
+  };
 }
 
 /**
@@ -261,6 +326,10 @@ export type Patch =
       startIndex: number;
       lines: string[];
       highlight?: Array<string | null>;
+      tokens?: Array<TokenLineV1 | null>;
+      diffKind?: Array<DiffKind | null>;
+      oldNo?: Array<number | null>;
+      newNo?: Array<number | null>;
     }
   | {
       op: "setHTML";

@@ -2,7 +2,7 @@ import type { Block, PatchMetrics, WorkerIn, WorkerOut } from "@stream-mdx/core"
 // Main V2 Markdown Renderer
 // Client-side renderer with component registry and worker integration
 import type { PatchCommitSchedulerOptions, PatchFlushResult } from "./renderer/patch-commit-scheduler";
-import type { BlockComponents, InlineComponents, Renderer, RendererConfig } from "./types";
+import type { BlockComponents, CodeHighlightRangeRequest, InlineComponents, Renderer, RendererConfig } from "./types";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -10,6 +10,7 @@ import { getBlockKey, PATCH_ROOT_ID } from "@stream-mdx/core";
 import { createDefaultWorker, releaseDefaultWorker } from "@stream-mdx/worker";
 import { ComponentRegistry } from "./components";
 import { getMDXComponentFactory, registerMDXComponents } from "./mdx-client";
+import { CodeHighlightRequestContext } from "./renderer/code-highlight-context";
 import { useRendererChildren } from "./renderer/hooks";
 import { BlockNodeRenderer } from "./renderer/node-views";
 import { isHeavyPatch, splitPatchBatch } from "./renderer/patch-batching";
@@ -108,6 +109,11 @@ export class MarkdownRenderer implements Renderer {
     if (!options?.skipInit) {
       // Initialize worker
       const mdxComponentNames = getMdxComponentNames(this.config);
+      const codeHighlighting = this.config.plugins?.codeHighlighting;
+      const outputMode = this.config.plugins?.outputMode;
+      const liveTokenization = this.config.plugins?.liveTokenization;
+      const emitHighlightTokens = this.config.plugins?.emitHighlightTokens;
+      const emitDiffBlocks = this.config.plugins?.emitDiffBlocks;
       const docPlugins = {
         footnotes: this.config.plugins?.footnotes ?? true,
         html: this.config.plugins?.html ?? true,
@@ -116,8 +122,12 @@ export class MarkdownRenderer implements Renderer {
         callouts: this.config.plugins?.callouts ?? false,
         math: this.config.plugins?.math ?? true,
         formatAnticipation: this.config.plugins?.formatAnticipation ?? false,
-        codeHighlighting: this.config.plugins?.codeHighlighting,
+        ...(codeHighlighting !== undefined ? { codeHighlighting } : {}),
+        ...(outputMode !== undefined ? { outputMode } : {}),
         liveCodeHighlighting: this.config.plugins?.liveCodeHighlighting ?? false,
+        ...(liveTokenization !== undefined ? { liveTokenization } : {}),
+        ...(emitHighlightTokens !== undefined ? { emitHighlightTokens } : {}),
+        ...(emitDiffBlocks !== undefined ? { emitDiffBlocks } : {}),
         ...(mdxComponentNames ? { mdxComponentNames } : {}),
       };
 
@@ -187,6 +197,7 @@ export class MarkdownRenderer implements Renderer {
       this.worker.addEventListener("message", handleMessage);
 
       const mdxComponentNames = getMdxComponentNames(this.config);
+      const codeHighlighting = this.config.plugins?.codeHighlighting;
       const docPlugins = {
         footnotes: this.config.plugins?.footnotes ?? true,
         html: this.config.plugins?.html ?? true,
@@ -195,7 +206,7 @@ export class MarkdownRenderer implements Renderer {
         callouts: this.config.plugins?.callouts ?? false,
         math: this.config.plugins?.math ?? true,
         formatAnticipation: this.config.plugins?.formatAnticipation ?? false,
-        codeHighlighting: this.config.plugins?.codeHighlighting,
+        ...(codeHighlighting !== undefined ? { codeHighlighting } : {}),
         liveCodeHighlighting: this.config.plugins?.liveCodeHighlighting ?? false,
         ...(mdxComponentNames ? { mdxComponentNames } : {}),
       };
@@ -391,6 +402,17 @@ export class MarkdownRenderer implements Renderer {
     if (!this.worker) return;
     const credits = Math.max(0, Math.min(1, value));
     this.worker.postMessage({ type: "SET_CREDITS", credits } as WorkerIn);
+  }
+
+  requestCodeHighlightRange(request: CodeHighlightRangeRequest): void {
+    if (!this.worker) return;
+    this.worker.postMessage({
+      type: "TOKENIZE_RANGE",
+      blockId: request.blockId,
+      startLine: request.startLine,
+      endLine: request.endLine,
+      priority: request.priority,
+    } as WorkerIn);
   }
 
   getPatchHistory(limit?: number): ReadonlyArray<PatchFlushResult> {
@@ -642,6 +664,12 @@ export const MarkdownRenderer2: React.FC<{
   children?: (api: ReturnType<typeof useMarkdownRenderer>) => React.ReactNode;
 }> = ({ config, className, onBlocksChange, children }) => {
   const api = useMarkdownRenderer(config);
+  const highlightRequester = useCallback(
+    (request: CodeHighlightRangeRequest) => {
+      api.renderer.requestCodeHighlightRange(request);
+    },
+    [api.renderer],
+  );
 
   // Notify parent of block changes
   useEffect(() => {
@@ -654,12 +682,16 @@ export const MarkdownRenderer2: React.FC<{
     return React.createElement(React.Fragment, {}, children(api));
   }
 
-  return React.createElement(MarkdownBlocksRenderer, {
-    blocks: api.blocks,
-    componentRegistry: api.renderer.getComponentRegistry(),
-    className,
-    store: api.renderer.getStore(),
-  });
+  return React.createElement(
+    CodeHighlightRequestContext.Provider,
+    { value: highlightRequester },
+    React.createElement(MarkdownBlocksRenderer, {
+      blocks: api.blocks,
+      componentRegistry: api.renderer.getComponentRegistry(),
+      className,
+      store: api.renderer.getStore(),
+    }),
+  );
 };
 
 /**
