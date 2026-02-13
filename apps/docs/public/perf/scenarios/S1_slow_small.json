@@ -1,0 +1,7 @@
+{
+  "id": "S1_slow_small",
+  "label": "Slow + small chunks",
+  "updateIntervalMs": 50,
+  "charRateCps": 200,
+  "maxChunkChars": 32
+}

@@ -10,6 +10,7 @@
     min-height: 384px;
     padding: 48px;
     margin-top: 4px;
+    margin-bottom: 0;
     border-color: var(--border);
     border-width: 1px;
     border-radius: var(--radius-base);
@@ -17,13 +18,16 @@
     &[data-with-codeblock="true"] {
       border-bottom-right-radius: 0;
       border-bottom-left-radius: 0;
+      margin-bottom: 0 !important;
 
       & + figure,
-      & + pre {
-        margin-top: 0;
-        border-top-width: 0;
-        border-top-left-radius: 0;
-        border-top-right-radius: 0;
+      & + pre,
+      :global(.markdown-mdx):has(> &) + pre,
+      :global(.markdown-mdx):has(> &) + figure {
+        margin-top: 0 !important;
+        border-top-width: 0 !important;
+        border-top-left-radius: 0 !important;
+        border-top-right-radius: 0 !important;
       }
     }
   }

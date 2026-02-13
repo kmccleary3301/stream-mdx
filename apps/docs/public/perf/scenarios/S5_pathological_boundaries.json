@@ -1,0 +1,9 @@
+{
+  "id": "S5_pathological_boundaries",
+  "label": "Pathological boundary splits",
+  "updateIntervalMs": 16,
+  "charRateCps": 1200,
+  "maxChunkChars": 256,
+  "useSplitMarkers": true,
+  "includeTags": ["split-markers"]
+}

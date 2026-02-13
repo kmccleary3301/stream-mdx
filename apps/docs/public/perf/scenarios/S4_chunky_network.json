@@ -1,0 +1,7 @@
+{
+  "id": "S4_chunky_network",
+  "label": "Chunky network",
+  "updateIntervalMs": 100,
+  "charRateCps": 5000,
+  "maxChunkChars": 2000
+}
