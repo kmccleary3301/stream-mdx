@@ -53,7 +53,7 @@ const ref = useRef<StreamingMarkdownHandle>(null);
 | `worker` | `Worker \| URL \| string \| () => Worker` | Worker instance/URL/factory. When omitted, the component uses the default worker strategy and falls back to `/workers/markdown-worker.js`. |
 | `managedWorker` | `boolean` | When `true`, the component attaches the worker but does not auto-`restart/append/finalize` for you (use the ref handle). |
 | `prewarmLangs` | `string[]` | Shiki languages to load inside the worker. |
-| `features` | `{ footnotes?, html?, mdx?, tables?, callouts?, math?, formatAnticipation? }` | Toggles built-in feature flags. |
+| `features` | `{ footnotes?, html?, mdx?, tables?, callouts?, math?, formatAnticipation?, codeHighlighting? }` | Toggles built-in feature flags. |
 | `mdxCompileMode` | `"server" \| "worker"` | Enables MDX compilation/hydration and selects the compile strategy. |
 | `components` | `Partial<BlockComponents>` | Override block renders (wrap code/math without affecting the patch scheduler). |
 | `inlineComponents` | `Partial<InlineComponents>` | Override inline renders. |
@@ -131,6 +131,10 @@ See `docs/CLI_USAGE.md` for an example that consumes `PATCH` messages into a `Do
 - `footnotes`: enables footnote aggregation.
 - `callouts`: enables callout blockquote syntax (disabled by default in the worker).
 - `formatAnticipation`: (opt-in) withholds formatting markers while streaming (initial support: `*`, `**`, `` ` ``, `~~`). Final output is unchanged.
+- `codeHighlighting`: controls Shiki strategy for fenced code blocks:
+  - `"final"` (default): highlight only after the block finalizes.
+  - `"incremental"`: highlight completed lines as they arrive (fast enough for streaming).
+  - `"live"`: re-highlight on every update (slowest, highest fidelity).
 
 ---
 
@@ -176,12 +180,14 @@ Adaptive throttling is based on coalescing p95 thresholds:
 
 `scheduling` (a subset of the patch scheduler options) includes:
 
-- `frameBudgetMs` (default: 8)
-- `lowPriorityFrameBudgetMs` (default: half the frame budget, min 2)
-- `maxBatchesPerFlush` (default: unlimited; governed by frame budget)
-- `maxLowPriorityBatchesPerFlush` (default: 1)
-- `urgentQueueThreshold` (default: 3)
-- `batch` (`"rAF" | "timeout" | "microtask"`, default: `"rAF"` when available)
+- `frameBudgetMs` (default: 10)
+- `lowPriorityFrameBudgetMs` (default: 6; derived from the frame budget when unspecified)
+- `maxBatchesPerFlush` (default: 12)
+- `maxLowPriorityBatchesPerFlush` (default: 2)
+- `urgentQueueThreshold` (default: 4)
+- `batch` (`"rAF" | "timeout" | "microtask"`, default: `"microtask"` when available)
+- `adaptiveSwitch` (default: `true` when `batch` is `"microtask"`) — switch to a smooth rAF preset once the queue drains
+- `adaptiveQueueThreshold` (default: `maxBatchesPerFlush` or 12) — queue size threshold for switching
 - `historyLimit` (default: 200)
 
 ---

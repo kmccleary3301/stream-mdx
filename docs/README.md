@@ -11,6 +11,7 @@ Start here (in order):
 ## Topics
 
 - **Getting started**: `docs/GETTING_STARTED.md`
+- **Articles**: `/articles` (component-rendered deep dives in the docs site)
 - **CLI / Node usage**: `docs/CLI_USAGE.md`
 - **Configuration**: `docs/CONFIGURATION.md`
 - **Plugins & worker customization**: `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`
