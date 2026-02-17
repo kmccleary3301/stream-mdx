@@ -4,7 +4,7 @@ import { Link } from "next-view-transitions";
 
 export function SiteHeader() {
   return (
-    <div className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/90 backdrop-blur">
+    <div className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70">
       <div className="mx-auto flex w-full max-w-screen-xl items-center justify-between gap-3 px-4 py-3 md:gap-6 md:px-6 md:py-4">
         <Link href="/" className="text-sm font-semibold tracking-tight">
           StreamMDX

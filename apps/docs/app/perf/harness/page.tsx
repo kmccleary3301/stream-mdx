@@ -1,10 +1,10 @@
-import { PerfHarness } from "@/components/perf/perf-harness";
 import { Suspense } from "react";
 
+import { PerfHarness } from "@/components/perf/perf-harness";
+
 export default function PerfHarnessPage(): JSX.Element {
-  // PerfHarness uses useSearchParams() and needs a Suspense boundary for static export.
   return (
-    <Suspense fallback={<div />}>
+    <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Loading perf harness…</div>}>
       <PerfHarness />
     </Suspense>
   );

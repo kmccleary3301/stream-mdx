@@ -1,0 +1,624 @@
+{
+  "version": 1,
+  "schemaId": "streammdx.snapshot.v1",
+  "createdAt": "2026-02-11T20:25:57.525Z",
+  "hash": "76bd78e3df118d66ed23fafa80dad95488e43f362759fe6535c878706ef53933",
+  "contentHash": "00afb1c7c4a688a0be1139d5cf44d0cd516274b488713c4766eb3598f0f6f9bb",
+  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
+  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "blocks": [
+    {
+      "id": "db082c0",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Architecture and Internals",
+        "range": {
+          "from": 0,
+          "to": 28
+        },
+        "meta": {
+          "headingLevel": 1,
+          "headingText": "Architecture and Internals",
+          "headingId": "architecture-and-internals"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Architecture and Internals"
+          }
+        ]
+      }
+    },
+    {
+      "id": "756c2ce3",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "This is a high-level map of the StreamMDX pipeline and the decisions that keep streaming fast while preserving output correctness.",
+        "range": {
+          "from": 30,
+          "to": 160
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "This is a high-level map of the StreamMDX pipeline and the decisions that keep streaming fast while preserving output correctness."
+          }
+        ]
+      }
+    },
+    {
+      "id": "1a6d6cbd",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Pipeline overview",
+        "range": {
+          "from": 162,
+          "to": 182
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Pipeline overview",
+          "headingId": "pipeline-overview"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Pipeline overview"
+          }
+        ]
+      }
+    },
+    {
+      "id": "3cc12799",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "1. **Worker ingestion**: content arrives in chunks; the worker parses and emits patches.\n2. **Block enrichment**: inline parsing, math detection, and HTML/MDX detection happen at block level.\n3. **Patch coalescing**: patches are merged into minimal operations.\n4. **React render**: patches update the renderer store, then the React tree.",
+        "range": {
+          "from": 184,
+          "to": 521
+        },
+        "meta": {
+          "ordered": true,
+          "items": [
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Worker ingestion"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": content arrives in chunks; the worker parses and emits patches."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Block enrichment"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": inline parsing, math detection, and HTML/MDX detection happen at block level."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Patch coalescing"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": patches are merged into minimal operations."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "React render"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": patches update the renderer store, then the React tree."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "311ee246",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Patch coalescing",
+        "range": {
+          "from": 523,
+          "to": 542
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Patch coalescing",
+          "headingId": "patch-coalescing"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Patch coalescing"
+          }
+        ]
+      }
+    },
+    {
+      "id": "161089d",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "StreamMDX consolidates patch operations to reduce DOM work per tick. The goal is to keep queue depth low and avoid re-rendering stable nodes.",
+        "range": {
+          "from": 544,
+          "to": 685
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "StreamMDX consolidates patch operations to reduce DOM work per tick. The goal is to keep queue depth low and avoid re-rendering stable nodes."
+          }
+        ]
+      }
+    },
+    {
+      "id": "2f32083b",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Renderer store",
+        "range": {
+          "from": 687,
+          "to": 704
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Renderer store",
+          "headingId": "renderer-store"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Renderer store"
+          }
+        ]
+      }
+    },
+    {
+      "id": "16961a5b",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "The renderer store holds a normalized tree of nodes (blocks + children). It supports:",
+        "range": {
+          "from": 706,
+          "to": 791
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "The renderer store holds a normalized tree of nodes (blocks + children). It supports:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "65b74843",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Deterministic patch application\n- List depth normalization\n- Snapshot caching for React rendering",
+        "range": {
+          "from": 793,
+          "to": 892
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Deterministic patch application"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "List depth normalization"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Snapshot caching for React rendering"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "32138163",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Streaming invariants",
+        "range": {
+          "from": 894,
+          "to": 917
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Streaming invariants",
+          "headingId": "streaming-invariants"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Streaming invariants"
+          }
+        ]
+      }
+    },
+    {
+      "id": "73304fb7",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "The regression harness enforces invariants that catch drift:",
+        "range": {
+          "from": 919,
+          "to": 979
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "The regression harness enforces invariants that catch drift:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "2d64a7e",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- **Root child count** should never decrease during streaming.\n- **Final HTML** should not contain raw math or raw backticks.\n- **Sanitization** removes script handlers and unsafe tags.",
+        "range": {
+          "from": 981,
+          "to": 1166
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Root child count"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": " should never decrease during streaming."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Final HTML"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": " should not contain raw math or raw backticks."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Sanitization"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": " removes script handlers and unsafe tags."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "11b7061e",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "MDX and HTML boundaries",
+        "range": {
+          "from": 1168,
+          "to": 1194
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "MDX and HTML boundaries",
+          "headingId": "mdx-and-html-boundaries"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "MDX and HTML boundaries"
+          }
+        ]
+      }
+    },
+    {
+      "id": "65af46fd",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "MDX compilation is decoupled from core markdown parsing:",
+        "range": {
+          "from": 1196,
+          "to": 1252
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "MDX compilation is decoupled from core markdown parsing:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "5d3eef7c",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- HTML/MDX is segmented into mixed content blocks.\n- MDX blocks can be compiled in the worker or server.\n- Inline protected ranges prevent false MDX detection inside code/math.",
+        "range": {
+          "from": 1254,
+          "to": 1430
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "HTML/MDX is segmented into mixed content blocks."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "MDX blocks can be compiled in the worker or server."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Inline protected ranges prevent false MDX detection inside code/math."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "568024c2",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Scheduling and backpressure",
+        "range": {
+          "from": 1432,
+          "to": 1462
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Scheduling and backpressure",
+          "headingId": "scheduling-and-backpressure"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Scheduling and backpressure"
+          }
+        ]
+      }
+    },
+    {
+      "id": "fa5fb1f",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "The scheduler controls when patches flush:",
+        "range": {
+          "from": 1464,
+          "to": 1506
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "The scheduler controls when patches flush:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6cc94fb0",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- **Aggressive**: prioritizes low latency.\n- **Smooth**: prioritizes frame pacing.",
+        "range": {
+          "from": 1508,
+          "to": 1590
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Aggressive"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": prioritizes low latency."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Smooth"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": prioritizes frame pacing."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "33d76a03",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Backpressure is exposed via metrics and can be tuned for high-volume streams.",
+        "range": {
+          "from": 1592,
+          "to": 1669
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Backpressure is exposed via metrics and can be tuned for high-volume streams."
+          }
+        ]
+      }
+    }
+  ],
+  "tocHeadings": [
+    {
+      "id": "architecture-and-internals",
+      "text": "Architecture and Internals",
+      "level": 1,
+      "blockId": "db082c0"
+    },
+    {
+      "id": "pipeline-overview",
+      "text": "Pipeline overview",
+      "level": 2,
+      "blockId": "1a6d6cbd"
+    },
+    {
+      "id": "patch-coalescing",
+      "text": "Patch coalescing",
+      "level": 2,
+      "blockId": "311ee246"
+    },
+    {
+      "id": "renderer-store",
+      "text": "Renderer store",
+      "level": 2,
+      "blockId": "2f32083b"
+    },
+    {
+      "id": "streaming-invariants",
+      "text": "Streaming invariants",
+      "level": 2,
+      "blockId": "32138163"
+    },
+    {
+      "id": "mdx-and-html-boundaries",
+      "text": "MDX and HTML boundaries",
+      "level": 2,
+      "blockId": "11b7061e"
+    },
+    {
+      "id": "scheduling-and-backpressure",
+      "text": "Scheduling and backpressure",
+      "level": 2,
+      "blockId": "568024c2"
+    }
+  ],
+  "init": {
+    "docPlugins": {
+      "tables": true,
+      "html": true,
+      "mdx": true,
+      "math": true,
+      "footnotes": true,
+      "callouts": true
+    },
+    "mdx": {
+      "compileMode": "server"
+    },
+    "prewarmLangs": [
+      "typescript",
+      "tsx",
+      "javascript",
+      "json",
+      "bash",
+      "diff"
+    ]
+  }
+}

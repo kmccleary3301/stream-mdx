@@ -106,7 +106,7 @@
   font-weight: 500;
   color: var(--tw-prose-quotes);
   quotes: "\201C" "\201D" "\2018" "\2019";
-  border-left-color: var(--tw-prose-quote-borders);
+  border-left-color: var(--border);
   border-left-width: 0.25rem;
 }
 
@@ -198,6 +198,16 @@
   font-weight:600
 } */
 
+.prose :where(code):not(:where([class~="not-prose"] *), :where(pre *)) {
+  padding: 0.15rem 0.35rem;
+  font-size: 0.875em;
+  font-weight: 500;
+  color: var(--foreground);
+  background-color: var(--gray-2);
+  border: 1px solid var(--border);
+  border-radius: 0.35rem;
+}
+
 /* .prose :where(code):not(:where([class~=not-prose] *)):before {
   content:"`"
 } */
@@ -237,17 +247,15 @@
 }
 
 .prose :where(pre):not(:where([class~="not-prose"] *)) {
-  padding: 0;
+  padding: 0.85rem 1rem;
   margin: 0;
   overflow-x: auto;
-
-  /* font-size:.875em; */
-
-  font-weight: 400;
-  line-height: 1.7143;
-  color: currentcolor;
-  background-color: transparent;
-  border-radius: 0.375rem;
+  font-weight: 500;
+  line-height: 1.65;
+  color: var(--tw-prose-pre-code);
+  background-color: var(--tw-prose-pre-bg);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
 }
 
 .prose :where(pre code):not(:where([class~="not-prose"] *)) {
@@ -329,10 +337,10 @@
   --tw-prose-quote-borders: var(--border);
   --tw-prose-captions: var(--text-secondary);
   --tw-prose-code: var(--text-primary);
-  --tw-prose-pre-code: #e5e7eb;
-  --tw-prose-pre-bg: #1f2937;
-  --tw-prose-th-borders: #d1d5db;
-  --tw-prose-td-borders: #e5e7eb;
+  --tw-prose-pre-code: #e2e8f0;
+  --tw-prose-pre-bg: #0f172a;
+  --tw-prose-th-borders: var(--border);
+  --tw-prose-td-borders: var(--border);
   --tw-prose-invert-body: var(--text-primary);
   --tw-prose-invert-headings: var(--text-primary);
   --tw-prose-invert-lead: var(--text-primary);
@@ -347,8 +355,8 @@
   --tw-prose-invert-code: var(--text-primary);
   --tw-prose-invert-pre-code: #d1d5db;
   --tw-prose-invert-pre-bg: rgb(0 0 0 / 50%);
-  --tw-prose-invert-th-borders: #4b5563;
-  --tw-prose-invert-td-borders: #374151;
+  --tw-prose-invert-th-borders: var(--border);
+  --tw-prose-invert-td-borders: var(--border);
 
   font-size: 1rem;
 

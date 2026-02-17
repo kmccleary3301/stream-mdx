@@ -55,7 +55,22 @@ import { MermaidBlock } from "@stream-mdx/mermaid";
 
 Regex patterns typically live in a custom worker bundle. If you only need rendering changes (no parsing), use `components` and `inlineComponents`.
 
+### Example: citation syntax
+
+```ts
+// Worker-side: register a custom regex block/inline matcher.
+registry.use({
+  name: "citation",
+  inline: {
+    full: /\{cite:(\d+)\}/g,
+    start: /\{cite:/g,
+    render: ({ match }) => ({ type: "inline", tag: "span", props: { className: "citation", children: `[${match[1]}]` } }),
+  },
+});
+```
+
+If you enable format anticipation for regex, use `start` patterns that are safe to close within a newline boundary.
+
 ## Format anticipation
 
 Format anticipation is a feature for rendering incomplete emphasis or math segments before the closing marker arrives. It is controlled via the `features.formatAnticipation` config (see the public API docs).
-

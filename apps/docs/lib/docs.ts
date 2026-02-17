@@ -41,9 +41,17 @@ export const DOC_SECTIONS: DocSection[] = [
       { title: "Security model", slug: "security-model", file: "SECURITY_MODEL.md" },
       { title: "Plugins cookbook", slug: "plugins-cookbook", file: "STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md" },
       { title: "Release checklist", slug: "release-checklist", file: "STREAMING_MARKDOWN_RELEASE_CHECKLIST.md" },
+      { title: "Perf harness", slug: "perf-harness", file: "PERF_HARNESS.md" },
+      { title: "Perf quality changelog", slug: "perf-quality-changelog", file: "PERF_QUALITY_CHANGELOG.md" },
       { title: "Status / architecture", slug: "status", file: "STREAMING_MARKDOWN_V2_STATUS.md" },
       { title: "Streamdown comparison", slug: "streamdown-comparison", file: "STREAMDOWN_COMPARISON.md" },
       { title: "Comprehensive manual", slug: "manual", file: "COMPREHENSIVE_PROJECT_DOCUMENTATION.md" },
+    ],
+  },
+  {
+    title: "TUI",
+    items: [
+      { title: "JSON/TUI protocol", slug: "tui-json-protocol", file: "STREAMMDX_JSON_DIFF_SPEC.md" },
     ],
   },
 ];
@@ -81,4 +89,3 @@ export async function renderMarkdownToHtml(markdown: string): Promise<string> {
 
   return String(result);
 }
-

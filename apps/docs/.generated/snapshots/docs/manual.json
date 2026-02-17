@@ -1,0 +1,3707 @@
+{
+  "version": 1,
+  "schemaId": "streammdx.snapshot.v1",
+  "createdAt": "2026-02-11T20:25:52.281Z",
+  "hash": "c86ef8d18f049fa314fe800bce22112ee2011753ec8ff24a41d9c03bb55006aa",
+  "contentHash": "46785dd3d2070a59057123de6bb54054abac086475895e6188ac6fb9bc588ae5",
+  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
+  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "blocks": [
+    {
+      "id": "db082c0",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "StreamMDX — Comprehensive Documentation",
+        "range": {
+          "from": 0,
+          "to": 41
+        },
+        "meta": {
+          "headingLevel": 1,
+          "headingText": "StreamMDX — Comprehensive Documentation",
+          "headingId": "streammdx-comprehensive-documentation"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "StreamMDX — Comprehensive Documentation"
+          }
+        ]
+      }
+    },
+    {
+      "id": "50f390bf",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "This is the “everything in one place” manual for the StreamMDX project.",
+        "range": {
+          "from": 43,
+          "to": 114
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "This is the “everything in one place” manual for the StreamMDX project."
+          }
+        ]
+      }
+    },
+    {
+      "id": "545ceade",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- npm: `stream-mdx` (convenience wrapper)\n- scoped packages: `@stream-mdx/{core,plugins,worker,react}`\n- repo: https://github.com/kmccleary3301/stream-mdx",
+        "range": {
+          "from": 116,
+          "to": 270
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "npm: "
+              },
+              {
+                "kind": "code",
+                "text": "stream-mdx"
+              },
+              {
+                "kind": "text",
+                "text": " (convenience wrapper)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "scoped packages: "
+              },
+              {
+                "kind": "code",
+                "text": "@stream-mdx/{core,plugins,worker,react}"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "repo: https://github.com/kmccleary3301/stream-mdx"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "5c646f63",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Table of Contents",
+        "range": {
+          "from": 272,
+          "to": 292
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Table of Contents",
+          "headingId": "table-of-contents"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Table of Contents"
+          }
+        ]
+      }
+    },
+    {
+      "id": "60064087",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- [1. What StreamMDX Is](#1-what-streammdx-is)\n- [2. Quickstart](#2-quickstart)\n  - [2.1 Minimal Next.js usage](#2-1-minimal-next-js-usage)\n  - [2.2 Worker bundle placement](#2-2-worker-bundle-placement)\n- [3. Conceptual Model](#3-conceptual-model)\n  - [3.1 Worker-first parsing + patching](#3-1-worker-first-parsing-patching)\n  - [3.2 Backpressure and responsiveness](#3-2-backpressure-and-responsiveness)\n- [4. Public API (High Level)](#4-public-api-high-level)\n- [5. Modularity & Feature Toggles](#5-modularity-feature-toggles)\n  - [5.1 Can users drop math, HTML, MDX?](#5-1-can-users-drop-math-html-mdx)\n  - [5.2 Math delimiters (`$...$` vs `\\\\(...\\\\)`)](#5-2-math-delimiters-vs)\n- [6. Plugins](#6-plugins)\n  - [6.1 Default “document” plugin set](#6-1-default-document-plugin-set)\n  - [6.2 Tables (Shadcn variants)](#6-2-tables-shadcn-variants)\n  - [6.3 HTML](#6-3-html)\n  - [6.4 Math](#6-4-math)\n  - [6.5 MDX](#6-5-mdx)\n- [7. React Integration](#7-react-integration)\n  - [7.1 Tag/component overrides](#7-1-tag-component-overrides)\n  - [7.2 Wrapping code/math blocks (scroll containers, etc)](#7-2-wrapping-code-math-blocks-scroll-containers-etc)\n- [8. MDX Hydration & Parity](#8-mdx-hydration-parity)\n- [9. Security (CSP + Sanitization)](#9-security-csp-sanitization)\n- [10. Performance & Tuning](#10-performance-tuning)\n- [11. Troubleshooting](#11-troubleshooting)\n- [12. Packages & Entry Points](#12-packages-entry-points)\n- [13. Development, Testing, and Release](#13-development-testing-and-release)",
+        "range": {
+          "from": 294,
+          "to": 1802
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "link",
+                "href": "#1-what-streammdx-is",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "1. What StreamMDX Is"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "link",
+                "href": "#2-quickstart",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "2. Quickstart"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "link",
+                "href": "#2-1-minimal-next-js-usage",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "2.1 Minimal Next.js usage"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "link",
+                "href": "#2-2-worker-bundle-placement",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "2.2 Worker bundle placement"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "link",
+                "href": "#3-conceptual-model",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "3. Conceptual Model"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "link",
+                "href": "#3-1-worker-first-parsing-patching",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "3.1 Worker-first parsing + patching"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "link",
+                "href": "#3-2-backpressure-and-responsiveness",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "3.2 Backpressure and responsiveness"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "link",
+                "href": "#4-public-api-high-level",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "4. Public API (High Level)"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "link",
+                "href": "#5-modularity-feature-toggles",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "5. Modularity & Feature Toggles"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "link",
+                "href": "#5-1-can-users-drop-math-html-mdx",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "5.1 Can users drop math, HTML, MDX?"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "[5.2 Math delimiters (`"
+              },
+              {
+                "kind": "math-inline",
+                "tex": "..."
+              },
+              {
+                "kind": "code",
+                "text": " vs "
+              },
+              {
+                "kind": "text",
+                "text": "\\"
+              },
+              {
+                "kind": "text",
+                "text": "(..."
+              },
+              {
+                "kind": "text",
+                "text": "\\"
+              },
+              {
+                "kind": "text",
+                "text": ")`)](#5-2-math-delimiters-vs)"
+              }
+            ],
+            [
+              {
+                "kind": "link",
+                "href": "#6-plugins",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "6. Plugins"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "link",
+                "href": "#6-1-default-document-plugin-set",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "6.1 Default “document” plugin set"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "link",
+                "href": "#6-2-tables-shadcn-variants",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "6.2 Tables (Shadcn variants)"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "link",
+                "href": "#6-3-html",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "6.3 HTML"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "link",
+                "href": "#6-4-math",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "6.4 Math"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "link",
+                "href": "#6-5-mdx",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "6.5 MDX"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "link",
+                "href": "#7-react-integration",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "7. React Integration"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "link",
+                "href": "#7-1-tag-component-overrides",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "7.1 Tag/component overrides"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "link",
+                "href": "#7-2-wrapping-code-math-blocks-scroll-containers-etc",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "7.2 Wrapping code/math blocks (scroll containers, etc)"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "link",
+                "href": "#8-mdx-hydration-parity",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "8. MDX Hydration & Parity"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "link",
+                "href": "#9-security-csp-sanitization",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "9. Security (CSP + Sanitization)"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "link",
+                "href": "#10-performance-tuning",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "10. Performance & Tuning"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "link",
+                "href": "#11-troubleshooting",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "11. Troubleshooting"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "link",
+                "href": "#12-packages-entry-points",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "12. Packages & Entry Points"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "link",
+                "href": "#13-development-testing-and-release",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "13. Development, Testing, and Release"
+                  }
+                ]
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "4fb13a09",
+      "type": "hr",
+      "isFinalized": true,
+      "payload": {
+        "raw": "---",
+        "range": {
+          "from": 1804,
+          "to": 1807
+        }
+      }
+    },
+    {
+      "id": "24ea5a90",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "1. What StreamMDX Is",
+        "range": {
+          "from": 1809,
+          "to": 1832
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "1. What StreamMDX Is",
+          "headingId": "1-what-streammdx-is"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "1. What StreamMDX Is"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6caed138",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "StreamMDX is a streaming Markdown/MDX renderer designed for:",
+        "range": {
+          "from": 1834,
+          "to": 1894
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "StreamMDX is a streaming Markdown/MDX renderer designed for:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "5c776508",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- **live streaming text** (token-by-token or chunk-by-chunk)\n- **worker-first parsing/compilation** (keeps heavy work off the main thread)\n- **incremental patching** (updates are applied to an existing render rather than re-rendering everything)\n- **guardrails** (backpressure and coalescing to maintain UI responsiveness)",
+        "range": {
+          "from": 1896,
+          "to": 2218
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "live streaming text"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": " (token-by-token or chunk-by-chunk)"
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "worker-first parsing/compilation"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": " (keeps heavy work off the main thread)"
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "incremental patching"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": " (updates are applied to an existing render rather than re-rendering everything)"
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "guardrails"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": " (backpressure and coalescing to maintain UI responsiveness)"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "1796157e",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "2. Quickstart",
+        "range": {
+          "from": 2220,
+          "to": 2236
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "2. Quickstart",
+          "headingId": "2-quickstart"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "2. Quickstart"
+          }
+        ]
+      }
+    },
+    {
+      "id": "51fd015b",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "2.1 Minimal Next.js usage",
+        "range": {
+          "from": 2238,
+          "to": 2267
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "2.1 Minimal Next.js usage",
+          "headingId": "2-1-minimal-next-js-usage"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "2.1 Minimal Next.js usage"
+          }
+        ]
+      }
+    },
+    {
+      "id": "2256c0bd",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "`StreamingMarkdown` is a **client component**. Import it from a `\"use client\"` boundary.",
+        "range": {
+          "from": 2269,
+          "to": 2357
+        },
+        "inline": [
+          {
+            "kind": "code",
+            "text": "StreamingMarkdown"
+          },
+          {
+            "kind": "text",
+            "text": " is a "
+          },
+          {
+            "kind": "strong",
+            "children": [
+              {
+                "kind": "text",
+                "text": "client component"
+              }
+            ]
+          },
+          {
+            "kind": "text",
+            "text": ". Import it from a "
+          },
+          {
+            "kind": "code",
+            "text": "\"use client\""
+          },
+          {
+            "kind": "text",
+            "text": " boundary."
+          }
+        ]
+      }
+    },
+    {
+      "id": "24a055ab",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```tsx\n\"use client\";\n\nimport { StreamingMarkdown } from \"stream-mdx\";\n\nexport function StreamingArticle({ text }: { text: string }) {\n  return (\n    <StreamingMarkdown\n      text={text}\n      worker=\"/workers/markdown-worker.js\"\n      features={{ html: true, tables: true, math: true, mdx: true }}\n      mdxCompileMode=\"worker\"\n    />\n  );\n}\n```",
+        "range": {
+          "from": 2359,
+          "to": 2704
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"use client\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { StreamingMarkdown } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"4\"></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">export</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> function</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> StreamingArticle</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">({ </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">text</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }) {</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  return</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> (</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    &#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">      text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{text}</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">      worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">      features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, tables: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, math: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }}</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">      mdxCompileMode</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"worker\"</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    /></span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  );</span></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}</span></span></code></pre>",
+        "meta": {
+          "lang": "tsx",
+          "code": "\"use client\";\n\nimport { StreamingMarkdown } from \"stream-mdx\";\n\nexport function StreamingArticle({ text }: { text: string }) {\n  return (\n    <StreamingMarkdown\n      text={text}\n      worker=\"/workers/markdown-worker.js\"\n      features={{ html: true, tables: true, math: true, mdx: true }}\n      mdxCompileMode=\"worker\"\n    />\n  );\n}"
+        }
+      }
+    },
+    {
+      "id": "669f98b5",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "If you import `StreamingMarkdown` from a Next.js server component, you’ll typically get `useRef is not a function`. Fix by moving the import behind a `\"use client\"` boundary.",
+        "range": {
+          "from": 2706,
+          "to": 2880
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "If you import "
+          },
+          {
+            "kind": "code",
+            "text": "StreamingMarkdown"
+          },
+          {
+            "kind": "text",
+            "text": " from a Next.js server component, you’ll typically get "
+          },
+          {
+            "kind": "code",
+            "text": "useRef is not a function"
+          },
+          {
+            "kind": "text",
+            "text": ". Fix by moving the import behind a "
+          },
+          {
+            "kind": "code",
+            "text": "\"use client\""
+          },
+          {
+            "kind": "text",
+            "text": " boundary."
+          }
+        ]
+      }
+    },
+    {
+      "id": "7733cac0",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "2.2 Worker bundle placement",
+        "range": {
+          "from": 2882,
+          "to": 2913
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "2.2 Worker bundle placement",
+          "headingId": "2-2-worker-bundle-placement"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "2.2 Worker bundle placement"
+          }
+        ]
+      }
+    },
+    {
+      "id": "16cc9915",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "In production you generally want to serve the hosted worker bundle from your app’s `/public` (or equivalent static assets):",
+        "range": {
+          "from": 2915,
+          "to": 3038
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "In production you generally want to serve the hosted worker bundle from your app’s "
+          },
+          {
+            "kind": "code",
+            "text": "/public"
+          },
+          {
+            "kind": "text",
+            "text": " (or equivalent static assets):"
+          }
+        ]
+      }
+    },
+    {
+      "id": "7a4bd603",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- copy the hosted worker from `node_modules` into your app:\n  - `mkdir -p public/workers`\n  - `cp node_modules/@stream-mdx/worker/dist/hosted/markdown-worker.js public/workers/markdown-worker.js`\n- reference it by URL (recommended): `worker=\"/workers/markdown-worker.js\"`",
+        "range": {
+          "from": 3040,
+          "to": 3311
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "copy the hosted worker from "
+              },
+              {
+                "kind": "code",
+                "text": "node_modules"
+              },
+              {
+                "kind": "text",
+                "text": " into your app:"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "mkdir -p public/workers"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "cp node_modules/@stream-mdx/worker/dist/hosted/markdown-worker.js public/workers/markdown-worker.js"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "reference it by URL (recommended): "
+              },
+              {
+                "kind": "code",
+                "text": "worker=\"/workers/markdown-worker.js\""
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "a35a402",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "If you’re developing inside this repo, `npm run worker:build` builds the hosted worker and copies it into the example app for you.",
+        "range": {
+          "from": 3313,
+          "to": 3443
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "If you’re developing inside this repo, "
+          },
+          {
+            "kind": "code",
+            "text": "npm run worker:build"
+          },
+          {
+            "kind": "text",
+            "text": " builds the hosted worker and copies it into the example app for you."
+          }
+        ]
+      }
+    },
+    {
+      "id": "39970022",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "If you’re using the included default worker helper (`createDefaultWorker`) it expects you to follow the project’s documented “hosted worker” pattern. Start from:",
+        "range": {
+          "from": 3445,
+          "to": 3606
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "If you’re using the included default worker helper ("
+          },
+          {
+            "kind": "code",
+            "text": "createDefaultWorker"
+          },
+          {
+            "kind": "text",
+            "text": ") it expects you to follow the project’s documented “hosted worker” pattern. Start from:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "23a0bb31",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `docs/REACT_INTEGRATION_GUIDE.md`\n- `docs/PUBLIC_API.md`",
+        "range": {
+          "from": 3608,
+          "to": 3666
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "docs/REACT_INTEGRATION_GUIDE.md"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "docs/PUBLIC_API.md"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "19dc3d9b",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "3. Conceptual Model",
+        "range": {
+          "from": 3668,
+          "to": 3690
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "3. Conceptual Model",
+          "headingId": "3-conceptual-model"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "3. Conceptual Model"
+          }
+        ]
+      }
+    },
+    {
+      "id": "49657bbc",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "3.1 Worker-first parsing + patching",
+        "range": {
+          "from": 3692,
+          "to": 3731
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "3.1 Worker-first parsing + patching",
+          "headingId": "3-1-worker-first-parsing-patching"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "3.1 Worker-first parsing + patching"
+          }
+        ]
+      }
+    },
+    {
+      "id": "2c5af73c",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "At a high level:",
+        "range": {
+          "from": 3733,
+          "to": 3749
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "At a high level:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "77f0dc04",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "1. Your app streams text in over time.\n2. A worker receives text updates and parses/compiles into an internal block model.\n3. The worker emits **patches** that describe how to update the current render.\n4. The React renderer applies patches incrementally.",
+        "range": {
+          "from": 3751,
+          "to": 4006
+        },
+        "meta": {
+          "ordered": true,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Your app streams text in over time."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "A worker receives text updates and parses/compiles into an internal block model."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "The worker emits "
+              },
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "patches"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": " that describe how to update the current render."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "The React renderer applies patches incrementally."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "1503284",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "This design avoids “re-render the whole document on every chunk”.",
+        "range": {
+          "from": 4008,
+          "to": 4073
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "This design avoids “re-render the whole document on every chunk”."
+          }
+        ]
+      }
+    },
+    {
+      "id": "580aa4a6",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "3.2 Backpressure and responsiveness",
+        "range": {
+          "from": 4075,
+          "to": 4114
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "3.2 Backpressure and responsiveness",
+          "headingId": "3-2-backpressure-and-responsiveness"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "3.2 Backpressure and responsiveness"
+          }
+        ]
+      }
+    },
+    {
+      "id": "3244871e",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "The renderer uses backpressure to keep UI responsive on large documents or high update rates. When updates become too heavy, it will throttle/aggregate work so the main thread stays interactive.",
+        "range": {
+          "from": 4116,
+          "to": 4310
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "The renderer uses backpressure to keep UI responsive on large documents or high update rates. When updates become too heavy, it will throttle/aggregate work so the main thread stays interactive."
+          }
+        ]
+      }
+    },
+    {
+      "id": "572ebae0",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "See:",
+        "range": {
+          "from": 4312,
+          "to": 4316
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "See:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "4c8cf9c9",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `@stream-mdx/core/perf/backpressure`\n- `docs/STREAMING_MARKDOWN_V2_STATUS.md`",
+        "range": {
+          "from": 4317,
+          "to": 4396
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "@stream-mdx/core/perf/backpressure"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "docs/STREAMING_MARKDOWN_V2_STATUS.md"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "c03a2de",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "4. Public API (High Level)",
+        "range": {
+          "from": 4398,
+          "to": 4427
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "4. Public API (High Level)",
+          "headingId": "4-public-api-high-level"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "4. Public API (High Level)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "5fa44a07",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "The full API reference lives in:",
+        "range": {
+          "from": 4429,
+          "to": 4461
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "The full API reference lives in:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "1b4b2040",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `docs/PUBLIC_API.md`",
+        "range": {
+          "from": 4462,
+          "to": 4484
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "docs/PUBLIC_API.md"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "30dfee02",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "The main things you’ll use:",
+        "range": {
+          "from": 4486,
+          "to": 4513
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "The main things you’ll use:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "7fcbaeb7",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `StreamingMarkdown` (React component)\n- a worker instance/client (usually via a hosted worker URL in production)\n- optional plugin sets and render overrides (depending on your needs)",
+        "range": {
+          "from": 4515,
+          "to": 4699
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "StreamingMarkdown"
+              },
+              {
+                "kind": "text",
+                "text": " (React component)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "a worker instance/client (usually via a hosted worker URL in production)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "optional plugin sets and render overrides (depending on your needs)"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "44dd953c",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "5. Modularity & Feature Toggles",
+        "range": {
+          "from": 4701,
+          "to": 4735
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "5. Modularity & Feature Toggles",
+          "headingId": "5-modularity-feature-toggles"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "5. Modularity & Feature Toggles"
+          }
+        ]
+      }
+    },
+    {
+      "id": "11995827",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "5.1 Can users drop math, HTML, MDX?",
+        "range": {
+          "from": 4737,
+          "to": 4776
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "5.1 Can users drop math, HTML, MDX?",
+          "headingId": "5-1-can-users-drop-math-html-mdx"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "5.1 Can users drop math, HTML, MDX?"
+          }
+        ]
+      }
+    },
+    {
+      "id": "433f1a5c",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Yes, by design the system is modular:",
+        "range": {
+          "from": 4778,
+          "to": 4815
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Yes, by design the system is modular:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "4527196e",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- **Math** can be disabled via `features={{ math: false }}`.\n- **Raw HTML** can be disabled via `features={{ html: false }}` (recommended for untrusted inputs), or enabled with sanitization.\n- **MDX** can be disabled via `features={{ mdx: false }}` (or left off entirely if you only want Markdown).",
+        "range": {
+          "from": 4817,
+          "to": 5115
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Math"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": " can be disabled via "
+              },
+              {
+                "kind": "code",
+                "text": "features={{ math: false }}"
+              },
+              {
+                "kind": "text",
+                "text": "."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Raw HTML"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": " can be disabled via "
+              },
+              {
+                "kind": "code",
+                "text": "features={{ html: false }}"
+              },
+              {
+                "kind": "text",
+                "text": " (recommended for untrusted inputs), or enabled with sanitization."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "MDX"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": " can be disabled via "
+              },
+              {
+                "kind": "code",
+                "text": "features={{ mdx: false }}"
+              },
+              {
+                "kind": "text",
+                "text": " (or left off entirely if you only want Markdown)."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "447df542",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Where the toggles live depends on which layer you’re configuring:",
+        "range": {
+          "from": 5117,
+          "to": 5182
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Where the toggles live depends on which layer you’re configuring:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "1addcf9c",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `features` (high-level app config; drives worker + renderer behavior)\n- `docPlugins` (low-level worker init message; when you orchestrate the worker manually)\n- renderer-side component mapping (how blocks/inline nodes render)",
+        "range": {
+          "from": 5184,
+          "to": 5411
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "features"
+              },
+              {
+                "kind": "text",
+                "text": " (high-level app config; drives worker + renderer behavior)"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "docPlugins"
+              },
+              {
+                "kind": "text",
+                "text": " (low-level worker init message; when you orchestrate the worker manually)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "renderer-side component mapping (how blocks/inline nodes render)"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "438bc23f",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "For the authoritative configuration surface and examples, see:",
+        "range": {
+          "from": 5413,
+          "to": 5475
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "For the authoritative configuration surface and examples, see:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "14b6d302",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `docs/REACT_INTEGRATION_GUIDE.md`\n- `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`",
+        "range": {
+          "from": 5476,
+          "to": 5559
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "docs/REACT_INTEGRATION_GUIDE.md"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "52c3515b",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "5.2 Math delimiters ( `$...$` vs `\\\\(...\\\\)` )",
+        "range": {
+          "from": 5561,
+          "to": 5611
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "5.2 Math delimiters ( `$...$` vs `\\\\(...\\\\)` )",
+          "headingId": "5-2-math-delimiters-vs"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "5.2 Math delimiters ( `"
+          },
+          {
+            "kind": "math-inline",
+            "tex": "..."
+          },
+          {
+            "kind": "code",
+            "text": " vs "
+          },
+          {
+            "kind": "text",
+            "text": "\\"
+          },
+          {
+            "kind": "text",
+            "text": "(..."
+          },
+          {
+            "kind": "text",
+            "text": "\\"
+          },
+          {
+            "kind": "text",
+            "text": ")` )"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6685b53d",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Default behavior typically targets the common Markdown math conventions:",
+        "range": {
+          "from": 5613,
+          "to": 5685
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Default behavior typically targets the common Markdown math conventions:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "e596564",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- inline: `$...$`\n- block: `$$...$$`",
+        "range": {
+          "from": 5687,
+          "to": 5723
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "inline: `"
+              },
+              {
+                "kind": "math-inline",
+                "tex": "..."
+              },
+              {
+                "kind": "text",
+                "text": "`"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "block: `"
+              },
+              {
+                "kind": "math-display",
+                "tex": "..."
+              },
+              {
+                "kind": "text",
+                "text": "`"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "4687a3db",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "If you want ChatGPT-style delimiters:",
+        "range": {
+          "from": 5725,
+          "to": 5762
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "If you want ChatGPT-style delimiters:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "156338e4",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- inline: `\\\\(...\\\\)`\n- block: `\\\\[...\\\\]`",
+        "range": {
+          "from": 5764,
+          "to": 5806
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "inline: `"
+              },
+              {
+                "kind": "text",
+                "text": "\\"
+              },
+              {
+                "kind": "text",
+                "text": "(..."
+              },
+              {
+                "kind": "text",
+                "text": "\\"
+              },
+              {
+                "kind": "text",
+                "text": ")`"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "block: `"
+              },
+              {
+                "kind": "text",
+                "text": "\\"
+              },
+              {
+                "kind": "text",
+                "text": "[..."
+              },
+              {
+                "kind": "text",
+                "text": "\\"
+              },
+              {
+                "kind": "text",
+                "text": "]`"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "5746302b",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "…you can do this by swapping the math tokenizer / configuration in the math plugin layer (the tokenizer is implemented as a plugin concern, not hard-coded into the renderer).",
+        "range": {
+          "from": 5808,
+          "to": 5982
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "…you can do this by swapping the math tokenizer / configuration in the math plugin layer (the tokenizer is implemented as a plugin concern, not hard-coded into the renderer)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "2fc396a0",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "See the math plugin docs and tokenizer entrypoints:",
+        "range": {
+          "from": 5984,
+          "to": 6035
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "See the math plugin docs and tokenizer entrypoints:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "c6ffb7f",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `@stream-mdx/plugins/math`\n- `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`",
+        "range": {
+          "from": 6036,
+          "to": 6112
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "@stream-mdx/plugins/math"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "1bfbce2",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "6. Plugins",
+        "range": {
+          "from": 6114,
+          "to": 6127
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "6. Plugins",
+          "headingId": "6-plugins"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "6. Plugins"
+          }
+        ]
+      }
+    },
+    {
+      "id": "282020be",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "6.1 Default “document” plugin set",
+        "range": {
+          "from": 6129,
+          "to": 6166
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "6.1 Default “document” plugin set",
+          "headingId": "6-1-default-document-plugin-set"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "6.1 Default “document” plugin set"
+          }
+        ]
+      }
+    },
+    {
+      "id": "1e475383",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "StreamMDX organizes parsing/features by “document plugins”: a known set of remark/rehype capabilities and tokenizers that the worker uses.",
+        "range": {
+          "from": 6168,
+          "to": 6306
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "StreamMDX organizes parsing/features by “document plugins”: a known set of remark/rehype capabilities and tokenizers that the worker uses."
+          }
+        ]
+      }
+    },
+    {
+      "id": "6f6b26bb",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Start from:",
+        "range": {
+          "from": 6308,
+          "to": 6319
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Start from:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "4f03321",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`",
+        "range": {
+          "from": 6320,
+          "to": 6367
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "2d30f6c0",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "6.2 Tables (Shadcn variants)",
+        "range": {
+          "from": 6369,
+          "to": 6401
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "6.2 Tables (Shadcn variants)",
+          "headingId": "6-2-tables-shadcn-variants"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "6.2 Tables (Shadcn variants)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "695f9dff",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Tables are intentionally customizable at the renderer layer. If you want Shadcn-like tables:",
+        "range": {
+          "from": 6403,
+          "to": 6495
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Tables are intentionally customizable at the renderer layer. If you want Shadcn-like tables:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "14f114e0",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- register table handling in the worker (so tables are recognized)\n- override the React render mapping for `table`, `thead`, `tr`, `th`, `td` to use your preferred component implementations/classes",
+        "range": {
+          "from": 6497,
+          "to": 6694
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "register table handling in the worker (so tables are recognized)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "override the React render mapping for "
+              },
+              {
+                "kind": "code",
+                "text": "table"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "thead"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "tr"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "th"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "td"
+              },
+              {
+                "kind": "text",
+                "text": " to use your preferred component implementations/classes"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "7793579d",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "See:",
+        "range": {
+          "from": 6696,
+          "to": 6700
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "See:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "3c5d48ba",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `@stream-mdx/plugins/tables`\n- `docs/REACT_INTEGRATION_GUIDE.md`",
+        "range": {
+          "from": 6701,
+          "to": 6767
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "@stream-mdx/plugins/tables"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "docs/REACT_INTEGRATION_GUIDE.md"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "2661d444",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "6.3 HTML",
+        "range": {
+          "from": 6769,
+          "to": 6781
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "6.3 HTML",
+          "headingId": "6-3-html"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "6.3 HTML"
+          }
+        ]
+      }
+    },
+    {
+      "id": "60495f84",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Raw/inline HTML support is optional. If enabled, you should treat it as a security boundary:",
+        "range": {
+          "from": 6783,
+          "to": 6875
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Raw/inline HTML support is optional. If enabled, you should treat it as a security boundary:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "20c7281a",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- sanitize\n- isolate in a worker\n- deploy with CSP",
+        "range": {
+          "from": 6877,
+          "to": 6927
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "sanitize"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "isolate in a worker"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "deploy with CSP"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "34110236",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "See:",
+        "range": {
+          "from": 6929,
+          "to": 6933
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "See:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "500f21e8",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `@stream-mdx/plugins/html`\n- `@stream-mdx/core/worker-html-sanitizer`\n- `docs/STREAMING_MARKDOWN_V2_STATUS.md`",
+        "range": {
+          "from": 6934,
+          "to": 7046
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "@stream-mdx/plugins/html"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "@stream-mdx/core/worker-html-sanitizer"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "docs/STREAMING_MARKDOWN_V2_STATUS.md"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "6104bae3",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "6.4 Math",
+        "range": {
+          "from": 7048,
+          "to": 7060
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "6.4 Math",
+          "headingId": "6-4-math"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "6.4 Math"
+          }
+        ]
+      }
+    },
+    {
+      "id": "57b73f15",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Math support typically involves:",
+        "range": {
+          "from": 7062,
+          "to": 7094
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Math support typically involves:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "21e631fa",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- parsing (tokenizer)\n- rendering (KaTeX/renderer components)\n- optional delayed rendering / stabilization during streaming",
+        "range": {
+          "from": 7096,
+          "to": 7219
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "parsing (tokenizer)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "rendering (KaTeX/renderer components)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "optional delayed rendering / stabilization during streaming"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "7eedfc26",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "See:",
+        "range": {
+          "from": 7221,
+          "to": 7225
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "See:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "3b9088fd",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `@stream-mdx/plugins/math`\n- `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`",
+        "range": {
+          "from": 7226,
+          "to": 7302
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "@stream-mdx/plugins/math"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "3b71dce0",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "6.5 MDX",
+        "range": {
+          "from": 7304,
+          "to": 7315
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "6.5 MDX",
+          "headingId": "6-5-mdx"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "6.5 MDX"
+          }
+        ]
+      }
+    },
+    {
+      "id": "1ac06a7e",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "MDX adds a compilation/hydration pipeline and therefore additional deployment and security considerations. StreamMDX aims for **parity** between worker compilation and server compilation (see §8).",
+        "range": {
+          "from": 7317,
+          "to": 7513
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "MDX adds a compilation/hydration pipeline and therefore additional deployment and security considerations. StreamMDX aims for "
+          },
+          {
+            "kind": "strong",
+            "children": [
+              {
+                "kind": "text",
+                "text": "parity"
+              }
+            ]
+          },
+          {
+            "kind": "text",
+            "text": " between worker compilation and server compilation (see §8)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "6783c2fe",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Start from:",
+        "range": {
+          "from": 7515,
+          "to": 7526
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Start from:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "74e8e839",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `@stream-mdx/plugins/mdx`\n- `docs/REACT_INTEGRATION_GUIDE.md`",
+        "range": {
+          "from": 7527,
+          "to": 7590
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "@stream-mdx/plugins/mdx"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "docs/REACT_INTEGRATION_GUIDE.md"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "2cb8a189",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "7. React Integration",
+        "range": {
+          "from": 7592,
+          "to": 7615
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "7. React Integration",
+          "headingId": "7-react-integration"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "7. React Integration"
+          }
+        ]
+      }
+    },
+    {
+      "id": "54c94cbb",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "7.1 Tag/component overrides",
+        "range": {
+          "from": 7617,
+          "to": 7648
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "7.1 Tag/component overrides",
+          "headingId": "7-1-tag-component-overrides"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "7.1 Tag/component overrides"
+          }
+        ]
+      }
+    },
+    {
+      "id": "42b1a4c6",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Users can customize rendering by providing tag overrides (e.g. links, code blocks, tables, headings) and/or higher-level component registries (depending on which API surface you use).",
+        "range": {
+          "from": 7650,
+          "to": 7833
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Users can customize rendering by providing tag overrides (e.g. links, code blocks, tables, headings) and/or higher-level component registries (depending on which API surface you use)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "73689b43",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "This is the core mechanism for:",
+        "range": {
+          "from": 7835,
+          "to": 7866
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "This is the core mechanism for:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "7e25cb87",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- “change markdown tags and rendering styles”\n- “wrap code blocks in scroll containers”\n- “swap table components to Shadcn”",
+        "range": {
+          "from": 7868,
+          "to": 7991
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "“change markdown tags and rendering styles”"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "“wrap code blocks in scroll containers”"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "“swap table components to Shadcn”"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "664c1c7c",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "See:",
+        "range": {
+          "from": 7993,
+          "to": 7997
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "See:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "7791ece5",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `docs/REACT_INTEGRATION_GUIDE.md`\n- `docs/PUBLIC_API.md`",
+        "range": {
+          "from": 7998,
+          "to": 8056
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "docs/REACT_INTEGRATION_GUIDE.md"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "docs/PUBLIC_API.md"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "6509a465",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "7.2 Wrapping code/math blocks (scroll containers, etc)",
+        "range": {
+          "from": 8058,
+          "to": 8116
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "7.2 Wrapping code/math blocks (scroll containers, etc)",
+          "headingId": "7-2-wrapping-code-math-blocks-scroll-containers-etc"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "7.2 Wrapping code/math blocks (scroll containers, etc)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "7efc04e0",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Wrapping expensive blocks is supported and should not meaningfully affect performance when done as a lightweight wrapper because:",
+        "range": {
+          "from": 8118,
+          "to": 8247
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Wrapping expensive blocks is supported and should not meaningfully affect performance when done as a lightweight wrapper because:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "3ebff85d",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- the inner renderer remains incremental and virtualized where applicable\n- the wrapper does not force re-parsing or re-coalescing",
+        "range": {
+          "from": 8249,
+          "to": 8379
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "the inner renderer remains incremental and virtualized where applicable"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "the wrapper does not force re-parsing or re-coalescing"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "7f9cb434",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Patterns:",
+        "range": {
+          "from": 8381,
+          "to": 8390
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Patterns:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "5cd19ed8",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- wrap `<pre>` / code blocks in a horizontal scroll container\n- wrap block math in an overflow container",
+        "range": {
+          "from": 8392,
+          "to": 8496
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "wrap "
+              },
+              {
+                "kind": "code",
+                "text": "<pre>"
+              },
+              {
+                "kind": "text",
+                "text": " / code blocks in a horizontal scroll container"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "wrap block math in an overflow container"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "77edbca5",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "See:",
+        "range": {
+          "from": 8498,
+          "to": 8502
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "See:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "677281c4",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `docs/REACT_INTEGRATION_GUIDE.md`",
+        "range": {
+          "from": 8503,
+          "to": 8538
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "docs/REACT_INTEGRATION_GUIDE.md"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "12ff0fc7",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "8. MDX Hydration & Parity",
+        "range": {
+          "from": 8540,
+          "to": 8568
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "8. MDX Hydration & Parity",
+          "headingId": "8-mdx-hydration-parity"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "8. MDX Hydration & Parity"
+          }
+        ]
+      }
+    },
+    {
+      "id": "3ff396ea",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "StreamMDX aims to keep **client-side vs server-side** MDX compilation outputs aligned so:",
+        "range": {
+          "from": 8570,
+          "to": 8659
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "StreamMDX aims to keep "
+          },
+          {
+            "kind": "strong",
+            "children": [
+              {
+                "kind": "text",
+                "text": "client-side vs server-side"
+              }
+            ]
+          },
+          {
+            "kind": "text",
+            "text": " MDX compilation outputs aligned so:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "3a6a5d63",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- streaming mode and non-streaming mode match\n- worker compilation and server compilation match",
+        "range": {
+          "from": 8661,
+          "to": 8756
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "streaming mode and non-streaming mode match"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "worker compilation and server compilation match"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "34d4c162",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "If you’re changing MDX behavior, treat parity as a regression surface. Start from:",
+        "range": {
+          "from": 8758,
+          "to": 8840
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "If you’re changing MDX behavior, treat parity as a regression surface. Start from:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "5f9fbf61",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `docs/REACT_INTEGRATION_GUIDE.md`\n- `docs/PUBLIC_API.md`",
+        "range": {
+          "from": 8841,
+          "to": 8899
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "docs/REACT_INTEGRATION_GUIDE.md"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "docs/PUBLIC_API.md"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "3b265c2",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "9. Security (CSP + Sanitization)",
+        "range": {
+          "from": 8901,
+          "to": 8936
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "9. Security (CSP + Sanitization)",
+          "headingId": "9-security-csp-sanitization"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "9. Security (CSP + Sanitization)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "27783a6",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Key principles:",
+        "range": {
+          "from": 8938,
+          "to": 8953
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Key principles:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "43fb0b3b",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- prefer worker isolation for parsing/HTML\n- sanitize HTML aggressively if enabled\n- deploy with CSP suitable for your plugins/components (especially embeds)",
+        "range": {
+          "from": 8955,
+          "to": 9112
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "prefer worker isolation for parsing/HTML"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "sanitize HTML aggressively if enabled"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "deploy with CSP suitable for your plugins/components (especially embeds)"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "d47037b",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "References:",
+        "range": {
+          "from": 9114,
+          "to": 9125
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "References:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "212ed41",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `@stream-mdx/core/worker-html-sanitizer`\n- `docs/STREAMING_MARKDOWN_V2_STATUS.md`",
+        "range": {
+          "from": 9127,
+          "to": 9210
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "@stream-mdx/core/worker-html-sanitizer"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "docs/STREAMING_MARKDOWN_V2_STATUS.md"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "7e4ef806",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "10. Performance & Tuning",
+        "range": {
+          "from": 9212,
+          "to": 9239
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "10. Performance & Tuning",
+          "headingId": "10-performance-tuning"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "10. Performance & Tuning"
+          }
+        ]
+      }
+    },
+    {
+      "id": "5430e1d6",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "The system’s key performance levers generally include:",
+        "range": {
+          "from": 9241,
+          "to": 9295
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "The system’s key performance levers generally include:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "27e6219b",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- patch coalescing behavior (reduce update churn)\n- backpressure configuration (keep UI interactive)\n- streaming update rate (characters-per-second / chunk sizes)",
+        "range": {
+          "from": 9297,
+          "to": 9459
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "patch coalescing behavior (reduce update churn)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "backpressure configuration (keep UI interactive)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "streaming update rate (characters-per-second / chunk sizes)"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "409a3996",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "References:",
+        "range": {
+          "from": 9461,
+          "to": 9472
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "References:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "373c5f25",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `@stream-mdx/core/perf/patch-coalescing`\n- `@stream-mdx/core/perf/backpressure`",
+        "range": {
+          "from": 9473,
+          "to": 9554
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "@stream-mdx/core/perf/patch-coalescing"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "@stream-mdx/core/perf/backpressure"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "6296a0bd",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "11. Troubleshooting",
+        "range": {
+          "from": 9556,
+          "to": 9578
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "11. Troubleshooting",
+          "headingId": "11-troubleshooting"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "11. Troubleshooting"
+          }
+        ]
+      }
+    },
+    {
+      "id": "311ac298",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- **`useRef is not a function` (Next.js App Router)**: importing a client component from a server boundary. Fix: move import behind `\"use client\"`.\n- **Worker DOM globals (`DOMParser is not defined`)**: you’re running worker code that expects DOM APIs in a non-DOM worker context. Use the hosted worker bundle and avoid DOM-only code paths in the worker.\n- **Registry verification weirdness**: `npm view` can show confusing auth-related messages if your local token is stale. Use `--userconfig=/dev/null` when verifying public package metadata.",
+        "range": {
+          "from": 9580,
+          "to": 10124
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "**"
+              },
+              {
+                "kind": "code",
+                "text": "useRef is not a function"
+              },
+              {
+                "kind": "text",
+                "text": " (Next.js App Router)**: importing a client component from a server boundary. Fix: move import behind "
+              },
+              {
+                "kind": "code",
+                "text": "\"use client\""
+              },
+              {
+                "kind": "text",
+                "text": "."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "**Worker DOM globals ("
+              },
+              {
+                "kind": "code",
+                "text": "DOMParser is not defined"
+              },
+              {
+                "kind": "text",
+                "text": ")**: you’re running worker code that expects DOM APIs in a non-DOM worker context. Use the hosted worker bundle and avoid DOM-only code paths in the worker."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Registry verification weirdness"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": "
+              },
+              {
+                "kind": "code",
+                "text": "npm view"
+              },
+              {
+                "kind": "text",
+                "text": " can show confusing auth-related messages if your local token is stale. Use "
+              },
+              {
+                "kind": "code",
+                "text": "--userconfig=/dev/null"
+              },
+              {
+                "kind": "text",
+                "text": " when verifying public package metadata."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "2539dd3a",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "12. Packages & Entry Points",
+        "range": {
+          "from": 10126,
+          "to": 10156
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "12. Packages & Entry Points",
+          "headingId": "12-packages-entry-points"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "12. Packages & Entry Points"
+          }
+        ]
+      }
+    },
+    {
+      "id": "4eb166c1",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `stream-mdx` (convenience):\n  - `stream-mdx` → `@stream-mdx/react` main surface\n  - `stream-mdx/core` → `@stream-mdx/core`\n  - `stream-mdx/plugins` → `@stream-mdx/plugins`\n  - `stream-mdx/worker` → `@stream-mdx/worker`\n  - `stream-mdx/react` → `@stream-mdx/react`",
+        "range": {
+          "from": 10158,
+          "to": 10423
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "stream-mdx"
+              },
+              {
+                "kind": "text",
+                "text": " (convenience):"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "stream-mdx"
+              },
+              {
+                "kind": "text",
+                "text": " → "
+              },
+              {
+                "kind": "code",
+                "text": "@stream-mdx/react"
+              },
+              {
+                "kind": "text",
+                "text": " main surface"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "stream-mdx/core"
+              },
+              {
+                "kind": "text",
+                "text": " → "
+              },
+              {
+                "kind": "code",
+                "text": "@stream-mdx/core"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "stream-mdx/plugins"
+              },
+              {
+                "kind": "text",
+                "text": " → "
+              },
+              {
+                "kind": "code",
+                "text": "@stream-mdx/plugins"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "stream-mdx/worker"
+              },
+              {
+                "kind": "text",
+                "text": " → "
+              },
+              {
+                "kind": "code",
+                "text": "@stream-mdx/worker"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "stream-mdx/react"
+              },
+              {
+                "kind": "text",
+                "text": " → "
+              },
+              {
+                "kind": "code",
+                "text": "@stream-mdx/react"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "7998a160",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "If you’re building a library on top of StreamMDX, prefer the scoped packages.",
+        "range": {
+          "from": 10425,
+          "to": 10502
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "If you’re building a library on top of StreamMDX, prefer the scoped packages."
+          }
+        ]
+      }
+    },
+    {
+      "id": "1d3d2d8a",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "13. Development, Testing, and Release",
+        "range": {
+          "from": 10504,
+          "to": 10544
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "13. Development, Testing, and Release",
+          "headingId": "13-development-testing-and-release"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "13. Development, Testing, and Release"
+          }
+        ]
+      }
+    },
+    {
+      "id": "1883603c",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Install: `npm ci`\n- Build: `npm run build`\n- Test: `npm test`\n- Hosted worker: `npm run worker:build`",
+        "range": {
+          "from": 10546,
+          "to": 10649
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Install: "
+              },
+              {
+                "kind": "code",
+                "text": "npm ci"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Build: "
+              },
+              {
+                "kind": "code",
+                "text": "npm run build"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Test: "
+              },
+              {
+                "kind": "code",
+                "text": "npm test"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Hosted worker: "
+              },
+              {
+                "kind": "code",
+                "text": "npm run worker:build"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "1a20d37b",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Release checklist:",
+        "range": {
+          "from": 10651,
+          "to": 10669
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Release checklist:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "14da2b24",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `docs/STREAMING_MARKDOWN_RELEASE_CHECKLIST.md`",
+        "range": {
+          "from": 10670,
+          "to": 10718
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "docs/STREAMING_MARKDOWN_RELEASE_CHECKLIST.md"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    }
+  ],
+  "tocHeadings": [
+    {
+      "id": "streammdx-comprehensive-documentation",
+      "text": "StreamMDX — Comprehensive Documentation",
+      "level": 1,
+      "blockId": "db082c0"
+    },
+    {
+      "id": "table-of-contents",
+      "text": "Table of Contents",
+      "level": 2,
+      "blockId": "5c646f63"
+    },
+    {
+      "id": "1-what-streammdx-is",
+      "text": "1. What StreamMDX Is",
+      "level": 2,
+      "blockId": "24ea5a90"
+    },
+    {
+      "id": "2-quickstart",
+      "text": "2. Quickstart",
+      "level": 2,
+      "blockId": "1796157e"
+    },
+    {
+      "id": "2-1-minimal-next-js-usage",
+      "text": "2.1 Minimal Next.js usage",
+      "level": 3,
+      "blockId": "51fd015b"
+    },
+    {
+      "id": "2-2-worker-bundle-placement",
+      "text": "2.2 Worker bundle placement",
+      "level": 3,
+      "blockId": "7733cac0"
+    },
+    {
+      "id": "3-conceptual-model",
+      "text": "3. Conceptual Model",
+      "level": 2,
+      "blockId": "19dc3d9b"
+    },
+    {
+      "id": "3-1-worker-first-parsing-patching",
+      "text": "3.1 Worker-first parsing + patching",
+      "level": 3,
+      "blockId": "49657bbc"
+    },
+    {
+      "id": "3-2-backpressure-and-responsiveness",
+      "text": "3.2 Backpressure and responsiveness",
+      "level": 3,
+      "blockId": "580aa4a6"
+    },
+    {
+      "id": "4-public-api-high-level",
+      "text": "4. Public API (High Level)",
+      "level": 2,
+      "blockId": "c03a2de"
+    },
+    {
+      "id": "5-modularity-feature-toggles",
+      "text": "5. Modularity & Feature Toggles",
+      "level": 2,
+      "blockId": "44dd953c"
+    },
+    {
+      "id": "5-1-can-users-drop-math-html-mdx",
+      "text": "5.1 Can users drop math, HTML, MDX?",
+      "level": 3,
+      "blockId": "11995827"
+    },
+    {
+      "id": "5-2-math-delimiters-vs",
+      "text": "5.2 Math delimiters ( `$...$` vs `\\\\(...\\\\)` )",
+      "level": 3,
+      "blockId": "52c3515b"
+    },
+    {
+      "id": "6-plugins",
+      "text": "6. Plugins",
+      "level": 2,
+      "blockId": "1bfbce2"
+    },
+    {
+      "id": "6-1-default-document-plugin-set",
+      "text": "6.1 Default “document” plugin set",
+      "level": 3,
+      "blockId": "282020be"
+    },
+    {
+      "id": "6-2-tables-shadcn-variants",
+      "text": "6.2 Tables (Shadcn variants)",
+      "level": 3,
+      "blockId": "2d30f6c0"
+    },
+    {
+      "id": "6-3-html",
+      "text": "6.3 HTML",
+      "level": 3,
+      "blockId": "2661d444"
+    },
+    {
+      "id": "6-4-math",
+      "text": "6.4 Math",
+      "level": 3,
+      "blockId": "6104bae3"
+    },
+    {
+      "id": "6-5-mdx",
+      "text": "6.5 MDX",
+      "level": 3,
+      "blockId": "3b71dce0"
+    },
+    {
+      "id": "7-react-integration",
+      "text": "7. React Integration",
+      "level": 2,
+      "blockId": "2cb8a189"
+    },
+    {
+      "id": "7-1-tag-component-overrides",
+      "text": "7.1 Tag/component overrides",
+      "level": 3,
+      "blockId": "54c94cbb"
+    },
+    {
+      "id": "7-2-wrapping-code-math-blocks-scroll-containers-etc",
+      "text": "7.2 Wrapping code/math blocks (scroll containers, etc)",
+      "level": 3,
+      "blockId": "6509a465"
+    },
+    {
+      "id": "8-mdx-hydration-parity",
+      "text": "8. MDX Hydration & Parity",
+      "level": 2,
+      "blockId": "12ff0fc7"
+    },
+    {
+      "id": "9-security-csp-sanitization",
+      "text": "9. Security (CSP + Sanitization)",
+      "level": 2,
+      "blockId": "3b265c2"
+    },
+    {
+      "id": "10-performance-tuning",
+      "text": "10. Performance & Tuning",
+      "level": 2,
+      "blockId": "7e4ef806"
+    },
+    {
+      "id": "11-troubleshooting",
+      "text": "11. Troubleshooting",
+      "level": 2,
+      "blockId": "6296a0bd"
+    },
+    {
+      "id": "12-packages-entry-points",
+      "text": "12. Packages & Entry Points",
+      "level": 2,
+      "blockId": "2539dd3a"
+    },
+    {
+      "id": "13-development-testing-and-release",
+      "text": "13. Development, Testing, and Release",
+      "level": 2,
+      "blockId": "1d3d2d8a"
+    }
+  ],
+  "init": {
+    "docPlugins": {
+      "tables": true,
+      "html": true,
+      "mdx": true,
+      "math": true,
+      "footnotes": true,
+      "callouts": true
+    },
+    "mdx": {
+      "compileMode": "server"
+    },
+    "prewarmLangs": [
+      "typescript",
+      "tsx",
+      "javascript",
+      "json",
+      "bash",
+      "diff"
+    ]
+  }
+}

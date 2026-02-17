@@ -41,5 +41,5 @@ The script writes JSON output under `tmp/perf-baseline/`.
 
 ## Notes
 
-- These checks are intentionally **not** in CI yet.
+- Release/publish gates run the regression checks on the docs app.
 - If you add fixtures, update `tests/regression/fixtures/index.ts` and regenerate snapshots.

@@ -1,0 +1,515 @@
+{
+  "version": 1,
+  "schemaId": "streammdx.snapshot.v1",
+  "createdAt": "2026-02-11T20:25:55.694Z",
+  "hash": "58c46ff7f32253ae3b6710cc98daa34facc6bf39a56c6676f5a6b717fd08ad5d",
+  "contentHash": "2091adec7e68e86ed0d6f69b6d94e89e2790b8095862cae8b7b2011592009111",
+  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
+  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "blocks": [
+    {
+      "id": "db082c0",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Performance and Backpressure",
+        "range": {
+          "from": 0,
+          "to": 30
+        },
+        "meta": {
+          "headingLevel": 1,
+          "headingText": "Performance and Backpressure",
+          "headingId": "performance-and-backpressure"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Performance and Backpressure"
+          }
+        ]
+      }
+    },
+    {
+      "id": "72c393a1",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "The goal: steady rendering at scale",
+        "range": {
+          "from": 32,
+          "to": 70
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "The goal: steady rendering at scale",
+          "headingId": "the-goal-steady-rendering-at-scale"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "The goal: steady rendering at scale"
+          }
+        ]
+      }
+    },
+    {
+      "id": "2cdc31e5",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "StreamMDX prioritizes steady frame times during long streams. Instead of re-rendering everything, it coalesces patches and applies them with an adaptive scheduler.",
+        "range": {
+          "from": 72,
+          "to": 235
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "StreamMDX prioritizes steady frame times during long streams. Instead of re-rendering everything, it coalesces patches and applies them with an adaptive scheduler."
+          }
+        ]
+      }
+    },
+    {
+      "id": "132b9802",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Key concepts:",
+        "range": {
+          "from": 237,
+          "to": 250
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Key concepts:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "76fc5dbb",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- **Patch coalescing**: adjacent changes are merged into a single render batch.\n- **Adaptive budget**: the renderer adjusts how much work to do per frame.\n- **Backpressure**: the worker can be slowed when the UI is overloaded.",
+        "range": {
+          "from": 252,
+          "to": 478
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Patch coalescing"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": adjacent changes are merged into a single render batch."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Adaptive budget"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": the renderer adjusts how much work to do per frame."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Backpressure"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": the worker can be slowed when the UI is overloaded."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "66da76c4",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Scheduling knobs",
+        "range": {
+          "from": 480,
+          "to": 499
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Scheduling knobs",
+          "headingId": "scheduling-knobs"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Scheduling knobs"
+          }
+        ]
+      }
+    },
+    {
+      "id": "23ec5ade",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "The scheduling config lets you tune performance without touching the parser:",
+        "range": {
+          "from": 501,
+          "to": 577
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "The scheduling config lets you tune performance without touching the parser:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "7c3eb63",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```tsx\n<StreamingMarkdown\n  text={content}\n  scheduling={{\n    frameBudgetMs: 6,\n    lowPriorityFrameBudgetMs: 4,\n    maxBatchesPerFlush: 6,\n    maxLowPriorityBatchesPerFlush: 2,\n  }}\n/>\n```",
+        "range": {
+          "from": 579,
+          "to": 769
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content}</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  scheduling</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    frameBudgetMs: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">6</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    lowPriorityFrameBudgetMs: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">4</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    maxBatchesPerFlush: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">6</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    maxLowPriorityBatchesPerFlush: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">2</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }}</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/></span></span></code></pre>",
+        "meta": {
+          "lang": "tsx",
+          "code": "<StreamingMarkdown\n  text={content}\n  scheduling={{\n    frameBudgetMs: 6,\n    lowPriorityFrameBudgetMs: 4,\n    maxBatchesPerFlush: 6,\n    maxLowPriorityBatchesPerFlush: 2,\n  }}\n/>"
+        }
+      }
+    },
+    {
+      "id": "36cded79",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "These values are optional. The defaults are tuned for real-time streaming in browsers.",
+        "range": {
+          "from": 771,
+          "to": 857
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "These values are optional. The defaults are tuned for real-time streaming in browsers."
+          }
+        ]
+      }
+    },
+    {
+      "id": "4643e7ec",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Metrics",
+        "range": {
+          "from": 859,
+          "to": 869
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Metrics",
+          "headingId": "metrics"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Metrics"
+          }
+        ]
+      }
+    },
+    {
+      "id": "2550f3fa",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "`onMetrics` lets you capture timing data:",
+        "range": {
+          "from": 871,
+          "to": 912
+        },
+        "inline": [
+          {
+            "kind": "code",
+            "text": "onMetrics"
+          },
+          {
+            "kind": "text",
+            "text": " lets you capture timing data:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "51d32978",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```tsx\n<StreamingMarkdown\n  text={content}\n  onMetrics={(metrics) => {\n    console.log(\"patch apply\", metrics.patchApplyMs);\n    console.log(\"queue depth\", metrics.queueDepth);\n  }}\n/>\n```",
+        "range": {
+          "from": 914,
+          "to": 1102
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content}</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  onMetrics</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{(</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">metrics</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    console.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">log</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"patch apply\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, metrics.patchApplyMs);</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    console.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">log</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"queue depth\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, metrics.queueDepth);</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }}</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/></span></span></code></pre>",
+        "meta": {
+          "lang": "tsx",
+          "code": "<StreamingMarkdown\n  text={content}\n  onMetrics={(metrics) => {\n    console.log(\"patch apply\", metrics.patchApplyMs);\n    console.log(\"queue depth\", metrics.queueDepth);\n  }}\n/>"
+        }
+      }
+    },
+    {
+      "id": "958eedc",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Use these metrics to verify improvements instead of relying on subjective feel.",
+        "range": {
+          "from": 1104,
+          "to": 1183
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Use these metrics to verify improvements instead of relying on subjective feel."
+          }
+        ]
+      }
+    },
+    {
+      "id": "1a0e8f1d",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Practical tuning tips",
+        "range": {
+          "from": 1185,
+          "to": 1209
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Practical tuning tips",
+          "headingId": "practical-tuning-tips"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Practical tuning tips"
+          }
+        ]
+      }
+    },
+    {
+      "id": "7b788765",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Keep the update interval low for smooth streams.\n- Avoid extra work in custom components during hot paths.\n- Prefer wrapping (ScrollArea, callouts) over replacing rendering logic.",
+        "range": {
+          "from": 1211,
+          "to": 1392
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Keep the update interval low for smooth streams."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Avoid extra work in custom components during hot paths."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Prefer wrapping (ScrollArea, callouts) over replacing rendering logic."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "5c230943",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Known expensive operations",
+        "range": {
+          "from": 1394,
+          "to": 1423
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Known expensive operations",
+          "headingId": "known-expensive-operations"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Known expensive operations"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6ffc8fea",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Very large HTML blocks\n- Heavy MDX components that trigger layout thrash\n- Unbounded DOM for extremely long sessions",
+        "range": {
+          "from": 1425,
+          "to": 1543
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Very large HTML blocks"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Heavy MDX components that trigger layout thrash"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Unbounded DOM for extremely long sessions"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "645e7365",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "In those cases, use `features` flags to turn off unused blocks, or chunk your content.",
+        "range": {
+          "from": 1545,
+          "to": 1631
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "In those cases, use "
+          },
+          {
+            "kind": "code",
+            "text": "features"
+          },
+          {
+            "kind": "text",
+            "text": " flags to turn off unused blocks, or chunk your content."
+          }
+        ]
+      }
+    }
+  ],
+  "tocHeadings": [
+    {
+      "id": "performance-and-backpressure",
+      "text": "Performance and Backpressure",
+      "level": 1,
+      "blockId": "db082c0"
+    },
+    {
+      "id": "the-goal-steady-rendering-at-scale",
+      "text": "The goal: steady rendering at scale",
+      "level": 2,
+      "blockId": "72c393a1"
+    },
+    {
+      "id": "scheduling-knobs",
+      "text": "Scheduling knobs",
+      "level": 2,
+      "blockId": "66da76c4"
+    },
+    {
+      "id": "metrics",
+      "text": "Metrics",
+      "level": 2,
+      "blockId": "4643e7ec"
+    },
+    {
+      "id": "practical-tuning-tips",
+      "text": "Practical tuning tips",
+      "level": 2,
+      "blockId": "1a0e8f1d"
+    },
+    {
+      "id": "known-expensive-operations",
+      "text": "Known expensive operations",
+      "level": 2,
+      "blockId": "5c230943"
+    }
+  ],
+  "init": {
+    "docPlugins": {
+      "tables": true,
+      "html": true,
+      "mdx": true,
+      "math": true,
+      "footnotes": true,
+      "callouts": true
+    },
+    "mdx": {
+      "compileMode": "server"
+    },
+    "prewarmLangs": [
+      "typescript",
+      "tsx",
+      "javascript",
+      "json",
+      "bash",
+      "diff"
+    ]
+  }
+}

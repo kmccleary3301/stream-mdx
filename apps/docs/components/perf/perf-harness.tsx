@@ -150,6 +150,7 @@ function parseBoolean(value: string | null): boolean | null {
 function buildScheduling(presetKey: string, params: URLSearchParams): StreamingSchedulerOptions {
   const base = SCHEDULING_PRESETS[presetKey] ?? DEFAULT_SCHEDULING;
   const batch = params.get("batch") ?? base.batch;
+  const adaptiveSwitch = parseBoolean(params.get("adaptiveSwitch"));
   return {
     ...base,
     batch: batch === "microtask" || batch === "timeout" || batch === "rAF" ? batch : base.batch,
@@ -159,6 +160,8 @@ function buildScheduling(presetKey: string, params: URLSearchParams): StreamingS
     maxLowPriorityBatchesPerFlush: parseNumber(params.get("maxLowPriorityBatchesPerFlush")) ?? base.maxLowPriorityBatchesPerFlush,
     urgentQueueThreshold: parseNumber(params.get("urgentQueueThreshold")) ?? base.urgentQueueThreshold,
     historyLimit: parseNumber(params.get("historyLimit")) ?? base.historyLimit,
+    adaptiveSwitch: adaptiveSwitch ?? base.adaptiveSwitch,
+    adaptiveQueueThreshold: parseNumber(params.get("adaptiveQueueThreshold")) ?? base.adaptiveQueueThreshold,
   };
 }
 
@@ -232,7 +235,15 @@ export function PerfHarness(): JSX.Element {
     }
   }, []);
 
-  const onProfile = useCallback<React.ProfilerOnRenderCallback>((id, phase, actualDuration, baseDuration, startTime, commitTime) => {
+  const onProfile = useCallback(
+    (
+      id: string,
+      phase: "mount" | "update" | "nested-update",
+      actualDuration: number,
+      baseDuration: number,
+      startTime: number,
+      commitTime: number,
+    ) => {
       if (!profilerEnabled) return;
       profilerSamplesRef.current.push({
         id,

@@ -1,0 +1,3573 @@
+{
+  "version": 1,
+  "schemaId": "streammdx.snapshot.v1",
+  "createdAt": "2026-02-11T20:25:46.061Z",
+  "hash": "077a1ff2159cfc51f2e83a803686e344e6a82eb83394ece06e3420b6b4647f24",
+  "contentHash": "be1ecefd6bda31975f9b7db6f9177539ae40118f114a8fa268efc776f8c6ce6c",
+  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
+  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "blocks": [
+    {
+      "id": "db082c0",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Public API — StreamMDX",
+        "range": {
+          "from": 0,
+          "to": 24
+        },
+        "meta": {
+          "headingLevel": 1,
+          "headingText": "Public API — StreamMDX",
+          "headingId": "public-api-streammdx"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Public API — StreamMDX"
+          }
+        ]
+      }
+    },
+    {
+      "id": "3e5e44",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "_Last updated: 2026-02-11_",
+        "range": {
+          "from": 26,
+          "to": 52
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "_Last updated: 2026-02-11_"
+          }
+        ]
+      }
+    },
+    {
+      "id": "61a7d361",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Packages & Entry Points",
+        "range": {
+          "from": 54,
+          "to": 80
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Packages & Entry Points",
+          "headingId": "packages-entry-points"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Packages & Entry Points"
+          }
+        ]
+      }
+    },
+    {
+      "id": "252a8c86",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "StreamMDX is published as both scoped packages and an unscoped convenience wrapper:",
+        "range": {
+          "from": 82,
+          "to": 165
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "StreamMDX is published as both scoped packages and an unscoped convenience wrapper:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "206b45a",
+      "type": "table",
+      "isFinalized": true,
+      "payload": {
+        "raw": "| Package | Use when… |\n| --- | --- |\n| `stream-mdx` | You want a single dependency and stable import paths (recommended for apps). |\n| `@stream-mdx/react` | You want the React surface without the wrapper. |\n| `@stream-mdx/worker` | You want the worker client + hosted worker bundle (browser + Node). |\n| `@stream-mdx/core` | You want types + perf/sanitization helpers (no React). |\n| `@stream-mdx/mermaid` | You want optional Mermaid diagrams for fenced ` ```mermaid ` code blocks. |\n| `@stream-mdx/plugins/*` | You are building/customizing a worker bundle or need plugin primitives. |",
+        "range": {
+          "from": 167,
+          "to": 753
+        },
+        "inline": [],
+        "meta": {
+          "header": [
+            [
+              {
+                "kind": "text",
+                "text": "Package"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Use when…"
+              }
+            ]
+          ],
+          "rows": [
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "stream-mdx"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "You want a single dependency and stable import paths (recommended for apps)."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "@stream-mdx/react"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "You want the React surface without the wrapper."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "@stream-mdx/worker"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "You want the worker client + hosted worker bundle (browser + Node)."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "@stream-mdx/core"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "You want types + perf/sanitization helpers (no React)."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "@stream-mdx/mermaid"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "You want optional Mermaid diagrams for fenced "
+                },
+                {
+                  "kind": "code",
+                  "text": " "
+                },
+                {
+                  "kind": "text",
+                  "text": "`"
+                },
+                {
+                  "kind": "code",
+                  "text": "mermaid "
+                },
+                {
+                  "kind": "text",
+                  "text": " code blocks."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "@stream-mdx/plugins/*"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "You are building/customizing a worker bundle or need plugin primitives."
+                }
+              ]
+            ]
+          ],
+          "align": [
+            null,
+            null
+          ]
+        }
+      }
+    },
+    {
+      "id": "7afd6dbf",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "When you install `stream-mdx`, you can also import:",
+        "range": {
+          "from": 755,
+          "to": 806
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "When you install "
+          },
+          {
+            "kind": "code",
+            "text": "stream-mdx"
+          },
+          {
+            "kind": "text",
+            "text": ", you can also import:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "5f7650c",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `stream-mdx/react`, `stream-mdx/worker`, `stream-mdx/core`\n- `stream-mdx/worker/node` (Node `worker_threads` helper)\n- `stream-mdx/worker/direct` (in-process compile helper for runtimes without `worker_threads`)\n- `stream-mdx/plugins/*` (common plugin entrypoints; useful for pnpm users)",
+        "range": {
+          "from": 808,
+          "to": 1097
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "stream-mdx/react"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "stream-mdx/worker"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "stream-mdx/core"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "stream-mdx/worker/node"
+              },
+              {
+                "kind": "text",
+                "text": " (Node "
+              },
+              {
+                "kind": "code",
+                "text": "worker_threads"
+              },
+              {
+                "kind": "text",
+                "text": " helper)"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "stream-mdx/worker/direct"
+              },
+              {
+                "kind": "text",
+                "text": " (in-process compile helper for runtimes without "
+              },
+              {
+                "kind": "code",
+                "text": "worker_threads"
+              },
+              {
+                "kind": "text",
+                "text": ")"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "stream-mdx/plugins/*"
+              },
+              {
+                "kind": "text",
+                "text": " (common plugin entrypoints; useful for pnpm users)"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "357af681",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Runtime Context Matrix",
+        "range": {
+          "from": 1099,
+          "to": 1124
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Runtime Context Matrix",
+          "headingId": "runtime-context-matrix"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Runtime Context Matrix"
+          }
+        ]
+      }
+    },
+    {
+      "id": "1c8cf064",
+      "type": "table",
+      "isFinalized": true,
+      "payload": {
+        "raw": "| Context | Primary API | Compile path | Determinism status |\n| --- | --- | --- | --- |\n| Browser streaming UI | `<StreamingMarkdown />` from `stream-mdx` or `@stream-mdx/react` | Web Worker (`/workers/markdown-worker.js`) | Supported + CI-covered |\n| Node SSR/SSG | `compileMarkdownSnapshot()` from `stream-mdx/worker/node` + `MarkdownBlocksRenderer` from `@stream-mdx/react/server` | `worker_threads` hosted worker | Supported + parity-tested |\n| Static export docs build | `scripts/compile-docs-snapshots.ts` | Node snapshot compile at build time | Supported + Vercel-parity-tested |\n| Edge/no-`worker_threads` runtime | `compileMarkdownSnapshotDirect()` from `stream-mdx/worker/direct` + `MarkdownBlocksRenderer` from `@stream-mdx/react/server` | In-process direct worker runtime bridge (no `worker_threads`) | Preview + parity-tested + cache-compatible (Node FS) |",
+        "range": {
+          "from": 1126,
+          "to": 1995
+        },
+        "inline": [],
+        "meta": {
+          "header": [
+            [
+              {
+                "kind": "text",
+                "text": "Context"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Primary API"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Compile path"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Determinism status"
+              }
+            ]
+          ],
+          "rows": [
+            [
+              [
+                {
+                  "kind": "text",
+                  "text": "Browser streaming UI"
+                }
+              ],
+              [
+                {
+                  "kind": "code",
+                  "text": "<StreamingMarkdown />"
+                },
+                {
+                  "kind": "text",
+                  "text": " from "
+                },
+                {
+                  "kind": "code",
+                  "text": "stream-mdx"
+                },
+                {
+                  "kind": "text",
+                  "text": " or "
+                },
+                {
+                  "kind": "code",
+                  "text": "@stream-mdx/react"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Web Worker ("
+                },
+                {
+                  "kind": "code",
+                  "text": "/workers/markdown-worker.js"
+                },
+                {
+                  "kind": "text",
+                  "text": ")"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Supported + CI-covered"
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "text",
+                  "text": "Node SSR/SSG"
+                }
+              ],
+              [
+                {
+                  "kind": "code",
+                  "text": "compileMarkdownSnapshot()"
+                },
+                {
+                  "kind": "text",
+                  "text": " from "
+                },
+                {
+                  "kind": "code",
+                  "text": "stream-mdx/worker/node"
+                },
+                {
+                  "kind": "text",
+                  "text": " + "
+                },
+                {
+                  "kind": "code",
+                  "text": "MarkdownBlocksRenderer"
+                },
+                {
+                  "kind": "text",
+                  "text": " from "
+                },
+                {
+                  "kind": "code",
+                  "text": "@stream-mdx/react/server"
+                }
+              ],
+              [
+                {
+                  "kind": "code",
+                  "text": "worker_threads"
+                },
+                {
+                  "kind": "text",
+                  "text": " hosted worker"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Supported + parity-tested"
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "text",
+                  "text": "Static export docs build"
+                }
+              ],
+              [
+                {
+                  "kind": "code",
+                  "text": "scripts/compile-docs-snapshots.ts"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Node snapshot compile at build time"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Supported + Vercel-parity-tested"
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "text",
+                  "text": "Edge/no-"
+                },
+                {
+                  "kind": "code",
+                  "text": "worker_threads"
+                },
+                {
+                  "kind": "text",
+                  "text": " runtime"
+                }
+              ],
+              [
+                {
+                  "kind": "code",
+                  "text": "compileMarkdownSnapshotDirect()"
+                },
+                {
+                  "kind": "text",
+                  "text": " from "
+                },
+                {
+                  "kind": "code",
+                  "text": "stream-mdx/worker/direct"
+                },
+                {
+                  "kind": "text",
+                  "text": " + "
+                },
+                {
+                  "kind": "code",
+                  "text": "MarkdownBlocksRenderer"
+                },
+                {
+                  "kind": "text",
+                  "text": " from "
+                },
+                {
+                  "kind": "code",
+                  "text": "@stream-mdx/react/server"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "In-process direct worker runtime bridge (no "
+                },
+                {
+                  "kind": "code",
+                  "text": "worker_threads"
+                },
+                {
+                  "kind": "text",
+                  "text": ")"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Preview + parity-tested + cache-compatible (Node FS)"
+                }
+              ]
+            ]
+          ],
+          "align": [
+            null,
+            null,
+            null,
+            null
+          ]
+        }
+      }
+    },
+    {
+      "id": "6eac2dc6",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Determinism scope for supported rows:",
+        "range": {
+          "from": 1997,
+          "to": 2034
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Determinism scope for supported rows:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "46569924",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- same input text\n- same init/config\n- same worker/compiler bundle hash\n- same dependency set",
+        "range": {
+          "from": 2035,
+          "to": 2128
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "same input text"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "same init/config"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "same worker/compiler bundle hash"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "same dependency set"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "78cdfdf8",
+      "type": "hr",
+      "isFinalized": true,
+      "payload": {
+        "raw": "---",
+        "range": {
+          "from": 2130,
+          "to": 2133
+        }
+      }
+    },
+    {
+      "id": "5c50fee1",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "1) `<StreamingMarkdown />`",
+        "range": {
+          "from": 2135,
+          "to": 2164
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "1) `<StreamingMarkdown />`",
+          "headingId": "1-streamingmarkdown"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "1) "
+          },
+          {
+            "kind": "code",
+            "text": "<StreamingMarkdown />"
+          }
+        ]
+      }
+    },
+    {
+      "id": "3b6501fb",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```tsx\n\"use client\";\n\nimport { StreamingMarkdown, type StreamingMarkdownHandle } from \"stream-mdx\";\n\nconst ref = useRef<StreamingMarkdownHandle>(null);\n\n<StreamingMarkdown\n  ref={ref}\n  text=\"## Hello\\n\\nStreaming **markdown**\"\n  worker=\"/workers/markdown-worker.js\"\n  features={{ tables: true, html: true, math: true, mdx: true }}\n  mdxCompileMode=\"worker\"\n  prewarmLangs={[\"python\", \"bash\"]}\n  onMetrics={(m) => console.table(m.queueDelay)}\n  onError={(err) => reportError(err)}\n/>;\n```",
+        "range": {
+          "from": 2166,
+          "to": 2654
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"use client\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { StreamingMarkdown, </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">type</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> StreamingMarkdownHandle } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"4\"></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> ref</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> useRef</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">StreamingMarkdownHandle</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>(</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">null</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">);</span></span>\n<span class=\"line\" data-line=\"6\"></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  ref</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{ref}</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"## Hello\\n\\nStreaming **markdown**\"</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ tables: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, math: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }}</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  mdxCompileMode</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"worker\"</span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  prewarmLangs</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{[</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"python\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"bash\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">]}</span></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  onMetrics</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{(</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">m</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> console.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">table</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(m.queueDelay)}</span></span>\n<span class=\"line\" data-line=\"15\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  onError</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{(</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">err</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> reportError</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(err)}</span></span>\n<span class=\"line\" data-line=\"16\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/>;</span></span></code></pre>",
+        "meta": {
+          "lang": "tsx",
+          "code": "\"use client\";\n\nimport { StreamingMarkdown, type StreamingMarkdownHandle } from \"stream-mdx\";\n\nconst ref = useRef<StreamingMarkdownHandle>(null);\n\n<StreamingMarkdown\n  ref={ref}\n  text=\"## Hello\\n\\nStreaming **markdown**\"\n  worker=\"/workers/markdown-worker.js\"\n  features={{ tables: true, html: true, math: true, mdx: true }}\n  mdxCompileMode=\"worker\"\n  prewarmLangs={[\"python\", \"bash\"]}\n  onMetrics={(m) => console.table(m.queueDelay)}\n  onError={(err) => reportError(err)}\n/>;"
+        }
+      }
+    },
+    {
+      "id": "3e60321b",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Props",
+        "range": {
+          "from": 2656,
+          "to": 2665
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "Props",
+          "headingId": "props"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Props"
+          }
+        ]
+      }
+    },
+    {
+      "id": "356884bb",
+      "type": "table",
+      "isFinalized": true,
+      "payload": {
+        "raw": "| Prop | Type | Notes |\n| --- | --- | --- |\n| `text` | `string` | Static markdown. Mutating it restarts the session. |\n| `stream` | `AsyncIterable<string>` | Append-only stream; provide **either** `text` or `stream`. |\n| `worker` | `Worker \\| URL \\| string \\| () => Worker` | Worker instance/URL/factory. When omitted, the component uses the default worker strategy and falls back to `/workers/markdown-worker.js`. |\n| `managedWorker` | `boolean` | When `true`, the component attaches the worker but does not auto-`restart/append/finalize` for you (use the ref handle). |\n| `prewarmLangs` | `string[]` | Shiki languages to load inside the worker. |\n| `features` | `{ footnotes?, html?, mdx?, tables?, callouts?, math?, formatAnticipation?, codeHighlighting? }` | Toggles built-in feature flags. |\n| `mdxCompileMode` | `\"server\" \\| \"worker\"` | Enables MDX compilation/hydration and selects the compile strategy. |\n| `components` | `Partial<BlockComponents>` | Override block renders (wrap code/math without affecting the patch scheduler). |\n| `inlineComponents` | `Partial<InlineComponents>` | Override inline renders. |\n| `tableElements` | `Partial<TableElements>` | Override table tags (e.g. Shadcn table wrappers). |\n| `htmlElements` | `Partial<HtmlElements>` | Override HTML tag renders (when HTML is enabled). |\n| `mdxComponents` | `Record<string, ComponentType>` | Component registry used when hydrating MDX. |\n| `caret` | `\"block\" \\| \"circle\" \\| string \\| false` | Show a streaming caret while blocks are still in-flight. |\n| `linkSafety` | `{ enabled?, onLinkCheck?, renderModal? }` | Intercept links and require confirmation before navigation. |\n| `deferHeavyBlocks` | `boolean \\| { rootMargin?, idleTimeoutMs?, debounceMs? }` | Defer heavy blocks (e.g. Mermaid) until in view/idle. |\n| `scheduling` | `StreamingSchedulerOptions` | Patch scheduler/backpressure knobs. |\n| `onMetrics` | `(metrics: RendererMetrics) => void` | Invoked after each flush (queue depth, timings, adaptive budget state, worker metrics). |\n| `onError` | `(error: Error) => void` | Render-time errors. (Worker runtime errors surface via `error` events on the Worker.) |\n| `className`, `style` | React props forwarded to the root container. |",
+        "range": {
+          "from": 2667,
+          "to": 4890
+        },
+        "inline": [],
+        "meta": {
+          "header": [
+            [
+              {
+                "kind": "text",
+                "text": "Prop"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Type"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Notes"
+              }
+            ]
+          ],
+          "rows": [
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "text"
+                }
+              ],
+              [
+                {
+                  "kind": "code",
+                  "text": "string"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Static markdown. Mutating it restarts the session."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "stream"
+                }
+              ],
+              [
+                {
+                  "kind": "code",
+                  "text": "AsyncIterable<string>"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Append-only stream; provide "
+                },
+                {
+                  "kind": "strong",
+                  "children": [
+                    {
+                      "kind": "text",
+                      "text": "either"
+                    }
+                  ]
+                },
+                {
+                  "kind": "text",
+                  "text": " "
+                },
+                {
+                  "kind": "code",
+                  "text": "text"
+                },
+                {
+                  "kind": "text",
+                  "text": " or "
+                },
+                {
+                  "kind": "code",
+                  "text": "stream"
+                },
+                {
+                  "kind": "text",
+                  "text": "."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "worker"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "`Worker \\"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "URL \\"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "string \\"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "() => Worker`"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Worker instance/URL/factory. When omitted, the component uses the default worker strategy and falls back to "
+                },
+                {
+                  "kind": "code",
+                  "text": "/workers/markdown-worker.js"
+                },
+                {
+                  "kind": "text",
+                  "text": "."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "managedWorker"
+                }
+              ],
+              [
+                {
+                  "kind": "code",
+                  "text": "boolean"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "When "
+                },
+                {
+                  "kind": "code",
+                  "text": "true"
+                },
+                {
+                  "kind": "text",
+                  "text": ", the component attaches the worker but does not auto-"
+                },
+                {
+                  "kind": "code",
+                  "text": "restart/append/finalize"
+                },
+                {
+                  "kind": "text",
+                  "text": " for you (use the ref handle)."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "prewarmLangs"
+                }
+              ],
+              [
+                {
+                  "kind": "code",
+                  "text": "string[]"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Shiki languages to load inside the worker."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "features"
+                }
+              ],
+              [
+                {
+                  "kind": "code",
+                  "text": "{ footnotes?, html?, mdx?, tables?, callouts?, math?, formatAnticipation?, codeHighlighting? }"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Toggles built-in feature flags."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "mdxCompileMode"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "`\"server\" \\"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "\"worker\"`"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Enables MDX compilation/hydration and selects the compile strategy."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "components"
+                }
+              ],
+              [
+                {
+                  "kind": "code",
+                  "text": "Partial<BlockComponents>"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Override block renders (wrap code/math without affecting the patch scheduler)."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "inlineComponents"
+                }
+              ],
+              [
+                {
+                  "kind": "code",
+                  "text": "Partial<InlineComponents>"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Override inline renders."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "tableElements"
+                }
+              ],
+              [
+                {
+                  "kind": "code",
+                  "text": "Partial<TableElements>"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Override table tags (e.g. Shadcn table wrappers)."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "htmlElements"
+                }
+              ],
+              [
+                {
+                  "kind": "code",
+                  "text": "Partial<HtmlElements>"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Override HTML tag renders (when HTML is enabled)."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "mdxComponents"
+                }
+              ],
+              [
+                {
+                  "kind": "code",
+                  "text": "Record<string, ComponentType>"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Component registry used when hydrating MDX."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "caret"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "`\"block\" \\"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "\"circle\" \\"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "string \\"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "false`"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Show a streaming caret while blocks are still in-flight."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "linkSafety"
+                }
+              ],
+              [
+                {
+                  "kind": "code",
+                  "text": "{ enabled?, onLinkCheck?, renderModal? }"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Intercept links and require confirmation before navigation."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "deferHeavyBlocks"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "`boolean \\"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "{ rootMargin?, idleTimeoutMs?, debounceMs? }`"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Defer heavy blocks (e.g. Mermaid) until in view/idle."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "scheduling"
+                }
+              ],
+              [
+                {
+                  "kind": "code",
+                  "text": "StreamingSchedulerOptions"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Patch scheduler/backpressure knobs."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "onMetrics"
+                }
+              ],
+              [
+                {
+                  "kind": "code",
+                  "text": "(metrics: RendererMetrics) => void"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Invoked after each flush (queue depth, timings, adaptive budget state, worker metrics)."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "onError"
+                }
+              ],
+              [
+                {
+                  "kind": "code",
+                  "text": "(error: Error) => void"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Render-time errors. (Worker runtime errors surface via "
+                },
+                {
+                  "kind": "code",
+                  "text": "error"
+                },
+                {
+                  "kind": "text",
+                  "text": " events on the Worker.)"
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "className"
+                },
+                {
+                  "kind": "text",
+                  "text": ", "
+                },
+                {
+                  "kind": "code",
+                  "text": "style"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "React props forwarded to the root container."
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": ""
+                }
+              ]
+            ]
+          ],
+          "align": [
+            null,
+            null,
+            null
+          ]
+        }
+      }
+    },
+    {
+      "id": "3d4b065d",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Notes:",
+        "range": {
+          "from": 4892,
+          "to": 4898
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Notes:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "657471d8",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- When `linkSafety.enabled` is on, the default `link` inline renderer is overridden to ensure clicks are intercepted. If you supply a custom `inlineComponents.link`, wrap link safety yourself.",
+        "range": {
+          "from": 4899,
+          "to": 5091
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "When "
+              },
+              {
+                "kind": "code",
+                "text": "linkSafety.enabled"
+              },
+              {
+                "kind": "text",
+                "text": " is on, the default "
+              },
+              {
+                "kind": "code",
+                "text": "link"
+              },
+              {
+                "kind": "text",
+                "text": " inline renderer is overridden to ensure clicks are intercepted. If you supply a custom "
+              },
+              {
+                "kind": "code",
+                "text": "inlineComponents.link"
+              },
+              {
+                "kind": "text",
+                "text": ", wrap link safety yourself."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "6fb104f5",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Imperative Handle",
+        "range": {
+          "from": 5093,
+          "to": 5114
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "Imperative Handle",
+          "headingId": "imperative-handle"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Imperative Handle"
+          }
+        ]
+      }
+    },
+    {
+      "id": "104cd947",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```ts\ntype StreamingMarkdownHandle = {\n  pause(): void;\n  resume(): void;\n  restart(): void;\n  finalize(): void;\n  append(text: string): void;\n  setCredits(value: number): void;\n  flushPending(): PatchFlushResult | null;\n  waitForIdle(): Promise<void>;\n  onFlush(listener: (result: PatchFlushResult) => void): () => void;\n  getState(): RendererStateSnapshot;\n  getPatchHistory(limit?: number): ReadonlyArray<RendererMetrics>;\n};\n```",
+        "range": {
+          "from": 5116,
+          "to": 5548
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"typescript\"><code data-language=\"typescript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">type</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> StreamingMarkdownHandle</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  pause</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">()</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> void</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  resume</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">()</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> void</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  restart</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">()</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> void</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  finalize</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">()</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> void</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  append</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> void</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  setCredits</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">value</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> number</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> void</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  flushPending</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">()</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> PatchFlushResult</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> |</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> null</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  waitForIdle</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">()</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> Promise</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">void</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>;</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  onFlush</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">listener</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> (</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">result</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> PatchFlushResult</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> void</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> () </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> void</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  getState</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">()</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> RendererStateSnapshot</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  getPatchHistory</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">limit</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> number</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> ReadonlyArray</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">RendererMetrics</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>;</span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">};</span></span></code></pre>",
+        "meta": {
+          "lang": "typescript",
+          "code": "type StreamingMarkdownHandle = {\n  pause(): void;\n  resume(): void;\n  restart(): void;\n  finalize(): void;\n  append(text: string): void;\n  setCredits(value: number): void;\n  flushPending(): PatchFlushResult | null;\n  waitForIdle(): Promise<void>;\n  onFlush(listener: (result: PatchFlushResult) => void): () => void;\n  getState(): RendererStateSnapshot;\n  getPatchHistory(limit?: number): ReadonlyArray<RendererMetrics>;\n};"
+        }
+      }
+    },
+    {
+      "id": "1e704139",
+      "type": "hr",
+      "isFinalized": true,
+      "payload": {
+        "raw": "---",
+        "range": {
+          "from": 5550,
+          "to": 5553
+        }
+      }
+    },
+    {
+      "id": "507463c0",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "2) Worker Hosting + CSP",
+        "range": {
+          "from": 5555,
+          "to": 5581
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "2) Worker Hosting + CSP",
+          "headingId": "2-worker-hosting-csp"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "2) Worker Hosting + CSP"
+          }
+        ]
+      }
+    },
+    {
+      "id": "1f2d3625",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Recommended production setup is to host the worker bundle from static assets and point the component at it:",
+        "range": {
+          "from": 5583,
+          "to": 5690
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Recommended production setup is to host the worker bundle from static assets and point the component at it:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "68888160",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```bash\nmkdir -p public/workers\ncp node_modules/@stream-mdx/worker/dist/hosted/markdown-worker.js public/workers/markdown-worker.js\n```",
+        "range": {
+          "from": 5692,
+          "to": 5827
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">mkdir</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> -p</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> public/workers</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">cp</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> node_modules/@stream-mdx/worker/dist/hosted/markdown-worker.js</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> public/workers/markdown-worker.js</span></span></code></pre>",
+        "meta": {
+          "lang": "bash",
+          "code": "mkdir -p public/workers\ncp node_modules/@stream-mdx/worker/dist/hosted/markdown-worker.js public/workers/markdown-worker.js"
+        }
+      }
+    },
+    {
+      "id": "e025f0",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```tsx\n<StreamingMarkdown worker=\"/workers/markdown-worker.js\" />\n```",
+        "range": {
+          "from": 5829,
+          "to": 5898
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> /></span></span></code></pre>",
+        "meta": {
+          "lang": "tsx",
+          "code": "<StreamingMarkdown worker=\"/workers/markdown-worker.js\" />"
+        }
+      }
+    },
+    {
+      "id": "615c5f5c",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Worker ownership semantics:",
+        "range": {
+          "from": 5900,
+          "to": 5927
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Worker ownership semantics:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "10b1910f",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `worker=\"/.../markdown-worker.js\"` or `worker={new URL(...)}`\n  - StreamMDX creates + terminates the Worker instance for you.\n- `worker={existingWorker}` or `worker={() => existingWorker}`\n  - StreamMDX treats the Worker as externally managed and will not terminate it.\n- `worker={undefined}`\n  - StreamMDX uses the default worker strategy and falls back to `/workers/markdown-worker.js`.",
+        "range": {
+          "from": 5929,
+          "to": 6319
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "worker=\"/.../markdown-worker.js\""
+              },
+              {
+                "kind": "text",
+                "text": " or "
+              },
+              {
+                "kind": "code",
+                "text": "worker={new URL(...)}"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "StreamMDX creates + terminates the Worker instance for you."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "worker={existingWorker}"
+              },
+              {
+                "kind": "text",
+                "text": " or "
+              },
+              {
+                "kind": "code",
+                "text": "worker={() => existingWorker}"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "StreamMDX treats the Worker as externally managed and will not terminate it."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "worker={undefined}"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "StreamMDX uses the default worker strategy and falls back to "
+              },
+              {
+                "kind": "code",
+                "text": "/workers/markdown-worker.js"
+              },
+              {
+                "kind": "text",
+                "text": "."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "7248bf44",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "For advanced worker instantiation (CSP overrides, shared worker instances), see `createDefaultWorker()` in `stream-mdx/worker`.",
+        "range": {
+          "from": 6321,
+          "to": 6448
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "For advanced worker instantiation (CSP overrides, shared worker instances), see "
+          },
+          {
+            "kind": "code",
+            "text": "createDefaultWorker()"
+          },
+          {
+            "kind": "text",
+            "text": " in "
+          },
+          {
+            "kind": "code",
+            "text": "stream-mdx/worker"
+          },
+          {
+            "kind": "text",
+            "text": "."
+          }
+        ]
+      }
+    },
+    {
+      "id": "3d0263d9",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Node / CLI runtimes",
+        "range": {
+          "from": 6450,
+          "to": 6473
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "Node / CLI runtimes",
+          "headingId": "node-cli-runtimes"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Node / CLI runtimes"
+          }
+        ]
+      }
+    },
+    {
+      "id": "9bab2e4",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "To run the hosted worker bundle in Node (via `worker_threads`), use:",
+        "range": {
+          "from": 6475,
+          "to": 6543
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "To run the hosted worker bundle in Node (via "
+          },
+          {
+            "kind": "code",
+            "text": "worker_threads"
+          },
+          {
+            "kind": "text",
+            "text": "), use:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "47073e7c",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `@stream-mdx/worker/node` (scoped)\n- `stream-mdx/worker/node` (convenience wrapper)",
+        "range": {
+          "from": 6545,
+          "to": 6630
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "@stream-mdx/worker/node"
+              },
+              {
+                "kind": "text",
+                "text": " (scoped)"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "stream-mdx/worker/node"
+              },
+              {
+                "kind": "text",
+                "text": " (convenience wrapper)"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "a2953a1",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "For runtimes without `worker_threads` (edge-style constraints), use:",
+        "range": {
+          "from": 6632,
+          "to": 6700
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "For runtimes without "
+          },
+          {
+            "kind": "code",
+            "text": "worker_threads"
+          },
+          {
+            "kind": "text",
+            "text": " (edge-style constraints), use:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "3e122159",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `@stream-mdx/worker/direct` (scoped)\n- `stream-mdx/worker/direct` (convenience wrapper)",
+        "range": {
+          "from": 6702,
+          "to": 6791
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "@stream-mdx/worker/direct"
+              },
+              {
+                "kind": "text",
+                "text": " (scoped)"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "stream-mdx/worker/direct"
+              },
+              {
+                "kind": "text",
+                "text": " (convenience wrapper)"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "5897ba25",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "See `docs/CLI_USAGE.md` for an example that consumes `PATCH` messages into a `DocumentSnapshot`.",
+        "range": {
+          "from": 6793,
+          "to": 6889
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "See "
+          },
+          {
+            "kind": "code",
+            "text": "docs/CLI_USAGE.md"
+          },
+          {
+            "kind": "text",
+            "text": " for an example that consumes "
+          },
+          {
+            "kind": "code",
+            "text": "PATCH"
+          },
+          {
+            "kind": "text",
+            "text": " messages into a "
+          },
+          {
+            "kind": "code",
+            "text": "DocumentSnapshot"
+          },
+          {
+            "kind": "text",
+            "text": "."
+          }
+        ]
+      }
+    },
+    {
+      "id": "58add8ba",
+      "type": "hr",
+      "isFinalized": true,
+      "payload": {
+        "raw": "---",
+        "range": {
+          "from": 6891,
+          "to": 6894
+        }
+      }
+    },
+    {
+      "id": "24aa72a1",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "3) Features",
+        "range": {
+          "from": 6896,
+          "to": 6910
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "3) Features",
+          "headingId": "3-features"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "3) Features"
+          }
+        ]
+      }
+    },
+    {
+      "id": "4e038adc",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "`features` toggles built-in capabilities in the worker + renderer:",
+        "range": {
+          "from": 6912,
+          "to": 6978
+        },
+        "inline": [
+          {
+            "kind": "code",
+            "text": "features"
+          },
+          {
+            "kind": "text",
+            "text": " toggles built-in capabilities in the worker + renderer:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "4e635c1f",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `tables`: GitHub-flavored markdown tables → table block snapshots (`tableElements` controls rendering).\n- `html`: enables inline/raw HTML (sanitized by default; `htmlElements` controls rendering).\n- `mdx`: recognizes MDX blocks (requires `mdxCompileMode` to compile/hydrate).\n- `math`: recognizes inline + display math (default delimiters: `$…$` and `$$…$$`).\n- `footnotes`: enables footnote aggregation.\n- `callouts`: enables callout blockquote syntax (disabled by default in the worker).\n- `formatAnticipation`: (opt-in) withholds formatting markers while streaming (initial support: `*`, `**`, `` ` ``, `~~`). Final output is unchanged.\n- `codeHighlighting`: controls Shiki strategy for fenced code blocks:\n  - `\"final\"` (default): highlight only after the block finalizes.\n  - `\"incremental\"`: highlight completed lines as they arrive (fast enough for streaming).\n  - `\"live\"`: re-highlight on every update (slowest, highest fidelity).",
+        "range": {
+          "from": 6980,
+          "to": 7921
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "tables"
+              },
+              {
+                "kind": "text",
+                "text": ": GitHub-flavored markdown tables → table block snapshots ("
+              },
+              {
+                "kind": "code",
+                "text": "tableElements"
+              },
+              {
+                "kind": "text",
+                "text": " controls rendering)."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "html"
+              },
+              {
+                "kind": "text",
+                "text": ": enables inline/raw HTML (sanitized by default; "
+              },
+              {
+                "kind": "code",
+                "text": "htmlElements"
+              },
+              {
+                "kind": "text",
+                "text": " controls rendering)."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "mdx"
+              },
+              {
+                "kind": "text",
+                "text": ": recognizes MDX blocks (requires "
+              },
+              {
+                "kind": "code",
+                "text": "mdxCompileMode"
+              },
+              {
+                "kind": "text",
+                "text": " to compile/hydrate)."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "math"
+              },
+              {
+                "kind": "text",
+                "text": ": recognizes inline + display math (default delimiters: `"
+              },
+              {
+                "kind": "math-inline",
+                "tex": "…"
+              },
+              {
+                "kind": "code",
+                "text": " and "
+              },
+              {
+                "kind": "math-display",
+                "tex": "…"
+              },
+              {
+                "kind": "text",
+                "text": "`)."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "footnotes"
+              },
+              {
+                "kind": "text",
+                "text": ": enables footnote aggregation."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "callouts"
+              },
+              {
+                "kind": "text",
+                "text": ": enables callout blockquote syntax (disabled by default in the worker)."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "formatAnticipation"
+              },
+              {
+                "kind": "text",
+                "text": ": (opt-in) withholds formatting markers while streaming (initial support: "
+              },
+              {
+                "kind": "code",
+                "text": "*"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "**"
+              },
+              {
+                "kind": "text",
+                "text": ", `"
+              },
+              {
+                "kind": "code",
+                "text": " "
+              },
+              {
+                "kind": "text",
+                "text": " `"
+              },
+              {
+                "kind": "code",
+                "text": ", "
+              },
+              {
+                "kind": "text",
+                "text": "~~`). Final output is unchanged."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "codeHighlighting"
+              },
+              {
+                "kind": "text",
+                "text": ": controls Shiki strategy for fenced code blocks:"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "\"final\""
+              },
+              {
+                "kind": "text",
+                "text": " (default): highlight only after the block finalizes."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "\"incremental\""
+              },
+              {
+                "kind": "text",
+                "text": ": highlight completed lines as they arrive (fast enough for streaming)."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "\"live\""
+              },
+              {
+                "kind": "text",
+                "text": ": re-highlight on every update (slowest, highest fidelity)."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "d1c80a3",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Context support table",
+        "range": {
+          "from": 7923,
+          "to": 7948
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "Context support table",
+          "headingId": "context-support-table"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Context support table"
+          }
+        ]
+      }
+    },
+    {
+      "id": "72a7323d",
+      "type": "table",
+      "isFinalized": true,
+      "payload": {
+        "raw": "| Feature | Browser worker streaming | Node snapshot compile | Edge/no-worker compile |\n| --- | --- | --- | --- |\n| `tables` | Yes | Yes | Preview |\n| `html` | Yes (sanitized) | Yes (sanitized) | Preview |\n| `math` | Yes | Yes | Preview |\n| `mdx` | Yes (`server` or `worker` mode) | Yes (`server` compile mode) | Preview (`server` compile mode) |\n| `footnotes` | Yes | Yes | Preview |\n| `callouts` | Yes | Yes | Preview |\n| Mermaid addon (`@stream-mdx/mermaid`) | Yes (renderer component) | Yes (renderer component) | Preview (renderer component) |",
+        "range": {
+          "from": 7950,
+          "to": 8498
+        },
+        "inline": [],
+        "meta": {
+          "header": [
+            [
+              {
+                "kind": "text",
+                "text": "Feature"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Browser worker streaming"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Node snapshot compile"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Edge/no-worker compile"
+              }
+            ]
+          ],
+          "rows": [
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "tables"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Yes"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Yes"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Preview"
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "html"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Yes (sanitized)"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Yes (sanitized)"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Preview"
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "math"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Yes"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Yes"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Preview"
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "mdx"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Yes ("
+                },
+                {
+                  "kind": "code",
+                  "text": "server"
+                },
+                {
+                  "kind": "text",
+                  "text": " or "
+                },
+                {
+                  "kind": "code",
+                  "text": "worker"
+                },
+                {
+                  "kind": "text",
+                  "text": " mode)"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Yes ("
+                },
+                {
+                  "kind": "code",
+                  "text": "server"
+                },
+                {
+                  "kind": "text",
+                  "text": " compile mode)"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Preview ("
+                },
+                {
+                  "kind": "code",
+                  "text": "server"
+                },
+                {
+                  "kind": "text",
+                  "text": " compile mode)"
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "footnotes"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Yes"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Yes"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Preview"
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "callouts"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Yes"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Yes"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Preview"
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "text",
+                  "text": "Mermaid addon ("
+                },
+                {
+                  "kind": "code",
+                  "text": "@stream-mdx/mermaid"
+                },
+                {
+                  "kind": "text",
+                  "text": ")"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Yes (renderer component)"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Yes (renderer component)"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Preview (renderer component)"
+                }
+              ]
+            ]
+          ],
+          "align": [
+            null,
+            null,
+            null,
+            null
+          ]
+        }
+      }
+    },
+    {
+      "id": "43238289",
+      "type": "hr",
+      "isFinalized": true,
+      "payload": {
+        "raw": "---",
+        "range": {
+          "from": 8500,
+          "to": 8503
+        }
+      }
+    },
+    {
+      "id": "13156c2",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "3.1) Mermaid (optional)",
+        "range": {
+          "from": 8505,
+          "to": 8531
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "3.1) Mermaid (optional)",
+          "headingId": "3-1-mermaid-optional"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "3.1) Mermaid (optional)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "5ff3ebdd",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Mermaid diagrams are provided as an **opt-in addon** via `@stream-mdx/mermaid`.",
+        "range": {
+          "from": 8533,
+          "to": 8612
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Mermaid diagrams are provided as an "
+          },
+          {
+            "kind": "strong",
+            "children": [
+              {
+                "kind": "text",
+                "text": "opt-in addon"
+              }
+            ]
+          },
+          {
+            "kind": "text",
+            "text": " via "
+          },
+          {
+            "kind": "code",
+            "text": "@stream-mdx/mermaid"
+          },
+          {
+            "kind": "text",
+            "text": "."
+          }
+        ]
+      }
+    },
+    {
+      "id": "4f835d27",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```bash\nnpm install @stream-mdx/mermaid\n```",
+        "range": {
+          "from": 8614,
+          "to": 8657
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> install</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> @stream-mdx/mermaid</span></span></code></pre>",
+        "meta": {
+          "lang": "bash",
+          "code": "npm install @stream-mdx/mermaid"
+        }
+      }
+    },
+    {
+      "id": "73623508",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```tsx\nimport { MermaidBlock } from \"@stream-mdx/mermaid\";\n\n<StreamingMarkdown components={{ mermaid: MermaidBlock }} />;\n```",
+        "range": {
+          "from": 8659,
+          "to": 8784
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { MermaidBlock } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/mermaid\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> components</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ mermaid: MermaidBlock }} />;</span></span></code></pre>",
+        "meta": {
+          "lang": "tsx",
+          "code": "import { MermaidBlock } from \"@stream-mdx/mermaid\";\n\n<StreamingMarkdown components={{ mermaid: MermaidBlock }} />;"
+        }
+      }
+    },
+    {
+      "id": "22204bfd",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "When registered, fenced ` ```mermaid ` code blocks render as diagrams (with a Diagram/Code toggle). All other code blocks remain unchanged.",
+        "range": {
+          "from": 8786,
+          "to": 8925
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "When registered, fenced "
+          },
+          {
+            "kind": "code",
+            "text": " "
+          },
+          {
+            "kind": "text",
+            "text": "`"
+          },
+          {
+            "kind": "code",
+            "text": "mermaid "
+          },
+          {
+            "kind": "text",
+            "text": " code blocks render as diagrams (with a Diagram/Code toggle). All other code blocks remain unchanged."
+          }
+        ]
+      }
+    },
+    {
+      "id": "65dfe206",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "4) MDX Compilation Modes",
+        "range": {
+          "from": 8927,
+          "to": 8954
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "4) MDX Compilation Modes",
+          "headingId": "4-mdx-compilation-modes"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "4) MDX Compilation Modes"
+          }
+        ]
+      }
+    },
+    {
+      "id": "17ee971e",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "`mdxCompileMode` selects how MDX blocks are compiled:",
+        "range": {
+          "from": 8956,
+          "to": 9009
+        },
+        "inline": [
+          {
+            "kind": "code",
+            "text": "mdxCompileMode"
+          },
+          {
+            "kind": "text",
+            "text": " selects how MDX blocks are compiled:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "56e896e5",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `\"worker\"`: compilation happens client-side in the worker.\n- `\"server\"`: compilation requests go to `/api/mdx-compile-v2` by default (you must implement this endpoint in your app).",
+        "range": {
+          "from": 9011,
+          "to": 9193
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "\"worker\""
+              },
+              {
+                "kind": "text",
+                "text": ": compilation happens client-side in the worker."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "\"server\""
+              },
+              {
+                "kind": "text",
+                "text": ": compilation requests go to "
+              },
+              {
+                "kind": "code",
+                "text": "/api/mdx-compile-v2"
+              },
+              {
+                "kind": "text",
+                "text": " by default (you must implement this endpoint in your app)."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "20471ecc",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "See `docs/REACT_INTEGRATION_GUIDE.md` for a complete Next.js wiring guide and parity notes.",
+        "range": {
+          "from": 9195,
+          "to": 9286
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "See "
+          },
+          {
+            "kind": "code",
+            "text": "docs/REACT_INTEGRATION_GUIDE.md"
+          },
+          {
+            "kind": "text",
+            "text": " for a complete Next.js wiring guide and parity notes."
+          }
+        ]
+      }
+    },
+    {
+      "id": "56b24627",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Next.js App Router (server-safe rendering)",
+        "range": {
+          "from": 9288,
+          "to": 9334
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "Next.js App Router (server-safe rendering)",
+          "headingId": "next-js-app-router-server-safe-rendering"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Next.js App Router (server-safe rendering)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "7a53b2fd",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```tsx\nimport { MarkdownBlocksRenderer, ComponentRegistry } from \"@stream-mdx/react/server\";\nimport { compileMarkdownSnapshot } from \"stream-mdx/worker/node\";\n\nexport default async function Page() {\n  const { blocks } = await compileMarkdownSnapshot({\n    text: \"# Hello\\\\n\\\\nStreaming-safe server render.\",\n    init: {\n      docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true },\n      mdx: { compileMode: \"server\" },\n      prewarmLangs: [\"typescript\"],\n    },\n  });\n\n  return <MarkdownBlocksRenderer blocks={blocks} componentRegistry={new ComponentRegistry()} />;\n}\n```",
+        "range": {
+          "from": 9336,
+          "to": 9934
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { MarkdownBlocksRenderer, ComponentRegistry } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/react/server\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { compileMarkdownSnapshot } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx/worker/node\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">export</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> default</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> async</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> function</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> Page</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">() {</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  const</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">blocks</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> await</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> compileMarkdownSnapshot</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">({</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    text: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"# Hello</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">\\\\</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">n</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">\\\\</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">nStreaming-safe server render.\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    init: {</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      docPlugins: { tables: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, math: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, footnotes: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> },</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      mdx: { compileMode: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"server\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> },</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      prewarmLangs: [</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"typescript\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">],</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    },</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  });</span></span>\n<span class=\"line\" data-line=\"13\"></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  return</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">MarkdownBlocksRenderer</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> blocks</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{blocks} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">componentRegistry</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">new</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> ComponentRegistry</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">()} />;</span></span>\n<span class=\"line\" data-line=\"15\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}</span></span></code></pre>",
+        "meta": {
+          "lang": "tsx",
+          "code": "import { MarkdownBlocksRenderer, ComponentRegistry } from \"@stream-mdx/react/server\";\nimport { compileMarkdownSnapshot } from \"stream-mdx/worker/node\";\n\nexport default async function Page() {\n  const { blocks } = await compileMarkdownSnapshot({\n    text: \"# Hello\\\\n\\\\nStreaming-safe server render.\",\n    init: {\n      docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true },\n      mdx: { compileMode: \"server\" },\n      prewarmLangs: [\"typescript\"],\n    },\n  });\n\n  return <MarkdownBlocksRenderer blocks={blocks} componentRegistry={new ComponentRegistry()} />;\n}"
+        }
+      }
+    },
+    {
+      "id": "3269767d",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Static build pipeline (SSG/export)",
+        "range": {
+          "from": 9936,
+          "to": 9974
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "Static build pipeline (SSG/export)",
+          "headingId": "static-build-pipeline-ssg-export"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Static build pipeline (SSG/export)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "26ad82c1",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Use a build-time step to compile markdown into snapshot artifacts, then render those blocks in routes:",
+        "range": {
+          "from": 9976,
+          "to": 10078
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Use a build-time step to compile markdown into snapshot artifacts, then render those blocks in routes:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "7024be35",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```bash\nnpm run docs:snapshots:build\n```",
+        "range": {
+          "from": 10080,
+          "to": 10120
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> docs:snapshots:build</span></span></code></pre>",
+        "meta": {
+          "lang": "bash",
+          "code": "npm run docs:snapshots:build"
+        }
+      }
+    },
+    {
+      "id": "109e8a66",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "This is the same model used by `apps/docs` before `next build`/export.",
+        "range": {
+          "from": 10122,
+          "to": 10192
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "This is the same model used by "
+          },
+          {
+            "kind": "code",
+            "text": "apps/docs"
+          },
+          {
+            "kind": "text",
+            "text": " before "
+          },
+          {
+            "kind": "code",
+            "text": "next build"
+          },
+          {
+            "kind": "text",
+            "text": "/export."
+          }
+        ]
+      }
+    },
+    {
+      "id": "603f5c9d",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Direct compile helper (no `worker_threads`)",
+        "range": {
+          "from": 10194,
+          "to": 10241
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "Direct compile helper (no `worker_threads`)",
+          "headingId": "direct-compile-helper-no-worker-threads"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Direct compile helper (no "
+          },
+          {
+            "kind": "code",
+            "text": "worker_threads"
+          },
+          {
+            "kind": "text",
+            "text": ")"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6edcc79e",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```tsx\nimport { MarkdownBlocksRenderer, ComponentRegistry } from \"@stream-mdx/react/server\";\nimport { compileMarkdownSnapshotDirect } from \"stream-mdx/worker/direct\";\n\nexport default async function EdgeLikePage() {\n  const { blocks } = await compileMarkdownSnapshotDirect({\n    text: \"# Hello\\\\n\\\\nEdge-safe deterministic compile.\",\n    init: {\n      docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true },\n      mdx: { compileMode: \"server\" },\n      prewarmLangs: [\"typescript\"],\n    },\n    cache: {\n      dir: \".stream-mdx-cache\",\n    },\n  });\n\n  return <MarkdownBlocksRenderer blocks={blocks} componentRegistry={new ComponentRegistry()} />;\n}\n```",
+        "range": {
+          "from": 10243,
+          "to": 10918
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { MarkdownBlocksRenderer, ComponentRegistry } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/react/server\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { compileMarkdownSnapshotDirect } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx/worker/direct\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">export</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> default</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> async</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> function</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> EdgeLikePage</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">() {</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  const</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">blocks</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> await</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> compileMarkdownSnapshotDirect</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">({</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    text: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"# Hello</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">\\\\</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">n</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">\\\\</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">nEdge-safe deterministic compile.\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    init: {</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      docPlugins: { tables: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, math: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, footnotes: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> },</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      mdx: { compileMode: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"server\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> },</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      prewarmLangs: [</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"typescript\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">],</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    },</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    cache: {</span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      dir: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\".stream-mdx-cache\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    },</span></span>\n<span class=\"line\" data-line=\"15\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  });</span></span>\n<span class=\"line\" data-line=\"16\"></span>\n<span class=\"line\" data-line=\"17\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  return</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">MarkdownBlocksRenderer</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> blocks</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{blocks} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">componentRegistry</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">new</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> ComponentRegistry</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">()} />;</span></span>\n<span class=\"line\" data-line=\"18\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}</span></span></code></pre>",
+        "meta": {
+          "lang": "tsx",
+          "code": "import { MarkdownBlocksRenderer, ComponentRegistry } from \"@stream-mdx/react/server\";\nimport { compileMarkdownSnapshotDirect } from \"stream-mdx/worker/direct\";\n\nexport default async function EdgeLikePage() {\n  const { blocks } = await compileMarkdownSnapshotDirect({\n    text: \"# Hello\\\\n\\\\nEdge-safe deterministic compile.\",\n    init: {\n      docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true },\n      mdx: { compileMode: \"server\" },\n      prewarmLangs: [\"typescript\"],\n    },\n    cache: {\n      dir: \".stream-mdx-cache\",\n    },\n  });\n\n  return <MarkdownBlocksRenderer blocks={blocks} componentRegistry={new ComponentRegistry()} />;\n}"
+        }
+      }
+    },
+    {
+      "id": "39b04420",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Notes:",
+        "range": {
+          "from": 10920,
+          "to": 10926
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Notes:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "4ff075d5",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Cache semantics match `compileMarkdownSnapshot()` when the runtime exposes Node filesystem APIs.\n- In edge isolates without filesystem access, direct compile still runs deterministically and skips cache IO.",
+        "range": {
+          "from": 10927,
+          "to": 11135
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Cache semantics match "
+              },
+              {
+                "kind": "code",
+                "text": "compileMarkdownSnapshot()"
+              },
+              {
+                "kind": "text",
+                "text": " when the runtime exposes Node filesystem APIs."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "In edge isolates without filesystem access, direct compile still runs deterministically and skips cache IO."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "35cf1edf",
+      "type": "hr",
+      "isFinalized": true,
+      "payload": {
+        "raw": "---",
+        "range": {
+          "from": 11137,
+          "to": 11140
+        }
+      }
+    },
+    {
+      "id": "79f8ee5f",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "5) Metrics & Scheduling",
+        "range": {
+          "from": 11142,
+          "to": 11168
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "5) Metrics & Scheduling",
+          "headingId": "5-metrics-scheduling"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "5) Metrics & Scheduling"
+          }
+        ]
+      }
+    },
+    {
+      "id": "2e4c63ba",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "`onMetrics`",
+        "range": {
+          "from": 11170,
+          "to": 11185
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "`onMetrics`",
+          "headingId": "onmetrics"
+        },
+        "inline": [
+          {
+            "kind": "code",
+            "text": "onMetrics"
+          }
+        ]
+      }
+    },
+    {
+      "id": "181f62c8",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "`onMetrics` receives `RendererMetrics` after each flush. The payload includes queue depth, queue delay distribution, worker patch metrics, and the adaptive throttling state.",
+        "range": {
+          "from": 11187,
+          "to": 11360
+        },
+        "inline": [
+          {
+            "kind": "code",
+            "text": "onMetrics"
+          },
+          {
+            "kind": "text",
+            "text": " receives "
+          },
+          {
+            "kind": "code",
+            "text": "RendererMetrics"
+          },
+          {
+            "kind": "text",
+            "text": " after each flush. The payload includes queue depth, queue delay distribution, worker patch metrics, and the adaptive throttling state."
+          }
+        ]
+      }
+    },
+    {
+      "id": "32f41e49",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Adaptive throttling is based on coalescing p95 thresholds:",
+        "range": {
+          "from": 11362,
+          "to": 11420
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Adaptive throttling is based on coalescing p95 thresholds:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "2bb936a0",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- activates when coalescing p95 > **6ms**\n- deactivates when coalescing p95 < **4ms**",
+        "range": {
+          "from": 11422,
+          "to": 11507
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "activates when coalescing p95 > "
+              },
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "6ms"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "deactivates when coalescing p95 < "
+              },
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "4ms"
+                  }
+                ]
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "a44fdee",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "`scheduling`",
+        "range": {
+          "from": 11509,
+          "to": 11525
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "`scheduling`",
+          "headingId": "scheduling"
+        },
+        "inline": [
+          {
+            "kind": "code",
+            "text": "scheduling"
+          }
+        ]
+      }
+    },
+    {
+      "id": "73c2d702",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "`scheduling` (a subset of the patch scheduler options) includes:",
+        "range": {
+          "from": 11527,
+          "to": 11591
+        },
+        "inline": [
+          {
+            "kind": "code",
+            "text": "scheduling"
+          },
+          {
+            "kind": "text",
+            "text": " (a subset of the patch scheduler options) includes:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "4fd7925b",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `frameBudgetMs` (default: 10)\n- `lowPriorityFrameBudgetMs` (default: 6; derived from the frame budget when unspecified)\n- `maxBatchesPerFlush` (default: 12)\n- `maxLowPriorityBatchesPerFlush` (default: 2)\n- `urgentQueueThreshold` (default: 4)\n- `batch` (`\"rAF\" | \"timeout\" | \"microtask\"`, default: `\"microtask\"` when available)\n- `adaptiveSwitch` (default: `true` when `batch` is `\"microtask\"`) — switch to a smooth rAF preset once the queue drains\n- `adaptiveQueueThreshold` (default: `maxBatchesPerFlush` or 12) — queue size threshold for switching\n- `historyLimit` (default: 200)",
+        "range": {
+          "from": 11593,
+          "to": 12176
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "frameBudgetMs"
+              },
+              {
+                "kind": "text",
+                "text": " (default: 10)"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "lowPriorityFrameBudgetMs"
+              },
+              {
+                "kind": "text",
+                "text": " (default: 6; derived from the frame budget when unspecified)"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "maxBatchesPerFlush"
+              },
+              {
+                "kind": "text",
+                "text": " (default: 12)"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "maxLowPriorityBatchesPerFlush"
+              },
+              {
+                "kind": "text",
+                "text": " (default: 2)"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "urgentQueueThreshold"
+              },
+              {
+                "kind": "text",
+                "text": " (default: 4)"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "batch"
+              },
+              {
+                "kind": "text",
+                "text": " ("
+              },
+              {
+                "kind": "code",
+                "text": "\"rAF\" | \"timeout\" | \"microtask\""
+              },
+              {
+                "kind": "text",
+                "text": ", default: "
+              },
+              {
+                "kind": "code",
+                "text": "\"microtask\""
+              },
+              {
+                "kind": "text",
+                "text": " when available)"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "adaptiveSwitch"
+              },
+              {
+                "kind": "text",
+                "text": " (default: "
+              },
+              {
+                "kind": "code",
+                "text": "true"
+              },
+              {
+                "kind": "text",
+                "text": " when "
+              },
+              {
+                "kind": "code",
+                "text": "batch"
+              },
+              {
+                "kind": "text",
+                "text": " is "
+              },
+              {
+                "kind": "code",
+                "text": "\"microtask\""
+              },
+              {
+                "kind": "text",
+                "text": ") — switch to a smooth rAF preset once the queue drains"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "adaptiveQueueThreshold"
+              },
+              {
+                "kind": "text",
+                "text": " (default: "
+              },
+              {
+                "kind": "code",
+                "text": "maxBatchesPerFlush"
+              },
+              {
+                "kind": "text",
+                "text": " or 12) — queue size threshold for switching"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "historyLimit"
+              },
+              {
+                "kind": "text",
+                "text": " (default: 200)"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "6aee2c83",
+      "type": "hr",
+      "isFinalized": true,
+      "payload": {
+        "raw": "---",
+        "range": {
+          "from": 12178,
+          "to": 12181
+        }
+      }
+    },
+    {
+      "id": "18eb38c5",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "6) Streaming Sources",
+        "range": {
+          "from": 12183,
+          "to": 12206
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "6) Streaming Sources",
+          "headingId": "6-streaming-sources"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "6) Streaming Sources"
+          }
+        ]
+      }
+    },
+    {
+      "id": "f98f521",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "You can stream text via an `AsyncIterable<string>`:",
+        "range": {
+          "from": 12208,
+          "to": 12259
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "You can stream text via an "
+          },
+          {
+            "kind": "code",
+            "text": "AsyncIterable<string>"
+          },
+          {
+            "kind": "text",
+            "text": ":"
+          }
+        ],
+        "meta": {
+          "mixedSegments": [
+            {
+              "kind": "text",
+              "value": "You can stream text via an `AsyncIterable<string>`:",
+              "range": {
+                "from": 12208,
+                "to": 12259
+              },
+              "inline": [
+                {
+                  "kind": "text",
+                  "text": "You can stream text via an "
+                },
+                {
+                  "kind": "code",
+                  "text": "AsyncIterable<string>"
+                },
+                {
+                  "kind": "text",
+                  "text": ":"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "200edba8",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```ts\nasync function* chunksFromReadable(readable: ReadableStreamDefaultReader<Uint8Array>) {\n  const decoder = new TextDecoder();\n  while (true) {\n    const { done, value } = await readable.read();\n    if (done) break;\n    yield decoder.decode(value, { stream: true });\n  }\n}\n\n<StreamingMarkdown stream={chunksFromReadable(response.body!.getReader())} />;\n```",
+        "range": {
+          "from": 12261,
+          "to": 12621
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"typescript\"><code data-language=\"typescript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">async</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> function*</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> chunksFromReadable</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">readable</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> ReadableStreamDefaultReader</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">Uint8Array</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>) {</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> decoder</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> new</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> TextDecoder</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">();</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  while</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> (</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) {</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">    const</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">done</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">value</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> await</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> readable.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">read</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">();</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">    if</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> (done) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">break</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">    yield</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> decoder.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">decode</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(value, { stream: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> });</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}</span></span>\n<span class=\"line\" data-line=\"9\"></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">&#x3C;</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">StreamingMarkdown stream</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">chunksFromReadable</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(response.body!.getReader())} </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">/></span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span></code></pre>",
+        "meta": {
+          "lang": "typescript",
+          "code": "async function* chunksFromReadable(readable: ReadableStreamDefaultReader<Uint8Array>) {\n  const decoder = new TextDecoder();\n  while (true) {\n    const { done, value } = await readable.read();\n    if (done) break;\n    yield decoder.decode(value, { stream: true });\n  }\n}\n\n<StreamingMarkdown stream={chunksFromReadable(response.body!.getReader())} />;"
+        }
+      }
+    },
+    {
+      "id": "732dac3e",
+      "type": "hr",
+      "isFinalized": true,
+      "payload": {
+        "raw": "---",
+        "range": {
+          "from": 12623,
+          "to": 12626
+        }
+      }
+    },
+    {
+      "id": "4d636b5",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "7) Plugins & Extensibility",
+        "range": {
+          "from": 12628,
+          "to": 12657
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "7) Plugins & Extensibility",
+          "headingId": "7-plugins-extensibility"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "7) Plugins & Extensibility"
+          }
+        ]
+      }
+    },
+    {
+      "id": "7afe033f",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Most consumers should start with `features` rather than wiring plugin registries directly.",
+        "range": {
+          "from": 12659,
+          "to": 12749
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Most consumers should start with "
+          },
+          {
+            "kind": "code",
+            "text": "features"
+          },
+          {
+            "kind": "text",
+            "text": " rather than wiring plugin registries directly."
+          }
+        ]
+      }
+    },
+    {
+      "id": "33a092c6",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "If you need deeper control (custom tokenizers, custom streaming matchers, custom worker bundles), see:",
+        "range": {
+          "from": 12751,
+          "to": 12853
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "If you need deeper control (custom tokenizers, custom streaming matchers, custom worker bundles), see:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "541ed883",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`\n- `stream-mdx/plugins/*` (convenience package)\n- `@stream-mdx/plugins/*` (scoped packages)",
+        "range": {
+          "from": 12855,
+          "to": 12993
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "stream-mdx/plugins/*"
+              },
+              {
+                "kind": "text",
+                "text": " (convenience package)"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "@stream-mdx/plugins/*"
+              },
+              {
+                "kind": "text",
+                "text": " (scoped packages)"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    }
+  ],
+  "tocHeadings": [
+    {
+      "id": "public-api-streammdx",
+      "text": "Public API — StreamMDX",
+      "level": 1,
+      "blockId": "db082c0"
+    },
+    {
+      "id": "packages-entry-points",
+      "text": "Packages & Entry Points",
+      "level": 2,
+      "blockId": "61a7d361"
+    },
+    {
+      "id": "runtime-context-matrix",
+      "text": "Runtime Context Matrix",
+      "level": 2,
+      "blockId": "357af681"
+    },
+    {
+      "id": "1-streamingmarkdown",
+      "text": "1) `<StreamingMarkdown />`",
+      "level": 2,
+      "blockId": "5c50fee1"
+    },
+    {
+      "id": "props",
+      "text": "Props",
+      "level": 3,
+      "blockId": "3e60321b"
+    },
+    {
+      "id": "imperative-handle",
+      "text": "Imperative Handle",
+      "level": 3,
+      "blockId": "6fb104f5"
+    },
+    {
+      "id": "2-worker-hosting-csp",
+      "text": "2) Worker Hosting + CSP",
+      "level": 2,
+      "blockId": "507463c0"
+    },
+    {
+      "id": "node-cli-runtimes",
+      "text": "Node / CLI runtimes",
+      "level": 3,
+      "blockId": "3d0263d9"
+    },
+    {
+      "id": "3-features",
+      "text": "3) Features",
+      "level": 2,
+      "blockId": "24aa72a1"
+    },
+    {
+      "id": "context-support-table",
+      "text": "Context support table",
+      "level": 3,
+      "blockId": "d1c80a3"
+    },
+    {
+      "id": "3-1-mermaid-optional",
+      "text": "3.1) Mermaid (optional)",
+      "level": 2,
+      "blockId": "13156c2"
+    },
+    {
+      "id": "4-mdx-compilation-modes",
+      "text": "4) MDX Compilation Modes",
+      "level": 2,
+      "blockId": "65dfe206"
+    },
+    {
+      "id": "next-js-app-router-server-safe-rendering",
+      "text": "Next.js App Router (server-safe rendering)",
+      "level": 3,
+      "blockId": "56b24627"
+    },
+    {
+      "id": "static-build-pipeline-ssg-export",
+      "text": "Static build pipeline (SSG/export)",
+      "level": 3,
+      "blockId": "3269767d"
+    },
+    {
+      "id": "direct-compile-helper-no-worker-threads",
+      "text": "Direct compile helper (no `worker_threads`)",
+      "level": 3,
+      "blockId": "603f5c9d"
+    },
+    {
+      "id": "5-metrics-scheduling",
+      "text": "5) Metrics & Scheduling",
+      "level": 2,
+      "blockId": "79f8ee5f"
+    },
+    {
+      "id": "onmetrics",
+      "text": "`onMetrics`",
+      "level": 3,
+      "blockId": "2e4c63ba"
+    },
+    {
+      "id": "scheduling",
+      "text": "`scheduling`",
+      "level": 3,
+      "blockId": "a44fdee"
+    },
+    {
+      "id": "6-streaming-sources",
+      "text": "6) Streaming Sources",
+      "level": 2,
+      "blockId": "18eb38c5"
+    },
+    {
+      "id": "7-plugins-extensibility",
+      "text": "7) Plugins & Extensibility",
+      "level": 2,
+      "blockId": "4d636b5"
+    }
+  ],
+  "init": {
+    "docPlugins": {
+      "tables": true,
+      "html": true,
+      "mdx": true,
+      "math": true,
+      "footnotes": true,
+      "callouts": true
+    },
+    "mdx": {
+      "compileMode": "server"
+    },
+    "prewarmLangs": [
+      "typescript",
+      "tsx",
+      "javascript",
+      "json",
+      "bash",
+      "diff"
+    ]
+  }
+}

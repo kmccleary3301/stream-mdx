@@ -86,6 +86,23 @@ const htmlElements = {
 <StreamingMarkdown text={content} htmlElements={htmlElements} features={{ html: true }} />
 ```
 
+## HTML overrides (ShadCN-style wrappers)
+
+If your content includes raw HTML, you can wrap it with ShadCN primitives while keeping streaming intact:
+
+```tsx
+const htmlElements = {
+  table: ({ children }: { children: React.ReactNode }) => (
+    <div className="rounded-lg border border-border overflow-x-auto">{children}</div>
+  ),
+  blockquote: ({ children }: { children: React.ReactNode }) => (
+    <blockquote className="border-l-2 border-border pl-4 text-muted-foreground">{children}</blockquote>
+  ),
+};
+
+<StreamingMarkdown text={content} htmlElements={htmlElements} features={{ html: true }} />
+```
+
 ## Typography and spacing
 
 The docs site uses two layers of styles:
@@ -94,6 +111,26 @@ The docs site uses two layers of styles:
 - `.markdown` and `.prose` for base typography
 
 You can disable or replace these styles in your own app. The component itself does not inject CSS, so you control the look completely.
+
+## Optional Tailwind theme package
+
+If you want the docs styling without copying CSS, install the optional theme package:
+
+```bash
+npm install @stream-mdx/theme-tailwind
+```
+
+Then import the stylesheet after your Tailwind directives:
+
+```css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import "@stream-mdx/theme-tailwind/theme.css";
+```
+
+The theme ships `.markdown-v2-output`, `.markdown`, and `.prose` helpers. Use `@tailwindcss/typography` if you want the `prose` base styles.
 
 ## Recommended structure
 
@@ -104,4 +141,3 @@ You can disable or replace these styles in your own app. The component itself do
 ```
 
 This pattern keeps markdown typography consistent while still using the streaming renderer.
-

@@ -23,6 +23,20 @@ The pipeline looks like this:
 input text -> worker -> blocks -> patches -> renderer -> React
 ```
 
+## Patch flow (mental model)
+
+When new text arrives, StreamMDX only updates the nodes that changed:
+
+```
+block tree -> diff -> coalesce -> flush -> React commit
+```
+
+Key points:
+
+- **Diff** finds the minimal structural changes.
+- **Coalesce** merges small patch bursts to reduce render churn.
+- **Flush** applies patches under a frame budget.
+
 ## Worker vs server compilation
 
 There are two compilation strategies for MDX:
@@ -83,4 +97,3 @@ The two main rules are:
 - [ ] Pass `worker="/workers/markdown-worker.js"`.
 - [ ] Start with `features={{ html: true, tables: true, math: true, mdx: true }}`.
 - [ ] Use `mdxCompileMode="worker"` for parity.
-
