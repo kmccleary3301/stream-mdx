@@ -6,6 +6,9 @@ import { motion } from "framer-motion";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 type Heading = { id: string; text: string; level: string };
+const MAX_TOC_ITEMS = 24;
+const TOC_HEADING_SELECTOR = "h2[id], h3[id]";
+const TOC_EXCLUDE_PREFIXES = ["appendix", "appendices"];
 
 function debounce<F extends (...args: unknown[]) => unknown>(fn: F, waitMs: number) {
   let timeout: ReturnType<typeof setTimeout> | null = null;
@@ -23,11 +26,29 @@ export function TableOfContents() {
   const tocScrollContainerRef = useRef<HTMLDivElement>(null);
 
   const getHeadings = useCallback((): Heading[] => {
-    return Array.from(document.querySelectorAll("h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]")).map((heading) => ({
-      id: heading.id,
-      text: heading.textContent || "",
-      level: heading.tagName.toLowerCase(),
-    }));
+    const root = document.getElementById("article-content-wrapper");
+    if (!root) return [];
+
+    const seen = new Set<string>();
+    const headings = Array.from(root.querySelectorAll(TOC_HEADING_SELECTOR))
+      .map((heading) => {
+        const id = heading.id.trim();
+        const text = (heading.textContent || "").trim();
+        const level = heading.tagName.toLowerCase();
+        return { id, text, level };
+      })
+      .filter((heading) => heading.id.length > 0 && heading.text.length > 0)
+      .filter((heading) => {
+        const text = heading.text.toLowerCase();
+        return !TOC_EXCLUDE_PREFIXES.some((prefix) => text.startsWith(prefix));
+      })
+      .filter((heading) => {
+        if (seen.has(heading.id)) return false;
+        seen.add(heading.id);
+        return true;
+      });
+
+    return headings.slice(0, MAX_TOC_ITEMS);
   }, []);
 
   useEffect(() => {
@@ -37,7 +58,8 @@ export function TableOfContents() {
 
     debouncedUpdateHeadings();
 
-    const contentRoot = document.getElementById("article-content-wrapper") ?? document.body;
+    const contentRoot = document.getElementById("article-content-wrapper");
+    if (!contentRoot) return;
     const mutationObserver = new MutationObserver(() => {
       debouncedUpdateHeadings();
     });
