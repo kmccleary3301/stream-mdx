@@ -1,33 +1,32 @@
 "use client";
 
 import type { Block, FormatAnticipationConfig, InlineNode, Patch, PerformanceMetrics, WorkerIn } from "@stream-mdx/core";
-import type { HtmlElements, TableElements } from "@stream-mdx/react";
 import type { CoalescingMetrics } from "@stream-mdx/react/renderer/patch-coalescing";
 import type { PatchFlushResult } from "@stream-mdx/react/renderer/patch-commit-scheduler";
 import type { RendererStore } from "@stream-mdx/react/renderer/store";
-import type { CSSProperties, ComponentType, HTMLAttributes, ReactNode } from "react";
+import type { ComponentType } from "react";
 
-import { BlockMath, InlineMath } from "@/components/markdown/Math";
 import { Button } from "@/components/ui/button";
-import { ScrollAreaHorizontal } from "@/components/ui/scroll-area";
 import { Slider } from "@/components/ui/slider";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { components as sharedMdxComponents } from "@/mdx-components";
+import { configureDemoRegistry, createDemoHtmlElements, createDemoTableElements } from "@/lib/streaming-demo-registry";
 import { DEFAULT_BACKPRESSURE_CONFIG, calculateSmoothedCredit, clampCredit } from "@stream-mdx/core";
-import { StreamingMarkdown, type StreamingMarkdownHandle, ComponentRegistry, renderInlineNodes } from "@stream-mdx/react";
+import { StreamingMarkdown, type StreamingMarkdownHandle, ComponentRegistry } from "@stream-mdx/react";
 import { registerMDXComponents } from "@stream-mdx/react/mdx-client";
 import { MarkdownWorkerClient, type MarkdownWorkerClientOptions } from "@stream-mdx/worker/worker-client";
 import type { DefaultWorkerMode } from "@stream-mdx/worker";
 
-import { Fragment, createElement, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 
-const METRIC_SAMPLE_LIMIT = 1000;
+const METRIC_SAMPLE_LIMIT = process.env.NODE_ENV === "production" ? 300 : 1000;
 const COALESCING_RECENT_BATCH_COUNT = 8;
 const COALESCING_SPARKLINE_POINTS = 24;
 const COALESCING_WARN_REDUCTION_PCT = 5;
 const COALESCING_WARN_DURATION_MS = 5;
 const SHOULD_EXPOSE_AUTOMATION_API = process.env.NEXT_PUBLIC_STREAMING_DEMO_API === "true";
+const LIST_DEBUG_ENABLED = process.env.NEXT_PUBLIC_STREAMING_LIST_DEBUG === "true";
+const LIST_AUTO_EXPORT_ENABLED = process.env.NEXT_PUBLIC_STREAMING_LIST_AUTO_EXPORT === "true";
 const AUTOMATION_DOC_LINK = "docs/STREAMING_MARKDOWN_V2_STATUS.md#54-automation-api-availability";
 const ENABLE_WORKER_HELPER = process.env.NEXT_PUBLIC_STREAMING_WORKER_HELPER === "true";
 const WORKER_HELPER_MODE: DefaultWorkerMode = process.env.NEXT_PUBLIC_STREAMING_WORKER_HELPER_MODE === "blob" ? "blob" : "auto";
@@ -40,6 +39,7 @@ type AutomationState = {
   total: number;
   isRunning: boolean;
   mode: "classic" | "worker";
+  schedulingPreset?: "latency" | "throughput";
   rate: number;
   tickMs: number;
   renderer?: { version: number; patchMode: boolean };
@@ -136,10 +136,45 @@ type FlushBatchSample = {
 
 type DebugEvent = AppendDebugEvent | PatchEnqueueDebugEvent | PatchBufferDebugEvent | PatchFlushDebugEvent;
 
+type ListDebugStoreList = {
+  id: string;
+  depth: number | null;
+  ordered: boolean;
+  itemIds: string[];
+  itemCount: number;
+  childTypes: string[];
+};
+
+type ListDebugMismatch = {
+  listId: string;
+  domCount: number;
+  storeCount: number;
+};
+
+type ListDebugEvent = {
+  t: number;
+  sinceStartMs: number;
+  idx: number;
+  total: number;
+  queueDepth: number | null;
+  lists: Array<{
+    listId: string | null;
+    depth: number | null;
+    ordered: boolean;
+    itemCount: number;
+    totalItemCount: number;
+    itemIds: string[];
+    firstItemText: string | null;
+  }>;
+  storeLists: ListDebugStoreList[] | null;
+  listMismatches: ListDebugMismatch[] | null;
+};
+
 export type StreamingDemoAutomationApiV2 = {
   setRate?: (value: number) => void;
   setTick?: (value: number) => void;
   setMode?: (mode: "classic" | "worker") => void;
+  setSchedulingPreset?: (preset: "latency" | "throughput") => void;
   setMdxEnabled?: (enabled: boolean) => void;
   setMdxStrategy?: (mode: "server" | "worker") => void;
   setStreamLimit?: (limit: number | null) => void;
@@ -169,6 +204,7 @@ export type StreamingDemoAutomationApiV2 = {
   waitForIdle?: () => Promise<void>;
   waitForWorker?: () => Promise<void>;
   getHandle?: () => StreamingMarkdownHandle | null;
+  getWorker?: () => Worker | null;
   getPerf?: () => {
     summary: TimingSummary;
     samples: {
@@ -194,6 +230,30 @@ export type StreamingDemoAutomationApiV2 = {
       setProps: number;
       insertChild: number;
       durationMs: number;
+    } | null;
+    mdxHydration?: {
+      pending: number;
+      compiled: number;
+      hydrated: number;
+      error: number;
+      avgHydrationMs: number | null;
+      p95HydrationMs: number | null;
+      maxHydrationMs: number | null;
+      lastHydrationMs: number | null;
+      longTaskTotalMs?: number | null;
+      longTaskCount?: number | null;
+      p95LongTaskMs?: number | null;
+      maxLongTaskMs?: number | null;
+      prefetch?: {
+        requested: number;
+        completed: number;
+        error: number;
+        pending: number;
+        avgPrefetchMs: number | null;
+        p95PrefetchMs: number | null;
+        maxPrefetchMs: number | null;
+        lastPrefetchMs: number | null;
+      } | null;
     } | null;
     stream?: {
       startedAt?: number | null;
@@ -433,40 +493,80 @@ function createEmptyTimingSummary(): TimingSummary {
   };
 }
 
-function attrsToProps(attrs?: Record<string, string>): HTMLAttributes<HTMLElement> & Record<string, unknown> {
-  if (!attrs) return {} as HTMLAttributes<HTMLElement> & Record<string, unknown>;
-  const out: HTMLAttributes<HTMLElement> & Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(attrs)) {
-    if (key === "class") {
-      out.className = value;
-    } else if (key === "style") {
-      out.style = parseStyleAttribute(value);
-    } else {
-      out[key] = value;
-    }
+function isListDebugEnabled(): boolean {
+  if (typeof window !== "undefined") {
+    const flag = (window as { __STREAMING_LIST_DEBUG__?: boolean }).__STREAMING_LIST_DEBUG__;
+    if (flag === true) return true;
   }
-  return out;
+  return LIST_DEBUG_ENABLED;
 }
 
-function parseStyleAttribute(value: string): CSSProperties & Record<string, string> {
-  const style: Record<string, string> = {};
-  if (!value) return style;
-  const parts = value.split(";");
-  for (const part of parts) {
-    if (!part.trim()) continue;
-    const [prop, val] = part.split(":");
-    if (!prop || !val) continue;
-    const property = prop.trim();
-    const trimmedValue = val.trim();
-    if (property.startsWith("--")) {
-      style[property] = trimmedValue;
-    } else {
-      const camelProp = property.replace(/-([a-z])/g, (_, char: string) => char.toUpperCase());
-      style[camelProp] = trimmedValue;
-    }
+function isListAutoExportEnabled(): boolean {
+  if (typeof window !== "undefined") {
+    const flag = (window as { __STREAMING_LIST_AUTO_EXPORT__?: boolean }).__STREAMING_LIST_AUTO_EXPORT__;
+    if (flag === true) return true;
   }
-  return style as CSSProperties & Record<string, string>;
+  return LIST_AUTO_EXPORT_ENABLED;
 }
+
+function collectStoreListSnapshots(store: RendererStore): ListDebugStoreList[] {
+  const blocks = store.getBlocks();
+  const listBlocks = blocks.filter((block) => block.type === "list");
+  const seen = new Set<string>();
+  const results: ListDebugStoreList[] = [];
+
+  const visitList = (listId: string) => {
+    if (seen.has(listId)) return;
+    seen.add(listId);
+    const node = store.getNode(listId);
+    if (!node) return;
+    const childIds = store.getChildren(listId);
+    const childTypes = childIds.map((childId) => store.getNode(childId)?.type ?? "missing");
+    const itemIds = childIds.filter((childId) => store.getNode(childId)?.type === "list-item");
+    const ordered = Boolean(node.props?.ordered ?? node.block?.payload.meta?.ordered);
+    const depth = typeof node.props?.depth === "number" ? Number(node.props?.depth) : null;
+    results.push({ id: listId, depth, ordered, itemIds, itemCount: itemIds.length, childTypes });
+
+    for (const itemId of itemIds) {
+      const itemChildren = store.getChildren(itemId);
+      for (const childId of itemChildren) {
+        const child = store.getNode(childId);
+        if (child?.type === "list") {
+          visitList(childId);
+        }
+      }
+    }
+  };
+
+  for (const block of listBlocks) {
+    visitList(block.id);
+  }
+
+  return results;
+}
+
+// moved to streaming-demo-registry helper
+
+const SCHEDULING_PRESETS = {
+  latency: {
+    batch: "rAF",
+    frameBudgetMs: 6,
+    maxBatchesPerFlush: 4,
+    lowPriorityFrameBudgetMs: 3,
+    maxLowPriorityBatchesPerFlush: 1,
+    urgentQueueThreshold: 2,
+  },
+  throughput: {
+    batch: "microtask",
+    frameBudgetMs: 10,
+    maxBatchesPerFlush: 12,
+    lowPriorityFrameBudgetMs: 6,
+    maxLowPriorityBatchesPerFlush: 2,
+    urgentQueueThreshold: 4,
+  },
+} as const;
+
+type SchedulingPreset = keyof typeof SCHEDULING_PRESETS;
 
 export function StreamingMarkdownDemoV2({
   fullText,
@@ -475,67 +575,13 @@ export function StreamingMarkdownDemoV2({
   fullText: string;
   className?: string;
 }) {
-  const tableElements = useMemo<TableElements>(
-    () => ({
-      Table,
-      Thead: TableHeader,
-      Tbody: TableBody,
-      Tr: TableRow,
-      Th: TableHead,
-      Td: TableCell,
-    }),
-    [],
-  );
-  const htmlElements = useMemo<Partial<HtmlElements>>(
-    () => ({
-      table: ({ className, children, ...props }: HTMLAttributes<HTMLTableElement>) => (
-        <div className="my-6 w-full overflow-hidden overflow-y-auto">
-          <Table className={className} {...props}>
-            {children}
-          </Table>
-        </div>
-      ),
-      thead: ({ className, children, ...props }: HTMLAttributes<HTMLTableSectionElement>) => (
-        <TableHeader className={className} {...props}>
-          {children}
-        </TableHeader>
-      ),
-      tbody: ({ className, children, ...props }: HTMLAttributes<HTMLTableSectionElement>) => (
-        <TableBody className={cn("border border-border px-4 py-2 text-left [&[align=center]]:text-center [&[align=right]]:text-right", className)} {...props}>
-          {children}
-        </TableBody>
-      ),
-      tr: ({ className, children, ...props }: HTMLAttributes<HTMLTableRowElement>) => (
-        <TableRow className={cn("border border-border px-4 py-2 text-left [&[align=center]]:text-center [&[align=right]]:text-right", className)} {...props}>
-          {children}
-        </TableRow>
-      ),
-      th: ({ className, children, ...props }: HTMLAttributes<HTMLTableCellElement>) => (
-        <TableHead
-          className={cn("border border-border px-4 py-2 text-left font-bold [&[align=center]]:text-center [&[align=right]]:text-right", className)}
-          {...props}
-        >
-          {children}
-        </TableHead>
-      ),
-      td: ({ className, children, ...props }: HTMLAttributes<HTMLTableCellElement>) => (
-        <TableCell className={cn("border border-border px-4 py-2 text-left [&[align=center]]:text-center [&[align=right]]:text-right", className)} {...props}>
-          {children}
-        </TableCell>
-      ),
-    }),
-    [],
-  );
+  const tableElements = useMemo(() => createDemoTableElements(), []);
+  const htmlElements = useMemo(() => createDemoHtmlElements(), []);
   const PREWARM_LANGS = useMemo(() => ["typescript", "tsx", "javascript", "json", "python", "bash", "html", "css", "sql", "yaml", "markdown"], []);
+  const [schedulingPreset, setSchedulingPreset] = useState<SchedulingPreset>("throughput");
   const rendererScheduling = useMemo(
-    () => ({
-      frameBudgetMs: 9,
-      maxBatchesPerFlush: 5,
-      lowPriorityFrameBudgetMs: 4,
-      maxLowPriorityBatchesPerFlush: 1,
-      urgentQueueThreshold: 2,
-    }),
-    [],
+    () => SCHEDULING_PRESETS[schedulingPreset],
+    [schedulingPreset],
   );
   const [idx, setIdx] = useState<number>(0);
   const [rate, setRate] = useState<number>(500); // characters per second
@@ -551,6 +597,7 @@ export function StreamingMarkdownDemoV2({
   const [noCap, setNoCap] = useState<boolean>(false);
   const [prewarm, setPrewarm] = useState<boolean>(true);
   const [debugTiming, setDebugTiming] = useState<boolean>(false);
+  const [metricsTab, setMetricsTab] = useState<"coalescing" | "timing">("coalescing");
   const [showInspector, setShowInspector] = useState<boolean>(false);
   const [showCodeMeta, setShowCodeMeta] = useState<boolean>(false);
   const [formatAnticipationEnabled, setFormatAnticipationEnabled] = useState<boolean>(true);
@@ -562,14 +609,22 @@ export function StreamingMarkdownDemoV2({
     mdx: true,
     regex: false,
   });
-  const [liveCodeHighlightingEnabled, setLiveCodeHighlightingEnabled] = useState<boolean>(false);
+  const [htmlEnabled, setHtmlEnabled] = useState<boolean>(true);
+  const [mdxEnabled, setMdxEnabled] = useState<boolean>(true);
+  const [mathEnabled, setMathEnabled] = useState<boolean>(true);
+  const [liveCodeHighlightingEnabled, setLiveCodeHighlightingEnabled] = useState(false);
   const debugTimingRef = useRef(debugTiming);
   const showInspectorRef = useRef(showInspector);
   const modeRef = useRef<"classic" | "worker">("worker");
-  const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const listDebugEventsRef = useRef<ListDebugEvent[]>([]);
+  const listDebugStartRef = useRef<number | null>(null);
+  const listMismatchCountRef = useRef(0);
+  const listAutoExportedRef = useRef(false);
   // Default to worker-side MDX compilation so the demo renders MDX blocks without server help.
   const [mdxStrategy, setMdxStrategy] = useState<"server" | "worker">("worker");
   const mdxStrategyRef = useRef<"server" | "worker">("worker");
+  const schedulingPresetRef = useRef<SchedulingPreset>(schedulingPreset);
 
   useEffect(() => {
     debugTimingRef.current = debugTiming;
@@ -633,7 +688,42 @@ export function StreamingMarkdownDemoV2({
   const maxLen = fullText.length;
   const effectiveTotal = streamLimit ?? maxLen;
   const finished = idx >= effectiveTotal;
+  const [isFinalizing, setIsFinalizing] = useState(false);
   const current = useMemo(() => fullText.slice(0, Math.min(idx, effectiveTotal)), [fullText, idx, effectiveTotal]);
+  const exportListDebug = useCallback(() => {
+    try {
+      const payload = {
+        capturedAt: new Date().toISOString(),
+        location: typeof window !== "undefined" ? window.location.href : null,
+        userAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+        listDebugEnabled: isListDebugEnabled(),
+        state: {
+          idx,
+          total: effectiveTotal,
+          isRunning,
+          rate,
+          tickMs,
+          schedulingPreset,
+          mode: modeRef.current,
+        },
+        listEvents: listDebugEventsRef.current,
+        patchHistory: patchHistoryRef.current,
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `streaming-list-debug-${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("Failed to export list debug log", e);
+    }
+  }, [idx, effectiveTotal, isRunning, rate, tickMs, schedulingPreset]);
   const handleRendererError = useCallback((error: Error) => {
     console.error("StreamingMarkdown render error", error);
   }, []);
@@ -678,14 +768,24 @@ export function StreamingMarkdownDemoV2({
   const workerCleanupRef = useRef<(() => void) | null>(null);
   const workerInitTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pendingWorkerInitRef = useRef<MarkdownWorkerClient | null>(null);
-  const componentRegistry = useRef(new ComponentRegistry());
+  const componentRegistry = useMemo(() => {
+    const registry = new ComponentRegistry();
+    configureDemoRegistry({
+      registry,
+      tableElements,
+      htmlElements,
+      showCodeMeta,
+    });
+    return registry;
+  }, [tableElements, htmlElements, showCodeMeta]);
   const hasPatchPipelineRef = useRef(false);
   const docPluginConfigRef = useRef<DocPluginConfig>({
     footnotes: true,
-    html: true,
-    mdx: true,
+    html: htmlEnabled,
+    mdx: mdxEnabled,
     tables: true,
     callouts: true,
+    math: mathEnabled,
     formatAnticipation: formatAnticipationConfig,
     liveCodeHighlighting: false,
   });
@@ -733,6 +833,7 @@ export function StreamingMarkdownDemoV2({
     lastTx: 0,
   });
   const pendingDrainRef = useRef(false);
+  const finalizeDrainTimerRef = useRef<NodeJS.Timeout | null>(null);
   const patchDurationsRef = useRef<number[]>([]);
   const longTaskDurationsRef = useRef<number[]>([]);
   const recvToFlushRef = useRef<number[]>([]);
@@ -993,6 +1094,32 @@ export function StreamingMarkdownDemoV2({
     streamingRef.current?.setCredits(clamped);
   }, []);
 
+  const startFinalizeDrain = useCallback(() => {
+    if (finalizeDrainTimerRef.current) {
+      clearTimeout(finalizeDrainTimerRef.current);
+      finalizeDrainTimerRef.current = null;
+    }
+    setIsFinalizing(true);
+    const drainStart = Date.now();
+    const MAX_FINALIZE_DRAIN_MS = 1000;
+    const drain = () => {
+      const handle = streamingRef.current;
+      if (!handle) return;
+      handle.flushPending();
+      const queueDepth = handle.getState?.().queueDepth ?? 0;
+      const elapsed = Date.now() - drainStart;
+      if (elapsed >= MAX_FINALIZE_DRAIN_MS) {
+        setIsFinalizing(false);
+      }
+      if (elapsed >= MAX_FINALIZE_DRAIN_MS && queueDepth <= 0) {
+        finalizeDrainTimerRef.current = null;
+        return;
+      }
+      finalizeDrainTimerRef.current = setTimeout(drain, 16);
+    };
+    finalizeDrainTimerRef.current = setTimeout(drain, 0);
+  }, []);
+
   useEffect(() => {
     registerMDXComponents(sharedMdxComponents as unknown as Record<string, ComponentType<unknown>>);
   }, []);
@@ -1006,6 +1133,78 @@ export function StreamingMarkdownDemoV2({
       }
     }
   }, []);
+
+  const collectListDebugSnapshot = useCallback(() => {
+    if (!isListDebugEnabled() || typeof document === "undefined") return;
+    const now = Date.now();
+    if (listDebugStartRef.current === null) {
+      listDebugStartRef.current = now;
+    }
+    const lists = Array.from(document.querySelectorAll(".markdown-v2-output ol, .markdown-v2-output ul")).map((list) => {
+      const children = Array.from(list.children);
+      const directItems = children.filter((child) => child.tagName.toLowerCase() === "li");
+      const itemIds = directItems
+        .map((item) => item.getAttribute("data-list-item-id"))
+        .filter((value): value is string => Boolean(value));
+      const totalItems = list.querySelectorAll("li").length;
+      return {
+        listId: list.getAttribute("data-list-id"),
+        depth: list.hasAttribute("data-list-depth") ? Number(list.getAttribute("data-list-depth")) : null,
+        ordered: list.tagName.toLowerCase() === "ol",
+        itemCount: directItems.length,
+        totalItemCount: totalItems,
+        itemIds,
+        firstItemText: directItems[0]?.textContent?.trim().slice(0, 120) ?? null,
+      };
+    });
+    const store = streamingRef.current?.getState?.().store;
+    const storeLists = store ? collectStoreListSnapshots(store) : null;
+    let listMismatches: ListDebugMismatch[] | null = null;
+    if (storeLists && storeLists.length > 0) {
+      const domMap = new Map<string, number>();
+      for (const list of lists) {
+        if (list.listId) {
+          domMap.set(list.listId, list.itemCount);
+        }
+      }
+      listMismatches = [];
+      for (const storeList of storeLists) {
+        const domCount = domMap.get(storeList.id);
+        if (typeof domCount === "number" && domCount !== storeList.itemCount) {
+          listMismatches.push({ listId: storeList.id, domCount, storeCount: storeList.itemCount });
+        }
+      }
+      if (listMismatches.length === 0) {
+        listMismatches = null;
+      }
+    }
+    listDebugEventsRef.current.push({
+      t: now,
+      sinceStartMs: Math.max(0, now - (listDebugStartRef.current ?? now)),
+      idx: latestIdxRef.current,
+      total: effectiveTotal,
+      queueDepth: streamingRef.current?.getState?.().queueDepth ?? null,
+      lists,
+      storeLists,
+      listMismatches,
+    });
+    const LIST_DEBUG_CAP = 2000;
+    if (listDebugEventsRef.current.length > LIST_DEBUG_CAP) {
+      listDebugEventsRef.current.splice(0, listDebugEventsRef.current.length - LIST_DEBUG_CAP);
+    }
+
+    if (listMismatches && listMismatches.length > 0) {
+      listMismatchCountRef.current += 1;
+    } else {
+      listMismatchCountRef.current = 0;
+    }
+
+    const SHOULD_AUTO_EXPORT = isListAutoExportEnabled();
+    if (SHOULD_AUTO_EXPORT && !listAutoExportedRef.current && listMismatchCountRef.current >= 3) {
+      listAutoExportedRef.current = true;
+      setTimeout(() => exportListDebug(), 0);
+    }
+  }, [effectiveTotal, exportListDebug]);
 
   const handleRendererFlush = useCallback(
     (result: PatchFlushResult) => {
@@ -1118,10 +1317,11 @@ export function StreamingMarkdownDemoV2({
         debugEventsRef.current.splice(0, debugEventsRef.current.length - MAX_DEBUG_EVENTS);
       }
 
+      collectListDebugSnapshot();
       notifyPatchListeners();
       scheduleUiSync();
     },
-    [notifyPatchListeners, recordSample, updateWorkerCredits, computeSoftDrainDelayMs, scheduleUiSync],
+    [notifyPatchListeners, recordSample, updateWorkerCredits, computeSoftDrainDelayMs, scheduleUiSync, collectListDebugSnapshot],
   );
 
   useEffect(() => {
@@ -1589,11 +1789,13 @@ export function StreamingMarkdownDemoV2({
     if (finished && !finalizedOnceRef.current) {
       workerRef.current.finalize();
       streamingRef.current?.finalize();
+      updateWorkerCredits(1);
+      startFinalizeDrain();
       finalizedOnceRef.current = true;
     } else if (!finished && finalizedOnceRef.current) {
       finalizedOnceRef.current = false;
     }
-  }, [finished, effectiveTotal, workerInitEpoch]);
+  }, [finished, effectiveTotal, workerInitEpoch, updateWorkerCredits, startFinalizeDrain]);
 
   useEffect(() => {
     if (finished) {
@@ -1649,6 +1851,11 @@ export function StreamingMarkdownDemoV2({
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
+    if (finalizeDrainTimerRef.current) {
+      clearTimeout(finalizeDrainTimerRef.current);
+      finalizeDrainTimerRef.current = null;
+    }
+    setIsFinalizing(false);
     setIdx(0);
     setRenderTimes([]);
     workerSentIdxRef.current = 0;
@@ -1680,6 +1887,10 @@ export function StreamingMarkdownDemoV2({
       appendLineTotalLines: 0,
       appendLineMaxLines: 0,
     };
+    listDebugEventsRef.current = [];
+    listDebugStartRef.current = null;
+    listMismatchCountRef.current = 0;
+    listAutoExportedRef.current = false;
     streamStartRef.current = typeof performance !== "undefined" && typeof performance.now === "function" ? performance.now() : Date.now();
     firstMeaningfulMsRef.current = null;
     completionMsRef.current = null;
@@ -1688,6 +1899,12 @@ export function StreamingMarkdownDemoV2({
     bumpRunToken((token) => token + 1);
     setupWorker();
   }, [isRunning, setupWorker, bumpRunToken]);
+
+  useEffect(() => {
+    if (schedulingPresetRef.current === schedulingPreset) return;
+    schedulingPresetRef.current = schedulingPreset;
+    onRestart();
+  }, [onRestart, schedulingPreset]);
 
   const getCodeBlockSnapshot = useCallback(
     (options?: {
@@ -1803,243 +2020,6 @@ export function StreamingMarkdownDemoV2({
     }
   };
 
-  // Custom components for V2 renderer
-  useEffect(() => {
-    componentRegistry.current.setInlineComponents({
-      mention: ({ handle }: { handle: string }) => (
-        <a href={`https://x.com/${handle}`} className="text-[#A68AEB] underline-offset-4 hover:underline">
-          @{handle}
-        </a>
-      ),
-      "math-inline": ({ tex }: { tex: string }) => <InlineMath math={tex} />,
-      "math-display": ({ tex }: { tex: string }) => <BlockMath math={tex} />,
-    });
-
-    const renderWithInline = (nodes: InlineNode[]) => renderInlineNodes(nodes, componentRegistry.current.getInlineComponents());
-
-    componentRegistry.current.setBlockComponents({
-      paragraph: ({
-        inlines,
-        raw,
-      }: {
-        inlines: InlineNode[];
-        raw?: string;
-      }) => {
-        const filteredInlines = inlines.length > 0 && raw ? inlines.filter((node) => !(node.kind === "text" && node.text === raw)) : inlines;
-        const baseInlines: InlineNode[] = filteredInlines.length > 0 ? filteredInlines : raw ? ([{ kind: "text", text: raw }] as InlineNode[]) : [];
-        let hasDisplayMath = false;
-        let key = 0;
-        const segments: ReactNode[] = [];
-        let buffer: InlineNode[] = [];
-
-        const flushBuffer = () => {
-          if (buffer.length === 0) return;
-          segments.push(
-            <p key={`segment-${key++}`} className="markdown-paragraph">
-              {renderWithInline(buffer)}
-            </p>,
-          );
-          buffer = [];
-        };
-
-        for (const node of baseInlines) {
-          if (node.kind === "math-display") {
-            hasDisplayMath = true;
-            flushBuffer();
-            segments.push(<BlockMath key={`math-${key++}`} math={node.tex} />);
-          } else {
-            buffer.push(node);
-          }
-        }
-        flushBuffer();
-
-        if (!hasDisplayMath) {
-          return <p className="markdown-paragraph">{renderWithInline(baseInlines)}</p>;
-        }
-
-        return <div className="markdown-paragraph">{segments}</div>;
-      },
-      heading: ({
-        level,
-        inlines,
-        text,
-      }: {
-        level: 1 | 2 | 3 | 4 | 5 | 6;
-        inlines: InlineNode[];
-        text?: string;
-      }) => {
-        const Tag = `h${level}` as const;
-        const headingProps: Record<string, unknown> = {
-          className: `markdown-heading markdown-h${level}`,
-        };
-        if (text && text.length > 0) {
-          headingProps["data-heading-text"] = text;
-        }
-        return <Tag {...headingProps}>{renderWithInline(inlines)}</Tag>;
-      },
-      blockquote: ({
-        inlines,
-        renderedContent,
-      }: {
-        inlines: InlineNode[];
-        renderedContent?: ReactNode;
-      }) => <blockquote className="markdown-blockquote">{renderedContent ?? renderWithInline(inlines)}</blockquote>,
-      list: ({
-        ordered,
-        items,
-      }: {
-        ordered: boolean;
-        items: InlineNode[][];
-      }) => {
-        const Tag = ordered ? "ol" : "ul";
-        return (
-          <Tag className={`markdown-list ${ordered ? "ordered" : "unordered"}`}>
-            {items.map((item, index) => {
-              const synthesizedKey = item
-                .map((node) => {
-                  switch (node.kind) {
-                    case "text":
-                    case "code":
-                      return `${node.kind}:${node.text}`;
-                    case "link":
-                      return `${node.kind}:${node.href ?? ""}:${node.title ?? ""}`;
-                    case "image":
-                      return `${node.kind}:${node.src}`;
-                    case "mention":
-                      return `${node.kind}:${node.handle}`;
-                    default:
-                      return node.kind;
-                  }
-                })
-                .join("|");
-              const key = synthesizedKey.length > 0 ? synthesizedKey : `list-item-${index}`;
-              return (
-                <li key={key} className="markdown-list-item">
-                  {renderWithInline(item)}
-                </li>
-              );
-            })}
-          </Tag>
-        );
-      },
-      code: ({
-        html,
-        raw,
-        meta,
-        lang,
-        lines,
-        preAttrs,
-        codeAttrs,
-      }: {
-        html: string;
-        raw?: string;
-        meta?: Record<string, unknown>;
-        lang?: string;
-        lines?: ReadonlyArray<{
-          id: string;
-          index: number;
-          text: string;
-          html?: string | null;
-        }>;
-        preAttrs?: Record<string, string>;
-        codeAttrs?: Record<string, string>;
-      }) => {
-        // Prefer explicit lines; otherwise derive from meta.code, else strip fences from raw.
-        const fenced = typeof meta?.code === "string" && meta.code.length > 0 ? meta.code : raw ?? "";
-        const stripFence = (value: string): string => {
-          if (!value) return "";
-          const trimmed = value.trimStart();
-          if (!trimmed.startsWith("```")) return value;
-          const parts = trimmed.split("\n");
-          if (parts.length <= 1) return value;
-          // Drop first fence line; drop last fence if present
-          if (parts[parts.length - 1].trim().startsWith("```")) {
-            return parts.slice(1, -1).join("\n");
-          }
-          return parts.slice(1).join("\n");
-        };
-        const rawCode = stripFence(fenced);
-        const rawCodeLines = rawCode ? rawCode.split("\n") : [];
-        const incomingLines = Array.isArray(lines) ? lines.map((l) => l.text ?? "") : [];
-        const effectiveLines = rawCodeLines.length > 0 ? rawCodeLines : incomingLines;
-        const languageLabel = typeof (lang ?? meta?.lang) === "string" && String(lang ?? meta?.lang).length > 0 ? String(lang ?? meta?.lang) : null;
-        const showLabel = Boolean(showCodeMeta && languageLabel);
-
-        return (
-          <div className="flex flex-col">
-            {showLabel ? (
-              <div className="border-border/60 border-b bg-muted/40 px-3 py-1 font-mono text-muted-foreground text-xs">{languageLabel}</div>
-            ) : null}
-            <ScrollAreaHorizontal className="min-w-auto">
-              <div className="min-w-max p-4">
-                {html ? (
-                  <div
-                    className="[&_pre]:m-0 [&_pre]:overflow-x-visible [&_pre]:bg-transparent [&_pre]:p-0"
-                    /* biome-ignore lint/security/noDangerouslySetInnerHtml: HTML is sanitized upstream */
-                    dangerouslySetInnerHTML={{ __html: html }}
-                  />
-                ) : effectiveLines.length > 0 ? (
-                  <pre className="m-0" {...attrsToProps(preAttrs)}>
-                    <code {...attrsToProps(codeAttrs)}>
-                      {effectiveLines.map((text, idx) => (
-                        <span
-                          key={`line-${idx}`}
-                          className="line"
-                          dangerouslySetInnerHTML={{
-                            __html: text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"),
-                          }}
-                        />
-                      ))}
-                    </code>
-                  </pre>
-                ) : null}
-              </div>
-            </ScrollAreaHorizontal>
-          </div>
-        );
-      },
-      table: ({
-        header,
-        rows,
-        align,
-        elements,
-      }: {
-        header?: InlineNode[][];
-        rows: InlineNode[][][];
-        align?: Array<"left" | "center" | "right" | null>;
-        elements?: Partial<TableElements>;
-      }) => {
-        const El: TableElements = { ...tableElements, ...(elements || {}) };
-        const renderCells = (cells: InlineNode[][], tag: "th" | "td", rowIdx: number) =>
-          cells.map((cell, i) => {
-            const columnAlign = align?.[i] ?? undefined;
-            const cellStyle = columnAlign ? ({ textAlign: columnAlign } satisfies CSSProperties) : undefined;
-            const Comp = tag === "th" ? El.Th : El.Td;
-            return (
-              <Comp key={`${rowIdx}-${i}`} style={cellStyle} align={columnAlign ?? undefined}>
-                {renderWithInline(cell)}
-              </Comp>
-            );
-          });
-
-        return (
-          <ScrollAreaHorizontal className="my-6 w-full rounded border border-border">
-            <div className="min-w-max">
-              <El.Table className="w-full caption-bottom text-base">
-                {header && header.length > 0 ? <El.Thead>{<El.Tr>{renderCells(header, "th", -1)}</El.Tr>}</El.Thead> : null}
-                <El.Tbody>{rows.map((row, r) => createElement(El.Tr, { key: r }, renderCells(row, "td", r)))}</El.Tbody>
-              </El.Table>
-            </div>
-          </ScrollAreaHorizontal>
-        );
-      },
-    });
-
-    // Use ShadCN table components for both structured tables and HTML tables
-    componentRegistry.current.setTableElements(tableElements);
-    componentRegistry.current.setHtmlElements(htmlElements);
-  }, [showCodeMeta, tableElements, htmlElements]);
-
   useEffect(() => {
     if (!SHOULD_EXPOSE_AUTOMATION_API) return;
     if (typeof window === "undefined") return;
@@ -2072,6 +2052,9 @@ export function StreamingMarkdownDemoV2({
     };
     api.setMode = (mode: "classic" | "worker") => {
       modeRef.current = mode;
+    };
+    api.setSchedulingPreset = (preset: "latency" | "throughput") => {
+      setSchedulingPreset(preset);
     };
     api.fastForward = async () => {
       // Ensure worker is ready before forcing a full append
@@ -2123,6 +2106,7 @@ export function StreamingMarkdownDemoV2({
       streamingRef.current?.finalize();
     };
     api.getHandle = () => streamingRef.current;
+    api.getWorker = () => workerRef.current?.getWorker() ?? null;
     api.flushPending = async () => {
       streamingRef.current?.flushPending();
       await streamingRef.current?.waitForIdle?.();
@@ -2184,11 +2168,13 @@ export function StreamingMarkdownDemoV2({
       isPending,
       fullTextLength: fullTextRef.current.length,
       finished,
+      isFinalizing,
       streamLimit: streamLimitRef.current,
       workerSentIdx: workerSentIdxRef.current,
       workerCredits: workerCreditsRef.current,
       timerActive: Boolean(timerRef.current),
       mode: modeRef.current,
+      schedulingPreset,
       rate,
       tickMs,
       renderer: {
@@ -2218,562 +2204,716 @@ export function StreamingMarkdownDemoV2({
   const coalescingRecent = coalescingPanel.recent;
   const coalescingSparkline = coalescingPanel.sparkline;
   const coalescingAdaptiveState = coalescingPanel.adaptiveState;
+  const demoTitle = useMemo(() => {
+    const match = fullText.match(/^#\s+(.+)$/m);
+    return match?.[1]?.trim() || "Streaming Output";
+  }, [fullText]);
+  const streamStatus = finished ? (isFinalizing ? "Finalizing…" : "Completed") : !isRunning ? "Paused" : showRendering ? "Rendering…" : "Streaming";
+  const statusTone =
+    streamStatus === "Streaming"
+      ? "bg-emerald-50 text-emerald-700"
+      : streamStatus === "Paused"
+        ? "bg-amber-50 text-amber-700"
+        : streamStatus === "Rendering…"
+          ? "bg-slate-100 text-slate-600"
+          : streamStatus === "Finalizing…"
+            ? "bg-sky-50 text-sky-700"
+            : "bg-foreground/5 text-foreground/70";
+  const summaryCards = [
+    { label: "First flush", value: formatMs(firstMeaningfulMsRef.current) },
+    { label: "Latency p95", value: formatMs(timingSummary.recvToFlush?.p95Ms) },
+    { label: "Patch p95", value: formatMs(timingSummary.flushApply?.p95Ms) },
+    { label: "Long tasks", value: formatCount(timingSummary.longTasks?.count ?? null, 0) },
+    { label: "Shiki ms", value: formatMs(lastMetrics?.shikiMs) },
+    { label: "Coalescing", value: formatPercent(coalescingPanel.reductionPct) },
+  ];
 
   return (
-    <div className={cn("flex w-full flex-col gap-4", className)}>
+    <div className={cn("flex w-full flex-col gap-6", className)}>
       {SHOULD_EXPOSE_AUTOMATION_API && (
-        <div className="rounded-md border border-amber-400 bg-amber-50 p-3 text-sm text-amber-900">
-          <p className="font-semibold">Automation API is demo-only.</p>
-          <p className="mt-1">
-            The <code>window.__STREAMING_DEMO__</code> shim only exists for internal tooling. Use the <code>StreamingMarkdownHandle</code> ref instead. See{" "}
-            {AUTOMATION_DOC_LINK}.
-          </p>
-        </div>
+        <details className="rounded-md border border-amber-400 bg-amber-50 p-3 text-sm text-amber-900">
+          <summary className="cursor-pointer font-semibold">Automation API (demo-only)</summary>
+          <div className="mt-2">
+            <p>
+              The <code>window.__STREAMING_DEMO__</code> shim only exists for internal tooling. Use the <code>StreamingMarkdownHandle</code> ref instead.
+            </p>
+            <p className="mt-1">See {AUTOMATION_DOC_LINK}.</p>
+          </div>
+        </details>
       )}
-      <div className={cn("flex flex-col gap-3 rounded-lg border border-border p-4")}>
-        <div className="flex items-center justify-between">
-          <div className="text-muted text-sm">V2 Streaming Controls</div>
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="default" onClick={() => setIsRunning((r) => !r)}>
-              {isRunning ? "Pause" : "Resume"}
-            </Button>
-            <Button size="sm" variant="secondary" onClick={onRestart}>
-              Restart
-            </Button>
-            <Button size="sm" variant="outline" onClick={exportDebug}>
-              Export debug
-            </Button>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between text-muted text-xs">
-          <span>Theme</span>
-          <div className="flex items-center gap-2">
-            <label className="inline-flex items-center gap-2 text-xs">
-              <input type="checkbox" checked={theme === "dark"} onChange={(e) => setTheme(e.target.checked ? "dark" : "light")} />
-              <span>Dark theme</span>
-            </label>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between text-muted text-xs">
-          <span>HTML/MDX compilation</span>
-          <div className="flex items-center gap-2">
-            <label className="inline-flex items-center gap-2 text-xs">
-              <input
-                type="radio"
-                name="mdx-strategy"
-                value="server"
-                checked={mdxStrategy === "server"}
-                onChange={() => {
-                  if (mdxStrategyRef.current !== "server") {
-                    mdxStrategyRef.current = "server";
-                    setMdxStrategy("server");
-                    onRestart();
-                  }
-                }}
-              />
-              <span>Server (API)</span>
-            </label>
-            <label className="inline-flex items-center gap-2 text-xs">
-              <input
-                type="radio"
-                name="mdx-strategy"
-                value="worker"
-                checked={mdxStrategy === "worker"}
-                onChange={() => {
-                  if (mdxStrategyRef.current !== "worker") {
-                    mdxStrategyRef.current = "worker";
-                    setMdxStrategy("worker");
-                    onRestart();
-                  }
-                }}
-              />
-              <span>Client (Worker)</span>
-            </label>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between text-muted text-xs">
-          <span>Pre-warm languages</span>
-          <div className="flex items-center gap-2">
-            <input type="checkbox" checked={prewarm} onChange={(e) => setPrewarm(e.target.checked)} />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between text-muted text-xs">
-          <span>Debug timing</span>
-          <div className="flex items-center gap-2">
-            <input type="checkbox" checked={debugTiming} onChange={(e) => setDebugTiming(e.target.checked)} />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between text-muted text-xs">
-          <span>Block inspector</span>
-          <div className="flex items-center gap-2">
-            <input type="checkbox" checked={showInspector} onChange={(e) => setShowInspector(e.target.checked)} />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between text-muted text-xs">
-          <span>Show code header meta</span>
-          <div className="flex items-center gap-2">
-            <input type="checkbox" checked={showCodeMeta} onChange={(e) => setShowCodeMeta(e.target.checked)} />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between text-muted text-xs">
-          <span>Format anticipation</span>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={formatAnticipationEnabled}
-              onChange={(e) => {
-                const enabled = e.target.checked;
-                setFormatAnticipationEnabled(enabled);
-                docPluginConfigRef.current = {
-                  ...docPluginConfigRef.current,
-                  formatAnticipation: enabled ? formatAnticipationConfig : false,
-                };
-                onRestart();
-              }}
-            />
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2 pl-4 text-muted text-xs">
-          <label className="flex items-center justify-between gap-2">
-            <span>Inline (em/strong/code/strike)</span>
-            <input
-              type="checkbox"
-              disabled={!formatAnticipationEnabled}
-              checked={formatAnticipationConfig.inline}
-              onChange={(e) => {
-                const updated = { ...formatAnticipationConfig, inline: e.target.checked };
-                setFormatAnticipationConfig(updated);
-                docPluginConfigRef.current = {
-                  ...docPluginConfigRef.current,
-                  formatAnticipation: formatAnticipationEnabled ? updated : false,
-                };
-                onRestart();
-              }}
-            />
-          </label>
-
-          <label className="flex items-center justify-between gap-2">
-            <span>Math inline ($...$)</span>
-            <input
-              type="checkbox"
-              disabled={!formatAnticipationEnabled}
-              checked={formatAnticipationConfig.mathInline}
-              onChange={(e) => {
-                const updated = { ...formatAnticipationConfig, mathInline: e.target.checked };
-                setFormatAnticipationConfig(updated);
-                docPluginConfigRef.current = {
-                  ...docPluginConfigRef.current,
-                  formatAnticipation: formatAnticipationEnabled ? updated : false,
-                };
-                onRestart();
-              }}
-            />
-          </label>
-
-          <label className="flex items-center justify-between gap-2">
-            <span>Math block ($$...$$)</span>
-            <input
-              type="checkbox"
-              disabled={!formatAnticipationEnabled}
-              checked={formatAnticipationConfig.mathBlock}
-              onChange={(e) => {
-                const updated = { ...formatAnticipationConfig, mathBlock: e.target.checked };
-                setFormatAnticipationConfig(updated);
-                docPluginConfigRef.current = {
-                  ...docPluginConfigRef.current,
-                  formatAnticipation: formatAnticipationEnabled ? updated : false,
-                };
-                onRestart();
-              }}
-            />
-          </label>
-
-          <label className="flex items-center justify-between gap-2">
-            <span>HTML segments</span>
-            <input
-              type="checkbox"
-              disabled={!formatAnticipationEnabled}
-              checked={formatAnticipationConfig.html}
-              onChange={(e) => {
-                const updated = { ...formatAnticipationConfig, html: e.target.checked };
-                setFormatAnticipationConfig(updated);
-                docPluginConfigRef.current = {
-                  ...docPluginConfigRef.current,
-                  formatAnticipation: formatAnticipationEnabled ? updated : false,
-                };
-                onRestart();
-              }}
-            />
-          </label>
-
-          <label className="flex items-center justify-between gap-2">
-            <span>MDX segments</span>
-            <input
-              type="checkbox"
-              disabled={!formatAnticipationEnabled}
-              checked={formatAnticipationConfig.mdx}
-              onChange={(e) => {
-                const updated = { ...formatAnticipationConfig, mdx: e.target.checked };
-                setFormatAnticipationConfig(updated);
-                docPluginConfigRef.current = {
-                  ...docPluginConfigRef.current,
-                  formatAnticipation: formatAnticipationEnabled ? updated : false,
-                };
-                onRestart();
-              }}
-            />
-          </label>
-
-          <label className="flex items-center justify-between gap-2">
-            <span>Regex plugins</span>
-            <input
-              type="checkbox"
-              disabled={!formatAnticipationEnabled}
-              checked={formatAnticipationConfig.regex}
-              onChange={(e) => {
-                const updated = { ...formatAnticipationConfig, regex: e.target.checked };
-                setFormatAnticipationConfig(updated);
-                docPluginConfigRef.current = {
-                  ...docPluginConfigRef.current,
-                  formatAnticipation: formatAnticipationEnabled ? updated : false,
-                };
-                onRestart();
-              }}
-            />
-          </label>
-        </div>
-
-        <div className="flex items-center justify-between text-muted text-xs">
-          <span>Live code highlighting (slow)</span>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={liveCodeHighlightingEnabled}
-              onChange={(e) => {
-                const enabled = e.target.checked;
-                setLiveCodeHighlightingEnabled(enabled);
-                docPluginConfigRef.current = { ...docPluginConfigRef.current, liveCodeHighlighting: enabled };
-                onRestart();
-              }}
-            />
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center justify-between text-muted text-xs">
-            <span>Rate</span>
-            <span>{rate} chars/sec</span>
-          </div>
-          <Slider className="mt-4" min={50} max={20000} step={50} value={[rate]} onValueChange={(v) => setRate(v[0] ?? 500)} />
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center justify-between text-muted text-xs">
-            <span>Update interval</span>
-            <span>{tickMs} ms</span>
-          </div>
-          <Slider className="mt-4" min={1} max={200} step={1} value={[tickMs]} onValueChange={(v) => setTickMs(v[0] ?? 50)} />
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center justify-between text-muted text-xs">
-            <span>Log window size</span>
-            <span>
-              {noCap ? "∞" : logWindow}
-              <label className="ml-3 inline-flex items-center gap-2">
-                <input type="checkbox" checked={noCap} onChange={(e) => setNoCap(e.target.checked)} />
-                <span>No cap</span>
-              </label>
-            </span>
-          </div>
-          <Slider className="mt-4" min={10} max={500} step={10} value={[logWindow]} onValueChange={(v) => setLogWindow(v[0] ?? 50)} />
-        </div>
-
-        <div className="flex items-center justify-between text-muted text-xs">
-          <span>
-            Progress: {idx.toLocaleString()} / {maxLen.toLocaleString()} chars
-          </span>
-          <span>{finished ? "Completed" : !isRunning ? "Paused" : showRendering ? "Rendering…" : "Streaming"}</span>
-        </div>
-
-        {debugTiming && (
-          <div className="rounded-md border border-border bg-background/50 p-2">
-            <div className="mb-1 flex items-center justify-between text-muted text-xs">
-              <span>
-                V2 Render times (showing {renderTimes.length}
-                {noCap ? "" : `/${Math.max(1, logWindow)}`})
-              </span>
-              <span className="flex gap-3">
-                <span>avg {renderTimes.length ? (renderTimes.reduce((a, b) => a + b.ms, 0) / renderTimes.length).toFixed(1) : "-"} ms</span>
-                <span>
-                  p95{" "}
-                  {renderTimes.length
-                    ? (() => {
-                        const arr = [...renderTimes.map((r) => r.ms)].sort((a, b) => a - b);
-                        const p = arr[Math.floor(0.95 * (arr.length - 1))];
-                        return p?.toFixed(1) ?? "-";
-                      })()
-                    : "-"}{" "}
-                  ms
-                </span>
-                <span>max {renderTimes.length ? Math.max(...renderTimes.map((r) => r.ms)).toFixed(1) : "-"} ms</span>
-              </span>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,320px)]">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-semibold text-foreground">{demoTitle}</h2>
+                  <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide", statusTone)}>
+                    {streamStatus}
+                  </span>
+                </div>
+                <div className="text-xs text-muted">
+                  {idx.toLocaleString()} / {effectiveTotal.toLocaleString()} chars streamed
+                </div>
+              </div>
             </div>
-            <div className="max-h-28 overflow-y-auto font-mono text-xs">
-              {renderTimes.map((t) => (
-                <div key={`${t.idx}-${t.total}-${t.ms}`}>
-                  {t.ms.toFixed(1)} ms — {t.idx.toLocaleString()}/{t.total.toLocaleString()} chars
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {summaryCards.map((card) => (
+                <div key={card.label} className="rounded-lg border border-border/60 bg-background p-2">
+                  <div className="text-[11px] uppercase tracking-wide text-muted">{card.label}</div>
+                  <div className="mt-1 text-sm font-semibold text-foreground">{card.value}</div>
                 </div>
               ))}
             </div>
           </div>
-        )}
 
-        <div className="rounded-md border border-border bg-background/60 p-3">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <div className="font-semibold text-muted text-xs uppercase tracking-wide">Coalescing</div>
-              <div
-                className={cn(
-                  "font-semibold text-lg leading-tight",
-                  typeof coalescingPanel.reductionPct === "number" && coalescingPanel.reductionPct < COALESCING_WARN_REDUCTION_PCT
-                    ? "text-destructive"
-                    : "text-foreground",
-                )}
-              >
-                {formatPercent(coalescingPanel.reductionPct)}
-              </div>
-              <div className="text-muted text-xs">
-                input {formatCount(coalescingTotalsSnapshot.input, 0)} → output {formatCount(coalescingTotalsSnapshot.output, 0)} (
-                {formatCount(coalescingTotalsSnapshot.coalesced, 0)} merged)
-              </div>
+          <div className="rounded-xl border border-border bg-background p-4 shadow-sm">
+            <div data-testid="markdown-output" className={cn("prose max-w-none", theme === "dark" ? "prose-invert" : "")}>
+              <StreamingMarkdown
+                ref={streamingHandleRef}
+                worker={rendererWorker ?? undefined}
+                managedWorker={Boolean(rendererWorker)}
+                className="markdown-v2-output"
+                features={docPluginConfigRef.current}
+                scheduling={rendererScheduling}
+                mdxCompileMode={mdxStrategy}
+                mdxComponents={sharedMdxComponents as unknown as Record<string, ComponentType<unknown>>}
+                prewarmLangs={prewarm ? PREWARM_LANGS : []}
+                components={componentRegistry.getBlockComponentMap()}
+                inlineComponents={componentRegistry.getInlineComponentMap()}
+                tableElements={tableElements}
+                htmlElements={htmlElements}
+                style={{ contain: "content" }}
+                onError={handleRendererError}
+              />
             </div>
-            <div className="text-right text-muted text-xs">
-              <div>duration total {formatMs(coalescingTotalsSnapshot.durationMs, 2)}</div>
-              <div>append lines {formatCount(coalescingTotalsSnapshot.appendLines, 0)}</div>
-              <Button size="sm" variant="ghost" className="mt-2" onClick={handleResetCoalescing}>
-                Reset
+          </div>
+
+          <details className="rounded-xl border border-border bg-background/60 p-4">
+            <summary className="cursor-pointer text-sm font-semibold">Metrics</summary>
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+              <Button size="sm" variant={metricsTab === "coalescing" ? "default" : "ghost"} onClick={() => setMetricsTab("coalescing")}>
+                Coalescing
               </Button>
+              <Button size="sm" variant={metricsTab === "timing" ? "default" : "ghost"} onClick={() => setMetricsTab("timing")}>
+                Timing
+              </Button>
+              <span className="text-muted">Run the stream to populate batch metrics.</span>
             </div>
-          </div>
-          <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-muted">
-            <span
-              className={cn(
-                "rounded-full px-2 py-0.5 font-semibold uppercase tracking-wide",
-                coalescingAdaptiveState.active ? "bg-destructive/10 text-destructive" : "bg-foreground/5 text-foreground/70",
-              )}
-            >
-              {coalescingAdaptiveState.active ? "Adaptive budget" : "Normal budget"}
-            </span>
-            <span className="font-mono">
-              duration p95 {typeof coalescingAdaptiveState.p95 === "number" ? `${coalescingAdaptiveState.p95.toFixed(2)} ms` : "—"} (
-              {coalescingAdaptiveState.sampleCount} samples)
-            </span>
-          </div>
-          <div className="mt-3 grid gap-3">
-            <CoalescingSparkline
-              label="Reduction"
-              unit="%"
-              values={coalescingSparkline.reduction}
-              maxValue={100}
-              warnThreshold={COALESCING_WARN_REDUCTION_PCT}
-              warnDirection="below"
-            />
-            <CoalescingSparkline
-              label="Accumulator duration"
-              unit="ms"
-              values={coalescingSparkline.duration}
-              maxValue={coalescingSparkline.durationMax}
-              warnThreshold={COALESCING_WARN_DURATION_MS}
-              warnDirection="above"
-            />
-          </div>
-          <div className="mt-4">
-            <div className="mb-2 flex items-center justify-between text-muted text-xs">
-              <span>Recent batches</span>
-              <span>
-                target reduction ≥ {COALESCING_WARN_REDUCTION_PCT}% · duration ≤ {COALESCING_WARN_DURATION_MS}ms
-              </span>
-            </div>
-            <div className="flex flex-col gap-1">
-              {coalescingRecent.length === 0 ? (
-                <div className="rounded border border-border/60 border-dashed px-3 py-2 text-muted text-xs">Run the stream to populate batch metrics.</div>
-              ) : (
-                coalescingRecent.map((batch, index) => {
-                  const reductionWarn = typeof batch.reductionPct === "number" && batch.reductionPct < COALESCING_WARN_REDUCTION_PCT;
-                  const durationWarn = typeof batch.durationMs === "number" && batch.durationMs > COALESCING_WARN_DURATION_MS;
-                  return (
+
+            {metricsTab === "coalescing" ? (
+              <div className="mt-3 rounded-md border border-border bg-background/60 p-3">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="font-semibold text-muted text-xs uppercase tracking-wide">Coalescing</div>
                     <div
-                      key={`coalesce-${batch.tx ?? index}-${index}`}
                       className={cn(
-                        "grid grid-cols-[minmax(0,1.4fr)_minmax(0,1.6fr)_minmax(0,0.9fr)_minmax(0,0.9fr)] gap-2 rounded border px-2 py-1 font-mono text-xs",
-                        reductionWarn || durationWarn
-                          ? "border-destructive/40 bg-destructive/10 text-destructive"
-                          : "border-border/40 bg-background/50 text-foreground",
+                        "font-semibold text-lg leading-tight",
+                        typeof coalescingPanel.reductionPct === "number" && coalescingPanel.reductionPct < COALESCING_WARN_REDUCTION_PCT
+                          ? "text-destructive"
+                          : "text-foreground",
                       )}
                     >
-                      <span className="text-muted">
-                        tx {batch.tx ?? "—"} {batch.priority === "low" ? "(L)" : "(H)"}
-                      </span>
-                      <span>
-                        {formatCount(batch.input ?? 0, 0)}→{formatCount(batch.output ?? 0, 0)} (-{formatCount(batch.coalesced ?? 0, 0)})
-                      </span>
-                      <span className={cn(reductionWarn && "font-semibold")}>
-                        {typeof batch.reductionPct === "number" ? `${batch.reductionPct.toFixed(1)}%` : "—"}
-                      </span>
-                      <span className={cn(durationWarn && "font-semibold")}>
-                        {typeof batch.durationMs === "number" ? `${batch.durationMs.toFixed(2)} ms` : "—"}
-                      </span>
+                      {formatPercent(coalescingPanel.reductionPct)}
                     </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        </div>
-
-        {debugTiming && (
-          <div className="rounded-md border border-border bg-background/50 p-2 font-mono text-[11px]">
-            <div className="mb-1 flex items-center justify-between text-muted text-xs">
-              <span>Main-thread timings</span>
-              <span>samples {timingSummary.patchApply?.count ?? 0}</span>
-            </div>
-            <div className="grid gap-1">
-              {timingRows.map((row) => (
-                <div key={`timing-row-${row.label}`} className="flex justify-between gap-2">
-                  <span>{row.label}</span>
-                  <span className="text-right text-foreground/80">{formatStatSummary(row.stat, row.unit)}</span>
-                </div>
-              ))}
-            </div>
-            {workerMetricsSummary && (
-              <div className="mt-3 border-border/60 border-t pt-2">
-                <div className="mb-1 text-muted text-xs">Last worker metrics</div>
-                <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-                  {workerMetricsSummary.map((item) => (
-                    <Fragment key={`worker-metric-${item.label}`}>
-                      <span>{item.label}</span>
-                      <span className="text-right text-foreground/80">{item.value}</span>
-                    </Fragment>
-                  ))}
-                </div>
-              </div>
-            )}
-            {(() => {
-              const totals = coalescingTotalsRef.current;
-              const input = totals.input;
-              const output = totals.output;
-              const coalesced = totals.coalesced;
-              const reductionPct = input > 0 ? (coalesced / input) * 100 : null;
-              const appliedPct = input > 0 ? (output / input) * 100 : null;
-              return (
-                <div className="mt-3 border-border/60 border-t pt-2">
-                  <div className="mb-1 text-muted text-xs">Coalescing totals</div>
-                  <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-                    <Fragment>
-                      <span>input patches</span>
-                      <span className="text-right text-foreground/80">{formatCount(input, 0)}</span>
-                    </Fragment>
-                    <Fragment>
-                      <span>applied patches</span>
-                      <span className="text-right text-foreground/80">{formatCount(output, 0)}</span>
-                    </Fragment>
-                    <Fragment>
-                      <span>coalesced</span>
-                      <span className="text-right text-foreground/80">{formatCount(coalesced, 0)}</span>
-                    </Fragment>
-                    <Fragment>
-                      <span>appendLines merged</span>
-                      <span className="text-right text-foreground/80">{formatCount(totals.appendLines, 0)}</span>
-                    </Fragment>
-                    <Fragment>
-                      <span>setProps merged</span>
-                      <span className="text-right text-foreground/80">{formatCount(totals.setProps, 0)}</span>
-                    </Fragment>
-                    <Fragment>
-                      <span>insertChild merged</span>
-                      <span className="text-right text-foreground/80">{formatCount(totals.insertChild, 0)}</span>
-                    </Fragment>
-                    <Fragment>
-                      <span>reduction</span>
-                      <span className="text-right text-foreground/80">{formatPercent(reductionPct)}</span>
-                    </Fragment>
-                    <Fragment>
-                      <span>applied / input</span>
-                      <span className="text-right text-foreground/80">{formatPercent(appliedPct)}</span>
-                    </Fragment>
-                    <Fragment>
-                      <span>coalesce time</span>
-                      <span className="text-right text-foreground/80">{formatMs(totals.durationMs, 2)}</span>
-                    </Fragment>
+                    <div className="text-muted text-xs">
+                      input {formatCount(coalescingTotalsSnapshot.input, 0)} → output {formatCount(coalescingTotalsSnapshot.output, 0)} (
+                      {formatCount(coalescingTotalsSnapshot.coalesced, 0)} merged)
+                    </div>
+                  </div>
+                  <div className="text-right text-muted text-xs">
+                    <div>duration total {formatMs(coalescingTotalsSnapshot.durationMs, 2)}</div>
+                    <div>append lines {formatCount(coalescingTotalsSnapshot.appendLines, 0)}</div>
+                    <Button size="sm" variant="ghost" className="mt-2" onClick={handleResetCoalescing}>
+                      Reset
+                    </Button>
                   </div>
                 </div>
-              );
-            })()}
-          </div>
-        )}
+                <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-muted">
+                  <span
+                    className={cn(
+                      "rounded-full px-2 py-0.5 font-semibold uppercase tracking-wide",
+                      coalescingAdaptiveState.active ? "bg-destructive/10 text-destructive" : "bg-foreground/5 text-foreground/70",
+                    )}
+                  >
+                    {coalescingAdaptiveState.active ? "Adaptive budget" : "Normal budget"}
+                  </span>
+                  <span className="font-mono">
+                    duration p95 {typeof coalescingAdaptiveState.p95 === "number" ? `${coalescingAdaptiveState.p95.toFixed(2)} ms` : "—"} (
+                    {coalescingAdaptiveState.sampleCount} samples)
+                  </span>
+                </div>
+                <div className="mt-3 grid gap-3">
+                  <CoalescingSparkline
+                    label="Reduction"
+                    unit="%"
+                    values={coalescingSparkline.reduction}
+                    maxValue={100}
+                    warnThreshold={COALESCING_WARN_REDUCTION_PCT}
+                    warnDirection="below"
+                  />
+                  <CoalescingSparkline
+                    label="Accumulator duration"
+                    unit="ms"
+                    values={coalescingSparkline.duration}
+                    maxValue={coalescingSparkline.durationMax}
+                    warnThreshold={COALESCING_WARN_DURATION_MS}
+                    warnDirection="above"
+                  />
+                </div>
+                <div className="mt-4">
+                  <div className="mb-2 flex items-center justify-between text-muted text-xs">
+                    <span>Recent batches</span>
+                    <span>
+                      target reduction ≥ {COALESCING_WARN_REDUCTION_PCT}% · duration ≤ {COALESCING_WARN_DURATION_MS}ms
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    {coalescingRecent.length === 0 ? (
+                      <div className="rounded border border-border/60 border-dashed px-3 py-2 text-muted text-xs">Run the stream to populate batch metrics.</div>
+                    ) : (
+                      coalescingRecent.map((batch, index) => {
+                        const reductionWarn = typeof batch.reductionPct === "number" && batch.reductionPct < COALESCING_WARN_REDUCTION_PCT;
+                        const durationWarn = typeof batch.durationMs === "number" && batch.durationMs > COALESCING_WARN_DURATION_MS;
+                        return (
+                          <div
+                            key={`coalesce-${batch.tx ?? index}-${index}`}
+                            className={cn(
+                              "grid grid-cols-[minmax(0,1.4fr)_minmax(0,1.6fr)_minmax(0,0.9fr)_minmax(0,0.9fr)] gap-2 rounded border px-2 py-1 font-mono text-xs",
+                              reductionWarn || durationWarn
+                                ? "border-destructive/40 bg-destructive/10 text-destructive"
+                                : "border-border/40 bg-background/50 text-foreground",
+                            )}
+                          >
+                            <span className="text-muted">
+                              tx {batch.tx ?? "—"} {batch.priority === "low" ? "(L)" : "(H)"}
+                            </span>
+                            <span>
+                              {formatCount(batch.input ?? 0, 0)}→{formatCount(batch.output ?? 0, 0)} (-{formatCount(batch.coalesced ?? 0, 0)})
+                            </span>
+                            <span className={cn(reductionWarn && "font-semibold")}>
+                              {typeof batch.reductionPct === "number" ? `${batch.reductionPct.toFixed(1)}%` : "—"}
+                            </span>
+                            <span className={cn(durationWarn && "font-semibold")}>
+                              {typeof batch.durationMs === "number" ? `${batch.durationMs.toFixed(2)} ms` : "—"}
+                            </span>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-3 flex flex-col gap-3">
+                <label className="inline-flex items-center gap-2 text-xs text-muted">
+                  <input type="checkbox" checked={debugTiming} onChange={(e) => setDebugTiming(e.target.checked)} />
+                  <span>Enable timing details</span>
+                </label>
 
-        {showInspector && (
-          <div className="rounded-md border border-border bg-background/50 p-2 font-mono text-xs">
-            <div className="mb-1 flex items-center justify-between text-muted text-xs">
-              <span>V2 Block inspector (last 10 blocks)</span>
-              <span>total blocks {blocks.length}</span>
-            </div>
-            <div className="grid grid-cols-1 gap-1">
-              {(() => {
-                const sliceStart = Math.max(0, blocks.length - 10);
-                return blocks.slice(sliceStart).map((b, i) => {
-                  const idx = sliceStart + i + 1;
-                  const features = [];
-                  if (b.payload.highlightedHtml) features.push("highlighted");
-                  if (b.payload.inline) features.push("inline");
-                  if (b.payload.meta) features.push("meta");
-
-                  return (
-                    <div key={`insp-v2-${sliceStart}-${i}-${b.id}`} className="flex justify-between">
-                      <span>
-                        #{idx} {b.type}
-                        {b.isFinalized ? " (final)" : " (dirty)"}
-                      </span>
-                      <span>
-                        {features.join("+")} · {b.payload.raw.length} chars
-                      </span>
+                {!debugTiming ? (
+                  <div className="rounded-md border border-border/60 bg-background/50 p-3 text-xs text-muted">
+                    Enable timing to view render timings and main-thread stats.
+                  </div>
+                ) : (
+                  <>
+                    <div className="rounded-md border border-border bg-background/50 p-2">
+                      <div className="mb-1 flex items-center justify-between text-muted text-xs">
+                        <span>
+                          V2 Render times (showing {renderTimes.length}
+                          {noCap ? "" : `/${Math.max(1, logWindow)}`})
+                        </span>
+                        <span className="flex gap-3">
+                          <span>avg {renderTimes.length ? (renderTimes.reduce((a, b) => a + b.ms, 0) / renderTimes.length).toFixed(1) : "-"} ms</span>
+                          <span>
+                            p95{" "}
+                            {renderTimes.length
+                              ? (() => {
+                                  const arr = [...renderTimes.map((r) => r.ms)].sort((a, b) => a - b);
+                                  const p = arr[Math.floor(0.95 * (arr.length - 1))];
+                                  return p?.toFixed(1) ?? "-";
+                                })()
+                              : "-"}{" "}
+                            ms
+                          </span>
+                          <span>max {renderTimes.length ? Math.max(...renderTimes.map((r) => r.ms)).toFixed(1) : "-"} ms</span>
+                        </span>
+                      </div>
+                      <div className="max-h-28 overflow-y-auto font-mono text-xs">
+                        {renderTimes.map((t) => (
+                          <div key={`${t.idx}-${t.total}-${t.ms}`}>
+                            {t.ms.toFixed(1)} ms — {t.idx.toLocaleString()}/{t.total.toLocaleString()} chars
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  );
-                });
-              })()}
+
+                    <div className="rounded-md border border-border bg-background/50 p-2 font-mono text-[11px]">
+                      <div className="mb-1 flex items-center justify-between text-muted text-xs">
+                        <span>Main-thread timings</span>
+                        <span>samples {timingSummary.patchApply?.count ?? 0}</span>
+                      </div>
+                      <div className="grid gap-1">
+                        {timingRows.map((row) => (
+                          <div key={`timing-row-${row.label}`} className="flex justify-between gap-2">
+                            <span>{row.label}</span>
+                            <span className="text-right text-foreground/80">{formatStatSummary(row.stat, row.unit)}</span>
+                          </div>
+                        ))}
+                      </div>
+                      {workerMetricsSummary && (
+                        <div className="mt-3 border-border/60 border-t pt-2">
+                          <div className="mb-1 text-muted text-xs">Last worker metrics</div>
+                          <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                            {workerMetricsSummary.map((item) => (
+                              <Fragment key={`worker-metric-${item.label}`}>
+                                <span>{item.label}</span>
+                                <span className="text-right text-foreground/80">{item.value}</span>
+                              </Fragment>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {(() => {
+                        const totals = coalescingTotalsRef.current;
+                        const input = totals.input;
+                        const output = totals.output;
+                        const coalesced = totals.coalesced;
+                        const reductionPct = input > 0 ? (coalesced / input) * 100 : null;
+                        const appliedPct = input > 0 ? (output / input) * 100 : null;
+                        return (
+                          <div className="mt-3 border-border/60 border-t pt-2">
+                            <div className="mb-1 text-muted text-xs">Coalescing totals</div>
+                            <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                              <Fragment>
+                                <span>input patches</span>
+                                <span className="text-right text-foreground/80">{formatCount(input, 0)}</span>
+                              </Fragment>
+                              <Fragment>
+                                <span>applied patches</span>
+                                <span className="text-right text-foreground/80">{formatCount(output, 0)}</span>
+                              </Fragment>
+                              <Fragment>
+                                <span>coalesced</span>
+                                <span className="text-right text-foreground/80">{formatCount(coalesced, 0)}</span>
+                              </Fragment>
+                              <Fragment>
+                                <span>appendLines merged</span>
+                                <span className="text-right text-foreground/80">{formatCount(totals.appendLines, 0)}</span>
+                              </Fragment>
+                              <Fragment>
+                                <span>setProps merged</span>
+                                <span className="text-right text-foreground/80">{formatCount(totals.setProps, 0)}</span>
+                              </Fragment>
+                              <Fragment>
+                                <span>insertChild merged</span>
+                                <span className="text-right text-foreground/80">{formatCount(totals.insertChild, 0)}</span>
+                              </Fragment>
+                              <Fragment>
+                                <span>reduction</span>
+                                <span className="text-right text-foreground/80">{formatPercent(reductionPct)}</span>
+                              </Fragment>
+                              <Fragment>
+                                <span>applied / input</span>
+                                <span className="text-right text-foreground/80">{formatPercent(appliedPct)}</span>
+                              </Fragment>
+                              <Fragment>
+                                <span>coalesce time</span>
+                                <span className="text-right text-foreground/80">{formatMs(totals.durationMs, 2)}</span>
+                              </Fragment>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </details>
+        </div>
+
+        <aside className="flex flex-col gap-4">
+          <div className="rounded-xl border border-border bg-background p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-muted">Streaming</div>
+              <div className="rounded-full border border-border/60 px-2 py-0.5 text-[11px] text-muted">{demoTitle}</div>
+            </div>
+
+            <div className="mt-3 flex items-center gap-2">
+              <Button size="sm" variant="default" onClick={() => setIsRunning((r) => !r)}>
+                {isRunning ? "Pause" : "Resume"}
+              </Button>
+              <Button size="sm" variant="secondary" onClick={onRestart}>
+                Restart
+              </Button>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-muted">Rate & update interval</div>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between text-muted text-xs">
+                  <span>Stream rate</span>
+                  <span>{rate} chars/s</span>
+                </div>
+                <Slider className="mt-4" min={50} max={20000} step={50} value={[rate]} onValueChange={(v) => setRate(v[0] ?? 500)} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between text-muted text-xs">
+                  <span>Update interval</span>
+                  <span>{tickMs} ms</span>
+                </div>
+                <Slider className="mt-4" min={1} max={200} step={1} value={[tickMs]} onValueChange={(v) => setTickMs(v[0] ?? 50)} />
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-2 text-xs text-muted">
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-muted">Features</div>
+              <label className="flex items-center justify-between gap-2">
+                <span>Math block ($$...$$)</span>
+                <input
+                  type="checkbox"
+                  checked={mathEnabled}
+                  onChange={(e) => {
+                    const enabled = e.target.checked;
+                    setMathEnabled(enabled);
+                    docPluginConfigRef.current = { ...docPluginConfigRef.current, math: enabled };
+                    onRestart();
+                  }}
+                />
+              </label>
+              <label className="flex items-center justify-between gap-2">
+                <span>HTML segments</span>
+                <input
+                  type="checkbox"
+                  checked={htmlEnabled}
+                  onChange={(e) => {
+                    const enabled = e.target.checked;
+                    setHtmlEnabled(enabled);
+                    docPluginConfigRef.current = { ...docPluginConfigRef.current, html: enabled };
+                    onRestart();
+                  }}
+                />
+              </label>
+              <label className="flex items-center justify-between gap-2">
+                <span>MDX components</span>
+                <input
+                  type="checkbox"
+                  checked={mdxEnabled}
+                  onChange={(e) => {
+                    const enabled = e.target.checked;
+                    setMdxEnabled(enabled);
+                    docPluginConfigRef.current = { ...docPluginConfigRef.current, mdx: enabled };
+                    onRestart();
+                  }}
+                />
+              </label>
+            </div>
+
+            <div className="mt-4 space-y-2 text-xs text-muted">
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-muted">Scheduling preset</div>
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="inline-flex items-center gap-2 text-xs">
+                  <input
+                    type="radio"
+                    name="scheduling-preset"
+                    value="latency"
+                    checked={schedulingPreset === "latency"}
+                    onChange={() => setSchedulingPreset("latency")}
+                  />
+                  <span>Latency</span>
+                </label>
+                <label className="inline-flex items-center gap-2 text-xs">
+                  <input
+                    type="radio"
+                    name="scheduling-preset"
+                    value="throughput"
+                    checked={schedulingPreset === "throughput"}
+                    onChange={() => setSchedulingPreset("throughput")}
+                  />
+                  <span>Throughput</span>
+                </label>
+              </div>
+              <div className="text-[11px] text-muted/80">Latency prioritizes first flush and immediate feedback.</div>
+            </div>
+
+            <div className="mt-4 space-y-2 text-xs text-muted">
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-muted">Debug</div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button size="sm" variant="outline" onClick={exportDebug}>
+                  Export
+                </Button>
+                {LIST_DEBUG_ENABLED && (
+                  <Button size="sm" variant="outline" onClick={exportListDebug}>
+                    List debug
+                  </Button>
+                )}
+                <Button size="sm" variant={showInspector ? "default" : "outline"} onClick={() => setShowInspector((value) => !value)}>
+                  Inspector
+                </Button>
+              </div>
             </div>
           </div>
-        )}
-      </div>
 
-      {/* V2 Renderer Output */}
-      <div data-testid="markdown-output" className={cn("prose max-w-none", theme === "dark" ? "prose-invert" : "")}>
-        <StreamingMarkdown
-          ref={streamingHandleRef}
-          worker={rendererWorker ?? undefined}
-          managedWorker={Boolean(rendererWorker)}
-          className="markdown-v2-output"
-          features={docPluginConfigRef.current}
-          scheduling={rendererScheduling}
-          mdxCompileMode={mdxStrategy}
-          mdxComponents={sharedMdxComponents as unknown as Record<string, ComponentType<unknown>>}
-          prewarmLangs={prewarm ? PREWARM_LANGS : []}
-          components={componentRegistry.current.getBlockComponentMap()}
-          inlineComponents={componentRegistry.current.getInlineComponentMap()}
-          tableElements={tableElements}
-          htmlElements={htmlElements}
-          style={{ contain: "content" }}
-          onError={handleRendererError}
-        />
+          <details className="rounded-xl border border-border bg-background/60 p-4">
+            <summary className="cursor-pointer text-sm font-semibold">Advanced controls</summary>
+            <div className="mt-3 flex flex-col gap-3 text-xs text-muted">
+              <div className="flex items-center justify-between">
+                <span>Dark theme</span>
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" checked={theme === "dark"} onChange={(e) => setTheme(e.target.checked ? "dark" : "light")} />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span>HTML/MDX compilation</span>
+                <div className="flex items-center gap-2">
+                  <label className="inline-flex items-center gap-2 text-xs">
+                    <input
+                      type="radio"
+                      name="mdx-strategy"
+                      value="server"
+                      checked={mdxStrategy === "server"}
+                      onChange={() => {
+                        if (mdxStrategyRef.current !== "server") {
+                          mdxStrategyRef.current = "server";
+                          setMdxStrategy("server");
+                          onRestart();
+                        }
+                      }}
+                    />
+                    <span>Server (API)</span>
+                  </label>
+                  <label className="inline-flex items-center gap-2 text-xs">
+                    <input
+                      type="radio"
+                      name="mdx-strategy"
+                      value="worker"
+                      checked={mdxStrategy === "worker"}
+                      onChange={() => {
+                        if (mdxStrategyRef.current !== "worker") {
+                          mdxStrategyRef.current = "worker";
+                          setMdxStrategy("worker");
+                          onRestart();
+                        }
+                      }}
+                    />
+                    <span>Client (Worker)</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span>Pre-warm languages</span>
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" checked={prewarm} onChange={(e) => setPrewarm(e.target.checked)} />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span>Show code header meta</span>
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" checked={showCodeMeta} onChange={(e) => setShowCodeMeta(e.target.checked)} />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span>Format anticipation</span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={formatAnticipationEnabled}
+                    onChange={(e) => {
+                      const enabled = e.target.checked;
+                      setFormatAnticipationEnabled(enabled);
+                      docPluginConfigRef.current = {
+                        ...docPluginConfigRef.current,
+                        formatAnticipation: enabled ? formatAnticipationConfig : false,
+                      };
+                      onRestart();
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2 pl-4">
+                <label className="flex items-center justify-between gap-2">
+                  <span>Inline (em/strong/code/strike)</span>
+                  <input
+                    type="checkbox"
+                    disabled={!formatAnticipationEnabled}
+                    checked={formatAnticipationConfig.inline}
+                    onChange={(e) => {
+                      const updated = { ...formatAnticipationConfig, inline: e.target.checked };
+                      setFormatAnticipationConfig(updated);
+                      docPluginConfigRef.current = {
+                        ...docPluginConfigRef.current,
+                        formatAnticipation: formatAnticipationEnabled ? updated : false,
+                      };
+                      onRestart();
+                    }}
+                  />
+                </label>
+
+                <label className="flex items-center justify-between gap-2">
+                  <span>Math inline ($...$)</span>
+                  <input
+                    type="checkbox"
+                    disabled={!formatAnticipationEnabled}
+                    checked={formatAnticipationConfig.mathInline}
+                    onChange={(e) => {
+                      const updated = { ...formatAnticipationConfig, mathInline: e.target.checked };
+                      setFormatAnticipationConfig(updated);
+                      docPluginConfigRef.current = {
+                        ...docPluginConfigRef.current,
+                        formatAnticipation: formatAnticipationEnabled ? updated : false,
+                      };
+                      onRestart();
+                    }}
+                  />
+                </label>
+
+                <label className="flex items-center justify-between gap-2">
+                  <span>Math block ($$...$$)</span>
+                  <input
+                    type="checkbox"
+                    disabled={!formatAnticipationEnabled}
+                    checked={formatAnticipationConfig.mathBlock}
+                    onChange={(e) => {
+                      const updated = { ...formatAnticipationConfig, mathBlock: e.target.checked };
+                      setFormatAnticipationConfig(updated);
+                      docPluginConfigRef.current = {
+                        ...docPluginConfigRef.current,
+                        formatAnticipation: formatAnticipationEnabled ? updated : false,
+                      };
+                      onRestart();
+                    }}
+                  />
+                </label>
+
+                <label className="flex items-center justify-between gap-2">
+                  <span>HTML segments</span>
+                  <input
+                    type="checkbox"
+                    disabled={!formatAnticipationEnabled}
+                    checked={formatAnticipationConfig.html}
+                    onChange={(e) => {
+                      const updated = { ...formatAnticipationConfig, html: e.target.checked };
+                      setFormatAnticipationConfig(updated);
+                      docPluginConfigRef.current = {
+                        ...docPluginConfigRef.current,
+                        formatAnticipation: formatAnticipationEnabled ? updated : false,
+                      };
+                      onRestart();
+                    }}
+                  />
+                </label>
+
+                <label className="flex items-center justify-between gap-2">
+                  <span>MDX segments</span>
+                  <input
+                    type="checkbox"
+                    disabled={!formatAnticipationEnabled}
+                    checked={formatAnticipationConfig.mdx}
+                    onChange={(e) => {
+                      const updated = { ...formatAnticipationConfig, mdx: e.target.checked };
+                      setFormatAnticipationConfig(updated);
+                      docPluginConfigRef.current = {
+                        ...docPluginConfigRef.current,
+                        formatAnticipation: formatAnticipationEnabled ? updated : false,
+                      };
+                      onRestart();
+                    }}
+                  />
+                </label>
+
+                <label className="flex items-center justify-between gap-2">
+                  <span>Regex plugins</span>
+                  <input
+                    type="checkbox"
+                    disabled={!formatAnticipationEnabled}
+                    checked={formatAnticipationConfig.regex}
+                    onChange={(e) => {
+                      const updated = { ...formatAnticipationConfig, regex: e.target.checked };
+                      setFormatAnticipationConfig(updated);
+                      docPluginConfigRef.current = {
+                        ...docPluginConfigRef.current,
+                        formatAnticipation: formatAnticipationEnabled ? updated : false,
+                      };
+                      onRestart();
+                    }}
+                  />
+                </label>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span>Live code highlighting (slow)</span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={liveCodeHighlightingEnabled}
+                    onChange={(e) => {
+                      const enabled = e.target.checked;
+                      setLiveCodeHighlightingEnabled(enabled);
+                      docPluginConfigRef.current = {
+                        ...docPluginConfigRef.current,
+                        liveCodeHighlighting: enabled,
+                      };
+                      onRestart();
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between">
+                  <span>Log window size</span>
+                  <span>
+                    {noCap ? "∞" : logWindow}
+                    <label className="ml-3 inline-flex items-center gap-2">
+                      <input type="checkbox" checked={noCap} onChange={(e) => setNoCap(e.target.checked)} />
+                      <span>No cap</span>
+                    </label>
+                  </span>
+                </div>
+                <Slider className="mt-4" min={10} max={500} step={10} value={[logWindow]} onValueChange={(v) => setLogWindow(v[0] ?? 50)} />
+              </div>
+            </div>
+          </details>
+
+          {showInspector && (
+            <div className="rounded-xl border border-border bg-background/60 p-3 font-mono text-xs">
+              <div className="mb-1 flex items-center justify-between text-muted text-xs">
+                <span>V2 Block inspector (last 10 blocks)</span>
+                <span>total blocks {blocks.length}</span>
+              </div>
+              <div className="grid grid-cols-1 gap-1">
+                {(() => {
+                  const sliceStart = Math.max(0, blocks.length - 10);
+                  return blocks.slice(sliceStart).map((b, i) => {
+                    const idx = sliceStart + i + 1;
+                    const features = [];
+                    if (b.payload.highlightedHtml) features.push("highlighted");
+                    if (b.payload.inline) features.push("inline");
+                    if (b.payload.meta) features.push("meta");
+
+                    return (
+                      <div key={`insp-v2-${sliceStart}-${i}-${b.id}`} className="flex justify-between">
+                        <span>
+                          #{idx} {b.type}
+                          {b.isFinalized ? " (final)" : " (dirty)"}
+                        </span>
+                        <span>
+                          {features.join("+")} · {b.payload.raw.length} chars
+                        </span>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+          )}
+        </aside>
       </div>
     </div>
   );

@@ -11,6 +11,45 @@ const Spacer = ({ size = "md" }: { size?: "sm" | "md" | "lg" }) => {
 };
 
 export default function Home() {
+  const featureTiles = [
+    {
+      title: "Incremental Shiki",
+      body: "Highlight code blocks as they stream without flicker or layout shifts.",
+      icon: Sparkles,
+      accent: "text-cyan-600 dark:text-cyan-400 bg-cyan-500/10 border-cyan-500/30",
+    },
+    {
+      title: "Full MDX support",
+      body: "Import and render React components directly within your markdown stream.",
+      icon: Braces,
+      accent: "text-violet-600 dark:text-violet-400 bg-violet-500/10 border-violet-500/30",
+    },
+    {
+      title: "HTML overrides",
+      body: "Map standard markdown elements to your design system components.",
+      icon: Wand2,
+      accent: "text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/30",
+    },
+    {
+      title: "Math & Mermaid",
+      body: "First-class KaTeX and Mermaid diagrams via optional plugins.",
+      icon: Blocks,
+      accent: "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/30",
+    },
+    {
+      title: "Format anticipation",
+      body: "Regex-based plugins to predict and format content early.",
+      icon: Sparkles,
+      accent: "text-sky-600 dark:text-sky-400 bg-sky-500/10 border-sky-500/30",
+    },
+    {
+      title: "Security model",
+      body: "Built-in sanitization and CSP-friendly rendering for untrusted output.",
+      icon: ShieldCheck,
+      accent: "text-rose-600 dark:text-rose-400 bg-rose-500/10 border-rose-500/30",
+    },
+  ];
+
   return (
     <FadeIn.Container>
       <FadeIn.Item>
@@ -41,7 +80,7 @@ export default function Home() {
           <div className="grid gap-4 md:grid-cols-3">
             <div className="rounded-lg border border-border/60 bg-background/40 p-5">
               <div className="flex items-center gap-2 text-sm font-semibold">
-                <span className="flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background/60">
+                <span className="flex h-7 w-7 items-center justify-center rounded-md border border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
                   <TerminalSquare size={14} />
                 </span>
                 Worker-first parsing
@@ -57,7 +96,7 @@ export default function Home() {
             </div>
             <div className="rounded-lg border border-border/60 bg-background/40 p-5">
               <div className="flex items-center gap-2 text-sm font-semibold">
-                <span className="flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background/60">
+                <span className="flex h-7 w-7 items-center justify-center rounded-md border border-teal-500/30 bg-teal-500/10 text-teal-600 dark:text-teal-400">
                   <Blocks size={14} />
                 </span>
                 Patch-based rendering
@@ -73,7 +112,7 @@ export default function Home() {
             </div>
             <div className="rounded-lg border border-border/60 bg-background/40 p-5">
               <div className="flex items-center gap-2 text-sm font-semibold">
-                <span className="flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background/60">
+                <span className="flex h-7 w-7 items-center justify-center rounded-md border border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400">
                   <ShieldCheck size={14} />
                 </span>
                 Output locked
@@ -100,41 +139,10 @@ export default function Home() {
             </p>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
-            {[
-              {
-                title: "Incremental Shiki",
-                body: "Highlight code blocks as they stream without flicker or layout shifts.",
-                icon: Sparkles,
-              },
-              {
-                title: "Full MDX support",
-                body: "Import and render React components directly within your markdown stream.",
-                icon: Braces,
-              },
-              {
-                title: "HTML overrides",
-                body: "Map standard markdown elements to your design system components.",
-                icon: Wand2,
-              },
-              {
-                title: "Math & Mermaid",
-                body: "First-class KaTeX and Mermaid diagrams via optional plugins.",
-                icon: Blocks,
-              },
-              {
-                title: "Format anticipation",
-                body: "Regex-based plugins to predict and format content early.",
-                icon: Sparkles,
-              },
-              {
-                title: "Security model",
-                body: "Built-in sanitization and CSP-friendly rendering for untrusted output.",
-                icon: ShieldCheck,
-              },
-            ].map((item) => (
+            {featureTiles.map((item) => (
               <div key={item.title} className="rounded-lg border border-border/60 bg-background/40 p-4">
                 <div className="flex items-center gap-2 text-sm font-semibold">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background/60">
+                  <span className={`flex h-7 w-7 items-center justify-center rounded-md border ${item.accent}`}>
                     <item.icon size={14} />
                   </span>
                   {item.title}

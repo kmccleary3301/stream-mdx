@@ -1,0 +1,552 @@
+{
+  "version": 1,
+  "schemaId": "streammdx.snapshot.v1",
+  "createdAt": "2026-02-11T20:25:55.222Z",
+  "hash": "4fbc4fdc0e08b1b93b43e7687ca016ba4310ce6bd3570742f18478ace2cb6ec1",
+  "contentHash": "b62ba06eb88931e219be7b75f92796926374165c7dcd055043bb0e2c44e9dfa5",
+  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
+  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "blocks": [
+    {
+      "id": "db082c0",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Plugins and Extensions",
+        "range": {
+          "from": 0,
+          "to": 24
+        },
+        "meta": {
+          "headingLevel": 1,
+          "headingText": "Plugins and Extensions",
+          "headingId": "plugins-and-extensions"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Plugins and Extensions"
+          }
+        ]
+      }
+    },
+    {
+      "id": "15fb48bc",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Features are the default switchboard",
+        "range": {
+          "from": 26,
+          "to": 65
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Features are the default switchboard",
+          "headingId": "features-are-the-default-switchboard"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Features are the default switchboard"
+          }
+        ]
+      }
+    },
+    {
+      "id": "4c16597f",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Most behavior is enabled with the `features` prop:",
+        "range": {
+          "from": 67,
+          "to": 117
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Most behavior is enabled with the "
+          },
+          {
+            "kind": "code",
+            "text": "features"
+          },
+          {
+            "kind": "text",
+            "text": " prop:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "1b51fd9b",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```tsx\n<StreamingMarkdown\n  text={content}\n  features={{\n    tables: true,\n    html: true,\n    mdx: true,\n    math: true,\n    footnotes: true,\n    callouts: true,\n  }}\n/>\n```",
+        "range": {
+          "from": 119,
+          "to": 293
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content}</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    tables: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    math: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    footnotes: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    callouts: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }}</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/></span></span></code></pre>",
+        "meta": {
+          "lang": "tsx",
+          "code": "<StreamingMarkdown\n  text={content}\n  features={{\n    tables: true,\n    html: true,\n    mdx: true,\n    math: true,\n    footnotes: true,\n    callouts: true,\n  }}\n/>"
+        }
+      }
+    },
+    {
+      "id": "ecb1d4a",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "You do not need to pass plugins for common features. The worker already knows how to parse these blocks.",
+        "range": {
+          "from": 295,
+          "to": 399
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "You do not need to pass plugins for common features. The worker already knows how to parse these blocks."
+          }
+        ]
+      }
+    },
+    {
+      "id": "74e190bb",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Custom syntax and custom worker bundles",
+        "range": {
+          "from": 401,
+          "to": 443
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Custom syntax and custom worker bundles",
+          "headingId": "custom-syntax-and-custom-worker-bundles"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Custom syntax and custom worker bundles"
+          }
+        ]
+      }
+    },
+    {
+      "id": "583d4b23",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "If you need custom syntax (custom regex, domain tokens, or non-standard blocks), build a custom worker bundle and enable the plugin there. The `Mermaid` addon is a good example of an opt-in block renderer.",
+        "range": {
+          "from": 445,
+          "to": 650
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "If you need custom syntax (custom regex, domain tokens, or non-standard blocks), build a custom worker bundle and enable the plugin there. The "
+          },
+          {
+            "kind": "code",
+            "text": "Mermaid"
+          },
+          {
+            "kind": "text",
+            "text": " addon is a good example of an opt-in block renderer."
+          }
+        ]
+      }
+    },
+    {
+      "id": "e9b7963",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Worker bundle workflow",
+        "range": {
+          "from": 652,
+          "to": 678
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "Worker bundle workflow",
+          "headingId": "worker-bundle-workflow"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Worker bundle workflow"
+          }
+        ]
+      }
+    },
+    {
+      "id": "3c2ea9ba",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "1. Start from the default worker package.\n2. Add your plugin registry setup.\n3. Build a hosted worker bundle.",
+        "range": {
+          "from": 680,
+          "to": 789
+        },
+        "meta": {
+          "ordered": true,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Start from the default worker package."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Add your plugin registry setup."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Build a hosted worker bundle."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "24241fe5",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```ts\nimport { createWorkerRegistry } from \"@stream-mdx/plugins\";\nimport { mathPlugin } from \"@stream-mdx/plugins/math\";\n\nconst registry = createWorkerRegistry();\nregistry.use(mathPlugin());\n```",
+        "range": {
+          "from": 791,
+          "to": 985
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"typescript\"><code data-language=\"typescript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { createWorkerRegistry } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/plugins\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { mathPlugin } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/plugins/math\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> registry</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> createWorkerRegistry</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">();</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">registry.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">use</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">mathPlugin</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">());</span></span></code></pre>",
+        "meta": {
+          "lang": "typescript",
+          "code": "import { createWorkerRegistry } from \"@stream-mdx/plugins\";\nimport { mathPlugin } from \"@stream-mdx/plugins/math\";\n\nconst registry = createWorkerRegistry();\nregistry.use(mathPlugin());"
+        }
+      }
+    },
+    {
+      "id": "7083eff8",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Mermaid diagrams",
+        "range": {
+          "from": 987,
+          "to": 1006
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Mermaid diagrams",
+          "headingId": "mermaid-diagrams"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Mermaid diagrams"
+          }
+        ]
+      }
+    },
+    {
+      "id": "5bb6d5a7",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Mermaid is an optional addon that turns ```mermaid code fences into diagrams. It does not change the parser; it replaces the code block renderer for `mermaid` fences.",
+        "range": {
+          "from": 1008,
+          "to": 1174
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Mermaid is an optional addon that turns ``"
+          },
+          {
+            "kind": "code",
+            "text": "mermaid code fences into diagrams. It does not change the parser; it replaces the code block renderer for "
+          },
+          {
+            "kind": "text",
+            "text": "mermaid` fences."
+          }
+        ]
+      }
+    },
+    {
+      "id": "23f931c5",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```tsx\nimport { MermaidBlock } from \"@stream-mdx/mermaid\";\n\n<StreamingMarkdown\n  text={content}\n  components={{ mermaid: MermaidBlock }}\n/>\n```",
+        "range": {
+          "from": 1176,
+          "to": 1319
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { MermaidBlock } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/mermaid\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content}</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  components</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ mermaid: MermaidBlock }}</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/></span></span></code></pre>",
+        "meta": {
+          "lang": "tsx",
+          "code": "import { MermaidBlock } from \"@stream-mdx/mermaid\";\n\n<StreamingMarkdown\n  text={content}\n  components={{ mermaid: MermaidBlock }}\n/>"
+        }
+      }
+    },
+    {
+      "id": "390d91e1",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Custom regex patterns",
+        "range": {
+          "from": 1321,
+          "to": 1345
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Custom regex patterns",
+          "headingId": "custom-regex-patterns"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Custom regex patterns"
+          }
+        ]
+      }
+    },
+    {
+      "id": "4ede341b",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Regex patterns typically live in a custom worker bundle. If you only need rendering changes (no parsing), use `components` and `inlineComponents`.",
+        "range": {
+          "from": 1347,
+          "to": 1493
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Regex patterns typically live in a custom worker bundle. If you only need rendering changes (no parsing), use "
+          },
+          {
+            "kind": "code",
+            "text": "components"
+          },
+          {
+            "kind": "text",
+            "text": " and "
+          },
+          {
+            "kind": "code",
+            "text": "inlineComponents"
+          },
+          {
+            "kind": "text",
+            "text": "."
+          }
+        ]
+      }
+    },
+    {
+      "id": "32f9e781",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Example: citation syntax",
+        "range": {
+          "from": 1495,
+          "to": 1523
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "Example: citation syntax",
+          "headingId": "example-citation-syntax"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Example: citation syntax"
+          }
+        ]
+      }
+    },
+    {
+      "id": "715780d3",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```ts\n// Worker-side: register a custom regex block/inline matcher.\nregistry.use({\n  name: \"citation\",\n  inline: {\n    full: /\\{cite:(\\d+)\\}/g,\n    start: /\\{cite:/g,\n    render: ({ match }) => ({ type: \"inline\", tag: \"span\", props: { className: \"citation\", children: `[${match[1]}]` } }),\n  },\n});\n```",
+        "range": {
+          "from": 1525,
+          "to": 1827
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"typescript\"><code data-language=\"typescript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#6A737D;--shiki-light:#6A737D\">// Worker-side: register a custom regex block/inline matcher.</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">registry.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">use</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">({</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  name: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"citation\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  inline: {</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    full:</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> /</span><span style=\"--shiki-dark:#85E89D;--shiki-dark-font-weight:bold;--shiki-light:#22863A;--shiki-light-font-weight:bold\">\\{</span><span style=\"--shiki-dark:#DBEDFF;--shiki-light:#032F62\">cite:(</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">\\d</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">+</span><span style=\"--shiki-dark:#DBEDFF;--shiki-light:#032F62\">)</span><span style=\"--shiki-dark:#85E89D;--shiki-dark-font-weight:bold;--shiki-light:#22863A;--shiki-light-font-weight:bold\">\\}</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">/</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">g</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    start:</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> /</span><span style=\"--shiki-dark:#85E89D;--shiki-dark-font-weight:bold;--shiki-light:#22863A;--shiki-light-font-weight:bold\">\\{</span><span style=\"--shiki-dark:#DBEDFF;--shiki-light:#032F62\">cite:</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">/</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">g</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">    render</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: ({ </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">match</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> ({ type: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"inline\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, tag: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"span\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, props: { className: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"citation\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, children: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">`[${</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">match</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">[</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">1</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">]</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">}]`</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> } }),</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  },</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">});</span></span></code></pre>",
+        "meta": {
+          "lang": "typescript",
+          "code": "// Worker-side: register a custom regex block/inline matcher.\nregistry.use({\n  name: \"citation\",\n  inline: {\n    full: /\\{cite:(\\d+)\\}/g,\n    start: /\\{cite:/g,\n    render: ({ match }) => ({ type: \"inline\", tag: \"span\", props: { className: \"citation\", children: `[${match[1]}]` } }),\n  },\n});"
+        }
+      }
+    },
+    {
+      "id": "7417072e",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "If you enable format anticipation for regex, use `start` patterns that are safe to close within a newline boundary.",
+        "range": {
+          "from": 1829,
+          "to": 1944
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "If you enable format anticipation for regex, use "
+          },
+          {
+            "kind": "code",
+            "text": "start"
+          },
+          {
+            "kind": "text",
+            "text": " patterns that are safe to close within a newline boundary."
+          }
+        ]
+      }
+    },
+    {
+      "id": "7bad3056",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Format anticipation",
+        "range": {
+          "from": 1946,
+          "to": 1968
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Format anticipation",
+          "headingId": "format-anticipation"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Format anticipation"
+          }
+        ]
+      }
+    },
+    {
+      "id": "4d07ffc1",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Format anticipation is a feature for rendering incomplete emphasis or math segments before the closing marker arrives. It is controlled via the `features.formatAnticipation` config (see the public API docs).",
+        "range": {
+          "from": 1970,
+          "to": 2177
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Format anticipation is a feature for rendering incomplete emphasis or math segments before the closing marker arrives. It is controlled via the "
+          },
+          {
+            "kind": "code",
+            "text": "features.formatAnticipation"
+          },
+          {
+            "kind": "text",
+            "text": " config (see the public API docs)."
+          }
+        ]
+      }
+    }
+  ],
+  "tocHeadings": [
+    {
+      "id": "plugins-and-extensions",
+      "text": "Plugins and Extensions",
+      "level": 1,
+      "blockId": "db082c0"
+    },
+    {
+      "id": "features-are-the-default-switchboard",
+      "text": "Features are the default switchboard",
+      "level": 2,
+      "blockId": "15fb48bc"
+    },
+    {
+      "id": "custom-syntax-and-custom-worker-bundles",
+      "text": "Custom syntax and custom worker bundles",
+      "level": 2,
+      "blockId": "74e190bb"
+    },
+    {
+      "id": "worker-bundle-workflow",
+      "text": "Worker bundle workflow",
+      "level": 3,
+      "blockId": "e9b7963"
+    },
+    {
+      "id": "mermaid-diagrams",
+      "text": "Mermaid diagrams",
+      "level": 2,
+      "blockId": "7083eff8"
+    },
+    {
+      "id": "custom-regex-patterns",
+      "text": "Custom regex patterns",
+      "level": 2,
+      "blockId": "390d91e1"
+    },
+    {
+      "id": "example-citation-syntax",
+      "text": "Example: citation syntax",
+      "level": 3,
+      "blockId": "32f9e781"
+    },
+    {
+      "id": "format-anticipation",
+      "text": "Format anticipation",
+      "level": 2,
+      "blockId": "7bad3056"
+    }
+  ],
+  "init": {
+    "docPlugins": {
+      "tables": true,
+      "html": true,
+      "mdx": true,
+      "math": true,
+      "footnotes": true,
+      "callouts": true
+    },
+    "mdx": {
+      "compileMode": "server"
+    },
+    "prewarmLangs": [
+      "typescript",
+      "tsx",
+      "javascript",
+      "json",
+      "bash",
+      "diff"
+    ]
+  }
+}

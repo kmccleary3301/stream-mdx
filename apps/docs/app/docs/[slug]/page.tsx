@@ -1,12 +1,20 @@
 import { notFound } from "next/navigation";
 
-import { findDocBySlug, getAllDocSlugs, readDocFile, renderMarkdownToHtml } from "../../../lib/docs";
+import { findDocBySlug, getAllDocSlugs, readDocFile } from "../../../lib/docs";
 import { DOC_SECTIONS } from "../../../lib/docs";
+import { deriveTocHeadingsFromBlocks, readDocSnapshot } from "../../../lib/snapshot-artifacts";
+import { SnapshotArticle } from "@/components/articles/snapshot-article";
+import { StreamingArticle } from "@/components/articles/streaming-article";
 import { CollectionNavigation } from "@/components/collection-navigation";
-import { TableOfContents } from "@/components/on-this-page";
+import { DocsShell } from "@/components/docs/docs-shell";
 
 export function generateStaticParams() {
   return getAllDocSlugs().map((slug) => ({ slug }));
+}
+
+function docHref(slug: string) {
+  if (!slug) return "/docs";
+  return `/docs/${slug}`;
 }
 
 export default async function DocPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -14,22 +22,28 @@ export default async function DocPage({ params }: { params: Promise<{ slug: stri
   const doc = findDocBySlug(slug);
   if (!doc) return notFound();
 
+  const snapshot = await readDocSnapshot(slug);
   const markdown = await readDocFile(doc.file);
-  const html = await renderMarkdownToHtml(markdown);
 
   const navItems = DOC_SECTIONS.flatMap((section) => section.items)
     .filter((item) => item.slug.length > 0)
     .map((item) => ({ slug: item.slug, title: item.title }));
 
+  const navSections = DOC_SECTIONS.map((section) => ({
+    title: section.title,
+    items: section.items.map((item) => ({
+      title: item.title,
+      href: docHref(item.slug),
+    })),
+  }));
+
   return (
-    <>
-      <div
-        id="article-content-wrapper"
-        className="prose markdown flex flex-col space-y-3 text-theme-primary"
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
+    <DocsShell
+      sections={navSections}
+      initialTocHeadings={snapshot ? (snapshot.tocHeadings ?? deriveTocHeadingsFromBlocks(snapshot.blocks)) : undefined}
+    >
+      {snapshot ? <SnapshotArticle blocks={snapshot.blocks} /> : <StreamingArticle content={markdown} />}
       <CollectionNavigation items={navItems} basePath="/docs" />
-      <TableOfContents />
-    </>
+    </DocsShell>
   );
 }

@@ -195,6 +195,11 @@
     max-width: 100%;
   }
 
+  .markdown-v2-output {
+    --shiki-light-bg: transparent;
+    --shiki-dark-bg: transparent;
+  }
+
   .markdown-v2-output .markdown-mdx:has(> figure[data-with-codeblock="true"]) + pre,
   .markdown-v2-output .markdown-mdx:has(> figure[data-with-codeblock="true"]) + figure {
     margin-top: 0 !important;
@@ -355,6 +360,11 @@
     border: 1px solid var(--code-border);
     border-radius: 0.75rem;
     background: var(--code-bg);
+  }
+
+  .code-panel-block .docs-code-block__body pre,
+  .code-panel-block .docs-code-block__body pre code {
+    color: var(--foreground);
   }
 
   .markdown-v2-output .markdown-hr {
@@ -668,6 +678,18 @@
         background-color: var(--shiki-dark-bg);
       }
     }
+  }
+
+  .markdown-v2-output .shiki,
+  .markdown-v2-output .shiki span {
+    background-color: transparent !important;
+  }
+
+  .markdown-v2-output pre,
+  .markdown-v2-output pre code,
+  .markdown-v2-output pre [data-line],
+  .markdown-v2-output pre span {
+    background: transparent !important;
   }
 
   /* 

@@ -68,7 +68,7 @@ function extractCodeText(value: unknown): string | undefined {
     return parts.join("");
   }
   if (React.isValidElement<{ children?: unknown }>(value)) {
-    return extractCodeText(value.props.children);
+    return extractCodeText(value.props?.children);
   }
   return undefined;
 }

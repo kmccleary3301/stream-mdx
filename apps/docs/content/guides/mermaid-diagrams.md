@@ -28,13 +28,15 @@ import { MermaidBlock } from "@stream-mdx/mermaid";
 
 ## Example fence
 
-```
+Use a Mermaid code fence (three backticks + `mermaid`) like the rendered example below.
+
+## Rendered example
+
 ```mermaid
 graph TD
   A[User] --> B[StreamMDX]
   B --> C[Worker]
   C --> D[Renderer]
-```
 ```
 
 ## UX details
@@ -48,4 +50,3 @@ components={{
   mermaid: (props) => <MermaidBlock {...props} defaultView="diagram" />,
 }}
 ```
-

@@ -1,0 +1,818 @@
+{
+  "version": 1,
+  "schemaId": "streammdx.snapshot.v1",
+  "createdAt": "2026-02-11T20:25:44.623Z",
+  "hash": "c2f2482df1a6fc1858d076959fbdce2672cd78ecadbb20c386265dc43accb629",
+  "contentHash": "9248b2972039815f5ec22366d659d6288b20fcbc7c1f5037899dfd3941a1a942",
+  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
+  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "blocks": [
+    {
+      "id": "db082c0",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Configuration",
+        "range": {
+          "from": 0,
+          "to": 15
+        },
+        "meta": {
+          "headingLevel": 1,
+          "headingText": "Configuration",
+          "headingId": "configuration"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Configuration"
+          }
+        ]
+      }
+    },
+    {
+      "id": "728e945a",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "This page summarizes the configuration surface exposed by `<StreamingMarkdown />`.",
+        "range": {
+          "from": 17,
+          "to": 99
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "This page summarizes the configuration surface exposed by "
+          },
+          {
+            "kind": "code",
+            "text": "<StreamingMarkdown />"
+          },
+          {
+            "kind": "text",
+            "text": "."
+          }
+        ],
+        "meta": {
+          "mixedSegments": [
+            {
+              "kind": "text",
+              "value": "This page summarizes the configuration surface exposed by `",
+              "range": {
+                "from": 17,
+                "to": 76
+              },
+              "inline": [
+                {
+                  "kind": "text",
+                  "text": "This page summarizes the configuration surface exposed by `"
+                }
+              ]
+            },
+            {
+              "kind": "mdx",
+              "value": "<StreamingMarkdown />",
+              "range": {
+                "from": 76,
+                "to": 97
+              },
+              "status": "pending"
+            },
+            {
+              "kind": "text",
+              "value": "`.",
+              "range": {
+                "from": 97,
+                "to": 99
+              },
+              "inline": [
+                {
+                  "kind": "text",
+                  "text": "`."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "338fa8fe",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Feature flags",
+        "range": {
+          "from": 101,
+          "to": 117
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Feature flags",
+          "headingId": "feature-flags"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Feature flags"
+          }
+        ]
+      }
+    },
+    {
+      "id": "18b77c41",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "`features` toggles built-in domains in the worker + renderer:",
+        "range": {
+          "from": 119,
+          "to": 180
+        },
+        "inline": [
+          {
+            "kind": "code",
+            "text": "features"
+          },
+          {
+            "kind": "text",
+            "text": " toggles built-in domains in the worker + renderer:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "7e544ff7",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```tsx\n<StreamingMarkdown\n  text={text}\n  features={{ tables: true, html: true, mdx: true, math: true, footnotes: true, callouts: false, formatAnticipation: false }}\n/>;\n```",
+        "range": {
+          "from": 182,
+          "to": 355
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{text}</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ tables: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, math: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, footnotes: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, callouts: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">false</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, formatAnticipation: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">false</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }}</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/>;</span></span></code></pre>",
+        "meta": {
+          "lang": "tsx",
+          "code": "<StreamingMarkdown\n  text={text}\n  features={{ tables: true, html: true, mdx: true, math: true, footnotes: true, callouts: false, formatAnticipation: false }}\n/>;"
+        }
+      }
+    },
+    {
+      "id": "35438c25",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "`formatAnticipation`",
+        "range": {
+          "from": 357,
+          "to": 381
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "`formatAnticipation`",
+          "headingId": "formatanticipation"
+        },
+        "inline": [
+          {
+            "kind": "code",
+            "text": "formatAnticipation"
+          }
+        ]
+      }
+    },
+    {
+      "id": "51c321aa",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "When `features.formatAnticipation` is enabled, StreamMDX will attempt to **withhold formatting markers while streaming** (initial support: `*`, `**`, `` ` ``, `~~`). This is strictly a *streaming UX* improvement; finalized output remains unchanged.",
+        "range": {
+          "from": 383,
+          "to": 631
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "When "
+          },
+          {
+            "kind": "code",
+            "text": "features.formatAnticipation"
+          },
+          {
+            "kind": "text",
+            "text": " is enabled, StreamMDX will attempt to "
+          },
+          {
+            "kind": "strong",
+            "children": [
+              {
+                "kind": "text",
+                "text": "withhold formatting markers while streaming"
+              }
+            ]
+          },
+          {
+            "kind": "text",
+            "text": " (initial support: "
+          },
+          {
+            "kind": "code",
+            "text": "*"
+          },
+          {
+            "kind": "text",
+            "text": ", "
+          },
+          {
+            "kind": "code",
+            "text": "**"
+          },
+          {
+            "kind": "text",
+            "text": ", `"
+          },
+          {
+            "kind": "code",
+            "text": " "
+          },
+          {
+            "kind": "text",
+            "text": " `"
+          },
+          {
+            "kind": "code",
+            "text": ", "
+          },
+          {
+            "kind": "text",
+            "text": "~~`). This is strictly a "
+          },
+          {
+            "kind": "em",
+            "children": [
+              {
+                "kind": "text",
+                "text": "streaming UX"
+              }
+            ]
+          },
+          {
+            "kind": "text",
+            "text": " improvement; finalized output remains unchanged."
+          }
+        ]
+      }
+    },
+    {
+      "id": "45b2f9da",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Worker",
+        "range": {
+          "from": 633,
+          "to": 642
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Worker",
+          "headingId": "worker"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Worker"
+          }
+        ]
+      }
+    },
+    {
+      "id": "101bf0e2",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Recommended: host the worker and pass a URL string:",
+        "range": {
+          "from": 644,
+          "to": 695
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Recommended: host the worker and pass a URL string:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "397ff940",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```tsx\n<StreamingMarkdown worker=\"/workers/markdown-worker.js\" />\n```",
+        "range": {
+          "from": 697,
+          "to": 766
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> /></span></span></code></pre>",
+        "meta": {
+          "lang": "tsx",
+          "code": "<StreamingMarkdown worker=\"/workers/markdown-worker.js\" />"
+        }
+      }
+    },
+    {
+      "id": "415d2b61",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "If you omit `worker`, StreamMDX uses the default worker strategy and falls back to `/workers/markdown-worker.js`.",
+        "range": {
+          "from": 768,
+          "to": 881
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "If you omit "
+          },
+          {
+            "kind": "code",
+            "text": "worker"
+          },
+          {
+            "kind": "text",
+            "text": ", StreamMDX uses the default worker strategy and falls back to "
+          },
+          {
+            "kind": "code",
+            "text": "/workers/markdown-worker.js"
+          },
+          {
+            "kind": "text",
+            "text": "."
+          }
+        ]
+      }
+    },
+    {
+      "id": "567a5ebd",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "MDX",
+        "range": {
+          "from": 883,
+          "to": 889
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "MDX",
+          "headingId": "mdx"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "MDX"
+          }
+        ]
+      }
+    },
+    {
+      "id": "34b43eb8",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "To render MDX blocks:",
+        "range": {
+          "from": 891,
+          "to": 912
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "To render MDX blocks:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "70035f68",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- set `features={{ mdx: true }}`\n- set `mdxCompileMode=\"worker\"` (no server), or `\"server\"` (requires `/api/mdx-compile-v2`)\n- provide `mdxComponents` if you use custom MDX components",
+        "range": {
+          "from": 914,
+          "to": 1097
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "set "
+              },
+              {
+                "kind": "code",
+                "text": "features={{ mdx: true }}"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "set "
+              },
+              {
+                "kind": "code",
+                "text": "mdxCompileMode=\"worker\""
+              },
+              {
+                "kind": "text",
+                "text": " (no server), or "
+              },
+              {
+                "kind": "code",
+                "text": "\"server\""
+              },
+              {
+                "kind": "text",
+                "text": " (requires "
+              },
+              {
+                "kind": "code",
+                "text": "/api/mdx-compile-v2"
+              },
+              {
+                "kind": "text",
+                "text": ")"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "provide "
+              },
+              {
+                "kind": "code",
+                "text": "mdxComponents"
+              },
+              {
+                "kind": "text",
+                "text": " if you use custom MDX components"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "357af681",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Rendering overrides",
+        "range": {
+          "from": 1099,
+          "to": 1121
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Rendering overrides",
+          "headingId": "rendering-overrides"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Rendering overrides"
+          }
+        ]
+      }
+    },
+    {
+      "id": "54f6383b",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `components`: override block renders (heading/code/table/etc).\n- `inlineComponents`: override inline renders (strong/em/link/code/etc).\n- `tableElements`: override table tags (Shadcn table wrappers).\n- `htmlElements`: override HTML tag renders (when HTML is enabled).",
+        "range": {
+          "from": 1123,
+          "to": 1392
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "components"
+              },
+              {
+                "kind": "text",
+                "text": ": override block renders (heading/code/table/etc)."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "inlineComponents"
+              },
+              {
+                "kind": "text",
+                "text": ": override inline renders (strong/em/link/code/etc)."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "tableElements"
+              },
+              {
+                "kind": "text",
+                "text": ": override table tags (Shadcn table wrappers)."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "htmlElements"
+              },
+              {
+                "kind": "text",
+                "text": ": override HTML tag renders (when HTML is enabled)."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "5c230943",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Mermaid diagrams (optional)",
+        "range": {
+          "from": 1394,
+          "to": 1424
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Mermaid diagrams (optional)",
+          "headingId": "mermaid-diagrams-optional"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Mermaid diagrams (optional)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "4a32b19",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Mermaid is an **opt-in add-on** that renders fenced ` ```mermaid ` code blocks as diagrams (with a Diagram/Code toggle).",
+        "range": {
+          "from": 1426,
+          "to": 1546
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Mermaid is an "
+          },
+          {
+            "kind": "strong",
+            "children": [
+              {
+                "kind": "text",
+                "text": "opt-in add-on"
+              }
+            ]
+          },
+          {
+            "kind": "text",
+            "text": " that renders fenced "
+          },
+          {
+            "kind": "code",
+            "text": " "
+          },
+          {
+            "kind": "text",
+            "text": "`"
+          },
+          {
+            "kind": "code",
+            "text": "mermaid "
+          },
+          {
+            "kind": "text",
+            "text": " code blocks as diagrams (with a Diagram/Code toggle)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "1fbd7ece",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```bash\nnpm install @stream-mdx/mermaid\n```",
+        "range": {
+          "from": 1548,
+          "to": 1591
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> install</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> @stream-mdx/mermaid</span></span></code></pre>",
+        "meta": {
+          "lang": "bash",
+          "code": "npm install @stream-mdx/mermaid"
+        }
+      }
+    },
+    {
+      "id": "1fc691a4",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```tsx\nimport { MermaidBlock } from \"@stream-mdx/mermaid\";\n\n<StreamingMarkdown\n  text={text}\n  components={{ mermaid: MermaidBlock }}\n/>;\n```",
+        "range": {
+          "from": 1593,
+          "to": 1734
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { MermaidBlock } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/mermaid\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{text}</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  components</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ mermaid: MermaidBlock }}</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/>;</span></span></code></pre>",
+        "meta": {
+          "lang": "tsx",
+          "code": "import { MermaidBlock } from \"@stream-mdx/mermaid\";\n\n<StreamingMarkdown\n  text={text}\n  components={{ mermaid: MermaidBlock }}\n/>;"
+        }
+      }
+    },
+    {
+      "id": "663ff909",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Scheduling and metrics",
+        "range": {
+          "from": 1736,
+          "to": 1761
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Scheduling and metrics",
+          "headingId": "scheduling-and-metrics"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Scheduling and metrics"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6829cd87",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `scheduling`: patch scheduler/backpressure knobs (frame budget, batch caps, history size).\n- `onMetrics`: flush metrics callback (queue depth, timings, adaptive throttling state).",
+        "range": {
+          "from": 1763,
+          "to": 1944
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "scheduling"
+              },
+              {
+                "kind": "text",
+                "text": ": patch scheduler/backpressure knobs (frame budget, batch caps, history size)."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "onMetrics"
+              },
+              {
+                "kind": "text",
+                "text": ": flush metrics callback (queue depth, timings, adaptive throttling state)."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "4cb0bfd6",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "For exact types and defaults, see `docs/PUBLIC_API.md`.",
+        "range": {
+          "from": 1946,
+          "to": 2001
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "For exact types and defaults, see "
+          },
+          {
+            "kind": "code",
+            "text": "docs/PUBLIC_API.md"
+          },
+          {
+            "kind": "text",
+            "text": "."
+          }
+        ]
+      }
+    }
+  ],
+  "tocHeadings": [
+    {
+      "id": "configuration",
+      "text": "Configuration",
+      "level": 1,
+      "blockId": "db082c0"
+    },
+    {
+      "id": "feature-flags",
+      "text": "Feature flags",
+      "level": 2,
+      "blockId": "338fa8fe"
+    },
+    {
+      "id": "formatanticipation",
+      "text": "`formatAnticipation`",
+      "level": 3,
+      "blockId": "35438c25"
+    },
+    {
+      "id": "worker",
+      "text": "Worker",
+      "level": 2,
+      "blockId": "45b2f9da"
+    },
+    {
+      "id": "mdx",
+      "text": "MDX",
+      "level": 2,
+      "blockId": "567a5ebd"
+    },
+    {
+      "id": "rendering-overrides",
+      "text": "Rendering overrides",
+      "level": 2,
+      "blockId": "357af681"
+    },
+    {
+      "id": "mermaid-diagrams-optional",
+      "text": "Mermaid diagrams (optional)",
+      "level": 2,
+      "blockId": "5c230943"
+    },
+    {
+      "id": "scheduling-and-metrics",
+      "text": "Scheduling and metrics",
+      "level": 2,
+      "blockId": "663ff909"
+    }
+  ],
+  "init": {
+    "docPlugins": {
+      "tables": true,
+      "html": true,
+      "mdx": true,
+      "math": true,
+      "footnotes": true,
+      "callouts": true
+    },
+    "mdx": {
+      "compileMode": "server"
+    },
+    "prewarmLangs": [
+      "typescript",
+      "tsx",
+      "javascript",
+      "json",
+      "bash",
+      "diff"
+    ]
+  }
+}

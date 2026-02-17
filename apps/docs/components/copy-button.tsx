@@ -1,64 +1,67 @@
 "use client";
 
-import * as React from "react";
+import { useEffect, useRef, useState } from "react";
+
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 import { Check, Copy } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-
 type CopyButtonProps = {
   text: string;
-  className?: string;
+  label?: string;
   iconOnly?: boolean;
+  className?: string;
 };
 
-export function CopyButton({ text, className, iconOnly = false }: CopyButtonProps) {
-  const [copied, setCopied] = React.useState(false);
+export function CopyButton({ text, label = "Copy", iconOnly = false, className }: CopyButtonProps) {
+  const [copied, setCopied] = useState(false);
+  const timeoutRef = useRef<number | null>(null);
 
-  React.useEffect(() => {
-    if (!copied) return;
-    const t = window.setTimeout(() => setCopied(false), 1200);
-    return () => window.clearTimeout(t);
-  }, [copied]);
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        window.clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
-  const onCopy = React.useCallback(async () => {
+  const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(text);
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const selection = window.getSelection();
+        const range = document.createRange();
+        const node = document.createTextNode(text);
+        document.body.appendChild(node);
+        range.selectNodeContents(node);
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+        document.execCommand("copy");
+        selection?.removeAllRanges();
+        document.body.removeChild(node);
+      }
       setCopied(true);
-      return;
+      if (timeoutRef.current) {
+        window.clearTimeout(timeoutRef.current);
+      }
+      timeoutRef.current = window.setTimeout(() => setCopied(false), 1500);
     } catch {
-      // Fall through to the legacy execCommand path.
+      setCopied(false);
     }
-
-    try {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.setAttribute("readonly", "true");
-      ta.style.position = "fixed";
-      ta.style.left = "-9999px";
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand("copy");
-      document.body.removeChild(ta);
-      setCopied(true);
-    } catch {
-      // Swallow copy failures; caller UX can still select manually.
-    }
-  }, [text]);
+  };
 
   return (
     <Button
-      type="button"
+      size={iconOnly ? "icon" : "sm"}
       variant="ghost"
-      size="icon"
-      onClick={onCopy}
-      className={cn("h-8 w-8 rounded-md", className)}
-      aria-label={copied ? "Copied" : "Copy"}
+      onClick={handleCopy}
+      aria-label={`Copy ${text}`}
+      className={cn(iconOnly ? "h-8 w-8" : "", className)}
     >
-      {copied ? <Check size={14} /> : <Copy size={14} />}
-      {iconOnly ? null : <span className="sr-only">Copy</span>}
+      {iconOnly ? (copied ? <Check size={14} /> : <Copy size={14} />) : copied ? "Copied" : label}
+      {iconOnly ? <span className="sr-only">{copied ? "Copied" : label}</span> : null}
     </Button>
   );
 }
-

@@ -1,0 +1,444 @@
+{
+  "version": 1,
+  "schemaId": "streammdx.snapshot.v1",
+  "createdAt": "2026-02-11T20:25:58.060Z",
+  "hash": "ca2145338a9c574768ac22cf6f69e4a94bd930f1ede8bc80e8eb63c61e45318c",
+  "contentHash": "f2787bb1491544fd2e4ef2da982ee726fc8014e25e7478b49e23f543a8ad4f0e",
+  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
+  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "blocks": [
+    {
+      "id": "db082c0",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Deployment and Security",
+        "range": {
+          "from": 0,
+          "to": 25
+        },
+        "meta": {
+          "headingLevel": 1,
+          "headingText": "Deployment and Security",
+          "headingId": "deployment-and-security"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Deployment and Security"
+          }
+        ]
+      }
+    },
+    {
+      "id": "7e492645",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Hosted worker bundle",
+        "range": {
+          "from": 27,
+          "to": 50
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Hosted worker bundle",
+          "headingId": "hosted-worker-bundle"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Hosted worker bundle"
+          }
+        ]
+      }
+    },
+    {
+      "id": "3c3f7ca3",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "For production, host the worker bundle from static assets. This avoids `blob:` CSP requirements and keeps your policy strict.",
+        "range": {
+          "from": 52,
+          "to": 177
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "For production, host the worker bundle from static assets. This avoids "
+          },
+          {
+            "kind": "code",
+            "text": "blob:"
+          },
+          {
+            "kind": "text",
+            "text": " CSP requirements and keeps your policy strict."
+          }
+        ]
+      }
+    },
+    {
+      "id": "58b76121",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```bash\nmkdir -p public/workers\ncp node_modules/@stream-mdx/worker/dist/hosted/markdown-worker.js public/workers/markdown-worker.js\n```",
+        "range": {
+          "from": 179,
+          "to": 314
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">mkdir</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> -p</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> public/workers</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">cp</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> node_modules/@stream-mdx/worker/dist/hosted/markdown-worker.js</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> public/workers/markdown-worker.js</span></span></code></pre>",
+        "meta": {
+          "lang": "bash",
+          "code": "mkdir -p public/workers\ncp node_modules/@stream-mdx/worker/dist/hosted/markdown-worker.js public/workers/markdown-worker.js"
+        }
+      }
+    },
+    {
+      "id": "370f7100",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Then point StreamMDX at it:",
+        "range": {
+          "from": 316,
+          "to": 343
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Then point StreamMDX at it:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "7d0c5960",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```tsx\n<StreamingMarkdown worker=\"/workers/markdown-worker.js\" />\n```",
+        "range": {
+          "from": 345,
+          "to": 414
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> /></span></span></code></pre>",
+        "meta": {
+          "lang": "tsx",
+          "code": "<StreamingMarkdown worker=\"/workers/markdown-worker.js\" />"
+        }
+      }
+    },
+    {
+      "id": "64be0b69",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "CSP guidance",
+        "range": {
+          "from": 416,
+          "to": 431
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "CSP guidance",
+          "headingId": "csp-guidance"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "CSP guidance"
+          }
+        ]
+      }
+    },
+    {
+      "id": "7647a9fc",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "If you serve the hosted bundle from your own origin, your CSP can be minimal:",
+        "range": {
+          "from": 433,
+          "to": 510
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "If you serve the hosted bundle from your own origin, your CSP can be minimal:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "511b3b42",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```\nworker-src 'self';\nscript-src 'self';\n```",
+        "range": {
+          "from": 512,
+          "to": 557
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>worker-src 'self';</span></span>\n<span class=\"line\" data-line=\"2\"><span>script-src 'self';</span></span></code></pre>",
+        "meta": {
+          "lang": "text",
+          "code": "worker-src 'self';\nscript-src 'self';"
+        }
+      }
+    },
+    {
+      "id": "e75d43f",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Avoid `blob:` unless you intentionally want to inline workers.",
+        "range": {
+          "from": 559,
+          "to": 621
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Avoid "
+          },
+          {
+            "kind": "code",
+            "text": "blob:"
+          },
+          {
+            "kind": "text",
+            "text": " unless you intentionally want to inline workers."
+          }
+        ]
+      }
+    },
+    {
+      "id": "39fc6af9",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "HTML sanitization",
+        "range": {
+          "from": 623,
+          "to": 643
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "HTML sanitization",
+          "headingId": "html-sanitization"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "HTML sanitization"
+          }
+        ]
+      }
+    },
+    {
+      "id": "7b373e21",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "HTML rendering uses a sanitizer with a default allowlist. This helps prevent unsafe tags or attributes from rendering.",
+        "range": {
+          "from": 645,
+          "to": 763
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "HTML rendering uses a sanitizer with a default allowlist. This helps prevent unsafe tags or attributes from rendering."
+          }
+        ]
+      }
+    },
+    {
+      "id": "7d50ece2",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "If you need custom HTML, prefer `htmlElements` to keep the HTML surface small and auditable.",
+        "range": {
+          "from": 765,
+          "to": 857
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "If you need custom HTML, prefer "
+          },
+          {
+            "kind": "code",
+            "text": "htmlElements"
+          },
+          {
+            "kind": "text",
+            "text": " to keep the HTML surface small and auditable."
+          }
+        ]
+      }
+    },
+    {
+      "id": "4643e7ec",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Deployment checklist",
+        "range": {
+          "from": 859,
+          "to": 882
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Deployment checklist",
+          "headingId": "deployment-checklist"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Deployment checklist"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6598ed80",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- [ ] Host `markdown-worker.js` in a static directory.\n- [ ] Set CSP `worker-src` to `self`.\n- [ ] Use `mdxCompileMode=\"worker\"` for parity.\n- [ ] Enable `features.html` only if needed.",
+        "range": {
+          "from": 884,
+          "to": 1069
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "[ ] Host "
+              },
+              {
+                "kind": "code",
+                "text": "markdown-worker.js"
+              },
+              {
+                "kind": "text",
+                "text": " in a static directory."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "[ ] Set CSP "
+              },
+              {
+                "kind": "code",
+                "text": "worker-src"
+              },
+              {
+                "kind": "text",
+                "text": " to "
+              },
+              {
+                "kind": "code",
+                "text": "self"
+              },
+              {
+                "kind": "text",
+                "text": "."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "[ ] Use "
+              },
+              {
+                "kind": "code",
+                "text": "mdxCompileMode=\"worker\""
+              },
+              {
+                "kind": "text",
+                "text": " for parity."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "[ ] Enable "
+              },
+              {
+                "kind": "code",
+                "text": "features.html"
+              },
+              {
+                "kind": "text",
+                "text": " only if needed."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    }
+  ],
+  "tocHeadings": [
+    {
+      "id": "deployment-and-security",
+      "text": "Deployment and Security",
+      "level": 1,
+      "blockId": "db082c0"
+    },
+    {
+      "id": "hosted-worker-bundle",
+      "text": "Hosted worker bundle",
+      "level": 2,
+      "blockId": "7e492645"
+    },
+    {
+      "id": "csp-guidance",
+      "text": "CSP guidance",
+      "level": 2,
+      "blockId": "64be0b69"
+    },
+    {
+      "id": "html-sanitization",
+      "text": "HTML sanitization",
+      "level": 2,
+      "blockId": "39fc6af9"
+    },
+    {
+      "id": "deployment-checklist",
+      "text": "Deployment checklist",
+      "level": 2,
+      "blockId": "4643e7ec"
+    }
+  ],
+  "init": {
+    "docPlugins": {
+      "tables": true,
+      "html": true,
+      "mdx": true,
+      "math": true,
+      "footnotes": true,
+      "callouts": true
+    },
+    "mdx": {
+      "compileMode": "server"
+    },
+    "prewarmLangs": [
+      "typescript",
+      "tsx",
+      "javascript",
+      "json",
+      "bash",
+      "diff"
+    ]
+  }
+}

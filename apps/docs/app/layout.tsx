@@ -24,8 +24,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <Providers>
           <SiteHeader />
-          <main className="mx-auto max-w-screen-sm overflow-x-hidden px-6 py-24 md:overflow-x-visible">
-            <article className="article">{children}</article>
+          <main className="mx-auto w-full max-w-screen-xl overflow-x-hidden px-6 py-24 md:overflow-x-visible">
+            <article className="article w-full">{children}</article>
           </main>
         </Providers>
       </body>

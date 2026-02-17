@@ -1,0 +1,1000 @@
+{
+  "version": 1,
+  "schemaId": "streammdx.snapshot.v1",
+  "createdAt": "2026-02-11T20:25:53.375Z",
+  "hash": "d863c518d6cb4ebea09877c7df7a88e06f28fb0764f786bee0b8750af8731fea",
+  "contentHash": "993ad57af65ba9270d5d1f26b629eaa3af646fe3ad726521ce98f652c43c5434",
+  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
+  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "blocks": [
+    {
+      "id": "db082c0",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Streaming Fundamentals",
+        "range": {
+          "from": 0,
+          "to": 24
+        },
+        "meta": {
+          "headingLevel": 1,
+          "headingText": "Streaming Fundamentals",
+          "headingId": "streaming-fundamentals"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Streaming Fundamentals"
+          }
+        ]
+      }
+    },
+    {
+      "id": "15fb48bc",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "What streaming means in StreamMDX",
+        "range": {
+          "from": 26,
+          "to": 62
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "What streaming means in StreamMDX",
+          "headingId": "what-streaming-means-in-streammdx"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "What streaming means in StreamMDX"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ac471c2",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Streaming is not just \"append text and re-render everything\". StreamMDX keeps a structured tree of blocks and patches that tree as new text arrives. The result is:",
+        "range": {
+          "from": 64,
+          "to": 227
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Streaming is not just \"append text and re-render everything\". StreamMDX keeps a structured tree of blocks and patches that tree as new text arrives. The result is:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "9bd2325",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- stable DOM nodes for completed content\n- fast incremental updates for new content\n- lower memory churn during long outputs",
+        "range": {
+          "from": 229,
+          "to": 353
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "stable DOM nodes for completed content"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "fast incremental updates for new content"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "lower memory churn during long outputs"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "3f0eac45",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "You can use StreamMDX with either a full string (`text`) or an append-only stream (`stream`). The component behaves the same either way; streaming just lets you render as the data arrives.",
+        "range": {
+          "from": 355,
+          "to": 543
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "You can use StreamMDX with either a full string ("
+          },
+          {
+            "kind": "code",
+            "text": "text"
+          },
+          {
+            "kind": "text",
+            "text": ") or an append-only stream ("
+          },
+          {
+            "kind": "code",
+            "text": "stream"
+          },
+          {
+            "kind": "text",
+            "text": "). The component behaves the same either way; streaming just lets you render as the data arrives."
+          }
+        ]
+      }
+    },
+    {
+      "id": "423aa286",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Data flow in one pass",
+        "range": {
+          "from": 545,
+          "to": 569
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Data flow in one pass",
+          "headingId": "data-flow-in-one-pass"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Data flow in one pass"
+          }
+        ]
+      }
+    },
+    {
+      "id": "28bec6c5",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "1. **Append**: new text is appended to a worker-side buffer.\n2. **Parse**: the worker turns the buffer into a block tree (headings, paragraphs, code blocks, lists, etc.).\n3. **Patch**: only the differences are sent to the UI.\n4. **Render**: the renderer applies patches and updates React without rebuilding the entire tree.",
+        "range": {
+          "from": 571,
+          "to": 894
+        },
+        "meta": {
+          "ordered": true,
+          "items": [
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Append"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": new text is appended to a worker-side buffer."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Parse"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": the worker turns the buffer into a block tree (headings, paragraphs, code blocks, lists, etc.)."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Patch"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": only the differences are sent to the UI."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Render"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": the renderer applies patches and updates React without rebuilding the entire tree."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "1d2bbc7d",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "The pipeline looks like this:",
+        "range": {
+          "from": 896,
+          "to": 925
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "The pipeline looks like this:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "7428116a",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```\ninput text -> worker -> blocks -> patches -> renderer -> React\n```",
+        "range": {
+          "from": 927,
+          "to": 997
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>input text -> worker -> blocks -> patches -> renderer -> React</span></span></code></pre>",
+        "meta": {
+          "lang": "text",
+          "code": "input text -> worker -> blocks -> patches -> renderer -> React"
+        }
+      }
+    },
+    {
+      "id": "53b1a0d7",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Patch flow (mental model)",
+        "range": {
+          "from": 999,
+          "to": 1027
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Patch flow (mental model)",
+          "headingId": "patch-flow-mental-model"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Patch flow (mental model)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "12cda",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "When new text arrives, StreamMDX only updates the nodes that changed:",
+        "range": {
+          "from": 1029,
+          "to": 1098
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "When new text arrives, StreamMDX only updates the nodes that changed:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "5f7e1bba",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```\nblock tree -> diff -> coalesce -> flush -> React commit\n```",
+        "range": {
+          "from": 1100,
+          "to": 1163
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>block tree -> diff -> coalesce -> flush -> React commit</span></span></code></pre>",
+        "meta": {
+          "lang": "text",
+          "code": "block tree -> diff -> coalesce -> flush -> React commit"
+        }
+      }
+    },
+    {
+      "id": "464a5be1",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Key points:",
+        "range": {
+          "from": 1165,
+          "to": 1176
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Key points:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "65fd9b9b",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- **Diff** finds the minimal structural changes.\n- **Coalesce** merges small patch bursts to reduce render churn.\n- **Flush** applies patches under a frame budget.",
+        "range": {
+          "from": 1178,
+          "to": 1341
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Diff"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": " finds the minimal structural changes."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Coalesce"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": " merges small patch bursts to reduce render churn."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Flush"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": " applies patches under a frame budget."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "4a295221",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Worker vs server compilation",
+        "range": {
+          "from": 1343,
+          "to": 1374
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Worker vs server compilation",
+          "headingId": "worker-vs-server-compilation"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Worker vs server compilation"
+          }
+        ]
+      }
+    },
+    {
+      "id": "33520941",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "There are two compilation strategies for MDX:",
+        "range": {
+          "from": 1376,
+          "to": 1421
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "There are two compilation strategies for MDX:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "73664128",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- **Worker** (recommended): all compilation happens in the worker for maximal parity.\n- **Server**: you host a compile endpoint and StreamMDX calls it when MDX is encountered.",
+        "range": {
+          "from": 1423,
+          "to": 1598
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Worker"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": " (recommended): all compilation happens in the worker for maximal parity."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Server"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": you host a compile endpoint and StreamMDX calls it when MDX is encountered."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "4ba366a5",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "If you are unsure, start with worker mode:",
+        "range": {
+          "from": 1600,
+          "to": 1642
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "If you are unsure, start with worker mode:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "41504b95",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```tsx\n<StreamingMarkdown\n  text={content}\n  worker=\"/workers/markdown-worker.js\"\n  features={{ mdx: true, html: true, math: true, tables: true }}\n  mdxCompileMode=\"worker\"\n/>\n```",
+        "range": {
+          "from": 1644,
+          "to": 1823
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content}</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, math: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, tables: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }}</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  mdxCompileMode</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"worker\"</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/></span></span></code></pre>",
+        "meta": {
+          "lang": "tsx",
+          "code": "<StreamingMarkdown\n  text={content}\n  worker=\"/workers/markdown-worker.js\"\n  features={{ mdx: true, html: true, math: true, tables: true }}\n  mdxCompileMode=\"worker\"\n/>"
+        }
+      }
+    },
+    {
+      "id": "7296cbaa",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Minimal streaming example",
+        "range": {
+          "from": 1825,
+          "to": 1853
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Minimal streaming example",
+          "headingId": "minimal-streaming-example"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Minimal streaming example"
+          }
+        ]
+      }
+    },
+    {
+      "id": "47adb933",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```tsx\n\"use client\";\n\nimport { StreamingMarkdown } from \"stream-mdx\";\n\nexport function StreamExample({ stream }: { stream: AsyncIterable<string> }) {\n  return (\n    <StreamingMarkdown\n      stream={stream}\n      worker=\"/workers/markdown-worker.js\"\n      features={{ html: true, tables: true, mdx: true, math: true }}\n      mdxCompileMode=\"worker\"\n    />\n  );\n}\n```",
+        "range": {
+          "from": 1855,
+          "to": 2220
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"use client\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { StreamingMarkdown } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"4\"></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">export</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> function</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> StreamExample</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">({ </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">stream</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">stream</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> AsyncIterable</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">> }) {</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  return</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> (</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    &#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">      stream</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{stream}</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">      worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">      features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, tables: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, math: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }}</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">      mdxCompileMode</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"worker\"</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    /></span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  );</span></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}</span></span></code></pre>",
+        "meta": {
+          "lang": "tsx",
+          "code": "\"use client\";\n\nimport { StreamingMarkdown } from \"stream-mdx\";\n\nexport function StreamExample({ stream }: { stream: AsyncIterable<string> }) {\n  return (\n    <StreamingMarkdown\n      stream={stream}\n      worker=\"/workers/markdown-worker.js\"\n      features={{ html: true, tables: true, mdx: true, math: true }}\n      mdxCompileMode=\"worker\"\n    />\n  );\n}"
+        }
+      }
+    },
+    {
+      "id": "535e3980",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "If you already have the full text, just pass `text` instead of `stream`.",
+        "range": {
+          "from": 2222,
+          "to": 2294
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "If you already have the full text, just pass "
+          },
+          {
+            "kind": "code",
+            "text": "text"
+          },
+          {
+            "kind": "text",
+            "text": " instead of "
+          },
+          {
+            "kind": "code",
+            "text": "stream"
+          },
+          {
+            "kind": "text",
+            "text": "."
+          }
+        ]
+      }
+    },
+    {
+      "id": "3f32c75d",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "What is \"stable\" output?",
+        "range": {
+          "from": 2296,
+          "to": 2323
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "What is \"stable\" output?",
+          "headingId": "what-is-stable-output"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "What is \"stable\" output?"
+          }
+        ]
+      }
+    },
+    {
+      "id": "59d2e544",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "StreamMDX keeps rendered blocks stable once they are complete. A completed paragraph will not re-render unless the incoming text actually changes that paragraph. This is what keeps long renders smooth even at high throughput.",
+        "range": {
+          "from": 2325,
+          "to": 2550
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "StreamMDX keeps rendered blocks stable once they are complete. A completed paragraph will not re-render unless the incoming text actually changes that paragraph. This is what keeps long renders smooth even at high throughput."
+          }
+        ]
+      }
+    },
+    {
+      "id": "70c035e0",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "The two main rules are:",
+        "range": {
+          "from": 2552,
+          "to": 2575
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "The two main rules are:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "67ee1a87",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- **Only the tail changes** while streaming. Completed blocks are reused.\n- **Patches are small** and reflect structural changes only when needed.",
+        "range": {
+          "from": 2577,
+          "to": 2723
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Only the tail changes"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": " while streaming. Completed blocks are reused."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Patches are small"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": " and reflect structural changes only when needed."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "1a9c41b8",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Common pitfalls",
+        "range": {
+          "from": 2725,
+          "to": 2743
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Common pitfalls",
+          "headingId": "common-pitfalls"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Common pitfalls"
+          }
+        ]
+      }
+    },
+    {
+      "id": "3a4823ca",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- **Mixing `text` and `stream`**: the component expects exactly one.\n- **Server component imports**: `StreamingMarkdown` must be in a client component.\n- **Missing worker bundle**: remember to copy the hosted worker to static assets.",
+        "range": {
+          "from": 2745,
+          "to": 2978
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "**Mixing "
+              },
+              {
+                "kind": "code",
+                "text": "text"
+              },
+              {
+                "kind": "text",
+                "text": " and "
+              },
+              {
+                "kind": "code",
+                "text": "stream"
+              },
+              {
+                "kind": "text",
+                "text": "**: the component expects exactly one."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Server component imports"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": "
+              },
+              {
+                "kind": "code",
+                "text": "StreamingMarkdown"
+              },
+              {
+                "kind": "text",
+                "text": " must be in a client component."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Missing worker bundle"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": remember to copy the hosted worker to static assets."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "1c706081",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Checklist for first-time streaming",
+        "range": {
+          "from": 2980,
+          "to": 3017
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Checklist for first-time streaming",
+          "headingId": "checklist-for-first-time-streaming"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Checklist for first-time streaming"
+          }
+        ]
+      }
+    },
+    {
+      "id": "150b3e29",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- [ ] Host the worker bundle in `public/workers/markdown-worker.js`.\n- [ ] Pass `worker=\"/workers/markdown-worker.js\"`.\n- [ ] Start with `features={{ html: true, tables: true, math: true, mdx: true }}`.\n- [ ] Use `mdxCompileMode=\"worker\"` for parity.",
+        "range": {
+          "from": 3019,
+          "to": 3269
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "[ ] Host the worker bundle in "
+              },
+              {
+                "kind": "code",
+                "text": "public/workers/markdown-worker.js"
+              },
+              {
+                "kind": "text",
+                "text": "."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "[ ] Pass "
+              },
+              {
+                "kind": "code",
+                "text": "worker=\"/workers/markdown-worker.js\""
+              },
+              {
+                "kind": "text",
+                "text": "."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "[ ] Start with "
+              },
+              {
+                "kind": "code",
+                "text": "features={{ html: true, tables: true, math: true, mdx: true }}"
+              },
+              {
+                "kind": "text",
+                "text": "."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "[ ] Use "
+              },
+              {
+                "kind": "code",
+                "text": "mdxCompileMode=\"worker\""
+              },
+              {
+                "kind": "text",
+                "text": " for parity."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    }
+  ],
+  "tocHeadings": [
+    {
+      "id": "streaming-fundamentals",
+      "text": "Streaming Fundamentals",
+      "level": 1,
+      "blockId": "db082c0"
+    },
+    {
+      "id": "what-streaming-means-in-streammdx",
+      "text": "What streaming means in StreamMDX",
+      "level": 2,
+      "blockId": "15fb48bc"
+    },
+    {
+      "id": "data-flow-in-one-pass",
+      "text": "Data flow in one pass",
+      "level": 2,
+      "blockId": "423aa286"
+    },
+    {
+      "id": "patch-flow-mental-model",
+      "text": "Patch flow (mental model)",
+      "level": 2,
+      "blockId": "53b1a0d7"
+    },
+    {
+      "id": "worker-vs-server-compilation",
+      "text": "Worker vs server compilation",
+      "level": 2,
+      "blockId": "4a295221"
+    },
+    {
+      "id": "minimal-streaming-example",
+      "text": "Minimal streaming example",
+      "level": 2,
+      "blockId": "7296cbaa"
+    },
+    {
+      "id": "what-is-stable-output",
+      "text": "What is \"stable\" output?",
+      "level": 2,
+      "blockId": "3f32c75d"
+    },
+    {
+      "id": "common-pitfalls",
+      "text": "Common pitfalls",
+      "level": 2,
+      "blockId": "1a9c41b8"
+    },
+    {
+      "id": "checklist-for-first-time-streaming",
+      "text": "Checklist for first-time streaming",
+      "level": 2,
+      "blockId": "1c706081"
+    }
+  ],
+  "init": {
+    "docPlugins": {
+      "tables": true,
+      "html": true,
+      "mdx": true,
+      "math": true,
+      "footnotes": true,
+      "callouts": true
+    },
+    "mdx": {
+      "compileMode": "server"
+    },
+    "prewarmLangs": [
+      "typescript",
+      "tsx",
+      "javascript",
+      "json",
+      "bash",
+      "diff"
+    ]
+  }
+}

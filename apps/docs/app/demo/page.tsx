@@ -27,9 +27,14 @@ export default function DemoPage() {
   const testString = readNaiveBayesDoc();
 
   return (
-    <div className="container mx-auto max-w-4xl py-8">
-      <h1 className="mb-2 text-2xl font-bold">Streaming Markdown Demo</h1>
-      <p className="mb-6 text-muted">Stream the Naive Bayes article into the renderer to evaluate incremental performance.</p>
+    <div className="mx-auto flex w-full max-w-screen-xl flex-col gap-6 px-4 py-8">
+      <div className="flex flex-col gap-2">
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted">Demo</div>
+        <h1 className="text-3xl font-semibold text-foreground">Streaming Markdown Demo</h1>
+        <p className="max-w-2xl text-sm text-muted">
+          Stream the Naive Bayes article into the renderer to evaluate incremental performance and layout stability as content arrives.
+        </p>
+      </div>
       <StreamingMarkdownDemoV2 fullText={testString} />
     </div>
   );

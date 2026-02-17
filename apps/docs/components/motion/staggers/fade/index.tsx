@@ -20,18 +20,13 @@ const item: Variants = {
   hidden: {
     opacity: 0,
     y: 16,
-    filter: "blur(4px)",
   },
   show: {
     opacity: 1,
-    scale: 1,
     y: 0,
-    filter: "blur(0px)",
     transition: {
-      type: "spring" as const,
-      stiffness: 150,
-      damping: 19,
-      mass: 1.2,
+      duration: 0.28,
+      ease: [0.22, 1, 0.36, 1],
     },
   },
 };
@@ -44,7 +39,7 @@ export function Container({ children, className }: React.HTMLProps<HTMLDivElemen
   return (
     <motion.div
       variants={container}
-      initial="hidden"
+      initial={false}
       animate="show"
       className={className}
     >
@@ -58,5 +53,13 @@ export function Item({ children }: { children: React.ReactNode }) {
   if (DISABLE_ANIMATIONS || reducedMotion) {
     return <div>{children}</div>;
   }
-  return <motion.div variants={item}>{children}</motion.div>;
+  return (
+    <motion.div
+      variants={item}
+      initial={false}
+      animate="show"
+    >
+      {children}
+    </motion.div>
+  );
 }

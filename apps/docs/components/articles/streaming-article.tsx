@@ -1,64 +1,51 @@
 "use client";
 
-import type { BlockComponents } from "@stream-mdx/react";
+import type { BlockComponents, StreamingMarkdownHandle } from "@stream-mdx/react";
+import { MermaidBlock } from "@stream-mdx/mermaid";
 import { StreamingMarkdown } from "@stream-mdx/react";
+import { PATCH_ROOT_ID } from "@stream-mdx/core";
 import { useEffect, useMemo, useRef } from "react";
 
 import { DocsCodeBlock } from "@/components/markdown/docs-code-block";
-
-function slugify(value: string): string {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-}
+import { useSetTocHeadings } from "@/components/on-this-page/toc-context";
+import type { TocHeading } from "@/lib/toc";
 
 export function StreamingArticle({ content }: { content: string }) {
-  const wrapperRef = useRef<HTMLDivElement | null>(null);
-  const components = useMemo<Partial<BlockComponents>>(() => ({ code: DocsCodeBlock }), []);
-
-  const assignHeadingIds = useMemo(() => {
-    return () => {
-      const root = wrapperRef.current;
-      if (!root) return;
-      const headings = Array.from(root.querySelectorAll("h1, h2, h3, h4, h5, h6"));
-      const counts = new Map<string, number>();
-      for (const heading of headings) {
-        const text = heading.textContent?.trim() ?? "";
-        const base = slugify(text) || "section";
-        const count = counts.get(base) ?? 0;
-        counts.set(base, count + 1);
-        const id = count === 0 ? base : `${base}-${count}`;
-        if (heading.id !== id) {
-          heading.id = id;
-        }
-      }
-    };
-  }, []);
+  const setTocHeadings = useSetTocHeadings();
+  const handleRef = useRef<StreamingMarkdownHandle | null>(null);
+  const components = useMemo<Partial<BlockComponents>>(
+    () => ({
+      code: DocsCodeBlock,
+      mermaid: MermaidBlock,
+    }),
+    [],
+  );
 
   useEffect(() => {
-    assignHeadingIds();
-    const root = wrapperRef.current;
-    if (!root) return;
+    if (!setTocHeadings) return;
+    const handle = handleRef.current;
+    if (!handle) return;
 
-    const observer = new MutationObserver(() => {
-      assignHeadingIds();
+    const updateHeadings = () => {
+      const root = handle.getState().store.getNode(PATCH_ROOT_ID);
+      const headings = (root?.props?.tocHeadings as TocHeading[] | undefined) ?? [];
+      setTocHeadings(headings);
+    };
+
+    updateHeadings();
+    const unsubscribe = handle.onFlush(() => {
+      updateHeadings();
     });
 
-    observer.observe(root, { childList: true, subtree: true });
-
     return () => {
-      observer.disconnect();
+      unsubscribe?.();
+      setTocHeadings([]);
     };
-  }, [content, assignHeadingIds]);
+  }, [content, setTocHeadings]);
 
   return (
     <div
       id="article-content-wrapper"
-      ref={wrapperRef}
       className="prose markdown flex w-full max-w-3xl flex-col space-y-3 text-theme-primary"
     >
       <StreamingMarkdown
@@ -66,6 +53,7 @@ export function StreamingArticle({ content }: { content: string }) {
         className="markdown-v2-output"
         components={components}
         worker="/workers/markdown-worker.js"
+        ref={handleRef}
         mdxCompileMode="worker"
         features={{
           html: true,
@@ -74,7 +62,6 @@ export function StreamingArticle({ content }: { content: string }) {
           mdx: true,
           footnotes: true,
           callouts: true,
-          // Highlighting still runs on finalized blocks; this flag only enables incremental highlighting while streaming.
           liveCodeHighlighting: false,
         }}
       />

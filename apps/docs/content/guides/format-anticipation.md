@@ -52,6 +52,13 @@ This keeps the streaming state stable while letting rich components appear as ea
 - Content with ambiguous markers (e.g., heavy use of stray `*` or `$`).
 - Strict Markdown pipelines where you want the renderer to wait for a full, valid token.
 
+## Toggles and caveats
+
+- **Inline emphasis/strong**: safest to enable; closes at line boundaries.
+- **Math blocks**: guarded by a newline threshold (default 2) so unclosed blocks don’t swallow the document.
+- **HTML/MDX**: limited to allowlisted tags/components to avoid invalid nesting.
+- **Regex plugins**: require start/partial/full definitions to anticipate safely.
+
 ## Debugging tips
 
 - Toggle one flag at a time to see the effect.

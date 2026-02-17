@@ -1,0 +1,1427 @@
+{
+  "version": 1,
+  "schemaId": "streammdx.snapshot.v1",
+  "createdAt": "2026-02-11T20:25:50.851Z",
+  "hash": "b5b86030fb8c1ae825b7fc6bb77b42a5189c27732a0bf243b15765ef7b08f87e",
+  "contentHash": "5607015c67a2458ef7ece4d66f1a6d3ec09fe2ff36cef657d2de584bd04eceb2",
+  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
+  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "blocks": [
+    {
+      "id": "db082c0",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "StreamMDX Perf Quality Changelog",
+        "range": {
+          "from": 0,
+          "to": 34
+        },
+        "meta": {
+          "headingLevel": 1,
+          "headingText": "StreamMDX Perf Quality Changelog",
+          "headingId": "streammdx-perf-quality-changelog"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "StreamMDX Perf Quality Changelog"
+          }
+        ]
+      }
+    },
+    {
+      "id": "7f003a3",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "This log tracks perf harness snapshots used to make scheduling decisions. Values are p95 unless noted. Paths point to local `tmp/` outputs.",
+        "range": {
+          "from": 36,
+          "to": 175
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "This log tracks perf harness snapshots used to make scheduling decisions. Values are p95 unless noted. Paths point to local "
+          },
+          {
+            "kind": "code",
+            "text": "tmp/"
+          },
+          {
+            "kind": "text",
+            "text": " outputs."
+          }
+        ]
+      }
+    },
+    {
+      "id": "bf2f71f",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "2026-01-16 Baseline refresh (naive-bayes + table-large)",
+        "range": {
+          "from": 177,
+          "to": 235
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "2026-01-16 Baseline refresh (naive-bayes + table-large)",
+          "headingId": "2026-01-16-baseline-refresh-naive-bayes-table-large"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "2026-01-16 Baseline refresh (naive-bayes + table-large)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "132b9802",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Baselines compared:",
+        "range": {
+          "from": 237,
+          "to": 256
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Baselines compared:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6e7422a0",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Base:\n  - `tmp/perf-baselines/naive-bayes-S1_slow_small-2026-01-16T01-23-40-289Z`\n  - `tmp/perf-baselines/naive-bayes-S2_typical-2026-01-16T01-31-45-659Z`\n  - `tmp/perf-baselines/naive-bayes-S4_chunky_network-2026-01-16T01-33-19-667Z`\n  - `tmp/perf-baselines/table-large-S2_typical-2026-01-16T01-34-13-489Z`\n  - `tmp/perf-baselines/table-large-S6_extreme-2026-01-16T01-34-28-484Z`\n- Candidate:\n  - `tmp/perf-baselines/naive-bayes-S1_slow_small-2026-01-16T06-11-35-608Z`\n  - `tmp/perf-baselines/naive-bayes-S2_typical-2026-01-16T06-19-37-644Z`\n  - `tmp/perf-baselines/naive-bayes-S4_chunky_network-2026-01-16T06-21-10-866Z`\n  - `tmp/perf-baselines/table-large-S2_typical-2026-01-16T06-22-16-932Z`\n  - `tmp/perf-baselines/table-large-S6_extreme-2026-01-16T06-22-29-600Z`",
+        "range": {
+          "from": 257,
+          "to": 1027
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Base:"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "tmp/perf-baselines/naive-bayes-S1_slow_small-2026-01-16T01-23-40-289Z"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "tmp/perf-baselines/naive-bayes-S2_typical-2026-01-16T01-31-45-659Z"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "tmp/perf-baselines/naive-bayes-S4_chunky_network-2026-01-16T01-33-19-667Z"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "tmp/perf-baselines/table-large-S2_typical-2026-01-16T01-34-13-489Z"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "tmp/perf-baselines/table-large-S6_extreme-2026-01-16T01-34-28-484Z"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Candidate:"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "tmp/perf-baselines/naive-bayes-S1_slow_small-2026-01-16T06-11-35-608Z"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "tmp/perf-baselines/naive-bayes-S2_typical-2026-01-16T06-19-37-644Z"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "tmp/perf-baselines/naive-bayes-S4_chunky_network-2026-01-16T06-21-10-866Z"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "tmp/perf-baselines/table-large-S2_typical-2026-01-16T06-22-16-932Z"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "tmp/perf-baselines/table-large-S6_extreme-2026-01-16T06-22-29-600Z"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "12cda",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Summary (p95, base -> candidate):",
+        "range": {
+          "from": 1029,
+          "to": 1062
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Summary (p95, base -> candidate):"
+          }
+        ]
+      }
+    },
+    {
+      "id": "3f5207a0",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- S1_slow_small: duration 113694.70 -> 113677.80 (-0.0%), first flush 373.20 -> 376.10 (+0.8%), longtask 74.00 -> 97.00 (+31.1%), raf delta 16.80 -> 16.80, memory peak 87.45 -> 110.63 (+26.5%).\n- S2_typical: duration 18982.50 -> 18982.60 (0.0%), first flush 258.40 -> 300.20 (+16.2%), longtask n/a -> 64.00, raf delta 16.80 -> 16.80, memory peak 87.45 -> 110.63 (+26.5%).\n- S4_chunky_network: duration 4750.10 -> 4766.30 (+0.3%), first flush 293.00 -> 222.40 (-24.1%), longtask 58.00 -> 75.00 (+29.3%), raf delta 16.80 -> 16.80, memory peak 87.45 -> 110.63 (+26.5%).\n- table-large S2_typical: duration 633.10 -> 633.20 (0.0%), first flush 217.20 -> 225.50 (+3.8%), raf delta 16.80 -> 16.80, memory peak 87.45 -> 110.63 (+26.5%).\n- table-large S6_extreme: duration 66.60 -> 66.50 (-0.2%), raf delta 16.70 -> 16.80 (+0.6%).",
+        "range": {
+          "from": 1063,
+          "to": 1884
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "S1_slow_small: duration 113694.70 -> 113677.80 (-0.0%), first flush 373.20 -> 376.10 (+0.8%), longtask 74.00 -> 97.00 (+31.1%), raf delta 16.80 -> 16.80, memory peak 87.45 -> 110.63 (+26.5%)."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "S2_typical: duration 18982.50 -> 18982.60 (0.0%), first flush 258.40 -> 300.20 (+16.2%), longtask n/a -> 64.00, raf delta 16.80 -> 16.80, memory peak 87.45 -> 110.63 (+26.5%)."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "S4_chunky_network: duration 4750.10 -> 4766.30 (+0.3%), first flush 293.00 -> 222.40 (-24.1%), longtask 58.00 -> 75.00 (+29.3%), raf delta 16.80 -> 16.80, memory peak 87.45 -> 110.63 (+26.5%)."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "table-large S2_typical: duration 633.10 -> 633.20 (0.0%), first flush 217.20 -> 225.50 (+3.8%), raf delta 16.80 -> 16.80, memory peak 87.45 -> 110.63 (+26.5%)."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "table-large S6_extreme: duration 66.60 -> 66.50 (-0.2%), raf delta 16.70 -> 16.80 (+0.6%)."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "1c6d30db",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Notes:",
+        "range": {
+          "from": 1886,
+          "to": 1892
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Notes:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6195eee5",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- All guardrails were within bounds; S2 first flush regressed +16.2% but stayed below thresholds.\n- Longtask p95 is newly reported for S2 (base was n/a); treat as new visibility rather than a regression.\n- Profiler run (LOCAL_BENCHMARKS): `naive-bayes/S2_typical` 2026-01-16T06-23-05-474Z actual p95 8.70 ms, base p95 128.40 ms.",
+        "range": {
+          "from": 1893,
+          "to": 2221
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "All guardrails were within bounds; S2 first flush regressed +16.2% but stayed below thresholds."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Longtask p95 is newly reported for S2 (base was n/a); treat as new visibility rather than a regression."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Profiler run (LOCAL_BENCHMARKS): "
+              },
+              {
+                "kind": "code",
+                "text": "naive-bayes/S2_typical"
+              },
+              {
+                "kind": "text",
+                "text": " 2026-01-16T06-23-05-474Z actual p95 8.70 ms, base p95 128.40 ms."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "2b9c9d7f",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "2026-01-13 Long-task filtering to stream window",
+        "range": {
+          "from": 2223,
+          "to": 2273
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "2026-01-13 Long-task filtering to stream window",
+          "headingId": "2026-01-13-long-task-filtering-to-stream-window"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "2026-01-13 Long-task filtering to stream window"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6e37e662",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Change:",
+        "range": {
+          "from": 2275,
+          "to": 2282
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Change:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "717ec85f",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Long-task stats now only consider tasks occurring between `runStart` and `runEnd`.\n- This removes page-load noise from perf results and makes stutter attribution more accurate.",
+        "range": {
+          "from": 2283,
+          "to": 2461
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Long-task stats now only consider tasks occurring between "
+              },
+              {
+                "kind": "code",
+                "text": "runStart"
+              },
+              {
+                "kind": "text",
+                "text": " and "
+              },
+              {
+                "kind": "code",
+                "text": "runEnd"
+              },
+              {
+                "kind": "text",
+                "text": "."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "This removes page-load noise from perf results and makes stutter attribution more accurate."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "3d531bbf",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Baselines refreshed from:",
+        "range": {
+          "from": 2463,
+          "to": 2488
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Baselines refreshed from:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6880a519",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `tmp/perf-runs/naive-bayes-S2_typical-2026-01-13T02-40-09-035Z`\n- `tmp/perf-runs/naive-bayes-S3_fast_reasonable-2026-01-13T02-39-22-647Z`",
+        "range": {
+          "from": 2489,
+          "to": 2628
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "tmp/perf-runs/naive-bayes-S2_typical-2026-01-13T02-40-09-035Z"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "tmp/perf-runs/naive-bayes-S3_fast_reasonable-2026-01-13T02-39-22-647Z"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "5f7251a1",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "2026-01-09 Aggressive default scheduling",
+        "range": {
+          "from": 2630,
+          "to": 2673
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "2026-01-09 Aggressive default scheduling",
+          "headingId": "2026-01-09-aggressive-default-scheduling"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "2026-01-09 Aggressive default scheduling"
+          }
+        ]
+      }
+    },
+    {
+      "id": "4bd433a2",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Baseline:",
+        "range": {
+          "from": 2675,
+          "to": 2684
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Baseline:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "316f9c5b",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `tmp/perf-baselines/S2_typical`\n- `tmp/perf-baselines/S3_fast_reasonable`",
+        "range": {
+          "from": 2685,
+          "to": 2760
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "tmp/perf-baselines/S2_typical"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "tmp/perf-baselines/S3_fast_reasonable"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "73f77c81",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Candidate (aggressive default):",
+        "range": {
+          "from": 2762,
+          "to": 2793
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Candidate (aggressive default):"
+          }
+        ]
+      }
+    },
+    {
+      "id": "337dd424",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `tmp/perf-runs/naive-bayes-S2_typical-2026-01-09T20-33-31-324Z`\n- `tmp/perf-runs/naive-bayes-S3_fast_reasonable-2026-01-09T20-35-43-534Z`",
+        "range": {
+          "from": 2794,
+          "to": 2933
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "tmp/perf-runs/naive-bayes-S2_typical-2026-01-09T20-33-31-324Z"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "tmp/perf-runs/naive-bayes-S3_fast_reasonable-2026-01-09T20-35-43-534Z"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "7694e57",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "S2_typical vs baseline:",
+        "range": {
+          "from": 2935,
+          "to": 2958
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "S2_typical vs baseline:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "2ecc2c4f",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- duration p95: 19065.10 ms -> 18982.60 ms (-0.4%)\n- first flush p95: 422.30 ms -> 239.30 ms (-43.3%)\n- longtask p95 (run p95s): 597.00 ms -> 404.00 ms (-32.3%)\n- raf delta p95 (run p95s): 16.80 ms -> 16.80 ms (0.0%)\n- memory peak p95: 87.45 MB -> 87.45 MB (0.0%)",
+        "range": {
+          "from": 2959,
+          "to": 3222
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "duration p95: 19065.10 ms -> 18982.60 ms (-0.4%)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "first flush p95: 422.30 ms -> 239.30 ms (-43.3%)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "longtask p95 (run p95s): 597.00 ms -> 404.00 ms (-32.3%)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "raf delta p95 (run p95s): 16.80 ms -> 16.80 ms (0.0%)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "memory peak p95: 87.45 MB -> 87.45 MB (0.0%)"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "47b70a5f",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "S3_fast_reasonable vs baseline:",
+        "range": {
+          "from": 3224,
+          "to": 3255
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "S3_fast_reasonable vs baseline:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "76ce8144",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- duration p95: 7632.10 ms -> 7627.60 ms (-0.1%)\n- first flush p95: 276.60 ms -> 268.50 ms (-2.9%)\n- longtask p95 (run p95s): 420.00 ms -> 422.00 ms (+0.5%)\n- raf delta p95 (run p95s): 16.80 ms -> 16.80 ms (0.0%)\n- memory peak p95: 87.45 MB -> 87.45 MB (0.0%)",
+        "range": {
+          "from": 3256,
+          "to": 3515
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "duration p95: 7632.10 ms -> 7627.60 ms (-0.1%)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "first flush p95: 276.60 ms -> 268.50 ms (-2.9%)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "longtask p95 (run p95s): 420.00 ms -> 422.00 ms (+0.5%)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "raf delta p95 (run p95s): 16.80 ms -> 16.80 ms (0.0%)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "memory peak p95: 87.45 MB -> 87.45 MB (0.0%)"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "3ace7c08",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Smooth vs aggressive comparison (3 runs + warmup):",
+        "range": {
+          "from": 3517,
+          "to": 3567
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Smooth vs aggressive comparison (3 runs + warmup):"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6db0e28",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- smooth S2: `tmp/perf-runs/naive-bayes-S2_typical-2026-01-09T20-36-48-998Z`\n- smooth S3: `tmp/perf-runs/naive-bayes-S3_fast_reasonable-2026-01-09T20-38-18-288Z`",
+        "range": {
+          "from": 3568,
+          "to": 3729
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "smooth S2: "
+              },
+              {
+                "kind": "code",
+                "text": "tmp/perf-runs/naive-bayes-S2_typical-2026-01-09T20-36-48-998Z"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "smooth S3: "
+              },
+              {
+                "kind": "code",
+                "text": "tmp/perf-runs/naive-bayes-S3_fast_reasonable-2026-01-09T20-38-18-288Z"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "56245cbe",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "S2_typical smooth -> aggressive:",
+        "range": {
+          "from": 3731,
+          "to": 3763
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "S2_typical smooth -> aggressive:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "3dec16e6",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- first flush p95: 276.20 ms -> 239.30 ms (-13.4%)\n- longtask p95 (run p95s): 433.00 ms -> 404.00 ms (-6.7%)",
+        "range": {
+          "from": 3764,
+          "to": 3872
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "first flush p95: 276.20 ms -> 239.30 ms (-13.4%)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "longtask p95 (run p95s): 433.00 ms -> 404.00 ms (-6.7%)"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "75d35782",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "S3_fast_reasonable smooth -> aggressive:",
+        "range": {
+          "from": 3874,
+          "to": 3914
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "S3_fast_reasonable smooth -> aggressive:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "74f40cce",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- first flush p95: 262.50 ms -> 268.50 ms (+2.3%)\n- longtask p95 (run p95s): 434.00 ms -> 422.00 ms (-2.8%)",
+        "range": {
+          "from": 3915,
+          "to": 4022
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "first flush p95: 262.50 ms -> 268.50 ms (+2.3%)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "longtask p95 (run p95s): 434.00 ms -> 422.00 ms (-2.8%)"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "4e41b6be",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "2026-01-09 Baseline refresh (aggressive defaults in @stream-mdx/react)",
+        "range": {
+          "from": 4024,
+          "to": 4097
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "2026-01-09 Baseline refresh (aggressive defaults in @stream-mdx/react)",
+          "headingId": "2026-01-09-baseline-refresh-aggressive-defaults-in-stream-mdx-react"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "2026-01-09 Baseline refresh (aggressive defaults in "
+          },
+          {
+            "kind": "mention",
+            "handle": "stream"
+          },
+          {
+            "kind": "text",
+            "text": "-mdx/react)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "248c4a64",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Baselines updated from:",
+        "range": {
+          "from": 4099,
+          "to": 4122
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Baselines updated from:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "11c3853e",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `tmp/perf-runs/naive-bayes-S2_typical-2026-01-09T23-26-15-474Z`\n- `tmp/perf-runs/naive-bayes-S3_fast_reasonable-2026-01-09T23-28-41-343Z`",
+        "range": {
+          "from": 4123,
+          "to": 4262
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "tmp/perf-runs/naive-bayes-S2_typical-2026-01-09T23-26-15-474Z"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "tmp/perf-runs/naive-bayes-S3_fast_reasonable-2026-01-09T23-28-41-343Z"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "4712ab44",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Smooth vs aggressive (new baseline) comparison:",
+        "range": {
+          "from": 4264,
+          "to": 4311
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Smooth vs aggressive (new baseline) comparison:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "551534e4",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- smooth S2: `tmp/perf-runs/naive-bayes-S2_typical-2026-01-09T23-45-11-719Z`\n- smooth S3: `tmp/perf-runs/naive-bayes-S3_fast_reasonable-2026-01-09T23-46-49-380Z`",
+        "range": {
+          "from": 4312,
+          "to": 4473
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "smooth S2: "
+              },
+              {
+                "kind": "code",
+                "text": "tmp/perf-runs/naive-bayes-S2_typical-2026-01-09T23-45-11-719Z"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "smooth S3: "
+              },
+              {
+                "kind": "code",
+                "text": "tmp/perf-runs/naive-bayes-S3_fast_reasonable-2026-01-09T23-46-49-380Z"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "3289b9de",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "S2_typical smooth -> aggressive:",
+        "range": {
+          "from": 4475,
+          "to": 4507
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "S2_typical smooth -> aggressive:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "5003fd53",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- first flush p95: 541.10 ms -> 335.20 ms (-38.1%)\n- longtask p95 (run p95s): 519.00 ms -> 601.00 ms (+15.8%)\n- raf delta p95 (run p95s): 16.80 ms -> 33.30 ms (+98.2%)",
+        "range": {
+          "from": 4508,
+          "to": 4675
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "first flush p95: 541.10 ms -> 335.20 ms (-38.1%)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "longtask p95 (run p95s): 519.00 ms -> 601.00 ms (+15.8%)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "raf delta p95 (run p95s): 16.80 ms -> 33.30 ms (+98.2%)"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "39592c62",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "S3_fast_reasonable smooth -> aggressive:",
+        "range": {
+          "from": 4677,
+          "to": 4717
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "S3_fast_reasonable smooth -> aggressive:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "54ac9252",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- first flush p95: 278.30 ms -> 417.40 ms (+50.0%)\n- longtask p95 (run p95s): 477.00 ms -> 525.00 ms (+10.1%)",
+        "range": {
+          "from": 4718,
+          "to": 4827
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "first flush p95: 278.30 ms -> 417.40 ms (+50.0%)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "longtask p95 (run p95s): 477.00 ms -> 525.00 ms (+10.1%)"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "25428835",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "2026-01-10 Adaptive switch (aggressive -> smooth after first flush)",
+        "range": {
+          "from": 4829,
+          "to": 4899
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "2026-01-10 Adaptive switch (aggressive -> smooth after first flush)",
+          "headingId": "2026-01-10-adaptive-switch-aggressive-smooth-after-first-flush"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "2026-01-10 Adaptive switch (aggressive -> smooth after first flush)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "51aa89c6",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Candidate runs:",
+        "range": {
+          "from": 4901,
+          "to": 4916
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Candidate runs:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "22ba1371",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `tmp/perf-runs/naive-bayes-S2_typical-2026-01-10T00-23-35-054Z`\n- `tmp/perf-runs/naive-bayes-S3_fast_reasonable-2026-01-10T00-25-49-205Z`",
+        "range": {
+          "from": 4917,
+          "to": 5056
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "tmp/perf-runs/naive-bayes-S2_typical-2026-01-10T00-23-35-054Z"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "tmp/perf-runs/naive-bayes-S3_fast_reasonable-2026-01-10T00-25-49-205Z"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "9a636fe",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "S2_typical vs previous baseline:",
+        "range": {
+          "from": 5058,
+          "to": 5090
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "S2_typical vs previous baseline:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "52f74b17",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- first flush p95: 335.20 ms -> 302.00 ms (-9.9%)\n- longtask p95 (run p95s): 601.00 ms -> 485.00 ms (-19.3%)\n- raf delta p95 (run p95s): 33.30 ms -> 16.80 ms (-49.5%)",
+        "range": {
+          "from": 5091,
+          "to": 5257
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "first flush p95: 335.20 ms -> 302.00 ms (-9.9%)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "longtask p95 (run p95s): 601.00 ms -> 485.00 ms (-19.3%)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "raf delta p95 (run p95s): 33.30 ms -> 16.80 ms (-49.5%)"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "7b90f6c1",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "S3_fast_reasonable vs previous baseline:",
+        "range": {
+          "from": 5259,
+          "to": 5299
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "S3_fast_reasonable vs previous baseline:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6df4d9e",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- first flush p95: 417.40 ms -> 281.50 ms (-32.6%)\n- longtask p95 (run p95s): 525.00 ms -> 454.00 ms (-13.5%)\n- raf delta p95 (run p95s): 33.30 ms -> 16.80 ms (-49.5%)",
+        "range": {
+          "from": 5300,
+          "to": 5467
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "first flush p95: 417.40 ms -> 281.50 ms (-32.6%)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "longtask p95 (run p95s): 525.00 ms -> 454.00 ms (-13.5%)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "raf delta p95 (run p95s): 33.30 ms -> 16.80 ms (-49.5%)"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "6048a922",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Baselines refreshed from the candidate runs above.",
+        "range": {
+          "from": 5469,
+          "to": 5519
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Baselines refreshed from the candidate runs above."
+          }
+        ]
+      }
+    },
+    {
+      "id": "7e627321",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "2026-01-10 Baseline refresh (adaptive switch, 7 runs + warmup)",
+        "range": {
+          "from": 5521,
+          "to": 5586
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "2026-01-10 Baseline refresh (adaptive switch, 7 runs + warmup)",
+          "headingId": "2026-01-10-baseline-refresh-adaptive-switch-7-runs-warmup"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "2026-01-10 Baseline refresh (adaptive switch, 7 runs + warmup)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "36b5b860",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Baselines updated from:",
+        "range": {
+          "from": 5588,
+          "to": 5611
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Baselines updated from:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "76d2c0ba",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `tmp/perf-runs/naive-bayes-S2_typical-2026-01-10T04-19-04-852Z`\n- `tmp/perf-runs/naive-bayes-S3_fast_reasonable-2026-01-10T04-21-56-247Z`",
+        "range": {
+          "from": 5612,
+          "to": 5751
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "tmp/perf-runs/naive-bayes-S2_typical-2026-01-10T04-19-04-852Z"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "tmp/perf-runs/naive-bayes-S3_fast_reasonable-2026-01-10T04-21-56-247Z"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    }
+  ],
+  "tocHeadings": [
+    {
+      "id": "streammdx-perf-quality-changelog",
+      "text": "StreamMDX Perf Quality Changelog",
+      "level": 1,
+      "blockId": "db082c0"
+    },
+    {
+      "id": "2026-01-16-baseline-refresh-naive-bayes-table-large",
+      "text": "2026-01-16 Baseline refresh (naive-bayes + table-large)",
+      "level": 2,
+      "blockId": "bf2f71f"
+    },
+    {
+      "id": "2026-01-13-long-task-filtering-to-stream-window",
+      "text": "2026-01-13 Long-task filtering to stream window",
+      "level": 2,
+      "blockId": "2b9c9d7f"
+    },
+    {
+      "id": "2026-01-09-aggressive-default-scheduling",
+      "text": "2026-01-09 Aggressive default scheduling",
+      "level": 2,
+      "blockId": "5f7251a1"
+    },
+    {
+      "id": "2026-01-09-baseline-refresh-aggressive-defaults-in-stream-mdx-react",
+      "text": "2026-01-09 Baseline refresh (aggressive defaults in @stream-mdx/react)",
+      "level": 2,
+      "blockId": "4e41b6be"
+    },
+    {
+      "id": "2026-01-10-adaptive-switch-aggressive-smooth-after-first-flush",
+      "text": "2026-01-10 Adaptive switch (aggressive -> smooth after first flush)",
+      "level": 2,
+      "blockId": "25428835"
+    },
+    {
+      "id": "2026-01-10-baseline-refresh-adaptive-switch-7-runs-warmup",
+      "text": "2026-01-10 Baseline refresh (adaptive switch, 7 runs + warmup)",
+      "level": 2,
+      "blockId": "7e627321"
+    }
+  ],
+  "init": {
+    "docPlugins": {
+      "tables": true,
+      "html": true,
+      "mdx": true,
+      "math": true,
+      "footnotes": true,
+      "callouts": true
+    },
+    "mdx": {
+      "compileMode": "server"
+    },
+    "prewarmLangs": [
+      "typescript",
+      "tsx",
+      "javascript",
+      "json",
+      "bash",
+      "diff"
+    ]
+  }
+}

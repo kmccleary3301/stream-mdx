@@ -1,11 +1,11 @@
-export type ArticleItem = {
+export type GuideItem = {
   slug: string;
   title: string;
   file: string;
   description?: string;
 };
 
-export const ARTICLE_ITEMS: ArticleItem[] = [
+export const GUIDE_ITEMS: GuideItem[] = [
   {
     slug: "streaming-fundamentals",
     title: "Streaming Fundamentals",

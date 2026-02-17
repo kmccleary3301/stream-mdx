@@ -232,7 +232,15 @@ export function PerfHarness(): JSX.Element {
     }
   }, []);
 
-  const onProfile = useCallback<React.ProfilerOnRenderCallback>((id, phase, actualDuration, baseDuration, startTime, commitTime) => {
+  const onProfile = useCallback(
+    (
+      id: string,
+      phase: "mount" | "update" | "nested-update",
+      actualDuration: number,
+      baseDuration: number,
+      startTime: number,
+      commitTime: number,
+    ) => {
       if (!profilerEnabled) return;
       profilerSamplesRef.current.push({
         id,
