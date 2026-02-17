@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { StreamingMarkdown } from "@stream-mdx/react";
-import type { CodeHighlightingMode } from "@stream-mdx/core";
 
 const SAMPLE = `# Streaming preview
 
@@ -30,11 +29,11 @@ const SPEEDS = {
 } as const;
 
 type SpeedPreset = keyof typeof SPEEDS;
-type HighlightPreset = { id: CodeHighlightingMode; label: string; live: boolean };
+type HighlightMode = "standard" | "live";
+type HighlightPreset = { id: HighlightMode; label: string; live: boolean };
 
 const HIGHLIGHT_PRESETS: HighlightPreset[] = [
-  { id: "incremental", label: "Incremental", live: false },
-  { id: "final", label: "Final", live: false },
+  { id: "standard", label: "Standard", live: false },
   { id: "live", label: "Live", live: true },
 ];
 
@@ -44,7 +43,7 @@ export function MiniStreamingDemo() {
   const [position, setPosition] = useState(0);
   const [isRunning, setIsRunning] = useState(true);
   const [speed, setSpeed] = useState<SpeedPreset>("typical");
-  const [highlightMode, setHighlightMode] = useState<CodeHighlightingMode>("incremental");
+  const [highlightMode, setHighlightMode] = useState<HighlightMode>("standard");
   const [liveHighlighting, setLiveHighlighting] = useState(false);
 
   const total = SAMPLE.length;
@@ -124,7 +123,6 @@ export function MiniStreamingDemo() {
           text={displayText}
           className="markdown-v2-output"
           features={{
-            codeHighlighting: highlightMode,
             liveCodeHighlighting: liveHighlighting,
           }}
         />

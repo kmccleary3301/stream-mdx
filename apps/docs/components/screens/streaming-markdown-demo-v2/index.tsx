@@ -1,6 +1,6 @@
 "use client";
 
-import type { Block, CodeHighlightingMode, FormatAnticipationConfig, InlineNode, Patch, PerformanceMetrics, WorkerIn } from "@stream-mdx/core";
+import type { Block, FormatAnticipationConfig, InlineNode, Patch, PerformanceMetrics, WorkerIn } from "@stream-mdx/core";
 import type { CoalescingMetrics } from "@stream-mdx/react/renderer/patch-coalescing";
 import type { PatchFlushResult } from "@stream-mdx/react/renderer/patch-commit-scheduler";
 import type { RendererStore } from "@stream-mdx/react/renderer/store";
@@ -612,8 +612,7 @@ export function StreamingMarkdownDemoV2({
   const [htmlEnabled, setHtmlEnabled] = useState<boolean>(true);
   const [mdxEnabled, setMdxEnabled] = useState<boolean>(true);
   const [mathEnabled, setMathEnabled] = useState<boolean>(true);
-  const [codeHighlightingMode, setCodeHighlightingMode] = useState<CodeHighlightingMode>("incremental");
-  const liveCodeHighlightingEnabled = codeHighlightingMode === "live";
+  const [liveCodeHighlightingEnabled, setLiveCodeHighlightingEnabled] = useState(false);
   const debugTimingRef = useRef(debugTiming);
   const showInspectorRef = useRef(showInspector);
   const modeRef = useRef<"classic" | "worker">("worker");
@@ -788,7 +787,6 @@ export function StreamingMarkdownDemoV2({
     callouts: true,
     math: mathEnabled,
     formatAnticipation: formatAnticipationConfig,
-    codeHighlighting: "incremental",
     liveCodeHighlighting: false,
   });
   const finalizedOnceRef = useRef(false);
@@ -2156,7 +2154,6 @@ export function StreamingMarkdownDemoV2({
       patchTotals: patchTotalsRef.current,
       workerTotals: { ...workerTotalsRef.current },
       coalescingTotals: { ...coalescingTotalsRef.current },
-      mdxHydration: streamingRef.current?.getState?.().mdxHydration ?? null,
       scheduler: {
         adaptiveBudgetActive: schedulerBudgetRef.current.active,
         coalescingDurationP95: schedulerBudgetRef.current.p95,
@@ -2286,9 +2283,6 @@ export function StreamingMarkdownDemoV2({
                 inlineComponents={componentRegistry.getInlineComponentMap()}
                 tableElements={tableElements}
                 htmlElements={htmlElements}
-                caret="block"
-                linkSafety={{ enabled: true }}
-                deferHeavyBlocks={{ rootMargin: "200px 0px", debounceMs: 120 }}
                 style={{ contain: "content" }}
                 onError={handleRendererError}
               />
@@ -2860,11 +2854,9 @@ export function StreamingMarkdownDemoV2({
                     checked={liveCodeHighlightingEnabled}
                     onChange={(e) => {
                       const enabled = e.target.checked;
-                      const nextMode: CodeHighlightingMode = enabled ? "live" : "incremental";
-                      setCodeHighlightingMode(nextMode);
+                      setLiveCodeHighlightingEnabled(enabled);
                       docPluginConfigRef.current = {
                         ...docPluginConfigRef.current,
-                        codeHighlighting: nextMode,
                         liveCodeHighlighting: enabled,
                       };
                       onRestart();
