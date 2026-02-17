@@ -26,7 +26,6 @@ const DEFAULT_FEATURES: NonNullable<StreamingMarkdownProps["features"]> = {
   footnotes: true,
   callouts: true,
   formatAnticipation: DEFAULT_FORMAT_ANTICIPATION,
-  codeHighlighting: "incremental",
   liveCodeHighlighting: false,
 };
 
