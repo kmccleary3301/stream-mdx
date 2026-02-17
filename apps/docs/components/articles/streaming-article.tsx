@@ -62,7 +62,7 @@ export function StreamingArticle({ content }: { content: string }) {
           mdx: true,
           footnotes: true,
           callouts: true,
-          codeHighlighting: "final",
+          liveCodeHighlighting: false,
         }}
       />
     </div>
