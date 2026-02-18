@@ -1,6 +1,6 @@
 # Public API — StreamMDX
 
-_Last updated: 2025-12-17_
+*Last updated: 2026-02-11*
 
 ## Packages & Entry Points
 
@@ -12,14 +12,30 @@ StreamMDX is published as both scoped packages and an unscoped convenience wrapp
 | `@stream-mdx/react` | You want the React surface without the wrapper. |
 | `@stream-mdx/worker` | You want the worker client + hosted worker bundle (browser + Node). |
 | `@stream-mdx/core` | You want types + perf/sanitization helpers (no React). |
-| `@stream-mdx/mermaid` | You want optional Mermaid diagrams for fenced ` ```mermaid ` code blocks. |
+| `@stream-mdx/mermaid` | You want optional Mermaid diagrams for fenced `mermaid` code blocks. |
 | `@stream-mdx/plugins/*` | You are building/customizing a worker bundle or need plugin primitives. |
 
 When you install `stream-mdx`, you can also import:
 
 - `stream-mdx/react`, `stream-mdx/worker`, `stream-mdx/core`
 - `stream-mdx/worker/node` (Node `worker_threads` helper)
+- `stream-mdx/worker/direct` (in-process compile helper for runtimes without `worker_threads`)
 - `stream-mdx/plugins/*` (common plugin entrypoints; useful for pnpm users)
+
+## Runtime Context Matrix
+
+| Context | Primary API | Compile path | Determinism status |
+| --- | --- | --- | --- |
+| Browser streaming UI | `<StreamingMarkdown />` from `stream-mdx` or `@stream-mdx/react` | Web Worker (`/workers/markdown-worker.js`) | Supported + CI-covered |
+| Node SSR/SSG | `compileMarkdownSnapshot()` from `stream-mdx/worker/node` + `MarkdownBlocksRenderer` from `@stream-mdx/react/server` | `worker_threads` hosted worker | Supported + parity-tested |
+| Static export docs build | `scripts/compile-docs-snapshots.ts` | Node snapshot compile at build time | Supported + Vercel-parity-tested |
+| Edge/no-`worker_threads` runtime | `compileMarkdownSnapshotDirect()` from `stream-mdx/worker/direct` + `MarkdownBlocksRenderer` from `@stream-mdx/react/server` | In-process direct worker runtime bridge (no `worker_threads`) | Preview + parity-tested + cache-compatible (Node FS) |
+
+Determinism scope for supported rows:
+- same input text
+- same init/config
+- same worker/compiler bundle hash
+- same dependency set
 
 ---
 
@@ -50,20 +66,32 @@ const ref = useRef<StreamingMarkdownHandle>(null);
 | --- | --- | --- |
 | `text` | `string` | Static markdown. Mutating it restarts the session. |
 | `stream` | `AsyncIterable<string>` | Append-only stream; provide **either** `text` or `stream`. |
-| `worker` | `Worker \| URL \| string \| () => Worker` | Worker instance/URL/factory. When omitted, the component uses the default worker strategy and falls back to `/workers/markdown-worker.js`. |
+| `worker` | `WorkerLike` | Worker instance/URL/factory. When omitted, the component uses the default worker strategy and falls back to `/workers/markdown-worker.js`. |
 | `managedWorker` | `boolean` | When `true`, the component attaches the worker but does not auto-`restart/append/finalize` for you (use the ref handle). |
 | `prewarmLangs` | `string[]` | Shiki languages to load inside the worker. |
 | `features` | `{ footnotes?, html?, mdx?, tables?, callouts?, math?, formatAnticipation?, codeHighlighting? }` | Toggles built-in feature flags. |
-| `mdxCompileMode` | `"server" \| "worker"` | Enables MDX compilation/hydration and selects the compile strategy. |
+| `mdxCompileMode` | `MdxCompileMode` | Enables MDX compilation/hydration and selects the compile strategy. |
 | `components` | `Partial<BlockComponents>` | Override block renders (wrap code/math without affecting the patch scheduler). |
 | `inlineComponents` | `Partial<InlineComponents>` | Override inline renders. |
 | `tableElements` | `Partial<TableElements>` | Override table tags (e.g. Shadcn table wrappers). |
 | `htmlElements` | `Partial<HtmlElements>` | Override HTML tag renders (when HTML is enabled). |
 | `mdxComponents` | `Record<string, ComponentType>` | Component registry used when hydrating MDX. |
+| `caret` | `CaretMode` | Show a streaming caret while blocks are still in-flight. |
+| `linkSafety` | `{ enabled?, onLinkCheck?, renderModal? }` | Intercept links and require confirmation before navigation. |
+| `deferHeavyBlocks` | `DeferHeavyBlocks` | Defer heavy blocks (e.g. Mermaid) until in view/idle. |
 | `scheduling` | `StreamingSchedulerOptions` | Patch scheduler/backpressure knobs. |
 | `onMetrics` | `(metrics: RendererMetrics) => void` | Invoked after each flush (queue depth, timings, adaptive budget state, worker metrics). |
 | `onError` | `(error: Error) => void` | Render-time errors. (Worker runtime errors surface via `error` events on the Worker.) |
 | `className`, `style` | React props forwarded to the root container. |
+
+Notes:
+- When `linkSafety.enabled` is on, the default `link` inline renderer is overridden to ensure clicks are intercepted. If you supply a custom `inlineComponents.link`, wrap link safety yourself.
+
+Type aliases:
+- `type WorkerLike = Worker | URL | string | (() => Worker)`
+- `type MdxCompileMode = "server" | "worker"`
+- `type CaretMode = "block" | "circle" | string | false`
+- `type DeferHeavyBlocks = boolean | { rootMargin?: string; idleTimeoutMs?: number; debounceMs?: number }`
 
 ### Imperative Handle
 
@@ -116,6 +144,11 @@ To run the hosted worker bundle in Node (via `worker_threads`), use:
 - `@stream-mdx/worker/node` (scoped)
 - `stream-mdx/worker/node` (convenience wrapper)
 
+For runtimes without `worker_threads` (edge-style constraints), use:
+
+- `@stream-mdx/worker/direct` (scoped)
+- `stream-mdx/worker/direct` (convenience wrapper)
+
 See `docs/CLI_USAGE.md` for an example that consumes `PATCH` messages into a `DocumentSnapshot`.
 
 ---
@@ -136,6 +169,18 @@ See `docs/CLI_USAGE.md` for an example that consumes `PATCH` messages into a `Do
   - `"incremental"`: highlight completed lines as they arrive (fast enough for streaming).
   - `"live"`: re-highlight on every update (slowest, highest fidelity).
 
+### Context support table
+
+| Feature | Browser worker streaming | Node snapshot compile | Edge/no-worker compile |
+| --- | --- | --- | --- |
+| `tables` | Yes | Yes | Preview |
+| `html` | Yes (sanitized) | Yes (sanitized) | Preview |
+| `math` | Yes | Yes | Preview |
+| `mdx` | Yes (`server` or `worker` mode) | Yes (`server` compile mode) | Preview (`server` compile mode) |
+| `footnotes` | Yes | Yes | Preview |
+| `callouts` | Yes | Yes | Preview |
+| Mermaid addon (`@stream-mdx/mermaid`) | Yes (renderer component) | Yes (renderer component) | Preview (renderer component) |
+
 ---
 
 ## 3.1) Mermaid (optional)
@@ -152,7 +197,7 @@ import { MermaidBlock } from "@stream-mdx/mermaid";
 <StreamingMarkdown components={{ mermaid: MermaidBlock }} />;
 ```
 
-When registered, fenced ` ```mermaid ` code blocks render as diagrams (with a Diagram/Code toggle). All other code blocks remain unchanged.
+When registered, fenced `mermaid` code blocks render as diagrams (with a Diagram/Code toggle). All other code blocks remain unchanged.
 
 ## 4) MDX Compilation Modes
 
@@ -162,6 +207,63 @@ When registered, fenced ` ```mermaid ` code blocks render as diagrams (with a Di
 - `"server"`: compilation requests go to `/api/mdx-compile-v2` by default (you must implement this endpoint in your app).
 
 See `docs/REACT_INTEGRATION_GUIDE.md` for a complete Next.js wiring guide and parity notes.
+
+### Next.js App Router (server-safe rendering)
+
+```tsx
+import { MarkdownBlocksRenderer, ComponentRegistry } from "@stream-mdx/react/server";
+import { compileMarkdownSnapshot } from "stream-mdx/worker/node";
+
+export default async function Page() {
+  const { blocks } = await compileMarkdownSnapshot({
+    text: "# Hello\\n\\nStreaming-safe server render.",
+    init: {
+      docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true },
+      mdx: { compileMode: "server" },
+      prewarmLangs: ["typescript"],
+    },
+  });
+
+  return <MarkdownBlocksRenderer blocks={blocks} componentRegistry={new ComponentRegistry()} />;
+}
+```
+
+### Static build pipeline (SSG/export)
+
+Use a build-time step to compile markdown into snapshot artifacts, then render those blocks in routes:
+
+```bash
+npm run docs:snapshots:build
+```
+
+This is the same model used by `apps/docs` before `next build`/export.
+
+### Direct compile helper (no `worker_threads`)
+
+```tsx
+import { MarkdownBlocksRenderer, ComponentRegistry } from "@stream-mdx/react/server";
+import { compileMarkdownSnapshotDirect } from "stream-mdx/worker/direct";
+
+export default async function EdgeLikePage() {
+  const { blocks } = await compileMarkdownSnapshotDirect({
+    text: "# Hello\\n\\nEdge-safe deterministic compile.",
+    init: {
+      docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true },
+      mdx: { compileMode: "server" },
+      prewarmLangs: ["typescript"],
+    },
+    cache: {
+      dir: ".stream-mdx-cache",
+    },
+  });
+
+  return <MarkdownBlocksRenderer blocks={blocks} componentRegistry={new ComponentRegistry()} />;
+}
+```
+
+Notes:
+- Cache semantics match `compileMarkdownSnapshot()` when the runtime exposes Node filesystem APIs.
+- In edge isolates without filesystem access, direct compile still runs deterministically and skips cache IO.
 
 ---
 
