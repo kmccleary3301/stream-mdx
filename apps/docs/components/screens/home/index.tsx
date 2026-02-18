@@ -17,36 +17,48 @@ export default function Home() {
       body: "Highlight code blocks as they stream without flicker or layout shifts.",
       icon: Sparkles,
       accent: "text-cyan-600 dark:text-cyan-400 bg-cyan-500/10 border-cyan-500/30",
+      href: "/docs/guides/rendering-and-styling",
+      cta: "Rendering guide",
     },
     {
       title: "Full MDX support",
       body: "Import and render React components directly within your markdown stream.",
       icon: Braces,
       accent: "text-violet-600 dark:text-violet-400 bg-violet-500/10 border-violet-500/30",
+      href: "/docs/guides/mdx-and-html",
+      cta: "MDX guide",
     },
     {
       title: "HTML overrides",
       body: "Map standard markdown elements to your design system components.",
       icon: Wand2,
       accent: "text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/30",
+      href: "/showcase/html-overrides",
+      cta: "HTML showcase",
     },
     {
       title: "Math & Mermaid",
       body: "First-class KaTeX and Mermaid diagrams via optional plugins.",
       icon: Blocks,
       accent: "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/30",
+      href: "/docs/guides/mermaid-diagrams",
+      cta: "Mermaid guide",
     },
     {
       title: "Format anticipation",
       body: "Regex-based plugins to predict and format content early.",
       icon: Sparkles,
       accent: "text-sky-600 dark:text-sky-400 bg-sky-500/10 border-sky-500/30",
+      href: "/docs/guides/format-anticipation",
+      cta: "Format guide",
     },
     {
       title: "Security model",
       body: "Built-in sanitization and CSP-friendly rendering for untrusted output.",
       icon: ShieldCheck,
       accent: "text-rose-600 dark:text-rose-400 bg-rose-500/10 border-rose-500/30",
+      href: "/docs/security-model",
+      cta: "Security docs",
     },
   ];
 
@@ -90,7 +102,10 @@ export default function Home() {
                 <li>Zero-latency UI interactions.</li>
                 <li>Incremental AST hydration.</li>
               </ul>
-              <Link className="mt-3 inline-block text-sm text-foreground/80 underline decoration-1 decoration-gray-a4 underline-offset-2" href="/docs/architecture">
+              <Link
+                className="mt-3 inline-block text-sm text-foreground/80 underline decoration-1 decoration-gray-a4 underline-offset-2"
+                href="/docs/guides/architecture-and-internals"
+              >
                 Architecture
               </Link>
             </div>
@@ -122,7 +137,10 @@ export default function Home() {
                 <li>Regression protection.</li>
                 <li>Incremental checkouts.</li>
               </ul>
-              <Link className="mt-3 inline-block text-sm text-foreground/80 underline decoration-1 decoration-gray-a4 underline-offset-2" href="/docs/testing">
+              <Link
+                className="mt-3 inline-block text-sm text-foreground/80 underline decoration-1 decoration-gray-a4 underline-offset-2"
+                href="/docs/guides/testing-and-baselines"
+              >
                 Testing docs
               </Link>
             </div>
@@ -148,6 +166,9 @@ export default function Home() {
                   {item.title}
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">{item.body}</p>
+                <Link className="mt-3 inline-block text-sm text-foreground/80 underline decoration-1 decoration-gray-a4 underline-offset-2" href={item.href}>
+                  {item.cta}
+                </Link>
               </div>
             ))}
           </div>
