@@ -6,6 +6,7 @@ import { DocsShell } from "@/components/docs/docs-shell";
 import { StreamingCodeBlock } from "@/components/markdown/streaming-code-block";
 import { Button } from "@/components/ui/button";
 import { DOC_SECTIONS } from "@/lib/docs";
+import type { TocHeading } from "@/lib/toc";
 
 import {
   ArrowRight,
@@ -69,6 +70,15 @@ const diffSnippet = `@@ -12,7 +12,8 @@
  }
 `;
 
+const protocolTocHeadings: TocHeading[] = [
+  { id: "lifecycle", text: "The lifecycle of a stream", level: 2, blockId: "lifecycle" },
+  { id: "protocol-schema", text: "Protocol schema", level: 2, blockId: "protocol-schema" },
+  { id: "token-highlighting", text: "Token-level highlighting", level: 2, blockId: "token-highlighting" },
+  { id: "diffs", text: "Diffs in terminal", level: 2, blockId: "diffs" },
+  { id: "stability", text: "Stability & guarantees", level: 2, blockId: "stability" },
+  { id: "cta", text: "Ready to build something real?", level: 2, blockId: "cta" },
+];
+
 function CodePanel({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="rounded-2xl border border-border/60 bg-background p-4 shadow-sm">
@@ -112,7 +122,7 @@ export default function TuiJsonProtocolPage() {
     <div className="relative -mx-6 rounded-3xl border border-border/60 bg-muted/20 p-6 shadow-sm md:p-10">
       <DocsShell
         sections={navSections}
-        showToc={false}
+        initialTocHeadings={protocolTocHeadings}
         navClassName="lg:pr-4"
         tocClassName="lg:pl-4"
       >

@@ -45,7 +45,7 @@ export const DOC_SECTIONS: DocSection[] = [
       { title: "Perf quality changelog", slug: "perf-quality-changelog", file: "PERF_QUALITY_CHANGELOG.md" },
       { title: "Status / architecture", slug: "status", file: "STREAMING_MARKDOWN_V2_STATUS.md" },
       { title: "Streamdown comparison", slug: "streamdown-comparison", file: "STREAMDOWN_COMPARISON.md" },
-      { title: "Comprehensive manual", slug: "manual", file: "COMPREHENSIVE_PROJECT_DOCUMENTATION.md" },
+      { title: "Comprehensive manual", slug: "manual", file: "COMPREHENSIVE_PROJECT_DOCUMENTATION_SITE.md" },
     ],
   },
   {
@@ -56,8 +56,12 @@ export const DOC_SECTIONS: DocSection[] = [
   },
 ];
 
+const CUSTOM_DOC_ROUTES = new Set(["tui-json-protocol"]);
+
 export function getAllDocSlugs(): string[] {
-  return DOC_SECTIONS.flatMap((section) => section.items.map((item) => item.slug)).filter((slug) => slug.length > 0);
+  return DOC_SECTIONS
+    .flatMap((section) => section.items.map((item) => item.slug))
+    .filter((slug) => slug.length > 0 && !CUSTOM_DOC_ROUTES.has(slug));
 }
 
 export function findDocBySlug(slug: string): DocItem | undefined {

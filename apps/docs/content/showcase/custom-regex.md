@@ -2,11 +2,17 @@
 
 Regex plugins let you add domain-specific inline syntax without changing the block parser. This is useful for app-specific tokens that need to render during streaming.
 
+## Why this matters
+
+- You can ship product-specific syntax without forking core parsing logic.
+- Inline transforms stay deterministic because plugin output is pure and synchronous.
+- Format anticipation lets partial tokens remain stable during streaming updates.
+
 ## What this showcases
 
-- `@mentions` converted into structured inline nodes.
+- `@mentions` converted into structured link nodes.
 - Citation tokens like `@cite{paper-2024}` recognized incrementally.
-- Streaming-safe behavior with format anticipation.
+- Streaming-safe tail handling with anticipation boundaries.
 
 ## Example plugin
 
@@ -35,6 +41,14 @@ export const mentionPlugin: RegexInlinePlugin = {
 };
 ```
 
+## Bundle multiple patterns
+
+```ts
+import { createRegexPluginBundle } from "@stream-mdx/plugins/regex";
+
+const regexPlugins = createRegexPluginBundle([mentionPlugin, citationPlugin, issueRefPlugin]);
+```
+
 ## Worker wiring
 
 ```ts
@@ -48,7 +62,7 @@ worker.init({
 });
 ```
 
-## Expected behavior
+## Expected runtime behavior
 
 - `Hey @alice can you review @bob's patch?` renders mention links while the text is still streaming.
 - `@cite{smith-2024}` can be mapped to footnote links or a citation chip renderer.
@@ -59,3 +73,10 @@ worker.init({
 - Keep regex patterns linear-time and bounded.
 - Add `fastCheck` whenever possible.
 - Add determinism tests for custom plugins if they are part of your production bundle.
+- Keep plugin priority explicit when patterns overlap.
+
+## Next steps
+
+- Guide: [Format anticipation](/docs/guides/format-anticipation)
+- Worker docs: [Plugins cookbook](/docs/plugins-cookbook)
+- API details: [Public API](/docs/public-api)
