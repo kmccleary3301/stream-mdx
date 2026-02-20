@@ -26,6 +26,16 @@
       "import": "./dist/streaming-markdown.mjs",
       "require": "./dist/streaming-markdown.cjs"
     },
+    "./components": {
+      "types": "./dist/components/index.d.ts",
+      "import": "./dist/components/index.mjs",
+      "require": "./dist/components/index.cjs"
+    },
+    "./components/bottom-stick-scroll-area": {
+      "types": "./dist/components/bottom-stick-scroll-area.d.ts",
+      "import": "./dist/components/bottom-stick-scroll-area.mjs",
+      "require": "./dist/components/bottom-stick-scroll-area.cjs"
+    },
     "./renderer": {
       "types": "./dist/renderer/index.d.ts",
       "import": "./dist/renderer/index.mjs",
@@ -74,6 +84,7 @@
   },
   "files": [
     "dist",
+    "shadcn",
     "README.md",
     "CHANGELOG.md"
   ],

@@ -1,4 +1,5 @@
 // Default component implementations for V2 Markdown Renderer
+export * from "./bottom-stick-scroll-area";
 
 import { createTrustedHTML, sanitizeHTML } from "@stream-mdx/core";
 import type {
