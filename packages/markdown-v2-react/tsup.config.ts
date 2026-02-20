@@ -16,6 +16,7 @@ const entries = [
   "src/renderer/node-views.tsx",
   "src/renderer/virtualized-code.tsx",
   "src/components/index.ts",
+  "src/components/bottom-stick-scroll-area.tsx",
   "src/mdx-client.ts",
   "src/mdx-coordinator.ts",
   "src/utils/inline-html.ts",
