@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import type { Metadata } from "next";
+import { Link } from "next-view-transitions";
 import { StreamingMarkdownDemoV2 } from "@/components/screens/streaming-markdown-demo-v2";
 
 export const metadata: Metadata = {
@@ -33,6 +34,13 @@ export default function DemoPage() {
         <h1 className="text-3xl font-semibold text-foreground">Streaming Markdown Demo</h1>
         <p className="max-w-2xl text-sm text-muted">
           Stream the Naive Bayes article into the renderer to evaluate incremental performance and layout stability as content arrives.
+        </p>
+        <p className="text-xs text-muted">
+          Need to validate sticky bottom scrolling separately?{" "}
+          <Link href="/demo/sticky-scroll" className="underline decoration-border underline-offset-2">
+            Open sticky-scroll test
+          </Link>
+          .
         </p>
       </div>
       <StreamingMarkdownDemoV2 fullText={testString} />

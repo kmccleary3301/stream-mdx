@@ -36,3 +36,37 @@ jobs:
         env:
           NEXT_PUBLIC_BASE_PATH: ""
         run: npm run docs:build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Sticky scroll + docs surface checks
+        run: |
+          python3 -m http.server 4173 --directory apps/docs/out >/tmp/stream-mdx-docs-http.log 2>&1 &
+          SERVER_PID=$!
+          trap "kill $SERVER_PID" EXIT
+          READY=0
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null 2>&1; then
+              READY=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$READY" -ne 1 ]; then
+            echo "docs static server did not become ready in time"
+            exit 1
+          fi
+          STICKY_SCROLL_URL=http://127.0.0.1:4173/demo/sticky-scroll/ \
+          STICKY_SCROLL_DEMO_URL=http://127.0.0.1:4173/demo/ \
+          STICKY_SCROLL_DOCS_URL=http://127.0.0.1:4173/docs/getting-started/ \
+          STICKY_SCROLL_EVIDENCE_DIR=tmp/sticky-scroll-check-ci \
+          npm run docs:sticky-scroll:check
+
+      - name: Upload sticky-scroll evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sticky-scroll-check-evidence
+          path: tmp/sticky-scroll-check-ci
+          if-no-files-found: ignore

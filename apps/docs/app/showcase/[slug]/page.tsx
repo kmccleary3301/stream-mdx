@@ -10,15 +10,6 @@ export function generateStaticParams() {
   return getAllShowcaseSlugs().map((slug) => ({ slug }));
 }
 
-const tagsBySlug: Record<string, string[]> = {
-  "stream-mdx-devx-catalog": ["docs", "mdx"],
-  "html-overrides": ["rendering", "components"],
-  "custom-regex": ["plugin", "extensibility"],
-  "mdx-components": ["mdx", "rendering"],
-  "mermaid-diagrams": ["plugin", "visualization"],
-  "perf-harness": ["performance", "testing"],
-};
-
 export default async function ShowcasePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const item = findShowcaseBySlug(slug);
@@ -28,7 +19,7 @@ export default async function ShowcasePage({ params }: { params: Promise<{ slug:
   const html = await renderMarkdownToHtml(markdown);
 
   const navItems = SHOWCASE_ITEMS.map((showcaseItem) => ({ slug: showcaseItem.slug, title: showcaseItem.title }));
-  const tags = tagsBySlug[item.slug] ?? ["streaming"];
+  const tags = item.tags.length > 0 ? item.tags : ["streaming"];
 
   return (
     <div className="mx-auto flex w-full max-w-screen-xl flex-col gap-6 px-4 py-10">
@@ -43,10 +34,10 @@ export default async function ShowcasePage({ params }: { params: Promise<{ slug:
             </span>
           ))}
           <div className="ml-auto flex flex-wrap items-center gap-2 text-xs">
-            <Link className="underline decoration-1 decoration-gray-a4 underline-offset-2" href="/demo">
+            <Link className="underline decoration-1 decoration-gray-a4 underline-offset-2" href={item.demoHref ?? "/demo"}>
               Open demo
             </Link>
-            <Link className="underline decoration-1 decoration-gray-a4 underline-offset-2" href="/docs">
+            <Link className="underline decoration-1 decoration-gray-a4 underline-offset-2" href={item.docsHref ?? "/docs"}>
               View docs
             </Link>
           </div>
