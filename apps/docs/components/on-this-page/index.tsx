@@ -11,6 +11,14 @@ type Heading = { id: string; text: string; level: string };
 const MAX_TOC_ITEMS = 24;
 const TOC_HEADING_SELECTOR = "h2[id], h3[id]";
 const TOC_EXCLUDE_PREFIXES = ["appendix", "appendices"];
+const TOC_EXCLUDE_EXACT = ["table of contents"];
+
+function shouldIncludeHeading(text: string) {
+  const normalized = text.trim().toLowerCase();
+  if (!normalized) return false;
+  if (TOC_EXCLUDE_EXACT.includes(normalized)) return false;
+  return !TOC_EXCLUDE_PREFIXES.some((prefix) => normalized.startsWith(prefix));
+}
 
 function debounce<F extends (...args: unknown[]) => unknown>(fn: F, waitMs: number) {
   let timeout: ReturnType<typeof setTimeout> | null = null;
@@ -31,10 +39,7 @@ export function TableOfContents({ className, title = "On this page" }: { classNa
     () =>
       contextHeadings
         .filter((heading) => heading.level >= 2 && heading.level <= 3)
-        .filter((heading) => {
-          const text = heading.text.toLowerCase();
-          return !TOC_EXCLUDE_PREFIXES.some((prefix) => text.startsWith(prefix));
-        })
+        .filter((heading) => shouldIncludeHeading(heading.text))
         .map((heading) => ({
           id: heading.id,
           text: heading.text,
@@ -59,10 +64,7 @@ export function TableOfContents({ className, title = "On this page" }: { classNa
         level: heading.tagName.toLowerCase(),
       }))
       .filter((heading) => heading.id.trim().length > 0 && heading.text.trim().length > 0)
-      .filter((heading) => {
-        const text = heading.text.toLowerCase();
-        return !TOC_EXCLUDE_PREFIXES.some((prefix) => text.startsWith(prefix));
-      })
+      .filter((heading) => shouldIncludeHeading(heading.text))
       .filter((heading) => {
         if (seen.has(heading.id)) return false;
         seen.add(heading.id);
@@ -109,7 +111,7 @@ export function TableOfContents({ className, title = "On this page" }: { classNa
       intersectionObserverRef.current.disconnect();
     }
 
-    const observerOptions: IntersectionObserverInit = { root: null, threshold: 0.1 };
+    const observerOptions: IntersectionObserverInit = { root: null, threshold: [0, 0.1], rootMargin: "-100px 0px -65% 0px" };
 
     const handleIntersection = (entries: IntersectionObserverEntry[]) => {
       setVisibleHeadings((prevVisible) => {

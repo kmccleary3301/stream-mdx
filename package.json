@@ -19,6 +19,8 @@
     "docs:dev": "npm run docs:worker:build && npm -w stream-mdx-docs run dev",
     "docs:build": "npm run build:packages && npm run docs:worker:build && npm -w stream-mdx-docs run build",
     "docs:start": "npm -w stream-mdx-docs run start",
+    "docs:sticky-scroll:check": "tsx scripts/sticky-scroll-check.ts",
+    "docs:quality:audit": "tsx scripts/docs-quality-audit.ts",
     "docs:css:snapshot": "tsx scripts/css-snapshot-docs.ts",
     "changeset": "changeset",
     "changeset:version": "changeset version",
@@ -29,6 +31,7 @@
     "@types/node": "^22.10.2",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "playwright": "^1.58.2",
     "tsup": "^8.3.5",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
