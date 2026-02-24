@@ -88,6 +88,7 @@ export class MarkdownRenderer implements Renderer {
         batch: this.config.performance?.batch,
         historyLimit: this.config.performance?.historyLimit,
         startupMicrotaskFlushes: this.config.performance?.startupMicrotaskFlushes,
+        adaptiveBudgeting: this.config.performance?.adaptiveBudgeting,
       },
     });
   }

@@ -97,6 +97,7 @@ export interface RendererConfig {
     batch?: "rAF" | "microtask" | "timeout";
     historyLimit?: number;
     startupMicrotaskFlushes?: number;
+    adaptiveBudgeting?: boolean;
   };
 }
 

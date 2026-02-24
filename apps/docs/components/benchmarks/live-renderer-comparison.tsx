@@ -62,6 +62,7 @@ type StageBreakdownStore = Record<
     ingestToCommit: number[];
     emitToCommit: number[];
     appendOverhead: number[];
+    timerDrift: number[];
   }
 >;
 
@@ -130,9 +131,9 @@ function createEmptyAggregate(): AggregateStore {
 
 function createEmptyStageBreakdown(): StageBreakdownStore {
   return {
-    streammdx: { emitToIngest: [], ingestToCommit: [], emitToCommit: [], appendOverhead: [] },
-    streamdown: { emitToIngest: [], ingestToCommit: [], emitToCommit: [], appendOverhead: [] },
-    "react-markdown": { emitToIngest: [], ingestToCommit: [], emitToCommit: [], appendOverhead: [] },
+    streammdx: { emitToIngest: [], ingestToCommit: [], emitToCommit: [], appendOverhead: [], timerDrift: [] },
+    streamdown: { emitToIngest: [], ingestToCommit: [], emitToCommit: [], appendOverhead: [], timerDrift: [] },
+    "react-markdown": { emitToIngest: [], ingestToCommit: [], emitToCommit: [], appendOverhead: [], timerDrift: [] },
   };
 }
 
@@ -295,6 +296,7 @@ function StreamMdxPanel({
   scheduling: {
     batch: "rAF" | "microtask" | "timeout";
     startupMicrotaskFlushes: number;
+    adaptiveBudgeting?: boolean;
   };
 }) {
   const localHandleRef = useRef<StreamingMarkdownHandle | null>(null);
@@ -379,7 +381,8 @@ export function LiveRendererComparison() {
   const runStateRef = useRef<RunState>("idle");
   const seqRef = useRef(0);
   const cursorRef = useRef(0);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timerDeadlineRef = useRef<number | null>(null);
   const engineTransitioningRef = useRef(false);
   const runCountRef = useRef(1);
   const runIndexRef = useRef(0);
@@ -422,6 +425,7 @@ export function LiveRendererComparison() {
     () => ({
       batch: "rAF" as const,
       startupMicrotaskFlushes: methodologyMode === "ci-locked" ? 8 : 4,
+      adaptiveBudgeting: methodologyMode === "ci-locked" ? false : undefined,
     }),
     [methodologyMode],
   );
@@ -438,9 +442,10 @@ export function LiveRendererComparison() {
 
   const stopTimer = useCallback(() => {
     if (timerRef.current !== null) {
-      clearInterval(timerRef.current);
+      clearTimeout(timerRef.current);
       timerRef.current = null;
     }
+    timerDeadlineRef.current = null;
   }, []);
 
   const setRunStateBoth = useCallback((next: RunState) => {
@@ -745,9 +750,35 @@ export function LiveRendererComparison() {
 
   const startTimer = useCallback(() => {
     stopTimer();
-    timerRef.current = setInterval(() => {
-      emitDelta();
-    }, intervalMs);
+    timerDeadlineRef.current = performance.now() + intervalMs;
+    const scheduleNextTick = () => {
+      const deadline = timerDeadlineRef.current;
+      if (deadline === null) return;
+      const delay = Math.max(0, deadline - performance.now());
+      timerRef.current = setTimeout(() => {
+        const now = performance.now();
+        const scheduledAt = timerDeadlineRef.current;
+        const engine = activeEngineRef.current;
+        if (scheduledAt !== null) {
+          const overdueMs = Math.max(0, now - scheduledAt);
+          const skippedIntervals = intervalMs > 0 ? Math.floor(overdueMs / intervalMs) : 0;
+          const driftMs = intervalMs > 0 ? overdueMs - skippedIntervals * intervalMs : overdueMs;
+          if (engine && activePhaseRef.current === "measured") {
+            stageBreakdownRef.current[engine].timerDrift.push(driftMs);
+          }
+          timerDeadlineRef.current = scheduledAt + (skippedIntervals + 1) * intervalMs;
+        } else {
+          timerDeadlineRef.current = now + intervalMs;
+        }
+        emitDelta();
+        if (runStateRef.current === "running" && timerDeadlineRef.current !== null) {
+          scheduleNextTick();
+          return;
+        }
+        timerRef.current = null;
+      }, delay);
+    };
+    scheduleNextTick();
   }, [emitDelta, intervalMs, stopTimer]);
 
   const resetState = useCallback(() => {
@@ -907,6 +938,7 @@ export function LiveRendererComparison() {
             ingestToCommit: summarize(stage.ingestToCommit),
             emitToCommit: summarize(stage.emitToCommit),
             appendOverhead: summarize(stage.appendOverhead),
+            timerDrift: summarize(stage.timerDrift),
           },
         ];
       }),
@@ -917,6 +949,7 @@ export function LiveRendererComparison() {
         ingestToCommit: EngineStats;
         emitToCommit: EngineStats;
         appendOverhead: EngineStats;
+        timerDrift: EngineStats;
       }
     >;
   }, [statsRevision]);
@@ -1491,6 +1524,7 @@ export function LiveRendererComparison() {
               <th className="px-2 py-2">Ingest→commit p50</th>
               <th className="px-2 py-2">Emit→commit p50</th>
               <th className="px-2 py-2">Append overhead p50</th>
+              <th className="px-2 py-2">Timer drift p50 / p95</th>
             </tr>
           </thead>
           <tbody>
@@ -1503,6 +1537,9 @@ export function LiveRendererComparison() {
                   <td className="px-2 py-2 text-muted">{formatMs(row.ingestToCommit.p50)}</td>
                   <td className="px-2 py-2 text-muted">{formatMs(row.emitToCommit.p50)}</td>
                   <td className="px-2 py-2 text-muted">{formatMs(row.appendOverhead.p50)}</td>
+                  <td className="px-2 py-2 text-muted">
+                    {formatMs(row.timerDrift.p50)} / {formatMs(row.timerDrift.p95)}
+                  </td>
                 </tr>
               );
             })}

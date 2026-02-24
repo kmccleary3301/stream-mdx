@@ -35,6 +35,7 @@ export interface StreamingSchedulerOptions {
   batch?: "rAF" | "microtask" | "timeout";
   historyLimit?: number;
   startupMicrotaskFlushes?: number;
+  adaptiveBudgeting?: boolean;
 }
 
 export interface StreamingFeatureFlags {
@@ -223,6 +224,7 @@ function StreamingMarkdownComponent(
         batch: scheduling?.batch,
         historyLimit: scheduling?.historyLimit,
         startupMicrotaskFlushes: scheduling?.startupMicrotaskFlushes,
+        adaptiveBudgeting: scheduling?.adaptiveBudgeting,
       },
       mdx: mdxConfig,
     };
