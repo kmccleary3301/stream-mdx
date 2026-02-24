@@ -12,6 +12,8 @@ type DebugState = {
   programmaticWrites: number;
 };
 
+const LOCK_ID = process.env.STICKY_SCROLL_LOCK_ID ?? "docs-bottom-stick-v1";
+
 function isIgnorableConsoleError(message: string) {
   const lower = message.toLowerCase();
   return (
@@ -88,6 +90,19 @@ async function main() {
     });
   };
 
+  const assertLockedComponent = async (surface: string) => {
+    const locked = await page.evaluate((lockId) => {
+      const root = document.querySelector(`[data-sticky-scroll-lock="${lockId}"]`) as HTMLDivElement | null;
+      const viewport = root?.querySelector("[data-testid='sticky-scroll-viewport']") as HTMLDivElement | null;
+      return { root: Boolean(root), viewport: Boolean(viewport) };
+    }, LOCK_ID);
+    if (!locked.root || !locked.viewport) {
+      fail(
+        `${surface} does not use locked bottom-stick component (root=${String(locked.root)} viewport=${String(locked.viewport)} lockId=${LOCK_ID})`,
+      );
+    }
+  };
+
   const ensureApi = async () => {
     await page.evaluate(() => {
       if (!window.__stickyScrollTest) {
@@ -113,6 +128,7 @@ async function main() {
       20_000,
       50,
     );
+    await assertLockedComponent("sticky-scroll demo");
 
     await ensureApi();
     await page.evaluate(() => {
@@ -155,6 +171,29 @@ async function main() {
       window.__stickyScrollTest?.resume();
     });
     await page.waitForSelector("[data-testid='sticky-scroll-jump']", { state: "visible", timeout: 5000 });
+    const jumpVisual = await page.evaluate(() => {
+      const button = document.querySelector("[data-testid='sticky-scroll-jump']") as HTMLButtonElement | null;
+      if (!button) return null;
+      const style = window.getComputedStyle(button);
+      return {
+        backgroundColor: style.backgroundColor,
+        color: style.color,
+        boxShadow: style.boxShadow,
+        borderColor: style.borderColor,
+      };
+    });
+    if (!jumpVisual) {
+      fail("jump button style check failed: button not found");
+    }
+    if (jumpVisual.backgroundColor !== "rgb(255, 255, 255)") {
+      fail(`jump button is not locked white (got ${jumpVisual.backgroundColor})`);
+    }
+    if (jumpVisual.color !== "rgb(0, 0, 0)") {
+      fail(`jump button icon color drifted (got ${jumpVisual.color})`);
+    }
+    if (!jumpVisual.boxShadow || jumpVisual.boxShadow === "none") {
+      fail("jump button shadow missing");
+    }
     const clicked = await page.evaluate(() => {
       const button = document.querySelector("[data-testid='sticky-scroll-jump']") as HTMLButtonElement | null;
       if (!button) return false;
@@ -257,6 +296,7 @@ async function main() {
       (value) => (value ?? "").toLowerCase().includes("streaming markdown demo"),
       5000,
     );
+    await assertLockedComponent("streaming demo page");
     await capture("07-demo-surface");
 
     const demoMainTextLength = await page.evaluate(() => {
@@ -283,6 +323,7 @@ async function main() {
     const report = {
       ok: true,
       urls: { stickyUrl, demoUrl, docsUrl },
+      lockId: LOCK_ID,
       metrics: {
         detachedAfterBurstDistance: detachedAfterBurst.distanceToBottom,
         maxFrameDrop,
@@ -290,6 +331,7 @@ async function main() {
         finalDebug,
         demoMainTextLength,
         docsCodeBlocks,
+        jumpVisual,
       },
       consoleErrors,
       pageErrors,

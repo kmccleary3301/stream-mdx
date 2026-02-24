@@ -6,6 +6,7 @@ import type { PatchFlushResult } from "@stream-mdx/react/renderer/patch-commit-s
 import type { RendererStore } from "@stream-mdx/react/renderer/store";
 import type { ComponentType } from "react";
 
+import { BottomStickScrollArea } from "@/components/layout/bottom-stick-scroll-area";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
@@ -30,6 +31,7 @@ const LIST_AUTO_EXPORT_ENABLED = process.env.NEXT_PUBLIC_STREAMING_LIST_AUTO_EXP
 const AUTOMATION_DOC_LINK = "docs/STREAMING_MARKDOWN_V2_STATUS.md#54-automation-api-availability";
 const ENABLE_WORKER_HELPER = process.env.NEXT_PUBLIC_STREAMING_WORKER_HELPER === "true";
 const WORKER_HELPER_MODE: DefaultWorkerMode = process.env.NEXT_PUBLIC_STREAMING_WORKER_HELPER_MODE === "blob" ? "blob" : "auto";
+const DEMO_RENDER_WIDGET_HEIGHT = 520;
 
 type PatchSummary = { tx: number; count: number; byOp: Record<string, number> };
 type FormatAnticipationOptions = Exclude<FormatAnticipationConfig, boolean>;
@@ -2267,25 +2269,33 @@ export function StreamingMarkdownDemoV2({
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-background p-4 shadow-sm">
-            <div data-testid="markdown-output" className={cn("prose max-w-none", theme === "dark" ? "prose-invert" : "")}>
-              <StreamingMarkdown
-                ref={streamingHandleRef}
-                worker={rendererWorker ?? undefined}
-                managedWorker={Boolean(rendererWorker)}
-                className="markdown-v2-output"
-                features={docPluginConfigRef.current}
-                scheduling={rendererScheduling}
-                mdxCompileMode={mdxStrategy}
-                mdxComponents={sharedMdxComponents as unknown as Record<string, ComponentType<unknown>>}
-                prewarmLangs={prewarm ? PREWARM_LANGS : []}
-                components={componentRegistry.getBlockComponentMap()}
-                inlineComponents={componentRegistry.getInlineComponentMap()}
-                tableElements={tableElements}
-                htmlElements={htmlElements}
-                style={{ contain: "content" }}
-                onError={handleRendererError}
-              />
+          <div className="rounded-xl border border-border bg-background shadow-sm">
+            <div className="flex items-center justify-between border-b border-border/60 px-4 py-2">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted">Renderer viewport</div>
+              <div className="text-[11px] text-muted">{DEMO_RENDER_WIDGET_HEIGHT}px fixed height</div>
+            </div>
+            <div className="w-full min-h-[320px]" style={{ height: `${DEMO_RENDER_WIDGET_HEIGHT}px` }}>
+              <BottomStickScrollArea className="h-full w-full" contentClassName="p-4" showJumpToBottom showScrollBar>
+                <div data-testid="markdown-output" className={cn("prose max-w-none", theme === "dark" ? "prose-invert" : "")}>
+                  <StreamingMarkdown
+                    ref={streamingHandleRef}
+                    worker={rendererWorker ?? undefined}
+                    managedWorker={Boolean(rendererWorker)}
+                    className="markdown-v2-output"
+                    features={docPluginConfigRef.current}
+                    scheduling={rendererScheduling}
+                    mdxCompileMode={mdxStrategy}
+                    mdxComponents={sharedMdxComponents as unknown as Record<string, ComponentType<unknown>>}
+                    prewarmLangs={prewarm ? PREWARM_LANGS : []}
+                    components={componentRegistry.getBlockComponentMap()}
+                    inlineComponents={componentRegistry.getInlineComponentMap()}
+                    tableElements={tableElements}
+                    htmlElements={htmlElements}
+                    style={{ contain: "content" }}
+                    onError={handleRendererError}
+                  />
+                </div>
+              </BottomStickScrollArea>
             </div>
           </div>
 

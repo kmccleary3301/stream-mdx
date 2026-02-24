@@ -6,6 +6,8 @@ import { SnapshotArticle } from "@/components/articles/snapshot-article";
 import { StreamingArticle } from "@/components/articles/streaming-article";
 import { CollectionNavigation } from "@/components/collection-navigation";
 import { DocsShell } from "@/components/docs/docs-shell";
+import { StreamRenderWidget } from "@/components/widgets/stream-render-widget";
+import { getGuideWidgetSample } from "@/lib/render-widget-samples";
 
 export function generateStaticParams() {
   return getAllGuideSlugs().map((slug) => ({ slug }));
@@ -38,12 +40,16 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
       })),
     },
   ];
+  const widgetSample = getGuideWidgetSample(slug, item.title);
 
   return (
     <DocsShell
       sections={navSections}
       initialTocHeadings={snapshot ? (snapshot.tocHeadings ?? deriveTocHeadingsFromBlocks(snapshot.blocks)) : undefined}
     >
+      <div className="mb-6 w-full max-w-3xl">
+        <StreamRenderWidget title={`${widgetSample.title} · live stream`} markdown={widgetSample.markdown} />
+      </div>
       {snapshot ? <SnapshotArticle blocks={snapshot.blocks} /> : <StreamingArticle content={markdown} />}
       <CollectionNavigation items={navItems} basePath="/docs/guides" />
     </DocsShell>
