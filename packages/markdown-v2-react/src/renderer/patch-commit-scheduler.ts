@@ -72,6 +72,7 @@ export interface PatchCommitSchedulerOptions {
   urgentQueueThreshold?: number;
   batch?: "rAF" | "microtask" | "timeout";
   historyLimit?: number;
+  startupMicrotaskFlushes?: number;
 }
 
 interface PatchBatchInternal {
@@ -145,6 +146,8 @@ export class PatchCommitScheduler {
   private adaptiveBudgetActive = false;
   private adaptiveHighBatchCap: number | undefined;
   private adaptiveLowBatchCap: number | undefined;
+  private readonly startupMicrotaskFlushes: number;
+  private flushCount = 0;
 
   constructor(params: {
     store: RendererStore;
@@ -163,6 +166,7 @@ export class PatchCommitScheduler {
     this.maxLowPriorityBatchesPerFlush = params.options?.maxLowPriorityBatchesPerFlush ?? 1;
     this.urgentQueueThreshold = Math.max(1, params.options?.urgentQueueThreshold ?? 3);
     this.historyLimit = Math.max(1, params.options?.historyLimit ?? 200);
+    this.startupMicrotaskFlushes = Math.max(0, Math.floor(params.options?.startupMicrotaskFlushes ?? 0));
     const requestedBatch = params.options?.batch;
     if (requestedBatch === "microtask") {
       this.batchStrategy = "microtask";
@@ -217,6 +221,7 @@ export class PatchCommitScheduler {
     this.highQueue = [];
     this.lowQueue = [];
     this.flushing = false;
+    this.flushCount = 0;
     this.coalescingDurationSamples = [];
     this.adaptiveBudgetActive = false;
     this.adaptiveHighBatchCap = undefined;
@@ -272,7 +277,13 @@ export class PatchCommitScheduler {
       this.maybeResolveIdle();
     };
 
-    if (this.batchStrategy === "microtask" && typeof queueMicrotask === "function") {
+    const useStartupMicrotask =
+      this.batchStrategy !== "microtask" &&
+      this.startupMicrotaskFlushes > 0 &&
+      this.flushCount < this.startupMicrotaskFlushes &&
+      typeof queueMicrotask === "function";
+
+    if ((this.batchStrategy === "microtask" || useStartupMicrotask) && typeof queueMicrotask === "function") {
       this.scheduledViaRaf = false;
       this.scheduledHandle = token;
       queueMicrotask(execute);
@@ -397,6 +408,7 @@ export class PatchCommitScheduler {
     const remaining = this.highQueue.length + this.lowQueue.length;
 
     if (batches.length > 0) {
+      this.flushCount += 1;
       try {
         this.onFlush({
           batches,
@@ -551,6 +563,7 @@ export class PatchCommitScheduler {
     this.flushing = false;
     this.sequence = 0;
     this.history = [];
+    this.flushCount = 0;
     this.scheduleToken++;
     this.paused = false;
     this.coalescingDurationSamples = [];

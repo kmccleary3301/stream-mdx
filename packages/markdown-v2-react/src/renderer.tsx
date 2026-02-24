@@ -87,6 +87,7 @@ export class MarkdownRenderer implements Renderer {
         urgentQueueThreshold: this.config.performance?.urgentQueueThreshold,
         batch: this.config.performance?.batch,
         historyLimit: this.config.performance?.historyLimit,
+        startupMicrotaskFlushes: this.config.performance?.startupMicrotaskFlushes,
       },
     });
   }
