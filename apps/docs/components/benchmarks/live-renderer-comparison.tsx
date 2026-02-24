@@ -713,10 +713,12 @@ export function LiveRendererComparison() {
     cursorRef.current = nextCursor;
     setActiveSeq(nextSeq);
 
-    setEngineText((previous) => ({
-      ...previous,
-      [engine]: previous[engine] + nextChunk,
-    }));
+    if (engine !== "streammdx") {
+      setEngineText((previous) => ({
+        ...previous,
+        [engine]: previous[engine] + nextChunk,
+      }));
+    }
 
     if (phase === "measured") {
       const existing = pointsBySeqRef.current.get(nextSeq);
@@ -952,6 +954,7 @@ export function LiveRendererComparison() {
     const status: GateStatus = pending > 0 ? "pending" : failed > 0 ? "fail" : "pass";
     return { pending, passed, failed, status };
   }, [gateChecks]);
+  const streamMdxHasData = activeSeq > 0 || aggregateRef.current.streammdx.runMs.length > 0;
 
   const metricWinners = useMemo(() => {
     const byKey = Object.fromEntries(ENGINE_META.map((engine) => [engine.key, engine.label])) as Record<EngineKey, string>;
@@ -1513,7 +1516,7 @@ export function LiveRendererComparison() {
           subtitle="Incremental worker parser + patch renderer"
           active={activeEngine === "streammdx"}
           runState={runState}
-          hasData={engineText.streammdx.length > 0}
+          hasData={streamMdxHasData}
         >
           <BottomStickScrollArea className="h-full w-full" contentClassName="p-3" showJumpToBottom showScrollBar>
             <StreamMdxPanel
