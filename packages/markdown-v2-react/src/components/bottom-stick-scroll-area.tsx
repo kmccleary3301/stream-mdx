@@ -39,7 +39,7 @@ export type BottomStickScrollAreaProps = {
 
 const EPS_BOTTOM_PX = 2;
 const EPS_OVERFLOW_PX = 1;
-const DETACH_SCROLL_DELTA_PX = 4;
+const DETACH_SCROLL_DELTA_PX = 1;
 const RETURN_MIN_MS = 180;
 const RETURN_MAX_MS = 520;
 const RETURN_PX_PER_MS = 2.2;
@@ -79,12 +79,12 @@ function DefaultJumpButton({ canJump, jumpToBottom }: { canJump: boolean; jumpTo
       style={{
         pointerEvents: canJump ? "auto" : "none",
         borderRadius: 9999,
-        border: "1px solid color-mix(in srgb, currentColor 16%, transparent)",
+        border: "1px solid color-mix(in srgb, currentColor 20%, transparent)",
         width: 40,
         height: 40,
         display: "grid",
         placeItems: "center",
-        boxShadow: "0 8px 20px rgba(0,0,0,0.16)",
+        boxShadow: "0 8px 20px rgba(0,0,0,0.18)",
         background: "color-mix(in srgb, var(--background, #fff) 92%, transparent)",
         color: "var(--foreground, #111)",
         cursor: canJump ? "pointer" : "default",
@@ -368,9 +368,20 @@ export function BottomStickScrollArea({
     jumpToBottom: startReturnToBottomSmooth,
   }) ?? <DefaultJumpButton canJump={canJump} jumpToBottom={startReturnToBottomSmooth} />;
 
-  const jumpContainerBase =
-    "pointer-events-none absolute inset-x-0 bottom-3 z-20 flex justify-center transition-all duration-150";
-  const jumpContainerVisibility = canJump ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0";
+  const jumpContainerClassNameBase = "pointer-events-none absolute z-20";
+  const jumpContainerStyle = {
+    position: "absolute" as const,
+    zIndex: 20,
+    left: 0,
+    right: 0,
+    bottom: 12,
+    display: "flex",
+    justifyContent: "center",
+    opacity: canJump ? 1 : 0,
+    transform: canJump ? "translateY(0px)" : "translateY(4px)",
+    transition: "opacity 150ms ease, transform 150ms ease",
+    pointerEvents: "none" as const,
+  };
 
   return (
     <div className={joinClasses("relative h-full w-full overflow-hidden", className)}>
@@ -386,7 +397,11 @@ export function BottomStickScrollArea({
       </div>
 
       {showJumpToBottom ? (
-        <div className={joinClasses(jumpContainerBase, jumpContainerVisibility, jumpContainerClassName)}>
+        <div
+          className={joinClasses(jumpContainerClassNameBase, jumpContainerClassName)}
+          style={jumpContainerStyle}
+          aria-hidden={!canJump}
+        >
           <div className={canJump ? "pointer-events-auto" : "pointer-events-none"}>{jumpButton}</div>
         </div>
       ) : null}

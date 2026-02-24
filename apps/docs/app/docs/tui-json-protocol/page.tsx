@@ -3,9 +3,11 @@ import type { ReactNode } from "react";
 import { Link } from "next-view-transitions";
 
 import { DocsShell } from "@/components/docs/docs-shell";
+import { StreamRenderWidget } from "@/components/widgets/stream-render-widget";
 import { StreamingCodeBlock } from "@/components/markdown/streaming-code-block";
 import { Button } from "@/components/ui/button";
 import { DOC_SECTIONS } from "@/lib/docs";
+import { getDocWidgetSample } from "@/lib/render-widget-samples";
 import type { TocHeading } from "@/lib/toc";
 
 import {
@@ -95,6 +97,7 @@ function CodePanel({ title, children }: { title: string; children: ReactNode }) 
 }
 
 export default function TuiJsonProtocolPage() {
+  const widgetSample = getDocWidgetSample("tui-json-protocol", "TUI / JSON Stream Protocol");
   const lifecycle = [
     {
       title: "init",
@@ -143,6 +146,10 @@ export default function TuiJsonProtocolPage() {
               </p>
             </div>
           </header>
+
+          <section>
+            <StreamRenderWidget title={`${widgetSample.title} · live stream`} markdown={widgetSample.markdown} />
+          </section>
 
           <section className="grid gap-6 lg:grid-cols-[1.1fr_1fr]">
             <div className="rounded-2xl border border-border/60 bg-background p-5 shadow-sm">

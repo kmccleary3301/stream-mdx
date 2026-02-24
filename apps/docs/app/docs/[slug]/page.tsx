@@ -7,6 +7,8 @@ import { SnapshotArticle } from "@/components/articles/snapshot-article";
 import { StreamingArticle } from "@/components/articles/streaming-article";
 import { CollectionNavigation } from "@/components/collection-navigation";
 import { DocsShell } from "@/components/docs/docs-shell";
+import { StreamRenderWidget } from "@/components/widgets/stream-render-widget";
+import { getDocWidgetSample } from "@/lib/render-widget-samples";
 
 export function generateStaticParams() {
   return getAllDocSlugs().map((slug) => ({ slug }));
@@ -36,12 +38,16 @@ export default async function DocPage({ params }: { params: Promise<{ slug: stri
       href: docHref(item.slug),
     })),
   }));
+  const widgetSample = getDocWidgetSample(slug, doc.title);
 
   return (
     <DocsShell
       sections={navSections}
       initialTocHeadings={snapshot ? (snapshot.tocHeadings ?? deriveTocHeadingsFromBlocks(snapshot.blocks)) : undefined}
     >
+      <div className="mb-6 w-full max-w-3xl">
+        <StreamRenderWidget title={`${widgetSample.title} · live stream`} markdown={widgetSample.markdown} />
+      </div>
       {snapshot ? <SnapshotArticle blocks={snapshot.blocks} /> : <StreamingArticle content={markdown} />}
       <CollectionNavigation items={navItems} basePath="/docs" />
     </DocsShell>

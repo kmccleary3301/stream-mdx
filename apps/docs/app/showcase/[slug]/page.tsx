@@ -2,9 +2,11 @@ import { notFound } from "next/navigation";
 import { Link } from "next-view-transitions";
 
 import { findShowcaseBySlug, getAllShowcaseSlugs, readShowcaseFile } from "@/lib/showcase";
-import { renderMarkdownToHtml } from "@/lib/docs";
 import { SHOWCASE_ITEMS } from "@/lib/showcase";
 import { CollectionNavigation } from "@/components/collection-navigation";
+import { StreamRenderWidget } from "@/components/widgets/stream-render-widget";
+import { getShowcaseWidgetSample } from "@/lib/render-widget-samples";
+import { StreamingArticle } from "@/components/articles/streaming-article";
 
 export function generateStaticParams() {
   return getAllShowcaseSlugs().map((slug) => ({ slug }));
@@ -16,10 +18,10 @@ export default async function ShowcasePage({ params }: { params: Promise<{ slug:
   if (!item) return notFound();
 
   const markdown = await readShowcaseFile(item.file);
-  const html = await renderMarkdownToHtml(markdown);
 
   const navItems = SHOWCASE_ITEMS.map((showcaseItem) => ({ slug: showcaseItem.slug, title: showcaseItem.title }));
   const tags = item.tags.length > 0 ? item.tags : ["streaming"];
+  const widgetSample = getShowcaseWidgetSample(slug, item.title);
 
   return (
     <div className="mx-auto flex w-full max-w-screen-xl flex-col gap-6 px-4 py-10">
@@ -45,11 +47,10 @@ export default async function ShowcasePage({ params }: { params: Promise<{ slug:
       </div>
 
       <div className="rounded-xl border border-border bg-background p-6 shadow-sm">
-        <div
-          id="article-content-wrapper"
-          className="prose markdown max-w-none text-theme-primary"
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
+        <div className="mb-6">
+          <StreamRenderWidget title={`${widgetSample.title} · live stream`} markdown={widgetSample.markdown} />
+        </div>
+        <StreamingArticle content={markdown} />
       </div>
 
       <CollectionNavigation items={navItems} basePath="/showcase" />
