@@ -84,6 +84,10 @@ interface PatchBatchInternal {
   priority: "high" | "low";
 }
 
+function shouldSkipCoalescing(patches: Patch[]): boolean {
+  return patches.length <= 1;
+}
+
 const DEFAULT_TIMEOUT_MS = 16;
 const COALESCING_DURATION_SAMPLE_LIMIT = 60;
 const COALESCING_DURATION_ACTIVATE_MS = 6;
@@ -340,7 +344,15 @@ export class PatchCommitScheduler {
         consumed += 1;
         const applyStart = this.now();
         const queueDelayMs = Math.max(0, applyStart - next.receivedAt);
-        const { patches: coalesced, metrics: coalescingMetrics } = coalescePatchesWithMetrics(next.patches, DEFAULT_COALESCE_CONFIG);
+        let coalesced: Patch[];
+        let coalescingMetrics: CoalescingMetrics | undefined;
+        if (shouldSkipCoalescing(next.patches)) {
+          coalesced = next.patches;
+        } else {
+          const result = coalescePatchesWithMetrics(next.patches, DEFAULT_COALESCE_CONFIG);
+          coalesced = result.patches;
+          coalescingMetrics = result.metrics;
+        }
         const touched = this.store.applyPatches(coalesced, {
           coalesced: true,
           metrics: coalescingMetrics,
@@ -432,7 +444,9 @@ export class PatchCommitScheduler {
       this.schedule();
     }
 
-    const coalescingStats = this.computeCoalescingDurationStats();
+    const coalescingStats = this.adaptiveBudgeting
+      ? this.computeCoalescingDurationStats()
+      : { sampleCount: this.coalescingDurationSamples.length, p95: null };
     let adaptiveState: AdaptiveBudgetState | null = null;
     if (this.adaptiveBudgeting) {
       this.updateAdaptiveBudget(coalescingStats.p95);
