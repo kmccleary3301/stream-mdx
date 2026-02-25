@@ -4,7 +4,7 @@ import { BottomStickScrollArea } from "@/components/layout/bottom-stick-scroll-a
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
-import { StreamingMarkdown, type RendererMetrics, type StreamingMarkdownHandle } from "@stream-mdx/react";
+import { StreamingMarkdown, type StreamingMarkdownHandle } from "@stream-mdx/react";
 import ReactMarkdown from "react-markdown";
 import { Streamdown } from "streamdown";
 import remarkGfm from "remark-gfm";
@@ -17,6 +17,7 @@ type OrderMode = "rotate" | "random" | "fixed";
 type ChartMetric = "first" | "final";
 type ChartLayout = "single" | "split";
 type BenchmarkProfile = "parity-gfm" | "streaming-heavy";
+type MethodologyMode = "explore" | "ci-locked";
 
 type DeltaPoint = {
   seq: number;
@@ -54,6 +55,19 @@ type AggregateStore = Record<
   }
 >;
 
+type StageBreakdownStore = Record<
+  EngineKey,
+  {
+    emitToIngest: number[];
+    ingestToCommit: number[];
+    emitToCommit: number[];
+    appendOverhead: number[];
+    timerDrift: number[];
+  }
+>;
+
+type GateStatus = "pass" | "fail" | "pending";
+
 const FIXTURE_SECTION = `## Stream stress section
 
 This paragraph mixes **formatting**, _italics_, \`inline code\`, and [links](https://example.com).
@@ -79,6 +93,7 @@ export function apply(batch: PatchBatch) {
 const DEFAULT_CHUNK_CHARS = 42;
 const DEFAULT_INTERVAL_MS = 32;
 const DEFAULT_REPEAT = 16;
+const DEFAULT_SCORED_RUNS = 3;
 const ENGINE_SETTLE_FRAMES = 2;
 const CHART_WIDTH = 920;
 const CHART_HEIGHT = 240;
@@ -86,6 +101,15 @@ const CHART_MARGIN = { top: 12, right: 16, bottom: 34, left: 56 };
 const CHART_PLOT_WIDTH = CHART_WIDTH - CHART_MARGIN.left - CHART_MARGIN.right;
 const CHART_PLOT_HEIGHT = CHART_HEIGHT - CHART_MARGIN.top - CHART_MARGIN.bottom;
 const AXIS_TICK_COUNT = 5;
+const CI_PROFILE = {
+  chunkChars: 42,
+  intervalMs: 32,
+  repeatCount: 16,
+  scoredRuns: 5,
+  orderMode: "rotate" as const,
+  profile: "parity-gfm" as const,
+  chartLayout: "split" as const,
+};
 
 const ENGINE_META: Array<{ key: EngineKey; label: string; color: string; dash?: string; strokeWidth?: number }> = [
   { key: "streammdx", label: "StreamMDX", color: "#2563eb", strokeWidth: 2 },
@@ -102,6 +126,14 @@ function createEmptyAggregate(): AggregateStore {
     streammdx: { first: [], final: [], runMs: [], throughput: [] },
     streamdown: { first: [], final: [], runMs: [], throughput: [] },
     "react-markdown": { first: [], final: [], runMs: [], throughput: [] },
+  };
+}
+
+function createEmptyStageBreakdown(): StageBreakdownStore {
+  return {
+    streammdx: { emitToIngest: [], ingestToCommit: [], emitToCommit: [], appendOverhead: [], timerDrift: [] },
+    streamdown: { emitToIngest: [], ingestToCommit: [], emitToCommit: [], appendOverhead: [], timerDrift: [] },
+    "react-markdown": { emitToIngest: [], ingestToCommit: [], emitToCommit: [], appendOverhead: [], timerDrift: [] },
   };
 }
 
@@ -241,15 +273,90 @@ function StreamdownPanel({
   );
 }
 
+function StreamMdxPanel({
+  seq,
+  onCommit,
+  streamHandleRef,
+  setStreamHandleReady,
+  features,
+  scheduling,
+}: {
+  seq: number;
+  onCommit: (seq: number) => void;
+  streamHandleRef: React.MutableRefObject<StreamingMarkdownHandle | null>;
+  setStreamHandleReady: (ready: boolean) => void;
+  features: {
+    html: boolean;
+    tables: boolean;
+    math: boolean;
+    mdx: boolean;
+    footnotes: boolean;
+    callouts: boolean;
+  };
+  scheduling: {
+    batch: "rAF" | "microtask" | "timeout";
+    startupMicrotaskFlushes: number;
+    adaptiveBudgeting?: boolean;
+  };
+}) {
+  const localHandleRef = useRef<StreamingMarkdownHandle | null>(null);
+  const setHandleRef = useCallback(
+    (handle: StreamingMarkdownHandle | null) => {
+      localHandleRef.current = handle;
+      streamHandleRef.current = handle;
+      setStreamHandleReady(Boolean(handle));
+      if (process.env.NODE_ENV !== "production") {
+        (window as Window & { __streamMdxBenchHandle?: StreamingMarkdownHandle | null }).__streamMdxBenchHandle = handle;
+      }
+    },
+    [setStreamHandleReady, streamHandleRef],
+  );
+
+  useEffect(() => {
+    const sync = () => {
+      if (streamHandleRef.current !== localHandleRef.current) {
+        streamHandleRef.current = localHandleRef.current;
+      }
+      setStreamHandleReady(Boolean(localHandleRef.current));
+    };
+    sync();
+    const interval = window.setInterval(sync, 120);
+    return () => {
+      window.clearInterval(interval);
+      if (streamHandleRef.current === localHandleRef.current) {
+        streamHandleRef.current = null;
+        setStreamHandleReady(false);
+      }
+    };
+  }, [setStreamHandleReady, streamHandleRef]);
+
+  useLayoutEffect(() => {
+    if (seq > 0) onCommit(seq);
+  }, [seq, onCommit]);
+
+  return (
+    <div className="prose max-w-none text-sm">
+      <StreamingMarkdown
+        ref={setHandleRef}
+        worker="/workers/markdown-worker.js"
+        className="markdown-v2-output"
+        features={features}
+        scheduling={scheduling}
+      />
+    </div>
+  );
+}
+
 export function LiveRendererComparison() {
   const [chunkChars, setChunkChars] = useState(DEFAULT_CHUNK_CHARS);
   const [intervalMs, setIntervalMs] = useState(DEFAULT_INTERVAL_MS);
   const [repeatCount, setRepeatCount] = useState(DEFAULT_REPEAT);
-  const [scoredRuns, setScoredRuns] = useState(3);
+  const [scoredRuns, setScoredRuns] = useState(DEFAULT_SCORED_RUNS);
   const [orderMode, setOrderMode] = useState<OrderMode>("rotate");
   const [chartMetric, setChartMetric] = useState<ChartMetric>("final");
   const [chartLayout, setChartLayout] = useState<ChartLayout>("split");
   const [profile, setProfile] = useState<BenchmarkProfile>("parity-gfm");
+  const [methodologyMode, setMethodologyMode] = useState<MethodologyMode>("explore");
 
   const [runState, setRunState] = useState<RunState>("idle");
   const [activePhase, setActivePhase] = useState<EnginePhase>("warmup");
@@ -274,7 +381,8 @@ export function LiveRendererComparison() {
   const runStateRef = useRef<RunState>("idle");
   const seqRef = useRef(0);
   const cursorRef = useRef(0);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timerDeadlineRef = useRef<number | null>(null);
   const engineTransitioningRef = useRef(false);
   const runCountRef = useRef(1);
   const runIndexRef = useRef(0);
@@ -284,6 +392,12 @@ export function LiveRendererComparison() {
 
   const runStartAtRef = useRef<number | null>(null);
   const runEndAtRef = useRef<number | null>(null);
+  const ingestedAtRef = useRef<Record<EngineKey, Map<number, number>>>({
+    streammdx: new Map(),
+    streamdown: new Map(),
+    "react-markdown": new Map(),
+  });
+  const stageBreakdownRef = useRef<StageBreakdownStore>(createEmptyStageBreakdown());
   const engineTimingRef = useRef<Record<EngineKey, EngineTiming>>({
     streammdx: { startAt: null, endAt: null },
     streamdown: { startAt: null, endAt: null },
@@ -307,6 +421,14 @@ export function LiveRendererComparison() {
         : { html: true, tables: true, math: true, mdx: true, footnotes: true, callouts: true },
     [profile],
   );
+  const streamMdxScheduling = useMemo(
+    () => ({
+      batch: "rAF" as const,
+      startupMicrotaskFlushes: methodologyMode === "ci-locked" ? 8 : 4,
+      adaptiveBudgeting: methodologyMode === "ci-locked" ? false : undefined,
+    }),
+    [methodologyMode],
+  );
   const reactMarkdownPlugins = useMemo(() => [remarkGfm], []);
   const streamdownPlugins = useMemo(
     () => (profile === "parity-gfm" ? { remarkPlugins: [remarkGfm], rehypePlugins: [] as any[] } : undefined),
@@ -320,9 +442,10 @@ export function LiveRendererComparison() {
 
   const stopTimer = useCallback(() => {
     if (timerRef.current !== null) {
-      clearInterval(timerRef.current);
+      clearTimeout(timerRef.current);
       timerRef.current = null;
     }
+    timerDeadlineRef.current = null;
   }, []);
 
   const setRunStateBoth = useCallback((next: RunState) => {
@@ -374,6 +497,7 @@ export function LiveRendererComparison() {
     setActiveSeq(0);
 
     emittedAtRef.current[engine] = new Map();
+    ingestedAtRef.current[engine] = new Map();
     setEngineText((previous) => ({ ...previous, [engine]: "" }));
 
     if (phase === "measured") {
@@ -479,7 +603,14 @@ export function LiveRendererComparison() {
         if (!point) continue;
 
         if (point.firstLatencies[engine] === undefined) {
-          point.firstLatencies[engine] = now - emittedAt;
+          const emitToCommit = now - emittedAt;
+          point.firstLatencies[engine] = emitToCommit;
+          const ingestedAt = ingestedAtRef.current[engine].get(emittedSeq);
+          const emitToIngest = ingestedAt !== undefined ? Math.max(0, ingestedAt - emittedAt) : 0;
+          const ingestToCommit = ingestedAt !== undefined ? Math.max(0, now - ingestedAt) : emitToCommit;
+          stageBreakdownRef.current[engine].emitToIngest.push(emitToIngest);
+          stageBreakdownRef.current[engine].ingestToCommit.push(ingestToCommit);
+          stageBreakdownRef.current[engine].emitToCommit.push(emitToCommit);
           changed = true;
         }
         point.finalLatencies[engine] = now - emittedAt;
@@ -491,14 +622,9 @@ export function LiveRendererComparison() {
     [syncPointsState],
   );
 
-  const markStreamMdxMetrics = useCallback(
-    (_metrics: RendererMetrics) => {
-      if (activeEngineRef.current !== "streammdx") return;
-      if (activePhaseRef.current !== "measured") return;
-      const latestSeq = seqRef.current;
-      if (latestSeq > 0) {
-        markCommitted("streammdx", latestSeq);
-      }
+  const handleStreamMdxCommit = useCallback(
+    (nextSeq: number) => {
+      markCommitted("streammdx", nextSeq);
     },
     [markCommitted],
   );
@@ -550,6 +676,15 @@ export function LiveRendererComparison() {
     if (!engine || runStateRef.current !== "running") return;
     const phase = activePhaseRef.current;
 
+    if (engine === "streammdx") {
+      const handle = streamHandleRef.current;
+      if (!handle) return;
+      const state = handle.getState();
+      if (!state.workerReady) {
+        return;
+      }
+    }
+
     if (cursorRef.current >= fixture.length) {
       settleThenMoveToNextEngine();
       return;
@@ -564,18 +699,30 @@ export function LiveRendererComparison() {
     const emittedAt = performance.now();
     const nextSeq = seqRef.current + 1;
     const nextCursor = cursorRef.current + nextChunk.length;
+    let ingestedAt = performance.now();
+
+    if (engine === "streammdx") {
+      const appendStartedAt = ingestedAt;
+      try {
+        streamHandleRef.current?.append(nextChunk);
+      } catch {
+        // Worker can briefly detach during restart; retry next timer tick.
+        return;
+      }
+      const appendEndedAt = performance.now();
+      stageBreakdownRef.current.streammdx.appendOverhead.push(Math.max(0, appendEndedAt - appendStartedAt));
+      ingestedAt = appendEndedAt;
+    }
 
     seqRef.current = nextSeq;
     cursorRef.current = nextCursor;
     setActiveSeq(nextSeq);
 
-    setEngineText((previous) => ({
-      ...previous,
-      [engine]: previous[engine] + nextChunk,
-    }));
-
-    if (engine === "streammdx") {
-      streamHandleRef.current?.append(nextChunk);
+    if (engine !== "streammdx") {
+      setEngineText((previous) => ({
+        ...previous,
+        [engine]: previous[engine] + nextChunk,
+      }));
     }
 
     if (phase === "measured") {
@@ -592,6 +739,7 @@ export function LiveRendererComparison() {
       }
 
       emittedAtRef.current[engine].set(nextSeq, emittedAt);
+      ingestedAtRef.current[engine].set(nextSeq, ingestedAt);
       syncPointsState();
     }
 
@@ -602,9 +750,35 @@ export function LiveRendererComparison() {
 
   const startTimer = useCallback(() => {
     stopTimer();
-    timerRef.current = setInterval(() => {
-      emitDelta();
-    }, intervalMs);
+    timerDeadlineRef.current = performance.now() + intervalMs;
+    const scheduleNextTick = () => {
+      const deadline = timerDeadlineRef.current;
+      if (deadline === null) return;
+      const delay = Math.max(0, deadline - performance.now());
+      timerRef.current = setTimeout(() => {
+        const now = performance.now();
+        const scheduledAt = timerDeadlineRef.current;
+        const engine = activeEngineRef.current;
+        if (scheduledAt !== null) {
+          const overdueMs = Math.max(0, now - scheduledAt);
+          const skippedIntervals = intervalMs > 0 ? Math.floor(overdueMs / intervalMs) : 0;
+          const driftMs = intervalMs > 0 ? overdueMs - skippedIntervals * intervalMs : overdueMs;
+          if (engine && activePhaseRef.current === "measured") {
+            stageBreakdownRef.current[engine].timerDrift.push(driftMs);
+          }
+          timerDeadlineRef.current = scheduledAt + (skippedIntervals + 1) * intervalMs;
+        } else {
+          timerDeadlineRef.current = now + intervalMs;
+        }
+        emitDelta();
+        if (runStateRef.current === "running" && timerDeadlineRef.current !== null) {
+          scheduleNextTick();
+          return;
+        }
+        timerRef.current = null;
+      }, delay);
+    };
+    scheduleNextTick();
   }, [emitDelta, intervalMs, stopTimer]);
 
   const resetState = useCallback(() => {
@@ -629,6 +803,12 @@ export function LiveRendererComparison() {
       streamdown: new Map(),
       "react-markdown": new Map(),
     };
+    ingestedAtRef.current = {
+      streammdx: new Map(),
+      streamdown: new Map(),
+      "react-markdown": new Map(),
+    };
+    stageBreakdownRef.current = createEmptyStageBreakdown();
     aggregateRef.current = createEmptyAggregate();
     setStatsRevision((value) => value + 1);
     engineTransitioningRef.current = false;
@@ -648,7 +828,6 @@ export function LiveRendererComparison() {
 
   const startRun = useCallback(() => {
     resetState();
-    streamHandleRef.current?.restart();
     runStartAtRef.current = performance.now();
     runEndAtRef.current = null;
     runCountRef.current = scoredRuns;
@@ -670,15 +849,39 @@ export function LiveRendererComparison() {
 
   const resetRun = useCallback(() => {
     resetState();
-    streamHandleRef.current?.restart();
     setRunStateBoth("idle");
   }, [resetState, setRunStateBoth]);
+
+  const applyCiProfile = useCallback(() => {
+    setChunkChars(CI_PROFILE.chunkChars);
+    setIntervalMs(CI_PROFILE.intervalMs);
+    setRepeatCount(CI_PROFILE.repeatCount);
+    setScoredRuns(CI_PROFILE.scoredRuns);
+    setOrderMode(CI_PROFILE.orderMode);
+    setProfile(CI_PROFILE.profile);
+    setChartLayout(CI_PROFILE.chartLayout);
+    setChartMetric("final");
+  }, []);
+
+  useEffect(() => {
+    if (methodologyMode !== "ci-locked") return;
+    applyCiProfile();
+  }, [applyCiProfile, methodologyMode]);
 
   useEffect(() => {
     return () => {
       stopTimer();
     };
   }, [stopTimer]);
+
+  const controlsLocked = runState === "running" || runState === "paused" || methodologyMode === "ci-locked";
+  const isCiProfile =
+    chunkChars === CI_PROFILE.chunkChars &&
+    intervalMs === CI_PROFILE.intervalMs &&
+    repeatCount === CI_PROFILE.repeatCount &&
+    scoredRuns === CI_PROFILE.scoredRuns &&
+    orderMode === CI_PROFILE.orderMode &&
+    profile === CI_PROFILE.profile;
 
   const maxSeq = points.length ? points[points.length - 1]?.seq ?? 1 : 1;
   const maxLatencyFirst = Math.max(
@@ -722,6 +925,69 @@ export function LiveRendererComparison() {
       }
     >;
   }, [statsRevision]);
+
+  const stageStats = useMemo(() => {
+    void statsRevision;
+    return Object.fromEntries(
+      ENGINE_META.map(({ key }) => {
+        const stage = stageBreakdownRef.current[key];
+        return [
+          key,
+          {
+            emitToIngest: summarize(stage.emitToIngest),
+            ingestToCommit: summarize(stage.ingestToCommit),
+            emitToCommit: summarize(stage.emitToCommit),
+            appendOverhead: summarize(stage.appendOverhead),
+            timerDrift: summarize(stage.timerDrift),
+          },
+        ];
+      }),
+    ) as Record<
+      EngineKey,
+      {
+        emitToIngest: EngineStats;
+        ingestToCommit: EngineStats;
+        emitToCommit: EngineStats;
+        appendOverhead: EngineStats;
+        timerDrift: EngineStats;
+      }
+    >;
+  }, [statsRevision]);
+
+  const gateChecks = useMemo(() => {
+    const streamMdx = aggregateStats.streammdx;
+    const streamdown = aggregateStats.streamdown;
+    const evaluate = (passed: boolean | null): GateStatus => {
+      if (passed === null) return "pending";
+      return passed ? "pass" : "fail";
+    };
+
+    const firstP50Pass =
+      streamMdx.first.p50 !== null && streamdown.first.p50 !== null ? streamMdx.first.p50 <= streamdown.first.p50 : null;
+    const finalP50Pass =
+      streamMdx.final.p50 !== null && streamdown.final.p50 !== null ? streamMdx.final.p50 <= streamdown.final.p50 : null;
+    const runP50Pass = streamMdx.runMs.p50 !== null && streamdown.runMs.p50 !== null ? streamMdx.runMs.p50 <= streamdown.runMs.p50 : null;
+    const throughputP50Pass =
+      streamMdx.throughput.p50 !== null && streamdown.throughput.p50 !== null
+        ? streamMdx.throughput.p50 >= streamdown.throughput.p50
+        : null;
+
+    return [
+      { id: "first-p50", label: "First paint p50 <= Streamdown", status: evaluate(firstP50Pass), raw: firstP50Pass },
+      { id: "final-p50", label: "Final stable p50 <= Streamdown", status: evaluate(finalP50Pass), raw: finalP50Pass },
+      { id: "run-p50", label: "Run p50 <= Streamdown", status: evaluate(runP50Pass), raw: runP50Pass },
+      { id: "throughput-p50", label: "Throughput p50 >= Streamdown", status: evaluate(throughputP50Pass), raw: throughputP50Pass },
+    ];
+  }, [aggregateStats]);
+
+  const gateSummary = useMemo(() => {
+    const pending = gateChecks.filter((gate) => gate.status === "pending").length;
+    const passed = gateChecks.filter((gate) => gate.status === "pass").length;
+    const failed = gateChecks.filter((gate) => gate.status === "fail").length;
+    const status: GateStatus = pending > 0 ? "pending" : failed > 0 ? "fail" : "pass";
+    return { pending, passed, failed, status };
+  }, [gateChecks]);
+  const streamMdxHasData = activeSeq > 0 || aggregateRef.current.streammdx.runMs.length > 0;
 
   const metricWinners = useMemo(() => {
     const byKey = Object.fromEntries(ENGINE_META.map((engine) => [engine.key, engine.label])) as Record<EngineKey, string>;
@@ -938,6 +1204,39 @@ export function LiveRendererComparison() {
         Current order:{" "}
         {displayOrder.length ? displayOrder.map((engine) => ENGINE_META.find((item) => item.key === engine)?.label ?? engine).join(" → ") : "-"}
       </div>
+      <div className="mt-3 rounded-md border border-border/60 bg-muted/15 p-3 text-xs">
+        <div className="font-semibold text-foreground">Methodology mode</div>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            variant={methodologyMode === "ci-locked" ? "default" : "outline"}
+            onClick={() => {
+              setMethodologyMode("ci-locked");
+              applyCiProfile();
+            }}
+            disabled={runState === "running" || runState === "paused"}
+          >
+            CI locked profile
+          </Button>
+          <Button
+            size="sm"
+            variant={methodologyMode === "explore" ? "default" : "outline"}
+            onClick={() => setMethodologyMode("explore")}
+            disabled={runState === "running" || runState === "paused"}
+          >
+            Explore
+          </Button>
+          <span className="text-muted">
+            {methodologyMode === "ci-locked"
+              ? "Inputs are locked to reproducible CI settings."
+              : "Freeform tuning enabled for diagnosis."}
+          </span>
+        </div>
+        <div className="mt-2 text-muted">
+          Active profile snapshot: chunk={chunkChars}, interval={intervalMs}ms, repeats={repeatCount}, runs={scoredRuns}, order={orderMode},
+          workload={profile}. {isCiProfile ? "Matches CI profile." : "Differs from CI profile."}
+        </div>
+      </div>
 
       <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
         <ControlSlider
@@ -947,7 +1246,7 @@ export function LiveRendererComparison() {
           max={220}
           step={2}
           onChange={setChunkChars}
-          disabled={runState === "running" || runState === "paused"}
+          disabled={controlsLocked}
         />
         <ControlSlider
           label="Emit interval (ms)"
@@ -956,7 +1255,7 @@ export function LiveRendererComparison() {
           max={300}
           step={2}
           onChange={setIntervalMs}
-          disabled={runState === "running" || runState === "paused"}
+          disabled={controlsLocked}
         />
         <ControlSlider
           label="Fixture repeats"
@@ -965,7 +1264,7 @@ export function LiveRendererComparison() {
           max={32}
           step={1}
           onChange={setRepeatCount}
-          disabled={runState === "running" || runState === "paused"}
+          disabled={controlsLocked}
         />
       </div>
       <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
@@ -976,7 +1275,7 @@ export function LiveRendererComparison() {
           max={7}
           step={1}
           onChange={setScoredRuns}
-          disabled={runState === "running" || runState === "paused"}
+          disabled={controlsLocked}
         />
         <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2">
           <div className="text-xs font-semibold text-foreground">Order mode</div>
@@ -987,7 +1286,7 @@ export function LiveRendererComparison() {
                 size="sm"
                 variant={orderMode === mode ? "default" : "outline"}
                 onClick={() => setOrderMode(mode)}
-                disabled={runState === "running" || runState === "paused"}
+                disabled={controlsLocked}
               >
                 {mode}
               </Button>
@@ -1001,7 +1300,7 @@ export function LiveRendererComparison() {
               size="sm"
               variant={profile === "parity-gfm" ? "default" : "outline"}
               onClick={() => setProfile("parity-gfm")}
-              disabled={runState === "running" || runState === "paused"}
+              disabled={controlsLocked}
             >
               parity-gfm
             </Button>
@@ -1009,7 +1308,7 @@ export function LiveRendererComparison() {
               size="sm"
               variant={profile === "streaming-heavy" ? "default" : "outline"}
               onClick={() => setProfile("streaming-heavy")}
-              disabled={runState === "running" || runState === "paused"}
+              disabled={controlsLocked}
             >
               streaming-heavy
             </Button>
@@ -1022,7 +1321,7 @@ export function LiveRendererComparison() {
               size="sm"
               variant={chartMetric === "first" ? "default" : "outline"}
               onClick={() => setChartMetric("first")}
-              disabled={chartLayout === "split"}
+              disabled={chartLayout === "split" || controlsLocked}
             >
               First commit
             </Button>
@@ -1030,7 +1329,7 @@ export function LiveRendererComparison() {
               size="sm"
               variant={chartMetric === "final" ? "default" : "outline"}
               onClick={() => setChartMetric("final")}
-              disabled={chartLayout === "split"}
+              disabled={chartLayout === "split" || controlsLocked}
             >
               Final stable
             </Button>
@@ -1040,10 +1339,20 @@ export function LiveRendererComparison() {
         <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2">
           <div className="text-xs font-semibold text-foreground">Chart layout</div>
           <div className="mt-2 flex flex-wrap gap-2">
-            <Button size="sm" variant={chartLayout === "single" ? "default" : "outline"} onClick={() => setChartLayout("single")}>
+            <Button
+              size="sm"
+              variant={chartLayout === "single" ? "default" : "outline"}
+              onClick={() => setChartLayout("single")}
+              disabled={controlsLocked}
+            >
               Single
             </Button>
-            <Button size="sm" variant={chartLayout === "split" ? "default" : "outline"} onClick={() => setChartLayout("split")}>
+            <Button
+              size="sm"
+              variant={chartLayout === "split" ? "default" : "outline"}
+              onClick={() => setChartLayout("split")}
+              disabled={controlsLocked}
+            >
               Split
             </Button>
           </div>
@@ -1051,8 +1360,8 @@ export function LiveRendererComparison() {
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        <Button size="sm" onClick={startRun} disabled={!streamHandleReady || runState === "running"}>
-          Start run
+        <Button size="sm" onClick={startRun} disabled={!streamHandleReady || runState === "running" || runState === "paused"}>
+          {methodologyMode === "ci-locked" ? "Start CI run" : "Start run"}
         </Button>
         <Button size="sm" variant="outline" onClick={pauseRun} disabled={runState !== "running"}>
           Pause
@@ -1166,27 +1475,95 @@ export function LiveRendererComparison() {
         </div>
       </div>
 
+      <div className="mt-3 rounded-md border border-border/60 bg-muted/15 p-3 text-xs">
+        <div className="font-semibold text-foreground">CI gate (StreamMDX vs Streamdown)</div>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <span
+            className={cn(
+              "rounded-full border px-2.5 py-1 font-medium",
+              gateSummary.status === "pass"
+                ? "border-emerald-500/45 bg-emerald-500/12 text-emerald-700 dark:text-emerald-300"
+                : gateSummary.status === "fail"
+                  ? "border-rose-500/45 bg-rose-500/12 text-rose-700 dark:text-rose-300"
+                  : "border-border/60 bg-muted/20 text-muted",
+            )}
+          >
+            {gateSummary.status.toUpperCase()} • pass={gateSummary.passed} fail={gateSummary.failed} pending={gateSummary.pending}
+          </span>
+          {methodologyMode !== "ci-locked" ? (
+            <span className="rounded-full border border-amber-500/45 bg-amber-500/12 px-2.5 py-1 font-medium text-amber-700 dark:text-amber-300">
+              Run in CI locked mode before claiming results
+            </span>
+          ) : null}
+        </div>
+        <div className="mt-2 flex flex-wrap gap-2 text-muted">
+          {gateChecks.map((gate) => (
+            <span
+              key={gate.id}
+              className={cn(
+                "rounded-full border px-2.5 py-1 font-medium",
+                gate.status === "pass"
+                  ? "border-emerald-500/45 bg-emerald-500/12 text-emerald-700 dark:text-emerald-300"
+                  : gate.status === "fail"
+                    ? "border-rose-500/45 bg-rose-500/12 text-rose-700 dark:text-rose-300"
+                    : "border-border/60 bg-muted/20 text-muted",
+              )}
+            >
+              {gate.label}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-3 overflow-x-auto">
+        <table className="w-full min-w-[980px] text-left text-sm">
+          <thead className="text-xs uppercase tracking-wide text-muted">
+            <tr>
+              <th className="px-2 py-2">Renderer</th>
+              <th className="px-2 py-2">Emit→ingest p50</th>
+              <th className="px-2 py-2">Ingest→commit p50</th>
+              <th className="px-2 py-2">Emit→commit p50</th>
+              <th className="px-2 py-2">Append overhead p50</th>
+              <th className="px-2 py-2">Timer drift p50 / p95</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ENGINE_META.map((engine) => {
+              const row = stageStats[engine.key];
+              return (
+                <tr key={`${engine.key}-stages`} className="border-border/50 border-t">
+                  <td className="px-2 py-2 font-medium text-foreground">{engine.label}</td>
+                  <td className="px-2 py-2 text-muted">{formatMs(row.emitToIngest.p50)}</td>
+                  <td className="px-2 py-2 text-muted">{formatMs(row.ingestToCommit.p50)}</td>
+                  <td className="px-2 py-2 text-muted">{formatMs(row.emitToCommit.p50)}</td>
+                  <td className="px-2 py-2 text-muted">{formatMs(row.appendOverhead.p50)}</td>
+                  <td className="px-2 py-2 text-muted">
+                    {formatMs(row.timerDrift.p50)} / {formatMs(row.timerDrift.p95)}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
       <div className="mt-5 grid gap-4 xl:grid-cols-3">
         <RendererPane
           title="StreamMDX"
           subtitle="Incremental worker parser + patch renderer"
           active={activeEngine === "streammdx"}
           runState={runState}
-          hasData={engineText.streammdx.length > 0}
+          hasData={streamMdxHasData}
         >
           <BottomStickScrollArea className="h-full w-full" contentClassName="p-3" showJumpToBottom showScrollBar>
-            <div className="prose max-w-none text-sm">
-              <StreamingMarkdown
-                ref={(instance) => {
-                  streamHandleRef.current = instance;
-                  setStreamHandleReady(Boolean(instance));
-                }}
-                worker="/workers/markdown-worker.js"
-                className="markdown-v2-output"
-                features={streamMdxFeatures}
-                onMetrics={markStreamMdxMetrics}
-              />
-            </div>
+            <StreamMdxPanel
+              seq={activeEngine === "streammdx" ? activeSeq : 0}
+              onCommit={handleStreamMdxCommit}
+              streamHandleRef={streamHandleRef}
+              setStreamHandleReady={setStreamHandleReady}
+              features={streamMdxFeatures}
+              scheduling={streamMdxScheduling}
+            />
           </BottomStickScrollArea>
         </RendererPane>
 
@@ -1231,10 +1608,10 @@ export function LiveRendererComparison() {
       </div>
 
       <p className="mt-4 text-xs text-muted">
-        Method note: each engine runs warmup then scored pass in isolation. StreamMDX commit timings come from renderer flush metrics;
-        streamdown/react-markdown timings are captured via layout-effect commit hooks. Use profile, order mode, and multi-run controls to
-        reduce first-engine bias and compare like-for-like workloads. \"First paint\" measures earliest visible commit; \"final stable\" reflects
-        how quickly each delta settles after downstream formatting/render passes.
+        Method note: each engine runs warmup then scored pass in isolation. Commit timing capture is unified across engines via layout-effect
+        commit hooks to avoid instrumentation bias. Use CI locked mode for claim-grade runs; use explore mode to diagnose bottlenecks. \"First
+        paint\" measures earliest visible commit; \"final stable\" reflects how quickly each delta settles after downstream formatting/render
+        passes.
       </p>
     </section>
   );

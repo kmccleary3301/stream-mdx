@@ -96,6 +96,8 @@ export interface RendererConfig {
     urgentQueueThreshold?: number;
     batch?: "rAF" | "microtask" | "timeout";
     historyLimit?: number;
+    startupMicrotaskFlushes?: number;
+    adaptiveBudgeting?: boolean;
   };
 }
 
