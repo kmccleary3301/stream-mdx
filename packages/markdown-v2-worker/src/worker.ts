@@ -9,6 +9,7 @@ import type {
   FormatAnticipationConfig,
   InlineNode,
   InlineStreamingInlineStatus,
+  MixedContentSegment,
   NodeSnapshot,
   Patch,
   PatchMetrics,
@@ -313,24 +314,71 @@ function countChangedBlocksFromPatches(patches: Patch[]): number {
   return ids.size;
 }
 
-function partitionPatchesForCredits(patches: Patch[], maxImmediate?: number): Patch[] {
+function isPriorityImmediatePatch(patch: Patch): boolean {
+  if (patch.op === "setProps") {
+    const candidate = (patch.props as { block?: unknown } | undefined)?.block;
+    if (!candidate || typeof candidate !== "object") {
+      return false;
+    }
+    const block = candidate as Block;
+    return block.isFinalized === true;
+  }
+  if (patch.op === "insertChild" || patch.op === "replaceChild") {
+    const candidate = (patch.node?.props as { block?: unknown } | undefined)?.block;
+    return Boolean(candidate && typeof candidate === "object" && typeof (candidate as { id?: unknown }).id === "string");
+  }
+  return false;
+}
+
+function dedupeSetPropsByTargetKeepingLatest(patches: Patch[]): Patch[] {
+  if (patches.length < 2) {
+    return patches;
+  }
+  const seen = new Set<string>();
+  const dedupedReversed: Patch[] = [];
+  for (let i = patches.length - 1; i >= 0; i--) {
+    const patch = patches[i];
+    if (patch.op === "setProps") {
+      const target = patch.at.nodeId ?? patch.at.blockId;
+      const key = `${patch.at.blockId}::${target}`;
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+    }
+    dedupedReversed.push(patch);
+  }
+  dedupedReversed.reverse();
+  return dedupedReversed;
+}
+
+function partitionPatchesForCredits(
+  patches: Patch[],
+  maxImmediate?: number,
+  options?: {
+    ignoreCredits?: boolean;
+  },
+): Patch[] {
   let combined: Patch[] = patches;
   if (deferredPatchQueue.length > 0) {
     combined = deferredPatchQueue.concat(patches);
     deferredPatchQueue = [];
   }
+  combined = dedupeSetPropsByTargetKeepingLatest(combined);
   if (combined.length === 0) {
     return [];
   }
 
-  const immediate: Patch[] = [];
+  let immediate: Patch[] = [];
   const deferred: Patch[] = [];
 
+  const bypassCreditBudget = options?.ignoreCredits || workerCredits >= 0.999;
   let heavyBudget = computeHeavyPatchBudget(workerCredits);
 
   for (const patch of combined) {
     const heavy = isHeavyPatch(patch);
-    if (heavy) {
+    const priorityImmediate = isPriorityImmediatePatch(patch);
+    if (heavy && !bypassCreditBudget && !priorityImmediate) {
       if (heavyBudget <= 0) {
         if (deferred.length < MAX_DEFERRED_PATCHES) {
           deferred.push(patch);
@@ -344,7 +392,24 @@ function partitionPatchesForCredits(patches: Patch[], maxImmediate?: number): Pa
   }
 
   if (typeof maxImmediate === "number" && immediate.length > maxImmediate) {
-    const overflow = immediate.splice(maxImmediate);
+    const priorityCount = immediate.reduce((count, patch) => count + (isPriorityImmediatePatch(patch) ? 1 : 0), 0);
+    const maxNonPriority = Math.max(0, maxImmediate - priorityCount);
+    const kept: Patch[] = [];
+    const overflow: Patch[] = [];
+    let nonPriorityKept = 0;
+    for (const patch of immediate) {
+      if (isPriorityImmediatePatch(patch)) {
+        kept.push(patch);
+        continue;
+      }
+      if (nonPriorityKept < maxNonPriority) {
+        kept.push(patch);
+        nonPriorityKept += 1;
+      } else {
+        overflow.push(patch);
+      }
+    }
+    immediate = kept;
     deferredPatchQueue = overflow.concat(deferred);
   } else {
     deferredPatchQueue = deferred;
@@ -352,11 +417,11 @@ function partitionPatchesForCredits(patches: Patch[], maxImmediate?: number): Pa
   return immediate;
 }
 
-function flushDeferredPatches() {
+function flushDeferredPatches(options?: { ignoreCredits?: boolean }) {
   if (workerCredits <= 0 || deferredPatchQueue.length === 0) {
     return;
   }
-  const immediate = partitionPatchesForCredits([], MAX_DEFERRED_FLUSH_PATCHES);
+  const immediate = partitionPatchesForCredits([], MAX_DEFERRED_FLUSH_PATCHES, options);
   if (immediate.length === 0) {
     return;
   }
@@ -449,6 +514,31 @@ function parseInlineStreamingSafe(content: string): InlineNode[] {
   return parseInlineStreaming(content).inline;
 }
 
+function canonicalizeMixedSegments(segments: MixedContentSegment[]): MixedContentSegment[] {
+  return segments.map((segment) => {
+    const next: MixedContentSegment = {
+      kind: segment.kind,
+      value: segment.value,
+    };
+    if (Array.isArray(segment.inline)) {
+      next.inline = segment.inline;
+    }
+    if (segment.range && typeof segment.range.from === "number" && typeof segment.range.to === "number") {
+      next.range = { from: segment.range.from, to: segment.range.to };
+    }
+    if (typeof segment.sanitized === "string") {
+      next.sanitized = segment.sanitized;
+    }
+    if (segment.status !== undefined) {
+      next.status = segment.status;
+    }
+    if (segment.error !== undefined) {
+      next.error = segment.error;
+    }
+    return next;
+  });
+}
+
 /**
  * Initialize the worker
  */
@@ -472,7 +562,13 @@ async function initialize(
   blocks = [];
   lastTree = null;
   currentContent = "";
+  workerCredits = 1;
   deferredPatchQueue = [];
+
+  // INIT must start from clean plugin/session state to avoid cross-run drift.
+  for (const key of Object.keys(documentPluginState)) {
+    delete documentPluginState[key];
+  }
 
   mdxCompileMode = mdxOptions?.compileMode ?? "server";
   try {
@@ -485,7 +581,8 @@ async function initialize(
   }
   clearWorkerMdxCaches();
 
-  // Register document-phase plugins (once) based on flags
+  // Register document-phase plugins based on the current INIT flags.
+  resetDocumentPluginRegistry();
   const enable = {
     footnotes: docPlugins?.footnotes ?? true,
     html: docPlugins?.html ?? true,
@@ -518,16 +615,30 @@ async function initialize(
 
   performanceTimer.mark("highlighter-init");
 
+  // INIT can be called repeatedly by tests/harnesses; reuse the same highlighter
+  // instance to avoid repeated large allocations in a single process.
+  CODE_HIGHLIGHT_CACHE.clear();
+
   // Core languages that should always be available
   const coreLangs = ["javascript", "typescript", "json", "text", "markdown"];
   const initialLangs = [...coreLangs, ...prewarmLangs];
 
   // Initialize Shiki with JS engine for browser compatibility
-  highlighter = await createHighlighter({
-    engine: createJavaScriptRegexEngine(),
-    langs: initialLangs,
-    themes: ["github-dark", "github-light"],
-  });
+  if (!highlighter) {
+    highlighter = await createHighlighter({
+      engine: createJavaScriptRegexEngine(),
+      langs: initialLangs,
+      themes: ["github-dark", "github-light"],
+    });
+  } else if (initialLangs.length > 0) {
+    for (const lang of initialLangs) {
+      try {
+        await highlighter.loadLanguage(lang);
+      } catch {
+        // ignore duplicate/unsupported preload requests
+      }
+    }
+  }
 
   const highlighterTime = performanceTimer.measure("highlighter-init");
 
@@ -793,7 +904,7 @@ async function enrichBlock(block: Block) {
         block.payload.raw = normalizedHeading;
         block.payload.inline = inlineParser.parse(normalizedHeading);
         if (shouldTrackInlineStatus() && block.payload.meta) {
-          (block.payload.meta as Record<string, unknown>).inlineStatus = undefined;
+          delete (block.payload.meta as Record<string, unknown>).inlineStatus;
         }
       } else {
         const parsed = parseInlineStreaming(normalizedHeading);
@@ -819,7 +930,7 @@ async function enrichBlock(block: Block) {
                 : undefined,
             }
           : undefined;
-      const segments = extractMixedContentSegments(normalized, undefined, inlineParse, mixedOptions);
+      const segments = canonicalizeMixedSegments(extractMixedContentSegments(normalized, undefined, inlineParse, mixedOptions));
       const currentMeta = (block.payload.meta ?? {}) as Record<string, unknown>;
       const nextMeta: Record<string, unknown> = {
         ...currentMeta,
@@ -828,10 +939,13 @@ async function enrichBlock(block: Block) {
       if (segments.length > 0) {
         nextMeta.mixedSegments = segments;
       } else {
-        nextMeta.mixedSegments = undefined;
+        delete nextMeta.mixedSegments;
       }
       if (shouldTrackInlineStatus()) {
         nextMeta.inlineStatus = block.isFinalized ? undefined : streamingParsed?.status;
+        if (nextMeta.inlineStatus === undefined) {
+          delete nextMeta.inlineStatus;
+        }
       }
       if (Object.keys(nextMeta).length > 0) {
         block.payload.meta = nextMeta;
@@ -868,11 +982,11 @@ async function enrichBlock(block: Block) {
             metaChanged = true;
           }
         } else if (Object.prototype.hasOwnProperty.call(nextMeta, "inlineStatus")) {
-          nextMeta.inlineStatus = undefined;
+          delete nextMeta.inlineStatus;
           metaChanged = true;
         }
       } else if (Object.prototype.hasOwnProperty.call(nextMeta, "inlineStatus")) {
-        nextMeta.inlineStatus = undefined;
+        delete nextMeta.inlineStatus;
         metaChanged = true;
       }
 
@@ -881,7 +995,7 @@ async function enrichBlock(block: Block) {
         nextMeta.protectedRanges = mathRanges;
         metaChanged = true;
       } else if (Object.prototype.hasOwnProperty.call(nextMeta, "protectedRanges")) {
-        nextMeta.protectedRanges = undefined;
+        delete nextMeta.protectedRanges;
         metaChanged = true;
       }
 
@@ -897,7 +1011,7 @@ async function enrichBlock(block: Block) {
                   : undefined,
               }
             : undefined;
-        const segments = extractMixedContentSegments(rawParagraph, baseOffset, (value) => inlineParse(value), mixedOptions);
+        const segments = canonicalizeMixedSegments(extractMixedContentSegments(rawParagraph, baseOffset, (value) => inlineParse(value), mixedOptions));
         if (segments.length > 0) {
           nextMeta.mixedSegments = segments;
           metaChanged = true;
@@ -905,22 +1019,22 @@ async function enrichBlock(block: Block) {
             nextMeta.allowMixedStreaming = true;
             metaChanged = true;
           } else if (Object.prototype.hasOwnProperty.call(nextMeta, "allowMixedStreaming")) {
-            nextMeta.allowMixedStreaming = undefined;
+            delete nextMeta.allowMixedStreaming;
             metaChanged = true;
           }
         } else if (Object.prototype.hasOwnProperty.call(nextMeta, "mixedSegments")) {
-          nextMeta.mixedSegments = undefined;
+          delete nextMeta.mixedSegments;
           metaChanged = true;
           if (Object.prototype.hasOwnProperty.call(nextMeta, "allowMixedStreaming")) {
-            nextMeta.allowMixedStreaming = undefined;
+            delete nextMeta.allowMixedStreaming;
             metaChanged = true;
           }
         }
       } else if (Object.prototype.hasOwnProperty.call(nextMeta, "mixedSegments")) {
-        nextMeta.mixedSegments = undefined;
+        delete nextMeta.mixedSegments;
         metaChanged = true;
         if (Object.prototype.hasOwnProperty.call(nextMeta, "allowMixedStreaming")) {
-          nextMeta.allowMixedStreaming = undefined;
+          delete nextMeta.allowMixedStreaming;
           metaChanged = true;
         }
       }
@@ -1486,6 +1600,20 @@ function runDocumentPlugins(inputBlocks: Block[], content: string): Block[] {
     filtered.push(...syntheticBlocks);
   }
   return filtered;
+}
+
+function resetDocumentPluginRegistry(): void {
+  const registry = globalDocumentPluginRegistry as typeof globalDocumentPluginRegistry & { clear?: () => void };
+  if (typeof registry.clear === "function") {
+    registry.clear();
+    return;
+  }
+  const names = new Set(registry.getAll().map((plugin) => plugin?.name).filter((name): name is string => typeof name === "string"));
+  for (const name of names) {
+    while (registry.unregister(name)) {
+      // keep removing duplicates when clear() is unavailable
+    }
+  }
 }
 
 /**
@@ -2269,14 +2397,18 @@ async function finalizeAllBlocks() {
   if (deferredPatchQueue.length > 0) {
     const previousCredits = workerCredits;
     workerCredits = 1;
-    const maxIterations = Math.ceil(deferredPatchQueue.length / MAX_DEFERRED_FLUSH_PATCHES) + 8;
 
-    for (let i = 0; i < maxIterations && deferredPatchQueue.length > 0; i++) {
-      const before = deferredPatchQueue.length;
-      flushDeferredPatches();
-      if (deferredPatchQueue.length >= before) {
-        break;
+    while (deferredPatchQueue.length > 0) {
+      const immediate = partitionPatchesForCredits([], MAX_DEFERRED_FLUSH_PATCHES, { ignoreCredits: true });
+      if (immediate.length === 0) {
+        const fallback = deferredPatchQueue.splice(0, MAX_DEFERRED_FLUSH_PATCHES);
+        if (fallback.length === 0) {
+          break;
+        }
+        dispatchPatchBatch(fallback, metricsCollector);
+        continue;
       }
+      dispatchPatchBatch(immediate, metricsCollector);
     }
 
     workerCredits = previousCredits;
