@@ -1,7 +1,7 @@
 import assert from "node:assert";
 import { JSDOM } from "jsdom";
 
-import type { InlineNode, Patch, WorkerOut } from "@stream-mdx/core";
+import { PATCH_ROOT_ID, type InlineNode, type Patch, type WorkerOut } from "@stream-mdx/core";
 import { createRendererStore } from "@stream-mdx/react/renderer/store";
 
 import { createWorkerHarness } from "./worker-test-harness";
@@ -37,6 +37,37 @@ function applyPatchMessages(store: ReturnType<typeof createRendererStore>, messa
   }
 }
 
+function findListItemInlineByText(store: ReturnType<typeof createRendererStore>, needle: string): InlineNode[] {
+  const stack: string[] = [PATCH_ROOT_ID];
+  const seen = new Set<string>();
+
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (!current || seen.has(current)) continue;
+    seen.add(current);
+
+    const children = store.getChildren(current);
+    for (const childId of children) {
+      const child = store.getNode(childId);
+      if (!child) continue;
+      stack.push(childId);
+
+      if (child.type !== "list-item") {
+        continue;
+      }
+
+      const inline = Array.isArray(child.props?.inline) ? ((child.props?.inline ?? []) as InlineNode[]) : [];
+      const texts: string[] = [];
+      flattenInline(inline, new Set<string>(), texts);
+      if (texts.join(" ").includes(needle)) {
+        return inline;
+      }
+    }
+  }
+
+  return [];
+}
+
 async function runListAnticipationTest(): Promise<void> {
   ensureDom();
 
@@ -69,11 +100,22 @@ async function runListAnticipationTest(): Promise<void> {
   const listBlock = blocks.find((block) => block.type === "list");
   assert.ok(listBlock, "expected streamed list block");
 
-  const nestedListItemId = `${listBlock!.id}::item:0::list:0::item:0`;
-  const nestedItemNode = store.getNode(nestedListItemId);
-  assert.ok(nestedItemNode, `expected nested list item node ${nestedListItemId}`);
+  const targetText = "Handling missing values in nested list emphasis";
+  let inline: InlineNode[] = [];
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    inline = findListItemInlineByText(store, targetText);
+    const attemptKinds = new Set<string>();
+    const attemptTexts: string[] = [];
+    flattenInline(inline, attemptKinds, attemptTexts);
+    if (attemptKinds.has("strong")) {
+      break;
+    }
+    const flushMessages = await harness.send({ type: "SET_CREDITS", credits: 1 });
+    applyPatchMessages(store, flushMessages);
+  }
 
-  const inline = Array.isArray(nestedItemNode?.props?.inline) ? ((nestedItemNode?.props?.inline ?? []) as InlineNode[]) : [];
+  assert.ok(inline.length > 0, `expected nested list-item inline content containing \"${targetText}\"`);
+
   const kinds = new Set<string>();
   const texts: string[] = [];
   flattenInline(inline, kinds, texts);
