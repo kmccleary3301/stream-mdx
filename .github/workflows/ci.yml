@@ -26,6 +26,21 @@ jobs:
       - name: Test
         run: npm run test
 
+      - name: Worker regression guards
+        run: |
+          npx tsx packages/markdown-v2-worker/__tests__/worker-init-idempotency.test.ts
+          npx tsx packages/markdown-v2-worker/__tests__/deferred-stale-replay-guard.test.ts
+          npx tsx packages/markdown-v2-worker/__tests__/mixed-segment-canonicalization.test.ts
+
+      - name: Worker streaming fidelity matrix (x2)
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: |
+          for run in 1 2; do
+            echo "[stream-mdx] matrix run ${run}/2"
+            npx tsx packages/markdown-v2-worker/__tests__/streaming-fidelity-matrix.test.ts
+          done
+
       - name: Pack (dry-run)
         run: npm --workspaces --if-present pack --dry-run
 
