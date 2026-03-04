@@ -47,8 +47,27 @@ function snapshotToBlock(node: NodeSnapshot): Block | null {
 
 type NodeMap = Map<string, NodeRecord>;
 
-const nodeSnapshotCache = new Map<string, { version: number; node?: NodeRecord }>();
-const childrenSnapshotCache = new Map<string, { version: number; children: ReadonlyArray<string> }>();
+const nodeSnapshotCacheByMap = new WeakMap<NodeMap, Map<string, { version: number; node?: NodeRecord }>>();
+const childrenSnapshotCacheByMap = new WeakMap<NodeMap, Map<string, { version: number; children: ReadonlyArray<string> }>>();
+
+function getNodeSnapshotCacheForMap(map: NodeMap): Map<string, { version: number; node?: NodeRecord }> {
+  let cache = nodeSnapshotCacheByMap.get(map);
+  if (!cache) {
+    cache = new Map<string, { version: number; node?: NodeRecord }>();
+    nodeSnapshotCacheByMap.set(map, cache);
+  }
+  return cache;
+}
+
+function getChildrenSnapshotCacheForMap(map: NodeMap): Map<string, { version: number; children: ReadonlyArray<string> }> {
+  let cache = childrenSnapshotCacheByMap.get(map);
+  if (!cache) {
+    cache = new Map<string, { version: number; children: ReadonlyArray<string> }>();
+    childrenSnapshotCacheByMap.set(map, cache);
+  }
+  return cache;
+}
+
 const EMPTY_CHILDREN: ReadonlyArray<string> = Object.freeze([]);
 const EMPTY_NODE_SNAPSHOT = Object.freeze<{ version: number; node?: NodeRecord }>({ version: -1, node: undefined });
 const EMPTY_CHILDREN_SNAPSHOT = Object.freeze<{ version: number; children: ReadonlyArray<string> }>({
@@ -146,27 +165,6 @@ function ensureUniqueChildren(parent: NodeRecord, touched?: Set<string>) {
   }
 }
 
-function logDuplicateCodeChildren(parent: NodeRecord) {
-  if (parent.type !== "code") return;
-  const seen = new Set<string>();
-  const duplicates: string[] = [];
-  for (const childId of parent.children) {
-    if (seen.has(childId)) {
-      duplicates.push(childId);
-    } else {
-      seen.add(childId);
-    }
-  }
-  if (duplicates.length > 0) {
-    console.warn("[renderer-store] duplicate code-line ids detected", {
-      parentId: parent.id,
-      duplicateCount: duplicates.length,
-      duplicates,
-      children: parent.children.slice(),
-    });
-  }
-}
-
 function parseLineIndexFromId(id: string): number {
   const match = id.match(/::line:(\d+)$/);
   if (!match) return Number.NaN;
@@ -211,6 +209,8 @@ function sanitizeLineInnerHtml(innerHtml: string | null, fallbackText: string): 
 
 function normalizeCodeBlockChildren(nodes: NodeMap, parent: NodeRecord, touched: Set<string>) {
   if (parent.type !== "code") return;
+  const nodeSnapshotCache = getNodeSnapshotCacheForMap(nodes);
+  const childrenSnapshotCache = getChildrenSnapshotCacheForMap(nodes);
 
   const previousChildren = parent.children.slice();
   const originalOrder = new Map<string, number>();
@@ -254,7 +254,7 @@ function normalizeCodeBlockChildren(nodes: NodeMap, parent: NodeRecord, touched:
       children: previousChildren,
     });
     if (anomalies.some((entry) => entry.startsWith("duplicate-id"))) {
-      console.warn("[renderer-store] duplicate code-line ids detected", {
+      debugCodeBlock("duplicate-code-line-ids-detected", {
         parentId: parent.id,
         anomalies,
         children: previousChildren,
@@ -368,7 +368,7 @@ function normalizeCodeBlockChildren(nodes: NodeMap, parent: NodeRecord, touched:
       issues: validation.issues,
     });
     if (!rebuildCodeBlockFromSnapshot(nodes, parent, touched, validation.issues)) {
-      console.warn("[renderer-store] unable to fully normalize code block", {
+      debugCodeBlock("unable-to-fully-normalize-code-block", {
         parentId: parent.id,
         issues: validation.issues,
       });
@@ -528,6 +528,19 @@ function validateCodeBlockChildren(nodes: NodeMap, parent: NodeRecord): CodeBloc
     }
   }
 
+  if (parent.block?.isFinalized) {
+    const snapshot = createBlockSnapshot(cloneBlock(parent.block));
+    const expectedChildren = ensureArray(snapshot.children).filter((child) => child.type === "code-line");
+    if (expectedChildren.length !== parent.children.length) {
+      issues.push({
+        kind: "line-count-mismatch",
+        id: parent.id,
+        expected: expectedChildren.length,
+        actual: parent.children.length,
+      });
+    }
+  }
+
   return { ok: issues.length === 0, issues };
 }
 
@@ -554,7 +567,7 @@ function rebuildCodeBlockFromSnapshot(nodes: NodeMap, parent: NodeRecord, touche
   }
   ancestor.version++;
   touched.add(ancestor.id);
-  console.warn("[renderer-store] rebuilt code block from snapshot", {
+  debugCodeBlock("code-block-rebuilt-from-snapshot", {
     parentId: parent.id,
     issues,
   });
@@ -600,6 +613,8 @@ function buildNodeFromSnapshot(map: NodeMap, snapshot: NodeSnapshot, parentId: s
 function removeSubtree(map: NodeMap, id: string, touched: Set<string>) {
   const record = map.get(id);
   if (!record) return;
+  const nodeSnapshotCache = getNodeSnapshotCacheForMap(map);
+  const childrenSnapshotCache = getChildrenSnapshotCacheForMap(map);
   const stack = [record];
   const affectedParents = new Set<string>();
   while (stack.length > 0) {
@@ -713,6 +728,8 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
   let version = 0;
   let blocksCache: Block[] = [];
   let blocksDirty = true;
+  let nodeSnapshotCache = getNodeSnapshotCacheForMap(nodes);
+  let childrenSnapshotCache = getChildrenSnapshotCacheForMap(nodes);
   const listeners = new Set<() => void>();
   let notifyScheduled = false;
   let lastCoalescingMetrics: CoalescingMetrics | null = null;
@@ -755,9 +772,11 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
   }
 
   function rebuildFromBlocks(blocks: Block[]) {
+    nodes = new Map();
+    nodeSnapshotCache = getNodeSnapshotCacheForMap(nodes);
+    childrenSnapshotCache = getChildrenSnapshotCacheForMap(nodes);
     nodeSnapshotCache.clear();
     childrenSnapshotCache.clear();
-    nodes = new Map();
     const root = createRootRecord();
     nodes.set(root.id, root);
     root.children = [];
@@ -811,7 +830,7 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
       const applyPropsUpdate = (at: NodePath, props: Record<string, unknown> | undefined) => {
         const targetId = at.nodeId ?? at.blockId;
         if (!targetId) return;
-        const target = nodes.get(targetId);
+        let target = nodes.get(targetId);
         if (!target) return;
 
         const nextProps = props ? { ...props } : {};
@@ -854,16 +873,65 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
         }
 
         let blockChanged = false;
+        let typeChanged = false;
+        let rebuiltFromFinalizedBlock = false;
         if (incomingBlock && typeof incomingBlock === "object") {
           target.block = cloneBlock(incomingBlock as Block);
+          const previousType = target.type;
+          const incomingType = typeof target.block.type === "string" ? target.block.type : target.type;
+          if (incomingType !== target.type) {
+            target.type = incomingType;
+            typeChanged = true;
+            if (
+              previousType === "list" ||
+              previousType === "list-item" ||
+              target.type === "list" ||
+              target.type === "list-item"
+            ) {
+              listDepthDirty = true;
+            }
+          }
           if (target.type === "code") {
             applyCodeBlockMetadata(target);
           }
+
+          const shouldRebuildFinalizedTree =
+            !at.nodeId &&
+            target.id === at.blockId &&
+            Boolean(target.block?.isFinalized) &&
+            target.type !== "code" &&
+            Boolean(target.parentId);
+          if (shouldRebuildFinalizedTree) {
+            const parent = target.parentId ? nodes.get(target.parentId) : undefined;
+            const index = parent ? parent.children.indexOf(target.id) : -1;
+            if (parent && index !== -1) {
+              const snapshot = createBlockSnapshot(cloneBlock(target.block as Block));
+              replaceSnapshotAt(nodes, parent, index, snapshot, touched);
+              mutatedBlocks = true;
+              blockChanged = true;
+              rebuiltFromFinalizedBlock = true;
+              const rebuilt = nodes.get(target.id);
+              if (
+                previousType === "list" ||
+                previousType === "list-item" ||
+                rebuilt?.type === "list" ||
+                rebuilt?.type === "list-item"
+              ) {
+                listDepthDirty = true;
+              }
+              target = rebuilt ?? target;
+            }
+          }
+
           mutatedBlocks = true;
           blockChanged = true;
         }
 
-        if (propsChanged || blockChanged) {
+        if (rebuiltFromFinalizedBlock) {
+          return;
+        }
+
+        if (propsChanged || blockChanged || typeChanged) {
           target.version++;
           touched.add(target.id);
 
@@ -968,6 +1036,26 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
               target.version++;
               touched.add(target.id);
               mutatedBlocks = true;
+
+              // Finalization is the last chance to ensure subtree parity with block payload.
+              // Rebuild finalized non-code blocks from canonical snapshots to prevent stale
+              // child-node text/segment drift when intermediate setProps were coalesced.
+              if (!patch.at.nodeId && target.id === patch.at.blockId && target.type !== "code" && target.parentId) {
+                const parent = nodes.get(target.parentId);
+                const index = parent ? parent.children.indexOf(target.id) : -1;
+                if (parent && index !== -1) {
+                  const snapshot = createBlockSnapshot(cloneBlock(target.block));
+                  replaceSnapshotAt(nodes, parent, index, snapshot, touched);
+                  if (
+                    target.type === "list" ||
+                    target.type === "list-item" ||
+                    snapshot.type === "list" ||
+                    snapshot.type === "list-item"
+                  ) {
+                    listDepthDirty = true;
+                  }
+                }
+              }
             }
             break;
           }
@@ -1115,6 +1203,33 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
           }
           default:
             break;
+        }
+      }
+
+      // Finalized tables can retain stale cell-node props if intermediate patch streams
+      // were coalesced aggressively; resync any touched finalized table roots from block snapshots.
+      const finalizedTableRoots = new Set<string>();
+      for (const touchedId of touched) {
+        let cursor = nodes.get(touchedId);
+        while (cursor && cursor.id !== PATCH_ROOT_ID) {
+          if (cursor.type === "table" && cursor.block?.isFinalized && cursor.parentId) {
+            finalizedTableRoots.add(cursor.id);
+            break;
+          }
+          cursor = cursor.parentId ? nodes.get(cursor.parentId) : undefined;
+        }
+      }
+      if (finalizedTableRoots.size > 0) {
+        for (const tableId of finalizedTableRoots) {
+          const tableNode = nodes.get(tableId);
+          if (!tableNode || !tableNode.block || !tableNode.parentId) continue;
+          const parent = nodes.get(tableNode.parentId);
+          if (!parent) continue;
+          const index = parent.children.indexOf(tableNode.id);
+          if (index === -1) continue;
+          const snapshot = createBlockSnapshot(cloneBlock(tableNode.block));
+          replaceSnapshotAt(nodes, parent, index, snapshot, touched);
+          mutatedBlocks = true;
         }
       }
 

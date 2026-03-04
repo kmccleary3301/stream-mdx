@@ -91,9 +91,28 @@ function splitByTagSegments(
     }
     let end = tagPattern.lastIndex;
 
-    if (!isSelfClosing && !mdxAllowed) {
-      const closingIndex = findClosingHtmlTag(lowerSource, tagName.toLowerCase(), end);
-      if (closingIndex === -1) {
+    if (!isSelfClosing) {
+      const closingIndex = findClosingHtmlTag(lowerSource, tagNameLower, end);
+      if (closingIndex !== -1) {
+        end = closingIndex;
+      } else if (mdxAllowed) {
+        if (mdxAutoClose) {
+          const tail = source.slice(end);
+          const newlineCount = countNewlines(tail, mdxMaxNewlines + 1);
+          if (newlineCount > mdxMaxNewlines) {
+            // Not enough confidence to auto-close; keep as text until more input arrives.
+            tagPattern.lastIndex = start + 1;
+            match = tagPattern.exec(source);
+            continue;
+          }
+        } else {
+          // Without MDX auto-close, avoid emitting a synthetic segment for an unclosed tag.
+          // This prevents opening-tag-only segments that can later drift from finalized structure.
+          tagPattern.lastIndex = start + 1;
+          match = tagPattern.exec(source);
+          continue;
+        }
+      } else {
         if (htmlAutoClose && htmlAllowTags.has(tagNameLower)) {
           const tail = source.slice(end);
           const newlineCount = countNewlines(tail, htmlMaxNewlines + 1);
@@ -122,7 +141,6 @@ function splitByTagSegments(
         match = tagPattern.exec(source);
         continue;
       }
-      end = closingIndex;
     }
 
     if (start > cursor) {
@@ -149,7 +167,9 @@ function splitByTagSegments(
         match = tagPattern.exec(source);
         continue;
       }
-      if (mdxAutoClose && !rawSegment.endsWith("/>")) {
+      const closingTagPattern = new RegExp(`</\\s*${escapeRegExp(tagName)}\\s*>\\s*$`, "i");
+      const hasExplicitClose = closingTagPattern.test(rawSegment);
+      if (mdxAutoClose && !hasExplicitClose && !rawSegment.endsWith("/>")) {
         rawSegment = selfCloseTag(rawSegment);
         segment.value = rawSegment;
       }
@@ -341,6 +361,10 @@ function selfCloseTag(rawTag: string): string {
   const closeIndex = rawTag.lastIndexOf(">");
   if (closeIndex === -1) return rawTag;
   return `${rawTag.slice(0, closeIndex)}/>`;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 export function isLikelyMdxComponent(tagName: string): boolean {

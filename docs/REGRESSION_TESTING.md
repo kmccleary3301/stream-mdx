@@ -8,6 +8,22 @@ These regression checks are intentionally **local-only** for now. They lock in t
 - HTML checkpoints now also capture **structural signatures** (top-level tag order + element counts) and **root child hashes** for easier localization of diffs.
 - Computed style snapshots for critical elements (headings, tables, lists, blockquotes, footnotes, preview/code adjacency, etc).
 - Invariant checks after finalize (duplicate block IDs, MDX compile state, range ordering, queue drain).
+- Worker attach/restart race checks across regression/demo/benchmark surfaces.
+
+## Reliability additions (2026-03-03 tranche)
+
+- Worker fidelity matrix now enforces finalized parity for:
+  - MDX segment continuity across boundary-split chunks.
+  - Code block line ordering/completeness (reconstructed text parity).
+  - Table header/row cell text parity under extreme boundary slicing.
+- React/store regressions now cover:
+  - Block type sync when a stable block ID changes type (for example `html -> mdx`).
+  - Store cache isolation across independent renderer stores.
+  - Empty nested-list guard + list marker-digit stability.
+- Style regressions now lock:
+  - Ordered/unordered marker-width and padding parity (top-level + nested lists).
+  - Two-digit ordered marker expansion.
+  - Dark-mode footnote text/link/backref contrast.
 
 Snapshots live in:
 - `tests/regression/snapshots/html/**`
@@ -43,6 +59,15 @@ npm run test:regression:styles:update
 ```bash
 npm run test:regression:html
 npm run test:regression:styles
+npm run test:runtime:worker-races
+```
+
+## Package-level reliability run
+
+Run the package suites that contain the new deterministic reliability tests:
+
+```bash
+npm run test:reliability:packages
 ```
 
 ## Stress scenario (heavy fixtures only)
@@ -72,3 +97,4 @@ tmux kill-session -t streammdx-docs
 - If you need new coverage, add fixtures under `tests/regression/fixtures/` and register them in `tests/regression/fixtures/index.ts`.
 - The `S6_extreme` scenario only runs for fixtures tagged with `stress`. Use tags to keep the stress run focused on heavy fixtures.
 - The regression harness waits for worker readiness, flushes patches, and stabilizes the renderer version before snapshotting to avoid flaky results.
+- `test:runtime:worker-races` is local-only and expects the docs app to be running. It fails on `Worker not attached`-class errors and similar restart-race signals from browser logs.

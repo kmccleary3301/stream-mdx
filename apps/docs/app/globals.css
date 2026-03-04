@@ -98,6 +98,15 @@
     border: none;
   }
 
+  .dark .markdown-v2-output .markdown-link {
+    color: rgb(222 222 222);
+  }
+
+  .markdown-v2-output .footnotes a.markdown-link,
+  .markdown-v2-output .footnotes .footnote-backref {
+    color: var(--footnote-link) !important;
+  }
+
   .markdown-v2-output h1 + h2,
   .markdown-v2-output h2 + h3,
   .markdown-v2-output h3 + h4 {
@@ -114,32 +123,25 @@
   }
 
   .markdown-v2-output .markdown-list {
-    --list-indent: 2.5rem;
+    --list-marker-digits: 1;
+    --list-marker-width: calc((var(--list-marker-digits) * 0.72rem) + 1.05rem);
+    --list-indent: var(--list-marker-width);
 
     display: flex;
     flex-direction: column;
-    padding-left: var(--list-indent, 2.5rem);
+    padding-left: var(--list-indent);
     margin: 1.25em 0;
     list-style: none;
     list-style-type: none;
   }
 
   .markdown-v2-output .markdown-list.unordered {
-    --list-indent: 1.5rem;
-  }
-
-  .markdown-v2-output .markdown-list.ordered[data-list-depth="1"] {
-    --list-indent: 2rem;
-  }
-
-  .markdown-v2-output .markdown-list.ordered[data-list-depth="2"],
-  .markdown-v2-output .markdown-list.ordered[data-list-depth="3"] {
-    --list-indent: 1.5rem;
+    --list-marker-digits: 1;
   }
 
   .markdown-v2-output .markdown-list .markdown-list {
     margin-top: 0.25rem;
-    margin-left: 1rem;
+    margin-left: 0.75rem;
   }
 
   .markdown-v2-output .markdown-list-item {
@@ -155,8 +157,8 @@
     position: absolute;
     top: 0;
     right: 100%;
-    width: var(--list-indent, 2.5rem);
-    padding-right: 0.5rem;
+    width: var(--list-marker-width);
+    padding-right: 0.45rem;
     font-variant-numeric: var(--tw-ordinal) var(--tw-slashed-zero) var(--tw-numeric-figure) var(--tw-numeric-spacing) var(--tw-numeric-fraction);
     text-align: right;
     content: attr(data-counter-text) " ";
@@ -177,11 +179,11 @@
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    width: 1.5rem;
-    height: 1.5rem;
+    width: var(--list-marker-width);
+    min-height: 1.4rem;
     padding-right: 0;
-    margin-top: -0.1rem;
-    font-size: 1.25rem;
+    margin-top: -0.03rem;
+    font-size: 1.05rem;
     content: "\2022";
     opacity: 0.7;
   }
@@ -415,7 +417,8 @@
     --muted-old: var(--gray-8);
     --border-old: var(--gray-4);
     --muted: var(--gray-8);
-    --note-muted: #606060;
+    --note-muted: color-mix(in srgb, var(--foreground) 60%, var(--background));
+    --footnote-link: rgb(56 56 56);
     --border: var(--gray-4);
     --scrollbar-thumb: var(--gray-4);
     --scrollbar-track: transparent;
@@ -608,6 +611,8 @@
 
     .footnotes {
       position: relative;
+      --tw-prose-links: var(--footnote-link);
+
       padding-top: 16px;
       margin-top: 64px !important;
       border-top: 1px solid var(--border);
@@ -648,6 +653,21 @@
 
     .footnotes ol li p a {
       z-index: 2;
+    }
+
+    .markdown-v2-output .footnotes a,
+    .markdown-v2-output .footnotes a.markdown-link {
+      color: inherit !important;
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 2px;
+    }
+
+    .markdown-v2-output .footnotes .footnote-backref {
+      margin-left: 0.35rem;
+      font-size: 0.95em;
+      color: inherit !important;
+      opacity: 0.9;
     }
   }
 
@@ -774,7 +794,8 @@
     --secondary: 0 0% 14.9%;
     --secondary-foreground: 0 0% 98%;
     --muted: var(--gray-8);
-    --note-muted: #606060;
+    --note-muted: color-mix(in srgb, var(--foreground) 80%, var(--background));
+    --footnote-link: rgb(222 222 222);
     --muted-foreground: 0 0% 63.9%;
     --accent: 0 0% 14.9%;
     --accent-foreground: 0 0% 98%;

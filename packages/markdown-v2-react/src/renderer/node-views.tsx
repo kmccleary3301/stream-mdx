@@ -399,8 +399,22 @@ const ListBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
     const inlineComponents = registry.getInlineComponents();
     const ordered = Boolean(node?.props?.ordered ?? block?.payload.meta?.ordered);
     const Tag = ordered ? "ol" : "ul";
+    let markerDigits = 1;
+    if (ordered) {
+      for (let index = 0; index < childIds.length; index++) {
+        const childId = childIds[index];
+        const childNode = store.getNode(childId);
+        const raw = typeof childNode?.block?.payload?.raw === "string" ? childNode.block.payload.raw : "";
+        const markerMatch = raw.match(/^(\d+)[.)]\s+/);
+        const markerFromRaw = markerMatch ? Number(markerMatch[1]) : Number.NaN;
+        const markerFromIndex = typeof childNode?.props?.index === "number" ? Number(childNode.props.index) + 1 : index + 1;
+        const markerNumber = Number.isFinite(markerFromRaw) ? markerFromRaw : markerFromIndex;
+        markerDigits = Math.max(markerDigits, String(Math.max(1, Math.trunc(markerNumber))).length);
+      }
+    }
+    const listStyle = { ["--list-marker-digits" as const]: String(markerDigits) } as React.CSSProperties;
     return (
-      <Tag className={`markdown-list ${ordered ? "ordered" : "unordered"}`} data-list-depth={depth}>
+      <Tag className={`markdown-list ${ordered ? "ordered" : "unordered"}`} data-list-depth={depth} data-marker-digits={markerDigits} style={listStyle}>
         {childIds.map((childId, index) => (
           <ListItemView
             key={childId}
@@ -482,6 +496,9 @@ const ListItemView: React.FC<{
           );
         }
         case "list":
+          if (store.getChildren(childId).length === 0) {
+            return null;
+          }
           return <ListBlockView key={childId} store={store} blockId={childId} registry={registry} depth={depth + 1} />;
         default:
           return <BlockNodeRenderer key={childId} store={store} blockId={childId} registry={registry} />;

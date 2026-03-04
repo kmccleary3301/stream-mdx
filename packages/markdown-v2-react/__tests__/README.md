@@ -11,6 +11,16 @@ Renderer/store/scheduler tests are migrating out of `lib/markdown-v2/tests/` int
 - ✅ `store-reorder.test.ts`
 - ✅ `virtualized-list-config.test.ts`
 - ✅ `patch-batching.test.ts`
+- ✅ `store-block-type-sync.test.ts`
+- ✅ `store-cache-isolation.test.ts`
+- ✅ `empty-nested-list-guard.test.tsx`
+- ✅ `streaming-list-anticipation.test.tsx`
+- ✅ `list-marker-width.test.tsx`
+
+## Local run commands
+
+- Package: `npm -w @stream-mdx/react run test`
+- Reliability bundle: `npm run test:reliability:packages`
 
 ## TODO
 

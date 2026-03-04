@@ -2,8 +2,8 @@ import assert from "node:assert";
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import type { Block, Patch, WorkerOut } from "@stream-mdx/core";
-import { blocksStructurallyEqual } from "@stream-mdx/core";
+import type { Block, InlineNode, Patch, WorkerOut } from "@stream-mdx/core";
+import { blocksStructurallyEqual, cloneBlock, stripCodeFence } from "@stream-mdx/core";
 import { PATCH_ROOT_ID } from "@stream-mdx/core";
 import { createRendererStore } from "@stream-mdx/react/renderer/store";
 import { JSDOM } from "jsdom";
@@ -20,6 +20,8 @@ type Scenario = {
   postAppendCredit?: CreditProfile;
   postAppendEvery?: number;
 };
+
+type Store = ReturnType<typeof createRendererStore>;
 
 function ensureDom() {
   if (typeof (globalThis as { window?: unknown }).window !== "undefined") {
@@ -56,6 +58,84 @@ function blockSignature(block: Block): string {
 }
 
 const STABILITY_MARGIN_CHARS = 320;
+const COVERAGE_DOC = [
+  "# Streaming Coverage Fixture",
+  "",
+  "- Parent list item",
+  "  1. Nested ordered with *italic* emphasis",
+  "  2. Nested ordered with **bold** marker handling",
+  "- Sibling list item with inline MDX: <InlineChip tone=\"warm\">Hot</InlineChip>",
+  "",
+  "<Callout tone=\"info\">MDX block body with `inline code` and **formatting**.</Callout>",
+  "",
+  "| key | value | notes |",
+  "| --- | --- | --- |",
+  "| alpha | 1 | first row |",
+  "| beta | 2 | second row |",
+  "| gamma | 3 | third row |",
+  "",
+  "```ts",
+  "export function stableCodeOrder(input: number): number {",
+  "  const squared = input * input;",
+  "  return squared + 1;",
+  "}",
+  "```",
+  "",
+  "Final paragraph with footnote[^cov].",
+  "",
+  "[^cov]: Coverage footnote content.",
+].join("\n");
+
+function normalizeTextForCompare(value: string): string {
+  return value.replace(/\r\n?/g, "\n").replace(/\n+$/g, "");
+}
+
+function inlineToPlainText(nodes: InlineNode[] | undefined): string {
+  if (!Array.isArray(nodes) || nodes.length === 0) return "";
+  let out = "";
+  for (const node of nodes) {
+    const kind = (node as { kind?: string }).kind;
+    if (kind === "text" && typeof (node as { text?: unknown }).text === "string") {
+      out += (node as { text: string }).text;
+      continue;
+    }
+    if (typeof (node as { text?: unknown }).text === "string") {
+      out += (node as { text: string }).text;
+    }
+    if (typeof (node as { label?: unknown }).label === "string") {
+      out += `[${(node as { label: string }).label}]`;
+    }
+    const children = (node as { children?: InlineNode[] }).children;
+    if (Array.isArray(children) && children.length > 0) {
+      out += inlineToPlainText(children);
+    }
+  }
+  return out;
+}
+
+function tableTextSignature(block: Block): { header: string[]; rows: string[][] } {
+  const meta = (block.payload.meta ?? {}) as { header?: InlineNode[][]; rows?: InlineNode[][][] };
+  const header = Array.isArray(meta.header) ? meta.header.map((cell) => inlineToPlainText(cell)) : [];
+  const rows = Array.isArray(meta.rows) ? meta.rows.map((row) => row.map((cell) => inlineToPlainText(cell))) : [];
+  return { header, rows };
+}
+
+function collectMdxSignatures(blocks: ReadonlyArray<Block>): string[] {
+  const signatures: string[] = [];
+  for (const block of blocks) {
+    if (block.type === "mdx") {
+      signatures.push(`block:${block.id}:${normalizeTextForCompare(block.payload.raw ?? "")}`);
+    }
+    const mixedSegments = (block.payload.meta as { mixedSegments?: Array<{ kind?: string; value?: string }> } | undefined)?.mixedSegments;
+    if (Array.isArray(mixedSegments)) {
+      mixedSegments.forEach((segment, index) => {
+        if (segment?.kind !== "mdx") return;
+        signatures.push(`segment:${block.id}:${index}:${normalizeTextForCompare(segment.value ?? "")}`);
+      });
+    }
+  }
+  return signatures.sort();
+}
 
 function isStableAgainstTail(block: Block | undefined, consumedChars: number): boolean {
   const to = typeof block?.payload?.range?.to === "number" ? (block.payload.range.to as number) : null;
@@ -155,6 +235,88 @@ function assertNoEmptyNestedLists(store: ReturnType<typeof createRendererStore>,
   }
 }
 
+function stableValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => stableValue(item));
+  }
+  if (value && typeof value === "object") {
+    const input = value as Record<string, unknown>;
+    const output: Record<string, unknown> = {};
+    for (const key of Object.keys(input).sort()) {
+      if (key === "block") continue;
+      const child = input[key];
+      if (typeof child === "undefined") continue;
+      output[key] = stableValue(child);
+    }
+    return output;
+  }
+  return value;
+}
+
+function normalizePropsForSignature(nodeType: string, props: Record<string, unknown>): Record<string, unknown> {
+  if (nodeType === "code") {
+    return typeof props.lang === "string" ? { lang: props.lang } : {};
+  }
+  if (nodeType === "code-line") {
+    return typeof props.index === "number" ? { index: props.index } : {};
+  }
+
+  const includeKeys = ["ordered", "index", "text", "task", "checked", "status", "raw", "depth", "sanitized"];
+  const selected: Record<string, unknown> = {};
+  for (const key of includeKeys) {
+    if (!Object.prototype.hasOwnProperty.call(props, key)) continue;
+    const value = props[key];
+    if (typeof value === "undefined") continue;
+    selected[key] = stableValue(value);
+  }
+  return selected;
+}
+
+function collectNodeTreeSignature(store: Store, nodeId: string, pathPrefix = "0"): string[] {
+  const node = store.getNode(nodeId);
+  if (!node) {
+    return [`${pathPrefix}|missing:${nodeId}`];
+  }
+  const signature: string[] = [];
+  const nodeShape = {
+    path: pathPrefix,
+    id: node.id,
+    type: node.type,
+    props: normalizePropsForSignature(node.type, node.props ?? {}),
+  };
+  signature.push(JSON.stringify(nodeShape));
+  const children = store.getChildren(nodeId);
+  for (let i = 0; i < children.length; i++) {
+    signature.push(...collectNodeTreeSignature(store, children[i], `${pathPrefix}.${i}`));
+  }
+  return signature;
+}
+
+function assertStableFinalizedNodeTreesMatchBaseline(
+  store: Store,
+  baselineStore: Store,
+  current: ReadonlyArray<Block>,
+  baseline: ReadonlyArray<Block>,
+  consumedChars: number,
+  label: string,
+): void {
+  for (let i = 0; i < current.length; i++) {
+    const curr = current[i];
+    if (!curr?.isFinalized) continue;
+    const expected = baseline[i];
+    if (!expected || !isStableAgainstTail(expected, consumedChars)) {
+      continue;
+    }
+    const currentTree = collectNodeTreeSignature(store, curr.id);
+    const baselineTree = collectNodeTreeSignature(baselineStore, expected.id);
+    assert.deepStrictEqual(
+      currentTree,
+      baselineTree,
+      `[${label}] finalized node-tree diverged at index ${i} (${curr.id})`,
+    );
+  }
+}
+
 function assertCodeLineOrdering(store: ReturnType<typeof createRendererStore>, label: string): void {
   const stack = [...store.getChildren(PATCH_ROOT_ID)];
   while (stack.length > 0) {
@@ -204,6 +366,79 @@ function assertFinalizedTableShape(blocks: ReadonlyArray<Block>, label: string):
   }
 }
 
+function assertFinalizedTableContentMatchesBaseline(current: ReadonlyArray<Block>, baseline: ReadonlyArray<Block>, label: string): void {
+  const baselineById = new Map<string, Block>();
+  for (const block of baseline) {
+    if (block.type === "table") {
+      baselineById.set(block.id, block);
+    }
+  }
+
+  for (const block of current) {
+    if (block.type !== "table" || !block.isFinalized) continue;
+    const expected = baselineById.get(block.id);
+    assert.ok(expected, `[${label}] missing baseline table block for ${block.id}`);
+    if (!expected) continue;
+    const actualSignature = tableTextSignature(block);
+    const expectedSignature = tableTextSignature(expected);
+    assert.deepStrictEqual(
+      actualSignature,
+      expectedSignature,
+      `[${label}] finalized table text diverged for ${block.id}`,
+    );
+  }
+}
+
+function collectCodeLinesFromStore(store: ReturnType<typeof createRendererStore>, blockId: string): string[] {
+  const lineIds = store.getChildren(blockId);
+  const lines: Array<{ index: number; text: string }> = [];
+  for (const lineId of lineIds) {
+    const lineNode = store.getNode(lineId);
+    if (!lineNode || lineNode.type !== "code-line") continue;
+    const index = typeof lineNode.props?.index === "number" ? (lineNode.props.index as number) : lines.length;
+    const text = typeof lineNode.props?.text === "string" ? (lineNode.props.text as string) : "";
+    lines.push({ index, text });
+  }
+  lines.sort((a, b) => a.index - b.index);
+  return lines.map((line) => line.text);
+}
+
+function assertFinalizedCodeTextMatchesBaseline(
+  store: ReturnType<typeof createRendererStore>,
+  baseline: ReadonlyArray<Block>,
+  label: string,
+): void {
+  const baselineById = new Map<string, Block>();
+  for (const block of baseline) {
+    if (block.type === "code") {
+      baselineById.set(block.id, block);
+    }
+  }
+
+  const blocks = store.getBlocks();
+  for (const block of blocks) {
+    if (block.type !== "code" || !block.isFinalized) continue;
+    const expected = baselineById.get(block.id);
+    assert.ok(expected, `[${label}] missing baseline code block for ${block.id}`);
+    if (!expected) continue;
+
+    const expectedRaw = normalizeTextForCompare(stripCodeFence(expected.payload.raw ?? "").code);
+    const actualFromLines = normalizeTextForCompare(collectCodeLinesFromStore(store, block.id).join("\n"));
+    const actualFallback = normalizeTextForCompare(stripCodeFence(block.payload.raw ?? "").code);
+    const actual = actualFromLines.length > 0 ? actualFromLines : actualFallback;
+
+    assert.strictEqual(actual, expectedRaw, `[${label}] finalized code text diverged for ${block.id}`);
+  }
+}
+
+function assertFinalizedMdxSignaturesMatchBaseline(current: ReadonlyArray<Block>, baseline: ReadonlyArray<Block>, label: string): void {
+  const currentFinalized = current.filter((block) => block.isFinalized);
+  const expectedFinalized = baseline.filter((block) => block.isFinalized);
+  const currentSig = collectMdxSignatures(currentFinalized);
+  const expectedSig = collectMdxSignatures(expectedFinalized);
+  assert.deepStrictEqual(currentSig, expectedSig, `[${label}] finalized MDX signatures diverged`);
+}
+
 async function createInitializedHarnessStore() {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
@@ -244,6 +479,7 @@ async function computeBaseline(doc: string): Promise<Block[]> {
 
 async function runScenario(scenario: Scenario, baseline: Block[]): Promise<void> {
   const { harness, store } = await createInitializedHarnessStore();
+  const baselineStore = createRendererStore(baseline.map((block) => cloneBlock(block)));
   const seenFinalized = new Map<string, string>();
 
   for (let idx = 0, chunkIndex = 0; idx < scenario.doc.length; idx += scenario.chunkSize, chunkIndex++) {
@@ -292,6 +528,17 @@ async function runScenario(scenario: Scenario, baseline: Block[]): Promise<void>
     assert.strictEqual(actual.id, expected.id, `[${scenario.name}] final id mismatch at index ${i}`);
     assert.ok(blocksStructurallyEqual(actual, expected), `[${scenario.name}] final block diverged at index ${i} (${actual.id})`);
   }
+  assertFinalizedTableContentMatchesBaseline(finalBlocks, baseline, `${scenario.name}:final`);
+  assertFinalizedMdxSignaturesMatchBaseline(finalBlocks, baseline, `${scenario.name}:final`);
+  assertFinalizedCodeTextMatchesBaseline(store, baseline, `${scenario.name}:final`);
+  assertStableFinalizedNodeTreesMatchBaseline(
+    store,
+    baselineStore,
+    finalBlocks,
+    baseline,
+    scenario.doc.length,
+    `${scenario.name}:final`,
+  );
 }
 
 async function runStreamingFidelityMatrixTest(): Promise<void> {
@@ -304,6 +551,7 @@ async function runStreamingFidelityMatrixTest(): Promise<void> {
 
   const fullBaseline = await computeBaseline(fullDoc);
   const lowSpeedBaseline = await computeBaseline(lowSpeedDoc);
+  const coverageBaseline = await computeBaseline(COVERAGE_DOC);
 
   const scenarios: Array<{ scenario: Scenario; baseline: Block[] }> = [
     {
@@ -337,7 +585,57 @@ async function runStreamingFidelityMatrixTest(): Promise<void> {
       },
       baseline: lowSpeedBaseline,
     },
+    {
+      scenario: {
+        name: "coverage-low-speed-1-full",
+        doc: COVERAGE_DOC,
+        chunkSize: 1,
+        preAppendCredit: (chunkIndex) => (chunkIndex % 9 === 0 ? 0.25 : chunkIndex % 4 === 0 ? 0.55 : 1),
+        postAppendCredit: (chunkIndex) => (chunkIndex % 2 === 0 ? 1 : 0.45),
+        postAppendEvery: 2,
+      },
+      baseline: coverageBaseline,
+    },
+    {
+      scenario: {
+        name: "coverage-steady-37",
+        doc: COVERAGE_DOC,
+        chunkSize: 37,
+        preAppendCredit: () => 1,
+      },
+      baseline: coverageBaseline,
+    },
   ];
+
+  const coverageMatrixChunkSizes = [3, 5, 7, 11, 89, 233];
+  for (const chunkSize of coverageMatrixChunkSizes) {
+    scenarios.push({
+      scenario: {
+        name: `coverage-steady-${chunkSize}`,
+        doc: COVERAGE_DOC,
+        chunkSize,
+        preAppendCredit: () => 1,
+      },
+      baseline: coverageBaseline,
+    });
+    scenarios.push({
+      scenario: {
+        name: `coverage-jitter-${chunkSize}`,
+        doc: COVERAGE_DOC,
+        chunkSize,
+        preAppendCredit: (chunkIndex) => {
+          const values = [1, 0.78, 0.52, 0.28, 0.61];
+          return values[(chunkIndex + chunkSize) % values.length];
+        },
+        postAppendCredit: (chunkIndex) => {
+          const values = [0.4, 1, 0.55, 0.85];
+          return values[(chunkIndex + chunkSize) % values.length];
+        },
+        postAppendEvery: 2,
+      },
+      baseline: coverageBaseline,
+    });
+  }
 
   for (const entry of scenarios) {
     await runScenario(entry.scenario, entry.baseline);

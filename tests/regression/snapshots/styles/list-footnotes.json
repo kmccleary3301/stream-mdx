@@ -1,0 +1,187 @@
+{
+  "summary": {
+    "rootChildCount": 1,
+    "selectors": {
+      "hasTable": false,
+      "hasPre": false,
+      "hasFootnotes": true,
+      "hasMdxPending": false,
+      "hasMdxCompiled": false,
+      "hasBlockquote": false,
+      "hasMath": false
+    },
+    "counts": {
+      "table": 0,
+      "pre": 0,
+      "blockquote": 0,
+      "katex": 0,
+      "mdxPending": 0,
+      "mdxCompiled": 0,
+      "footnotes": 1,
+      "hr": 1
+    }
+  },
+  "invariants": [],
+  "light": {
+    "orderedOneList": {
+      "selector": ".markdown-list.ordered[data-marker-digits=\"1\"]",
+      "computed": {
+        "padding-left": "24.78px"
+      }
+    },
+    "unorderedList": {
+      "selector": ".markdown-list.unordered[data-marker-digits=\"1\"]",
+      "computed": {
+        "padding-left": "24.78px"
+      }
+    },
+    "orderedTwoList": {
+      "selector": ".markdown-list.ordered[data-marker-digits=\"2\"]",
+      "computed": {
+        "padding-left": "34.86px"
+      }
+    },
+    "nestedOrderedList": {
+      "selector": ".markdown-list.ordered[data-list-depth=\"1\"][data-marker-digits=\"1\"]",
+      "computed": {
+        "padding-left": "24.78px"
+      }
+    },
+    "nestedUnorderedList": {
+      "selector": ".markdown-list.unordered[data-list-depth=\"1\"][data-marker-digits=\"1\"]",
+      "computed": {
+        "padding-left": "24.78px"
+      }
+    },
+    "orderedOneItem": {
+      "selector": ".markdown-list.ordered[data-marker-digits=\"1\"] > .markdown-list-item:first-child",
+      "computed": {},
+      "pseudo": {
+        "::before": {
+          "width": "24.7656px",
+          "padding-right": "6.3px",
+          "text-align": "right",
+          "content": "\"1. \""
+        }
+      }
+    },
+    "unorderedItem": {
+      "selector": ".markdown-list.unordered[data-marker-digits=\"1\"] > .markdown-list-item:first-child",
+      "computed": {},
+      "pseudo": {
+        "::before": {
+          "width": "24.7656px",
+          "justify-content": "center",
+          "content": "\"•\""
+        }
+      }
+    },
+    "orderedTwoItem": {
+      "selector": ".markdown-list.ordered[data-marker-digits=\"2\"] > .markdown-list-item:first-child",
+      "computed": {},
+      "pseudo": {
+        "::before": {
+          "width": "34.8594px",
+          "padding-right": "6.3px",
+          "text-align": "right",
+          "content": "\"1. \""
+        }
+      }
+    },
+    "nestedOrderedItem": {
+      "selector": ".markdown-list.ordered[data-list-depth=\"1\"][data-marker-digits=\"1\"] > .markdown-list-item:first-child",
+      "computed": {},
+      "pseudo": {
+        "::before": {
+          "width": "24.7656px",
+          "padding-right": "6.3px",
+          "text-align": "right",
+          "content": "\"1. \""
+        }
+      }
+    },
+    "nestedUnorderedItem": {
+      "selector": ".markdown-list.unordered[data-list-depth=\"1\"][data-marker-digits=\"1\"] > .markdown-list-item:first-child",
+      "computed": {},
+      "pseudo": {
+        "::before": {
+          "width": "24.7656px",
+          "justify-content": "center",
+          "content": "\"•\""
+        }
+      }
+    }
+  },
+  "dark": {
+    "footnoteContainer": {
+      "selector": ".footnotes",
+      "computed": {
+        "border-top-color": "rgb(42, 42, 42)",
+        "color": "rgb(238, 238, 238)"
+      }
+    },
+    "footnoteItem": {
+      "selector": ".footnotes ol li:first-child",
+      "computed": {
+        "color": "color(srgb 0.76 0.76 0.76)",
+        "font-size": "12px"
+      }
+    },
+    "footnoteLink": {
+      "selector": ".footnotes ol li:first-child a",
+      "computed": {
+        "color": "color(srgb 0.76 0.76 0.76)",
+        "text-decoration-color": "color(srgb 0.76 0.76 0.76)",
+        "--footnote-link": "rgb(222 222 222)",
+        "--tw-prose-links": "rgb(222 222 222)"
+      }
+    },
+    "footnoteBackref": {
+      "selector": ".footnotes .footnote-backref",
+      "computed": {
+        "color": "color(srgb 0.76 0.76 0.76)",
+        "opacity": "0.9"
+      }
+    }
+  },
+  "listInventory": [
+    {
+      "className": "markdown-list ordered",
+      "markerDigits": "1",
+      "textPreview": "Ordered oneOrdered twoNested bullet alphaNested bullet betaOrdered threeNested ordered oneNested ordered two"
+    },
+    {
+      "className": "markdown-list unordered",
+      "markerDigits": "1",
+      "textPreview": "Nested bullet alphaNested bullet beta"
+    },
+    {
+      "className": "markdown-list ordered",
+      "markerDigits": "1",
+      "textPreview": "Nested ordered oneNested ordered two"
+    },
+    {
+      "className": "markdown-list unordered",
+      "markerDigits": "1",
+      "textPreview": "Bullet alphaBullet betaBullet child ordered oneBullet child ordered twoBullet gamma"
+    },
+    {
+      "className": "markdown-list ordered",
+      "markerDigits": "1",
+      "textPreview": "Bullet child ordered oneBullet child ordered two"
+    },
+    {
+      "className": "markdown-list ordered",
+      "markerDigits": "2",
+      "textPreview": "TenElevenTwelveThirteenFourteenFifteenSixteenSeventeenEighteenNineteen"
+    }
+  ],
+  "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">Ordered one</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Ordered two<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\" data-marker-digits=\"1\" style=\"--list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet alpha</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested bullet beta</li></ul></div></li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Ordered three<div class=\"markdown-list-item-children\"><ol class=\"markdown-list ordered\" data-list-depth=\"1\" data-marker-digits=\"1\" style=\"--list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"1\">Nested ordered one</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"1\">Nested ordered two</li></ol></div></li></ol><ul class=\"markdown-list unordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Bullet alpha</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Bullet beta<div class=\"markdown-list-item-children\"><ol class=\"markdown-list ordered\" data-list-depth=\"1\" data-marker-digits=\"1\" style=\"--list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"1\">Bullet child ordered one</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"1\">Bullet child ordered two</li></ol></div></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Bullet gamma</li></ul><p class=\"markdown-paragraph\">List split paragraph.</p><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"2\" style=\"--list-marker-digits: 2;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">Ten</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Eleven</li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\">Twelve</li><li class=\"markdown-list-item\" data-counter-text=\"4.\" data-list-depth=\"0\">Thirteen</li><li class=\"markdown-list-item\" data-counter-text=\"5.\" data-list-depth=\"0\">Fourteen</li><li class=\"markdown-list-item\" data-counter-text=\"6.\" data-list-depth=\"0\">Fifteen</li><li class=\"markdown-list-item\" data-counter-text=\"7.\" data-list-depth=\"0\">Sixteen</li><li class=\"markdown-list-item\" data-counter-text=\"8.\" data-list-depth=\"0\">Seventeen</li><li class=\"markdown-list-item\" data-counter-text=\"9.\" data-list-depth=\"0\">Eighteen</li><li class=\"markdown-list-item\" data-counter-text=\"10.\" data-list-depth=\"0\">Nineteen</li></ol><p class=\"markdown-paragraph\">Footnote reference<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"style\">1</a></sup>.</p><section class=\"footnotes\"><hr><ol><li id=\"fn:1\">Footnote body with a <a href=\"https://example.com\" class=\"markdown-link\" target=\"_blank\" rel=\"noopener noreferrer\">source link</a>. <a href=\"#fnref:1\" class=\"footnote-backref\" aria-label=\"Back to content\">↩</a></li></ol></section></div>",
+  "darkPalette": {
+    "bodyBackground": "rgb(17, 17, 17)",
+    "footnoteText": "color(srgb 0.76 0.76 0.76)",
+    "footnoteLink": "color(srgb 0.76 0.76 0.76)",
+    "footnoteBackref": "color(srgb 0.76 0.76 0.76)",
+    "rootFootnoteVar": "rgb(222 222 222)"
+  }
+}
