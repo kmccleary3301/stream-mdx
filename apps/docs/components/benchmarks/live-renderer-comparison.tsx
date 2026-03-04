@@ -93,7 +93,7 @@ export function apply(batch: PatchBatch) {
 const DEFAULT_CHUNK_CHARS = 42;
 const DEFAULT_INTERVAL_MS = 32;
 const DEFAULT_REPEAT = 16;
-const DEFAULT_SCORED_RUNS = 3;
+const DEFAULT_SCORED_RUNS = 1;
 const ENGINE_SETTLE_FRAMES = 2;
 const CHART_WIDTH = 920;
 const CHART_HEIGHT = 240;
@@ -197,6 +197,15 @@ function formatThroughput(value: number | null): string {
   return `${value.toFixed(0)} chars/s`;
 }
 
+function isWorkerReady(handle: StreamingMarkdownHandle | null): handle is StreamingMarkdownHandle {
+  if (!handle) return false;
+  try {
+    return handle.getState().workerReady;
+  } catch {
+    return false;
+  }
+}
+
 function getEngineAccentClass(engine: EngineKey): string {
   if (engine === "streammdx") return "border-blue-500/45 bg-blue-500/12 text-blue-700 dark:text-blue-300";
   if (engine === "streamdown") return "border-emerald-500/45 bg-emerald-500/12 text-emerald-700 dark:text-emerald-300";
@@ -277,14 +286,12 @@ function StreamMdxPanel({
   seq,
   onCommit,
   streamHandleRef,
-  setStreamHandleReady,
   features,
   scheduling,
 }: {
   seq: number;
   onCommit: (seq: number) => void;
   streamHandleRef: React.MutableRefObject<StreamingMarkdownHandle | null>;
-  setStreamHandleReady: (ready: boolean) => void;
   features: {
     html: boolean;
     tables: boolean;
@@ -299,36 +306,21 @@ function StreamMdxPanel({
     adaptiveBudgeting?: boolean;
   };
 }) {
-  const localHandleRef = useRef<StreamingMarkdownHandle | null>(null);
   const setHandleRef = useCallback(
     (handle: StreamingMarkdownHandle | null) => {
-      localHandleRef.current = handle;
       streamHandleRef.current = handle;
-      setStreamHandleReady(Boolean(handle));
       if (process.env.NODE_ENV !== "production") {
         (window as Window & { __streamMdxBenchHandle?: StreamingMarkdownHandle | null }).__streamMdxBenchHandle = handle;
       }
     },
-    [setStreamHandleReady, streamHandleRef],
+    [streamHandleRef],
   );
 
   useEffect(() => {
-    const sync = () => {
-      if (streamHandleRef.current !== localHandleRef.current) {
-        streamHandleRef.current = localHandleRef.current;
-      }
-      setStreamHandleReady(Boolean(localHandleRef.current));
-    };
-    sync();
-    const interval = window.setInterval(sync, 120);
     return () => {
-      window.clearInterval(interval);
-      if (streamHandleRef.current === localHandleRef.current) {
-        streamHandleRef.current = null;
-        setStreamHandleReady(false);
-      }
+      streamHandleRef.current = null;
     };
-  }, [setStreamHandleReady, streamHandleRef]);
+  }, [streamHandleRef]);
 
   useLayoutEffect(() => {
     if (seq > 0) onCommit(seq);
@@ -352,7 +344,7 @@ export function LiveRendererComparison() {
   const [intervalMs, setIntervalMs] = useState(DEFAULT_INTERVAL_MS);
   const [repeatCount, setRepeatCount] = useState(DEFAULT_REPEAT);
   const [scoredRuns, setScoredRuns] = useState(DEFAULT_SCORED_RUNS);
-  const [orderMode, setOrderMode] = useState<OrderMode>("rotate");
+  const [orderMode, setOrderMode] = useState<OrderMode>("fixed");
   const [chartMetric, setChartMetric] = useState<ChartMetric>("final");
   const [chartLayout, setChartLayout] = useState<ChartLayout>("split");
   const [profile, setProfile] = useState<BenchmarkProfile>("parity-gfm");
@@ -373,7 +365,6 @@ export function LiveRendererComparison() {
   const [statsRevision, setStatsRevision] = useState(0);
 
   const streamHandleRef = useRef<StreamingMarkdownHandle | null>(null);
-  const [streamHandleReady, setStreamHandleReady] = useState(false);
 
   const engineOrder = useMemo(() => ENGINE_META.map((engine) => engine.key), []);
   const activeEngineRef = useRef<EngineKey | null>(null);
@@ -414,6 +405,8 @@ export function LiveRendererComparison() {
   const fixture = useMemo(() => buildFixture(repeatCount), [repeatCount]);
   const totalChars = fixture.length;
   const totalDeltas = Math.max(1, Math.ceil(totalChars / chunkChars));
+  const totalMeasuredEnginePasses = scoredRuns * engineOrder.length;
+  const totalEnginePassesWithWarmup = totalMeasuredEnginePasses * 2;
   const streamMdxFeatures = useMemo(
     () =>
       profile === "parity-gfm"
@@ -827,6 +820,9 @@ export function LiveRendererComparison() {
   }, [stopTimer]);
 
   const startRun = useCallback(() => {
+    if (!isWorkerReady(streamHandleRef.current)) {
+      return;
+    }
     resetState();
     runStartAtRef.current = performance.now();
     runEndAtRef.current = null;
@@ -861,6 +857,11 @@ export function LiveRendererComparison() {
     setProfile(CI_PROFILE.profile);
     setChartLayout(CI_PROFILE.chartLayout);
     setChartMetric("final");
+  }, []);
+
+  const applyExploreDefaults = useCallback(() => {
+    setScoredRuns(DEFAULT_SCORED_RUNS);
+    setOrderMode("fixed");
   }, []);
 
   useEffect(() => {
@@ -1169,6 +1170,8 @@ export function LiveRendererComparison() {
           <div>
             Run: {activeRun.toLocaleString()} / {(runState === "idle" ? scoredRuns : runCountRef.current).toLocaleString()}
           </div>
+          <div>Measured passes: {totalMeasuredEnginePasses.toLocaleString()}</div>
+          <div>Total passes incl. warmup: {totalEnginePassesWithWarmup.toLocaleString()}</div>
           <div>
             Delta: {activeSeq.toLocaleString()} / {totalDeltas.toLocaleString()}
           </div>
@@ -1221,7 +1224,10 @@ export function LiveRendererComparison() {
           <Button
             size="sm"
             variant={methodologyMode === "explore" ? "default" : "outline"}
-            onClick={() => setMethodologyMode("explore")}
+            onClick={() => {
+              setMethodologyMode("explore");
+              applyExploreDefaults();
+            }}
             disabled={runState === "running" || runState === "paused"}
           >
             Explore
@@ -1235,6 +1241,9 @@ export function LiveRendererComparison() {
         <div className="mt-2 text-muted">
           Active profile snapshot: chunk={chunkChars}, interval={intervalMs}ms, repeats={repeatCount}, runs={scoredRuns}, order={orderMode},
           workload={profile}. {isCiProfile ? "Matches CI profile." : "Differs from CI profile."}
+        </div>
+        <div className="mt-1 text-muted">
+          A scored run is one full cycle across all renderers (then repeated for the configured run count).
         </div>
       </div>
 
@@ -1269,7 +1278,7 @@ export function LiveRendererComparison() {
       </div>
       <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
         <ControlSlider
-          label="Scored runs"
+          label="Scored run cycles"
           value={scoredRuns}
           min={1}
           max={7}
@@ -1360,7 +1369,7 @@ export function LiveRendererComparison() {
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        <Button size="sm" onClick={startRun} disabled={!streamHandleReady || runState === "running" || runState === "paused"}>
+        <Button size="sm" onClick={startRun} disabled={runState === "running" || runState === "paused"}>
           {methodologyMode === "ci-locked" ? "Start CI run" : "Start run"}
         </Button>
         <Button size="sm" variant="outline" onClick={pauseRun} disabled={runState !== "running"}>
@@ -1560,7 +1569,6 @@ export function LiveRendererComparison() {
               seq={activeEngine === "streammdx" ? activeSeq : 0}
               onCommit={handleStreamMdxCommit}
               streamHandleRef={streamHandleRef}
-              setStreamHandleReady={setStreamHandleReady}
               features={streamMdxFeatures}
               scheduling={streamMdxScheduling}
             />

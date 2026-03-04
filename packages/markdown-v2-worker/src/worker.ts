@@ -1938,7 +1938,11 @@ function diffNodeSnapshot(blockId: string, prevNode: NodeSnapshot, nextNode: Nod
   if (prevNode.type === "code" && nextNode.type === "code") {
     const commonLength = Math.min(prevChildren.length, nextChildren.length);
     let divergeIndex = 0;
-    while (divergeIndex < commonLength && prevChildren[divergeIndex].id === nextChildren[divergeIndex].id) {
+    while (
+      divergeIndex < commonLength &&
+      prevChildren[divergeIndex].id === nextChildren[divergeIndex].id &&
+      prevChildren[divergeIndex].type === nextChildren[divergeIndex].type
+    ) {
       diffNodeSnapshot(blockId, prevChildren[divergeIndex], nextChildren[divergeIndex], patches, metrics);
       divergeIndex++;
     }
@@ -1946,7 +1950,7 @@ function diffNodeSnapshot(blockId: string, prevNode: NodeSnapshot, nextNode: Nod
     const onlyAppend =
       divergeIndex === prevChildren.length &&
       nextChildren.length >= prevChildren.length &&
-      prevChildren.every((child, idx) => child.id === nextChildren[idx].id);
+      prevChildren.every((child, idx) => child.id === nextChildren[idx].id && child.type === nextChildren[idx].type);
 
     if (onlyAppend && nextChildren.length > prevChildren.length) {
       const startIndex = prevChildren.length;
@@ -1970,13 +1974,17 @@ function diffNodeSnapshot(blockId: string, prevNode: NodeSnapshot, nextNode: Nod
 
   const minLen = Math.min(prevChildren.length, nextChildren.length);
   let prefix = 0;
-  while (prefix < minLen && prevChildren[prefix].id === nextChildren[prefix].id) {
+  while (prefix < minLen && prevChildren[prefix].id === nextChildren[prefix].id && prevChildren[prefix].type === nextChildren[prefix].type) {
     diffNodeSnapshot(blockId, prevChildren[prefix], nextChildren[prefix], patches, metrics);
     prefix++;
   }
 
   let suffix = 0;
-  while (suffix < minLen - prefix && prevChildren[prevChildren.length - 1 - suffix].id === nextChildren[nextChildren.length - 1 - suffix].id) {
+  while (
+    suffix < minLen - prefix &&
+    prevChildren[prevChildren.length - 1 - suffix].id === nextChildren[nextChildren.length - 1 - suffix].id &&
+    prevChildren[prevChildren.length - 1 - suffix].type === nextChildren[nextChildren.length - 1 - suffix].type
+  ) {
     const prevIdx = prevChildren.length - 1 - suffix;
     const nextIdx = nextChildren.length - 1 - suffix;
     diffNodeSnapshot(blockId, prevChildren[prevIdx], nextChildren[nextIdx], patches, metrics);
@@ -1991,8 +1999,8 @@ function diffNodeSnapshot(blockId: string, prevNode: NodeSnapshot, nextNode: Nod
   }
 
   if (prevMid.length === nextMid.length && prevMid.length > 0) {
-    const prevIds = prevMid.map((child) => child.id);
-    const nextIds = nextMid.map((child) => child.id);
+    const prevIds = prevMid.map((child) => `${child.id}:${child.type}`);
+    const nextIds = nextMid.map((child) => `${child.id}:${child.type}`);
     if (haveSameMultiset(prevIds, nextIds)) {
       const currentOrder = prevIds.slice();
       const reorderOps: Array<{ from: number; to: number }> = [];
@@ -2021,9 +2029,9 @@ function diffNodeSnapshot(blockId: string, prevNode: NodeSnapshot, nextNode: Nod
         });
       }
 
-      const prevMap = new Map(prevMid.map((child) => [child.id, child]));
+      const prevMap = new Map(prevMid.map((child) => [`${child.id}:${child.type}`, child]));
       for (const child of nextMid) {
-        const previous = prevMap.get(child.id);
+        const previous = prevMap.get(`${child.id}:${child.type}`);
         if (previous) {
           diffNodeSnapshot(blockId, previous, child, patches, metrics);
         }
@@ -2099,7 +2107,7 @@ function diffListChildren(
 
   // Diff shared prefix first to propagate nested updates.
   let prefix = 0;
-  while (prefix < commonLength && prevChildren[prefix].id === nextChildren[prefix].id) {
+  while (prefix < commonLength && prevChildren[prefix].id === nextChildren[prefix].id && prevChildren[prefix].type === nextChildren[prefix].type) {
     diffNodeSnapshot(blockId, prevChildren[prefix], nextChildren[prefix], patches, metrics);
     prefix++;
   }
@@ -2135,7 +2143,11 @@ function diffListChildren(
 
   // Compute suffix after trimming already handled prefix.
   let suffix = 0;
-  while (suffix < commonLength - prefix && prevChildren[prevLength - 1 - suffix].id === nextChildren[nextLength - 1 - suffix].id) {
+  while (
+    suffix < commonLength - prefix &&
+    prevChildren[prevLength - 1 - suffix].id === nextChildren[nextLength - 1 - suffix].id &&
+    prevChildren[prevLength - 1 - suffix].type === nextChildren[nextLength - 1 - suffix].type
+  ) {
     const prevIdx = prevLength - 1 - suffix;
     const nextIdx = nextLength - 1 - suffix;
     diffNodeSnapshot(blockId, prevChildren[prevIdx], nextChildren[nextIdx], patches, metrics);
@@ -2183,7 +2195,11 @@ function diffListChildren(
 
   const sharedMid = Math.min(prevMid.length, nextMid.length);
   let midPrefix = 0;
-  while (midPrefix < sharedMid && prevMid[midPrefix].id === nextMid[midPrefix].id) {
+  while (
+    midPrefix < sharedMid &&
+    prevMid[midPrefix].id === nextMid[midPrefix].id &&
+    prevMid[midPrefix].type === nextMid[midPrefix].type
+  ) {
     diffNodeSnapshot(blockId, prevMid[midPrefix], nextMid[midPrefix], patches, metrics);
     midPrefix++;
   }
@@ -2218,7 +2234,10 @@ function diffListChildren(
   const remainingPrevMid = prevMid.slice(midPrefix);
   const remainingNextMid = nextMid.slice(midPrefix);
 
-  if (remainingPrevMid.length === remainingNextMid.length && remainingPrevMid.every((child, idx) => child.id === remainingNextMid[idx].id)) {
+  if (
+    remainingPrevMid.length === remainingNextMid.length &&
+    remainingPrevMid.every((child, idx) => child.id === remainingNextMid[idx].id && child.type === remainingNextMid[idx].type)
+  ) {
     for (let idx = 0; idx < remainingPrevMid.length; idx++) {
       diffNodeSnapshot(blockId, remainingPrevMid[idx], remainingNextMid[idx], patches, metrics);
     }

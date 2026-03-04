@@ -2,6 +2,7 @@ import { parser as mdParser } from "@lezer/markdown";
 import { extractCodeLines, extractCodeWrapperAttributes, extractHighlightedLines, stripCodeFence } from "./code-highlighting";
 import { InlineParser } from "./inline-parser";
 import { extractMixedContentSegments } from "./mixed-content";
+import { prepareInlineStreamingContent } from "./streaming/inline-streaming";
 import type {
   Block,
   InlineNode,
@@ -76,6 +77,37 @@ export function createBlockSnapshot(block: Block): NodeSnapshot {
 }
 
 const listInlineParser = new InlineParser();
+const LIST_STREAMING_ANTICIPATION = {
+  inline: true,
+  mathInline: true,
+  mathBlock: true,
+  regex: true,
+} as const;
+
+function parseListInline(raw: string, isFinalized: boolean): InlineNode[] {
+  if (isFinalized) {
+    return listInlineParser.parse(raw);
+  }
+
+  const prepared = prepareInlineStreamingContent(raw, {
+    formatAnticipation: LIST_STREAMING_ANTICIPATION,
+    math: true,
+  });
+
+  if (prepared.kind === "raw") {
+    return [{ kind: "text", text: raw }];
+  }
+
+  let content = prepared.content;
+  if (LIST_STREAMING_ANTICIPATION.regex) {
+    const regexAppend = listInlineParser.getRegexAnticipationAppend(raw);
+    if (regexAppend) {
+      content += regexAppend;
+    }
+  }
+
+  return listInlineParser.parse(content, { cache: false });
+}
 
 function enrichListSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot {
   const raw = block.payload.raw ?? "";
@@ -158,7 +190,7 @@ function buildListItemSnapshot(
       }
       if (name === "Paragraph") {
         const paragraphRaw = raw.slice(cursor.from, cursor.to);
-        const paragraphData = processListItemParagraph(paragraphRaw);
+        const paragraphData = processListItemParagraph(paragraphRaw, block.isFinalized);
         const parsedInline = paragraphData.inline;
         if (!paragraphHandled) {
           inlineNodes = parsedInline;
@@ -190,7 +222,10 @@ function buildListItemSnapshot(
       } else if (name === "BulletList" || name === "OrderedList") {
         const nestedId = `${id}::list:${subListIndex++}`;
         const nestedOrdered = name === "OrderedList";
-        childSnapshots.push(buildListNodeSnapshot(block, cursor.node, nestedOrdered, nestedId, baseOffset, raw));
+        const nestedList = buildListNodeSnapshot(block, cursor.node, nestedOrdered, nestedId, baseOffset, raw);
+        if (nestedList) {
+          childSnapshots.push(nestedList);
+        }
       } else if (name === "Blockquote") {
         const quoteId = `${id}::blockquote:${blockquoteIndex++}`;
         childSnapshots.push(buildBlockquoteSnapshot(block, cursor.node, quoteId, baseOffset, raw));
@@ -235,11 +270,11 @@ interface ListItemParagraphData {
   task?: { checked: boolean };
 }
 
-function processListItemParagraph(raw: string): ListItemParagraphData {
+function processListItemParagraph(raw: string, isFinalized: boolean): ListItemParagraphData {
   const normalized = normalizeParagraphText(raw);
   const { content, task } = stripTaskMarker(normalized);
-  const inline = listInlineParser.parse(content);
-  const segments = extractMixedContentSegments(content, undefined, (value) => listInlineParser.parse(value));
+  const inline = parseListInline(content, isFinalized);
+  const segments = extractMixedContentSegments(content, undefined, (value) => parseListInline(value, isFinalized));
   return {
     inline,
     segments,
@@ -338,7 +373,11 @@ function buildHeadingSnapshot(block: Block, headingNode: any, id: string, baseOf
   return createBlockSnapshot(headingBlock);
 }
 
-function buildListNodeSnapshot(block: Block, listNode: any, ordered: boolean, id: string, baseOffset: number, raw: string): NodeSnapshot {
+function buildListNodeSnapshot(block: Block, listNode: any, ordered: boolean, id: string, baseOffset: number, raw: string): NodeSnapshot | null {
+  const children = buildListItemSnapshots(block, listNode, ordered, id, baseOffset, raw);
+  if (children.length === 0) {
+    return null;
+  }
   return {
     id,
     type: "list",
@@ -346,7 +385,7 @@ function buildListNodeSnapshot(block: Block, listNode: any, ordered: boolean, id
       ordered,
     },
     range: createRange(baseOffset + listNode.from, baseOffset + listNode.to),
-    children: buildListItemSnapshots(block, listNode, ordered, id, baseOffset, raw),
+    children,
   };
 }
 

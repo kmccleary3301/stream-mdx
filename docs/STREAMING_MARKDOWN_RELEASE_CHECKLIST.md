@@ -35,6 +35,8 @@ Use this checklist when cutting releases from the `stream-mdx/` repo. It assumes
    ```bash
    npm run test:regression:html
    npm run test:regression:styles
+   npm run test:runtime:worker-races
+   npm run test:reliability:packages
    ```
 7. **Perf baseline capture (optional, local)**
    ```bash

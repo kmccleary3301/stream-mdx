@@ -1,6 +1,7 @@
 import { Link } from "next-view-transitions";
 
 import { LiveRendererComparison } from "@/components/benchmarks/live-renderer-comparison";
+import { StaticRenderComparison } from "@/components/benchmarks/static-render-comparison";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export const dynamic = "force-static";
@@ -38,6 +39,7 @@ export default function BenchmarksPage() {
       </header>
 
       <LiveRendererComparison />
+      <StaticRenderComparison />
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
         <div className="rounded-lg border border-border/40 bg-background p-6">
