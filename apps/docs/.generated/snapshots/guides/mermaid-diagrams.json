@@ -1,9 +1,9 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-02-11T20:25:58.616Z",
-  "hash": "636e542dbf3eefc4cbec6137acce8bb397724a8d2690deb0cb56cccf299e00a1",
-  "contentHash": "898c4f0c93c786db2e15bc47ebdb491a08bdb5cf08fc04ec49111cd6a3aa52f1",
+  "createdAt": "2026-03-08T20:59:03.113Z",
+  "hash": "85071972d2461272f3b9353f9335940ba4c299dee2b5d8762f8b40342ffaf644",
+  "contentHash": "f6d52f423918aa47431d463a3aa3b527eb49db852b06772b44e58f5276a62178",
   "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
   "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
   "blocks": [
@@ -31,14 +31,32 @@
       }
     },
     {
-      "id": "706a1d3e",
+      "id": "7d1dd242",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Mermaid is available as an optional addon so teams can opt in only when diagram rendering is needed.",
+        "range": {
+          "from": 20,
+          "to": 120
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Mermaid is available as an optional addon so teams can opt in only when diagram rendering is needed."
+          }
+        ]
+      }
+    },
+    {
+      "id": "4947a841",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Why Mermaid is optional",
         "range": {
-          "from": 20,
-          "to": 46
+          "from": 122,
+          "to": 148
         },
         "meta": {
           "headingLevel": 2,
@@ -54,32 +72,50 @@
       }
     },
     {
-      "id": "396b0e84",
-      "type": "paragraph",
+      "id": "1db8c428",
+      "type": "list",
       "isFinalized": true,
       "payload": {
-        "raw": "Mermaid can be heavy, so StreamMDX keeps it out of the default bundle. The addon lets you opt in only when you need diagram rendering.",
+        "raw": "- Keeps default bundle size lower.\n- Avoids extra parsing/rendering cost in apps that do not use diagrams.\n- Lets teams feature-flag diagram support by route or audience.",
         "range": {
-          "from": 48,
-          "to": 182
+          "from": 150,
+          "to": 320
         },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "Mermaid can be heavy, so StreamMDX keeps it out of the default bundle. The addon lets you opt in only when you need diagram rendering."
-          }
-        ]
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Keeps default bundle size lower."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Avoids extra parsing/rendering cost in apps that do not use diagrams."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Lets teams feature-flag diagram support by route or audience."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
       }
     },
     {
-      "id": "2b892cfd",
+      "id": "73110dc3",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Install",
         "range": {
-          "from": 184,
-          "to": 194
+          "from": 322,
+          "to": 332
         },
         "meta": {
           "headingLevel": 2,
@@ -95,14 +131,14 @@
       }
     },
     {
-      "id": "429ab23a",
+      "id": "4c5892c0",
       "type": "code",
       "isFinalized": true,
       "payload": {
         "raw": "```bash\nnpm install @stream-mdx/mermaid\n```",
         "range": {
-          "from": 196,
-          "to": 239
+          "from": 334,
+          "to": 377
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> install</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> @stream-mdx/mermaid</span></span></code></pre>",
         "meta": {
@@ -112,14 +148,14 @@
       }
     },
     {
-      "id": "327ace3f",
+      "id": "465f4c65",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Register the component",
         "range": {
-          "from": 241,
-          "to": 266
+          "from": 379,
+          "to": 404
         },
         "meta": {
           "headingLevel": 2,
@@ -135,19 +171,19 @@
       }
     },
     {
-      "id": "6731f524",
+      "id": "1de0d222",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "Mermaid is implemented as a block renderer for `mermaid` code fences:",
+        "raw": "Mermaid rendering is provided via a block component mapped to `mermaid` code fences.",
         "range": {
-          "from": 268,
-          "to": 337
+          "from": 406,
+          "to": 490
         },
         "inline": [
           {
             "kind": "text",
-            "text": "Mermaid is implemented as a block renderer for "
+            "text": "Mermaid rendering is provided via a block component mapped to "
           },
           {
             "kind": "code",
@@ -155,86 +191,77 @@
           },
           {
             "kind": "text",
-            "text": " code fences:"
+            "text": " code fences."
           }
         ]
       }
     },
     {
-      "id": "54e0cddb",
+      "id": "11ca8e19",
       "type": "code",
       "isFinalized": true,
       "payload": {
-        "raw": "```tsx\nimport { StreamingMarkdown } from \"stream-mdx\";\nimport { MermaidBlock } from \"@stream-mdx/mermaid\";\n\n<StreamingMarkdown\n  text={content}\n  components={{\n    mermaid: MermaidBlock,\n  }}\n/>\n```",
+        "raw": "```tsx\nimport { StreamingMarkdown } from \"stream-mdx\";\nimport { MermaidBlock } from \"@stream-mdx/mermaid\";\n\n<StreamingMarkdown\n  text={content}\n  worker=\"/workers/markdown-worker.js\"\n  components={{\n    mermaid: MermaidBlock,\n  }}\n  features={{\n    html: true,\n    tables: true,\n    math: true,\n    mdx: true,\n  }}\n/>;\n```",
         "range": {
-          "from": 339,
-          "to": 537
+          "from": 492,
+          "to": 814
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { StreamingMarkdown } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { MermaidBlock } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/mermaid\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content}</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  components</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    mermaid: MermaidBlock,</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }}</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/></span></span></code></pre>",
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { StreamingMarkdown } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { MermaidBlock } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/mermaid\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content}</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  components</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    mermaid: MermaidBlock,</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }}</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    tables: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    math: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"15\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }}</span></span>\n<span class=\"line\" data-line=\"16\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/>;</span></span></code></pre>",
         "meta": {
           "lang": "tsx",
-          "code": "import { StreamingMarkdown } from \"stream-mdx\";\nimport { MermaidBlock } from \"@stream-mdx/mermaid\";\n\n<StreamingMarkdown\n  text={content}\n  components={{\n    mermaid: MermaidBlock,\n  }}\n/>"
+          "code": "import { StreamingMarkdown } from \"stream-mdx\";\nimport { MermaidBlock } from \"@stream-mdx/mermaid\";\n\n<StreamingMarkdown\n  text={content}\n  worker=\"/workers/markdown-worker.js\"\n  components={{\n    mermaid: MermaidBlock,\n  }}\n  features={{\n    html: true,\n    tables: true,\n    math: true,\n    mdx: true,\n  }}\n/>;"
         }
       }
     },
     {
-      "id": "60fd1295",
+      "id": "47af2993",
       "type": "heading",
       "isFinalized": true,
       "payload": {
-        "raw": "Example fence",
+        "raw": "Authoring example",
         "range": {
-          "from": 539,
-          "to": 555
+          "from": 816,
+          "to": 836
         },
         "meta": {
           "headingLevel": 2,
-          "headingText": "Example fence",
-          "headingId": "example-fence"
+          "headingText": "Authoring example",
+          "headingId": "authoring-example"
         },
         "inline": [
           {
             "kind": "text",
-            "text": "Example fence"
+            "text": "Authoring example"
           }
         ]
       }
     },
     {
-      "id": "383f39c1",
-      "type": "paragraph",
+      "id": "5a91d597",
+      "type": "code",
       "isFinalized": true,
       "payload": {
-        "raw": "Use a Mermaid code fence (three backticks + `mermaid`) like the rendered example below.",
+        "raw": "````md\n```mermaid\ngraph TD\n  A[User] --> B[StreamMDX]\n  B --> C[Worker]\n  C --> D[Renderer]\n```\n````",
         "range": {
-          "from": 557,
-          "to": 644
+          "from": 838,
+          "to": 938
         },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "Use a Mermaid code fence (three backticks + "
-          },
-          {
-            "kind": "code",
-            "text": "mermaid"
-          },
-          {
-            "kind": "text",
-            "text": ") like the rendered example below."
-          }
-        ]
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>```mermaid</span></span>\n<span class=\"line\" data-line=\"2\"><span>graph TD</span></span>\n<span class=\"line\" data-line=\"3\"><span>  A[User] --> B[StreamMDX]</span></span>\n<span class=\"line\" data-line=\"4\"><span>  B --> C[Worker]</span></span>\n<span class=\"line\" data-line=\"5\"><span>  C --> D[Renderer]</span></span>\n<span class=\"line\" data-line=\"6\"><span>```</span></span></code></pre>",
+        "meta": {
+          "lang": "`md",
+          "code": "```mermaid\ngraph TD\n  A[User] --> B[StreamMDX]\n  B --> C[Worker]\n  C --> D[Renderer]\n```"
+        }
       }
     },
     {
-      "id": "6b63c448",
+      "id": "4f88bd7b",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Rendered example",
         "range": {
-          "from": 646,
-          "to": 665
+          "from": 940,
+          "to": 959
         },
         "meta": {
           "headingLevel": 2,
@@ -250,14 +277,14 @@
       }
     },
     {
-      "id": "27cd54fd",
+      "id": "5533c7e0",
       "type": "code",
       "isFinalized": true,
       "payload": {
         "raw": "```mermaid\ngraph TD\n  A[User] --> B[StreamMDX]\n  B --> C[Worker]\n  C --> D[Renderer]\n```",
         "range": {
-          "from": 667,
-          "to": 755
+          "from": 961,
+          "to": 1049
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"mermaid\"><code data-language=\"mermaid\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">graph TD</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  A[User] --> B[StreamMDX]</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  B --> C[Worker]</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  C --> D[Renderer]</span></span></code></pre>",
         "meta": {
@@ -267,14 +294,14 @@
       }
     },
     {
-      "id": "7729a8d7",
+      "id": "573bccfb",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "UX details",
         "range": {
-          "from": 757,
-          "to": 770
+          "from": 1051,
+          "to": 1064
         },
         "meta": {
           "headingLevel": 2,
@@ -290,55 +317,355 @@
       }
     },
     {
-      "id": "344d5fc6",
+      "id": "6017505f",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "The Mermaid block renderer supports a diagram/code toggle. This keeps the raw source accessible while still showing the rendered diagram.",
+        "raw": "The Mermaid block renderer includes a code/diagram toggle by default.",
         "range": {
-          "from": 772,
-          "to": 909
+          "from": 1066,
+          "to": 1135
         },
         "inline": [
           {
             "kind": "text",
-            "text": "The Mermaid block renderer supports a diagram/code toggle. This keeps the raw source accessible while still showing the rendered diagram."
+            "text": "The Mermaid block renderer includes a code/diagram toggle by default."
           }
         ]
       }
     },
     {
-      "id": "1a55e5bf",
+      "id": "3395e67c",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "If you want a default view, wrap it:",
+        "raw": "Use `defaultView` to control first render mode:",
         "range": {
-          "from": 911,
-          "to": 947
+          "from": 1137,
+          "to": 1184
         },
         "inline": [
           {
             "kind": "text",
-            "text": "If you want a default view, wrap it:"
+            "text": "Use "
+          },
+          {
+            "kind": "code",
+            "text": "defaultView"
+          },
+          {
+            "kind": "text",
+            "text": " to control first render mode:"
           }
         ]
       }
     },
     {
-      "id": "6f1e9aa",
+      "id": "10ed097c",
       "type": "code",
       "isFinalized": true,
       "payload": {
         "raw": "```tsx\ncomponents={{\n  mermaid: (props) => <MermaidBlock {...props} defaultView=\"diagram\" />,\n}}\n```",
         "range": {
-          "from": 949,
-          "to": 1049
+          "from": 1186,
+          "to": 1286
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">components</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  mermaid</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: (</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">props</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">MermaidBlock</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">...</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">props} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">defaultView</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"diagram\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> />,</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}}</span></span></code></pre>",
         "meta": {
           "lang": "tsx",
           "code": "components={{\n  mermaid: (props) => <MermaidBlock {...props} defaultView=\"diagram\" />,\n}}"
+        }
+      }
+    },
+    {
+      "id": "764a0da1",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Recommendations:",
+        "range": {
+          "from": 1288,
+          "to": 1304
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Recommendations:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "3ff55aac",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Keep source code view available for debugging and copy/paste.\n- Use overflow-safe wrappers on narrow screens.\n- Prefer diagram view only for docs pages where the diagram is primary content.",
+        "range": {
+          "from": 1306,
+          "to": 1497
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Keep source code view available for debugging and copy/paste."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Use overflow-safe wrappers on narrow screens."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Prefer diagram view only for docs pages where the diagram is primary content."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "1e17d483",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Performance and safety notes",
+        "range": {
+          "from": 1499,
+          "to": 1530
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Performance and safety notes",
+          "headingId": "performance-and-safety-notes"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Performance and safety notes"
+          }
+        ]
+      }
+    },
+    {
+      "id": "27ac4e59",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Mermaid rendering should remain opt-in and behind a feature toggle in user-facing apps.\n- Keep sanitization enabled for surrounding HTML content.\n- Include one regression snapshot for a representative Mermaid page.",
+        "range": {
+          "from": 1532,
+          "to": 1748
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Mermaid rendering should remain opt-in and behind a feature toggle in user-facing apps."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Keep sanitization enabled for surrounding HTML content."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Include one regression snapshot for a representative Mermaid page."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "2ac7bebf",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Troubleshooting",
+        "range": {
+          "from": 1750,
+          "to": 1768
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Troubleshooting",
+          "headingId": "troubleshooting"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Troubleshooting"
+          }
+        ]
+      }
+    },
+    {
+      "id": "38621c23",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- **No diagram appears**: verify `@stream-mdx/mermaid` is installed and registered in `components`.\n- **Hydration mismatch**: ensure wrappers/components around Mermaid are deterministic.\n- **Layout overflow**: add responsive container styles around the diagram block.",
+        "range": {
+          "from": 1770,
+          "to": 2037
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "No diagram appears"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": verify "
+              },
+              {
+                "kind": "code",
+                "text": "@stream-mdx/mermaid"
+              },
+              {
+                "kind": "text",
+                "text": " is installed and registered in "
+              },
+              {
+                "kind": "code",
+                "text": "components"
+              },
+              {
+                "kind": "text",
+                "text": "."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Hydration mismatch"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": ensure wrappers/components around Mermaid are deterministic."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Layout overflow"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": add responsive container styles around the diagram block."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "187e0824",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Next steps",
+        "range": {
+          "from": 2039,
+          "to": 2052
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Next steps",
+          "headingId": "next-steps"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Next steps"
+          }
+        ]
+      }
+    },
+    {
+      "id": "21c104bf",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- [MDX and HTML in StreamMDX](/docs/guides/mdx-and-html)\n- [Testing and baselines](/docs/guides/testing-and-baselines)\n- [Performance and backpressure](/docs/guides/performance-and-backpressure)",
+        "range": {
+          "from": 2054,
+          "to": 2248
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "link",
+                "href": "/docs/guides/mdx-and-html",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "MDX and HTML in StreamMDX"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "link",
+                "href": "/docs/guides/testing-and-baselines",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Testing and baselines"
+                  }
+                ]
+              }
+            ],
+            [
+              {
+                "kind": "link",
+                "href": "/docs/guides/performance-and-backpressure",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Performance and backpressure"
+                  }
+                ]
+              }
+            ]
+          ],
+          "mathEnabled": true
         }
       }
     }
@@ -354,37 +681,55 @@
       "id": "why-mermaid-is-optional",
       "text": "Why Mermaid is optional",
       "level": 2,
-      "blockId": "706a1d3e"
+      "blockId": "4947a841"
     },
     {
       "id": "install",
       "text": "Install",
       "level": 2,
-      "blockId": "2b892cfd"
+      "blockId": "73110dc3"
     },
     {
       "id": "register-the-component",
       "text": "Register the component",
       "level": 2,
-      "blockId": "327ace3f"
+      "blockId": "465f4c65"
     },
     {
-      "id": "example-fence",
-      "text": "Example fence",
+      "id": "authoring-example",
+      "text": "Authoring example",
       "level": 2,
-      "blockId": "60fd1295"
+      "blockId": "47af2993"
     },
     {
       "id": "rendered-example",
       "text": "Rendered example",
       "level": 2,
-      "blockId": "6b63c448"
+      "blockId": "4f88bd7b"
     },
     {
       "id": "ux-details",
       "text": "UX details",
       "level": 2,
-      "blockId": "7729a8d7"
+      "blockId": "573bccfb"
+    },
+    {
+      "id": "performance-and-safety-notes",
+      "text": "Performance and safety notes",
+      "level": 2,
+      "blockId": "1e17d483"
+    },
+    {
+      "id": "troubleshooting",
+      "text": "Troubleshooting",
+      "level": 2,
+      "blockId": "2ac7bebf"
+    },
+    {
+      "id": "next-steps",
+      "text": "Next steps",
+      "level": 2,
+      "blockId": "187e0824"
     }
   ],
   "init": {

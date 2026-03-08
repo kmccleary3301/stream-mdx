@@ -1,9 +1,9 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-02-11T20:25:58.060Z",
-  "hash": "ca2145338a9c574768ac22cf6f69e4a94bd930f1ede8bc80e8eb63c61e45318c",
-  "contentHash": "f2787bb1491544fd2e4ef2da982ee726fc8014e25e7478b49e23f543a8ad4f0e",
+  "createdAt": "2026-03-08T20:59:02.566Z",
+  "hash": "d3fda060d0cde6bab0691fdba00db6dd0473183fbbbe666a2d3d9160c3b5b5c3",
+  "contentHash": "f24d4af807c5e633cd823218d20ec060d95a6c291e3f43c03c4cc157261c9326",
   "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
   "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
   "blocks": [
@@ -31,63 +31,121 @@
       }
     },
     {
-      "id": "7e492645",
-      "type": "heading",
-      "isFinalized": true,
-      "payload": {
-        "raw": "Hosted worker bundle",
-        "range": {
-          "from": 27,
-          "to": 50
-        },
-        "meta": {
-          "headingLevel": 2,
-          "headingText": "Hosted worker bundle",
-          "headingId": "hosted-worker-bundle"
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "Hosted worker bundle"
-          }
-        ]
-      }
-    },
-    {
-      "id": "3c3f7ca3",
+      "id": "6adceefb",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "For production, host the worker bundle from static assets. This avoids `blob:` CSP requirements and keeps your policy strict.",
+        "raw": "This guide covers a production deployment pattern for StreamMDX with strict CSP, hosted worker assets, and controlled HTML rendering.",
         "range": {
-          "from": 52,
-          "to": 177
+          "from": 27,
+          "to": 160
         },
         "inline": [
           {
             "kind": "text",
-            "text": "For production, host the worker bundle from static assets. This avoids "
-          },
-          {
-            "kind": "code",
-            "text": "blob:"
-          },
-          {
-            "kind": "text",
-            "text": " CSP requirements and keeps your policy strict."
+            "text": "This guide covers a production deployment pattern for StreamMDX with strict CSP, hosted worker assets, and controlled HTML rendering."
           }
         ]
       }
     },
     {
-      "id": "58b76121",
+      "id": "1a6d6cbd",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Recommended production topology",
+        "range": {
+          "from": 162,
+          "to": 196
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Recommended production topology",
+          "headingId": "recommended-production-topology"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Recommended production topology"
+          }
+        ]
+      }
+    },
+    {
+      "id": "10789dc",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "1. Build your app and StreamMDX worker bundle in CI.\n2. Copy `markdown-worker.js` into static assets.\n3. Serve docs/app pages and worker from the same origin.\n4. Keep CSP strict (`worker-src 'self'`) and avoid `blob:`.",
+        "range": {
+          "from": 198,
+          "to": 416
+        },
+        "meta": {
+          "ordered": true,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Build your app and StreamMDX worker bundle in CI."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Copy "
+              },
+              {
+                "kind": "code",
+                "text": "markdown-worker.js"
+              },
+              {
+                "kind": "text",
+                "text": " into static assets."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Serve docs/app pages and worker from the same origin."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Keep CSP strict ("
+              },
+              {
+                "kind": "code",
+                "text": "worker-src 'self'"
+              },
+              {
+                "kind": "text",
+                "text": ") and avoid "
+              },
+              {
+                "kind": "code",
+                "text": "blob:"
+              },
+              {
+                "kind": "text",
+                "text": "."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "5140ab99",
       "type": "code",
       "isFinalized": true,
       "payload": {
         "raw": "```bash\nmkdir -p public/workers\ncp node_modules/@stream-mdx/worker/dist/hosted/markdown-worker.js public/workers/markdown-worker.js\n```",
         "range": {
-          "from": 179,
-          "to": 314
+          "from": 418,
+          "to": 553
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">mkdir</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> -p</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> public/workers</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">cp</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> node_modules/@stream-mdx/worker/dist/hosted/markdown-worker.js</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> public/workers/markdown-worker.js</span></span></code></pre>",
         "meta": {
@@ -97,32 +155,32 @@
       }
     },
     {
-      "id": "370f7100",
+      "id": "62089f43",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "Then point StreamMDX at it:",
+        "raw": "Then reference it explicitly:",
         "range": {
-          "from": 316,
-          "to": 343
+          "from": 555,
+          "to": 584
         },
         "inline": [
           {
             "kind": "text",
-            "text": "Then point StreamMDX at it:"
+            "text": "Then reference it explicitly:"
           }
         ]
       }
     },
     {
-      "id": "7d0c5960",
+      "id": "2803c601",
       "type": "code",
       "isFinalized": true,
       "payload": {
         "raw": "```tsx\n<StreamingMarkdown worker=\"/workers/markdown-worker.js\" />\n```",
         "range": {
-          "from": 345,
-          "to": 414
+          "from": 586,
+          "to": 655
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> /></span></span></code></pre>",
         "meta": {
@@ -132,188 +190,183 @@
       }
     },
     {
-      "id": "64be0b69",
+      "id": "c0e5b98",
       "type": "heading",
       "isFinalized": true,
       "payload": {
-        "raw": "CSP guidance",
+        "raw": "CSP baseline",
         "range": {
-          "from": 416,
-          "to": 431
+          "from": 657,
+          "to": 672
         },
         "meta": {
           "headingLevel": 2,
-          "headingText": "CSP guidance",
-          "headingId": "csp-guidance"
+          "headingText": "CSP baseline",
+          "headingId": "csp-baseline"
         },
         "inline": [
           {
             "kind": "text",
-            "text": "CSP guidance"
+            "text": "CSP baseline"
           }
         ]
       }
     },
     {
-      "id": "7647a9fc",
+      "id": "6f8ff3b",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "If you serve the hosted bundle from your own origin, your CSP can be minimal:",
+        "raw": "A conservative baseline for most deployments:",
         "range": {
-          "from": 433,
-          "to": 510
+          "from": 674,
+          "to": 719
         },
         "inline": [
           {
             "kind": "text",
-            "text": "If you serve the hosted bundle from your own origin, your CSP can be minimal:"
+            "text": "A conservative baseline for most deployments:"
           }
         ]
       }
     },
     {
-      "id": "511b3b42",
+      "id": "4e277ee2",
       "type": "code",
       "isFinalized": true,
       "payload": {
-        "raw": "```\nworker-src 'self';\nscript-src 'self';\n```",
+        "raw": "```text\ndefault-src 'self';\nscript-src 'self';\nstyle-src 'self' 'unsafe-inline';\nimg-src 'self' data: https:;\nworker-src 'self';\nconnect-src 'self' https:;\n```",
         "range": {
-          "from": 512,
-          "to": 557
+          "from": 721,
+          "to": 880
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>worker-src 'self';</span></span>\n<span class=\"line\" data-line=\"2\"><span>script-src 'self';</span></span></code></pre>",
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>default-src 'self';</span></span>\n<span class=\"line\" data-line=\"2\"><span>script-src 'self';</span></span>\n<span class=\"line\" data-line=\"3\"><span>style-src 'self' 'unsafe-inline';</span></span>\n<span class=\"line\" data-line=\"4\"><span>img-src 'self' data: https:;</span></span>\n<span class=\"line\" data-line=\"5\"><span>worker-src 'self';</span></span>\n<span class=\"line\" data-line=\"6\"><span>connect-src 'self' https:;</span></span></code></pre>",
         "meta": {
           "lang": "text",
-          "code": "worker-src 'self';\nscript-src 'self';"
+          "code": "default-src 'self';\nscript-src 'self';\nstyle-src 'self' 'unsafe-inline';\nimg-src 'self' data: https:;\nworker-src 'self';\nconnect-src 'self' https:;"
         }
       }
     },
     {
-      "id": "e75d43f",
+      "id": "3e18b3e6",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "Avoid `blob:` unless you intentionally want to inline workers.",
+        "raw": "Notes:",
         "range": {
-          "from": 559,
-          "to": 621
+          "from": 882,
+          "to": 888
         },
         "inline": [
           {
             "kind": "text",
-            "text": "Avoid "
-          },
-          {
-            "kind": "code",
-            "text": "blob:"
-          },
-          {
-            "kind": "text",
-            "text": " unless you intentionally want to inline workers."
+            "text": "Notes:"
           }
         ]
       }
     },
     {
-      "id": "39fc6af9",
-      "type": "heading",
-      "isFinalized": true,
-      "payload": {
-        "raw": "HTML sanitization",
-        "range": {
-          "from": 623,
-          "to": 643
-        },
-        "meta": {
-          "headingLevel": 2,
-          "headingText": "HTML sanitization",
-          "headingId": "html-sanitization"
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "HTML sanitization"
-          }
-        ]
-      }
-    },
-    {
-      "id": "7b373e21",
-      "type": "paragraph",
-      "isFinalized": true,
-      "payload": {
-        "raw": "HTML rendering uses a sanitizer with a default allowlist. This helps prevent unsafe tags or attributes from rendering.",
-        "range": {
-          "from": 645,
-          "to": 763
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "HTML rendering uses a sanitizer with a default allowlist. This helps prevent unsafe tags or attributes from rendering."
-          }
-        ]
-      }
-    },
-    {
-      "id": "7d50ece2",
-      "type": "paragraph",
-      "isFinalized": true,
-      "payload": {
-        "raw": "If you need custom HTML, prefer `htmlElements` to keep the HTML surface small and auditable.",
-        "range": {
-          "from": 765,
-          "to": 857
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "If you need custom HTML, prefer "
-          },
-          {
-            "kind": "code",
-            "text": "htmlElements"
-          },
-          {
-            "kind": "text",
-            "text": " to keep the HTML surface small and auditable."
-          }
-        ]
-      }
-    },
-    {
-      "id": "4643e7ec",
-      "type": "heading",
-      "isFinalized": true,
-      "payload": {
-        "raw": "Deployment checklist",
-        "range": {
-          "from": 859,
-          "to": 882
-        },
-        "meta": {
-          "headingLevel": 2,
-          "headingText": "Deployment checklist",
-          "headingId": "deployment-checklist"
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "Deployment checklist"
-          }
-        ]
-      }
-    },
-    {
-      "id": "6598ed80",
+      "id": "378614bb",
       "type": "list",
       "isFinalized": true,
       "payload": {
-        "raw": "- [ ] Host `markdown-worker.js` in a static directory.\n- [ ] Set CSP `worker-src` to `self`.\n- [ ] Use `mdxCompileMode=\"worker\"` for parity.\n- [ ] Enable `features.html` only if needed.",
+        "raw": "- `style-src 'unsafe-inline'` is often needed for runtime style injection in UI stacks.\n- If your stack supports nonce-based styles, prefer nonce over unrestricted inline styles.",
         "range": {
-          "from": 884,
-          "to": 1069
+          "from": 890,
+          "to": 1068
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "style-src 'unsafe-inline'"
+              },
+              {
+                "kind": "text",
+                "text": " is often needed for runtime style injection in UI stacks."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "If your stack supports nonce-based styles, prefer nonce over unrestricted inline styles."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "5475bfc8",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "HTML rendering policy",
+        "range": {
+          "from": 1070,
+          "to": 1094
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "HTML rendering policy",
+          "headingId": "html-rendering-policy"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "HTML rendering policy"
+          }
+        ]
+      }
+    },
+    {
+      "id": "772c407c",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "StreamMDX applies sanitization for untrusted HTML by default. Keep that enabled unless your input source is fully trusted and audited.",
+        "range": {
+          "from": 1096,
+          "to": 1230
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "StreamMDX applies sanitization for untrusted HTML by default. Keep that enabled unless your input source is fully trusted and audited."
+          }
+        ]
+      }
+    },
+    {
+      "id": "2d8a5dc0",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Operational policy:",
+        "range": {
+          "from": 1232,
+          "to": 1251
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Operational policy:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "5b8a16dd",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Enable `features.html` only when required.\n- Prefer render-layer overrides (`htmlElements`) over sanitizer allowlist expansion.\n- Review any allowlist changes as security-sensitive changes.",
+        "range": {
+          "from": 1253,
+          "to": 1444
         },
         "meta": {
           "ordered": false,
@@ -321,57 +374,7 @@
             [
               {
                 "kind": "text",
-                "text": "[ ] Host "
-              },
-              {
-                "kind": "code",
-                "text": "markdown-worker.js"
-              },
-              {
-                "kind": "text",
-                "text": " in a static directory."
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "[ ] Set CSP "
-              },
-              {
-                "kind": "code",
-                "text": "worker-src"
-              },
-              {
-                "kind": "text",
-                "text": " to "
-              },
-              {
-                "kind": "code",
-                "text": "self"
-              },
-              {
-                "kind": "text",
-                "text": "."
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "[ ] Use "
-              },
-              {
-                "kind": "code",
-                "text": "mdxCompileMode=\"worker\""
-              },
-              {
-                "kind": "text",
-                "text": " for parity."
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "[ ] Enable "
+                "text": "Enable "
               },
               {
                 "kind": "code",
@@ -379,12 +382,429 @@
               },
               {
                 "kind": "text",
-                "text": " only if needed."
+                "text": " only when required."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Prefer render-layer overrides ("
+              },
+              {
+                "kind": "code",
+                "text": "htmlElements"
+              },
+              {
+                "kind": "text",
+                "text": ") over sanitizer allowlist expansion."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Review any allowlist changes as security-sensitive changes."
               }
             ]
           ],
           "mathEnabled": true
         }
+      }
+    },
+    {
+      "id": "6424ae1b",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "MDX policy",
+        "range": {
+          "from": 1446,
+          "to": 1459
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "MDX policy",
+          "headingId": "mdx-policy"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "MDX policy"
+          }
+        ]
+      }
+    },
+    {
+      "id": "31abec9e",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "MDX is code execution by design. Treat MDX input as trusted content unless you have a hardened compilation boundary.",
+        "range": {
+          "from": 1461,
+          "to": 1577
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "MDX is code execution by design. Treat MDX input as trusted content unless you have a hardened compilation boundary."
+          }
+        ]
+      }
+    },
+    {
+      "id": "73727b6",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- For user-generated content, keep `features.mdx` disabled.\n- For trusted editorial content, enforce review + snapshot tests before publish.",
+        "range": {
+          "from": 1579,
+          "to": 1719
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "For user-generated content, keep "
+              },
+              {
+                "kind": "code",
+                "text": "features.mdx"
+              },
+              {
+                "kind": "text",
+                "text": " disabled."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "For trusted editorial content, enforce review + snapshot tests before publish."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "735fa31b",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Release hardening checklist",
+        "range": {
+          "from": 1721,
+          "to": 1751
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Release hardening checklist",
+          "headingId": "release-hardening-checklist"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Release hardening checklist"
+          }
+        ]
+      }
+    },
+    {
+      "id": "62eff738",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- [ ] Hosted worker copied to static path and versioned with app deploy.\n- [ ] CSP validated in production response headers.\n- [ ] `features.html` and `features.mdx` configured intentionally (not accidental defaults).\n- [ ] Regression snapshots updated and reviewed.\n- [ ] Perf harness run attached to release notes.",
+        "range": {
+          "from": 1753,
+          "to": 2069
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "[ ] Hosted worker copied to static path and versioned with app deploy."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "[ ] CSP validated in production response headers."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "[ ] "
+              },
+              {
+                "kind": "code",
+                "text": "features.html"
+              },
+              {
+                "kind": "text",
+                "text": " and "
+              },
+              {
+                "kind": "code",
+                "text": "features.mdx"
+              },
+              {
+                "kind": "text",
+                "text": " configured intentionally (not accidental defaults)."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "[ ] Regression snapshots updated and reviewed."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "[ ] Perf harness run attached to release notes."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "47805498",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Incident response quick path",
+        "range": {
+          "from": 2071,
+          "to": 2102
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Incident response quick path",
+          "headingId": "incident-response-quick-path"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Incident response quick path"
+          }
+        ]
+      }
+    },
+    {
+      "id": "277b253d",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "If a production issue appears in rendered output:",
+        "range": {
+          "from": 2104,
+          "to": 2153
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "If a production issue appears in rendered output:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "74a8f5c3",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "1. Disable risky feature flag (`html` or `mdx`) first.\n2. Roll back to previous worker bundle + app release.\n3. Compare regression snapshots to isolate the rendering delta.\n4. Patch and redeploy with a new snapshot/perf report.",
+        "range": {
+          "from": 2155,
+          "to": 2382
+        },
+        "meta": {
+          "ordered": true,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Disable risky feature flag ("
+              },
+              {
+                "kind": "code",
+                "text": "html"
+              },
+              {
+                "kind": "text",
+                "text": " or "
+              },
+              {
+                "kind": "code",
+                "text": "mdx"
+              },
+              {
+                "kind": "text",
+                "text": ") first."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Roll back to previous worker bundle + app release."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Compare regression snapshots to isolate the rendering delta."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Patch and redeploy with a new snapshot/perf report."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "48bad503",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Vercel notes",
+        "range": {
+          "from": 2384,
+          "to": 2399
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Vercel notes",
+          "headingId": "vercel-notes"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Vercel notes"
+          }
+        ]
+      }
+    },
+    {
+      "id": "1aa029fd",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "For this monorepo docs app on Vercel:",
+        "range": {
+          "from": 2401,
+          "to": 2438
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "For this monorepo docs app on Vercel:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "7a73e582",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Root Directory: `apps/docs`\n- Build Command: `cd ../.. && npm run docs:build`\n- Install Command: `cd ../.. && npm ci`\n- Output Directory: `apps/docs/out`\n- Include files outside root directory: **Enabled**",
+        "range": {
+          "from": 2440,
+          "to": 2647
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Root Directory: "
+              },
+              {
+                "kind": "code",
+                "text": "apps/docs"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Build Command: "
+              },
+              {
+                "kind": "code",
+                "text": "cd ../.. && npm run docs:build"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Install Command: "
+              },
+              {
+                "kind": "code",
+                "text": "cd ../.. && npm ci"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Output Directory: "
+              },
+              {
+                "kind": "code",
+                "text": "apps/docs/out"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Include files outside root directory: "
+              },
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Enabled"
+                  }
+                ]
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "77adf177",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "This is required so Vercel can access workspace packages and build the hosted worker.",
+        "range": {
+          "from": 2649,
+          "to": 2734
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "This is required so Vercel can access workspace packages and build the hosted worker."
+          }
+        ]
       }
     }
   ],
@@ -396,28 +816,46 @@
       "blockId": "db082c0"
     },
     {
-      "id": "hosted-worker-bundle",
-      "text": "Hosted worker bundle",
+      "id": "recommended-production-topology",
+      "text": "Recommended production topology",
       "level": 2,
-      "blockId": "7e492645"
+      "blockId": "1a6d6cbd"
     },
     {
-      "id": "csp-guidance",
-      "text": "CSP guidance",
+      "id": "csp-baseline",
+      "text": "CSP baseline",
       "level": 2,
-      "blockId": "64be0b69"
+      "blockId": "c0e5b98"
     },
     {
-      "id": "html-sanitization",
-      "text": "HTML sanitization",
+      "id": "html-rendering-policy",
+      "text": "HTML rendering policy",
       "level": 2,
-      "blockId": "39fc6af9"
+      "blockId": "5475bfc8"
     },
     {
-      "id": "deployment-checklist",
-      "text": "Deployment checklist",
+      "id": "mdx-policy",
+      "text": "MDX policy",
       "level": 2,
-      "blockId": "4643e7ec"
+      "blockId": "6424ae1b"
+    },
+    {
+      "id": "release-hardening-checklist",
+      "text": "Release hardening checklist",
+      "level": 2,
+      "blockId": "735fa31b"
+    },
+    {
+      "id": "incident-response-quick-path",
+      "text": "Incident response quick path",
+      "level": 2,
+      "blockId": "47805498"
+    },
+    {
+      "id": "vercel-notes",
+      "text": "Vercel notes",
+      "level": 2,
+      "blockId": "48bad503"
     }
   ],
   "init": {

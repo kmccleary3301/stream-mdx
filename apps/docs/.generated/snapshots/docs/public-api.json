@@ -1,9 +1,9 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-02-11T20:25:46.061Z",
-  "hash": "077a1ff2159cfc51f2e83a803686e344e6a82eb83394ece06e3420b6b4647f24",
-  "contentHash": "be1ecefd6bda31975f9b7db6f9177539ae40118f114a8fa268efc776f8c6ce6c",
+  "createdAt": "2026-03-08T20:59:00.803Z",
+  "hash": "1dfa81e413d8050998502ec46d925395f280c625f841b0ff33e2435aff160e8a",
+  "contentHash": "58712b508e07a4ee6fcb355ca05203258b60169046372b5255ca6b9ae16dc41c",
   "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
   "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
   "blocks": [
@@ -35,15 +35,20 @@
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "_Last updated: 2026-02-11_",
+        "raw": "*Last updated: 2026-02-11*",
         "range": {
           "from": 26,
           "to": 52
         },
         "inline": [
           {
-            "kind": "text",
-            "text": "_Last updated: 2026-02-11_"
+            "kind": "em",
+            "children": [
+              {
+                "kind": "text",
+                "text": "Last updated: 2026-02-11"
+              }
+            ]
           }
         ]
       }
@@ -94,10 +99,10 @@
       "type": "table",
       "isFinalized": true,
       "payload": {
-        "raw": "| Package | Use when… |\n| --- | --- |\n| `stream-mdx` | You want a single dependency and stable import paths (recommended for apps). |\n| `@stream-mdx/react` | You want the React surface without the wrapper. |\n| `@stream-mdx/worker` | You want the worker client + hosted worker bundle (browser + Node). |\n| `@stream-mdx/core` | You want types + perf/sanitization helpers (no React). |\n| `@stream-mdx/mermaid` | You want optional Mermaid diagrams for fenced ` ```mermaid ` code blocks. |\n| `@stream-mdx/plugins/*` | You are building/customizing a worker bundle or need plugin primitives. |",
+        "raw": "| Package | Use when… |\n| --- | --- |\n| `stream-mdx` | You want a single dependency and stable import paths (recommended for apps). |\n| `@stream-mdx/react` | You want the React surface without the wrapper. |\n| `@stream-mdx/worker` | You want the worker client + hosted worker bundle (browser + Node). |\n| `@stream-mdx/core` | You want types + perf/sanitization helpers (no React). |\n| `@stream-mdx/mermaid` | You want optional Mermaid diagrams for fenced `mermaid` code blocks. |\n| `@stream-mdx/plugins/*` | You are building/customizing a worker bundle or need plugin primitives. |",
         "range": {
           "from": 167,
-          "to": 753
+          "to": 748
         },
         "inline": [],
         "meta": {
@@ -186,15 +191,7 @@
                 },
                 {
                   "kind": "code",
-                  "text": " "
-                },
-                {
-                  "kind": "text",
-                  "text": "`"
-                },
-                {
-                  "kind": "code",
-                  "text": "mermaid "
+                  "text": "mermaid"
                 },
                 {
                   "kind": "text",
@@ -225,14 +222,14 @@
       }
     },
     {
-      "id": "7afd6dbf",
+      "id": "6d7a1006",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "When you install `stream-mdx`, you can also import:",
         "range": {
-          "from": 755,
-          "to": 806
+          "from": 750,
+          "to": 801
         },
         "inline": [
           {
@@ -251,14 +248,14 @@
       }
     },
     {
-      "id": "5f7650c",
+      "id": "e7fa027",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- `stream-mdx/react`, `stream-mdx/worker`, `stream-mdx/core`\n- `stream-mdx/worker/node` (Node `worker_threads` helper)\n- `stream-mdx/worker/direct` (in-process compile helper for runtimes without `worker_threads`)\n- `stream-mdx/plugins/*` (common plugin entrypoints; useful for pnpm users)",
         "range": {
-          "from": 808,
-          "to": 1097
+          "from": 803,
+          "to": 1092
         },
         "meta": {
           "ordered": false,
@@ -337,14 +334,14 @@
       }
     },
     {
-      "id": "357af681",
+      "id": "1ad12186",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Runtime Context Matrix",
         "range": {
-          "from": 1099,
-          "to": 1124
+          "from": 1094,
+          "to": 1119
         },
         "meta": {
           "headingLevel": 2,
@@ -360,14 +357,14 @@
       }
     },
     {
-      "id": "1c8cf064",
+      "id": "140dc81f",
       "type": "table",
       "isFinalized": true,
       "payload": {
         "raw": "| Context | Primary API | Compile path | Determinism status |\n| --- | --- | --- | --- |\n| Browser streaming UI | `<StreamingMarkdown />` from `stream-mdx` or `@stream-mdx/react` | Web Worker (`/workers/markdown-worker.js`) | Supported + CI-covered |\n| Node SSR/SSG | `compileMarkdownSnapshot()` from `stream-mdx/worker/node` + `MarkdownBlocksRenderer` from `@stream-mdx/react/server` | `worker_threads` hosted worker | Supported + parity-tested |\n| Static export docs build | `scripts/compile-docs-snapshots.ts` | Node snapshot compile at build time | Supported + Vercel-parity-tested |\n| Edge/no-`worker_threads` runtime | `compileMarkdownSnapshotDirect()` from `stream-mdx/worker/direct` + `MarkdownBlocksRenderer` from `@stream-mdx/react/server` | In-process direct worker runtime bridge (no `worker_threads`) | Preview + parity-tested + cache-compatible (Node FS) |",
         "range": {
-          "from": 1126,
-          "to": 1995
+          "from": 1121,
+          "to": 1990
         },
         "inline": [],
         "meta": {
@@ -605,14 +602,14 @@
       }
     },
     {
-      "id": "6eac2dc6",
+      "id": "79cb4fff",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Determinism scope for supported rows:",
         "range": {
-          "from": 1997,
-          "to": 2034
+          "from": 1992,
+          "to": 2029
         },
         "inline": [
           {
@@ -623,14 +620,14 @@
       }
     },
     {
-      "id": "46569924",
+      "id": "4eded43f",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- same input text\n- same init/config\n- same worker/compiler bundle hash\n- same dependency set",
         "range": {
-          "from": 2035,
-          "to": 2128
+          "from": 2030,
+          "to": 2123
         },
         "meta": {
           "ordered": false,
@@ -665,26 +662,26 @@
       }
     },
     {
-      "id": "78cdfdf8",
+      "id": "78c22c52",
       "type": "hr",
       "isFinalized": true,
       "payload": {
         "raw": "---",
         "range": {
-          "from": 2130,
-          "to": 2133
+          "from": 2125,
+          "to": 2128
         }
       }
     },
     {
-      "id": "5c50fee1",
+      "id": "76fad3dc",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "1) `<StreamingMarkdown />`",
         "range": {
-          "from": 2135,
-          "to": 2164
+          "from": 2130,
+          "to": 2159
         },
         "meta": {
           "headingLevel": 2,
@@ -704,14 +701,14 @@
       }
     },
     {
-      "id": "3b6501fb",
+      "id": "32dcc6e0",
       "type": "code",
       "isFinalized": true,
       "payload": {
         "raw": "```tsx\n\"use client\";\n\nimport { StreamingMarkdown, type StreamingMarkdownHandle } from \"stream-mdx\";\n\nconst ref = useRef<StreamingMarkdownHandle>(null);\n\n<StreamingMarkdown\n  ref={ref}\n  text=\"## Hello\\n\\nStreaming **markdown**\"\n  worker=\"/workers/markdown-worker.js\"\n  features={{ tables: true, html: true, math: true, mdx: true }}\n  mdxCompileMode=\"worker\"\n  prewarmLangs={[\"python\", \"bash\"]}\n  onMetrics={(m) => console.table(m.queueDelay)}\n  onError={(err) => reportError(err)}\n/>;\n```",
         "range": {
-          "from": 2166,
-          "to": 2654
+          "from": 2161,
+          "to": 2649
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"use client\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { StreamingMarkdown, </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">type</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> StreamingMarkdownHandle } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"4\"></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> ref</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> useRef</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">StreamingMarkdownHandle</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>(</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">null</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">);</span></span>\n<span class=\"line\" data-line=\"6\"></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  ref</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{ref}</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"## Hello\\n\\nStreaming **markdown**\"</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ tables: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, math: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }}</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  mdxCompileMode</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"worker\"</span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  prewarmLangs</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{[</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"python\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"bash\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">]}</span></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  onMetrics</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{(</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">m</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> console.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">table</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(m.queueDelay)}</span></span>\n<span class=\"line\" data-line=\"15\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  onError</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{(</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">err</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> reportError</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(err)}</span></span>\n<span class=\"line\" data-line=\"16\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/>;</span></span></code></pre>",
         "meta": {
@@ -721,14 +718,14 @@
       }
     },
     {
-      "id": "3e60321b",
+      "id": "23b65d20",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Props",
         "range": {
-          "from": 2656,
-          "to": 2665
+          "from": 2651,
+          "to": 2660
         },
         "meta": {
           "headingLevel": 3,
@@ -744,14 +741,14 @@
       }
     },
     {
-      "id": "356884bb",
+      "id": "3de7ad00",
       "type": "table",
       "isFinalized": true,
       "payload": {
-        "raw": "| Prop | Type | Notes |\n| --- | --- | --- |\n| `text` | `string` | Static markdown. Mutating it restarts the session. |\n| `stream` | `AsyncIterable<string>` | Append-only stream; provide **either** `text` or `stream`. |\n| `worker` | `Worker \\| URL \\| string \\| () => Worker` | Worker instance/URL/factory. When omitted, the component uses the default worker strategy and falls back to `/workers/markdown-worker.js`. |\n| `managedWorker` | `boolean` | When `true`, the component attaches the worker but does not auto-`restart/append/finalize` for you (use the ref handle). |\n| `prewarmLangs` | `string[]` | Shiki languages to load inside the worker. |\n| `features` | `{ footnotes?, html?, mdx?, tables?, callouts?, math?, formatAnticipation?, codeHighlighting? }` | Toggles built-in feature flags. |\n| `mdxCompileMode` | `\"server\" \\| \"worker\"` | Enables MDX compilation/hydration and selects the compile strategy. |\n| `components` | `Partial<BlockComponents>` | Override block renders (wrap code/math without affecting the patch scheduler). |\n| `inlineComponents` | `Partial<InlineComponents>` | Override inline renders. |\n| `tableElements` | `Partial<TableElements>` | Override table tags (e.g. Shadcn table wrappers). |\n| `htmlElements` | `Partial<HtmlElements>` | Override HTML tag renders (when HTML is enabled). |\n| `mdxComponents` | `Record<string, ComponentType>` | Component registry used when hydrating MDX. |\n| `caret` | `\"block\" \\| \"circle\" \\| string \\| false` | Show a streaming caret while blocks are still in-flight. |\n| `linkSafety` | `{ enabled?, onLinkCheck?, renderModal? }` | Intercept links and require confirmation before navigation. |\n| `deferHeavyBlocks` | `boolean \\| { rootMargin?, idleTimeoutMs?, debounceMs? }` | Defer heavy blocks (e.g. Mermaid) until in view/idle. |\n| `scheduling` | `StreamingSchedulerOptions` | Patch scheduler/backpressure knobs. |\n| `onMetrics` | `(metrics: RendererMetrics) => void` | Invoked after each flush (queue depth, timings, adaptive budget state, worker metrics). |\n| `onError` | `(error: Error) => void` | Render-time errors. (Worker runtime errors surface via `error` events on the Worker.) |\n| `className`, `style` | React props forwarded to the root container. |",
+        "raw": "| Prop | Type | Notes |\n| --- | --- | --- |\n| `text` | `string` | Static markdown. Mutating it restarts the session. |\n| `stream` | `AsyncIterable<string>` | Append-only stream; provide **either** `text` or `stream`. |\n| `worker` | `WorkerLike` | Worker instance/URL/factory. When omitted, the component uses the default worker strategy and falls back to `/workers/markdown-worker.js`. |\n| `managedWorker` | `boolean` | When `true`, the component attaches the worker but does not auto-`restart/append/finalize` for you (use the ref handle). |\n| `prewarmLangs` | `string[]` | Shiki languages to load inside the worker. |\n| `features` | `{ footnotes?, html?, mdx?, tables?, callouts?, math?, formatAnticipation?, codeHighlighting? }` | Toggles built-in feature flags. |\n| `mdxCompileMode` | `MdxCompileMode` | Enables MDX compilation/hydration and selects the compile strategy. |\n| `components` | `Partial<BlockComponents>` | Override block renders (wrap code/math without affecting the patch scheduler). |\n| `inlineComponents` | `Partial<InlineComponents>` | Override inline renders. |\n| `tableElements` | `Partial<TableElements>` | Override table tags (e.g. Shadcn table wrappers). |\n| `htmlElements` | `Partial<HtmlElements>` | Override HTML tag renders (when HTML is enabled). |\n| `mdxComponents` | `Record<string, ComponentType>` | Component registry used when hydrating MDX. |\n| `caret` | `CaretMode` | Show a streaming caret while blocks are still in-flight. |\n| `linkSafety` | `{ enabled?, onLinkCheck?, renderModal? }` | Intercept links and require confirmation before navigation. |\n| `deferHeavyBlocks` | `DeferHeavyBlocks` | Defer heavy blocks (e.g. Mermaid) until in view/idle. |\n| `scheduling` | `StreamingSchedulerOptions` | Patch scheduler/backpressure knobs. |\n| `onMetrics` | `(metrics: RendererMetrics) => void` | Invoked after each flush (queue depth, timings, adaptive budget state, worker metrics). |\n| `onError` | `(error: Error) => void` | Render-time errors. (Worker runtime errors surface via `error` events on the Worker.) |\n| `className`, `style` | React props forwarded to the root container. |",
         "range": {
-          "from": 2667,
-          "to": 4890
+          "from": 2662,
+          "to": 4782
         },
         "inline": [],
         "meta": {
@@ -854,26 +851,8 @@
               ],
               [
                 {
-                  "kind": "text",
-                  "text": "`Worker \\"
-                }
-              ],
-              [
-                {
-                  "kind": "text",
-                  "text": "URL \\"
-                }
-              ],
-              [
-                {
-                  "kind": "text",
-                  "text": "string \\"
-                }
-              ],
-              [
-                {
-                  "kind": "text",
-                  "text": "() => Worker`"
+                  "kind": "code",
+                  "text": "WorkerLike"
                 }
               ],
               [
@@ -976,14 +955,8 @@
               ],
               [
                 {
-                  "kind": "text",
-                  "text": "`\"server\" \\"
-                }
-              ],
-              [
-                {
-                  "kind": "text",
-                  "text": "\"worker\"`"
+                  "kind": "code",
+                  "text": "MdxCompileMode"
                 }
               ],
               [
@@ -1102,26 +1075,8 @@
               ],
               [
                 {
-                  "kind": "text",
-                  "text": "`\"block\" \\"
-                }
-              ],
-              [
-                {
-                  "kind": "text",
-                  "text": "\"circle\" \\"
-                }
-              ],
-              [
-                {
-                  "kind": "text",
-                  "text": "string \\"
-                }
-              ],
-              [
-                {
-                  "kind": "text",
-                  "text": "false`"
+                  "kind": "code",
+                  "text": "CaretMode"
                 }
               ],
               [
@@ -1160,14 +1115,8 @@
               ],
               [
                 {
-                  "kind": "text",
-                  "text": "`boolean \\"
-                }
-              ],
-              [
-                {
-                  "kind": "text",
-                  "text": "{ rootMargin?, idleTimeoutMs?, debounceMs? }`"
+                  "kind": "code",
+                  "text": "DeferHeavyBlocks"
                 }
               ],
               [
@@ -1283,14 +1232,14 @@
       }
     },
     {
-      "id": "3d4b065d",
+      "id": "70dfbfff",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Notes:",
         "range": {
-          "from": 4892,
-          "to": 4898
+          "from": 4784,
+          "to": 4790
         },
         "inline": [
           {
@@ -1301,14 +1250,14 @@
       }
     },
     {
-      "id": "657471d8",
+      "id": "10137fff",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- When `linkSafety.enabled` is on, the default `link` inline renderer is overridden to ensure clicks are intercepted. If you supply a custom `inlineComponents.link`, wrap link safety yourself.",
         "range": {
-          "from": 4899,
-          "to": 5091
+          "from": 4791,
+          "to": 4983
         },
         "meta": {
           "ordered": false,
@@ -1349,14 +1298,74 @@
       }
     },
     {
-      "id": "6fb104f5",
+      "id": "1d35803e",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Type aliases:",
+        "range": {
+          "from": 4985,
+          "to": 4998
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Type aliases:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "32aa6149",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `type WorkerLike = Worker | URL | string | (() => Worker)`\n- `type MdxCompileMode = \"server\" | \"worker\"`\n- `type CaretMode = \"block\" | \"circle\" | string | false`\n- `type DeferHeavyBlocks = boolean | { rootMargin?: string; idleTimeoutMs?: number; debounceMs?: number }`",
+        "range": {
+          "from": 4999,
+          "to": 5269
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "type WorkerLike = Worker | URL | string | (() => Worker)"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "type MdxCompileMode = \"server\" | \"worker\""
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "type CaretMode = \"block\" | \"circle\" | string | false"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "type DeferHeavyBlocks = boolean | { rootMargin?: string; idleTimeoutMs?: number; debounceMs?: number }"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "77a155c9",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Imperative Handle",
         "range": {
-          "from": 5093,
-          "to": 5114
+          "from": 5271,
+          "to": 5292
         },
         "meta": {
           "headingLevel": 3,
@@ -1372,14 +1381,14 @@
       }
     },
     {
-      "id": "104cd947",
+      "id": "4a3839e",
       "type": "code",
       "isFinalized": true,
       "payload": {
         "raw": "```ts\ntype StreamingMarkdownHandle = {\n  pause(): void;\n  resume(): void;\n  restart(): void;\n  finalize(): void;\n  append(text: string): void;\n  setCredits(value: number): void;\n  flushPending(): PatchFlushResult | null;\n  waitForIdle(): Promise<void>;\n  onFlush(listener: (result: PatchFlushResult) => void): () => void;\n  getState(): RendererStateSnapshot;\n  getPatchHistory(limit?: number): ReadonlyArray<RendererMetrics>;\n};\n```",
         "range": {
-          "from": 5116,
-          "to": 5548
+          "from": 5294,
+          "to": 5726
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"typescript\"><code data-language=\"typescript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">type</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> StreamingMarkdownHandle</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  pause</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">()</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> void</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  resume</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">()</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> void</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  restart</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">()</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> void</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  finalize</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">()</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> void</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  append</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> void</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  setCredits</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">value</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> number</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> void</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  flushPending</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">()</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> PatchFlushResult</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> |</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> null</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  waitForIdle</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">()</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> Promise</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">void</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>;</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  onFlush</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">listener</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> (</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">result</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> PatchFlushResult</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> void</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> () </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> void</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  getState</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">()</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> RendererStateSnapshot</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  getPatchHistory</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">limit</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> number</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> ReadonlyArray</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">RendererMetrics</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>;</span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">};</span></span></code></pre>",
         "meta": {
@@ -1389,26 +1398,26 @@
       }
     },
     {
-      "id": "1e704139",
+      "id": "21b34eec",
       "type": "hr",
       "isFinalized": true,
       "payload": {
         "raw": "---",
         "range": {
-          "from": 5550,
-          "to": 5553
+          "from": 5728,
+          "to": 5731
         }
       }
     },
     {
-      "id": "507463c0",
+      "id": "37c6be7e",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "2) Worker Hosting + CSP",
         "range": {
-          "from": 5555,
-          "to": 5581
+          "from": 5733,
+          "to": 5759
         },
         "meta": {
           "headingLevel": 2,
@@ -1424,14 +1433,14 @@
       }
     },
     {
-      "id": "1f2d3625",
+      "id": "7b53d963",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Recommended production setup is to host the worker bundle from static assets and point the component at it:",
         "range": {
-          "from": 5583,
-          "to": 5690
+          "from": 5761,
+          "to": 5868
         },
         "inline": [
           {
@@ -1442,14 +1451,14 @@
       }
     },
     {
-      "id": "68888160",
+      "id": "5fc4f62",
       "type": "code",
       "isFinalized": true,
       "payload": {
         "raw": "```bash\nmkdir -p public/workers\ncp node_modules/@stream-mdx/worker/dist/hosted/markdown-worker.js public/workers/markdown-worker.js\n```",
         "range": {
-          "from": 5692,
-          "to": 5827
+          "from": 5870,
+          "to": 6005
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">mkdir</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> -p</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> public/workers</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">cp</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> node_modules/@stream-mdx/worker/dist/hosted/markdown-worker.js</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> public/workers/markdown-worker.js</span></span></code></pre>",
         "meta": {
@@ -1459,14 +1468,14 @@
       }
     },
     {
-      "id": "e025f0",
+      "id": "171af9c7",
       "type": "code",
       "isFinalized": true,
       "payload": {
         "raw": "```tsx\n<StreamingMarkdown worker=\"/workers/markdown-worker.js\" />\n```",
         "range": {
-          "from": 5829,
-          "to": 5898
+          "from": 6007,
+          "to": 6076
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> /></span></span></code></pre>",
         "meta": {
@@ -1476,14 +1485,14 @@
       }
     },
     {
-      "id": "615c5f5c",
+      "id": "518b4a5",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Worker ownership semantics:",
         "range": {
-          "from": 5900,
-          "to": 5927
+          "from": 6078,
+          "to": 6105
         },
         "inline": [
           {
@@ -1494,14 +1503,14 @@
       }
     },
     {
-      "id": "10b1910f",
+      "id": "28acb0c6",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- `worker=\"/.../markdown-worker.js\"` or `worker={new URL(...)}`\n  - StreamMDX creates + terminates the Worker instance for you.\n- `worker={existingWorker}` or `worker={() => existingWorker}`\n  - StreamMDX treats the Worker as externally managed and will not terminate it.\n- `worker={undefined}`\n  - StreamMDX uses the default worker strategy and falls back to `/workers/markdown-worker.js`.",
         "range": {
-          "from": 5929,
-          "to": 6319
+          "from": 6107,
+          "to": 6497
         },
         "meta": {
           "ordered": false,
@@ -1572,14 +1581,14 @@
       }
     },
     {
-      "id": "7248bf44",
+      "id": "593b62de",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "For advanced worker instantiation (CSP overrides, shared worker instances), see `createDefaultWorker()` in `stream-mdx/worker`.",
         "range": {
-          "from": 6321,
-          "to": 6448
+          "from": 6499,
+          "to": 6626
         },
         "inline": [
           {
@@ -1606,14 +1615,14 @@
       }
     },
     {
-      "id": "3d0263d9",
+      "id": "2c12ee06",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Node / CLI runtimes",
         "range": {
-          "from": 6450,
-          "to": 6473
+          "from": 6628,
+          "to": 6651
         },
         "meta": {
           "headingLevel": 3,
@@ -1629,14 +1638,14 @@
       }
     },
     {
-      "id": "9bab2e4",
+      "id": "65e15622",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "To run the hosted worker bundle in Node (via `worker_threads`), use:",
         "range": {
-          "from": 6475,
-          "to": 6543
+          "from": 6653,
+          "to": 6721
         },
         "inline": [
           {
@@ -1655,14 +1664,14 @@
       }
     },
     {
-      "id": "47073e7c",
+      "id": "566c8f86",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- `@stream-mdx/worker/node` (scoped)\n- `stream-mdx/worker/node` (convenience wrapper)",
         "range": {
-          "from": 6545,
-          "to": 6630
+          "from": 6723,
+          "to": 6808
         },
         "meta": {
           "ordered": false,
@@ -1693,14 +1702,14 @@
       }
     },
     {
-      "id": "a2953a1",
+      "id": "664ff6df",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "For runtimes without `worker_threads` (edge-style constraints), use:",
         "range": {
-          "from": 6632,
-          "to": 6700
+          "from": 6810,
+          "to": 6878
         },
         "inline": [
           {
@@ -1719,14 +1728,14 @@
       }
     },
     {
-      "id": "3e122159",
+      "id": "49bb7702",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- `@stream-mdx/worker/direct` (scoped)\n- `stream-mdx/worker/direct` (convenience wrapper)",
         "range": {
-          "from": 6702,
-          "to": 6791
+          "from": 6880,
+          "to": 6969
         },
         "meta": {
           "ordered": false,
@@ -1757,14 +1766,14 @@
       }
     },
     {
-      "id": "5897ba25",
+      "id": "4b41a29d",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "See `docs/CLI_USAGE.md` for an example that consumes `PATCH` messages into a `DocumentSnapshot`.",
         "range": {
-          "from": 6793,
-          "to": 6889
+          "from": 6971,
+          "to": 7067
         },
         "inline": [
           {
@@ -1799,26 +1808,26 @@
       }
     },
     {
-      "id": "58add8ba",
+      "id": "7fc6ab78",
       "type": "hr",
       "isFinalized": true,
       "payload": {
         "raw": "---",
         "range": {
-          "from": 6891,
-          "to": 6894
+          "from": 7069,
+          "to": 7072
         }
       }
     },
     {
-      "id": "24aa72a1",
+      "id": "2ac5dc76",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "3) Features",
         "range": {
-          "from": 6896,
-          "to": 6910
+          "from": 7074,
+          "to": 7088
         },
         "meta": {
           "headingLevel": 2,
@@ -1834,14 +1843,14 @@
       }
     },
     {
-      "id": "4e038adc",
+      "id": "4502c9b0",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "`features` toggles built-in capabilities in the worker + renderer:",
         "range": {
-          "from": 6912,
-          "to": 6978
+          "from": 7090,
+          "to": 7156
         },
         "inline": [
           {
@@ -1856,14 +1865,14 @@
       }
     },
     {
-      "id": "4e635c1f",
+      "id": "75cbbf1f",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- `tables`: GitHub-flavored markdown tables → table block snapshots (`tableElements` controls rendering).\n- `html`: enables inline/raw HTML (sanitized by default; `htmlElements` controls rendering).\n- `mdx`: recognizes MDX blocks (requires `mdxCompileMode` to compile/hydrate).\n- `math`: recognizes inline + display math (default delimiters: `$…$` and `$$…$$`).\n- `footnotes`: enables footnote aggregation.\n- `callouts`: enables callout blockquote syntax (disabled by default in the worker).\n- `formatAnticipation`: (opt-in) withholds formatting markers while streaming (initial support: `*`, `**`, `` ` ``, `~~`). Final output is unchanged.\n- `codeHighlighting`: controls Shiki strategy for fenced code blocks:\n  - `\"final\"` (default): highlight only after the block finalizes.\n  - `\"incremental\"`: highlight completed lines as they arrive (fast enough for streaming).\n  - `\"live\"`: re-highlight on every update (slowest, highest fidelity).",
         "range": {
-          "from": 6980,
-          "to": 7921
+          "from": 7158,
+          "to": 8099
         },
         "meta": {
           "ordered": false,
@@ -2056,14 +2065,14 @@
       }
     },
     {
-      "id": "d1c80a3",
+      "id": "5c8ccfba",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Context support table",
         "range": {
-          "from": 7923,
-          "to": 7948
+          "from": 8101,
+          "to": 8126
         },
         "meta": {
           "headingLevel": 3,
@@ -2079,14 +2088,14 @@
       }
     },
     {
-      "id": "72a7323d",
+      "id": "345b7ebf",
       "type": "table",
       "isFinalized": true,
       "payload": {
         "raw": "| Feature | Browser worker streaming | Node snapshot compile | Edge/no-worker compile |\n| --- | --- | --- | --- |\n| `tables` | Yes | Yes | Preview |\n| `html` | Yes (sanitized) | Yes (sanitized) | Preview |\n| `math` | Yes | Yes | Preview |\n| `mdx` | Yes (`server` or `worker` mode) | Yes (`server` compile mode) | Preview (`server` compile mode) |\n| `footnotes` | Yes | Yes | Preview |\n| `callouts` | Yes | Yes | Preview |\n| Mermaid addon (`@stream-mdx/mermaid`) | Yes (renderer component) | Yes (renderer component) | Preview (renderer component) |",
         "range": {
-          "from": 7950,
-          "to": 8498
+          "from": 8128,
+          "to": 8676
         },
         "inline": [],
         "meta": {
@@ -2350,26 +2359,26 @@
       }
     },
     {
-      "id": "43238289",
+      "id": "4108626b",
       "type": "hr",
       "isFinalized": true,
       "payload": {
         "raw": "---",
         "range": {
-          "from": 8500,
-          "to": 8503
+          "from": 8678,
+          "to": 8681
         }
       }
     },
     {
-      "id": "13156c2",
+      "id": "fd8b479",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "3.1) Mermaid (optional)",
         "range": {
-          "from": 8505,
-          "to": 8531
+          "from": 8683,
+          "to": 8709
         },
         "meta": {
           "headingLevel": 2,
@@ -2385,14 +2394,14 @@
       }
     },
     {
-      "id": "5ff3ebdd",
+      "id": "3cd489f",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Mermaid diagrams are provided as an **opt-in addon** via `@stream-mdx/mermaid`.",
         "range": {
-          "from": 8533,
-          "to": 8612
+          "from": 8711,
+          "to": 8790
         },
         "inline": [
           {
@@ -2424,14 +2433,14 @@
       }
     },
     {
-      "id": "4f835d27",
+      "id": "43da077e",
       "type": "code",
       "isFinalized": true,
       "payload": {
         "raw": "```bash\nnpm install @stream-mdx/mermaid\n```",
         "range": {
-          "from": 8614,
-          "to": 8657
+          "from": 8792,
+          "to": 8835
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> install</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> @stream-mdx/mermaid</span></span></code></pre>",
         "meta": {
@@ -2441,14 +2450,14 @@
       }
     },
     {
-      "id": "73623508",
+      "id": "10d6030a",
       "type": "code",
       "isFinalized": true,
       "payload": {
         "raw": "```tsx\nimport { MermaidBlock } from \"@stream-mdx/mermaid\";\n\n<StreamingMarkdown components={{ mermaid: MermaidBlock }} />;\n```",
         "range": {
-          "from": 8659,
-          "to": 8784
+          "from": 8837,
+          "to": 8962
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { MermaidBlock } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/mermaid\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> components</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ mermaid: MermaidBlock }} />;</span></span></code></pre>",
         "meta": {
@@ -2458,14 +2467,14 @@
       }
     },
     {
-      "id": "22204bfd",
+      "id": "3a065741",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "When registered, fenced ` ```mermaid ` code blocks render as diagrams (with a Diagram/Code toggle). All other code blocks remain unchanged.",
+        "raw": "When registered, fenced `mermaid` code blocks render as diagrams (with a Diagram/Code toggle). All other code blocks remain unchanged.",
         "range": {
-          "from": 8786,
-          "to": 8925
+          "from": 8964,
+          "to": 9098
         },
         "inline": [
           {
@@ -2474,15 +2483,7 @@
           },
           {
             "kind": "code",
-            "text": " "
-          },
-          {
-            "kind": "text",
-            "text": "`"
-          },
-          {
-            "kind": "code",
-            "text": "mermaid "
+            "text": "mermaid"
           },
           {
             "kind": "text",
@@ -2492,14 +2493,14 @@
       }
     },
     {
-      "id": "65dfe206",
+      "id": "3005f9e8",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "4) MDX Compilation Modes",
         "range": {
-          "from": 8927,
-          "to": 8954
+          "from": 9100,
+          "to": 9127
         },
         "meta": {
           "headingLevel": 2,
@@ -2515,14 +2516,14 @@
       }
     },
     {
-      "id": "17ee971e",
+      "id": "28fd961",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "`mdxCompileMode` selects how MDX blocks are compiled:",
         "range": {
-          "from": 8956,
-          "to": 9009
+          "from": 9129,
+          "to": 9182
         },
         "inline": [
           {
@@ -2537,14 +2538,14 @@
       }
     },
     {
-      "id": "56e896e5",
+      "id": "3633ec68",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- `\"worker\"`: compilation happens client-side in the worker.\n- `\"server\"`: compilation requests go to `/api/mdx-compile-v2` by default (you must implement this endpoint in your app).",
         "range": {
-          "from": 9011,
-          "to": 9193
+          "from": 9184,
+          "to": 9366
         },
         "meta": {
           "ordered": false,
@@ -2583,14 +2584,14 @@
       }
     },
     {
-      "id": "20471ecc",
+      "id": "6458165c",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "See `docs/REACT_INTEGRATION_GUIDE.md` for a complete Next.js wiring guide and parity notes.",
         "range": {
-          "from": 9195,
-          "to": 9286
+          "from": 9368,
+          "to": 9459
         },
         "inline": [
           {
@@ -2609,14 +2610,14 @@
       }
     },
     {
-      "id": "56b24627",
+      "id": "235acbea",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Next.js App Router (server-safe rendering)",
         "range": {
-          "from": 9288,
-          "to": 9334
+          "from": 9461,
+          "to": 9507
         },
         "meta": {
           "headingLevel": 3,
@@ -2632,14 +2633,14 @@
       }
     },
     {
-      "id": "7a53b2fd",
+      "id": "4f7e1b2b",
       "type": "code",
       "isFinalized": true,
       "payload": {
         "raw": "```tsx\nimport { MarkdownBlocksRenderer, ComponentRegistry } from \"@stream-mdx/react/server\";\nimport { compileMarkdownSnapshot } from \"stream-mdx/worker/node\";\n\nexport default async function Page() {\n  const { blocks } = await compileMarkdownSnapshot({\n    text: \"# Hello\\\\n\\\\nStreaming-safe server render.\",\n    init: {\n      docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true },\n      mdx: { compileMode: \"server\" },\n      prewarmLangs: [\"typescript\"],\n    },\n  });\n\n  return <MarkdownBlocksRenderer blocks={blocks} componentRegistry={new ComponentRegistry()} />;\n}\n```",
         "range": {
-          "from": 9336,
-          "to": 9934
+          "from": 9509,
+          "to": 10107
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { MarkdownBlocksRenderer, ComponentRegistry } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/react/server\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { compileMarkdownSnapshot } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx/worker/node\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">export</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> default</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> async</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> function</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> Page</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">() {</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  const</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">blocks</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> await</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> compileMarkdownSnapshot</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">({</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    text: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"# Hello</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">\\\\</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">n</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">\\\\</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">nStreaming-safe server render.\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    init: {</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      docPlugins: { tables: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, math: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, footnotes: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> },</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      mdx: { compileMode: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"server\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> },</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      prewarmLangs: [</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"typescript\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">],</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    },</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  });</span></span>\n<span class=\"line\" data-line=\"13\"></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  return</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">MarkdownBlocksRenderer</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> blocks</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{blocks} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">componentRegistry</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">new</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> ComponentRegistry</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">()} />;</span></span>\n<span class=\"line\" data-line=\"15\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}</span></span></code></pre>",
         "meta": {
@@ -2649,14 +2650,14 @@
       }
     },
     {
-      "id": "3269767d",
+      "id": "50ff7275",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Static build pipeline (SSG/export)",
         "range": {
-          "from": 9936,
-          "to": 9974
+          "from": 10109,
+          "to": 10147
         },
         "meta": {
           "headingLevel": 3,
@@ -2672,14 +2673,14 @@
       }
     },
     {
-      "id": "26ad82c1",
+      "id": "1105a39f",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Use a build-time step to compile markdown into snapshot artifacts, then render those blocks in routes:",
         "range": {
-          "from": 9976,
-          "to": 10078
+          "from": 10149,
+          "to": 10251
         },
         "inline": [
           {
@@ -2690,14 +2691,14 @@
       }
     },
     {
-      "id": "7024be35",
+      "id": "39f68c5d",
       "type": "code",
       "isFinalized": true,
       "payload": {
         "raw": "```bash\nnpm run docs:snapshots:build\n```",
         "range": {
-          "from": 10080,
-          "to": 10120
+          "from": 10253,
+          "to": 10293
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> docs:snapshots:build</span></span></code></pre>",
         "meta": {
@@ -2707,14 +2708,14 @@
       }
     },
     {
-      "id": "109e8a66",
+      "id": "2d91e609",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "This is the same model used by `apps/docs` before `next build`/export.",
         "range": {
-          "from": 10122,
-          "to": 10192
+          "from": 10295,
+          "to": 10365
         },
         "inline": [
           {
@@ -2741,14 +2742,14 @@
       }
     },
     {
-      "id": "603f5c9d",
+      "id": "69f9bbc5",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Direct compile helper (no `worker_threads`)",
         "range": {
-          "from": 10194,
-          "to": 10241
+          "from": 10367,
+          "to": 10414
         },
         "meta": {
           "headingLevel": 3,
@@ -2772,14 +2773,14 @@
       }
     },
     {
-      "id": "6edcc79e",
+      "id": "38ae95c6",
       "type": "code",
       "isFinalized": true,
       "payload": {
         "raw": "```tsx\nimport { MarkdownBlocksRenderer, ComponentRegistry } from \"@stream-mdx/react/server\";\nimport { compileMarkdownSnapshotDirect } from \"stream-mdx/worker/direct\";\n\nexport default async function EdgeLikePage() {\n  const { blocks } = await compileMarkdownSnapshotDirect({\n    text: \"# Hello\\\\n\\\\nEdge-safe deterministic compile.\",\n    init: {\n      docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true },\n      mdx: { compileMode: \"server\" },\n      prewarmLangs: [\"typescript\"],\n    },\n    cache: {\n      dir: \".stream-mdx-cache\",\n    },\n  });\n\n  return <MarkdownBlocksRenderer blocks={blocks} componentRegistry={new ComponentRegistry()} />;\n}\n```",
         "range": {
-          "from": 10243,
-          "to": 10918
+          "from": 10416,
+          "to": 11091
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { MarkdownBlocksRenderer, ComponentRegistry } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/react/server\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { compileMarkdownSnapshotDirect } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx/worker/direct\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">export</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> default</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> async</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> function</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> EdgeLikePage</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">() {</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  const</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">blocks</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> await</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> compileMarkdownSnapshotDirect</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">({</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    text: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"# Hello</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">\\\\</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">n</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">\\\\</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">nEdge-safe deterministic compile.\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    init: {</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      docPlugins: { tables: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, math: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, footnotes: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> },</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      mdx: { compileMode: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"server\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> },</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      prewarmLangs: [</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"typescript\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">],</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    },</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    cache: {</span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      dir: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\".stream-mdx-cache\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    },</span></span>\n<span class=\"line\" data-line=\"15\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  });</span></span>\n<span class=\"line\" data-line=\"16\"></span>\n<span class=\"line\" data-line=\"17\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  return</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">MarkdownBlocksRenderer</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> blocks</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{blocks} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">componentRegistry</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">new</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> ComponentRegistry</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">()} />;</span></span>\n<span class=\"line\" data-line=\"18\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}</span></span></code></pre>",
         "meta": {
@@ -2789,14 +2790,14 @@
       }
     },
     {
-      "id": "39b04420",
+      "id": "52838eee",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Notes:",
         "range": {
-          "from": 10920,
-          "to": 10926
+          "from": 11093,
+          "to": 11099
         },
         "inline": [
           {
@@ -2807,14 +2808,14 @@
       }
     },
     {
-      "id": "4ff075d5",
+      "id": "2f6d1b03",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- Cache semantics match `compileMarkdownSnapshot()` when the runtime exposes Node filesystem APIs.\n- In edge isolates without filesystem access, direct compile still runs deterministically and skips cache IO.",
         "range": {
-          "from": 10927,
-          "to": 11135
+          "from": 11100,
+          "to": 11308
         },
         "meta": {
           "ordered": false,
@@ -2845,26 +2846,26 @@
       }
     },
     {
-      "id": "35cf1edf",
+      "id": "39197282",
       "type": "hr",
       "isFinalized": true,
       "payload": {
         "raw": "---",
         "range": {
-          "from": 11137,
-          "to": 11140
+          "from": 11310,
+          "to": 11313
         }
       }
     },
     {
-      "id": "79f8ee5f",
+      "id": "7c4cb279",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "5) Metrics & Scheduling",
         "range": {
-          "from": 11142,
-          "to": 11168
+          "from": 11315,
+          "to": 11341
         },
         "meta": {
           "headingLevel": 2,
@@ -2880,14 +2881,14 @@
       }
     },
     {
-      "id": "2e4c63ba",
+      "id": "3806c2e2",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "`onMetrics`",
         "range": {
-          "from": 11170,
-          "to": 11185
+          "from": 11343,
+          "to": 11358
         },
         "meta": {
           "headingLevel": 3,
@@ -2903,14 +2904,14 @@
       }
     },
     {
-      "id": "181f62c8",
+      "id": "5cbd83cb",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "`onMetrics` receives `RendererMetrics` after each flush. The payload includes queue depth, queue delay distribution, worker patch metrics, and the adaptive throttling state.",
         "range": {
-          "from": 11187,
-          "to": 11360
+          "from": 11360,
+          "to": 11533
         },
         "inline": [
           {
@@ -2933,14 +2934,14 @@
       }
     },
     {
-      "id": "32f41e49",
+      "id": "51ab16df",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Adaptive throttling is based on coalescing p95 thresholds:",
         "range": {
-          "from": 11362,
-          "to": 11420
+          "from": 11535,
+          "to": 11593
         },
         "inline": [
           {
@@ -2951,14 +2952,14 @@
       }
     },
     {
-      "id": "2bb936a0",
+      "id": "4c6de11d",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- activates when coalescing p95 > **6ms**\n- deactivates when coalescing p95 < **4ms**",
         "range": {
-          "from": 11422,
-          "to": 11507
+          "from": 11595,
+          "to": 11680
         },
         "meta": {
           "ordered": false,
@@ -2999,14 +3000,14 @@
       }
     },
     {
-      "id": "a44fdee",
+      "id": "339630a0",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "`scheduling`",
         "range": {
-          "from": 11509,
-          "to": 11525
+          "from": 11682,
+          "to": 11698
         },
         "meta": {
           "headingLevel": 3,
@@ -3022,14 +3023,14 @@
       }
     },
     {
-      "id": "73c2d702",
+      "id": "2f24b5ff",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "`scheduling` (a subset of the patch scheduler options) includes:",
         "range": {
-          "from": 11527,
-          "to": 11591
+          "from": 11700,
+          "to": 11764
         },
         "inline": [
           {
@@ -3044,14 +3045,14 @@
       }
     },
     {
-      "id": "4fd7925b",
+      "id": "19a96083",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- `frameBudgetMs` (default: 10)\n- `lowPriorityFrameBudgetMs` (default: 6; derived from the frame budget when unspecified)\n- `maxBatchesPerFlush` (default: 12)\n- `maxLowPriorityBatchesPerFlush` (default: 2)\n- `urgentQueueThreshold` (default: 4)\n- `batch` (`\"rAF\" | \"timeout\" | \"microtask\"`, default: `\"microtask\"` when available)\n- `adaptiveSwitch` (default: `true` when `batch` is `\"microtask\"`) — switch to a smooth rAF preset once the queue drains\n- `adaptiveQueueThreshold` (default: `maxBatchesPerFlush` or 12) — queue size threshold for switching\n- `historyLimit` (default: 200)",
         "range": {
-          "from": 11593,
-          "to": 12176
+          "from": 11766,
+          "to": 12349
         },
         "meta": {
           "ordered": false,
@@ -3200,26 +3201,26 @@
       }
     },
     {
-      "id": "6aee2c83",
+      "id": "6e388026",
       "type": "hr",
       "isFinalized": true,
       "payload": {
         "raw": "---",
         "range": {
-          "from": 12178,
-          "to": 12181
+          "from": 12351,
+          "to": 12354
         }
       }
     },
     {
-      "id": "18eb38c5",
+      "id": "f30d99d",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "6) Streaming Sources",
         "range": {
-          "from": 12183,
-          "to": 12206
+          "from": 12356,
+          "to": 12379
         },
         "meta": {
           "headingLevel": 2,
@@ -3235,14 +3236,14 @@
       }
     },
     {
-      "id": "f98f521",
+      "id": "29684353",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "You can stream text via an `AsyncIterable<string>`:",
         "range": {
-          "from": 12208,
-          "to": 12259
+          "from": 12381,
+          "to": 12432
         },
         "inline": [
           {
@@ -3257,44 +3258,18 @@
             "kind": "text",
             "text": ":"
           }
-        ],
-        "meta": {
-          "mixedSegments": [
-            {
-              "kind": "text",
-              "value": "You can stream text via an `AsyncIterable<string>`:",
-              "range": {
-                "from": 12208,
-                "to": 12259
-              },
-              "inline": [
-                {
-                  "kind": "text",
-                  "text": "You can stream text via an "
-                },
-                {
-                  "kind": "code",
-                  "text": "AsyncIterable<string>"
-                },
-                {
-                  "kind": "text",
-                  "text": ":"
-                }
-              ]
-            }
-          ]
-        }
+        ]
       }
     },
     {
-      "id": "200edba8",
+      "id": "563d0d80",
       "type": "code",
       "isFinalized": true,
       "payload": {
         "raw": "```ts\nasync function* chunksFromReadable(readable: ReadableStreamDefaultReader<Uint8Array>) {\n  const decoder = new TextDecoder();\n  while (true) {\n    const { done, value } = await readable.read();\n    if (done) break;\n    yield decoder.decode(value, { stream: true });\n  }\n}\n\n<StreamingMarkdown stream={chunksFromReadable(response.body!.getReader())} />;\n```",
         "range": {
-          "from": 12261,
-          "to": 12621
+          "from": 12434,
+          "to": 12794
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"typescript\"><code data-language=\"typescript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">async</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> function*</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> chunksFromReadable</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">readable</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> ReadableStreamDefaultReader</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">Uint8Array</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>) {</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> decoder</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> new</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> TextDecoder</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">();</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  while</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> (</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) {</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">    const</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">done</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">value</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> await</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> readable.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">read</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">();</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">    if</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> (done) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">break</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">    yield</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> decoder.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">decode</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(value, { stream: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> });</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}</span></span>\n<span class=\"line\" data-line=\"9\"></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">&#x3C;</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">StreamingMarkdown stream</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">chunksFromReadable</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(response.body!.getReader())} </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">/></span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span></code></pre>",
         "meta": {
@@ -3304,26 +3279,26 @@
       }
     },
     {
-      "id": "732dac3e",
+      "id": "75468681",
       "type": "hr",
       "isFinalized": true,
       "payload": {
         "raw": "---",
         "range": {
-          "from": 12623,
-          "to": 12626
+          "from": 12796,
+          "to": 12799
         }
       }
     },
     {
-      "id": "4d636b5",
+      "id": "2e814388",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "7) Plugins & Extensibility",
         "range": {
-          "from": 12628,
-          "to": 12657
+          "from": 12801,
+          "to": 12830
         },
         "meta": {
           "headingLevel": 2,
@@ -3339,14 +3314,14 @@
       }
     },
     {
-      "id": "7afe033f",
+      "id": "4063dbbe",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Most consumers should start with `features` rather than wiring plugin registries directly.",
         "range": {
-          "from": 12659,
-          "to": 12749
+          "from": 12832,
+          "to": 12922
         },
         "inline": [
           {
@@ -3365,14 +3340,14 @@
       }
     },
     {
-      "id": "33a092c6",
+      "id": "50fea262",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "If you need deeper control (custom tokenizers, custom streaming matchers, custom worker bundles), see:",
         "range": {
-          "from": 12751,
-          "to": 12853
+          "from": 12924,
+          "to": 13026
         },
         "inline": [
           {
@@ -3383,14 +3358,14 @@
       }
     },
     {
-      "id": "541ed883",
+      "id": "678807a0",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`\n- `stream-mdx/plugins/*` (convenience package)\n- `@stream-mdx/plugins/*` (scoped packages)",
         "range": {
-          "from": 12855,
-          "to": 12993
+          "from": 13028,
+          "to": 13166
         },
         "meta": {
           "ordered": false,
@@ -3444,109 +3419,109 @@
       "id": "runtime-context-matrix",
       "text": "Runtime Context Matrix",
       "level": 2,
-      "blockId": "357af681"
+      "blockId": "1ad12186"
     },
     {
       "id": "1-streamingmarkdown",
       "text": "1) `<StreamingMarkdown />`",
       "level": 2,
-      "blockId": "5c50fee1"
+      "blockId": "76fad3dc"
     },
     {
       "id": "props",
       "text": "Props",
       "level": 3,
-      "blockId": "3e60321b"
+      "blockId": "23b65d20"
     },
     {
       "id": "imperative-handle",
       "text": "Imperative Handle",
       "level": 3,
-      "blockId": "6fb104f5"
+      "blockId": "77a155c9"
     },
     {
       "id": "2-worker-hosting-csp",
       "text": "2) Worker Hosting + CSP",
       "level": 2,
-      "blockId": "507463c0"
+      "blockId": "37c6be7e"
     },
     {
       "id": "node-cli-runtimes",
       "text": "Node / CLI runtimes",
       "level": 3,
-      "blockId": "3d0263d9"
+      "blockId": "2c12ee06"
     },
     {
       "id": "3-features",
       "text": "3) Features",
       "level": 2,
-      "blockId": "24aa72a1"
+      "blockId": "2ac5dc76"
     },
     {
       "id": "context-support-table",
       "text": "Context support table",
       "level": 3,
-      "blockId": "d1c80a3"
+      "blockId": "5c8ccfba"
     },
     {
       "id": "3-1-mermaid-optional",
       "text": "3.1) Mermaid (optional)",
       "level": 2,
-      "blockId": "13156c2"
+      "blockId": "fd8b479"
     },
     {
       "id": "4-mdx-compilation-modes",
       "text": "4) MDX Compilation Modes",
       "level": 2,
-      "blockId": "65dfe206"
+      "blockId": "3005f9e8"
     },
     {
       "id": "next-js-app-router-server-safe-rendering",
       "text": "Next.js App Router (server-safe rendering)",
       "level": 3,
-      "blockId": "56b24627"
+      "blockId": "235acbea"
     },
     {
       "id": "static-build-pipeline-ssg-export",
       "text": "Static build pipeline (SSG/export)",
       "level": 3,
-      "blockId": "3269767d"
+      "blockId": "50ff7275"
     },
     {
       "id": "direct-compile-helper-no-worker-threads",
       "text": "Direct compile helper (no `worker_threads`)",
       "level": 3,
-      "blockId": "603f5c9d"
+      "blockId": "69f9bbc5"
     },
     {
       "id": "5-metrics-scheduling",
       "text": "5) Metrics & Scheduling",
       "level": 2,
-      "blockId": "79f8ee5f"
+      "blockId": "7c4cb279"
     },
     {
       "id": "onmetrics",
       "text": "`onMetrics`",
       "level": 3,
-      "blockId": "2e4c63ba"
+      "blockId": "3806c2e2"
     },
     {
       "id": "scheduling",
       "text": "`scheduling`",
       "level": 3,
-      "blockId": "a44fdee"
+      "blockId": "339630a0"
     },
     {
       "id": "6-streaming-sources",
       "text": "6) Streaming Sources",
       "level": 2,
-      "blockId": "18eb38c5"
+      "blockId": "f30d99d"
     },
     {
       "id": "7-plugins-extensibility",
       "text": "7) Plugins & Extensibility",
       "level": 2,
-      "blockId": "4d636b5"
+      "blockId": "2e814388"
     }
   ],
   "init": {
