@@ -60,6 +60,8 @@ const tableCellProps = [
   "border-bottom-color",
 ];
 
+const tableRowProps = ["border-bottom-width", "border-bottom-color"];
+
 const listItemProps = [
   "margin-top",
   "margin-bottom",
@@ -86,13 +88,39 @@ const listMarkerProps = [
 
 const footnoteTextProps = ["color", "font-size", "line-height"];
 
+const hrProps = ["margin-top", "margin-bottom", "border-top-width", "border-top-color"];
+
+const kbdProps = [
+  "color",
+  "background-color",
+  "border-top-width",
+  "border-right-width",
+  "border-bottom-width",
+  "border-left-width",
+  "border-top-color",
+  "border-right-color",
+  "border-bottom-color",
+  "border-left-color",
+  "border-top-left-radius",
+  "border-top-right-radius",
+  "border-bottom-left-radius",
+  "border-bottom-right-radius",
+  "padding-top",
+  "padding-right",
+  "padding-bottom",
+  "padding-left",
+];
+
 export const STYLE_TARGETS: StyleTarget[] = [
   { id: "h1", selector: "#regression-root h1", properties: typographyProps },
   { id: "h2", selector: "#regression-root h2", properties: typographyProps },
   { id: "p", selector: "#regression-root p", properties: typographyProps },
   { id: "blockquote", selector: "#regression-root blockquote", properties: [...typographyProps, ...blockProps] },
   { id: "code-pre", selector: "#regression-root pre", properties: [...blockProps, "font-family", "font-size", "white-space"] },
+  { id: "hr", selector: "#regression-root hr", properties: hrProps },
+  { id: "kbd", selector: "#regression-root kbd", properties: kbdProps },
   { id: "table", selector: "#regression-root table", properties: tableProps },
+  { id: "table-row", selector: "#regression-root tbody tr", properties: tableRowProps },
   { id: "table-th", selector: "#regression-root th", properties: tableCellProps },
   { id: "table-td", selector: "#regression-root td", properties: tableCellProps },
   { id: "list-ol", selector: "#regression-root ol", properties: blockProps },

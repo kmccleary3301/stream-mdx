@@ -14,12 +14,14 @@ import type { FormatAnticipationConfig } from "./types";
 import { extractMixedContentSegments } from "./mixed-content";
 import type {
   Block,
+  DiffKind,
   InlineNode,
   MixedContentSegment,
   NodeSnapshot,
   NodePath,
   Patch,
   SetPropsBatchEntry,
+  TokenLineV1,
 } from "./types";
 import { PATCH_ROOT_ID } from "./types";
 import { normalizeBlockquoteText, parseCodeFenceInfo } from "./utils";
@@ -336,7 +338,7 @@ function buildCodeBlockSnapshot(block: Block, codeNode: any, id: string, baseOff
   const segment = raw.slice(codeNode.from, codeNode.to);
   const normalized = stripListIndentation(segment);
   const { code, info: infoString, hadFence } = stripCodeFence(normalized);
-  const body = hadFence ? code : dedentIndentedCode(normalized);
+  const body = hadFence ? dedentFencedCodeByClosingIndent(normalized, code) : dedentIndentedCode(normalized);
   const { lang, meta } = parseCodeFenceInfo(infoString);
   const codeBlock: Block = {
     id,
@@ -551,6 +553,86 @@ function dedentIndentedCode(input: string): string {
     .trimEnd();
 }
 
+function dedentFencedCodeByClosingIndent(fencedRaw: string, extractedCode: string): string {
+  if (!fencedRaw || !extractedCode) {
+    return extractedCode;
+  }
+
+  const lines = fencedRaw.replace(/\r\n?/g, "\n").split("\n");
+  if (lines.length < 2) {
+    return extractedCode;
+  }
+
+  let closingIndex = lines.length - 1;
+  while (closingIndex > 0 && lines[closingIndex].trim().length === 0) {
+    closingIndex -= 1;
+  }
+  if (closingIndex <= 0) {
+    return extractedCode;
+  }
+
+  const closingMatch = lines[closingIndex].match(/^([ \t]*)```/);
+  const closingIndent = closingMatch?.[1] ?? "";
+  if (closingIndent.length === 0) {
+    return extractedCode;
+  }
+
+  return extractedCode
+    .split("\n")
+    .map((line) => stripIndentPrefix(line, closingIndent))
+    .join("\n");
+}
+
+function stripIndentPrefix(line: string, prefix: string): string {
+  if (!line || !prefix) {
+    return line;
+  }
+  if (line.startsWith(prefix)) {
+    return line.slice(prefix.length);
+  }
+
+  const targetColumns = measureIndentColumns(prefix);
+  if (targetColumns <= 0) {
+    return line;
+  }
+
+  let index = 0;
+  let columns = 0;
+  while (index < line.length && columns < targetColumns) {
+    const ch = line[index];
+    if (ch === " ") {
+      columns += 1;
+      index += 1;
+      continue;
+    }
+    if (ch === "\t") {
+      columns += 4;
+      index += 1;
+      continue;
+    }
+    break;
+  }
+
+  return columns >= targetColumns ? line.slice(index) : line;
+}
+
+function measureIndentColumns(value: string): number {
+  let columns = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    const ch = value[i];
+    if (ch === " ") {
+      columns += 1;
+      continue;
+    }
+    if (ch === "\t") {
+      columns += 4;
+      continue;
+    }
+    break;
+  }
+  return columns;
+}
+
 function removeHeadingMarkers(input: string): string {
   return input
     .replace(/^#{1,6}\s+/, "")
@@ -628,9 +710,22 @@ function enrichTableSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot
 }
 
 function enrichCodeSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot {
-  const source = typeof block.payload.meta?.code === "string" ? (block.payload.meta?.code as string) : (block.payload.raw ?? "");
-  const lines = extractCodeLines(source);
-  const meta = block.payload.meta as { highlightedLines?: HighlightedLine[]; lang?: string } | undefined;
+  const metaCode = typeof block.payload.meta?.code === "string" ? (block.payload.meta?.code as string) : null;
+  const source = metaCode ?? (block.payload.raw ?? "");
+  // Worker-provided meta.code is already normalized code body (no fences),
+  // so preserve its leading indentation verbatim instead of re-running
+  // extractCodeLines() heuristics for indented markdown blocks.
+  const lines = metaCode !== null ? (source.length > 0 ? source.replace(/\r\n?/g, "\n").split("\n") : []) : extractCodeLines(source);
+  const meta = block.payload.meta as
+    | {
+        highlightedLines?: HighlightedLine[];
+        lang?: string;
+        tokenLines?: Array<TokenLineV1 | null>;
+        diffKind?: Array<DiffKind | null>;
+        oldNo?: Array<number | null>;
+        newNo?: Array<number | null>;
+      }
+    | undefined;
   const highlightedHtml = block.payload.highlightedHtml ?? "";
   const hasBlockHighlight = typeof block.payload.highlightedHtml === "string" && block.payload.highlightedHtml.length > 0;
   const metaLines = Array.isArray(meta?.highlightedLines) ? (meta?.highlightedLines as HighlightedLine[]) : null;
@@ -638,6 +733,14 @@ function enrichCodeSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot 
   const highlightedLines = metaLines
     ? normalizeHighlightedLines(metaLines, lines.length)
     : extractHighlightedLines(highlightedHtml, lines.length);
+  const metaTokenLines = Array.isArray(meta?.tokenLines) ? (meta?.tokenLines as Array<TokenLineV1 | null>) : null;
+  const tokenLines = metaTokenLines ? normalizeTokenLines(metaTokenLines, lines.length) : null;
+  const metaDiffKind = Array.isArray(meta?.diffKind) ? (meta?.diffKind as Array<DiffKind | null>) : null;
+  const diffKindLines = metaDiffKind ? normalizeOptionalArray(metaDiffKind, lines.length) : null;
+  const metaOldNo = Array.isArray(meta?.oldNo) ? (meta?.oldNo as Array<number | null>) : null;
+  const oldNoLines = metaOldNo ? normalizeOptionalArray(metaOldNo, lines.length) : null;
+  const metaNewNo = Array.isArray(meta?.newNo) ? (meta?.newNo as Array<number | null>) : null;
+  const newNoLines = metaNewNo ? normalizeOptionalArray(metaNewNo, lines.length) : null;
   const lang = typeof meta?.lang === "string" ? String(meta.lang) : undefined;
   let { preAttrs, codeAttrs } = extractCodeWrapperAttributes(highlightedHtml);
   if (!preAttrs || !codeAttrs) {
@@ -651,17 +754,56 @@ function enrichCodeSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot 
     preAttrs,
     codeAttrs,
   };
-  snapshot.children = lines.map((line, index) => ({
-    id: `${block.id}::line:${index}`,
-    type: "code-line",
-    props: {
+  snapshot.children = lines.map((line, index) => {
+    const props: Record<string, unknown> = {
       index,
       text: line,
       html: includeLineHtml ? (highlightedLines[index] ?? null) : null,
-    },
-    children: [],
-  }));
+    };
+    if (tokenLines) {
+      props.tokens = tokenLines[index] ?? null;
+    }
+    if (diffKindLines) {
+      props.diffKind = diffKindLines[index] ?? null;
+    }
+    if (oldNoLines) {
+      props.oldNo = oldNoLines[index] ?? null;
+    }
+    if (newNoLines) {
+      props.newNo = newNoLines[index] ?? null;
+    }
+    return {
+      id: `${block.id}::line:${index}`,
+      type: "code-line",
+      props,
+      children: [],
+    };
+  });
   return snapshot;
+}
+
+function normalizeTokenLines(lines: Array<TokenLineV1 | null>, fallbackLength: number): Array<TokenLineV1 | null> {
+  if (!lines || lines.length === 0) {
+    return new Array(Math.max(0, fallbackLength)).fill(null);
+  }
+  const length = Math.max(fallbackLength, lines.length);
+  const result: Array<TokenLineV1 | null> = new Array(length).fill(null);
+  for (let i = 0; i < lines.length; i++) {
+    result[i] = lines[i] ?? null;
+  }
+  return result;
+}
+
+function normalizeOptionalArray<T>(lines: Array<T | null>, fallbackLength: number): Array<T | null> {
+  if (!lines || lines.length === 0) {
+    return new Array(Math.max(0, fallbackLength)).fill(null);
+  }
+  const length = Math.max(fallbackLength, lines.length);
+  const result: Array<T | null> = new Array(length).fill(null);
+  for (let i = 0; i < lines.length; i++) {
+    result[i] = lines[i] ?? null;
+  }
+  return result;
 }
 
 function cloneInlineNodes(nodes: InlineNode[]): InlineNode[] {
@@ -867,7 +1009,17 @@ export function applyPatchBatch(snapshot: DocumentSnapshot, patches: Patch[]): B
       case "appendLines": {
         const parent = resolveTargetNode(snapshot, patch.at);
         if (!parent) break;
-        appendLinesToCodeNode(snapshot, parent, patch.startIndex, patch.lines ?? [], patch.highlight ?? []);
+        appendLinesToCodeNode(
+          snapshot,
+          parent,
+          patch.startIndex,
+          patch.lines ?? [],
+          patch.highlight ?? [],
+          patch.tokens,
+          patch.diffKind,
+          patch.oldNo,
+          patch.newNo,
+        );
         break;
       }
       case "setHTML": {
@@ -1008,6 +1160,10 @@ function appendLinesToCodeNode(
   startIndex: number,
   lines: string[],
   highlights: Array<string | null>,
+  tokens?: Array<TokenLineV1 | null>,
+  diffKind?: Array<DiffKind | null>,
+  oldNo?: Array<number | null>,
+  newNo?: Array<number | null>,
 ) {
   if (parent.type !== "code") return;
   const insertionIndex = Math.max(0, Math.min(startIndex, parent.children.length));
@@ -1026,6 +1182,18 @@ function appendLinesToCodeNode(
         html: highlights[i] ?? null,
       },
     };
+    if (tokens && Object.prototype.hasOwnProperty.call(tokens, i)) {
+      child.props.tokens = tokens[i] ?? null;
+    }
+    if (diffKind && Object.prototype.hasOwnProperty.call(diffKind, i)) {
+      child.props.diffKind = diffKind[i] ?? null;
+    }
+    if (oldNo && Object.prototype.hasOwnProperty.call(oldNo, i)) {
+      child.props.oldNo = oldNo[i] ?? null;
+    }
+    if (newNo && Object.prototype.hasOwnProperty.call(newNo, i)) {
+      child.props.newNo = newNo[i] ?? null;
+    }
     snapshot.nodes.set(child.id, child);
     parent.children.splice(currentIndex, 0, child.id);
     currentIndex++;

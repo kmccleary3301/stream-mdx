@@ -62,6 +62,44 @@ export function buildChunks(text: string, scenario: RegressionScenario): string[
   return chunks.length > 0 ? chunks : [text];
 }
 
+function hashSeed(seed: string): number {
+  let hash = 2166136261;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash ^= seed.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function createSeededRng(seed: string): () => number {
+  let state = hashSeed(seed) || 1;
+  return () => {
+    state = Math.imul(state, 1664525) + 1013904223;
+    state >>>= 0;
+    return state / 0xffffffff;
+  };
+}
+
+export function buildSeededChunks(text: string, scenario: RegressionScenario, seed: string): string[] {
+  const baseRawChunk = Math.floor((scenario.charRateCps * scenario.updateIntervalMs) / 1000);
+  const baseChunkSize = Math.max(1, Math.min(scenario.maxChunkChars, baseRawChunk));
+  const maxChunkSize = Math.max(baseChunkSize, scenario.maxChunkChars);
+  const minChunkSize = Math.max(1, Math.min(baseChunkSize, Math.max(1, Math.floor(baseChunkSize * 0.35))));
+  const nextRandom = createSeededRng(seed);
+  const chunks: string[] = [];
+  let index = 0;
+
+  while (index < text.length) {
+    const jitter = minChunkSize + Math.floor(nextRandom() * (maxChunkSize - minChunkSize + 1));
+    const remaining = text.length - index;
+    const size = Math.max(1, Math.min(remaining, jitter));
+    chunks.push(text.slice(index, index + size));
+    index += size;
+  }
+
+  return chunks.length > 0 ? chunks : [text];
+}
+
 export function progressCheckpoints(totalLength: number): number[] {
   const percentages = [0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 1];
   const values = new Set<number>();
@@ -74,4 +112,20 @@ export function progressCheckpoints(totalLength: number): number[] {
 
 export function isSplitScenario(scenario: RegressionScenario): boolean {
   return Boolean(scenario.useSplitMarkers);
+}
+
+export function firstDiffIndex(a: string, b: string): number {
+  const len = Math.min(a.length, b.length);
+  for (let i = 0; i < len; i += 1) {
+    if (a[i] !== b[i]) return i;
+  }
+  if (a.length !== b.length) return len;
+  return -1;
+}
+
+export function diffContext(value: string, index: number, span = 80): string {
+  if (index < 0) return "";
+  const start = Math.max(0, index - span);
+  const end = Math.min(value.length, index + span);
+  return value.slice(start, end);
 }

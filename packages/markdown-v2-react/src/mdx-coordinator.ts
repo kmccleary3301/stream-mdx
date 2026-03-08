@@ -12,8 +12,8 @@ import type { RendererStore } from "./renderer/store";
  * - Returns a derived blocks array with `compiledMdxRef` populated
  */
 interface MdxWorkerClientLike {
-  setMdxCompiled(blockId: string, compiledId: string): void;
-  setMdxError(blockId: string, message: string): void;
+  setMdxCompiled(blockId: string, compiledId: string, rawSignature: string): void;
+  setMdxError(blockId: string, message: string, rawSignature: string): void;
 }
 
 interface MdxCoordinatorOptions {
@@ -29,6 +29,7 @@ export function useMdxCoordinator(blocks: ReadonlyArray<Block>, compileEndpoint?
   // Map block.id -> compiled id
   const [compiledMap, setCompiledMap] = useState<Map<string, string>>(new Map());
   const blockSignatureRef = useRef<Map<string, string>>(new Map());
+  const failedSignatureRef = useRef<Map<string, string>>(new Map());
 
   const applyCompiledRef = useCallback(
     (block: Block, compiledId: string) => {
@@ -36,7 +37,7 @@ export function useMdxCoordinator(blocks: ReadonlyArray<Block>, compileEndpoint?
         return;
       }
       if (options?.workerClient) {
-        options.workerClient.setMdxCompiled(block.id, compiledId);
+        options.workerClient.setMdxCompiled(block.id, compiledId, block.payload.raw ?? "");
         return;
       }
       const store = options?.store;
@@ -79,7 +80,13 @@ export function useMdxCoordinator(blocks: ReadonlyArray<Block>, compileEndpoint?
       return;
     }
     // Find compile targets: finalized MDX blocks without compiled ref yet
-    const targets = blocks.filter((b) => b.type === "mdx" && b.isFinalized && !b.payload.compiledMdxRef && !compiledMap.has(b.id));
+    const targets = blocks.filter((b) => {
+      if (b.type !== "mdx" || !b.isFinalized || b.payload.compiledMdxRef || compiledMap.has(b.id)) {
+        return false;
+      }
+      const raw = b.payload.raw ?? "";
+      return failedSignatureRef.current.get(b.id) !== raw;
+    });
     if (targets.length === 0) return;
 
     let cancelled = false;
@@ -99,13 +106,15 @@ export function useMdxCoordinator(blocks: ReadonlyArray<Block>, compileEndpoint?
             next.set(block.id, compiled.id);
             return next;
           });
+          failedSignatureRef.current.delete(block.id);
           applyCompiledRef(block, compiled.id);
         } catch (e) {
           // Compilation failure: leave as-is; could log or set a sentinel id
           // eslint-disable-next-line no-console
           console.warn("MDX compile failed for block", block.id, e);
+          failedSignatureRef.current.set(block.id, block.payload.raw ?? "");
           if (options?.workerClient) {
-            options.workerClient.setMdxError(block.id, e instanceof Error ? e.message : String(e));
+            options.workerClient.setMdxError(block.id, e instanceof Error ? e.message : String(e), block.payload.raw ?? "");
           } else if (options?.store) {
             options.store.applyPatches([
               {
@@ -153,6 +162,7 @@ export function useMdxCoordinator(blocks: ReadonlyArray<Block>, compileEndpoint?
         const currentSignature = candidate.payload.raw ?? "";
         if (previousSignature !== undefined && previousSignature !== currentSignature) {
           next.delete(blockId);
+          failedSignatureRef.current.delete(blockId);
           mutated = true;
         }
       }
@@ -164,6 +174,9 @@ export function useMdxCoordinator(blocks: ReadonlyArray<Block>, compileEndpoint?
     for (const block of blocks) {
       if (block.type === "mdx") {
         signatureMap.set(block.id, block.payload.raw ?? "");
+        if (!block.isFinalized || block.payload.compiledMdxRef) {
+          failedSignatureRef.current.delete(block.id);
+        }
       }
     }
     blockSignatureRef.current = signatureMap;

@@ -10,7 +10,7 @@ export const SHOWCASE_ITEMS: ShowcaseItem[] = [
     slug: "stream-mdx-devx-catalog",
     title: "Stream-MDX DevX Catalog",
     file: "stream-mdx-devx-catalog.mdx",
-    description: "Exhaustive MDX-based tutorial covering every Stream-MDX feature and pattern.",
+    description: "Complete feature surface for production integration, tuning, and deployment workflows.",
   },
   {
     slug: "html-overrides",
@@ -29,5 +29,17 @@ export const SHOWCASE_ITEMS: ShowcaseItem[] = [
     title: "Custom MDX Components",
     file: "mdx-components.md",
     description: "Notes on MDX compilation modes and runtime components.",
+  },
+  {
+    slug: "mermaid-diagrams",
+    title: "Mermaid diagrams",
+    file: "mermaid-diagrams.md",
+    description: "Opt-in diagram rendering with a code/preview toggle.",
+  },
+  {
+    slug: "perf-harness",
+    title: "Perf harness",
+    file: "perf-harness.md",
+    description: "Reproducible perf runs and guardrails for streaming metrics.",
   },
 ];

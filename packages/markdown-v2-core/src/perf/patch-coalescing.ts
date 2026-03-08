@@ -1,6 +1,8 @@
 import type { CoalescingMetrics, NodePath, NodeSnapshot, Patch, SetPropsBatchEntry } from "../types";
 export type { CoalescingMetrics } from "../types";
 
+type AppendLinesPatch = Extract<Patch, { op: "appendLines" }>;
+
 export interface CoalesceConfig {
   enabled: boolean;
   maxCoalesceWindow: number; // Maximum patches to consider for coalescing (for performance)
@@ -144,6 +146,14 @@ function mergeAppendLines(window: Patch[], startIndex: number): { patch: Patch; 
 
   const lines = [...(base.lines ?? [])];
   const highlight: Array<string | null> = Array.isArray(base.highlight) ? [...base.highlight] : [];
+  const tokens: Array<unknown> = Array.isArray(base.tokens) ? [...base.tokens] : [];
+  const diffKind: Array<unknown> = Array.isArray(base.diffKind) ? [...base.diffKind] : [];
+  const oldNo: Array<unknown> = Array.isArray(base.oldNo) ? [...base.oldNo] : [];
+  const newNo: Array<unknown> = Array.isArray(base.newNo) ? [...base.newNo] : [];
+  let includeTokens = Array.isArray(base.tokens);
+  let includeDiffKind = Array.isArray(base.diffKind);
+  let includeOldNo = Array.isArray(base.oldNo);
+  let includeNewNo = Array.isArray(base.newNo);
   const baseStart = base.startIndex;
   let expectedStart = baseStart + lines.length;
   let j = startIndex + 1;
@@ -158,6 +168,7 @@ function mergeAppendLines(window: Patch[], startIndex: number): { patch: Patch; 
       typeof next.startIndex === "number" &&
       next.startIndex === expectedStart
     ) {
+      const priorLineCount = lines.length;
       lines.push(...(next.lines ?? []));
       const nextHighlights = Array.isArray(next.highlight) ? next.highlight : [];
       const appendedCount = next.lines?.length ?? 0;
@@ -171,6 +182,50 @@ function mergeAppendLines(window: Patch[], startIndex: number): { patch: Patch; 
           highlight.push(null);
         }
       }
+      if (Array.isArray(next.tokens)) {
+        if (!includeTokens) {
+          tokens.push(...new Array(priorLineCount).fill(null));
+          includeTokens = true;
+        }
+        for (let idx = 0; idx < appendedCount; idx++) {
+          tokens.push(idx < next.tokens.length ? (next.tokens[idx] ?? null) : null);
+        }
+      } else if (includeTokens) {
+        tokens.push(...new Array(appendedCount).fill(null));
+      }
+      if (Array.isArray(next.diffKind)) {
+        if (!includeDiffKind) {
+          diffKind.push(...new Array(priorLineCount).fill(null));
+          includeDiffKind = true;
+        }
+        for (let idx = 0; idx < appendedCount; idx++) {
+          diffKind.push(idx < next.diffKind.length ? (next.diffKind[idx] ?? null) : null);
+        }
+      } else if (includeDiffKind) {
+        diffKind.push(...new Array(appendedCount).fill(null));
+      }
+      if (Array.isArray(next.oldNo)) {
+        if (!includeOldNo) {
+          oldNo.push(...new Array(priorLineCount).fill(null));
+          includeOldNo = true;
+        }
+        for (let idx = 0; idx < appendedCount; idx++) {
+          oldNo.push(idx < next.oldNo.length ? (next.oldNo[idx] ?? null) : null);
+        }
+      } else if (includeOldNo) {
+        oldNo.push(...new Array(appendedCount).fill(null));
+      }
+      if (Array.isArray(next.newNo)) {
+        if (!includeNewNo) {
+          newNo.push(...new Array(priorLineCount).fill(null));
+          includeNewNo = true;
+        }
+        for (let idx = 0; idx < appendedCount; idx++) {
+          newNo.push(idx < next.newNo.length ? (next.newNo[idx] ?? null) : null);
+        }
+      } else if (includeNewNo) {
+        newNo.push(...new Array(appendedCount).fill(null));
+      }
       expectedStart = baseStart + lines.length;
       mergedCount++;
       j++;
@@ -179,10 +234,14 @@ function mergeAppendLines(window: Patch[], startIndex: number): { patch: Patch; 
     break;
   }
 
-  const combined: Patch = {
+  const combined: AppendLinesPatch = {
     ...base,
     lines,
     highlight: highlight.length > 0 ? highlight : undefined,
+    tokens: includeTokens && tokens.length > 0 ? (tokens as AppendLinesPatch["tokens"]) : undefined,
+    diffKind: includeDiffKind && diffKind.length > 0 ? (diffKind as AppendLinesPatch["diffKind"]) : undefined,
+    oldNo: includeOldNo && oldNo.length > 0 ? (oldNo as AppendLinesPatch["oldNo"]) : undefined,
+    newNo: includeNewNo && newNo.length > 0 ? (newNo as AppendLinesPatch["newNo"]) : undefined,
   };
 
   return { patch: combined, nextIndex: j };
@@ -262,6 +321,7 @@ function collectSetProps(window: Patch[], startIndex: number): { patches: Patch[
     entries.push({
       at: cloneNodePath(current.at),
       props: mergedProps,
+      meta: current.meta ? { ...current.meta } : undefined,
     });
 
     j = k;
@@ -284,6 +344,7 @@ function collectSetProps(window: Patch[], startIndex: number): { patches: Patch[
   const batchPatch: Patch = {
     op: "setPropsBatch",
     entries,
+    meta: first.meta ? { ...first.meta } : undefined,
   } as Patch;
 
   return { patches: [batchPatch], nextIndex: j };
@@ -417,6 +478,7 @@ export function coalescePatchesQuadratic(patches: Patch[], config: CoalesceConfi
         {
           at: cloneNodePath(current.at),
           props: mergedProps,
+          meta: current.meta ? { ...current.meta } : undefined,
         },
       ];
 
@@ -445,6 +507,7 @@ export function coalescePatchesQuadratic(patches: Patch[], config: CoalesceConfi
         batchEntries.push({
           at: cloneNodePath(candidate.at),
           props: candidateMergedProps,
+          meta: candidate.meta ? { ...candidate.meta } : undefined,
         });
         k = m;
       }
@@ -453,6 +516,7 @@ export function coalescePatchesQuadratic(patches: Patch[], config: CoalesceConfi
         coalesced.push({
           op: "setPropsBatch",
           entries: batchEntries,
+          meta: current.meta ? { ...current.meta } : undefined,
         } as Patch);
         i = k;
         continue;

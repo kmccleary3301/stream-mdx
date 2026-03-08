@@ -1,4 +1,5 @@
 import type React from "react";
+import type { TokenLineV1 } from "@stream-mdx/core";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface VirtualizedCodeConfig {
@@ -20,11 +21,14 @@ export interface VirtualizedLine {
   index: number;
   text: string;
   html?: string | null;
+  tokens?: TokenLineV1 | null;
 }
 
 export interface VirtualizedCodeWindow {
   startIndex: number;
   endIndex: number;
+  visibleStart: number;
+  visibleEnd: number;
   visibleLines: VirtualizedLine[];
   totalLines: number;
   mountedLines: number;
@@ -46,6 +50,8 @@ export function calculateCodeWindow(
     return {
       startIndex: 0,
       endIndex: totalLines,
+      visibleStart: 0,
+      visibleEnd: totalLines,
       visibleLines: lines as VirtualizedLine[],
       totalLines,
       mountedLines: totalLines,
@@ -55,14 +61,18 @@ export function calculateCodeWindow(
   // Calculate visible range
   const firstVisibleLine = Math.floor(scrollTop / lineHeight);
   const lastVisibleLine = Math.ceil((scrollTop + containerHeight) / lineHeight);
+  const visibleStart = Math.max(0, firstVisibleLine);
+  const visibleEnd = Math.min(totalLines, Math.max(visibleStart, lastVisibleLine));
 
   // Apply buffer
-  const startIndex = Math.max(0, firstVisibleLine - config.bufferSize);
-  const endIndex = Math.min(totalLines, lastVisibleLine + config.bufferSize);
+  const startIndex = Math.max(0, visibleStart - config.bufferSize);
+  const endIndex = Math.min(totalLines, visibleEnd + config.bufferSize);
 
   return {
     startIndex,
     endIndex,
+    visibleStart,
+    visibleEnd,
     visibleLines: lines.slice(startIndex, endIndex) as VirtualizedLine[],
     totalLines,
     mountedLines: endIndex - startIndex,

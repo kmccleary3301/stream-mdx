@@ -3,11 +3,11 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import React, { createElement } from "react";
 
+import type { InlineNode } from "@stream-mdx/core";
 import {
   ComponentRegistry,
   renderInlineNodes,
   type HtmlElements,
-  type InlineNode,
   type TableElements,
 } from "@stream-mdx/react";
 

@@ -6,37 +6,6 @@ This is the “everything in one place” manual for the StreamMDX project.
 - scoped packages: `@stream-mdx/{core,plugins,worker,react}`
 - repo: https://github.com/kmccleary3301/stream-mdx
 
-## Table of Contents
-
-- [1. What StreamMDX Is](#1-what-streammdx-is)
-- [2. Quickstart](#2-quickstart)
-  - [2.1 Minimal Next.js usage](#21-minimal-nextjs-usage)
-  - [2.2 Worker bundle placement](#22-worker-bundle-placement)
-- [3. Conceptual Model](#3-conceptual-model)
-  - [3.1 Worker-first parsing + patching](#31-worker-first-parsing--patching)
-  - [3.2 Backpressure and responsiveness](#32-backpressure-and-responsiveness)
-- [4. Public API (High Level)](#4-public-api-high-level)
-- [5. Modularity & Feature Toggles](#5-modularity--feature-toggles)
-  - [5.1 Can users drop math, HTML, MDX?](#51-can-users-drop-math-html-mdx)
-  - [5.2 Math delimiters ( `$...$` vs `\\(...\\)` )](#52-math-delimiters--vs-)
-- [6. Plugins](#6-plugins)
-  - [6.1 Default “document” plugin set](#61-default-document-plugin-set)
-  - [6.2 Tables (Shadcn variants)](#62-tables-shadcn-variants)
-  - [6.3 HTML](#63-html)
-  - [6.4 Math](#64-math)
-  - [6.5 MDX](#65-mdx)
-- [7. React Integration](#7-react-integration)
-  - [7.1 Tag/component overrides](#71-tagcomponent-overrides)
-  - [7.2 Wrapping code/math blocks (scroll containers, etc)](#72-wrapping-codemath-blocks-scroll-containers-etc)
-- [8. MDX Hydration & Parity](#8-mdx-hydration--parity)
-- [9. Security (CSP + Sanitization)](#9-security-csp--sanitization)
-- [10. Performance & Tuning](#10-performance--tuning)
-- [11. Troubleshooting](#11-troubleshooting)
-- [12. Packages & Entry Points](#12-packages--entry-points)
-- [13. Development, Testing, and Release](#13-development-testing-and-release)
-
----
-
 ## 1. What StreamMDX Is
 
 StreamMDX is a streaming Markdown/MDX renderer designed for:

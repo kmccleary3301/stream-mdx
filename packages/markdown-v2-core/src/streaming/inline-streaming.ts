@@ -73,6 +73,15 @@ export function prepareInlineStreamingContent(
 
   let mathDisplayOpen = false;
   let mathDisplayCrossedNewline = false;
+  const shouldOpenInlineMath = (index: number) => {
+    const next = content[index + 1] ?? "";
+    // Be conservative for currency-like prefixes during streaming. A lone
+    // `$150 ...` should remain raw text until a real closing delimiter appears.
+    if (/\d/.test(next)) {
+      return false;
+    }
+    return true;
+  };
 
   for (let i = 0; i < content.length; i++) {
     const code = content.charCodeAt(i);
@@ -116,7 +125,10 @@ export function prepareInlineStreamingContent(
         }
         i += 1;
       } else {
-        toggleToken("math-inline");
+        const mathInlineOpen = stack.includes("math-inline");
+        if (mathInlineOpen || shouldOpenInlineMath(i)) {
+          toggleToken("math-inline");
+        }
       }
     }
   }
@@ -130,7 +142,7 @@ export function prepareInlineStreamingContent(
     if (hasIncompleteMathInline && !enableMathInlineAnticipation) {
       return { kind: "raw", status: "raw", reason: "incomplete-math" };
     }
-    if (hasIncompleteMathDisplay && (!enableMathBlockAnticipation || mathDisplayCrossedNewline)) {
+    if (hasIncompleteMathDisplay && !enableMathBlockAnticipation) {
       return { kind: "raw", status: "raw", reason: "incomplete-math" };
     }
   }
@@ -156,7 +168,10 @@ export function prepareInlineStreamingContent(
       case "math-inline":
         return "$";
       case "math-display":
-        return "$$";
+        if (!mathDisplayCrossedNewline) {
+          return "$$";
+        }
+        return content.endsWith("\n") || content.endsWith("\r") ? "$$" : "\n$$";
       default:
         return "";
     }

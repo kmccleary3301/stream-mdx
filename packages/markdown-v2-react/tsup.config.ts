@@ -4,7 +4,7 @@ import { defineConfig } from "tsup";
 const resolve = (p: string) => join(__dirname, p);
 const sourcemap = process.env.SOURCEMAP === "1" || process.env.SOURCEMAP === "true";
 
-const entries = [
+const clientEntries = [
   "src/index.ts",
   "src/streaming-markdown.tsx",
   "src/renderer.tsx",
@@ -23,26 +23,38 @@ const entries = [
   "src/contexts/math-tracker.ts",
 ].map(resolve);
 
-export default defineConfig({
-  entry: entries,
+const serverEntries = [resolve("src/server.tsx")];
+
+const sharedConfig = {
   dts: true,
   sourcemap,
   splitting: false,
-  clean: true,
-  banner: {
-    js: '"use client";',
-  },
   format: ["esm", "cjs"],
   outDir: join(__dirname, "dist"),
   target: "es2020",
   tsconfig: join(__dirname, "tsconfig.build.json"),
   external: ["react", "react-dom", "@stream-mdx/core", "@stream-mdx/worker"],
-  outExtension({ format }) {
+  outExtension({ format }: { format: "cjs" | "esm" }) {
     return {
       js: format === "cjs" ? ".cjs" : ".mjs",
     };
   },
-  esbuildOptions(options) {
+  esbuildOptions(options: { jsx?: string }) {
     options.jsx = "automatic";
   },
-});
+};
+
+export default defineConfig([
+  {
+    ...sharedConfig,
+    entry: clientEntries,
+    clean: true,
+    banner: {
+      js: '"use client";',
+    },
+  },
+  {
+    ...sharedConfig,
+    entry: serverEntries,
+  },
+]);

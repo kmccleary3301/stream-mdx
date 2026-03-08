@@ -8,6 +8,7 @@ const SAMPLE_SNIPPET = [
   "",
   '<Callout tone="info">Remember that $$E=mc^2$$ holds even inside MDX.</Callout>',
 ].join("\n");
+const MATH_SENTINEL_SNIPPET = ["$$", "\\text{MDX\\_IN\\_MATH\\_SENTINEL <InlineComponent />} + \\text{\\{not-mdx\\}}", "$$"].join("\n");
 
 function containsMathNodes(nodes: InlineNode[] | undefined): boolean {
   if (!nodes || nodes.length === 0) return false;
@@ -24,7 +25,7 @@ function containsMathNodes(nodes: InlineNode[] | undefined): boolean {
   return false;
 }
 
-async function renderSnippetWithPlugins(): Promise<Block[]> {
+async function renderSnippetWithPlugins(snippet: string): Promise<Block[]> {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
   const initMessages = await harness.send({
@@ -37,7 +38,7 @@ async function renderSnippetWithPlugins(): Promise<Block[]> {
   assert.ok(init, "worker did not initialize before streaming snippet");
   store.reset(init.blocks);
 
-  const appendMessages = await harness.send({ type: "APPEND", text: SAMPLE_SNIPPET });
+  const appendMessages = await harness.send({ type: "APPEND", text: snippet });
   appendMessages
     .filter((msg): msg is Extract<WorkerOut, { type: "PATCH" }> => msg.type === "PATCH")
     .forEach((msg) => store.applyPatches(msg.patches as Patch[], { captureMetrics: false }));
@@ -51,13 +52,23 @@ async function renderSnippetWithPlugins(): Promise<Block[]> {
 }
 
 async function main() {
-  const blocks = await renderSnippetWithPlugins();
+  const blocks = await renderSnippetWithPlugins(SAMPLE_SNIPPET);
   const mdxBlock = blocks.find((block) => block.type === "mdx");
   assert.ok(mdxBlock, "expected MDX detection plugin to retag Callout block to type 'mdx'");
 
   const mathParagraph = blocks.find((block) => block.type === "paragraph" && typeof block.payload.raw === "string" && block.payload.raw.includes("$a^2"));
   assert.ok(mathParagraph, "expected inline paragraph to survive next to MDX");
   assert.ok(containsMathNodes(mathParagraph.payload.inline), "paragraph inline nodes should include math markers when math plugin is enabled");
+
+  const sentinelBlocks = await renderSnippetWithPlugins(MATH_SENTINEL_SNIPPET);
+  const sentinelBlock = sentinelBlocks.find(
+    (block) => typeof block.payload.raw === "string" && block.payload.raw.includes("MDX\\_IN\\_MATH\\_SENTINEL"),
+  );
+  assert.ok(sentinelBlock, "expected sentinel math block to render");
+  assert.notStrictEqual(sentinelBlock.type, "mdx", "math sentinel should not be tagged as mdx");
+  const sentinelRanges = (sentinelBlock.payload.meta as { protectedRanges?: Array<{ kind?: string }> } | undefined)?.protectedRanges ?? [];
+  assert.ok(sentinelRanges.some((range) => range?.kind === "math-display"), "math sentinel should carry math-display protected range");
+  assert.ok(containsMathNodes(sentinelBlock.payload.inline), "math sentinel should remain inline math content, not raw text");
 
   console.log("worker mdx/math registration test passed");
 }

@@ -7,6 +7,7 @@ const sourcemap = process.env.SOURCEMAP === "1" || process.env.SOURCEMAP === "tr
 export default defineConfig({
   entry: [
     resolve("src/index.ts"),
+    resolve("src/direct.ts"),
     resolve("src/worker-client.ts"),
     resolve("src/mdx-compile.ts"),
     resolve("src/streaming/custom-matcher.ts"),

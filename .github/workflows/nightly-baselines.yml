@@ -1,0 +1,55 @@
+name: Nightly Baselines
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 8 * * *"
+
+jobs:
+  nightly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Run release gates (baseline run)
+        run: npm run release:gates
+
+      - name: Upload snippet analysis
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: snippet-analysis
+          path: tmp/snippet_analysis
+
+      - name: Upload perf baseline
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-baseline
+          path: tmp/perf-baseline
+
+      - name: Upload regression artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-artifacts
+          path: tests/regression/artifacts
+
+      - name: Upload gate logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-gates-logs
+          path: tmp/release-gates

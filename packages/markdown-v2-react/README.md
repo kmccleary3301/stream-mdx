@@ -42,9 +42,10 @@ export function Demo({ text }: { text: string }) {
 
 ## Docs
 
-- API reference: `docs/PUBLIC_API.md`
-- React integration guide: `docs/REACT_INTEGRATION_GUIDE.md`
-- Plugins & worker customization: `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`
+- API reference: https://github.com/kmccleary3301/stream-mdx/blob/main/docs/PUBLIC_API.md
+- React integration guide: https://github.com/kmccleary3301/stream-mdx/blob/main/docs/REACT_INTEGRATION_GUIDE.md
+- Plugins & worker customization: https://github.com/kmccleary3301/stream-mdx/blob/main/docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md
+- Full docs site: https://kmccleary3301.github.io/stream-mdx/
 
 ## Addons
 

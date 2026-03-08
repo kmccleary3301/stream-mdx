@@ -43,10 +43,12 @@ If you compile MDX on the server (e.g. Next.js API route), use the same compilat
 import { compileMdxContent } from "@stream-mdx/worker/mdx-compile";
 ```
 
-See `docs/REACT_INTEGRATION_GUIDE.md` for the full wiring and parity notes.
+See the React integration guide for full wiring and parity notes:
+https://github.com/kmccleary3301/stream-mdx/blob/main/docs/REACT_INTEGRATION_GUIDE.md
 
 ## Docs
 
-- React integration guide: `docs/REACT_INTEGRATION_GUIDE.md`
-- Security model / CSP: `docs/SECURITY_MODEL.md`
-- Plugins & custom worker bundles: `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`
+- React integration guide: https://github.com/kmccleary3301/stream-mdx/blob/main/docs/REACT_INTEGRATION_GUIDE.md
+- Security model / CSP: https://github.com/kmccleary3301/stream-mdx/blob/main/docs/SECURITY_MODEL.md
+- Plugins & custom worker bundles: https://github.com/kmccleary3301/stream-mdx/blob/main/docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md
+- CLI usage + worker-thread integration: https://github.com/kmccleary3301/stream-mdx/blob/main/docs/CLI_USAGE.md

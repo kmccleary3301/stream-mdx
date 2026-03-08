@@ -1,4 +1,5 @@
-import type { Patch, PatchMetrics } from "@stream-mdx/core";
+import type { Patch, PatchKind, PatchMetrics } from "@stream-mdx/core";
+import { getPatchKind } from "@stream-mdx/core/perf/patch-batching";
 import { type CoalescingMetrics, DEFAULT_COALESCE_CONFIG, coalescePatchesWithMetrics } from "./patch-coalescing";
 import type { RendererStore } from "./store";
 
@@ -24,6 +25,7 @@ export interface PatchBatchMeta {
   metrics?: PatchMetrics;
   receivedAt?: number;
   priority?: "high" | "low";
+  kind?: PatchKind;
 }
 
 export interface PatchBatchInput {
@@ -42,6 +44,7 @@ export interface PatchFlushBatchResult {
   receivedAt: number;
   appliedAt: number;
   priority: "high" | "low";
+  kind: PatchKind;
   coalescing?: CoalescingMetrics;
 }
 
@@ -51,7 +54,11 @@ export interface PatchFlushResult {
   totalAppliedPatches: number;
   totalDurationMs: number;
   remainingQueueSize: number;
+  remainingSemanticQueueSize: number;
+  remainingEnrichmentQueueSize: number;
   queueDepthBefore: number;
+  semanticQueueDepthBefore: number;
+  enrichmentQueueDepthBefore: number;
   flushStartedAt: number;
   flushCompletedAt: number;
   coalescingDurationP95?: number | null;
@@ -80,6 +87,7 @@ interface PatchBatchInternal {
   meta: PatchBatchMeta;
   receivedAt: number;
   priority: "high" | "low";
+  kind: PatchKind;
 }
 
 const DEFAULT_TIMEOUT_MS = 16;
@@ -131,8 +139,9 @@ export class PatchCommitScheduler {
   private maxLowPriorityBatchesPerFlush?: number;
   private urgentQueueThreshold: number;
 
-  private highQueue: PatchBatchInternal[] = [];
-  private lowQueue: PatchBatchInternal[] = [];
+  private semanticQueue: PatchBatchInternal[] = [];
+  private enrichmentHighQueue: PatchBatchInternal[] = [];
+  private enrichmentLowQueue: PatchBatchInternal[] = [];
   private scheduled = false;
   private flushing = false;
   private scheduledHandle: number | ReturnType<typeof setTimeout> | null = null;
@@ -196,12 +205,21 @@ export class PatchCommitScheduler {
       patches: input.patches,
       meta: input.meta ?? {},
       receivedAt: input.meta?.receivedAt ?? this.now(),
+      kind:
+        input.meta?.kind === "semantic" || input.meta?.kind === "enrichment"
+          ? input.meta.kind
+          : input.patches.some((patch) => getPatchKind(patch) === "semantic")
+            ? "semantic"
+            : "enrichment",
       priority: input.meta?.priority === "low" ? "low" : "high",
     };
-    if (batch.priority === "low") {
-      this.lowQueue.push(batch);
+    if (batch.kind === "semantic") {
+      batch.priority = "high";
+      this.semanticQueue.push(batch);
+    } else if (batch.priority === "low") {
+      this.enrichmentLowQueue.push(batch);
     } else {
-      this.highQueue.push(batch);
+      this.enrichmentHighQueue.push(batch);
     }
     if (!this.paused) {
       this.schedule();
@@ -209,7 +227,7 @@ export class PatchCommitScheduler {
   }
 
   flushAll(): PatchFlushResult | null {
-    if (this.highQueue.length === 0 && this.lowQueue.length === 0 && !this.flushing) {
+    if (this.semanticQueue.length === 0 && this.enrichmentHighQueue.length === 0 && this.enrichmentLowQueue.length === 0 && !this.flushing) {
       return null;
     }
     this.cancelScheduled();
@@ -220,8 +238,9 @@ export class PatchCommitScheduler {
 
   clear(): void {
     this.cancelScheduled();
-    this.highQueue = [];
-    this.lowQueue = [];
+    this.semanticQueue = [];
+    this.enrichmentHighQueue = [];
+    this.enrichmentLowQueue = [];
     this.flushing = false;
     this.coalescingDurationSamples = [];
     this.adaptiveBudgetActive = false;
@@ -231,11 +250,17 @@ export class PatchCommitScheduler {
   }
 
   getPendingCount(): number {
-    return this.highQueue.length + this.lowQueue.length;
+    return this.semanticQueue.length + this.enrichmentHighQueue.length + this.enrichmentLowQueue.length;
   }
 
   isIdle(): boolean {
-    return !this.flushing && !this.scheduled && this.highQueue.length === 0 && this.lowQueue.length === 0;
+    return (
+      !this.flushing &&
+      !this.scheduled &&
+      this.semanticQueue.length === 0 &&
+      this.enrichmentHighQueue.length === 0 &&
+      this.enrichmentLowQueue.length === 0
+    );
   }
 
   awaitIdle(): Promise<void> {
@@ -310,13 +335,15 @@ export class PatchCommitScheduler {
     if (this.paused && !manual) {
       return null;
     }
-    if (this.highQueue.length === 0 && this.lowQueue.length === 0) {
+    if (this.semanticQueue.length === 0 && this.enrichmentHighQueue.length === 0 && this.enrichmentLowQueue.length === 0) {
       return null;
     }
 
     this.flushing = true;
     const startedAt = this.now();
-    const initialQueueSize = this.highQueue.length + this.lowQueue.length;
+    const initialSemanticQueueSize = this.semanticQueue.length;
+    const initialEnrichmentQueueSize = this.enrichmentHighQueue.length + this.enrichmentLowQueue.length;
+    const initialQueueSize = initialSemanticQueueSize + initialEnrichmentQueueSize;
     const batches: PatchFlushBatchResult[] = [];
     let totalInputPatches = 0;
     let totalAppliedPatches = 0;
@@ -352,6 +379,7 @@ export class PatchCommitScheduler {
           receivedAt: next.receivedAt,
           appliedAt: applyStart,
           priority: next.priority,
+          kind: next.kind,
           coalescing: coalescingMetrics,
         });
 
@@ -371,20 +399,23 @@ export class PatchCommitScheduler {
       }
     };
 
-    const initialHighQueueSize = this.highQueue.length;
+    processQueue(this.semanticQueue, undefined, Number.POSITIVE_INFINITY);
+
+    const initialHighQueueSize = this.enrichmentHighQueue.length;
     const configuredHighLimit =
       manual || !this.maxBatchesPerFlush ? undefined : initialHighQueueSize > this.maxBatchesPerFlush ? undefined : this.maxBatchesPerFlush;
     const highBatchLimit = this.adaptiveHighBatchCap ?? configuredHighLimit;
 
-    processQueue(this.highQueue, highBatchLimit, budgetMs);
+    processQueue(this.enrichmentHighQueue, highBatchLimit, budgetMs);
 
     if (manual) {
-      processQueue(this.lowQueue, undefined, Number.POSITIVE_INFINITY);
-    } else if (this.lowQueue.length > 0) {
+      processQueue(this.enrichmentLowQueue, undefined, Number.POSITIVE_INFINITY);
+    } else if (this.enrichmentLowQueue.length > 0) {
       elapsed = this.now() - startedAt;
       const budgetForLow = Math.max(0, this.lowPriorityFrameBudgetMs - elapsed);
-      if (budgetForLow > 0) {
-        const initialLowQueueSize = this.lowQueue.length;
+      const processedHigherPriorityWork = batches.length > 0;
+      if (budgetForLow > 0 || !processedHigherPriorityWork) {
+        const initialLowQueueSize = this.enrichmentLowQueue.length;
         const configuredLowLimit =
           manual || !this.maxLowPriorityBatchesPerFlush
             ? undefined
@@ -393,14 +424,16 @@ export class PatchCommitScheduler {
               : this.maxLowPriorityBatchesPerFlush;
         const lowBatchLimit = this.adaptiveLowBatchCap ?? configuredLowLimit;
 
-        processQueue(this.lowQueue, lowBatchLimit, budgetForLow);
+        processQueue(this.enrichmentLowQueue, lowBatchLimit, budgetForLow);
       }
     }
 
     this.flushing = false;
     const completedAt = this.now();
     const totalDurationMs = completedAt - startedAt;
-    const remaining = this.highQueue.length + this.lowQueue.length;
+    const remainingSemantic = this.semanticQueue.length;
+    const remainingEnrichment = this.enrichmentHighQueue.length + this.enrichmentLowQueue.length;
+    const remaining = remainingSemantic + remainingEnrichment;
 
     if (batches.length > 0) {
       try {
@@ -410,7 +443,11 @@ export class PatchCommitScheduler {
           totalAppliedPatches,
           totalDurationMs,
           remainingQueueSize: remaining,
+          remainingSemanticQueueSize: remainingSemantic,
+          remainingEnrichmentQueueSize: remainingEnrichment,
           queueDepthBefore: initialQueueSize,
+          semanticQueueDepthBefore: initialSemanticQueueSize,
+          enrichmentQueueDepthBefore: initialEnrichmentQueueSize,
           flushStartedAt: startedAt,
           flushCompletedAt: completedAt,
         });
@@ -435,7 +472,11 @@ export class PatchCommitScheduler {
             totalAppliedPatches,
             totalDurationMs,
             remainingQueueSize: remaining,
+            remainingSemanticQueueSize: remainingSemantic,
+            remainingEnrichmentQueueSize: remainingEnrichment,
             queueDepthBefore: initialQueueSize,
+            semanticQueueDepthBefore: initialSemanticQueueSize,
+            enrichmentQueueDepthBefore: initialEnrichmentQueueSize,
             flushStartedAt: startedAt,
             flushCompletedAt: completedAt,
             coalescingDurationP95: coalescingStats.p95 ?? undefined,
@@ -563,8 +604,9 @@ export class PatchCommitScheduler {
 
   restart(): void {
     this.cancelScheduled();
-    this.highQueue = [];
-    this.lowQueue = [];
+    this.semanticQueue = [];
+    this.enrichmentHighQueue = [];
+    this.enrichmentLowQueue = [];
     this.flushing = false;
     this.sequence = 0;
     this.history = [];

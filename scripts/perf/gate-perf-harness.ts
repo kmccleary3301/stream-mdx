@@ -40,6 +40,7 @@ const DEFAULT_THRESHOLDS: Record<MetricKey, number> = {
 
 const DEFAULT_BASE_S2 = "tmp/perf-baselines/S2_typical";
 const DEFAULT_BASE_S3 = "tmp/perf-baselines/S3_fast_reasonable";
+const DEFAULT_BASE_EDGE = "tmp/perf-baselines/S6_extreme_edge_like";
 
 function getArg(flag: string): string | null {
   const index = process.argv.indexOf(flag);
@@ -88,6 +89,15 @@ async function loadSummary(input: string): Promise<Summary> {
   return JSON.parse(content) as Summary;
 }
 
+async function hasSummary(input: string): Promise<boolean> {
+  try {
+    await fs.access(resolveSummaryPath(input));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function comparePair(
   label: string,
   baseInput: string,
@@ -128,9 +138,20 @@ async function run(): Promise<void> {
   if (!candidateS2 || !candidateS3) {
     throw new Error("Provide --candidateS2 and --candidateS3 (or STREAM_MDX_PERF_CANDIDATE_S2 / _S3).");
   }
+  const candidateEdge =
+    getArg("--candidateEdge") ??
+    process.env.STREAM_MDX_PERF_CANDIDATE_EDGE ??
+    getArg("--candidateS6") ??
+    process.env.STREAM_MDX_PERF_CANDIDATE_S6;
 
   const baseS2 = getArg("--baseS2") ?? process.env.STREAM_MDX_PERF_BASE_S2 ?? DEFAULT_BASE_S2;
   const baseS3 = getArg("--baseS3") ?? process.env.STREAM_MDX_PERF_BASE_S3 ?? DEFAULT_BASE_S3;
+  const baseEdge =
+    getArg("--baseEdge") ??
+    process.env.STREAM_MDX_PERF_BASE_EDGE ??
+    getArg("--baseS6") ??
+    process.env.STREAM_MDX_PERF_BASE_S6 ??
+    DEFAULT_BASE_EDGE;
 
   const gate = !hasFlag("--no-gate") && process.env.STREAM_MDX_PERF_GATE !== "0";
   const thresholds: Record<MetricKey, number> = {
@@ -148,6 +169,19 @@ async function run(): Promise<void> {
   let failures = 0;
   failures += await comparePair("S2_typical", baseS2, candidateS2, thresholds, gate);
   failures += await comparePair("S3_fast_reasonable", baseS3, candidateS3, thresholds, gate);
+
+  if (candidateEdge) {
+    const [baseExists, candidateExists] = await Promise.all([hasSummary(baseEdge), hasSummary(candidateEdge)]);
+    if (!baseExists || !candidateExists) {
+      process.stdout.write(
+        `\n== S6_extreme_edge_like ==\n` +
+          `skip: missing summary file(s). base=${resolveSummaryPath(baseEdge)} (${baseExists ? "ok" : "missing"}), ` +
+          `candidate=${resolveSummaryPath(candidateEdge)} (${candidateExists ? "ok" : "missing"})\n`,
+      );
+    } else {
+      failures += await comparePair("S6_extreme_edge_like", baseEdge, candidateEdge, thresholds, gate);
+    }
+  }
 
   if (gate && failures > 0) {
     process.exitCode = 1;

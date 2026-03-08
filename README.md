@@ -13,6 +13,12 @@ High-performance streaming Markdown/MDX renderer for React with worker-first par
 npm install stream-mdx
 ```
 
+Modular install (when you only want the building blocks):
+
+```bash
+npm install @stream-mdx/react @stream-mdx/worker @stream-mdx/core @stream-mdx/plugins
+```
+
 ## Quickstart
 
 ### 1) Copy the hosted worker bundle

@@ -11,7 +11,9 @@ import {
   PATCH_ROOT_ID,
   type Patch,
   type SetPropsBatchEntry,
+  type TokenLineV1,
 } from "@stream-mdx/core";
+import { getPatchKind } from "@stream-mdx/core/perf/patch-batching";
 import { normalizeAllListDepths, normalizeListDepthsForIds } from "./list-utils";
 import { type CoalescingMetrics, DEFAULT_COALESCE_CONFIG, coalescePatchesWithMetrics } from "./patch-coalescing";
 
@@ -24,6 +26,7 @@ export interface NodeRecord {
   meta?: Record<string, unknown>;
   range?: { from: number; to: number };
   version: number;
+  blockEpoch: number;
   block?: Block;
 }
 
@@ -43,6 +46,8 @@ export interface RendererStore {
   getNodeWithVersion(id: string): { version: number; node?: NodeRecord };
   getChildren(id: string): ReadonlyArray<string>;
   getChildrenWithVersion(id: string): { version: number; children: ReadonlyArray<string> };
+  getInvariantViolations(): string[];
+  getDebugCounters(): Readonly<Record<string, number>>;
   subscribe(listener: () => void): () => void;
   getLastCoalescingMetrics(): CoalescingMetrics | null;
 }
@@ -79,6 +84,17 @@ const EMPTY_CHILDREN_SNAPSHOT = Object.freeze<{ version: number; children: Reado
   version: -1,
   children: EMPTY_CHILDREN,
 });
+
+export function isListPatchDebugEnabled(): boolean {
+  if (typeof globalThis !== "undefined") {
+    const flag = (globalThis as { __STREAMING_LIST_DEBUG__?: boolean }).__STREAMING_LIST_DEBUG__;
+    if (flag === true) return true;
+  }
+  if (typeof process !== "undefined" && process.env.NEXT_PUBLIC_STREAMING_LIST_DEBUG === "true") {
+    return true;
+  }
+  return false;
+}
 
 const CODE_BLOCK_DEBUG_ENABLED =
   (() => {
@@ -132,6 +148,12 @@ type PatchPerfTotals = {
   ops: Record<string, PatchPerfOpSummary>;
   setPropsByType: Record<string, PatchPerfOpSummary>;
   setPropsBySize: Record<string, PatchPerfOpSummary>;
+};
+
+type StoreDebugCounters = {
+  appendLineGuardRejected: number;
+  staleEpochRejected: number;
+  storeInvariantViolationCount: number;
 };
 
 const PATCH_PERF_HISTORY_LIMIT = 120;
@@ -292,7 +314,61 @@ function createRootRecord(): NodeRecord {
     children: [],
     props: {},
     version: 0,
+    blockEpoch: 0,
   };
+}
+
+function readNumericEpoch(value: unknown): number | undefined {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+    return undefined;
+  }
+  return value;
+}
+
+function readSnapshotBlockEpoch(snapshot: NodeSnapshot): number | undefined {
+  return readNumericEpoch(snapshot.meta?.blockEpoch);
+}
+
+function readPatchBlockEpoch(patch: Patch): number | undefined {
+  if (patch.op === "setHTML") {
+    return readNumericEpoch(patch.patchMeta?.blockEpoch);
+  }
+  return readNumericEpoch(patch.meta?.blockEpoch);
+}
+
+function readPatchParseEpoch(patch: Patch): number | undefined {
+  if (patch.op === "setHTML") {
+    return readNumericEpoch(patch.patchMeta?.parseEpoch);
+  }
+  return readNumericEpoch(patch.meta?.parseEpoch);
+}
+
+function readPatchTx(patch: Patch): number | undefined {
+  if (patch.op === "setHTML") {
+    return readNumericEpoch(patch.patchMeta?.tx);
+  }
+  return readNumericEpoch(patch.meta?.tx);
+}
+
+function assignSubtreeBlockEpoch(map: NodeMap, rootId: string, blockEpoch: number, touched?: Set<string>) {
+  const root = map.get(rootId);
+  if (!root) return;
+  const stack = [root];
+  while (stack.length > 0) {
+    const node = stack.pop();
+    if (!node) continue;
+    if (node.blockEpoch !== blockEpoch) {
+      node.blockEpoch = blockEpoch;
+      node.version += 1;
+      touched?.add(node.id);
+    }
+    for (const childId of node.children) {
+      const child = map.get(childId);
+      if (child) {
+        stack.push(child);
+      }
+    }
+  }
 }
 
 function ensureArray<T>(value: T[] | undefined): T[] {
@@ -380,7 +456,7 @@ function escapeHtml(value: string): string {
 
 function stripOuterLineSpan(html: string): string | null {
   if (!html) return null;
-  const openTagMatch = html.match(/<span[^>]*class="[^"]*\bline\b[^"]*"[^>]*>/i);
+  const openTagMatch = html.match(/<span[^>]*>/i);
   if (!openTagMatch) {
     return null;
   }
@@ -508,7 +584,11 @@ function normalizeCodeBlockChildren(nodes: NodeMap, parent: NodeRecord, touched:
       mutated = true;
     }
 
-    const normalizedProps = normalizeCodeLineProps({ index: idx, text: node.props?.text, html: node.props?.html }, node.props);
+    const incoming: Record<string, unknown> = { index: idx, text: node.props?.text, html: node.props?.html };
+    if (Object.prototype.hasOwnProperty.call(node.props ?? {}, "tokens")) {
+      incoming.tokens = (node.props as Record<string, unknown>).tokens;
+    }
+    const normalizedProps = normalizeCodeLineProps(incoming, node.props);
     if (normalizedProps !== node.props) {
       node.props = normalizedProps;
       node.version++;
@@ -583,14 +663,24 @@ function normalizeCodeLineProps(incoming: Record<string, unknown>, previous?: Re
   const index = typeof incoming.index === "number" ? (incoming.index as number) : previousIndex;
   const previousText = typeof previous?.text === "string" ? (previous?.text as string) : "";
   const previousHtml = typeof previous?.html === "string" ? (previous?.html as string) : null;
+  const previousTokens = Object.prototype.hasOwnProperty.call(previous ?? {}, "tokens") ? (previous?.tokens as TokenLineV1 | null) : undefined;
   const hasIncomingText = typeof incoming.text === "string";
   const hasIncomingHtml = typeof incoming.html === "string";
+  const hasIncomingTokens = Object.prototype.hasOwnProperty.call(incoming, "tokens");
+  const incomingTokens = hasIncomingTokens ? (incoming.tokens as TokenLineV1 | null) : undefined;
   const rawText = hasIncomingText ? (incoming.text as string) : previousText;
 
-  if (previous && !hasIncomingHtml && index === previousIndex && (!hasIncomingText || rawText === previousText)) {
+  if (previous && !hasIncomingHtml && !hasIncomingTokens && index === previousIndex && (!hasIncomingText || rawText === previousText)) {
     return previous;
   }
-  if (previous && hasIncomingHtml && incoming.html === previousHtml && index === previousIndex && (!hasIncomingText || rawText === previousText)) {
+  if (
+    previous &&
+    hasIncomingHtml &&
+    !hasIncomingTokens &&
+    incoming.html === previousHtml &&
+    index === previousIndex &&
+    (!hasIncomingText || rawText === previousText)
+  ) {
     return previous;
   }
 
@@ -603,18 +693,30 @@ function normalizeCodeLineProps(incoming: Record<string, unknown>, previous?: Re
 
   // Always re-derive html when text changes; highlight updates are best-effort and may arrive later.
   // If we keep a shorter stale `html` string, the renderer can show truncated lines even when `text` is complete.
-  return createCodeLineProps(index, rawText, highlight);
+  let tokens: TokenLineV1 | null | undefined = undefined;
+  if (hasIncomingTokens) {
+    tokens = incomingTokens ?? null;
+  } else if (!hasIncomingText || rawText === previousText) {
+    tokens = previousTokens;
+  } else {
+    tokens = null;
+  }
+  return createCodeLineProps(index, rawText, highlight, tokens);
 }
 
-function createCodeLineProps(index: number, text: string, highlight: string | null): Record<string, unknown> {
+function createCodeLineProps(index: number, text: string, highlight: string | null, tokens?: TokenLineV1 | null): Record<string, unknown> {
   const safeText = typeof text === "string" ? text : "";
   const sanitized = sanitizeLineInnerHtml(highlight, safeText);
   const html = sanitized && sanitized.length >= safeText.length ? sanitized : escapeHtml(safeText);
-  return {
+  const props: Record<string, unknown> = {
     index,
     text: safeText,
     html,
   };
+  if (tokens !== undefined) {
+    props.tokens = tokens;
+  }
+  return props;
 }
 
 function clampIndex(index: number, length: number): number {
@@ -686,7 +788,10 @@ function normalizeNodeProps(snapshot: NodeSnapshot): Record<string, unknown> {
     const index = typeof snapshot.props?.index === "number" ? (snapshot.props?.index as number) : 0;
     const text = typeof snapshot.props?.text === "string" ? (snapshot.props?.text as string) : "";
     const html = typeof snapshot.props?.html === "string" ? (snapshot.props?.html as string) : null;
-    return createCodeLineProps(index, text, html);
+    const tokens = Object.prototype.hasOwnProperty.call(snapshot.props ?? {}, "tokens")
+      ? (snapshot.props?.tokens as TokenLineV1 | null)
+      : undefined;
+    return createCodeLineProps(index, text, html, tokens);
   }
 
   if (isInlineSegmentType(snapshot.type)) {
@@ -761,7 +866,7 @@ function rebuildCodeBlockFromSnapshot(nodes: NodeMap, parent: NodeRecord, touche
   }
   const snapshot = createBlockSnapshot(cloneBlock(parent.block));
   removeSubtree(nodes, parent.id, touched);
-  const inserted = insertSnapshotAt(nodes, ancestor, index, snapshot);
+  const inserted = insertSnapshotAt(nodes, ancestor, index, snapshot, touched, parent.blockEpoch);
   if (!inserted) {
     return false;
   }
@@ -785,7 +890,62 @@ function arraysEqual<T>(a: ReadonlyArray<T>, b: ReadonlyArray<T>): boolean {
   }
   return true;
 }
-function buildNodeFromSnapshot(map: NodeMap, snapshot: NodeSnapshot, parentId: string | null): NodeRecord {
+
+function expectedCodeLineId(parentId: string, index: number): string {
+  return `${parentId}::line:${index}`;
+}
+
+function collectStoreInvariantViolations(nodes: NodeMap): string[] {
+  const violations: string[] = [];
+
+  for (const [id, node] of nodes) {
+    if (node.type === "__root__") continue;
+
+    if (node.children.length > 1) {
+      const seen = new Set<string>();
+      for (const childId of node.children) {
+        if (seen.has(childId)) {
+          violations.push(`duplicate child id:${id}:${childId}`);
+        } else {
+          seen.add(childId);
+        }
+      }
+    }
+
+    if (node.type === "list") {
+      const parent = node.parentId ? nodes.get(node.parentId) : undefined;
+      if (parent?.type === "list-item" && node.children.length === 0) {
+        violations.push(`empty nested list:${id}`);
+      }
+    }
+
+    if (node.type === "code") {
+      for (let index = 0; index < node.children.length; index += 1) {
+        const childId = node.children[index];
+        const child = nodes.get(childId);
+        if (!child) {
+          violations.push(`missing code-line node:${node.id}:${childId}`);
+          continue;
+        }
+        if (child.type !== "code-line") {
+          violations.push(`non-code child in code block:${node.id}:${child.id}:${child.type}`);
+          continue;
+        }
+        const expectedId = expectedCodeLineId(node.id, index);
+        if (child.id !== expectedId) {
+          violations.push(`code-line id mismatch:${node.id}:${child.id}:${expectedId}`);
+        }
+        const indexProp = typeof child.props?.index === "number" ? (child.props.index as number) : null;
+        if (indexProp !== index) {
+          violations.push(`code-line index mismatch:${node.id}:${child.id}:${indexProp}:${index}`);
+        }
+      }
+    }
+  }
+
+  return violations;
+}
+function buildNodeFromSnapshot(map: NodeMap, snapshot: NodeSnapshot, parentId: string | null, blockEpoch: number): NodeRecord {
   const record: NodeRecord = {
     id: snapshot.id,
     type: snapshot.type,
@@ -795,6 +955,7 @@ function buildNodeFromSnapshot(map: NodeMap, snapshot: NodeSnapshot, parentId: s
     meta: snapshot.meta ? { ...snapshot.meta } : undefined,
     range: snapshot.range ? { ...snapshot.range } : undefined,
     version: 0,
+    blockEpoch,
     block: snapshotToBlock(snapshot) ?? undefined,
   };
 
@@ -806,7 +967,7 @@ function buildNodeFromSnapshot(map: NodeMap, snapshot: NodeSnapshot, parentId: s
 
   const childSnapshots = ensureArray(snapshot.children);
   for (const child of childSnapshots) {
-    const childRecord = buildNodeFromSnapshot(map, child, record.id);
+    const childRecord = buildNodeFromSnapshot(map, child, record.id, blockEpoch);
     record.children.push(childRecord.id);
   }
 
@@ -878,13 +1039,14 @@ function insertSnapshotAt(
   index: number,
   snapshot: NodeSnapshot,
   touched?: Set<string>,
+  blockEpoch?: number,
 ): { record: NodeRecord; insertedIds: string[] } | null {
   if (!parent) return null;
   const existingIndex = parent.children.indexOf(snapshot.id);
   if (existingIndex !== -1) {
     removeSubtree(map, parent.children[existingIndex], touched ?? new Set<string>());
   }
-  const record = buildNodeFromSnapshot(map, snapshot, parent.id);
+  const record = buildNodeFromSnapshot(map, snapshot, parent.id, blockEpoch ?? readSnapshotBlockEpoch(snapshot) ?? parent.blockEpoch);
   const insertedIds: string[] = [];
 
   const queue = [record];
@@ -905,13 +1067,20 @@ function insertSnapshotAt(
   return { record, insertedIds };
 }
 
-function replaceSnapshotAt(map: NodeMap, parent: NodeRecord | undefined, index: number, snapshot: NodeSnapshot, touched: Set<string>) {
+function replaceSnapshotAt(
+  map: NodeMap,
+  parent: NodeRecord | undefined,
+  index: number,
+  snapshot: NodeSnapshot,
+  touched: Set<string>,
+  blockEpoch?: number,
+) {
   if (!parent) return;
   if (index < 0 || index >= parent.children.length) return;
   const targetId = parent.children[index];
   parent.children.splice(index, 1);
   removeSubtree(map, targetId, touched);
-  const inserted = insertSnapshotAt(map, parent, index, snapshot, touched);
+  const inserted = insertSnapshotAt(map, parent, index, snapshot, touched, blockEpoch);
   if (inserted) {
     for (const id of inserted.insertedIds) {
       touched.add(id);
@@ -932,6 +1101,25 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
   const listeners = new Set<() => void>();
   let notifyScheduled = false;
   let lastCoalescingMetrics: CoalescingMetrics | null = null;
+  let invariantViolations: string[] = [];
+  let transientDiagnostics: string[] = [];
+  let nextBlockEpoch = 1;
+  const debugCounters: StoreDebugCounters = {
+    appendLineGuardRejected: 0,
+    staleEpochRejected: 0,
+    storeInvariantViolationCount: 0,
+  };
+
+  const allocateBlockEpoch = (preferred?: number): number => {
+    const resolved = readNumericEpoch(preferred);
+    if (resolved !== undefined) {
+      nextBlockEpoch = Math.max(nextBlockEpoch, resolved + 1);
+      return resolved;
+    }
+    const epoch = nextBlockEpoch;
+    nextBlockEpoch += 1;
+    return epoch;
+  };
 
   const getRaf = () => {
     if (
@@ -970,6 +1158,11 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
     }
   }
 
+  function appendDiagnostic(message: string) {
+    transientDiagnostics = [...transientDiagnostics, message];
+    invariantViolations = [...invariantViolations, message];
+  }
+
   function rebuildFromBlocks(blocks: Block[]) {
     nodeSnapshotCache.clear();
     childrenSnapshotCache.clear();
@@ -981,9 +1174,12 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
     for (let i = 0; i < blocks.length; i++) {
       const block = cloneBlock(blocks[i]);
       const snapshot = createBlockSnapshot(block);
-      insertSnapshotAt(nodes, root, root.children.length, snapshot);
+      insertSnapshotAt(nodes, root, root.children.length, snapshot, undefined, allocateBlockEpoch(readSnapshotBlockEpoch(snapshot)));
     }
     normalizeAllListDepths(nodes, new Set<string>(), PATCH_ROOT_ID);
+    transientDiagnostics = [];
+    invariantViolations = collectStoreInvariantViolations(nodes);
+    debugCounters.storeInvariantViolationCount += invariantViolations.length;
     version++;
     blocksDirty = true;
     // Defer notification to avoid React "Cannot update a component while rendering" warning
@@ -1032,8 +1228,17 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
       let mutatedBlocks = false;
       let listDepthDirty = false;
       const listDepthDirtyNodes = new Set<string>();
+      const debugListPatches = isListPatchDebugEnabled();
 
       const isListRelated = (type: string | undefined) => type === "list" || type === "list-item";
+      const logListPatch = (label: string, details: Record<string, unknown>) => {
+        if (!debugListPatches) return;
+        try {
+          console.debug(`[list-patch] ${label}`, details);
+        } catch {
+          // ignore logging errors
+        }
+      };
 
       const findNearestListNode = (nodeId: string | undefined): NodeRecord | undefined => {
         if (!nodeId) return undefined;
@@ -1054,24 +1259,88 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
           listDepthDirty = true;
         }
       };
+      const semanticTxEpochs = new Map<string, { tx: number; blockEpoch: number }>();
 
-      const applyPropsUpdate = (at: NodePath, props: Record<string, unknown> | undefined) => {
+      const resolveBlockEpochTarget = (patch: Patch, at: NodePath): NodeRecord | undefined => {
+        if ((patch.op === "insertChild" || patch.op === "replaceChild") && at.blockId === PATCH_ROOT_ID) {
+          const nodeId = patch.node?.id;
+          return nodeId ? nodes.get(nodeId) : undefined;
+        }
+        return nodes.get(at.blockId) ?? (at.nodeId ? nodes.get(at.nodeId) : undefined);
+      };
+
+      const rejectStaleEpochPatch = (patch: Patch, at: NodePath | undefined): boolean => {
+        const expectedBlockEpoch = readPatchBlockEpoch(patch);
+        const patchTx = readPatchTx(patch);
+        if (expectedBlockEpoch === undefined) {
+          return false;
+        }
+        if (getPatchKind(patch) !== "semantic" || !at) {
+          return false;
+        }
+        const target = resolveBlockEpochTarget(patch, at);
+        if (!target || target.blockEpoch === expectedBlockEpoch) {
+          return false;
+        }
+        const txEpoch = at.blockId && patchTx !== undefined ? semanticTxEpochs.get(at.blockId) : undefined;
+        if (txEpoch && txEpoch.tx === patchTx && txEpoch.blockEpoch === target.blockEpoch) {
+          return false;
+        }
+        debugCounters.staleEpochRejected += 1;
+        appendDiagnostic(
+          `stale epoch rejected:${patch.op}:${target.id}:expected=${expectedBlockEpoch}:actual=${target.blockEpoch}`,
+        );
+        return true;
+      };
+
+      const advanceBlockEpoch = (
+        blockId: string | undefined,
+        touchedSet: Set<string>,
+        preferredEpoch?: number,
+        tx?: number,
+      ): number | null => {
+        if (!blockId || blockId === PATCH_ROOT_ID) {
+          return null;
+        }
+        const blockRoot = nodes.get(blockId);
+        if (!blockRoot) {
+          return null;
+        }
+        const nextEpoch = allocateBlockEpoch(preferredEpoch);
+        assignSubtreeBlockEpoch(nodes, blockRoot.id, nextEpoch, touchedSet);
+        if (tx !== undefined) {
+          semanticTxEpochs.set(blockRoot.id, { tx, blockEpoch: nextEpoch });
+        }
+        return nextEpoch;
+      };
+
+      const applyPropsUpdate = (at: NodePath, props: Record<string, unknown> | undefined, preferredEpoch?: number, tx?: number) => {
         const perfStartLocal = perfEnabled ? getPerfNow() : 0;
         const targetId = at.nodeId ?? at.blockId;
         if (!targetId) return;
         const target = nodes.get(targetId);
         if (!target) return;
+        const parentType = target.parentId ? nodes.get(target.parentId)?.type : undefined;
+        if (debugListPatches && (isListRelated(target.type) || isListRelated(parentType))) {
+          logListPatch("setProps", {
+            id: target.id,
+            type: target.type,
+            parentType,
+            keys: props ? Object.keys(props) : [],
+          });
+        }
 
         let propsChanged = false;
         if (target.type === "code-line") {
-          const normalized = normalizeCodeLineProps(
-            {
-              index: props?.index,
-              text: props?.text,
-              html: props?.html,
-            },
-            target.props,
-          );
+          const incoming: Record<string, unknown> = {
+            index: props?.index,
+            text: props?.text,
+            html: props?.html,
+          };
+          if (Object.prototype.hasOwnProperty.call(props ?? {}, "tokens")) {
+            incoming.tokens = (props as Record<string, unknown>).tokens;
+          }
+          const normalized = normalizeCodeLineProps(incoming, target.props);
           if (normalized !== target.props) {
             target.props = normalized;
             propsChanged = true;
@@ -1147,6 +1416,7 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
           if (target.type === "code") {
             applyCodeBlockMetadata(target);
           }
+          advanceBlockEpoch(at.blockId, touched, preferredEpoch, tx);
           mutatedBlocks = true;
           blockChanged = true;
         }
@@ -1198,24 +1468,43 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
       const applyPatch = (patch: Patch) => {
         switch (patch.op) {
           case "insertChild": {
+            if (rejectStaleEpochPatch(patch, patch.at)) break;
             const parent = resolveParent(nodes, patch.at);
-            const inserted = insertSnapshotAt(nodes, parent, patch.index, patch.node, touched);
+            const inserted = insertSnapshotAt(
+              nodes,
+              parent,
+              patch.index,
+              patch.node,
+              touched,
+              allocateBlockEpoch(readPatchParseEpoch(patch) ?? readSnapshotBlockEpoch(patch.node)),
+            );
             if (inserted) {
               for (const id of inserted.insertedIds) {
                 touched.add(id);
               }
               mutatedBlocks = true;
+              advanceBlockEpoch(patch.at.blockId, touched, readPatchParseEpoch(patch), readPatchTx(patch));
               if (isListRelated(inserted.record.type) || isListRelated(parent?.type)) {
                 markListDepthDirty(inserted.record.id);
                 if (parent) {
                   markListDepthDirty(parent.id);
                 }
               }
+              if (debugListPatches && (isListRelated(inserted.record.type) || isListRelated(parent?.type))) {
+                logListPatch("insertChild", {
+                  id: inserted.record.id,
+                  type: inserted.record.type,
+                  parentId: parent?.id,
+                  parentType: parent?.type,
+                  index: patch.index,
+                });
+              }
             }
             break;
           }
 
           case "deleteChild": {
+            if (rejectStaleEpochPatch(patch, patch.at)) break;
             const parent = resolveParent(nodes, patch.at);
             if (!parent) break;
             if (patch.index < 0 || patch.index >= parent.children.length) break;
@@ -1227,27 +1516,54 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
               touched.add(parent.id);
               ensureUniqueChildren(parent, touched);
               mutatedBlocks = true;
+              advanceBlockEpoch(patch.at.blockId, touched, readPatchParseEpoch(patch), readPatchTx(patch));
               if (isListRelated(parent.type) || isListRelated(removedNode?.type)) {
                 markListDepthDirty(parent.id);
+              }
+              if (debugListPatches && (isListRelated(parent.type) || isListRelated(removedNode?.type))) {
+                logListPatch("deleteChild", {
+                  id: childId,
+                  type: removedNode?.type,
+                  parentId: parent.id,
+                  parentType: parent.type,
+                  index: patch.index,
+                });
               }
             }
             break;
           }
 
           case "replaceChild": {
+            if (rejectStaleEpochPatch(patch, patch.at)) break;
             const parent = resolveParent(nodes, patch.at);
             if (!parent) break;
-            replaceSnapshotAt(nodes, parent, patch.index, patch.node, touched);
+            replaceSnapshotAt(
+              nodes,
+              parent,
+              patch.index,
+              patch.node,
+              touched,
+              allocateBlockEpoch(readPatchParseEpoch(patch) ?? readSnapshotBlockEpoch(patch.node)),
+            );
             touched.add(parent.id);
             mutatedBlocks = true;
+            advanceBlockEpoch(patch.at.blockId, touched, readPatchParseEpoch(patch), readPatchTx(patch));
             if (isListRelated(parent.type)) {
               markListDepthDirty(parent.id);
+            }
+            if (debugListPatches && isListRelated(parent.type)) {
+              logListPatch("replaceChild", {
+                parentId: parent.id,
+                parentType: parent.type,
+                index: patch.index,
+              });
             }
             break;
           }
 
           case "setProps": {
-            applyPropsUpdate(patch.at, patch.props);
+            if (rejectStaleEpochPatch(patch, patch.at)) break;
+            applyPropsUpdate(patch.at, patch.props, readPatchParseEpoch(patch), readPatchTx(patch));
             break;
           }
 
@@ -1255,12 +1571,20 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
             const entries = Array.isArray(patch.entries) ? (patch.entries as SetPropsBatchEntry[]) : [];
             for (const entry of entries) {
               if (!entry || !entry.at) continue;
-              applyPropsUpdate(entry.at, entry.props);
+              const entryPatch: Patch = {
+                op: "setProps",
+                at: entry.at,
+                props: entry.props,
+                meta: entry.meta ?? patch.meta,
+              };
+              if (rejectStaleEpochPatch(entryPatch, entry.at)) continue;
+              applyPropsUpdate(entry.at, entry.props, readPatchParseEpoch(entryPatch), readPatchTx(entryPatch));
             }
             break;
           }
 
           case "finalize": {
+            if (rejectStaleEpochPatch(patch, patch.at)) break;
             const target = nodes.get(patch.at.nodeId ?? patch.at.blockId);
             if (!target || !target.block) break;
             if (!target.block.isFinalized) {
@@ -1273,10 +1597,17 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
             if (isListRelated(target.type)) {
               markListDepthDirty(target.id);
             }
+            if (debugListPatches && isListRelated(target.type)) {
+              logListPatch("finalize", {
+                id: target.id,
+                type: target.type,
+              });
+            }
             break;
           }
 
           case "reorder": {
+            if (rejectStaleEpochPatch(patch, patch.at)) break;
             const parent = resolveParent(nodes, patch.at);
             if (!parent) break;
             const length = parent.children.length;
@@ -1294,20 +1625,46 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
             if (isListRelated(parent.type)) {
               markListDepthDirty(parent.id);
             }
+            if (debugListPatches && isListRelated(parent.type)) {
+              logListPatch("reorder", {
+                parentId: parent.id,
+                parentType: parent.type,
+                from: patch.from,
+                to: patch.to,
+                count: patch.count,
+              });
+            }
             break;
           }
 
           case "appendLines": {
+            if (rejectStaleEpochPatch(patch, patch.at)) break;
             const parent = resolveParent(nodes, patch.at);
             if (!parent) break;
-            const startIndex = Math.max(0, Math.min(patch.startIndex, parent.children.length));
+            if (parent.type !== "code") {
+              debugCounters.appendLineGuardRejected += 1;
+              appendDiagnostic(`appendLines target not code:${parent.id}:${parent.type}`);
+              break;
+            }
+            const requestedStartIndex = Math.max(0, patch.startIndex);
+            const startIndex = Math.max(0, Math.min(requestedStartIndex, parent.children.length));
             const lineCount = patch.lines?.length ?? 0;
             if (lineCount === 0) break;
+
+            const prefixMatches = parent.children.every((childId, index) => childId === expectedCodeLineId(parent.id, index));
+            const isStrictTailAppend = requestedStartIndex === parent.children.length;
+            if (!isStrictTailAppend || !prefixMatches) {
+              debugCounters.appendLineGuardRejected += 1;
+              appendDiagnostic(
+                `appendLines guard rejected:${parent.id}:requestedStart=${requestedStartIndex}:childCount=${parent.children.length}:prefixMatches=${prefixMatches}`,
+              );
+              break;
+            }
 
             const originalChildren = parent.children.slice();
             const insertedIds: string[] = [];
             const insertedSet = new Set<string>();
-            const isTrailingAppend = startIndex >= originalChildren.length;
+            const isTrailingAppend = true;
             let parentChildrenChanged = false;
             let codeLinesMutated = false;
 
@@ -1317,7 +1674,14 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
               insertedIds.push(lineId);
               insertedSet.add(lineId);
 
-              const nextLineProps = createCodeLineProps(absoluteIndex, patch.lines[offset] ?? "", patch.highlight?.[offset] ?? null);
+              const hasTokens = Object.prototype.hasOwnProperty.call(patch, "tokens");
+              const nextTokens = hasTokens ? (patch.tokens?.[offset] ?? null) : undefined;
+              const nextLineProps = createCodeLineProps(
+                absoluteIndex,
+                patch.lines[offset] ?? "",
+                patch.highlight?.[offset] ?? null,
+                nextTokens,
+              );
               const existing = nodes.get(lineId);
               if (existing && existing.type === "code-line") {
                 const existingIndex = parent.children.indexOf(lineId);
@@ -1345,6 +1709,7 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
                   children: [],
                   props: nextLineProps,
                   version: 0,
+                  blockEpoch: parent.blockEpoch,
                 };
                 nodes.set(lineId, record);
                 touched.add(lineId);
@@ -1372,7 +1737,11 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
                 const childId = parent.children[idx];
                 const child = nodes.get(childId);
                 if (child && child.type === "code-line") {
-                  const normalized = normalizeCodeLineProps({ index: idx, text: child.props?.text, html: child.props?.html }, child.props);
+                  const incoming: Record<string, unknown> = { index: idx, text: child.props?.text, html: child.props?.html };
+                  if (Object.prototype.hasOwnProperty.call(child.props ?? {}, "tokens")) {
+                    incoming.tokens = (child.props as Record<string, unknown>).tokens;
+                  }
+                  const normalized = normalizeCodeLineProps(incoming, child.props);
                   if (normalized !== child.props) {
                     child.props = normalized;
                     child.version++;
@@ -1394,6 +1763,7 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
           }
 
           case "setHTML": {
+            if (rejectStaleEpochPatch(patch, patch.at)) break;
             const target = nodes.get(patch.at.nodeId ?? patch.at.blockId);
             if (!target) break;
             const sanitized = patch.sanitized ? patch.html : sanitizeHTML(patch.html);
@@ -1461,6 +1831,9 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
           normalizeListDepthsForIds(nodes, touched, listDepthDirtyNodes, PATCH_ROOT_ID);
         }
       }
+
+      invariantViolations = [...collectStoreInvariantViolations(nodes), ...transientDiagnostics];
+      debugCounters.storeInvariantViolationCount += invariantViolations.length;
 
       if (touched.size > 0 || mutatedBlocks) {
         version++;
@@ -1540,16 +1913,24 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
         return EMPTY_CHILDREN_SNAPSHOT;
       }
       const cached = childrenSnapshotCache.get(id);
-      if (cached && cached.version === record.version && cached.children === record.children) {
+      if (cached && cached.version === record.version) {
         return cached;
       }
-      const snapshot = { version: record.version, children: record.children } as {
+      const snapshot = { version: record.version, children: record.children.slice() } as {
         version: number;
         children: ReadonlyArray<string>;
       };
       childrenSnapshotCache.set(id, snapshot);
       pruneCache(childrenSnapshotCache, CHILDREN_SNAPSHOT_CACHE_LIMIT, CHILDREN_SNAPSHOT_CACHE_BUFFER);
       return snapshot;
+    },
+
+    getInvariantViolations() {
+      return invariantViolations.slice();
+    },
+
+    getDebugCounters() {
+      return { ...debugCounters };
     },
 
     getLastCoalescingMetrics() {

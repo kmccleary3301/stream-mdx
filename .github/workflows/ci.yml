@@ -26,13 +26,66 @@ jobs:
       - name: Test
         run: npm run test
 
+      - name: Determinism matrix (node vs browser worker)
+        run: |
+          npx playwright install --with-deps chromium
+          npm run determinism:matrix
+
+      - name: HTML parity (server blocks renderer vs browser final DOM)
+        run: npm run determinism:html-parity
+
       - name: Pack (dry-run)
         run: npm --workspaces --if-present pack --dry-run
-
-      - name: Pack + install smoke (Next.js)
-        run: npm run ci:pack-smoke
 
       - name: Build docs site (static export)
         env:
           NEXT_PUBLIC_BASE_PATH: ""
         run: npm run docs:build
+
+      - name: Docs link integrity (internal routes + anchors)
+        env:
+          DOCS_CHECK_ANCHORS: "1"
+        run: npm run docs:check-links
+
+      - name: Docs screenshots (smoke)
+        run: npm run docs:screenshots:smoke
+
+  docs-seeded-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Seeded regression smoke (managed docs server)
+        run: npm run test:regression:seeded-smoke:server
+
+  compat-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        app: [next, vite]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Pack + install smoke
+        run: npm run ci:pack-smoke -- --only ${{ matrix.app }}

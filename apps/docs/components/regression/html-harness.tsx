@@ -1,6 +1,7 @@
 "use client";
 
-import type { InlineNode, StreamingSchedulerOptions, StreamingMarkdownProps } from "@stream-mdx/react";
+import type { InlineNode } from "@stream-mdx/core";
+import type { RendererStateSnapshot, StreamingSchedulerOptions, StreamingMarkdownProps } from "@stream-mdx/react";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
 import { ComponentRegistry, StreamingMarkdown, type StreamingMarkdownHandle } from "@stream-mdx/react";
@@ -84,13 +85,29 @@ type StyleTarget = {
 
 type RegressionApi = {
   setConfig: (next: Partial<RegressionConfig>) => Promise<void>;
-  setMeta: (meta: { fixtureId?: string; scenarioId?: string }) => void;
+  setMeta: (meta: { fixtureId?: string; scenarioId?: string; seed?: string; schedulerMode?: string }) => void;
   appendAndFlush: (chunk: string) => Promise<void>;
   finalizeAndFlush: () => Promise<void>;
   restart: () => void;
   waitForReady: () => Promise<void>;
   getHtml: () => string;
   getSummary: () => RegressionSummary;
+  getRuntimeState: () => {
+    rendererVersion: number;
+    queueDepth: number;
+    pendingBatches: number;
+    workerReady: boolean;
+    lastTx: number | null;
+    lastPatchToDomMs: number | null;
+    lastDurationMs: number | null;
+    meta: {
+      fixtureId?: string;
+      scenarioId?: string;
+      seed?: string;
+      schedulerMode?: string;
+    };
+    storeCounters: Record<string, number>;
+  };
   getDebugBlocks: () => Array<{
     id: string;
     type: string;
@@ -202,6 +219,43 @@ async function waitForStableVersion(
   }
 }
 
+function expectedLazyCodeLineCount(block: { raw: string; meta?: Record<string, unknown> }): number {
+  const meta = block.meta ?? {};
+  const highlightedLines = Array.isArray(meta.highlightedLines) ? meta.highlightedLines.length : 0;
+  const tokenLines = Array.isArray(meta.tokenLines) ? meta.tokenLines.length : 0;
+  const code = typeof meta.code === "string" ? meta.code : "";
+  const sourceLineCount = code.length > 0 ? code.split("\n").length : 0;
+  return Math.max(highlightedLines, tokenLines, sourceLineCount);
+}
+
+async function waitForLazyCodeCompletion(
+  handle: StreamingMarkdownHandle | null,
+  options: { timeoutMs?: number } = {},
+): Promise<void> {
+  if (!handle) return;
+  const timeoutMs = options.timeoutMs ?? 5000;
+  const start = Date.now();
+  while (Date.now() - start <= timeoutMs) {
+    const blocks = handle.getState().blocks;
+    const pendingLazyCode = blocks.some((block) => {
+      if (block.type !== "code" || !block.isFinalized) return false;
+      const meta = (block.payload.meta as Record<string, unknown> | undefined) ?? undefined;
+      if (!meta?.lazyTokenization) return false;
+      const expected = expectedLazyCodeLineCount({
+        raw: typeof block.payload.raw === "string" ? block.payload.raw : "",
+        meta,
+      });
+      if (expected <= 0) return false;
+      const tokenizedUntil = typeof meta.lazyTokenizedUntil === "number" ? (meta.lazyTokenizedUntil as number) : 0;
+      return tokenizedUntil < expected;
+    });
+    if (!pendingLazyCode) {
+      return;
+    }
+    await nextFrame();
+  }
+}
+
 export function HtmlRegressionHarness(): JSX.Element {
   const FLUSH_TIMEOUT_MS = 8000;
   const [config, setConfig] = useState<RegressionConfig>({
@@ -213,6 +267,7 @@ export function HtmlRegressionHarness(): JSX.Element {
   const [instanceKey, setInstanceKey] = useState(0);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const handleRef = useRef<StreamingMarkdownHandle | null>(null);
+  const metaRef = useRef<{ fixtureId?: string; scenarioId?: string; seed?: string; schedulerMode?: string }>({});
 
   const tableElements = useMemo(() => createDemoTableElements(), []);
   const htmlElements = useMemo(() => createDemoHtmlElements(), []);
@@ -262,9 +317,12 @@ export function HtmlRegressionHarness(): JSX.Element {
       },
       setMeta(meta) {
         const root = rootRef.current;
+        metaRef.current = { ...metaRef.current, ...meta };
         if (!root) return;
         if (meta.fixtureId) root.dataset.fixture = meta.fixtureId;
         if (meta.scenarioId) root.dataset.scenario = meta.scenarioId;
+        if (meta.seed) root.dataset.seed = meta.seed;
+        if (meta.schedulerMode) root.dataset.schedulerMode = meta.schedulerMode;
       },
       async appendAndFlush(chunk) {
         if (!chunk) return;
@@ -287,6 +345,8 @@ export function HtmlRegressionHarness(): JSX.Element {
         await waitForFlushAfter(prevVersion);
         await handle.waitForIdle();
         await waitForStableVersion(handle, { stableFrames: 3, timeoutMs: 2000 });
+        await waitForLazyCodeCompletion(handle, { timeoutMs: 5000 });
+        await waitForStableVersion(handle, { stableFrames: 3, timeoutMs: 2000 });
         await nextFrame();
         await nextFrame();
       },
@@ -308,32 +368,60 @@ export function HtmlRegressionHarness(): JSX.Element {
       getHtml() {
         return rootRef.current?.innerHTML ?? "";
       },
-  getSummary() {
-    const root = rootRef.current;
-    const selectors = {
-      hasTable: Boolean(root?.querySelector("table")),
-      hasPre: Boolean(root?.querySelector("pre")),
-      hasFootnotes: Boolean(root?.querySelector(".footnotes")),
-      hasMdxPending: Boolean(root?.querySelector('.markdown-mdx[data-mdx-status="pending"]')),
-      hasMdxCompiled: Boolean(root?.querySelector('.markdown-mdx[data-mdx-status="compiled"]')),
-      hasBlockquote: Boolean(root?.querySelector("blockquote")),
-      hasMath: Boolean(root?.querySelector(".katex")),
-    };
-    return {
-      rootChildCount: root?.children.length ?? 0,
-      selectors,
-      counts: {
-        table: root?.querySelectorAll("table").length ?? 0,
-        pre: root?.querySelectorAll("pre").length ?? 0,
-        blockquote: root?.querySelectorAll("blockquote").length ?? 0,
-        katex: root?.querySelectorAll(".katex").length ?? 0,
-        mdxPending: root?.querySelectorAll('.markdown-mdx[data-mdx-status="pending"]').length ?? 0,
-        mdxCompiled: root?.querySelectorAll('.markdown-mdx[data-mdx-status="compiled"]').length ?? 0,
-        footnotes: root?.querySelectorAll(".footnotes").length ?? 0,
-        hr: root?.querySelectorAll("hr").length ?? 0,
+      getSummary() {
+        const root = rootRef.current;
+        const selectors = {
+          hasTable: Boolean(root?.querySelector("table")),
+          hasPre: Boolean(root?.querySelector("pre")),
+          hasFootnotes: Boolean(root?.querySelector(".footnotes")),
+          hasMdxPending: Boolean(root?.querySelector('.markdown-mdx[data-mdx-status="pending"]')),
+          hasMdxCompiled: Boolean(root?.querySelector('.markdown-mdx[data-mdx-status="compiled"]')),
+          hasBlockquote: Boolean(root?.querySelector("blockquote")),
+          hasMath: Boolean(root?.querySelector(".katex")),
+        };
+        return {
+          rootChildCount: root?.children.length ?? 0,
+          selectors,
+          counts: {
+            table: root?.querySelectorAll("table").length ?? 0,
+            pre: root?.querySelectorAll("pre").length ?? 0,
+            blockquote: root?.querySelectorAll("blockquote").length ?? 0,
+            katex: root?.querySelectorAll(".katex").length ?? 0,
+            mdxPending: root?.querySelectorAll('.markdown-mdx[data-mdx-status="pending"]').length ?? 0,
+            mdxCompiled: root?.querySelectorAll('.markdown-mdx[data-mdx-status="compiled"]').length ?? 0,
+            footnotes: root?.querySelectorAll(".footnotes").length ?? 0,
+            hr: root?.querySelectorAll("hr").length ?? 0,
+          },
+        };
       },
-    };
-  },
+      getRuntimeState() {
+        const handle = handleRef.current;
+        if (!handle) {
+          return {
+            rendererVersion: 0,
+            queueDepth: 0,
+            pendingBatches: 0,
+            workerReady: false,
+            lastTx: null,
+            lastPatchToDomMs: null,
+            lastDurationMs: null,
+            meta: { ...metaRef.current },
+            storeCounters: {},
+          };
+        }
+        const state = handle.getState();
+        return {
+          rendererVersion: state.rendererVersion,
+          queueDepth: state.queueDepth,
+          pendingBatches: state.pendingBatches,
+          workerReady: state.workerReady,
+          lastTx: state.lastMetrics?.tx ?? null,
+          lastPatchToDomMs: state.lastMetrics?.patchToDomMs ?? null,
+          lastDurationMs: state.lastMetrics?.durationMs ?? null,
+          meta: { ...metaRef.current },
+          storeCounters: state.store.getDebugCounters(),
+        };
+      },
       getDebugBlocks() {
         const handle = handleRef.current;
         if (!handle) return [];
@@ -371,7 +459,10 @@ export function HtmlRegressionHarness(): JSX.Element {
       getInvariantViolations() {
         const handle = handleRef.current;
         if (!handle) return [];
-        return collectInvariantViolations(handle.getState());
+        return [
+          ...collectInvariantViolations(handle.getState()),
+          ...handle.getState().store.getInvariantViolations().map((message) => ({ message })),
+        ];
       },
       getComputedStyles(targets) {
         const root = rootRef.current;

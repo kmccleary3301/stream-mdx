@@ -1,6 +1,6 @@
 {
   "name": "@stream-mdx/worker",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Worker client utilities and shared worker helpers for the Streaming Markdown V2 pipeline",
   "license": "MIT",
   "repository": {
@@ -25,6 +25,11 @@
       "types": "./dist/worker-client.d.ts",
       "import": "./dist/worker-client.mjs",
       "require": "./dist/worker-client.cjs"
+    },
+    "./direct": {
+      "types": "./dist/direct.d.ts",
+      "import": "./dist/direct.mjs",
+      "require": "./dist/direct.cjs"
     },
     "./mdx-compile": {
       "types": "./dist/mdx-compile.d.ts",
@@ -63,8 +68,8 @@
     "@lezer/common": "^1.2.3",
     "@lezer/lr": "^1.4.2",
     "@lezer/markdown": "^1.3.0",
-    "@stream-mdx/core": "0.3.0",
-    "@stream-mdx/plugins": "0.3.0",
+    "@stream-mdx/core": "0.4.0",
+    "@stream-mdx/plugins": "0.4.0",
     "@mdx-js/mdx": "^3.1.0",
     "@shikijs/engine-javascript": "^1.29.2",
     "@shikijs/engine-oniguruma": "^1.29.2",

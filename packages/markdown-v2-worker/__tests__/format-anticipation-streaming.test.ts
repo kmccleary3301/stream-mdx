@@ -145,6 +145,50 @@ async function runMathAnticipationStreamingTest(): Promise<void> {
   assert(texts.every((text) => !text.includes("$x")), `raw '$' leaked into inline nodes: ${texts.join(" | ")}`);
 }
 
+async function runMathBlockAnticipationStreamingTest(): Promise<void> {
+  const harness = await createWorkerHarness();
+  const store = createRendererStore();
+
+  const initMessages = await harness.send({
+    type: "INIT",
+    initialContent: "",
+    prewarmLangs: [],
+    docPlugins: {
+      footnotes: true,
+      html: true,
+      mdx: true,
+      tables: true,
+      callouts: true,
+      math: true,
+      formatAnticipation: { mathBlock: true },
+    },
+  });
+  const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
+  assert.ok(init, "worker did not emit INITIALIZED");
+  store.reset(init.blocks);
+
+  const appendMessages = await harness.send({ type: "APPEND", text: "$$\nR_{\\rho\\sigma}" });
+  const patchMessages = appendMessages.filter((msg): msg is Extract<WorkerOut, { type: "PATCH" }> => msg.type === "PATCH");
+  assert.ok(patchMessages.length > 0, "expected PATCH response from append");
+  for (const msg of patchMessages) {
+    store.applyPatches(msg.patches as Patch[], { captureMetrics: false });
+  }
+
+  const paragraph = store.getBlocks().find((block) => block.type === "paragraph" && block.payload.raw.includes("R_{\\rho\\sigma}"));
+  assert.ok(paragraph, "expected streamed paragraph block for math block");
+  assert.strictEqual(paragraph.payload?.meta?.inlineStatus, "anticipated", "expected inlineStatus=anticipated for display math");
+  assert.ok(!Array.isArray(paragraph.payload?.meta?.mixedSegments), "text-only anticipation should not emit mixedSegments");
+
+  const inlineNodes: InlineNode[] = Array.isArray(paragraph.payload?.inline) ? (paragraph.payload?.inline as InlineNode[]) : [];
+  const kinds = new Set<string>();
+  const texts: string[] = [];
+  flattenInline(inlineNodes, kinds, texts);
+
+  assert(kinds.has("math-display"), "missing anticipated display math node");
+  assert(texts.every((text) => !text.includes("$$")), `raw '$$' leaked into inline nodes: ${texts.join(" | ")}`);
+}
+
 await runFormatAnticipationStreamingTest();
 await runMathAnticipationStreamingTest();
+await runMathBlockAnticipationStreamingTest();
 console.log("format anticipation streaming test passed");

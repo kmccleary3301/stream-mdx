@@ -6,6 +6,7 @@ This doc covers:
 
 - Running the StreamMDX worker in **Node** via `worker_threads`
 - Consuming `PATCH` messages to maintain a `DocumentSnapshot`
+- Running deterministic compile without `worker_threads` (edge-style runtime)
 - Rendering snapshots with a terminal renderer (Ink, etc.)
 
 ## 1) Run the worker in Node (recommended helper)
@@ -41,6 +42,65 @@ Notes:
 
 - `snapshot.blocks` is an ordered `Block[]` representation suitable for rendering in a TUI.
 - If you want to render the full node tree (not just blocks), inspect `snapshot.nodes` from `createInitialSnapshot()` / `applyPatchBatch()`.
+
+## 1b) Static compile helper (snapshot artifact)
+
+If you want a **one-shot compile** (SSG/SSR precompute), use the Node helper that wraps
+`worker_threads` and returns a deterministic snapshot with optional file caching:
+
+```ts
+import { compileMarkdownSnapshot } from "stream-mdx/worker/node";
+
+const result = await compileMarkdownSnapshot({
+  text: "# Hello\\n\\n```ts\\nconsole.log('hi')\\n```",
+  init: {
+    docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true },
+    mdx: { compileMode: "server" },
+    prewarmLangs: ["typescript"],
+  },
+  cache: {
+    dir: ".stream-mdx-cache",
+  },
+});
+
+console.log(result.blocks);
+// result.snapshot holds the full DocumentSnapshot if you need it.
+```
+
+Notes:
+
+- `compileMarkdownSnapshot` waits for the worker to finalize and returns stable `blocks`.
+- The cache is keyed by a hash of `text + init` unless you provide `cache.key`.
+
+## 1c) Direct compile helper (no `worker_threads`)
+
+If your runtime cannot spawn `worker_threads`, use the in-process direct helper:
+
+```ts
+import { compileMarkdownSnapshotDirect } from "stream-mdx/worker/direct";
+
+const result = await compileMarkdownSnapshotDirect({
+  text: "# Edge-safe compile\\n\\n```ts\\nexport const answer = 42;\\n```",
+  init: {
+    docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true },
+    mdx: { compileMode: "server" },
+    prewarmLangs: ["typescript"],
+  },
+  hashSalt: "edge-preview",
+  cache: {
+    dir: ".stream-mdx-cache",
+  },
+});
+
+console.log(result.blocks);
+```
+
+Notes:
+
+- This path keeps determinism parity with `compileMarkdownSnapshot` for the same input/init.
+- It is currently a preview API intended for runtimes where worker threads are unavailable.
+- Filesystem cache parity is supported when the runtime exposes Node filesystem APIs.
+- In runtimes without filesystem access (for example most edge isolates), direct compile still works and simply skips cache reads/writes (`fromCache` remains `false`).
 
 ## 2) Hosted worker bundle location (for advanced setups)
 

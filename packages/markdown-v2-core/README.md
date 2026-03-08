@@ -39,11 +39,16 @@ export function makeConfig(overrides?: Partial<typeof DEFAULT_BACKPRESSURE_CONFI
 
 ## Docs
 
-- API reference: `docs/PUBLIC_API.md`
-- Security model: `docs/SECURITY_MODEL.md`
+- API reference: https://github.com/kmccleary3301/stream-mdx/blob/main/docs/PUBLIC_API.md
+- Security model: https://github.com/kmccleary3301/stream-mdx/blob/main/docs/SECURITY_MODEL.md
+- Protocol spec (for typed stream events): https://github.com/kmccleary3301/stream-mdx/blob/main/docs/STREAMMDX_JSON_DIFF_SPEC.md
 
 ## Related packages
 
 - `@stream-mdx/react` for the React renderer
 - `@stream-mdx/worker` for hosted worker bundles
+- `@stream-mdx/plugins` for worker-side plugin primitives (advanced)
+- `@stream-mdx/protocol` for stable protocol/event types (e.g. TUIs)
+- `@stream-mdx/tui` for NDJSON helpers + a snapshot store (terminal UIs)
 - `@stream-mdx/mermaid` for Mermaid diagram rendering (optional)
+- `@stream-mdx/theme-tailwind` for an optional Tailwind-friendly theme (optional)

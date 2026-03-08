@@ -2,6 +2,34 @@
 
 This log tracks perf harness snapshots used to make scheduling decisions. Values are p95 unless noted. Paths point to local `tmp/` outputs.
 
+## 2026-01-16 Baseline refresh (naive-bayes + table-large)
+
+Baselines compared:
+- Base:
+  - `tmp/perf-baselines/naive-bayes-S1_slow_small-2026-01-16T01-23-40-289Z`
+  - `tmp/perf-baselines/naive-bayes-S2_typical-2026-01-16T01-31-45-659Z`
+  - `tmp/perf-baselines/naive-bayes-S4_chunky_network-2026-01-16T01-33-19-667Z`
+  - `tmp/perf-baselines/table-large-S2_typical-2026-01-16T01-34-13-489Z`
+  - `tmp/perf-baselines/table-large-S6_extreme-2026-01-16T01-34-28-484Z`
+- Candidate:
+  - `tmp/perf-baselines/naive-bayes-S1_slow_small-2026-01-16T06-11-35-608Z`
+  - `tmp/perf-baselines/naive-bayes-S2_typical-2026-01-16T06-19-37-644Z`
+  - `tmp/perf-baselines/naive-bayes-S4_chunky_network-2026-01-16T06-21-10-866Z`
+  - `tmp/perf-baselines/table-large-S2_typical-2026-01-16T06-22-16-932Z`
+  - `tmp/perf-baselines/table-large-S6_extreme-2026-01-16T06-22-29-600Z`
+
+Summary (p95, base -> candidate):
+- S1_slow_small: duration 113694.70 -> 113677.80 (-0.0%), first flush 373.20 -> 376.10 (+0.8%), longtask 74.00 -> 97.00 (+31.1%), raf delta 16.80 -> 16.80, memory peak 87.45 -> 110.63 (+26.5%).
+- S2_typical: duration 18982.50 -> 18982.60 (0.0%), first flush 258.40 -> 300.20 (+16.2%), longtask n/a -> 64.00, raf delta 16.80 -> 16.80, memory peak 87.45 -> 110.63 (+26.5%).
+- S4_chunky_network: duration 4750.10 -> 4766.30 (+0.3%), first flush 293.00 -> 222.40 (-24.1%), longtask 58.00 -> 75.00 (+29.3%), raf delta 16.80 -> 16.80, memory peak 87.45 -> 110.63 (+26.5%).
+- table-large S2_typical: duration 633.10 -> 633.20 (0.0%), first flush 217.20 -> 225.50 (+3.8%), raf delta 16.80 -> 16.80, memory peak 87.45 -> 110.63 (+26.5%).
+- table-large S6_extreme: duration 66.60 -> 66.50 (-0.2%), raf delta 16.70 -> 16.80 (+0.6%).
+
+Notes:
+- All guardrails were within bounds; S2 first flush regressed +16.2% but stayed below thresholds.
+- Longtask p95 is newly reported for S2 (base was n/a); treat as new visibility rather than a regression.
+- Profiler run (LOCAL_BENCHMARKS): `naive-bayes/S2_typical` 2026-01-16T06-23-05-474Z actual p95 8.70 ms, base p95 128.40 ms.
+
 ## 2026-01-13 Long-task filtering to stream window
 
 Change:

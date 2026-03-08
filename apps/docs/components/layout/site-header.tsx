@@ -4,7 +4,7 @@ import { Link } from "next-view-transitions";
 
 export function SiteHeader() {
   return (
-    <div className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/90 backdrop-blur">
+    <div className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/65">
       <div className="mx-auto flex w-full max-w-screen-xl items-center justify-between gap-3 px-4 py-3 md:gap-6 md:px-6 md:py-4">
         <Link href="/" className="text-sm font-semibold tracking-tight">
           StreamMDX
@@ -27,7 +27,7 @@ export function SiteHeader() {
           </Link>
         </nav>
         <div className="flex items-center gap-2 md:gap-3">
-          <div className="hidden items-center gap-2 rounded-full border border-border/60 bg-background/60 px-3 py-1 text-xs text-muted-old md:flex">
+          <div className="hidden items-center gap-2 rounded-full border border-border/60 bg-background/70 px-3 py-1 text-xs text-muted-old backdrop-blur md:flex">
             <Search size={14} />
             <span className="text-xs">Search docs...</span>
             <kbd className="ml-2 rounded-md border border-border/60 px-1.5 py-0.5 text-[10px] uppercase">⌘K</kbd>

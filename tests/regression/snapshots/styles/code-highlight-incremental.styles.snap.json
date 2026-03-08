@@ -58,9 +58,21 @@
         "white-space": "pre"
       }
     },
+    "hr": {
+      "missing": true,
+      "selector": "#regression-root hr"
+    },
+    "kbd": {
+      "missing": true,
+      "selector": "#regression-root kbd"
+    },
     "table": {
       "missing": true,
       "selector": "#regression-root table"
+    },
+    "table-row": {
+      "missing": true,
+      "selector": "#regression-root tbody tr"
     },
     "table-th": {
       "missing": true,

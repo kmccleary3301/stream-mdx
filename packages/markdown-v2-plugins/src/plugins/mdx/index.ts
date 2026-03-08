@@ -14,9 +14,28 @@ export const MDXDetectionPlugin: DocumentPlugin = {
       if (block.type !== "paragraph" && block.type !== "html") continue;
       const raw = block.payload.raw;
       const blockRange = block.payload.range;
-      const baseOffset = typeof blockRange?.from === "number" ? blockRange.from : 0;
-      const relevantProtected = filterProtectedRanges(ctx.protectedRanges, baseOffset, baseOffset + raw.length);
-      if (detectMDX(raw, { protectedRanges: relevantProtected, baseOffset })) {
+      const baseOffset = typeof blockRange?.from === "number" ? blockRange.from : null;
+      let protectedBase = baseOffset ?? 0;
+      let relevantProtected = filterProtectedRanges(ctx.protectedRanges, protectedBase, protectedBase + raw.length);
+      if (relevantProtected.length === 0) {
+        const metaProtected = Array.isArray((block.payload.meta as { protectedRanges?: ProtectedRange[] } | undefined)?.protectedRanges)
+          ? ((block.payload.meta as { protectedRanges?: ProtectedRange[] }).protectedRanges ?? [])
+          : [];
+        if (metaProtected.length > 0) {
+          if (baseOffset === null) {
+            protectedBase = 0;
+            relevantProtected = metaProtected;
+          } else {
+            protectedBase = baseOffset;
+            relevantProtected = metaProtected.map((range) => ({
+              ...range,
+              from: baseOffset + range.from,
+              to: baseOffset + range.to,
+            }));
+          }
+        }
+      }
+      if (detectMDX(raw, { protectedRanges: relevantProtected, baseOffset: protectedBase })) {
         block.payload.meta = { ...(block.payload.meta || {}), originalType: block.type };
         block.type = "mdx";
         if ("sanitizedHtml" in block.payload) {

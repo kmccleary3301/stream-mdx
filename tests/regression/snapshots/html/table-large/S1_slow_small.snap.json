@@ -9,12 +9,41 @@
     "charRateCps": 200,
     "maxChunkChars": 32
   },
+  "runMeta": {
+    "seed": null,
+    "schedulerMode": null,
+    "usedSplitMarkers": false,
+    "fixtureTags": [
+      "table",
+      "stress"
+    ]
+  },
   "totalLength": 690,
   "checkpoints": [
     {
       "id": "after-first-chunk",
       "appendedChars": 10,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 4,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 1,
+        "lastPatchToDomMs": 2.799999998882413,
+        "lastDurationMs": 2.199999999254942,
+        "meta": {
+          "fixtureId": "table-large",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -50,12 +79,37 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
       "id": "progress-35",
       "appendedChars": 40,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 7,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 4,
+        "lastPatchToDomMs": 12.5,
+        "lastDurationMs": 0.19999999925494194,
+        "meta": {
+          "fixtureId": "table-large",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -91,12 +145,37 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
       "id": "progress-69",
       "appendedChars": 70,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 10,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 7,
+        "lastPatchToDomMs": 5.299999998882413,
+        "lastDurationMs": 0.09999999962747097,
+        "meta": {
+          "fixtureId": "table-large",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -132,55 +211,39 @@
           "footnotes": 0,
           "hr": 0
         }
-      }
-    },
-    {
-      "id": "event-hasTable",
-      "appendedChars": 100,
-      "rootChildCount": 1,
-      "selectors": {
-        "hasTable": true,
-        "hasPre": false,
-        "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
-        "hasBlockquote": false,
-        "hasMath": false
       },
-      "counts": {
-        "table": 1,
-        "pre": 0,
-        "blockquote": 0,
-        "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
-        "footnotes": 0,
-        "hr": 0
-      },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Large Table\">Large Table</h1><div class=\"relative w-full overflow-auto\"><table class=\"markdown-table w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Hedge Fund</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Margin</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Portfolio Size (USD)</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Location</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"></tbody></table></div></div>",
-      "textSample": "Large TableHedge FundMarginPortfolio Size (USD)Location",
-      "structure": {
-        "topLevelTags": [
-          "div"
-        ],
-        "counts": {
-          "table": 1,
-          "pre": 0,
-          "blockquote": 0,
-          "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
-          "footnotes": 0,
-          "hr": 0
-        }
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
       "id": "progress-173",
       "appendedChars": 180,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 21,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 18,
+        "lastPatchToDomMs": 13.200000001117587,
+        "lastDurationMs": 0.09999999962747097,
+        "meta": {
+          "fixtureId": "table-large",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
-        "hasTable": true,
+        "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
         "hasMdxPending": false,
@@ -189,7 +252,7 @@
         "hasMath": false
       },
       "counts": {
-        "table": 1,
+        "table": 0,
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
@@ -198,14 +261,14 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Large Table\">Large Table</h1><div class=\"relative w-full overflow-auto\"><table class=\"markdown-table w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Hedge Fund</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Margin</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Portfolio Size (USD)</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Location</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Bridgewater</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">25%</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$150 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Westport, Connecticut</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Renaissance</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">No</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\"></td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\"></td></tr></tbody></table></div></div>",
-      "textSample": "Large TableHedge FundMarginPortfolio Size (USD)LocationBridgewater25%$150 billionWestport, ConnecticutRenaissanceNo",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Large Table\">Large Table</h1><p class=\"markdown-paragraph streaming-partial\">| Hedge Fund | Margin | Portfolio Size (USD) | Location |\n| --- | ---: | ---: | --- |\n| Bridgewater | 25% | $150 billion | Westport, Connecticut |\n| Renaissance | No</p></div>",
+      "textSample": "Large Table| Hedge Fund | Margin | Portfolio Size (USD) | Location |\n| --- | ---: | ---: | --- |\n| Bridgewater | 25% | $150 billion | Westport, Connecticut |\n| Renaissance | No",
       "structure": {
         "topLevelTags": [
           "div"
         ],
         "counts": {
-          "table": 1,
+          "table": 0,
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
@@ -214,14 +277,39 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
       "id": "progress-345",
       "appendedChars": 350,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 38,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 35,
+        "lastPatchToDomMs": 12.800000000745058,
+        "lastDurationMs": 0.10000000149011612,
+        "meta": {
+          "fixtureId": "table-large",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
-        "hasTable": true,
+        "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
         "hasMdxPending": false,
@@ -230,7 +318,7 @@
         "hasMath": false
       },
       "counts": {
-        "table": 1,
+        "table": 0,
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
@@ -239,14 +327,14 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Large Table\">Large Table</h1><div class=\"relative w-full overflow-auto\"><table class=\"markdown-table w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Hedge Fund</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Margin</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Portfolio Size (USD)</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Location</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Bridgewater</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">25%</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$150 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Westport, Connecticut</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Renaissance</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$80 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">East Setauket, NY</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Man Group</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$62 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">London, UK</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Millennium</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$55 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">New York, NY</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">AQR Capital</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\"></td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\"></td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\"></td></tr></tbody></table></div></div>",
-      "textSample": "Large TableHedge FundMarginPortfolio Size (USD)LocationBridgewater25%$150 billionWestport, ConnecticutRenaissanceNot Public$80 billionEast Setauket, NYMan GroupNot Public$62 billionLondon, UKMillenniu",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Large Table\">Large Table</h1><p class=\"markdown-paragraph streaming-partial\">| Hedge Fund | Margin | Portfolio Size (USD) | Location |\n| --- | ---: | ---: | --- |\n| Bridgewater | 25% | $150 billion | Westport, Connecticut |\n| Renaissance | Not Public | $80 billion | East Setauket, NY |\n| Man Group | Not Public | $62 billion | London, UK |\n| Millennium | Not Public | $55 billion | New York, NY |\n| AQR Capital </p></div>",
+      "textSample": "Large Table| Hedge Fund | Margin | Portfolio Size (USD) | Location |\n| --- | ---: | ---: | --- |\n| Bridgewater | 25% | $150 billion | Westport, Connecticut |\n| Renaissance | Not Public | $80 billion |",
       "structure": {
         "topLevelTags": [
           "div"
         ],
         "counts": {
-          "table": 1,
+          "table": 0,
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
@@ -255,14 +343,39 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
       "id": "progress-518",
       "appendedChars": 520,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 55,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 52,
+        "lastPatchToDomMs": 13.400000000372529,
+        "lastDurationMs": 0.09999999962747097,
+        "meta": {
+          "fixtureId": "table-large",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
-        "hasTable": true,
+        "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
         "hasMdxPending": false,
@@ -271,7 +384,7 @@
         "hasMath": false
       },
       "counts": {
-        "table": 1,
+        "table": 0,
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
@@ -280,14 +393,14 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Large Table\">Large Table</h1><div class=\"relative w-full overflow-auto\"><table class=\"markdown-table w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Hedge Fund</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Margin</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Portfolio Size (USD)</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Location</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Bridgewater</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">25%</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$150 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Westport, Connecticut</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Renaissance</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$80 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">East Setauket, NY</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Man Group</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$62 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">London, UK</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Millennium</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$55 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">New York, NY</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">AQR Capital</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$50 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Greenwich, Connecticut</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Two Sigma</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$50 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">New York, NY</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Citadel</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$35 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Chicago, IL</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Ellio</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\"></td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\"></td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\"></td></tr></tbody></table></div></div>",
-      "textSample": "Large TableHedge FundMarginPortfolio Size (USD)LocationBridgewater25%$150 billionWestport, ConnecticutRenaissanceNot Public$80 billionEast Setauket, NYMan GroupNot Public$62 billionLondon, UKMillenniu",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Large Table\">Large Table</h1><p class=\"markdown-paragraph streaming-partial\">| Hedge Fund | Margin | Portfolio Size (USD) | Location |\n| --- | ---: | ---: | --- |\n| Bridgewater | 25% | $150 billion | Westport, Connecticut |\n| Renaissance | Not Public | $80 billion | East Setauket, NY |\n| Man Group | Not Public | $62 billion | London, UK |\n| Millennium | Not Public | $55 billion | New York, NY |\n| AQR Capital | Not Public | $50 billion | Greenwich, Connecticut |\n| Two Sigma | Not Public | $50 billion | New York, NY |\n| Citadel | Not Public | $35 billion | Chicago, IL |\n| Ellio</p></div>",
+      "textSample": "Large Table| Hedge Fund | Margin | Portfolio Size (USD) | Location |\n| --- | ---: | ---: | --- |\n| Bridgewater | 25% | $150 billion | Westport, Connecticut |\n| Renaissance | Not Public | $80 billion |",
       "structure": {
         "topLevelTags": [
           "div"
         ],
         "counts": {
-          "table": 1,
+          "table": 0,
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
@@ -296,14 +409,39 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
       "id": "progress-621",
       "appendedChars": 630,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 66,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 63,
+        "lastPatchToDomMs": 12.900000000372529,
+        "lastDurationMs": 0.19999999925494194,
+        "meta": {
+          "fixtureId": "table-large",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
-        "hasTable": true,
+        "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
         "hasMdxPending": false,
@@ -312,7 +450,7 @@
         "hasMath": false
       },
       "counts": {
-        "table": 1,
+        "table": 0,
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
@@ -321,14 +459,14 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Large Table\">Large Table</h1><div class=\"relative w-full overflow-auto\"><table class=\"markdown-table w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Hedge Fund</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Margin</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Portfolio Size (USD)</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Location</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Bridgewater</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">25%</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$150 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Westport, Connecticut</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Renaissance</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$80 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">East Setauket, NY</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Man Group</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$62 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">London, UK</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Millennium</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$55 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">New York, NY</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">AQR Capital</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$50 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Greenwich, Connecticut</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Two Sigma</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$50 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">New York, NY</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Citadel</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$35 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Chicago, IL</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Elliott Management</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$34 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">New York, NY</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">D.E. Shaw</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$34 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">New York, N</td></tr></tbody></table></div></div>",
-      "textSample": "Large TableHedge FundMarginPortfolio Size (USD)LocationBridgewater25%$150 billionWestport, ConnecticutRenaissanceNot Public$80 billionEast Setauket, NYMan GroupNot Public$62 billionLondon, UKMillenniu",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Large Table\">Large Table</h1><p class=\"markdown-paragraph streaming-partial\">| Hedge Fund | Margin | Portfolio Size (USD) | Location |\n| --- | ---: | ---: | --- |\n| Bridgewater | 25% | $150 billion | Westport, Connecticut |\n| Renaissance | Not Public | $80 billion | East Setauket, NY |\n| Man Group | Not Public | $62 billion | London, UK |\n| Millennium | Not Public | $55 billion | New York, NY |\n| AQR Capital | Not Public | $50 billion | Greenwich, Connecticut |\n| Two Sigma | Not Public | $50 billion | New York, NY |\n| Citadel | Not Public | $35 billion | Chicago, IL |\n| Elliott Management | Not Public | $34 billion | New York, NY |\n| D.E. Shaw | Not Public | $34 billion | New York, N</p></div>",
+      "textSample": "Large Table| Hedge Fund | Margin | Portfolio Size (USD) | Location |\n| --- | ---: | ---: | --- |\n| Bridgewater | 25% | $150 billion | Westport, Connecticut |\n| Renaissance | Not Public | $80 billion |",
       "structure": {
         "topLevelTags": [
           "div"
         ],
         "counts": {
-          "table": 1,
+          "table": 0,
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
@@ -337,14 +475,39 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
       "id": "progress-690",
       "appendedChars": 690,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 72,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 69,
+        "lastPatchToDomMs": 13.200000001117587,
+        "lastDurationMs": 0.2000000011175871,
+        "meta": {
+          "fixtureId": "table-large",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
-        "hasTable": true,
+        "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
         "hasMdxPending": false,
@@ -353,7 +516,7 @@
         "hasMath": false
       },
       "counts": {
-        "table": 1,
+        "table": 0,
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
@@ -362,14 +525,14 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Large Table\">Large Table</h1><div class=\"relative w-full overflow-auto\"><table class=\"markdown-table w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Hedge Fund</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Margin</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Portfolio Size (USD)</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Location</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Bridgewater</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">25%</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$150 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Westport, Connecticut</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Renaissance</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$80 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">East Setauket, NY</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Man Group</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$62 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">London, UK</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Millennium</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$55 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">New York, NY</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">AQR Capital</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$50 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Greenwich, Connecticut</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Two Sigma</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$50 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">New York, NY</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Citadel</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$35 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Chicago, IL</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Elliott Management</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$34 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">New York, NY</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">D.E. Shaw</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$34 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">New York, NY</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">BlackRock</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$33 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">New York, NY</td></tr></tbody></table></div></div>",
-      "textSample": "Large TableHedge FundMarginPortfolio Size (USD)LocationBridgewater25%$150 billionWestport, ConnecticutRenaissanceNot Public$80 billionEast Setauket, NYMan GroupNot Public$62 billionLondon, UKMillenniu",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Large Table\">Large Table</h1><p class=\"markdown-paragraph streaming-partial\">| Hedge Fund | Margin | Portfolio Size (USD) | Location |\n| --- | ---: | ---: | --- |\n| Bridgewater | 25% | $150 billion | Westport, Connecticut |\n| Renaissance | Not Public | $80 billion | East Setauket, NY |\n| Man Group | Not Public | $62 billion | London, UK |\n| Millennium | Not Public | $55 billion | New York, NY |\n| AQR Capital | Not Public | $50 billion | Greenwich, Connecticut |\n| Two Sigma | Not Public | $50 billion | New York, NY |\n| Citadel | Not Public | $35 billion | Chicago, IL |\n| Elliott Management | Not Public | $34 billion | New York, NY |\n| D.E. Shaw | Not Public | $34 billion | New York, NY |\n| BlackRock | Not Public | $33 billion | New York, NY |</p></div>",
+      "textSample": "Large Table| Hedge Fund | Margin | Portfolio Size (USD) | Location |\n| --- | ---: | ---: | --- |\n| Bridgewater | 25% | $150 billion | Westport, Connecticut |\n| Renaissance | Not Public | $80 billion |",
       "structure": {
         "topLevelTags": [
           "div"
         ],
         "counts": {
-          "table": 1,
+          "table": 0,
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
@@ -378,6 +541,11 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     }
   ],
@@ -395,6 +563,26 @@
       "hasMath": false
     },
     "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Large Table\">Large Table</h1><div class=\"relative w-full overflow-auto\"><table class=\"markdown-table w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Hedge Fund</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Margin</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Portfolio Size (USD)</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Location</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Bridgewater</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">25%</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$150 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Westport, Connecticut</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Renaissance</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$80 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">East Setauket, NY</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Man Group</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$62 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">London, UK</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Millennium</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$55 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">New York, NY</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">AQR Capital</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$50 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Greenwich, Connecticut</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Two Sigma</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$50 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">New York, NY</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Citadel</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$35 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Chicago, IL</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Elliott Management</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$34 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">New York, NY</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">D.E. Shaw</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$34 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">New York, NY</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">BlackRock</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">Not Public</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\" align=\"right\">$33 billion</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">New York, NY</td></tr></tbody></table></div></div>",
+    "runtimeState": {
+      "rendererVersion": 73,
+      "queueDepth": 0,
+      "pendingBatches": 0,
+      "workerReady": true,
+      "lastTx": 70,
+      "lastPatchToDomMs": 6.600000001490116,
+      "lastDurationMs": 0.6000000014901161,
+      "meta": {
+        "fixtureId": "table-large",
+        "scenarioId": "S1_slow_small",
+        "seed": null,
+        "schedulerMode": null
+      },
+      "storeCounters": {
+        "appendLineGuardRejected": 0,
+        "staleEpochRejected": 0,
+        "storeInvariantViolationCount": 0
+      }
+    },
     "structure": {
       "topLevelTags": [
         "div"
@@ -417,6 +605,28 @@
         "hash": "4635334cf1889ba72057384e0b66ec65d7e5f79a72405b613575a4c5d20dd1db",
         "textSample": "Large TableHedge FundMarginPortfolio Size (USD)LocationBridgewater25%$150 billionWestport, ConnecticutRenaissanceNot Pub"
       }
-    ]
+    ],
+    "inspection": {
+      "tables": [
+        {
+          "headerColumns": 4,
+          "rowCellCounts": [
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4
+          ],
+          "emptyBodyCellCount": 0
+        }
+      ],
+      "mdxBlocks": [],
+      "codeBlocks": []
+    }
   }
 }

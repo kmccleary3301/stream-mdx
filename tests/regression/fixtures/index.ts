@@ -4,7 +4,16 @@ export type RegressionFixture = {
   file: string;
   tags?: string[];
   requiredSelectors?: string[];
+  requiredTextFragments?: string[];
   expectTableByPct?: number;
+  expectedListItemCount?: number;
+  forbidEmptyNestedLists?: boolean;
+  expectedTableColumnCount?: number;
+  forbidIncompleteTableRows?: boolean;
+  forbidIncompleteTableRowsDuringStreaming?: boolean;
+  expectedMdxBlockCount?: number;
+  expectedCodeBlockCount?: number;
+  enforceCodeTextPrefix?: boolean;
 };
 
 export const REGRESSION_FIXTURES: RegressionFixture[] = [
@@ -14,6 +23,13 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
     file: "kitchen-sink.md",
     tags: ["article"],
     requiredSelectors: ["table", "pre", ".footnotes", ".katex", "blockquote"],
+  },
+  {
+    id: "mixed-content-golden",
+    title: "Mixed Content Golden",
+    file: "mixed-content-golden.md",
+    tags: ["mixed", "golden", "article"],
+    requiredSelectors: ["table", "pre", ".footnotes", ".katex", "blockquote", "kbd", "sub", "sup"],
   },
   {
     id: "edge-boundaries",
@@ -28,6 +44,10 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
     file: "table-boundary.md",
     tags: ["table"],
     requiredSelectors: ["table"],
+    requiredTextFragments: ["Bridgewater", "Renaissance", "Man Group"],
+    expectedTableColumnCount: 3,
+    forbidIncompleteTableRows: true,
+    forbidIncompleteTableRowsDuringStreaming: true,
   },
   {
     id: "inline-html",
@@ -51,11 +71,27 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
     requiredSelectors: [".katex"],
   },
   {
+    id: "math-mdx-sentinel",
+    title: "Math/MDX Sentinel",
+    file: "math-mdx-sentinel.md",
+    tags: ["math", "regression"],
+    requiredSelectors: [".katex"],
+  },
+  {
     id: "lists-nested",
     title: "Lists Nested",
     file: "lists-nested.md",
     tags: ["lists"],
     requiredSelectors: ["ol", "ul"],
+  },
+  {
+    id: "imaginary-empty-list",
+    title: "Imaginary Empty Nested List",
+    file: "imaginary-empty-list.md",
+    tags: ["lists", "regression", "split-markers"],
+    requiredSelectors: ["ol"],
+    expectedListItemCount: 4,
+    forbidEmptyNestedLists: true,
   },
   {
     id: "mdx-preview-block",
@@ -91,12 +127,13 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
     file: "list-long.md",
     tags: ["lists"],
     requiredSelectors: ["ol", "ul"],
+    expectedListItemCount: 17,
   },
   {
     id: "edge-regressions",
     title: "Edge Regression Coverage",
     file: "edge-regressions.md",
-    tags: ["inline", "math", "lists"],
+    tags: ["inline", "math", "lists", "stress"],
     requiredSelectors: ["code", ".katex", "ol"],
   },
   {
@@ -127,6 +164,8 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
     file: "mdx-transitions.mdx",
     tags: ["mdx"],
     requiredSelectors: [".markdown-mdx", "figure", "pre"],
+    requiredTextFragments: ["Alpha", "Model", "Blockquote inside MDX"],
+    expectedMdxBlockCount: 3,
   },
   {
     id: "html-sanitization",
@@ -139,8 +178,10 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
     id: "code-huge",
     title: "Huge Code Block",
     file: "code-huge.md",
-    tags: ["code", "stress"],
+    tags: ["code", "stress", "golden"],
     requiredSelectors: ["pre", "code"],
+    expectedCodeBlockCount: 1,
+    enforceCodeTextPrefix: true,
   },
   {
     id: "anticipation-inline",
@@ -162,6 +203,8 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
     file: "code-highlight-incremental.md",
     tags: ["code", "highlight"],
     requiredSelectors: ["pre", "code"],
+    expectedCodeBlockCount: 1,
+    enforceCodeTextPrefix: true,
   },
 ];
 

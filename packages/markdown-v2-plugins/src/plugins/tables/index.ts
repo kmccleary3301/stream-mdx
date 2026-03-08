@@ -18,11 +18,15 @@ export const TablesPlugin: DocumentPlugin = {
     const parseInline = inlineParser ? (text: string) => inlineParser.parse(text) : fallbackParse;
     for (const block of ctx.blocks) {
       if (block.type !== "paragraph") continue;
+      // Do not rewrite a still-streaming paragraph into a semantic table yet.
+      // The raw markdown text is still the user-visible truth until the block closes,
+      // and switching representations early causes observable text discontinuities.
+      if (!block.isFinalized) continue;
       const raw = block.payload.raw;
       const lines = raw.split("\n");
       if (lines.length < 2) continue;
 
-      const table = parseGfmTable(lines);
+      const table = parseGfmTable(lines, { finalized: block.isFinalized });
       if (!table) continue;
 
       // Retag to table and populate meta
@@ -37,7 +41,7 @@ export const TablesPlugin: DocumentPlugin = {
         align: table.align,
       };
       // Make raw the exact slice of the table (trim extra lines)
-      block.payload.raw = lines.slice(0, 1 + 1 + table.rows.length).join("\n");
+      block.payload.raw = lines.slice(0, 2 + table.rows.length).join("\n");
       const from = block.payload.range?.from ?? 0;
       block.id = generateBlockId(`${from}:${block.type}`, block.type);
     }
@@ -45,19 +49,28 @@ export const TablesPlugin: DocumentPlugin = {
   },
 };
 
-function parseGfmTable(lines: string[]): { header?: string[]; align: Align[]; rows: string[][] } | null {
+function parseGfmTable(
+  lines: string[],
+  options: { finalized?: boolean } = {},
+): { header?: string[]; align: Align[]; rows: string[][] } | null {
   // must have a header, a delimiter row, then 1+ rows (rows optional technically)
   const header = splitRow(lines[0]);
   if (!header) return null;
   const align = parseAlignRow(lines[1]);
-  if (!align || align.length < header.length) return null;
+  if (!align || align.length !== header.length) return null;
 
   const rows: string[][] = [];
   for (let i = 2; i < lines.length; i++) {
     const row = splitRow(lines[i]);
     if (!row) break; // stop at first non-table line
-    // Normalize length to header length
-    while (row.length < header.length) row.push("");
+    if (row.length < header.length) {
+      if (!options.finalized && i === lines.length - 1) {
+        break;
+      }
+      while (row.length < header.length) row.push("");
+    } else if (row.length > header.length) {
+      row.length = header.length;
+    }
     rows.push(row);
   }
 

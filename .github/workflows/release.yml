@@ -30,11 +30,36 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
       - name: Build
         run: npm run build
 
       - name: Test
         run: npm run test
+
+      - name: Determinism matrix (node vs browser worker)
+        run: npm run determinism:matrix
+
+      - name: HTML parity (server blocks renderer vs browser final DOM)
+        run: npm run determinism:html-parity
+
+      - name: Build docs site (static export)
+        env:
+          NEXT_PUBLIC_BASE_PATH: ""
+        run: npm run docs:build
+
+      - name: Docs link integrity (internal routes + anchors)
+        env:
+          DOCS_CHECK_ANCHORS: "1"
+        run: npm run docs:check-links
+
+      - name: Pack + install smoke (Next + Vite)
+        run: npm run ci:pack-smoke
+
+      - name: Release gates (analyzer + regression + perf)
+        run: npm run release:gates
 
       - name: Create release PR or publish
         uses: changesets/action@v1

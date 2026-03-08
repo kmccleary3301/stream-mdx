@@ -15,6 +15,7 @@ type JsxDevFactory = typeof import("react/jsx-dev-runtime").jsxDEV;
 type ExtendedJsxRuntime = typeof ReactJsxRuntime & { jsxDEV?: JsxDevFactory };
 type MdxComponentProps = Record<string, unknown> & { components?: Record<string, React.ComponentType> };
 type MdxRuntimeComponent = React.ComponentType<MdxComponentProps>;
+type CompiledFetchOptions = { signal?: AbortSignal };
 
 function assignMdxChildKey(child: React.ReactNode, index: number | string): React.ReactNode {
   if (child == null) return child;
@@ -37,6 +38,8 @@ export class MDXClient {
   private compileEndpoint: string;
   private cache = new Map<string, Promise<CompiledMDX>>();
   private inlineModules = new Map<string, CompiledMDX>();
+  private compiledCache = new Map<string, CompiledMDX>();
+  private compiledInflight = new Map<string, Promise<CompiledMDX>>();
 
   constructor(compileEndpoint = "/api/mdx-compile-v2") {
     this.compileEndpoint = compileEndpoint;
@@ -72,31 +75,55 @@ export class MDXClient {
     }
   }
 
+  private async getCompiledInternal(ref: { id: string }): Promise<CompiledMDX> {
+    const inline = this.inlineModules.get(ref.id);
+    if (inline) {
+      return this.cloneCompiled(inline);
+    }
+
+    const cached = this.compiledCache.get(ref.id);
+    if (cached) {
+      return this.cloneCompiled(cached);
+    }
+
+    const inflight = this.compiledInflight.get(ref.id);
+    if (inflight) {
+      const resolved = await inflight;
+      return this.cloneCompiled(resolved);
+    }
+
+    const fetchPromise = this.fetchCompiled(ref);
+    this.compiledInflight.set(ref.id, fetchPromise);
+    try {
+      const data = await fetchPromise;
+      this.compiledCache.set(ref.id, data);
+      return this.cloneCompiled(data);
+    } finally {
+      this.compiledInflight.delete(ref.id);
+    }
+  }
+
   /**
    * Get compiled MDX by reference
    */
-  async getCompiled(ref: { id: string }): Promise<CompiledMDX> {
-    const inline = this.inlineModules.get(ref.id);
-    if (inline) {
-      return {
-        ...inline,
-        dependencies: Array.isArray(inline.dependencies) ? [...inline.dependencies] : [],
-      };
+  async getCompiled(ref: { id: string }): Promise<CompiledMDX>;
+  async getCompiled(ref: { id: string }, options: CompiledFetchOptions): Promise<CompiledMDX>;
+  async getCompiled(ref: { id: string }, options?: CompiledFetchOptions): Promise<CompiledMDX> {
+    if (options?.signal) {
+      const inline = this.inlineModules.get(ref.id);
+      if (inline) {
+        return this.cloneCompiled(inline);
+      }
+      const cached = this.compiledCache.get(ref.id);
+      if (cached) {
+        return this.cloneCompiled(cached);
+      }
+      const data = await this.fetchCompiled(ref, options);
+      this.compiledCache.set(ref.id, data);
+      return this.cloneCompiled(data);
     }
 
-    const response = await fetch(`${this.compileEndpoint}?id=${ref.id}`);
-
-    if (!response.ok) {
-      throw new Error(`Failed to get compiled MDX: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return {
-      id: data.id,
-      code: data.code,
-      dependencies: data.dependencies || [],
-      timestamp: data.timestamp,
-    };
+    return this.getCompiledInternal(ref);
   }
 
   /**
@@ -104,6 +131,8 @@ export class MDXClient {
    */
   clearCache(): void {
     this.cache.clear();
+    this.compiledCache.clear();
+    this.compiledInflight.clear();
   }
 
   registerInlineModule(compiled: CompiledMDX): void {
@@ -143,6 +172,31 @@ export class MDXClient {
       code: data.code,
       dependencies: data.dependencies || [],
       cached: data.cached || false,
+    };
+  }
+
+  private async fetchCompiled(ref: { id: string }, options?: CompiledFetchOptions): Promise<CompiledMDX> {
+    const response = await fetch(`${this.compileEndpoint}?id=${ref.id}`, {
+      signal: options?.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to get compiled MDX: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return {
+      id: data.id,
+      code: data.code,
+      dependencies: data.dependencies || [],
+      timestamp: data.timestamp,
+    };
+  }
+
+  private cloneCompiled(compiled: CompiledMDX): CompiledMDX {
+    return {
+      ...compiled,
+      dependencies: Array.isArray(compiled.dependencies) ? [...compiled.dependencies] : [],
     };
   }
 }

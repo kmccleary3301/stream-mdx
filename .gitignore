@@ -41,6 +41,8 @@ tmp/
 *.tmp
 *.log
 tests/regression/artifacts/
+.cache/
+apps/docs/.generated/
 
 # Package manager locks
 # - keep package-lock.json (npm workspaces)

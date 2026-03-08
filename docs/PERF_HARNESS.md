@@ -124,6 +124,22 @@ Add `--gate` to fail on regressions. Defaults are conservative; override per met
 npm run perf:gate -- --candidateS2 tmp/perf-runs/<s2-run> --candidateS3 tmp/perf-runs/<s3-run> --gate
 ```
 
+### Optional edge-like long-run gate
+
+To include an edge-like stress scenario in the same gate command, pass `--candidateEdge`
+(alias: `--candidateS6`) and provide a matching baseline path:
+
+```
+npm run perf:gate -- \
+  --candidateS2 tmp/perf-runs/<s2-run> \
+  --candidateS3 tmp/perf-runs/<s3-run> \
+  --candidateEdge tmp/perf-runs/<table-large-s6-run> \
+  --baseEdge tmp/perf-baselines/S6_extreme_edge_like \
+  --gate
+```
+
+If `candidateEdge` is omitted, the edge-like gate is skipped.
+
 ## Baselines
 
 Canonical baselines live under:
@@ -131,6 +147,7 @@ Canonical baselines live under:
 ```
 tmp/perf-baselines/S2_typical
 tmp/perf-baselines/S3_fast_reasonable
+tmp/perf-baselines/S6_extreme_edge_like (optional edge-like stress baseline)
 ```
 
 ## Notes

@@ -1,4 +1,4 @@
-import type { InlineNode, MixedContentSegment } from "./types";
+import type { InlineNode, MixedContentSegment, ProtectedRange } from "./types";
 import { sanitizeHtmlInWorker } from "./worker-html-sanitizer";
 
 export interface MixedContentAutoCloseHtmlOptions {
@@ -16,6 +16,8 @@ export interface MixedContentAutoCloseMdxOptions {
 export interface MixedContentOptions {
   html?: MixedContentAutoCloseHtmlOptions;
   mdx?: MixedContentAutoCloseMdxOptions;
+  protectedRanges?: ReadonlyArray<ProtectedRange>;
+  protectedRangeKinds?: ReadonlyArray<ProtectedRange["kind"]>;
 }
 
 const DEFAULT_INLINE_HTML_AUTOCLOSE_TAGS = new Set([
@@ -74,6 +76,10 @@ function splitByTagSegments(
   const mdxAutoClose = options?.mdx?.autoClose === true;
   const mdxMaxNewlines = normalizeNewlineLimit(options?.mdx?.maxNewlines);
   const mdxAllowlist = normalizeComponentAllowlist(options?.mdx?.componentAllowlist);
+  const protectedRanges = options?.protectedRanges ?? [];
+  const protectedKinds = protectedRanges.length
+    ? new Set<ProtectedRange["kind"]>(options?.protectedRangeKinds ?? ["math-inline", "math-display", "code-inline", "code-block", "autolink"])
+    : null;
 
   while (match !== null) {
     const start = match.index;
@@ -90,6 +96,23 @@ function splitByTagSegments(
       continue;
     }
     let end = tagPattern.lastIndex;
+    if (protectedKinds && protectedRanges.length > 0) {
+      const absoluteStart = baseIsFinite ? (baseOffset as number) + start : start;
+      const absoluteEnd = baseIsFinite ? (baseOffset as number) + end : end;
+      const covered = protectedRanges.some(
+        (range) =>
+          protectedKinds.has(range.kind) &&
+          typeof range.from === "number" &&
+          typeof range.to === "number" &&
+          range.from <= absoluteStart &&
+          range.to >= absoluteEnd,
+      );
+      if (covered) {
+        tagPattern.lastIndex = start + 1;
+        match = tagPattern.exec(source);
+        continue;
+      }
+    }
 
     if (!isSelfClosing && !mdxAllowed) {
       const closingIndex = findClosingHtmlTag(lowerSource, tagName.toLowerCase(), end);

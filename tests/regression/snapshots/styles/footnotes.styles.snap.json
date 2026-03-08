@@ -50,9 +50,26 @@
       "missing": true,
       "selector": "#regression-root pre"
     },
+    "hr": {
+      "selector": "#regression-root hr",
+      "computed": {
+        "margin-top": "42px",
+        "margin-bottom": "42px",
+        "border-top-width": "1px",
+        "border-top-color": "rgb(32, 32, 32)"
+      }
+    },
+    "kbd": {
+      "missing": true,
+      "selector": "#regression-root kbd"
+    },
     "table": {
       "missing": true,
       "selector": "#regression-root table"
+    },
+    "table-row": {
+      "missing": true,
+      "selector": "#regression-root tbody tr"
     },
     "table-th": {
       "missing": true,

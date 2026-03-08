@@ -1,0 +1,39 @@
+{
+  "name": "@stream-mdx/protocol",
+  "version": "0.4.0",
+  "description": "StreamMDX protocol types and event envelope for JSON/object streaming",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kmccleary3301/stream-mdx.git",
+    "directory": "packages/markdown-v2-protocol"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf dist",
+    "prepack": "npm run build"
+  },
+  "dependencies": {
+    "@stream-mdx/core": "0.4.0"
+  }
+}

@@ -13,7 +13,7 @@ Use this checklist when cutting releases from the `stream-mdx/` repo. It assumes
    npm ci
    ```
 2. **Build packages**
-   - `npm run build` runs all workspace builds (`npm -ws --if-present run build`).
+   - `npm run build` runs all workspace builds (`npm --workspaces --if-present run build`).
    ```bash
    npm run build
    ```
@@ -36,13 +36,27 @@ Use this checklist when cutting releases from the `stream-mdx/` repo. It assumes
    npm run test:regression:html
    npm run test:regression:styles
    ```
+   - HTML snapshots capture streaming checkpoints (5/10/25/50/75/90/100%) and run both typical + extreme scenarios for stress fixtures.
+   - Format anticipation is enabled by default in the regression harness.
+   - To update baselines, re-run with `UPDATE_SNAPSHOTS=1`.
+   - CSS parity checks to confirm after styles update:
+     - Table row borders (dark mode)
+     - Blockquote + footnote color alignment
+     - Preview + code adjacency (no top gap/radius)
 7. **Perf baseline capture (optional, local)**
    ```bash
    NEXT_PUBLIC_STREAMING_DEMO_API=true npm run docs:dev
    npm run perf:demo -- --rate 12000 --tick 5 --runs 1
    ```
    - Output includes a `longTasks` summary (count, total duration, max, p95).
-8. **Sanity-check hosted worker outputs**
+   - Baseline runs are tracked in `docs/perf/LOCAL_BENCHMARKS.md`.
+8. **Perf compare + changelog update (recommended)**
+   ```bash
+   npm run perf:compare -- --base tmp/perf-baselines/<baseline> --candidate tmp/perf-baselines/<candidate>
+   ```
+   - Record the deltas in `docs/PERF_QUALITY_CHANGELOG.md`.
+   - Update `docs/perf/LOCAL_BENCHMARKS.md` when new baselines are captured.
+9. **Sanity-check hosted worker outputs**
    - Built worker artifact:
      - `packages/markdown-v2-worker/dist/hosted/markdown-worker.js`
    - Copied artifact (for the example app):
@@ -69,8 +83,12 @@ npm run ci:pack-smoke
      mkdir -p tmp/release-packs
      (cd packages/markdown-v2-core && npm pack --pack-destination ../../tmp/release-packs)
      (cd packages/markdown-v2-plugins && npm pack --pack-destination ../../tmp/release-packs)
+     (cd packages/markdown-v2-protocol && npm pack --pack-destination ../../tmp/release-packs)
      (cd packages/markdown-v2-worker && npm pack --pack-destination ../../tmp/release-packs)
      (cd packages/markdown-v2-react && npm pack --pack-destination ../../tmp/release-packs)
+     (cd packages/markdown-v2-mermaid && npm pack --pack-destination ../../tmp/release-packs)
+     (cd packages/markdown-v2-tui && npm pack --pack-destination ../../tmp/release-packs)
+     (cd packages/theme-tailwind && npm pack --pack-destination ../../tmp/release-packs)
      (cd packages/stream-mdx && npm pack --pack-destination ../../tmp/release-packs)
      ```
 2. **In a clean scratch dir, install from tarballs and build**
@@ -112,7 +130,15 @@ This repo is set up for Changesets.
    ```
 2. **Trusted Publishing (recommended)**
    - Configure npm “Trusted Publisher” for:
-     - `@stream-mdx/core`, `@stream-mdx/plugins`, `@stream-mdx/worker`, `@stream-mdx/react`, `stream-mdx`
+     - `@stream-mdx/core`
+     - `@stream-mdx/plugins`
+     - `@stream-mdx/protocol`
+     - `@stream-mdx/worker`
+     - `@stream-mdx/react`
+     - `@stream-mdx/mermaid`
+     - `@stream-mdx/tui`
+     - `@stream-mdx/theme-tailwind`
+     - `stream-mdx`
    - Required workflow permissions:
      - `id-token: write`
    - Workflows:
@@ -123,11 +149,21 @@ This repo is set up for Changesets.
    ```bash
    npm run changeset:publish
    ```
-4. **Confirm all five packages are published**
+4. **Optional: local interactive publish helper**
+   ```bash
+   scripts/publish-v0.4.0.sh
+   ```
+   - Requires `npm login --auth-type=web`.
+   - Publishes in dependency order, verifies all local versions match, and skips packages already published at that version.
+5. **Confirm all packages are published**
    - `@stream-mdx/core`
    - `@stream-mdx/plugins`
+   - `@stream-mdx/protocol`
    - `@stream-mdx/worker`
    - `@stream-mdx/react`
+   - `@stream-mdx/mermaid`
+   - `@stream-mdx/tui`
+   - `@stream-mdx/theme-tailwind`
    - `stream-mdx`
 
 ---
@@ -150,9 +186,13 @@ Before publishing, run the same commands locally (plus the external install gate
 
 1. **Verify npm README renders**
    - `stream-mdx` should display `packages/stream-mdx/README.md` on npmjs.com.
-2. **Verify hosted worker guidance**
+2. **Verify docs + demo links**
+   - Docs: https://kmccleary3301.github.io/stream-mdx/
+   - Demo: https://kmccleary3301.github.io/stream-mdx/demo
+   - Showcase: https://kmccleary3301.github.io/stream-mdx/showcase
+3. **Verify hosted worker guidance**
    - The worker is expected at `/workers/markdown-worker.js` in most examples.
-3. **Confirm Trusted Publishing works**
+4. **Confirm Trusted Publishing works**
    - Once configured on npm, use `.github/workflows/publish.yml` (manual) or `.github/workflows/release.yml` (auto).
 
 ---

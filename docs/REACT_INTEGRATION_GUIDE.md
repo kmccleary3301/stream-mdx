@@ -10,7 +10,7 @@
 2. [Quick Start](#quick-start)
 3. [Core Concepts](#core-concepts)
 4. [Basic Usage Patterns](#basic-usage-patterns)
-5. [Streaming from LLM/API](#streaming-from-llmapi)
+5. [Streaming from LLM/API](#streaming-from-llm-api)
 6. [Custom Components](#custom-components)
 7. [Custom Plugins](#custom-plugins)
 8. [MDX Integration](#mdx-integration)
@@ -18,6 +18,7 @@
 10. [Common Patterns](#common-patterns)
 11. [Complete Examples](#complete-examples)
 12. [Troubleshooting](#troubleshooting)
+13. [Edge / No-worker Threads](#edge-no-worker-threads)
 
 ---
 
@@ -100,6 +101,58 @@ export function StreamingComponent({ text }: { text: string }) {
   );
 }
 ```
+
+### Static / SSR Rendering (server-safe entrypoint)
+
+For SSG/SSR, compile markdown once on the server and render blocks with the **server-safe** renderer entrypoint:
+
+```tsx
+import { MarkdownBlocksRenderer, ComponentRegistry } from "@stream-mdx/react/server";
+import { compileMarkdownSnapshot } from "@stream-mdx/worker/node";
+
+export async function ArticlePage() {
+  const { blocks } = await compileMarkdownSnapshot({
+    text: "# Hello\\n\\n```ts\\nconsole.log('hi')\\n```",
+    init: {
+      docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true },
+      mdx: { compileMode: "server" },
+    },
+  });
+
+  const registry = new ComponentRegistry();
+  return <MarkdownBlocksRenderer blocks={blocks} componentRegistry={registry} />;
+}
+```
+
+### Edge / No-worker Threads
+
+If your runtime cannot spawn `worker_threads`, use the direct compile surface and render
+the returned blocks with the server-safe renderer:
+
+```tsx
+import { MarkdownBlocksRenderer, ComponentRegistry } from "@stream-mdx/react/server";
+import { compileMarkdownSnapshotDirect } from "stream-mdx/worker/direct";
+
+export async function EdgeLikeArticlePage() {
+  const { blocks } = await compileMarkdownSnapshotDirect({
+    text: "# Hello\\n\\nEdge-safe deterministic compile.",
+    init: {
+      docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true },
+      mdx: { compileMode: "server" },
+      prewarmLangs: ["typescript"],
+    },
+    cache: {
+      dir: ".stream-mdx-cache",
+    },
+  });
+
+  return <MarkdownBlocksRenderer blocks={blocks} componentRegistry={new ComponentRegistry()} />;
+}
+```
+
+Cache note:
+- In Node-like environments, direct compile reads/writes the same snapshot cache contract as `compileMarkdownSnapshot`.
+- In edge isolates without filesystem APIs, compile still works and skips cache IO.
 
 ---
 
@@ -858,6 +911,23 @@ export function ControlledStreaming({ stream }: { stream: AsyncIterable<string> 
 ---
 
 ## Common Patterns
+
+### Pattern 0: Streaming polish (caret + link safety + deferred blocks)
+
+```tsx
+import { StreamingMarkdown } from "stream-mdx";
+
+export function StreamingMessage({ text }: { text: string }) {
+  return (
+    <StreamingMarkdown
+      text={text}
+      caret="block"
+      linkSafety={{ enabled: true }}
+      deferHeavyBlocks={{ rootMargin: "200px 0px" }}
+    />
+  );
+}
+```
 
 ### Pattern 1: Chat Interface with Message History
 

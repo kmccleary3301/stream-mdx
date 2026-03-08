@@ -1,0 +1,33 @@
+{
+  "name": "@stream-mdx/theme-tailwind",
+  "version": "0.4.0",
+  "description": "Optional Tailwind theme styles for StreamMDX streaming Markdown output",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kmccleary3301/stream-mdx.git",
+    "directory": "packages/theme-tailwind"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "style": "theme.css",
+  "exports": {
+    "./theme.css": "./theme.css",
+    "./styles.css": "./theme.css"
+  },
+  "files": [
+    "theme.css",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "node -e \"process.exit(0)\"",
+    "clean": "node -e \"process.exit(0)\"",
+    "prepack": "node -e \"process.exit(0)\""
+  },
+  "sideEffects": [
+    "theme.css"
+  ]
+}

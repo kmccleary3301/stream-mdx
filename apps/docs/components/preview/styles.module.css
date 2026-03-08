@@ -16,9 +16,9 @@
     border-radius: var(--radius-base);
 
     &[data-with-codeblock="true"] {
+      margin-bottom: 0 !important;
       border-bottom-right-radius: 0;
       border-bottom-left-radius: 0;
-      margin-bottom: 0 !important;
 
       & + figure,
       & + pre,

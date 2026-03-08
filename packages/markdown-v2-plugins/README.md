@@ -5,7 +5,7 @@ Plugin primitives and registries used by StreamMDX.
 Most app consumers **do not** need to import this package directly. Start with:
 
 - `stream-mdx` (recommended)
-- `docs/GETTING_STARTED.md`
+- https://github.com/kmccleary3301/stream-mdx/blob/main/docs/GETTING_STARTED.md
 
 Use `@stream-mdx/plugins` when you are:
 
@@ -48,5 +48,6 @@ If you need **custom syntax**, you generally need a **custom worker bundle** rat
 
 ## Docs
 
-- Plugins & worker cookbook: `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`
-- Public API: `docs/PUBLIC_API.md`
+- Plugins & worker cookbook: https://github.com/kmccleary3301/stream-mdx/blob/main/docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md
+- Public API: https://github.com/kmccleary3301/stream-mdx/blob/main/docs/PUBLIC_API.md
+- Full docs site: https://kmccleary3301.github.io/stream-mdx/

@@ -73,7 +73,7 @@ type MemorySample = {
 
 type ProfilerSample = {
   id: string;
-  phase: "mount" | "update";
+  phase: "mount" | "update" | "nested-update";
   actualDuration: number;
   baseDuration: number;
   startTime: number;
@@ -238,7 +238,7 @@ export function PerfHarness(): JSX.Element {
   const onProfile = useCallback(
     (
       id: string,
-      phase: "mount" | "update",
+      phase: "mount" | "update" | "nested-update",
       actualDuration: number,
       baseDuration: number,
       startTime: number,

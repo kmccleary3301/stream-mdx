@@ -11,11 +11,13 @@ Start here (in order):
 ## Topics
 
 - **Getting started**: `docs/GETTING_STARTED.md`
-- **Articles**: `/articles` (component-rendered deep dives in the docs site)
+- **Guides**: `/docs/guides` (component-rendered deep dives in the docs site)
 - **CLI / Node usage**: `docs/CLI_USAGE.md`
 - **Configuration**: `docs/CONFIGURATION.md`
 - **Plugins & worker customization**: `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`
 - **Security model (HTML/CSP)**: `docs/SECURITY_MODEL.md`
+- **Streaming correctness contract**: `docs/STREAMING_CORRECTNESS_CONTRACT.md`
+- **Streaming correctness execution plan**: `docs/STREAMING_CORRECTNESS_EXECUTION_PLAN.md`
 - **Status/architecture**: `docs/STREAMING_MARKDOWN_V2_STATUS.md`
 - **Release**: `docs/STREAMING_MARKDOWN_RELEASE_CHECKLIST.md`
 - **Comparison**: `docs/STREAMDOWN_COMPARISON.md`

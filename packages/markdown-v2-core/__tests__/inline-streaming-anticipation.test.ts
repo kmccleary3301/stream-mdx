@@ -64,9 +64,25 @@ function testMathAnticipation() {
   assert.strictEqual(display.content, "$$x$$");
 }
 
+function testCurrencyLikeDollarDoesNotAnticipateMath() {
+  const currency = prepareInlineStreamingContent("Bridgewater | $150 billion |", {
+    formatAnticipation: { mathInline: true },
+    math: true,
+  });
+  assert.strictEqual(currency.kind, "parse");
+  if (currency.kind !== "parse") throw new Error("expected parse result");
+  assert.strictEqual(currency.status, "complete");
+  assert.strictEqual(currency.appended, "");
+  assert.strictEqual(currency.content, "Bridgewater | $150 billion |");
+}
+
 function testMathBlockNewlineBoundary() {
   const display = prepareInlineStreamingContent("$$x\nmore", { formatAnticipation: { mathBlock: true }, math: true });
-  assert.deepStrictEqual(display, { kind: "raw", status: "raw", reason: "incomplete-math" });
+  assert.strictEqual(display.kind, "parse");
+  if (display.kind !== "parse") throw new Error("expected parse result");
+  assert.strictEqual(display.status, "anticipated");
+  assert.strictEqual(display.appended, "\n$$");
+  assert.strictEqual(display.content, "$$x\nmore\n$$");
 }
 
 testWithoutAnticipation();
@@ -74,5 +90,6 @@ testWithAnticipation();
 testComplete();
 testMathAlwaysRaw();
 testMathAnticipation();
+testCurrencyLikeDollarDoesNotAnticipateMath();
 testMathBlockNewlineBoundary();
 console.log("inline streaming anticipation tests passed");

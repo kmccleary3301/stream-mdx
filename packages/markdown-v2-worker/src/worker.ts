@@ -17,11 +17,13 @@ import type {
   MixedContentSegment,
   NodeSnapshot,
   Patch,
+  PatchKind,
   PatchMetrics,
   PerformanceMetrics,
   ProtectedRange,
   ThemedLine,
   ThemedToken,
+  TocHeading,
   TokenLineV1,
   TokenSpan,
   TokenStyle,
@@ -58,7 +60,7 @@ import {
 } from "@stream-mdx/core";
 import { InlineParser, dedentIndentedCode, sanitizeHtmlInWorker, stripCodeFence } from "@stream-mdx/core";
 import { computeHeavyPatchBudget } from "@stream-mdx/core";
-import { isHeavyPatch } from "@stream-mdx/core/perf/patch-batching";
+import { getPatchKind, isHeavyPatch } from "@stream-mdx/core/perf/patch-batching";
 import { CalloutsPlugin, HTMLBlockPlugin, MDXDetectionPlugin, TablesPlugin, globalDocumentPluginRegistry, registerFootnotesPlugin } from "@stream-mdx/plugins";
 import type { DocumentState } from "@stream-mdx/plugins/document";
 import { isBlockLevelNode, mapLezerNodeToBlockType } from "./parser/block-types";
@@ -81,6 +83,9 @@ let inlineParser: InlineParser;
 let performanceTimer: PerformanceTimer;
 const documentPluginState: DocumentState = {};
 let txCounter = 0;
+let parseEpochCounter = 0;
+let patchStreamSeq = 0;
+let emittedBlockEpochs = new Map<string, number>();
 const workerGrammarEngine: "js" | "wasm" = "js";
 let workerCredits = 1;
 let lastDiffSummary:
@@ -100,6 +105,9 @@ let lastStructuralDiffSummary: typeof lastDiffSummary = null;
 let maxEmittedBlockCount = 0;
 let maxDeferredQueueSize = 0;
 let maxStructuralBlockCount = 0;
+let tocHeadings: TocHeading[] = [];
+let tocSignature = "";
+let headingIdCounts = new Map<string, number>();
 let lastHighCountNoStructural:
   | {
       nextCount: number;
@@ -250,6 +258,8 @@ function isDebugEnabled(flag: "mdx" | "worker"): boolean {
   return false;
 }
 const DEBUG_MDX = isDebugEnabled("mdx");
+const WORKER_INVARIANT_DEBUG = typeof process !== "undefined" && process.env ? process.env.NODE_ENV !== "production" : true;
+let lastWorkerInvariantSignature = "";
 
 const sharedTextEncoder: TextEncoder | null = typeof TextEncoder !== "undefined" ? new TextEncoder() : null;
 
@@ -492,12 +502,124 @@ function estimatePatchSize(patches: Patch[]): number {
   }
 }
 
+function nextParseEpoch(): number {
+  parseEpochCounter += 1;
+  return parseEpochCounter;
+}
+
+function readPatchControlMeta(
+  patch: Patch,
+):
+  | {
+      kind?: PatchKind;
+      streamSeq?: number;
+      parseEpoch?: number;
+      tx?: number;
+      blockEpoch?: number;
+    }
+  | undefined {
+  return patch.op === "setHTML" ? patch.patchMeta : patch.meta;
+}
+
+function targetBlockIdsForPatch(patch: Patch): string[] {
+  if (patch.op === "setPropsBatch") {
+    const ids = new Set<string>();
+    for (const entry of patch.entries ?? []) {
+      if (entry?.at?.blockId && entry.at.blockId !== PATCH_ROOT_ID) {
+        ids.add(entry.at.blockId);
+      }
+    }
+    return Array.from(ids);
+  }
+
+  const ids = new Set<string>();
+  if (patch.at.blockId && patch.at.blockId !== PATCH_ROOT_ID) {
+    ids.add(patch.at.blockId);
+  }
+  if ((patch.op === "insertChild" || patch.op === "replaceChild") && patch.at.blockId === PATCH_ROOT_ID && patch.node?.id) {
+    ids.add(patch.node.id);
+  }
+  return Array.from(ids);
+}
+
+function withPatchControlMeta(
+  patch: Patch,
+  meta: {
+    kind: PatchKind;
+    streamSeq: number;
+    parseEpoch: number;
+    tx: number;
+    blockEpoch?: number;
+  },
+): Patch {
+  if (patch.op === "setHTML") {
+    return {
+      ...patch,
+      patchMeta: {
+        ...(patch.patchMeta ?? {}),
+        ...meta,
+      },
+    };
+  }
+  return {
+    ...patch,
+    meta: {
+      ...(patch.meta ?? {}),
+      ...meta,
+    },
+  };
+}
+
+function annotatePatchBatch(patches: Patch[], tx: number, parseEpoch: number): Patch[] {
+  const streamSeq = ++patchStreamSeq;
+  return patches.map((patch) => {
+    const kind = getPatchKind(patch);
+    const blockIds = targetBlockIdsForPatch(patch);
+    const expectedBlockEpoch = blockIds.length === 1 ? emittedBlockEpochs.get(blockIds[0]) : undefined;
+    return withPatchControlMeta(patch, {
+      kind,
+      streamSeq,
+      parseEpoch,
+      tx,
+      ...(expectedBlockEpoch !== undefined ? { blockEpoch: expectedBlockEpoch } : {}),
+    });
+  });
+}
+
+function syncEmittedBlockEpochsFromPatches(patches: Patch[], parseEpoch: number): void {
+  for (const patch of patches) {
+    if (getPatchKind(patch) !== "semantic") {
+      continue;
+    }
+    for (const blockId of targetBlockIdsForPatch(patch)) {
+      emittedBlockEpochs.set(blockId, parseEpoch);
+    }
+  }
+}
+
+function ensureAnnotatedPatchBatch(
+  patches: Patch[],
+  tx: number,
+  parseEpoch?: number,
+): { patches: Patch[]; parseEpoch: number } {
+  if (patches.length === 0) {
+    return { patches, parseEpoch: parseEpoch ?? nextParseEpoch() };
+  }
+  const existingMeta = readPatchControlMeta(patches[0]);
+  const resolvedParseEpoch = typeof existingMeta?.parseEpoch === "number" ? existingMeta.parseEpoch : (parseEpoch ?? nextParseEpoch());
+  if (existingMeta?.tx === tx && existingMeta?.parseEpoch === resolvedParseEpoch) {
+    return { patches, parseEpoch: resolvedParseEpoch };
+  }
+  const annotated = annotatePatchBatch(patches, tx, resolvedParseEpoch);
+  syncEmittedBlockEpochsFromPatches(annotated, resolvedParseEpoch);
+  return { patches: annotated, parseEpoch: resolvedParseEpoch };
+}
+
 function countChangedBlocksFromPatches(patches: Patch[]): number {
   if (!patches || patches.length === 0) return 0;
   const ids = new Set<string>();
   for (const patch of patches) {
-    const blockId = patch.at?.blockId;
-    if (blockId) {
+    for (const blockId of targetBlockIdsForPatch(patch)) {
       ids.add(blockId);
     }
   }
@@ -534,6 +656,11 @@ function partitionPatchesForCredits(patches: Patch[], maxImmediate?: number): Pa
 
   for (const patch of combined) {
     if (isStructuralPatch(patch)) {
+      immediate.push(patch);
+      continue;
+    }
+
+    if (getPatchKind(patch) === "semantic") {
       immediate.push(patch);
       continue;
     }
@@ -660,6 +787,143 @@ function parseInlineStreamingSafe(content: string): InlineNode[] {
   return parseInlineStreaming(content).inline;
 }
 
+function dedentFencedCodeByClosingIndent(fencedRaw: string, extractedCode: string): string {
+  if (!fencedRaw || !extractedCode) {
+    return extractedCode;
+  }
+  const lines = fencedRaw.replace(/\r\n?/g, "\n").split("\n");
+  if (lines.length < 2) {
+    return extractedCode;
+  }
+
+  let closingIndex = lines.length - 1;
+  while (closingIndex > 0 && lines[closingIndex].trim().length === 0) {
+    closingIndex -= 1;
+  }
+  if (closingIndex <= 0) {
+    return extractedCode;
+  }
+
+  const closingMatch = lines[closingIndex].match(/^([ \t]*)```/);
+  const closingIndent = closingMatch?.[1] ?? "";
+  if (closingIndent.length === 0) {
+    return extractedCode;
+  }
+
+  return extractedCode
+    .split("\n")
+    .map((line) => stripIndentPrefix(line, closingIndent))
+    .join("\n");
+}
+
+function stripIndentPrefix(line: string, prefix: string): string {
+  if (!line || !prefix) {
+    return line;
+  }
+  if (line.startsWith(prefix)) {
+    return line.slice(prefix.length);
+  }
+
+  const targetColumns = measureIndentColumns(prefix);
+  if (targetColumns <= 0) {
+    return line;
+  }
+
+  let index = 0;
+  let columns = 0;
+  while (index < line.length && columns < targetColumns) {
+    const ch = line[index];
+    if (ch === " ") {
+      columns += 1;
+      index += 1;
+      continue;
+    }
+    if (ch === "\t") {
+      columns += 4;
+      index += 1;
+      continue;
+    }
+    break;
+  }
+
+  return columns >= targetColumns ? line.slice(index) : line;
+}
+
+function measureIndentColumns(value: string): number {
+  let columns = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    const ch = value[i];
+    if (ch === " ") {
+      columns += 1;
+      continue;
+    }
+    if (ch === "\t") {
+      columns += 4;
+      continue;
+    }
+    break;
+  }
+  return columns;
+}
+
+function slugifyHeading(text: string): string {
+  const normalized = text
+    .trim()
+    .toLowerCase()
+    .replace(/[\u0000-\u001f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-");
+  return normalized;
+}
+
+function buildTocHeadings(blocksInput: Block[]): TocHeading[] {
+  const headings: TocHeading[] = [];
+
+  for (const block of blocksInput) {
+    if (block.type !== "heading") continue;
+    const meta = (block.payload.meta ?? {}) as Record<string, unknown>;
+    const rawHeading = typeof block.payload.raw === "string" ? block.payload.raw : "";
+    const headingText =
+      typeof meta.headingText === "string" && meta.headingText.trim().length > 0 ? (meta.headingText as string) : removeHeadingMarkers(rawHeading).trim();
+    const levelFromMeta = typeof meta.headingLevel === "number" ? meta.headingLevel : 1;
+    const level = Math.min(Math.max(levelFromMeta, 1), 6);
+    const id =
+      typeof meta.headingId === "string" && meta.headingId.trim().length > 0 ? (meta.headingId as string) : slugifyHeading(headingText) || "heading";
+
+    headings.push({
+      id,
+      text: headingText,
+      level,
+      blockId: block.id,
+    });
+  }
+
+  return headings;
+}
+
+function tocSignatureFor(headings: TocHeading[]): string {
+  if (headings.length === 0) return "";
+  return headings.map((heading) => `${heading.id}:${heading.level}:${heading.text}`).join("|");
+}
+
+function maybeBuildTocPatch(blocksInput: Block[]): Patch | null {
+  const nextHeadings = buildTocHeadings(blocksInput);
+  const nextSignature = tocSignatureFor(nextHeadings);
+  tocHeadings = nextHeadings;
+  if (nextSignature === tocSignature) {
+    return null;
+  }
+  tocSignature = nextSignature;
+  return {
+    op: "setProps",
+    at: { blockId: PATCH_ROOT_ID },
+    props: {
+      tocHeadings: nextHeadings,
+    },
+  };
+}
+
 /**
  * Initialize the worker
  */
@@ -686,6 +950,11 @@ async function initialize(
   lastTree = null;
   currentContent = "";
   deferredPatchQueue = [];
+  emittedBlockEpochs = new Map();
+  parseEpochCounter = 0;
+  patchStreamSeq = 0;
+  tocHeadings = [];
+  tocSignature = "";
   resetIncrementalHighlightState();
   lazyTokenizationStates.clear();
   lazyTokenizationQueue.clear();
@@ -782,6 +1051,7 @@ async function initialize(
   }
 
   txCounter = 0;
+  reportWorkerStructuralInvariantViolations("initialize", blocks);
   postMessage({
     type: "INITIALIZED",
     blocks,
@@ -876,6 +1146,7 @@ async function parseAll(content: string, options: ParseOptions = {}): Promise<{ 
 async function appendAndReparse(appendedText: string, metrics?: WorkerMetricsCollector): Promise<void> {
   performanceTimer.mark("incremental-parse");
   metrics?.markParseStart();
+  deferredPatchQueue = [];
 
   const newContent = currentContent + appendedText;
   const changeRanges = computeChangedRanges(currentContent, newContent);
@@ -923,6 +1194,7 @@ async function appendAndReparse(appendedText: string, metrics?: WorkerMetricsCol
  */
 async function extractBlocks(tree: Tree, content: string, options: ParseOptions = {}): Promise<Block[]> {
   try {
+    headingIdCounts = new Map<string, number>();
     const blocks: Block[] = [];
     const cursor = tree.cursor();
 
@@ -1055,10 +1327,15 @@ async function enrichBlock(block: Block) {
       const rawHeading = typeof block.payload.raw === "string" ? block.payload.raw : "";
       const normalizedHeading = removeHeadingMarkers(rawHeading);
       const headingLevel = Math.min(Math.max(rawHeading.match(/^#{1,6}/)?.[0].length ?? 1, 1), 6);
+      const baseSlug = slugifyHeading(normalizedHeading) || "heading";
+      const nextCount = (headingIdCounts.get(baseSlug) ?? 0) + 1;
+      headingIdCounts.set(baseSlug, nextCount);
+      const headingId = nextCount > 1 ? `${baseSlug}-${nextCount}` : baseSlug;
       block.payload.meta = {
         ...(block.payload.meta ?? {}),
         headingLevel,
         headingText: normalizedHeading,
+        headingId,
       };
       if (block.isFinalized) {
         block.payload.raw = normalizedHeading;
@@ -1091,12 +1368,13 @@ async function enrichBlock(block: Block) {
             }
           : undefined;
       const segments = extractMixedContentSegments(normalized, undefined, inlineParse, mixedOptions);
+      const hasStructuredSegments = segments.some((segment) => segment.kind !== "text");
       const currentMeta = (block.payload.meta ?? {}) as Record<string, unknown>;
       const nextMeta: Record<string, unknown> = {
         ...currentMeta,
         normalizedText: normalized,
       };
-      if (segments.length > 0) {
+      if (hasStructuredSegments) {
         nextMeta.mixedSegments = segments;
       } else {
         nextMeta.mixedSegments = undefined;
@@ -1184,11 +1462,12 @@ async function enrichBlock(block: Block) {
               }
             : undefined;
         const segments = extractMixedContentSegments(rawParagraph, baseOffset, (value) => inlineParse(value), mixedSegmentOptions);
+        const hasStructuredSegments = segments.some((segment) => segment.kind !== "text");
         const htmlRanges = collectHtmlProtectedRangesFromSegments(segments, baseOffset);
         if (htmlRanges.length > 0) {
           protectedRanges.push(...htmlRanges);
         }
-        if (segments.length > 0) {
+        if (hasStructuredSegments) {
           nextMeta.mixedSegments = segments;
           metaChanged = true;
           if (allowMixedStreaming) {
@@ -1347,6 +1626,14 @@ function collectMathProtectedRanges(content: string): ProtectedRange[] {
       i += 2;
       continue;
     }
+    if (char === "\n" || char === "\r") {
+      // Single-dollar inline math must not span line boundaries. Allowing it
+      // to do so causes currency amounts in streamed tables to transiently pair
+      // across rows (for example `$150 ...` with a later `$80 ...`).
+      inlineStack.length = 0;
+      i += 1;
+      continue;
+    }
     if (char !== "$") {
       i++;
       continue;
@@ -1472,49 +1759,10 @@ function renderShikiToken(token: ShikiThemedToken): string {
   return `<span${styleAttr}>${escapeHtmlText(token.content)}</span>`;
 }
 
-function getTokenFontStyle(token: ShikiThemedToken): number {
-  const dark = token.variants?.dark?.fontStyle ?? 0;
-  const light = token.variants?.light?.fontStyle ?? 0;
-  return (typeof dark === "number" ? dark : 0) | (typeof light === "number" ? light : 0);
-}
-
 function mergeWhitespaceTokens(tokens: ShikiThemedToken[][]): ShikiThemedToken[][] {
-  return tokens.map((line) => {
-    const merged: ShikiThemedToken[] = [];
-    let carryContent = "";
-    let carryOffset = 0;
-    let carryVariants: ShikiThemedToken["variants"] | null = null;
-
-    line.forEach((token, idx) => {
-      const fontStyle = getTokenFontStyle(token);
-      const couldMerge = (fontStyle & FONT_STYLE_UNDERLINE) === 0;
-      if (couldMerge && /^\s+$/.test(token.content) && line[idx + 1]) {
-        if (!carryContent) {
-          carryOffset = token.offset ?? 0;
-          carryVariants = token.variants;
-        }
-        carryContent += token.content;
-        return;
-      }
-
-      if (carryContent) {
-        if (couldMerge) {
-          merged.push({ ...token, offset: carryOffset, content: carryContent + token.content });
-        } else {
-          merged.push({ content: carryContent, offset: carryOffset, variants: carryVariants ?? token.variants });
-          merged.push(token);
-        }
-        carryContent = "";
-        carryOffset = 0;
-        carryVariants = null;
-        return;
-      }
-
-      merged.push(token);
-    });
-
-    return merged;
-  });
+  // Keep token boundaries stable so incremental snapshots are deterministic
+  // across different chunking scenarios.
+  return tokens;
 }
 
 function renderShikiLines(tokens: ShikiThemedToken[][]): Array<string | null> {
@@ -2083,7 +2331,7 @@ async function handleLazyTokenizationRequest(request: LazyTokenizationRequest): 
   const raw = block.payload.raw ?? "";
   const { code, info, hadFence } = stripCodeFence(raw);
   const { lang, meta } = parseCodeFenceInfo(info);
-  const codeBody = hadFence ? code : dedentIndentedCode(raw);
+  const codeBody = hadFence ? dedentFencedCodeByClosingIndent(raw, code) : dedentIndentedCode(raw);
   const codeLines = extractCodeLines(raw);
   let diffInfo = detectDiffLanguage(lang, meta);
   if (!diffInfo.isDiff && emitDiffBlocks && looksLikeUnifiedDiff(codeLines)) {
@@ -2274,7 +2522,7 @@ async function handleLazyTokenizationRequest(request: LazyTokenizationRequest): 
   const { code, info, hadFence } = stripCodeFence(raw);
   const { lang, meta } = parseCodeFenceInfo(info);
   let diffInfo = detectDiffLanguage(lang, meta);
-  const codeBody = hadFence ? code : dedentIndentedCode(raw);
+  const codeBody = hadFence ? dedentFencedCodeByClosingIndent(raw, code) : dedentIndentedCode(raw);
   const codeLines = extractCodeLines(raw);
   if (!diffInfo.isDiff && emitDiffBlocks && looksLikeUnifiedDiff(codeLines)) {
     diffInfo = {
@@ -2299,6 +2547,8 @@ async function handleLazyTokenizationRequest(request: LazyTokenizationRequest): 
       resetIncrementalHighlightState(block.id);
       block.payload.highlightedHtml = undefined;
       const nextMeta = { ...baseMeta, ...meta, lang: resolvedLanguage } as Record<string, unknown>;
+      // Snapshot-backed renderers (e.g. Mermaid) need the raw fence body, not just highlighted HTML.
+      nextMeta.code = codeBody;
       if ("highlightedLines" in nextMeta) {
         delete nextMeta.highlightedLines;
       }
@@ -2403,6 +2653,8 @@ async function handleLazyTokenizationRequest(request: LazyTokenizationRequest): 
       block.payload.highlightedHtml = undefined;
       const effectiveLang = wantsHtml ? resolvedLanguage : resolvedTokenLanguage;
       const nextMeta = { ...baseMeta, ...meta, lang: effectiveLang } as Record<string, unknown>;
+      // Keep raw code so snapshot builds can render Mermaid, copy buttons, etc.
+      nextMeta.code = codeBody;
       if (wantsHtml) {
         nextMeta.highlightedLines = state.highlightedLines;
       } else if ("highlightedLines" in nextMeta) {
@@ -2461,6 +2713,8 @@ async function handleLazyTokenizationRequest(request: LazyTokenizationRequest): 
     const state = getOrInitLazyState(block.id, signature, codeLines.length, resolvedLanguage, resolvedTokenLanguage, diffEnabled);
     const effectiveLang = wantsHtml ? resolvedLanguage : resolvedTokenLanguage;
     const nextMeta = { ...baseMeta, ...meta, lang: effectiveLang } as Record<string, unknown>;
+    // Required for snapshot-backed renderers that need source text (Mermaid).
+    nextMeta.code = codeBody;
     nextMeta.lazyTokenization = true;
     nextMeta.lazyTokenizedUntil = state.processedLines;
     if (wantsHtml) {
@@ -2580,6 +2834,8 @@ async function handleLazyTokenizationRequest(request: LazyTokenizationRequest): 
 
   const effectiveLang = wantsHtml ? resolvedLanguage : resolvedTokenLanguage;
   const nextMeta = { ...baseMeta, ...meta, lang: effectiveLang } as Record<string, unknown>;
+  // Persist the fence body for snapshot-backed rendering (Mermaid, copy, etc).
+  nextMeta.code = codeBody;
   if ("highlightedLines" in nextMeta) {
     delete nextMeta.highlightedLines;
   }
@@ -2663,7 +2919,7 @@ function enhanceHighlightedHtml(html: string, language: string): string {
     return `<code${serializeAttributes(attrMap)}>`;
   });
 
-  // Attach data-language to outer <pre> if missing
+  // Normalize outer <pre> style attributes.
   return enhancedCode.replace(/<pre([^>]*)>/, (match, attrs) => {
     const attrMap = parseAttributeString(attrs);
     attrMap["data-language"] = language || "text";
@@ -2720,7 +2976,6 @@ function sanitizeShikiStyle(style: string | undefined): string | undefined {
       if (lowerName === "--shiki-dark-bg" || lowerName === "--shiki-light-bg") {
         continue;
       }
-
       sanitized.push(`${name}:${value}`);
     }
   }
@@ -3031,6 +3286,7 @@ async function blockToNodeSnapshot(block: Block): Promise<NodeSnapshot> {
 
 async function emitDocumentPatch(currentBlocks: Block[]) {
   const patches: Patch[] = [];
+  const tocPatch = maybeBuildTocPatch(currentBlocks);
   for (let index = 0; index < currentBlocks.length; index++) {
     const block = currentBlocks[index];
     if (!block) continue;
@@ -3041,17 +3297,30 @@ async function emitDocumentPatch(currentBlocks: Block[]) {
       node: await blockToNodeSnapshot(block),
     });
   }
+  if (tocPatch) {
+    patches.push(tocPatch);
+  }
   if (patches.length > 0) {
+    const tx = ++txCounter;
+    const { patches: annotated } = ensureAnnotatedPatchBatch(patches, tx, nextParseEpoch());
     postMessage({
       type: "PATCH",
-      tx: ++txCounter,
-      patches,
+      tx,
+      patches: annotated,
     } as WorkerOut);
   }
 }
 
-async function emitBlockDiffPatches(previousBlocks: Block[], nextBlocks: Block[], changedRanges: ContentChangeRange[], metrics?: WorkerMetricsCollector | null) {
+async function emitBlockDiffPatches(
+  previousBlocks: Block[],
+  nextBlocks: Block[],
+  changedRanges: ContentChangeRange[],
+  metrics?: WorkerMetricsCollector | null,
+  parseEpoch: number = nextParseEpoch(),
+  extraPatches: Patch[] = [],
+) {
   const patches: Patch[] = [];
+  const tocPatch = maybeBuildTocPatch(nextBlocks);
 
   if (previousBlocks === nextBlocks) return;
 
@@ -3106,7 +3375,10 @@ async function emitBlockDiffPatches(previousBlocks: Block[], nextBlocks: Block[]
   const { patches: contentPatches, changedBlockCount } = await diffBlockContent(previousBlocks, nextBlocks, changedRanges, metrics);
   metrics?.markDiffEnd();
 
-  const combined = patches.concat(contentPatches);
+  const combined = patches.concat(contentPatches, extraPatches);
+  if (tocPatch) {
+    combined.push(tocPatch);
+  }
   let paragraphLimit: number | null = null;
   if (workerCredits < 0.9) {
     const dynamicBase = workerCredits < 0.5 ? 48 : 96;
@@ -3116,7 +3388,8 @@ async function emitBlockDiffPatches(previousBlocks: Block[], nextBlocks: Block[]
       finalizeLimit: dynamicFinalize,
     });
   }
-  const immediatePatches = partitionPatchesForCredits(combined, paragraphLimit === null ? undefined : paragraphLimit);
+  const annotatedCombined = ensureAnnotatedPatchBatch(combined, txCounter + 1, parseEpoch).patches;
+  const immediatePatches = partitionPatchesForCredits(annotatedCombined, paragraphLimit === null ? undefined : paragraphLimit);
   if (deferredPatchQueue.length > maxDeferredQueueSize) {
     maxDeferredQueueSize = deferredPatchQueue.length;
   }
@@ -3185,23 +3458,25 @@ function dispatchPatchBatch(patches: Patch[], metrics?: WorkerMetricsCollector |
   }
 
   const tx = ++txCounter;
-  const patchBytes = metrics ? estimatePatchSize(patches) : 0;
-  metrics?.finalizePatch(tx, patches.length, deferredPatchQueue.length, patchBytes);
-  const changedBlockReport = countChangedBlocksFromPatches(patches);
+  const { patches: annotatedPatches } = ensureAnnotatedPatchBatch(patches, tx);
+  const patchBytes = metrics ? estimatePatchSize(annotatedPatches) : 0;
+  metrics?.finalizePatch(tx, annotatedPatches.length, deferredPatchQueue.length, patchBytes);
+  const changedBlockReport = countChangedBlocksFromPatches(annotatedPatches);
   const patchMetrics: PatchMetrics = metrics
     ? metrics.toPatchMetrics(changedBlockReport)
     : {
-        patchCount: patches.length,
+        patchCount: annotatedPatches.length,
         changedBlocks: changedBlockReport,
       };
 
   const message: WorkerOut = {
     type: "PATCH",
     tx,
-    patches,
+    patches: annotatedPatches,
     metrics: patchMetrics,
   } as WorkerOut;
 
+  reportWorkerStructuralInvariantViolations("dispatchPatchBatch", blocks);
   metrics?.beginSerialize();
   postMessage(message);
   metrics?.endSerialize();
@@ -3306,6 +3581,104 @@ function preserveMdxMetadata(previous: Block, next: Block) {
   }
 }
 
+function expectedCodeLineSnapshotId(parentId: string, index: number): string {
+  return `${parentId}::line:${index}`;
+}
+
+function isStrictCodeLineSnapshot(parentId: string, child: NodeSnapshot, index: number): boolean {
+  if (child.type !== "code-line") return false;
+  if (child.id !== expectedCodeLineSnapshotId(parentId, index)) return false;
+  const childIndex = typeof child.props?.index === "number" ? (child.props.index as number) : null;
+  return childIndex === index;
+}
+
+function canEmitAppendLinesPatch(prevNode: NodeSnapshot, nextNode: NodeSnapshot, divergeIndex: number): boolean {
+  if (prevNode.type !== "code" || nextNode.type !== "code") return false;
+  const prevChildren = prevNode.children ?? [];
+  const nextChildren = nextNode.children ?? [];
+  if (divergeIndex !== prevChildren.length || nextChildren.length < prevChildren.length) {
+    return false;
+  }
+  for (let index = 0; index < prevChildren.length; index += 1) {
+    if (!isStrictCodeLineSnapshot(prevNode.id, prevChildren[index], index)) {
+      return false;
+    }
+    if (!isStrictCodeLineSnapshot(nextNode.id, nextChildren[index], index)) {
+      return false;
+    }
+  }
+  for (let index = divergeIndex; index < nextChildren.length; index += 1) {
+    if (!isStrictCodeLineSnapshot(nextNode.id, nextChildren[index], index)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function collectWorkerStructuralInvariantViolations(nextBlocks: ReadonlyArray<Block>): string[] {
+  const violations: string[] = [];
+
+  for (const block of nextBlocks) {
+    if (block.type === "table" && block.isFinalized) {
+      const tableMeta = (block.payload.meta ?? {}) as { header?: InlineNode[][]; rows?: InlineNode[][][] };
+      const headerColumns = Array.isArray(tableMeta.header) ? tableMeta.header.length : 0;
+      const rows = Array.isArray(tableMeta.rows) ? tableMeta.rows : [];
+      if (headerColumns > 0) {
+        rows.forEach((row, rowIndex) => {
+          if (row.length !== headerColumns) {
+            violations.push(`finalized table row width mismatch:${block.id}:${rowIndex}:${row.length}:${headerColumns}`);
+          }
+        });
+      }
+    }
+
+    if (block.type !== "mdx") {
+      if (block.payload.compiledMdxRef || block.payload.compiledMdxModule) {
+        violations.push(`non-mdx block carries mdx artifact:${block.id}:${block.type}`);
+      }
+      continue;
+    }
+
+    const meta = (block.payload.meta ?? {}) as { mdxStatus?: unknown };
+    const status = typeof meta.mdxStatus === "string" ? meta.mdxStatus : undefined;
+    const hasCompiledArtifact = Boolean(block.payload.compiledMdxRef || block.payload.compiledMdxModule);
+
+    if (block.isFinalized && status === "pending") {
+      violations.push(`finalized mdx block remained pending:${block.id}`);
+    }
+    if (status === "compiled" && !hasCompiledArtifact) {
+      violations.push(`compiled mdx block missing artifact:${block.id}`);
+    }
+    if (status === "error" && hasCompiledArtifact) {
+      violations.push(`errored mdx block retained compiled artifact:${block.id}`);
+    }
+    if (
+      block.payload.compiledMdxRef &&
+      block.payload.compiledMdxModule &&
+      block.payload.compiledMdxRef.id !== block.payload.compiledMdxModule.id
+    ) {
+      violations.push(`mdx artifact id mismatch:${block.id}:${block.payload.compiledMdxRef.id}:${block.payload.compiledMdxModule.id}`);
+    }
+  }
+
+  return violations;
+}
+
+function reportWorkerStructuralInvariantViolations(context: string, nextBlocks: ReadonlyArray<Block>): void {
+  if (!WORKER_INVARIANT_DEBUG) return;
+  const violations = collectWorkerStructuralInvariantViolations(nextBlocks);
+  if (violations.length === 0) {
+    lastWorkerInvariantSignature = "";
+    return;
+  }
+  const signature = `${context}:${violations.join("|")}`;
+  if (signature === lastWorkerInvariantSignature) {
+    return;
+  }
+  lastWorkerInvariantSignature = signature;
+  console.warn("[markdown-worker] structural invariant violations", { context, violations });
+}
+
 function diffNodeSnapshot(blockId: string, prevNode: NodeSnapshot, nextNode: NodeSnapshot, patches: Patch[], metrics?: WorkerMetricsCollector | null) {
   const prevProps = prevNode.props ?? {};
   const nextProps = nextNode.props ?? {};
@@ -3340,7 +3713,7 @@ function diffNodeSnapshot(blockId: string, prevNode: NodeSnapshot, nextNode: Nod
       nextChildren.length >= prevChildren.length &&
       prevChildren.every((child, idx) => child.id === nextChildren[idx].id);
 
-    if (onlyAppend && nextChildren.length > prevChildren.length) {
+    if (onlyAppend && nextChildren.length > prevChildren.length && canEmitAppendLinesPatch(prevNode, nextNode, divergeIndex)) {
       const startIndex = prevChildren.length;
       const appended = nextChildren.slice(startIndex);
       const hasTokenLines = appended.some((child) => Object.prototype.hasOwnProperty.call(child.props ?? {}, "tokens"));
@@ -3758,6 +4131,8 @@ function reportWorkerError(error: unknown, phase: WorkerPhase, meta?: Record<str
 async function finalizeAllBlocks() {
   const metricsCollector = new WorkerMetricsCollector(workerGrammarEngine);
   setActiveMetricsCollector(metricsCollector);
+  deferredPatchQueue = [];
+  lazyTokenizationQueue.clear();
 
   const prevBlocks = blocks.map((block) => cloneBlock(block));
   const finalizePatches: Patch[] = [];
@@ -3771,14 +4146,6 @@ async function finalizeAllBlocks() {
         at: { blockId: block.id },
       });
     }
-  }
-
-  if (finalizePatches.length > 0) {
-    postMessage({
-      type: "PATCH",
-      tx: ++txCounter,
-      patches: finalizePatches,
-    } as WorkerOut);
   }
 
   const { blocks: reparsedBlocks, lastTree: reparsedTree } = await parseAll(currentContent, { forceFinalize: true });
@@ -3799,24 +4166,22 @@ async function finalizeAllBlocks() {
       toB: currentContent.length,
     },
   ];
-  await emitBlockDiffPatches(prevBlocks, blocks, fullRange, metricsCollector);
-
-  if (prevBlocks && prevBlocks.length > 0) {
-    const finalizeSetProps: Patch[] = [];
-    for (const block of blocks) {
-      if (!block.isFinalized || !finalizeTargets.has(block.id)) continue;
-      finalizeSetProps.push({
-        op: "setProps",
-        at: { blockId: block.id, nodeId: block.id },
-        props: {
-          block: cloneBlock(block),
-        },
-      });
-    }
-    if (finalizeSetProps.length > 0) {
-      dispatchPatchBatch(finalizeSetProps, metricsCollector);
-    }
+  const finalizeSetProps: Patch[] = [];
+  for (const block of blocks) {
+    if (!block.isFinalized || !finalizeTargets.has(block.id)) continue;
+    finalizeSetProps.push({
+      op: "setProps",
+      at: { blockId: block.id, nodeId: block.id },
+      props: {
+        block: cloneBlock(block),
+      },
+    });
   }
+  const finalParseEpoch = nextParseEpoch();
+  await emitBlockDiffPatches(prevBlocks, blocks, fullRange, metricsCollector, finalParseEpoch, [
+    ...finalizePatches,
+    ...finalizeSetProps,
+  ]);
 
   if (deferredPatchQueue.length > 0) {
     const previousCredits = workerCredits;
@@ -3834,6 +4199,11 @@ async function finalizeAllBlocks() {
     workerCredits = previousCredits;
   }
 
+  reportWorkerStructuralInvariantViolations("finalizeAllBlocks", blocks);
+  postMessage({
+    type: "FINALIZED",
+  } as WorkerOut);
+
   if (getActiveMetricsCollector() === metricsCollector) {
     setActiveMetricsCollector(null);
   }
@@ -3843,6 +4213,7 @@ interface MdxStatusUpdate {
   compiledRef?: { id: string };
   status: "compiled" | "error";
   error?: string;
+  rawSignature?: string;
 }
 
 function handleMdxStatus(blockId: string, update: MdxStatusUpdate) {
@@ -3853,10 +4224,14 @@ function handleMdxStatus(blockId: string, update: MdxStatusUpdate) {
   if (index === -1) return;
 
   const previous = blocks[index];
+  if (typeof update.rawSignature === "string" && (previous.payload.raw ?? "") !== update.rawSignature) {
+    return;
+  }
   const updated = cloneBlock(previous);
   updated.payload = {
     ...updated.payload,
-    compiledMdxRef: update.compiledRef ?? updated.payload.compiledMdxRef,
+    compiledMdxRef: update.status === "error" ? undefined : (update.compiledRef ?? updated.payload.compiledMdxRef),
+    compiledMdxModule: update.status === "error" ? undefined : updated.payload.compiledMdxModule,
     meta: {
       ...(updated.payload.meta ?? {}),
       mdxStatus: update.status,
@@ -3866,19 +4241,16 @@ function handleMdxStatus(blockId: string, update: MdxStatusUpdate) {
 
   blocks[index] = updated;
 
-  postMessage({
-    type: "PATCH",
-    tx: ++txCounter,
-    patches: [
-      {
-        op: "setProps",
-        at: { blockId },
-        props: {
-          block: updated,
-        },
+  reportWorkerStructuralInvariantViolations("handleMdxStatus", blocks);
+  dispatchPatchBatch([
+    {
+      op: "setProps",
+      at: { blockId },
+      props: {
+        block: updated,
       },
-    ],
-  } as WorkerOut);
+    },
+  ]);
 }
 
 async function processWorkerMessage(msg: WorkerIn) {
@@ -3990,6 +4362,16 @@ async function processWorkerMessage(msg: WorkerIn) {
       } as WorkerOut);
       return;
     }
+    case "DUMP_BLOCKS": {
+      // Debug/testing hook: returns current block state without requiring a consumer-side
+      // patch applier. This is intentionally read-only.
+      postMessage({
+        type: "DUMP_BLOCKS",
+        blocks,
+        tocHeadings,
+      } as WorkerOut);
+      return;
+    }
     case "TOKENIZE_RANGE": {
       const priority: LazyTokenizationPriority = msg.priority === "prefetch" ? "prefetch" : "visible";
       enqueueLazyTokenization({
@@ -4005,6 +4387,7 @@ async function processWorkerMessage(msg: WorkerIn) {
       handleMdxStatus(msg.blockId, {
         compiledRef: { id: msg.compiledId },
         status: "compiled",
+        rawSignature: msg.rawSignature,
       });
       return;
     case "MDX_ERROR":
@@ -4012,6 +4395,7 @@ async function processWorkerMessage(msg: WorkerIn) {
         compiledRef: undefined,
         status: "error",
         error: msg.error,
+        rawSignature: msg.rawSignature,
       });
       return;
     case "SET_CREDITS":

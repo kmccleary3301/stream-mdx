@@ -1,10 +1,13 @@
-import { stripCodeFence, type Block, type InlineNode, type MixedContentSegment } from "@stream-mdx/core";
+import { stripCodeFence, type Block, type InlineNode, type MixedContentSegment, type TokenLineV1 } from "@stream-mdx/core";
 import React from "react";
 import { renderInlineNodes, renderParagraphMixedSegments } from "../components";
 import type { ComponentRegistry } from "../components";
 import { DEFAULT_INLINE_HTML_RENDERERS, renderInlineHtmlSegment } from "../utils/inline-html";
 import { useRendererChildren, useRendererNode } from "./hooks";
-import type { RendererStore } from "./store";
+import { useCodeHighlightRequester } from "./code-highlight-context";
+import { DeferredRenderContext } from "./deferred-render-context";
+import { isListPatchDebugEnabled, type RendererStore } from "./store";
+import { useDeferredRender } from "./use-deferred-render";
 import { DEFAULT_VIRTUALIZED_CODE_CONFIG, type VirtualizedLine, useVirtualizedCode } from "./virtualized-code";
 
 export const BlockNodeRenderer: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = ({ store, blockId, registry }) => {
@@ -399,6 +402,7 @@ const ListBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
     const inlineComponents = registry.getInlineComponents();
     const ordered = Boolean(node?.props?.ordered ?? block?.payload.meta?.ordered);
     const Tag = ordered ? "ol" : "ul";
+    const listDebugEnabled = isListPatchDebugEnabled();
     const listItemIds = React.useMemo(() => {
       const ids: string[] = [];
       for (const childId of childIds) {
@@ -409,6 +413,21 @@ const ListBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
       }
       return ids;
     }, [childIds, store]);
+    React.useEffect(() => {
+      if (!listDebugEnabled) return;
+      const childTypes = childIds.map((childId) => store.getNode(childId)?.type ?? "missing");
+      console.info("[stream-mdx:list-render]", {
+        listId: blockId,
+        depth,
+        ordered,
+        childIds,
+        childTypes,
+        listItemIds,
+        listItems: listItemIds.length,
+        totalChildren: childIds.length,
+        isFinalized: block?.isFinalized ?? false,
+      });
+    }, [listDebugEnabled, blockId, depth, ordered, childIds, listItemIds, store, block?.isFinalized]);
     const listStyle = React.useMemo(() => {
       if (!ordered || listItemIds.length === 0) return undefined;
       let maxDigits = 1;
@@ -422,14 +441,20 @@ const ListBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
         const digits = digitMatch ? digitMatch.length : text.length;
         if (digits > maxDigits) maxDigits = digits;
       });
-      const baseIndent = depth === 0 ? "2.5rem" : depth === 1 ? "2rem" : "1.5rem";
+      const baseIndent = depth === 0 ? "2rem" : depth === 1 ? "1.75rem" : "1.5rem";
+      const extraDigits = Math.max(0, maxDigits - 1);
       return {
-        ["--list-indent" as const]: `calc(${baseIndent} + ${maxDigits}ch)`,
+        ["--list-indent" as const]: extraDigits > 0 ? `calc(${baseIndent} + ${extraDigits}ch)` : baseIndent,
       } as React.CSSProperties;
     }, [ordered, listItemIds, store, depth]);
     if (listItemIds.length === 0) return null;
     return (
-      <Tag className={`markdown-list ${ordered ? "ordered" : "unordered"}`} data-list-depth={depth} style={listStyle}>
+      <Tag
+        className={`markdown-list ${ordered ? "ordered" : "unordered"}`}
+        data-list-depth={depth}
+        data-list-id={listDebugEnabled ? blockId : undefined}
+        style={listStyle}
+      >
         {listItemIds.map((childId, index) => (
           <ListItemView
             key={childId}
@@ -470,6 +495,8 @@ const ListItemView: React.FC<{
   const inferredIndex = typeof node?.props?.index === "number" ? Number(node?.props?.index) : index;
   const isOrdered = Boolean(node?.props?.ordered ?? ordered);
   const counterText = !isTask ? (isOrdered ? (marker ? marker : `${inferredIndex + 1}.`) : "\u2022") : undefined;
+  const listDebugEnabled = isListPatchDebugEnabled();
+  const inlineLength = inline.length;
 
   const [segmentChildIds, contentChildIds] = React.useMemo(() => {
     const segments: string[] = [];
@@ -520,9 +547,50 @@ const ListItemView: React.FC<{
 
   const filteredChildren = trailingChildren.filter((child): child is NonNullable<typeof child> => Boolean(child));
   const hasChildren = filteredChildren.length > 0;
+  React.useEffect(() => {
+    if (!listDebugEnabled) return;
+    const childTypes = childIds.map((childId) => store.getNode(childId)?.type ?? "missing");
+    console.info("[stream-mdx:list-item-render]", {
+      itemId: nodeId,
+      depth,
+      ordered: isOrdered,
+      inferredIndex,
+      marker,
+      isTask,
+      isChecked,
+      childIds,
+      childTypes,
+      segmentChildIds,
+      contentChildIds,
+      inlineLength,
+      hasChildren,
+      isFinalized: block?.isFinalized ?? false,
+    });
+  }, [
+    listDebugEnabled,
+    nodeId,
+    depth,
+    isOrdered,
+    inferredIndex,
+    marker,
+    isTask,
+    isChecked,
+    childIds,
+    segmentChildIds,
+    contentChildIds,
+    inlineLength,
+    hasChildren,
+    store,
+    block?.isFinalized,
+  ]);
 
   return (
-    <li className={`markdown-list-item${isTask ? " markdown-list-item-task" : ""}`} data-counter-text={counterText} data-list-depth={depth}>
+    <li
+      className={`markdown-list-item${isTask ? " markdown-list-item-task" : ""}`}
+      data-counter-text={counterText}
+      data-list-depth={depth}
+      data-list-item-id={listDebugEnabled ? nodeId : undefined}
+    >
       {isTask ? (
         <div className="markdown-task">
           <input type="checkbox" className="markdown-task-checkbox" checked={isChecked} readOnly disabled tabIndex={-1} aria-checked={isChecked} />
@@ -616,9 +684,16 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
   const node = useRendererNode(store, blockId);
   const childIds = useRendererChildren(store, blockId);
   const CodeComponent = registry.getBlockComponent("code");
+  const deferredConfig = React.useContext(DeferredRenderContext);
+  const deferredRef = React.useRef<HTMLDivElement | null>(null);
+  const shouldRenderDeferred = useDeferredRender(
+    deferredRef,
+    deferredConfig ? { ...deferredConfig, enabled: true } : { enabled: false },
+  );
 
   if (!node || !node.block) return null;
 
+  const blockIsFinalized = node.block.isFinalized;
   const nodeVersion = node.version;
 
   const lines = React.useMemo(() => {
@@ -632,6 +707,7 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
       const index = typeof child.props?.index === "number" ? (child.props?.index as number) : deduped.length;
       const text = typeof child.props?.text === "string" ? (child.props?.text as string) : "";
       const html = typeof child.props?.html === "string" ? (child.props?.html as string) : null;
+      const tokens = Object.prototype.hasOwnProperty.call(child.props ?? {}, "tokens") ? (child.props?.tokens as TokenLineV1 | null) : undefined;
 
       if (seenIds.has(child.id) || seenIndices.has(index)) {
         console.warn("[renderer-view] duplicate code line detected", {
@@ -644,7 +720,7 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
 
       seenIds.add(child.id);
       seenIndices.add(index);
-      deduped.push({ id: child.id, index, text, html });
+      deduped.push({ id: child.id, index, text, html, tokens });
     }
 
     // Sort by index to ensure correct line order (important for streaming)
@@ -656,38 +732,253 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
   const lang = typeof node.props?.lang === "string" ? (node.props?.lang as string) : (node.block.payload.meta?.lang as string | undefined);
   const preAttrs = (node.props?.preAttrs as Record<string, string> | undefined) ?? undefined;
   const codeAttrs = (node.props?.codeAttrs as Record<string, string> | undefined) ?? undefined;
+  const blockMeta = (node.block.payload.meta as Record<string, unknown> | undefined) ?? undefined;
+  const lazyEnabled = Boolean(blockMeta?.lazyTokenization);
+  const lazyTokenizedUntil =
+    typeof blockMeta?.lazyTokenizedUntil === "number"
+      ? (blockMeta.lazyTokenizedUntil as number)
+      : 0;
+  const lazyHighlightedLines = Array.isArray(blockMeta?.highlightedLines) ? blockMeta.highlightedLines.length : 0;
+  const lazyTokenLines = Array.isArray(blockMeta?.tokenLines) ? blockMeta.tokenLines.length : 0;
+  const lazySourceTextLineCount = React.useMemo(() => {
+    const raw = typeof node.block?.payload.raw === "string" ? node.block.payload.raw : "";
+    const metaCode = typeof blockMeta?.code === "string" ? (blockMeta.code as string) : null;
+    const sourceText = resolveCodeSourceText(raw, metaCode);
+    if (sourceText.length === 0) return 0;
+    return sourceText.split("\n").length;
+  }, [blockMeta, node.block?.payload.raw]);
+  const totalLazyLineCount = Math.max(lines.length, lazyHighlightedLines, lazyTokenLines, lazySourceTextLineCount);
 
   // Use virtualization if enabled and lines exceed threshold
   const virtualizationConfig = DEFAULT_VIRTUALIZED_CODE_CONFIG;
-  const shouldVirtualize = virtualizationConfig.enabled && lines.length >= virtualizationConfig.virtualizeThreshold;
+  const virtualizationDisabled =
+    typeof process !== "undefined" && typeof process.env === "object" && process.env.STREAM_MDX_DISABLE_VIRTUALIZED_CODE === "true";
+  // Keep the full streamed code visible while content is still arriving or while
+  // lazy tokenization is progressively filling line metadata. Switching into a
+  // windowed view mid-stream causes visible line loss and non-deterministic DOM.
+  const canVirtualize = node.block.isFinalized && !lazyEnabled;
+  const shouldVirtualize =
+    canVirtualize && !virtualizationDisabled && virtualizationConfig.enabled && lines.length >= virtualizationConfig.virtualizeThreshold;
   const virtualization = useVirtualizedCode(lines, shouldVirtualize ? virtualizationConfig : { ...virtualizationConfig, enabled: false });
+  const highlightRequester = useCodeHighlightRequester();
+  const lastRangeRef = React.useRef<{
+    visibleStart: number;
+    visibleEnd: number;
+    prefetchStart: number;
+    prefetchEnd: number;
+    tokenizedUntil: number;
+  } | null>(null);
+  const rafRef = React.useRef<number | null>(null);
+  const idleRef = React.useRef<number | null>(null);
+
+  React.useEffect(() => {
+    if (!shouldVirtualize || !lazyEnabled || !highlightRequester) return;
+    const { visibleStart, visibleEnd, startIndex, endIndex } = virtualization.window;
+    if (endIndex <= lazyTokenizedUntil) return;
+    const nextRange = {
+      visibleStart,
+      visibleEnd,
+      prefetchStart: startIndex,
+      prefetchEnd: endIndex,
+      tokenizedUntil: lazyTokenizedUntil,
+    };
+    const last = lastRangeRef.current;
+    if (
+      last &&
+      last.visibleStart === nextRange.visibleStart &&
+      last.visibleEnd === nextRange.visibleEnd &&
+      last.prefetchStart === nextRange.prefetchStart &&
+      last.prefetchEnd === nextRange.prefetchEnd &&
+      last.tokenizedUntil === nextRange.tokenizedUntil
+    ) {
+      return;
+    }
+    lastRangeRef.current = nextRange;
+
+    if (rafRef.current !== null && typeof cancelAnimationFrame === "function") {
+      cancelAnimationFrame(rafRef.current);
+    }
+    if (typeof requestAnimationFrame === "function") {
+      rafRef.current = requestAnimationFrame(() => {
+        highlightRequester({
+          blockId,
+          startLine: visibleStart,
+          endLine: visibleEnd,
+          priority: "visible",
+          reason: "scroll",
+        });
+        rafRef.current = null;
+      });
+    } else {
+      highlightRequester({
+        blockId,
+        startLine: visibleStart,
+        endLine: visibleEnd,
+        priority: "visible",
+        reason: "scroll",
+      });
+    }
+
+    const prefetchNeeded = startIndex < visibleStart || endIndex > visibleEnd;
+    if (prefetchNeeded) {
+      const idleCallback = (globalThis as { requestIdleCallback?: (cb: (deadline: { didTimeout: boolean }) => void) => number })
+        .requestIdleCallback;
+      const cancelIdle = (globalThis as { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback;
+      if (idleRef.current !== null) {
+        if (typeof cancelIdle === "function") {
+          cancelIdle(idleRef.current);
+        } else if (typeof clearTimeout === "function") {
+          clearTimeout(idleRef.current);
+        }
+      }
+      const schedule = () => {
+        highlightRequester({
+          blockId,
+          startLine: startIndex,
+          endLine: endIndex,
+          priority: "prefetch",
+          reason: "buffer",
+        });
+        idleRef.current = null;
+      };
+      if (typeof idleCallback === "function") {
+        idleRef.current = idleCallback(() => schedule());
+      } else if (typeof setTimeout === "function") {
+        idleRef.current = setTimeout(schedule, 80) as unknown as number;
+      }
+    }
+  }, [
+    blockId,
+    highlightRequester,
+    lazyEnabled,
+    lazyTokenizedUntil,
+    shouldVirtualize,
+    virtualization.window.visibleStart,
+    virtualization.window.visibleEnd,
+    virtualization.window.startIndex,
+    virtualization.window.endIndex,
+  ]);
+
+  React.useEffect(() => {
+    if (shouldVirtualize || !blockIsFinalized || !lazyEnabled || !highlightRequester) return;
+    if (totalLazyLineCount <= 0 || lazyTokenizedUntil >= totalLazyLineCount) return;
+    const nextRange = {
+      visibleStart: 0,
+      visibleEnd: totalLazyLineCount,
+      prefetchStart: 0,
+      prefetchEnd: totalLazyLineCount,
+      tokenizedUntil: lazyTokenizedUntil,
+    };
+    const last = lastRangeRef.current;
+    if (
+      last &&
+      last.visibleStart === nextRange.visibleStart &&
+      last.visibleEnd === nextRange.visibleEnd &&
+      last.prefetchStart === nextRange.prefetchStart &&
+      last.prefetchEnd === nextRange.prefetchEnd &&
+      last.tokenizedUntil === nextRange.tokenizedUntil
+    ) {
+      return;
+    }
+    lastRangeRef.current = nextRange;
+    if (rafRef.current !== null && typeof cancelAnimationFrame === "function") {
+      cancelAnimationFrame(rafRef.current);
+    }
+    const requestFullHighlight = () => {
+      highlightRequester({
+        blockId,
+        startLine: 0,
+        endLine: totalLazyLineCount,
+        priority: "visible",
+        reason: "finalize-full",
+      });
+      rafRef.current = null;
+    };
+    if (typeof requestAnimationFrame === "function") {
+      rafRef.current = requestAnimationFrame(requestFullHighlight);
+    } else {
+      requestFullHighlight();
+    }
+  }, [blockId, blockIsFinalized, highlightRequester, lazyEnabled, lazyTokenizedUntil, shouldVirtualize, totalLazyLineCount]);
 
   // Render virtualized or non-virtualized code
   const highlightedHtml = React.useMemo(() => {
-    if (!shouldVirtualize && node.block?.payload.highlightedHtml) {
-      return node.block.payload.highlightedHtml;
+    const blockHtml = node.block?.payload.highlightedHtml ?? "";
+    const raw = typeof node.block?.payload.raw === "string" ? node.block.payload.raw : "";
+    const metaCode =
+      typeof (node.block?.payload.meta as Record<string, unknown> | undefined)?.code === "string"
+        ? ((node.block?.payload.meta as Record<string, unknown>).code as string)
+        : null;
+    const sourceText = resolveCodeSourceText(raw, metaCode);
+    const sourceEndsWithNewline = sourceText.endsWith("\n");
+    const rawFallbackLines = buildCodeFallbackLines(raw);
+    if (blockIsFinalized && !shouldVirtualize && blockHtml) {
+      return blockHtml;
     }
-    // Always prefer composing from line children if they exist (even during streaming)
-    // This ensures we show incremental updates as lines arrive via appendLines patches
+    const shouldAppendTerminalNewline = (
+      renderedLines: ReadonlyArray<{ index: number; text: string; html?: string | null; id?: string }>,
+    ) =>
+      sourceEndsWithNewline &&
+      renderedLines.length > 0 &&
+      lines.length > 0 &&
+      renderedLines[renderedLines.length - 1]?.index === lines[lines.length - 1]?.index &&
+      renderedLines[renderedLines.length - 1]?.text !== "";
+
+    // Always prefer composing from line children if they exist.
+    // This keeps streaming and finalized projections on the same code path.
     if (lines.length > 0) {
+      const hasLineHtml = lines.some((line) => typeof line.html === "string" && line.html.length > 0);
+      if (!hasLineHtml && blockHtml) {
+        // If line HTML is missing (e.g. static render with finalized blocks),
+        // fall back to the finalized block HTML to preserve deterministic syntax styling.
+        return blockHtml;
+      }
       if (shouldVirtualize) {
         // Only compose visible lines for virtualized code
-        return composeHighlightedHtml(virtualization.window.visibleLines, preAttrs, codeAttrs);
+        return composeHighlightedHtml(
+          virtualization.window.visibleLines,
+          preAttrs,
+          codeAttrs,
+          shouldAppendTerminalNewline(virtualization.window.visibleLines),
+        );
       }
-      return composeHighlightedHtml(lines, preAttrs, codeAttrs);
+      return composeHighlightedHtml(lines, preAttrs, codeAttrs, shouldAppendTerminalNewline(lines));
+    }
+    if (!shouldVirtualize && blockHtml) {
+      const hasHighlightedLines = blockHtml.includes('class="line"');
+      if (!hasHighlightedLines && rawFallbackLines.length > 0) {
+        return composeHighlightedHtml(
+          rawFallbackLines,
+          preAttrs,
+          codeAttrs,
+          sourceEndsWithNewline && rawFallbackLines[rawFallbackLines.length - 1]?.text !== "",
+        );
+      }
+      return blockHtml;
     }
     // Fallback to block's highlightedHtml only if no line children exist yet
     // This handles the initial state before appendLines patches arrive
-    const blockHtml = node.block?.payload.highlightedHtml ?? "";
     if (blockHtml?.trim().match(/^```[\w-]*\s*$/)) {
-      const raw = node.block?.payload.raw ?? "";
-      if (raw.trim().length > 0) {
-        // Return minimal HTML structure with raw text until lines are available
-        return composeHighlightedHtml([{ index: 0, text: raw, html: null, id: "temp" }], preAttrs, codeAttrs);
+      if (rawFallbackLines.length > 0) {
+        // Return minimal HTML structure with raw text until lines are available.
+        return composeHighlightedHtml(
+          rawFallbackLines,
+          preAttrs,
+          codeAttrs,
+          sourceEndsWithNewline && rawFallbackLines[rawFallbackLines.length - 1]?.text !== "",
+        );
       }
     }
+    if (!blockHtml && rawFallbackLines.length > 0) {
+      return composeHighlightedHtml(
+        rawFallbackLines,
+        preAttrs,
+        codeAttrs,
+        sourceEndsWithNewline && rawFallbackLines[rawFallbackLines.length - 1]?.text !== "",
+      );
+    }
     return blockHtml;
-  }, [shouldVirtualize, node.block?.payload.highlightedHtml, lines, preAttrs, codeAttrs, virtualization.window.visibleLines, node.block?.payload.raw]);
+  }, [blockIsFinalized, shouldVirtualize, node.block?.payload.highlightedHtml, node.block?.payload.meta, lines, preAttrs, codeAttrs, virtualization.window.visibleLines, node.block?.payload.raw]);
 
   const rendered = (
     <CodeComponent
@@ -700,7 +991,24 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
     />
   );
 
+  const effectiveLineCount = React.useMemo(() => {
+    if (lines.length > 0) {
+      return lines.length;
+    }
+    // Preserve a stable metadata contract during early streaming checkpoints:
+    // once a code block shell exists, report one line until concrete line nodes arrive.
+    return 1;
+  }, [lines.length]);
+
   const codeFrameClass = "not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm";
+  const codeMetricsAttrs = {
+    "data-code-block": "true",
+    "data-block-id": blockId,
+    "data-code-virtualized": shouldVirtualize ? "true" : "false",
+    "data-code-total-lines": String(effectiveLineCount),
+    "data-code-mounted-lines": String(shouldVirtualize ? virtualization.window.mountedLines : effectiveLineCount),
+    "data-code-window-size": String(virtualization.config.windowSize),
+  };
 
   const codeView = shouldVirtualize ? (
     (() => {
@@ -708,7 +1016,7 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
       const spacerTop = window.startIndex * lineHeight;
       const spacerBottom = (window.totalLines - window.endIndex) * lineHeight;
       return (
-        <pre className={codeFrameClass}>
+        <pre className={codeFrameClass} {...codeMetricsAttrs}>
           <div
             ref={containerRef}
             className="markdown-code-block-container relative"
@@ -723,7 +1031,9 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
       );
     })()
   ) : (
-    <pre className={codeFrameClass}>{rendered}</pre>
+    <pre className={codeFrameClass} {...codeMetricsAttrs}>
+      {rendered}
+    </pre>
   );
 
   const blockComponentMap = registry.getBlockComponentMap() as Record<string, unknown>;
@@ -732,6 +1042,20 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
     const raw = typeof node.block.payload.raw === "string" ? node.block.payload.raw : "";
     const fenced = stripCodeFence(raw);
     const code = fenced.hadFence ? fenced.code : raw;
+    if (deferredConfig) {
+      return (
+        <div ref={deferredRef}>
+          {shouldRenderDeferred
+            ? React.createElement(MermaidComponent as React.ComponentType<any>, {
+                code,
+                renderCode: codeView,
+                meta: node.block.payload.meta,
+                isFinalized: node.block.isFinalized,
+              })
+            : codeView}
+        </div>
+      );
+    }
     return React.createElement(MermaidComponent as React.ComponentType<any>, {
       code,
       renderCode: codeView,
@@ -749,6 +1073,7 @@ function composeHighlightedHtml(
   lines: ReadonlyArray<{ index: number; text: string; html?: string | null; id?: string }>,
   preAttrs?: Record<string, string>,
   codeAttrs?: Record<string, string>,
+  appendTerminalNewline = false,
 ): string {
   const lineMarkup = lines
     .map((line) => {
@@ -759,7 +1084,17 @@ function composeHighlightedHtml(
     .join("\n");
   const preAttr = attrsToString(preAttrs);
   const codeAttr = attrsToString(codeAttrs);
-  return `<pre${preAttr}><code${codeAttr}>${lineMarkup}\n</code></pre>`;
+  return `<pre${preAttr}><code${codeAttr}>${lineMarkup}${appendTerminalNewline ? "\n" : ""}</code></pre>`;
+}
+
+function resolveCodeSourceText(raw: string, metaCode: string | null): string {
+  if (metaCode !== null) {
+    return metaCode.replace(/\r\n?/g, "\n");
+  }
+  if (!raw) return "";
+  const normalized = raw.replace(/\r\n?/g, "\n");
+  const fenced = stripCodeFence(normalized);
+  return fenced.hadFence ? fenced.code : normalized;
 }
 
 function attrsToString(attrs?: Record<string, string>): string {
@@ -767,6 +1102,33 @@ function attrsToString(attrs?: Record<string, string>): string {
   return Object.entries(attrs)
     .map(([key, value]) => ` ${key}="${escapeAttribute(value)}"`)
     .join("");
+}
+
+function buildCodeFallbackLines(raw: string): Array<{ index: number; text: string; html: null; id: string }> {
+  const normalized = normalizeCodeFallbackRaw(raw);
+  if (normalized.length === 0) {
+    // When only an opening fence is available (e.g. "```lang\\n"), keep one
+    // placeholder line so incremental snapshots do not render an empty code shell.
+    if (/^\s*```[^\n]*\n?\s*$/.test(raw)) {
+      return [{ id: "temp-0", index: 0, text: "", html: null }];
+    }
+    return [];
+  }
+  return normalized.split("\n").map((line, index) => ({
+    id: `temp-${index}`,
+    index,
+    text: line,
+    html: null,
+  }));
+}
+
+function normalizeCodeFallbackRaw(raw: string): string {
+  if (!raw) return "";
+  let normalized = raw.replace(/\r\n?/g, "\n");
+  normalized = normalized.replace(/^```[^\n]*\n?/, "");
+  normalized = normalized.replace(/\n?```[\t ]*$/, "");
+  normalized = normalized.replace(/\n+$/, "");
+  return normalized;
 }
 
 function escapeHtml(value: string): string {

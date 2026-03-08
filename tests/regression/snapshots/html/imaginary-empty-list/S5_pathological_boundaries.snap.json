@@ -1,0 +1,620 @@
+{
+  "fixtureId": "imaginary-empty-list",
+  "fixtureTitle": "Imaginary Empty Nested List",
+  "scenarioId": "S5_pathological_boundaries",
+  "scenario": {
+    "id": "S5_pathological_boundaries",
+    "label": "Pathological boundary splits",
+    "updateIntervalMs": 16,
+    "charRateCps": 1200,
+    "maxChunkChars": 256,
+    "useSplitMarkers": true,
+    "includeTags": [
+      "split-markers"
+    ]
+  },
+  "runMeta": {
+    "seed": null,
+    "schedulerMode": null,
+    "usedSplitMarkers": true,
+    "fixtureTags": [
+      "lists",
+      "regression",
+      "split-markers"
+    ]
+  },
+  "totalLength": 755,
+  "checkpoints": [
+    {
+      "id": "after-first-chunk",
+      "appendedChars": 564,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 4,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 1,
+        "lastPatchToDomMs": 0.5,
+        "lastDurationMs": 0.40000000037252903,
+        "meta": {
+          "fixtureId": "imaginary-empty-list",
+          "scenarioId": "S5_pathological_boundaries",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Imaginary Empty Nested List\">Imaginary Empty Nested List</h1><p class=\"markdown-paragraph\">This fixture isolates the regression where an ordered list item briefly committed an empty nested list shell.</p><ol class=\"markdown-list ordered\" data-list-depth=\"0\" style=\"--list-indent: 2rem;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\"><strong>Prepare your dataset</strong>: Make sure your dataset is in a usable format for a Naive Bayes classifier.</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\"><strong>Split your dataset into training and testing sets</strong>: Estimate parameters on the training portion and evaluate on the testing portion.</li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\"><strong>Estimate the parameters of the classifier</strong>: This item used to provoke an empty nested list shell under streaming when the boundary to the next item landed at the wrong time.</li></ol></div>",
+      "textSample": "Imaginary Empty Nested ListThis fixture isolates the regression where an ordered list item briefly committed an empty nested list shell.Prepare your dataset: Make sure your dataset is in a usable form",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-38",
+      "appendedChars": 564,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 4,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 1,
+        "lastPatchToDomMs": 0.5,
+        "lastDurationMs": 0.40000000037252903,
+        "meta": {
+          "fixtureId": "imaginary-empty-list",
+          "scenarioId": "S5_pathological_boundaries",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Imaginary Empty Nested List\">Imaginary Empty Nested List</h1><p class=\"markdown-paragraph\">This fixture isolates the regression where an ordered list item briefly committed an empty nested list shell.</p><ol class=\"markdown-list ordered\" data-list-depth=\"0\" style=\"--list-indent: 2rem;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\"><strong>Prepare your dataset</strong>: Make sure your dataset is in a usable format for a Naive Bayes classifier.</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\"><strong>Split your dataset into training and testing sets</strong>: Estimate parameters on the training portion and evaluate on the testing portion.</li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\"><strong>Estimate the parameters of the classifier</strong>: This item used to provoke an empty nested list shell under streaming when the boundary to the next item landed at the wrong time.</li></ol></div>",
+      "textSample": "Imaginary Empty Nested ListThis fixture isolates the regression where an ordered list item briefly committed an empty nested list shell.Prepare your dataset: Make sure your dataset is in a usable form",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-76",
+      "appendedChars": 564,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 4,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 1,
+        "lastPatchToDomMs": 0.5,
+        "lastDurationMs": 0.40000000037252903,
+        "meta": {
+          "fixtureId": "imaginary-empty-list",
+          "scenarioId": "S5_pathological_boundaries",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Imaginary Empty Nested List\">Imaginary Empty Nested List</h1><p class=\"markdown-paragraph\">This fixture isolates the regression where an ordered list item briefly committed an empty nested list shell.</p><ol class=\"markdown-list ordered\" data-list-depth=\"0\" style=\"--list-indent: 2rem;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\"><strong>Prepare your dataset</strong>: Make sure your dataset is in a usable format for a Naive Bayes classifier.</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\"><strong>Split your dataset into training and testing sets</strong>: Estimate parameters on the training portion and evaluate on the testing portion.</li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\"><strong>Estimate the parameters of the classifier</strong>: This item used to provoke an empty nested list shell under streaming when the boundary to the next item landed at the wrong time.</li></ol></div>",
+      "textSample": "Imaginary Empty Nested ListThis fixture isolates the regression where an ordered list item briefly committed an empty nested list shell.Prepare your dataset: Make sure your dataset is in a usable form",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-189",
+      "appendedChars": 564,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 4,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 1,
+        "lastPatchToDomMs": 0.5,
+        "lastDurationMs": 0.40000000037252903,
+        "meta": {
+          "fixtureId": "imaginary-empty-list",
+          "scenarioId": "S5_pathological_boundaries",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Imaginary Empty Nested List\">Imaginary Empty Nested List</h1><p class=\"markdown-paragraph\">This fixture isolates the regression where an ordered list item briefly committed an empty nested list shell.</p><ol class=\"markdown-list ordered\" data-list-depth=\"0\" style=\"--list-indent: 2rem;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\"><strong>Prepare your dataset</strong>: Make sure your dataset is in a usable format for a Naive Bayes classifier.</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\"><strong>Split your dataset into training and testing sets</strong>: Estimate parameters on the training portion and evaluate on the testing portion.</li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\"><strong>Estimate the parameters of the classifier</strong>: This item used to provoke an empty nested list shell under streaming when the boundary to the next item landed at the wrong time.</li></ol></div>",
+      "textSample": "Imaginary Empty Nested ListThis fixture isolates the regression where an ordered list item briefly committed an empty nested list shell.Prepare your dataset: Make sure your dataset is in a usable form",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-378",
+      "appendedChars": 564,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 4,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 1,
+        "lastPatchToDomMs": 0.5,
+        "lastDurationMs": 0.40000000037252903,
+        "meta": {
+          "fixtureId": "imaginary-empty-list",
+          "scenarioId": "S5_pathological_boundaries",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Imaginary Empty Nested List\">Imaginary Empty Nested List</h1><p class=\"markdown-paragraph\">This fixture isolates the regression where an ordered list item briefly committed an empty nested list shell.</p><ol class=\"markdown-list ordered\" data-list-depth=\"0\" style=\"--list-indent: 2rem;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\"><strong>Prepare your dataset</strong>: Make sure your dataset is in a usable format for a Naive Bayes classifier.</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\"><strong>Split your dataset into training and testing sets</strong>: Estimate parameters on the training portion and evaluate on the testing portion.</li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\"><strong>Estimate the parameters of the classifier</strong>: This item used to provoke an empty nested list shell under streaming when the boundary to the next item landed at the wrong time.</li></ol></div>",
+      "textSample": "Imaginary Empty Nested ListThis fixture isolates the regression where an ordered list item briefly committed an empty nested list shell.Prepare your dataset: Make sure your dataset is in a usable form",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-566",
+      "appendedChars": 755,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 5,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 2,
+        "lastPatchToDomMs": 0.30000000074505806,
+        "lastDurationMs": 0.2000000011175871,
+        "meta": {
+          "fixtureId": "imaginary-empty-list",
+          "scenarioId": "S5_pathological_boundaries",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Imaginary Empty Nested List\">Imaginary Empty Nested List</h1><p class=\"markdown-paragraph\">This fixture isolates the regression where an ordered list item briefly committed an empty nested list shell.</p><ol class=\"markdown-list ordered\" data-list-depth=\"0\" style=\"--list-indent: 2rem;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\"><strong>Prepare your dataset</strong>: Make sure your dataset is in a usable format for a Naive Bayes classifier.</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\"><strong>Split your dataset into training and testing sets</strong>: Estimate parameters on the training portion and evaluate on the testing portion.</li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\"><strong>Estimate the parameters of the classifier</strong>: This item used to provoke an empty nested list shell under streaming when the boundary to the next item landed at the wrong time.</li><li class=\"markdown-list-item\" data-counter-text=\"4.\" data-list-depth=\"0\"><strong>Predict labels for new instances</strong>: Use the estimated parameters to classify new examples and verify that the ordered list continues cleanly with no empty nested list under item three.</li></ol></div>",
+      "textSample": "Imaginary Empty Nested ListThis fixture isolates the regression where an ordered list item briefly committed an empty nested list shell.Prepare your dataset: Make sure your dataset is in a usable form",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-680",
+      "appendedChars": 755,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 5,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 2,
+        "lastPatchToDomMs": 0.30000000074505806,
+        "lastDurationMs": 0.2000000011175871,
+        "meta": {
+          "fixtureId": "imaginary-empty-list",
+          "scenarioId": "S5_pathological_boundaries",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Imaginary Empty Nested List\">Imaginary Empty Nested List</h1><p class=\"markdown-paragraph\">This fixture isolates the regression where an ordered list item briefly committed an empty nested list shell.</p><ol class=\"markdown-list ordered\" data-list-depth=\"0\" style=\"--list-indent: 2rem;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\"><strong>Prepare your dataset</strong>: Make sure your dataset is in a usable format for a Naive Bayes classifier.</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\"><strong>Split your dataset into training and testing sets</strong>: Estimate parameters on the training portion and evaluate on the testing portion.</li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\"><strong>Estimate the parameters of the classifier</strong>: This item used to provoke an empty nested list shell under streaming when the boundary to the next item landed at the wrong time.</li><li class=\"markdown-list-item\" data-counter-text=\"4.\" data-list-depth=\"0\"><strong>Predict labels for new instances</strong>: Use the estimated parameters to classify new examples and verify that the ordered list continues cleanly with no empty nested list under item three.</li></ol></div>",
+      "textSample": "Imaginary Empty Nested ListThis fixture isolates the regression where an ordered list item briefly committed an empty nested list shell.Prepare your dataset: Make sure your dataset is in a usable form",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-755",
+      "appendedChars": 755,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 5,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 2,
+        "lastPatchToDomMs": 0.30000000074505806,
+        "lastDurationMs": 0.2000000011175871,
+        "meta": {
+          "fixtureId": "imaginary-empty-list",
+          "scenarioId": "S5_pathological_boundaries",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Imaginary Empty Nested List\">Imaginary Empty Nested List</h1><p class=\"markdown-paragraph\">This fixture isolates the regression where an ordered list item briefly committed an empty nested list shell.</p><ol class=\"markdown-list ordered\" data-list-depth=\"0\" style=\"--list-indent: 2rem;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\"><strong>Prepare your dataset</strong>: Make sure your dataset is in a usable format for a Naive Bayes classifier.</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\"><strong>Split your dataset into training and testing sets</strong>: Estimate parameters on the training portion and evaluate on the testing portion.</li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\"><strong>Estimate the parameters of the classifier</strong>: This item used to provoke an empty nested list shell under streaming when the boundary to the next item landed at the wrong time.</li><li class=\"markdown-list-item\" data-counter-text=\"4.\" data-list-depth=\"0\"><strong>Predict labels for new instances</strong>: Use the estimated parameters to classify new examples and verify that the ordered list continues cleanly with no empty nested list under item three.</li></ol></div>",
+      "textSample": "Imaginary Empty Nested ListThis fixture isolates the regression where an ordered list item briefly committed an empty nested list shell.Prepare your dataset: Make sure your dataset is in a usable form",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    }
+  ],
+  "final": {
+    "id": "after-finalize",
+    "appendedChars": 755,
+    "rootChildCount": 1,
+    "selectors": {
+      "hasTable": false,
+      "hasPre": false,
+      "hasFootnotes": false,
+      "hasMdxPending": false,
+      "hasMdxCompiled": false,
+      "hasBlockquote": false,
+      "hasMath": false
+    },
+    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Imaginary Empty Nested List\">Imaginary Empty Nested List</h1><p class=\"markdown-paragraph\">This fixture isolates the regression where an ordered list item briefly committed an empty nested list shell.</p><ol class=\"markdown-list ordered\" data-list-depth=\"0\" style=\"--list-indent: 2rem;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\"><strong>Prepare your dataset</strong>: Make sure your dataset is in a usable format for a Naive Bayes classifier.</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\"><strong>Split your dataset into training and testing sets</strong>: Estimate parameters on the training portion and evaluate on the testing portion.</li><li class=\"markdown-list-item\" data-counter-text=\"3.\" data-list-depth=\"0\"><strong>Estimate the parameters of the classifier</strong>: This item used to provoke an empty nested list shell under streaming when the boundary to the next item landed at the wrong time.</li><li class=\"markdown-list-item\" data-counter-text=\"4.\" data-list-depth=\"0\"><strong>Predict labels for new instances</strong>: Use the estimated parameters to classify new examples and verify that the ordered list continues cleanly with no empty nested list under item three.</li></ol></div>",
+    "runtimeState": {
+      "rendererVersion": 6,
+      "queueDepth": 0,
+      "pendingBatches": 0,
+      "workerReady": true,
+      "lastTx": 3,
+      "lastPatchToDomMs": 0.19999999925494194,
+      "lastDurationMs": 0.19999999925494194,
+      "meta": {
+        "fixtureId": "imaginary-empty-list",
+        "scenarioId": "S5_pathological_boundaries",
+        "seed": null,
+        "schedulerMode": null
+      },
+      "storeCounters": {
+        "appendLineGuardRejected": 0,
+        "staleEpochRejected": 0,
+        "storeInvariantViolationCount": 0
+      }
+    },
+    "structure": {
+      "topLevelTags": [
+        "div"
+      ],
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      }
+    },
+    "children": [
+      {
+        "index": 0,
+        "tag": "div",
+        "hash": "fc1454452c05188f12cd0929cba76bbe2db5f0e0f8c48c834e57156d91b69af5",
+        "textSample": "Imaginary Empty Nested ListThis fixture isolates the regression where an ordered list item briefly committed an empty ne"
+      }
+    ],
+    "inspection": {
+      "tables": [],
+      "mdxBlocks": [],
+      "codeBlocks": []
+    }
+  }
+}

@@ -114,26 +114,22 @@
   }
 
   .markdown-v2-output .markdown-list {
-    --list-indent: 2.5rem;
+    --list-indent: 2rem;
 
     display: flex;
     flex-direction: column;
-    padding-left: var(--list-indent, 2.5rem);
+    padding-left: var(--list-indent, 2rem);
     margin: 1.25em 0;
     list-style: none;
     list-style-type: none;
   }
 
-  .markdown-v2-output .markdown-list.unordered {
-    --list-indent: 1.5rem;
+  .markdown-v2-output .markdown-list[data-list-depth="1"] {
+    --list-indent: 1.75rem;
   }
 
-  .markdown-v2-output .markdown-list.ordered[data-list-depth="1"] {
-    --list-indent: 2rem;
-  }
-
-  .markdown-v2-output .markdown-list.ordered[data-list-depth="2"],
-  .markdown-v2-output .markdown-list.ordered[data-list-depth="3"] {
+  .markdown-v2-output .markdown-list[data-list-depth="2"],
+  .markdown-v2-output .markdown-list[data-list-depth="3"] {
     --list-indent: 1.5rem;
   }
 
@@ -155,7 +151,7 @@
     position: absolute;
     top: 0;
     right: 100%;
-    width: var(--list-indent, 2.5rem);
+    width: var(--list-indent, 2rem);
     padding-right: 0.5rem;
     font-variant-numeric: var(--tw-ordinal) var(--tw-slashed-zero) var(--tw-numeric-figure) var(--tw-numeric-spacing) var(--tw-numeric-fraction);
     text-align: right;
@@ -174,14 +170,12 @@
   .markdown-v2-output .markdown-list.unordered > .markdown-list-item::before {
     --tw-numeric-spacing: tabular-nums;
 
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    width: 1.5rem;
-    height: 1.5rem;
-    padding-right: 0;
-    margin-top: -0.1rem;
+    display: block;
+    width: var(--list-indent, 2rem);
+    padding-right: 0.5rem;
+    margin-top: -0.05rem;
     font-size: 1.25rem;
+    text-align: right;
     content: "\2022";
     opacity: 0.7;
   }
@@ -193,6 +187,11 @@
   .markdown-v2-output .markdown-list-item > * {
     width: 100%;
     max-width: 100%;
+  }
+
+  .markdown-v2-output {
+    --shiki-light-bg: transparent;
+    --shiki-dark-bg: transparent;
   }
 
   .markdown-v2-output .markdown-mdx:has(> figure[data-with-codeblock="true"]) + pre,
@@ -355,6 +354,11 @@
     border: 1px solid var(--code-border);
     border-radius: 0.75rem;
     background: var(--code-bg);
+  }
+
+  .code-panel-block .docs-code-block__body pre,
+  .code-panel-block .docs-code-block__body pre code {
+    color: var(--foreground);
   }
 
   .markdown-v2-output .markdown-hr {
@@ -668,6 +672,18 @@
         background-color: var(--shiki-dark-bg);
       }
     }
+  }
+
+  .markdown-v2-output .shiki,
+  .markdown-v2-output .shiki span {
+    background-color: transparent !important;
+  }
+
+  .markdown-v2-output pre,
+  .markdown-v2-output pre code,
+  .markdown-v2-output pre [data-line],
+  .markdown-v2-output pre span {
+    background: transparent !important;
   }
 
   /* 

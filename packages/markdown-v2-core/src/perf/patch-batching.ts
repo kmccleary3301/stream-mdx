@@ -1,4 +1,4 @@
-import type { Block, NodeSnapshot, Patch, SetPropsBatchEntry } from "../types";
+import type { Block, NodeSnapshot, Patch, PatchKind, SetPropsBatchEntry } from "../types";
 
 const DEFAULT_MAX_LIGHT_PATCHES_PER_CHUNK = 32;
 const LIGHT_APPEND_LINE_THRESHOLD = 4;
@@ -89,27 +89,67 @@ export function isHeavyPatch(patch: Patch): boolean {
   }
 }
 
+export function getPatchKind(patch: Patch): PatchKind {
+  const explicitKind = patch.op === "setHTML" ? patch.patchMeta?.kind : patch.meta?.kind;
+  if (explicitKind === "semantic" || explicitKind === "enrichment") {
+    return explicitKind;
+  }
+
+  switch (patch.op) {
+    case "insertChild":
+    case "deleteChild":
+    case "replaceChild":
+    case "finalize":
+    case "reorder":
+    case "appendLines":
+    case "setHTML":
+      return "semantic";
+    case "setProps":
+    case "setPropsBatch":
+      // Conservative default: prop updates are treated as semantic until the
+      // worker emits finer-grained enrichment intent. Correctness wins.
+      return "semantic";
+    default:
+      return "semantic";
+  }
+}
+
 export function splitPatchBatch(patches: Patch[], maxLightChunk = DEFAULT_MAX_LIGHT_PATCHES_PER_CHUNK): Patch[][] {
   if (patches.length === 0) return [];
 
   const groups: Patch[][] = [];
   let current: Patch[] = [];
+  let currentMode: "semantic" | "enrichment" | null = null;
 
   const flush = () => {
     if (current.length > 0) {
       groups.push(current);
       current = [];
+      currentMode = null;
     }
   };
 
   for (const patch of patches) {
+    const kind = getPatchKind(patch);
     const heavy = isHeavyPatch(patch);
+    if (kind === "semantic") {
+      if (currentMode !== "semantic") {
+        flush();
+        currentMode = "semantic";
+      }
+      current.push(patch);
+      continue;
+    }
     if (heavy) {
       flush();
       groups.push([patch]);
       continue;
     }
 
+    if (currentMode !== "enrichment") {
+      flush();
+      currentMode = "enrichment";
+    }
     current.push(patch);
     if (current.length >= maxLightChunk) {
       flush();
@@ -120,4 +160,3 @@ export function splitPatchBatch(patches: Patch[], maxLightChunk = DEFAULT_MAX_LI
 
   return groups;
 }
-

@@ -14,6 +14,18 @@ function run(command: string, args: string[], options: { cwd: string }) {
   });
 }
 
+function getArg(flag: string): string | null {
+  const index = process.argv.indexOf(flag);
+  if (index === -1) return null;
+  return process.argv[index + 1] ?? null;
+}
+
+function resolveOnlyTarget(): "next" | "vite" | "all" {
+  const raw = (getArg("--only") ?? process.env.PACK_SMOKE_ONLY ?? "all").toLowerCase();
+  if (raw === "next" || raw === "vite" || raw === "all") return raw;
+  throw new Error(`Invalid --only value "${raw}". Expected next, vite, or all.`);
+}
+
 function findSinglePack(packsDir: string, predicate: (name: string) => boolean): string {
   const matches = fs
     .readdirSync(packsDir)
@@ -69,9 +81,15 @@ function writeViteSmokeApp(options: {
   viteDir: string;
   streamMdxTarball: string;
   scopedTarballs: Record<string, string>;
+  themeTarball?: string;
 }) {
   fs.mkdirSync(options.viteDir, { recursive: true });
   fs.mkdirSync(path.join(options.viteDir, "src"), { recursive: true });
+
+  const overrides = Object.fromEntries(Object.entries(options.scopedTarballs).map(([name, tarball]) => [name, `file:${tarball}`]));
+  if (options.themeTarball) {
+    overrides["@stream-mdx/theme-tailwind"] = `file:${options.themeTarball}`;
+  }
 
   writeJson(path.join(options.viteDir, "package.json"), {
     name: "stream-mdx-vite-smoke",
@@ -84,6 +102,7 @@ function writeViteSmokeApp(options: {
       react: "18.3.1",
       "react-dom": "18.3.1",
       "stream-mdx": `file:${options.streamMdxTarball}`,
+      ...(options.themeTarball ? { "@stream-mdx/theme-tailwind": `file:${options.themeTarball}` } : {}),
     },
     devDependencies: {
       "@types/node": "^22.10.2",
@@ -93,7 +112,7 @@ function writeViteSmokeApp(options: {
       typescript: "^5.7.2",
       vite: "6.0.5",
     },
-    overrides: Object.fromEntries(Object.entries(options.scopedTarballs).map(([name, tarball]) => [name, `file:${tarball}`])),
+    overrides,
   });
 
   writeJson(path.join(options.viteDir, "tsconfig.json"), {
@@ -143,6 +162,7 @@ export default defineConfig({
     path.join(options.viteDir, "src/main.tsx"),
     `import React from "react";
 import ReactDOM from "react-dom/client";
+import "@stream-mdx/theme-tailwind/theme.css";
 import { StreamingMarkdown } from "stream-mdx";
 
 function App() {
@@ -163,6 +183,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 }
 
 function main() {
+  const onlyTarget = resolveOnlyTarget();
+  const runNext = onlyTarget === "all" || onlyTarget === "next";
+  const runVite = onlyTarget === "all" || onlyTarget === "vite";
   const repoRoot = path.resolve(__dirname, "..");
   const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "stream-mdx-pack-smoke-"));
   const packsDir = path.join(tmpRoot, "packs");
@@ -176,6 +199,7 @@ function main() {
   run("npm", ["-w", "@stream-mdx/plugins", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
   run("npm", ["-w", "@stream-mdx/worker", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
   run("npm", ["-w", "@stream-mdx/react", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
+  run("npm", ["-w", "@stream-mdx/theme-tailwind", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
   run("npm", ["-w", "stream-mdx", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
 
   const tarStream = findSinglePack(packsDir, (name) => /^stream-mdx-\d/.test(name));
@@ -183,36 +207,42 @@ function main() {
   const tarPlugins = findSinglePack(packsDir, (name) => name.startsWith("stream-mdx-plugins-"));
   const tarWorker = findSinglePack(packsDir, (name) => name.startsWith("stream-mdx-worker-"));
   const tarReact = findSinglePack(packsDir, (name) => name.startsWith("stream-mdx-react-"));
+  const tarTheme = findSinglePack(packsDir, (name) => name.startsWith("stream-mdx-theme-tailwind-"));
 
-  copyDir(path.join(repoRoot, "examples", "streaming-markdown-starter"), nextDir);
+  if (runNext) {
+    copyDir(path.join(repoRoot, "examples", "streaming-markdown-starter"), nextDir);
 
-  rewriteNextPackageJson({
-    pkgPath: path.join(nextDir, "package.json"),
-    streamMdxTarball: tarStream,
-    scopedTarballs: {
-      "@stream-mdx/core": tarCore,
-      "@stream-mdx/plugins": tarPlugins,
-      "@stream-mdx/worker": tarWorker,
-      "@stream-mdx/react": tarReact,
-    },
-  });
+    rewriteNextPackageJson({
+      pkgPath: path.join(nextDir, "package.json"),
+      streamMdxTarball: tarStream,
+      scopedTarballs: {
+        "@stream-mdx/core": tarCore,
+        "@stream-mdx/plugins": tarPlugins,
+        "@stream-mdx/worker": tarWorker,
+        "@stream-mdx/react": tarReact,
+      },
+    });
 
-  run("npm", ["install", "--no-fund", "--no-audit"], { cwd: nextDir });
-  run("npm", ["run", "build"], { cwd: nextDir });
+    run("npm", ["install", "--no-fund", "--no-audit"], { cwd: nextDir });
+    run("npm", ["run", "build"], { cwd: nextDir });
+  }
 
-  writeViteSmokeApp({
-    viteDir,
-    streamMdxTarball: tarStream,
-    scopedTarballs: {
-      "@stream-mdx/core": tarCore,
-      "@stream-mdx/plugins": tarPlugins,
-      "@stream-mdx/worker": tarWorker,
-      "@stream-mdx/react": tarReact,
-    },
-  });
+  if (runVite) {
+    writeViteSmokeApp({
+      viteDir,
+      streamMdxTarball: tarStream,
+      scopedTarballs: {
+        "@stream-mdx/core": tarCore,
+        "@stream-mdx/plugins": tarPlugins,
+        "@stream-mdx/worker": tarWorker,
+        "@stream-mdx/react": tarReact,
+      },
+      themeTarball: tarTheme,
+    });
 
-  run("npm", ["install", "--no-fund", "--no-audit"], { cwd: viteDir });
-  run("npm", ["run", "build"], { cwd: viteDir });
+    run("npm", ["install", "--no-fund", "--no-audit"], { cwd: viteDir });
+    run("npm", ["run", "build"], { cwd: viteDir });
+  }
 
   if (process.env.KEEP_PACK_SMOKE_TMP !== "1") {
     fs.rmSync(tmpRoot, { recursive: true, force: true });

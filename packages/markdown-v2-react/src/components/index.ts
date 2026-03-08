@@ -1,6 +1,10 @@
 // Default component implementations for V2 Markdown Renderer
 
 import { createTrustedHTML, sanitizeHTML } from "@stream-mdx/core";
+import { markMdxHydrated, markMdxHydrationError, markMdxHydrationStart } from "../mdx-hydration-metrics";
+import { MdxHydrationContext } from "../mdx-hydration-context";
+import { loadMdxRuntime } from "../mdx-runtime";
+import { useDeferredRender } from "../renderer/use-deferred-render";
 import type {
   Block,
   InlineNode,
@@ -10,6 +14,35 @@ import { removeHeadingMarkers } from "@stream-mdx/core";
 import React from "react";
 import { DEFAULT_INLINE_HTML_RENDERERS, renderInlineHtmlSegment } from "../utils/inline-html";
 import type { BlockComponents, HtmlElements, InlineComponents, InlineHtmlRendererMap, TableElements } from "../types";
+export { DefaultLinkSafetyModal, type LinkSafetyModalProps } from "./link-safety-modal";
+
+class MdxRuntimeBoundary extends React.Component<
+  { resetKey: number; onError: (error: Error) => void; children?: React.ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError(): { hasError: boolean } {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error) {
+    this.props.onError(error);
+  }
+
+  componentDidUpdate(prevProps: { resetKey: number }) {
+    if (prevProps.resetKey !== this.props.resetKey && this.state.hasError) {
+      this.setState({ hasError: false });
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return null;
+    }
+    return this.props.children;
+  }
+}
 
 /**
  * Render inline nodes to React elements
@@ -225,17 +258,19 @@ export const defaultBlockComponents: BlockComponents = {
     );
   },
 
-  heading: ({ level, inlines, text }) => {
+  heading: ({ level, inlines, text, meta }) => {
     const tag = `h${level}` as keyof JSX.IntrinsicElements;
     const onlyPlainText = Array.isArray(inlines) && inlines.length > 0 && inlines.every((node) => node.kind === "text");
     const children = onlyPlainText
       ? inlines.map((node) => (node.kind === "text" ? node.text : "")).join("")
       : renderInlineNodes(inlines, defaultInlineComponents);
+    const headingId = typeof meta?.headingId === "string" && meta.headingId.length > 0 ? meta.headingId : undefined;
     return React.createElement(
       tag,
       {
         className: `markdown-heading markdown-h${level}`,
         ...(text ? { "data-heading-text": text } : {}),
+        ...(headingId ? { id: headingId, "data-heading-id": headingId } : {}),
       },
       children,
     );
@@ -298,13 +333,23 @@ export const defaultBlockComponents: BlockComponents = {
   hr: (props: React.HTMLAttributes<HTMLHRElement>) => React.createElement("hr", props),
 
   list: ({ ordered, items }) => {
+    if (items.length === 0) {
+      return null;
+    }
     const tag = ordered ? "ol" : "ul";
+    const listStyle = ordered
+      ? ({
+          ["--list-indent" as const]: `calc(2.5rem + ${String(items.length).length}ch)`,
+        } as React.CSSProperties)
+      : undefined;
     const listItems = items.map((item, index) =>
       React.createElement(
         "li",
         {
           key: index,
           className: "markdown-list-item",
+          "data-counter-text": ordered ? `${index + 1}.` : undefined,
+          "data-list-depth": 0,
         },
         renderInlineNodes(item, defaultInlineComponents),
       ),
@@ -314,6 +359,7 @@ export const defaultBlockComponents: BlockComponents = {
       tag,
       {
         className: `markdown-list ${ordered ? "ordered" : "unordered"}`,
+        style: listStyle,
       },
       listItems,
     );
@@ -321,7 +367,10 @@ export const defaultBlockComponents: BlockComponents = {
 
   html: ({ __trustedHtml, elements }) => {
     const raw = typeof __trustedHtml === "string" ? __trustedHtml : __trustedHtml.toString();
-    const htmlString = sanitizeHTML(raw);
+    // Worker-compiled flows already sanitize HTML at the source.
+    // On the server we may not have a DOM available for DOMPurify, so keep the
+    // HTML string as-is in that environment.
+    const htmlString = typeof window === "undefined" ? raw : sanitizeHTML(raw);
     // If client and mapping provided, convert to React tree using mapping
     if (typeof window !== "undefined" && elements) {
       const content = mapHtmlToReact(htmlString, elements);
@@ -338,21 +387,56 @@ export const defaultBlockComponents: BlockComponents = {
   mdx: ({ compiledRef, compiledModule, status, errorMessage }) => {
     const [Comp, setComp] = React.useState<React.ComponentType | null>(null);
     const [internalError, setInternalError] = React.useState<string | null>(null);
-
+    const [renderError, setRenderError] = React.useState<string | null>(null);
+    const [retryKey, setRetryKey] = React.useState(0);
+    const hydrationContext = React.useContext(MdxHydrationContext);
+    const hydrationController = hydrationContext?.controller ?? null;
+    const hydrationOptions = hydrationContext?.options;
+    const containerRef = React.useRef<HTMLDivElement | null>(null);
+    const deferHydration = hydrationOptions?.strategy === "visible";
+    const shouldHydrate = useDeferredRender(
+      containerRef,
+      deferHydration
+        ? {
+            enabled: true,
+            rootMargin: hydrationOptions?.rootMargin,
+            idleTimeoutMs: hydrationOptions?.idleTimeoutMs,
+            debounceMs: hydrationOptions?.debounceMs,
+          }
+        : { enabled: false },
+    );
     const resolvedId = compiledModule?.id ?? (compiledRef?.id && compiledRef.id !== "pending" ? compiledRef.id : undefined);
+    const handleRetry = React.useCallback(() => {
+      setInternalError(null);
+      setRenderError(null);
+      setComp(null);
+      setRetryKey((prev) => prev + 1);
+    }, []);
+    const handleRuntimeError = React.useCallback(
+      (error: Error) => {
+        const message = error instanceof Error ? error.message : String(error);
+        setRenderError(message);
+        markMdxHydrationError(resolvedId ?? compiledRef?.id);
+      },
+      [resolvedId, compiledRef?.id],
+    );
+
     const effectiveStatus: "pending" | "compiled" | "error" = status ? status : resolvedId ? "compiled" : "pending";
-    const failureMessage = errorMessage ?? internalError ?? null;
+    const failureMessage = errorMessage ?? internalError ?? renderError ?? null;
     const moduleDependencies = compiledModule?.dependencies;
 
     React.useEffect(() => {
+      if (!shouldHydrate) {
+        return;
+      }
       if (status === "error") {
-        setComp(null);
-        setInternalError(null);
+        markMdxHydrationError(resolvedId ?? compiledRef?.id);
         return;
       }
 
       let cancelled = false;
       async function ensure() {
+        let permit: { release: () => void } | null = null;
         try {
           if (status === "error" || !resolvedId || resolvedId === "pending") {
             if (!cancelled) {
@@ -362,7 +446,18 @@ export const defaultBlockComponents: BlockComponents = {
             return;
           }
 
-          const { getMDXComponentFactory, registerInlineMdxModule } = await import("../mdx-client");
+          if (hydrationController) {
+            permit = await hydrationController.acquire();
+            if (cancelled) {
+              permit.release();
+              return;
+            }
+          }
+
+          setInternalError(null);
+          setRenderError(null);
+          markMdxHydrationStart(resolvedId);
+          const { getMDXComponentFactory, registerInlineMdxModule } = await loadMdxRuntime();
           if (compiledModule?.code) {
             registerInlineMdxModule({
               id: compiledModule.id,
@@ -376,48 +471,96 @@ export const defaultBlockComponents: BlockComponents = {
           if (!cancelled) {
             setComp(() => C);
             setInternalError(null);
+            markMdxHydrated(resolvedId);
           }
         } catch (error: unknown) {
           if (!cancelled) {
             const message = error instanceof Error ? error.message : String(error);
-            setComp(null);
             setInternalError(message);
+            markMdxHydrationError(resolvedId);
           }
+        } finally {
+          permit?.release();
         }
       }
       ensure();
       return () => {
         cancelled = true;
       };
-    }, [compiledModule?.id, compiledModule?.code, moduleDependencies, resolvedId, status]);
+    }, [compiledModule?.id, compiledModule?.code, moduleDependencies, resolvedId, status, shouldHydrate, retryKey]);
 
     const compileMode = compiledModule?.source === "worker" || compiledRef?.id?.startsWith("worker:") ? "worker" : "server";
 
-    if (effectiveStatus === "error" || failureMessage) {
-      const message =
-        failureMessage ??
-        (compileMode === "worker"
-          ? "MDX compilation failed in client mode. Try switching back to server rendering or restarting the stream."
-          : "MDX compilation failed. Try restarting the stream.");
-      return React.createElement(
-        "div",
-        {
-          className: "markdown-mdx error",
-          "data-mdx-ref": resolvedId ?? compiledRef?.id ?? "error",
-          "data-mdx-status": "error",
-          "data-mdx-mode": compileMode,
-        },
-        React.createElement(React.Fragment, null, React.createElement("strong", null, "MDX failed"), React.createElement("div", null, message)),
-      );
-    }
+    const pendingId = resolvedId && resolvedId !== "pending" ? resolvedId : (compiledRef?.id ?? "pending");
+    const waitingForVisibility = deferHydration && !shouldHydrate && Boolean(resolvedId);
+    const pendingLabel = waitingForVisibility
+      ? "MDX ready (hydrate on view)…"
+      : compileMode === "worker"
+        ? "Compiling MDX (client)…"
+        : "Compiling MDX (server)…";
+    const message =
+      failureMessage ??
+      (compileMode === "worker"
+        ? "MDX compilation failed in client mode. Try switching back to server rendering or restarting the stream."
+        : "MDX compilation failed. Try restarting the stream.");
+    const allowRetry = Boolean(internalError || renderError);
+    const retryButton = allowRetry
+      ? React.createElement(
+          "button",
+          {
+            type: "button",
+            className: "markdown-mdx-retry",
+            onClick: handleRetry,
+          },
+          "Retry hydration",
+        )
+      : null;
+    const errorPanel = React.createElement(
+      React.Fragment,
+      null,
+      React.createElement("strong", null, "MDX failed"),
+      React.createElement("div", null, message),
+    );
 
-    if (!Comp) {
-      const pendingId = resolvedId && resolvedId !== "pending" ? resolvedId : (compiledRef?.id ?? "pending");
-      const pendingLabel = compileMode === "worker" ? "Compiling MDX (client)…" : "Compiling MDX (server)…";
+    if (Comp && !failureMessage) {
       return React.createElement(
         "div",
         {
           className: "markdown-mdx",
+          ref: containerRef,
+          "data-mdx-ref": resolvedId ?? compiledRef?.id ?? "compiled",
+          "data-mdx-status": failureMessage ? "error" : "compiled",
+          "data-mdx-mode": compileMode,
+        },
+        React.createElement(
+          MdxRuntimeBoundary,
+          { resetKey: retryKey, onError: handleRuntimeError },
+          React.createElement(Comp, {}),
+        ),
+      );
+    }
+
+    if (failureMessage) {
+      return React.createElement(
+        "div",
+        {
+          className: "markdown-mdx error",
+          ref: containerRef,
+          "data-mdx-ref": pendingId,
+          "data-mdx-status": "error",
+          "data-mdx-mode": compileMode,
+        },
+        errorPanel,
+        retryButton,
+      );
+    }
+
+    if (!Comp) {
+      return React.createElement(
+        "div",
+        {
+          className: "markdown-mdx",
+          ref: containerRef,
           "data-mdx-ref": pendingId,
           "data-mdx-status": "pending",
           "data-mdx-mode": compileMode,
@@ -426,16 +569,6 @@ export const defaultBlockComponents: BlockComponents = {
       );
     }
 
-    return React.createElement(
-      "div",
-      {
-        className: "markdown-mdx",
-        "data-mdx-ref": resolvedId ?? compiledRef?.id ?? "compiled",
-        "data-mdx-status": "compiled",
-        "data-mdx-mode": compileMode,
-      },
-      React.createElement(Comp, {}),
-    );
   },
 
   // Footnotes block rendered at page end
@@ -656,7 +789,9 @@ export class ComponentRegistry {
       case "html": {
         const trusted = block.payload.sanitizedHtml ?? block.payload.raw;
         return {
-          __trustedHtml: createTrustedHTML(trusted),
+          // Server render should not depend on DOMPurify (which requires a DOM `window`).
+          // In worker-compiled flows, `sanitizedHtml` is already sanitized at the source.
+          __trustedHtml: typeof window === "undefined" ? String(trusted ?? "") : createTrustedHTML(String(trusted ?? "")),
           elements: this.htmlElements,
         };
       }
@@ -674,6 +809,7 @@ export class ComponentRegistry {
             compiledModule,
             status,
             errorMessage,
+            raw: typeof block.payload.raw === "string" ? block.payload.raw : undefined,
           };
         })();
 

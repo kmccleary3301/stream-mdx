@@ -40,9 +40,21 @@
       "missing": true,
       "selector": "#regression-root pre"
     },
+    "hr": {
+      "missing": true,
+      "selector": "#regression-root hr"
+    },
+    "kbd": {
+      "missing": true,
+      "selector": "#regression-root kbd"
+    },
     "table": {
       "missing": true,
       "selector": "#regression-root table"
+    },
+    "table-row": {
+      "missing": true,
+      "selector": "#regression-root tbody tr"
     },
     "table-th": {
       "missing": true,
@@ -113,7 +125,7 @@
       "computed": {
         "margin-top": "1.4px",
         "margin-bottom": "1.4px",
-        "padding-left": "0px",
+        "padding-left": "17.5px",
         "position": "relative",
         "line-height": "21px"
       },
@@ -122,7 +134,7 @@
           "content": "\"•\"",
           "position": "absolute",
           "left": "-21px",
-          "right": "577px",
+          "right": "519px",
           "top": "0px",
           "width": "21px",
           "height": "21px",

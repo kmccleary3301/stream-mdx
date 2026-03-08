@@ -28,11 +28,20 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
       - name: Build
         run: npm run build
 
       - name: Test
         run: npm run test
+
+      - name: Pack + install smoke (Next + Vite)
+        run: npm run ci:pack-smoke
+
+      - name: Release gates (analyzer + regression + perf)
+        run: npm run release:gates
 
       - name: Publish (Changesets)
         run: npm run changeset:publish

@@ -44,7 +44,7 @@ export function Container({ children, className }: React.HTMLProps<HTMLDivElemen
   return (
     <motion.div
       variants={container}
-      initial="hidden"
+      initial={false}
       animate="show"
       className={className}
     >
@@ -58,5 +58,13 @@ export function Item({ children }: { children: React.ReactNode }) {
   if (DISABLE_ANIMATIONS || reducedMotion) {
     return <div>{children}</div>;
   }
-  return <motion.div variants={item}>{children}</motion.div>;
+  return (
+    <motion.div
+      variants={item}
+      initial={false}
+      animate="show"
+    >
+      {children}
+    </motion.div>
+  );
 }

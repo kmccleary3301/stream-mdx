@@ -78,6 +78,14 @@
         "white-space": "pre"
       }
     },
+    "hr": {
+      "missing": true,
+      "selector": "#regression-root hr"
+    },
+    "kbd": {
+      "missing": true,
+      "selector": "#regression-root kbd"
+    },
     "table": {
       "selector": "#regression-root table",
       "computed": {
@@ -108,6 +116,13 @@
         "overflow": "visible",
         "overflow-x": "visible",
         "overflow-y": "visible"
+      }
+    },
+    "table-row": {
+      "selector": "#regression-root tbody tr",
+      "computed": {
+        "border-bottom-width": "0px",
+        "border-bottom-color": "rgb(232, 232, 232)"
       }
     },
     "table-th": {

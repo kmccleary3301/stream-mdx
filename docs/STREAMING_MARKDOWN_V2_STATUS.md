@@ -58,6 +58,8 @@ StreamMDX is a streaming-first Markdown/MDX renderer for React built around:
 
 - Credits/budgets live in `@stream-mdx/core/perf/backpressure`.
 - Patch scheduling (frame budgets, batch caps, adaptive throttling) is implemented in `@stream-mdx/react`’s patch scheduler.
+- Default scheduling uses a microtask batch with a 10ms frame budget (`DEFAULT_SCHEDULING` in `packages/markdown-v2-react/src/streaming-markdown.tsx`).
+- For smoother UI at the cost of latency, use the rAF-based preset (`DEFAULT_SCHEDULING_SMOOTH`) or pass `scheduling` explicitly.
 
 ---
 
@@ -104,6 +106,13 @@ This builds the hosted worker bundle and copies it into:
 
 - `examples/streaming-markdown-starter` is the minimal Next.js sandbox used for manual QA.
 
+### Perf baselines (local)
+
+- Latest baselines live in `docs/perf/LOCAL_BENCHMARKS.md` (naive-bayes + table-large scenarios).
+- Comparisons and guardrail notes are recorded in `docs/PERF_QUALITY_CHANGELOG.md`.
+- Re-run comparisons with:
+  - `npm run perf:compare -- --base <base> --candidate <candidate>`
+
 ---
 
 ## 7) Tabled / Future Work
@@ -113,4 +122,3 @@ The following are intentionally out-of-scope for the current “quality bridge�
 - Deep benchmark harnesses and standardized perf reporting.
 - Expanded plugin ecosystems (`presets`, `themes`, `highlighters`) beyond documentation and packaging boundaries.
 - Marketing surfaces (domain/branding site) beyond a minimal docs portal.
-

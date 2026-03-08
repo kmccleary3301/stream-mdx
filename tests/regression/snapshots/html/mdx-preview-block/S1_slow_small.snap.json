@@ -9,12 +9,40 @@
     "charRateCps": 200,
     "maxChunkChars": 32
   },
+  "runMeta": {
+    "seed": null,
+    "schedulerMode": null,
+    "usedSplitMarkers": false,
+    "fixtureTags": [
+      "mdx"
+    ]
+  },
   "totalLength": 305,
   "checkpoints": [
     {
       "id": "after-first-chunk",
       "appendedChars": 10,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 4,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 1,
+        "lastPatchToDomMs": 2.800000000745058,
+        "lastDurationMs": 2.300000000745058,
+        "meta": {
+          "fixtureId": "mdx-preview-block",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -50,12 +78,37 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
       "id": "progress-15",
       "appendedChars": 20,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 5,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 2,
+        "lastPatchToDomMs": 0.2999999988824129,
+        "lastDurationMs": 0.2999999988824129,
+        "meta": {
+          "fixtureId": "mdx-preview-block",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -91,12 +144,37 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
       "id": "event-hasMdxPending",
       "appendedChars": 30,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 6,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 3,
+        "lastPatchToDomMs": 5,
+        "lastDurationMs": 0.30000000074505806,
+        "meta": {
+          "fixtureId": "mdx-preview-block",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -132,12 +210,42 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [
+          {
+            "status": "pending",
+            "textSample": "Compiling MDX (server)…"
+          }
+        ],
+        "codeBlocks": []
       }
     },
     {
       "id": "progress-31",
       "appendedChars": 40,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 7,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 4,
+        "lastPatchToDomMs": 3.300000000745058,
+        "lastDurationMs": 0.30000000074505806,
+        "meta": {
+          "fixtureId": "mdx-preview-block",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -173,12 +281,42 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [
+          {
+            "status": "pending",
+            "textSample": "Compiling MDX (server)…"
+          }
+        ],
+        "codeBlocks": []
       }
     },
     {
       "id": "event-hasBlockquote",
       "appendedChars": 70,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 10,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 7,
+        "lastPatchToDomMs": 0.2999999988824129,
+        "lastDurationMs": 0.09999999962747097,
+        "meta": {
+          "fixtureId": "mdx-preview-block",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -214,12 +352,42 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [
+          {
+            "status": "error",
+            "textSample": "MDX failedExpected a closing tag for `<Preview>` (1:1-1:20)"
+          }
+        ],
+        "codeBlocks": []
       }
     },
     {
       "id": "progress-76",
       "appendedChars": 80,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 11,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 8,
+        "lastPatchToDomMs": 5.800000000745058,
+        "lastDurationMs": 0.2000000011175871,
+        "meta": {
+          "fixtureId": "mdx-preview-block",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -255,12 +423,42 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [
+          {
+            "status": "error",
+            "textSample": "MDX failedExpected a closing tag for `<Preview>` (1:1-1:20)"
+          }
+        ],
+        "codeBlocks": []
       }
     },
     {
       "id": "event-hasPre",
       "appendedChars": 110,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 14,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 11,
+        "lastPatchToDomMs": 11.300000000745058,
+        "lastDurationMs": 0.5,
+        "meta": {
+          "fixtureId": "mdx-preview-block",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": true,
@@ -280,7 +478,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\">MDX Preview Block</h1><div class=\"markdown-mdx error\" data-mdx-ref=\"pending\" data-mdx-status=\"error\" data-mdx-mode=\"server\"><strong>MDX failed</strong><div>Expected a closing tag for `&lt;Preview&gt;` (1:1-1:20)</div></div><blockquote class=\"markdown-blockquote\">Text that is a quote\n&lt;/Preview&gt;</blockquote><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre><code><span class=\"line\" data-line=\"1\"></span>\n</code></pre></div></div></div></div></div></div></pre></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\">MDX Preview Block</h1><div class=\"markdown-mdx error\" data-mdx-ref=\"pending\" data-mdx-status=\"error\" data-mdx-mode=\"server\"><strong>MDX failed</strong><div>Expected a closing tag for `&lt;Preview&gt;` (1:1-1:20)</div></div><blockquote class=\"markdown-blockquote\">Text that is a quote\n&lt;/Preview&gt;</blockquote><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"258629ff\" data-code-virtualized=\"false\" data-code-total-lines=\"1\" data-code-mounted-lines=\"1\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"text\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"></span></code></pre></div></div></div></div></div></div></pre></div>",
       "textSample": "MDX Preview BlockMDX failedExpected a closing tag for `<Preview>` (1:1-1:20)Text that is a quote\n</Preview>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overfl",
       "structure": {
         "topLevelTags": [
@@ -296,12 +494,47 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [
+          {
+            "status": "error",
+            "textSample": "MDX failedExpected a closing tag for `<Preview>` (1:1-1:20)"
+          }
+        ],
+        "codeBlocks": [
+          {
+            "text": "",
+            "lineCount": 0
+          }
+        ]
       }
     },
     {
       "id": "progress-153",
       "appendedChars": 160,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 19,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 16,
+        "lastPatchToDomMs": 11.800000000745058,
+        "lastDurationMs": 0.6999999992549419,
+        "meta": {
+          "fixtureId": "mdx-preview-block",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": true,
@@ -321,7 +554,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\">MDX Preview Block</h1><div class=\"markdown-mdx error\" data-mdx-ref=\"pending\" data-mdx-status=\"error\" data-mdx-mode=\"server\"><strong>MDX failed</strong><div>Expected a closing tag for `&lt;Preview&gt;` (1:1-1:20)</div></div><blockquote class=\"markdown-blockquote\">Text that is a quote\n&lt;/Preview&gt;</blockquote><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre><code><span class=\"line\" data-line=\"1\">Text that is not a quote</span>\n<span class=\"line\" data-line=\"2\">&gt; Text that is a quote</span>\n<span class=\"line\" data-line=\"3\">``</span>\n</code></pre></div></div></div></div></div></div></pre></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\">MDX Preview Block</h1><div class=\"markdown-mdx error\" data-mdx-ref=\"pending\" data-mdx-status=\"error\" data-mdx-mode=\"server\"><strong>MDX failed</strong><div>Expected a closing tag for `&lt;Preview&gt;` (1:1-1:20)</div></div><blockquote class=\"markdown-blockquote\">Text that is a quote\n&lt;/Preview&gt;</blockquote><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"258629ff\" data-code-virtualized=\"false\" data-code-total-lines=\"3\" data-code-mounted-lines=\"3\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"text\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span>\n<span class=\"line\" data-line=\"3\">``</span></code></pre></div></div></div></div></div></div></pre></div>",
       "textSample": "MDX Preview BlockMDX failedExpected a closing tag for `<Preview>` (1:1-1:20)Text that is a quote\n</Preview>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overfl",
       "structure": {
         "topLevelTags": [
@@ -337,12 +570,47 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [
+          {
+            "status": "error",
+            "textSample": "MDX failedExpected a closing tag for `<Preview>` (1:1-1:20)"
+          }
+        ],
+        "codeBlocks": [
+          {
+            "text": "Text that is not a quote\n> Text that is a quote\n``",
+            "lineCount": 3
+          }
+        ]
       }
     },
     {
       "id": "progress-229",
       "appendedChars": 230,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 26,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 23,
+        "lastPatchToDomMs": 12.300000000745058,
+        "lastDurationMs": 0.10000000149011612,
+        "meta": {
+          "fixtureId": "mdx-preview-block",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": true,
@@ -362,7 +630,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\">MDX Preview Block</h1><div class=\"markdown-mdx error\" data-mdx-ref=\"pending\" data-mdx-status=\"error\" data-mdx-mode=\"server\"><strong>MDX failed</strong><div>Expected a closing tag for `&lt;Preview&gt;` (1:1-1:20)</div></div><blockquote class=\"markdown-blockquote\">Text that is a quote\n&lt;/Preview&gt;</blockquote><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span></code></pre></div></div></div></div></div></div></pre><div class=\"markdown-mdx\" data-mdx-ref=\"pending\" data-mdx-status=\"pending\" data-mdx-mode=\"server\">Compiling MDX (server)…</div></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\">MDX Preview Block</h1><div class=\"markdown-mdx error\" data-mdx-ref=\"pending\" data-mdx-status=\"error\" data-mdx-mode=\"server\"><strong>MDX failed</strong><div>Expected a closing tag for `&lt;Preview&gt;` (1:1-1:20)</div></div><blockquote class=\"markdown-blockquote\">Text that is a quote\n&lt;/Preview&gt;</blockquote><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"258629ff\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span></code></pre></div></div></div></div></div></div></pre><div class=\"markdown-mdx\" data-mdx-ref=\"pending\" data-mdx-status=\"pending\" data-mdx-mode=\"server\">Compiling MDX (server)…</div></div>",
       "textSample": "MDX Preview BlockMDX failedExpected a closing tag for `<Preview>` (1:1-1:20)Text that is a quote\n</Preview>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overfl",
       "structure": {
         "topLevelTags": [
@@ -378,12 +646,51 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [
+          {
+            "status": "error",
+            "textSample": "MDX failedExpected a closing tag for `<Preview>` (1:1-1:20)"
+          },
+          {
+            "status": "pending",
+            "textSample": "Compiling MDX (server)…"
+          }
+        ],
+        "codeBlocks": [
+          {
+            "text": "Text that is not a quote\n> Text that is a quote",
+            "lineCount": 2
+          }
+        ]
       }
     },
     {
       "id": "event-hasMdxCompiled",
       "appendedChars": 240,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 27,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 24,
+        "lastPatchToDomMs": 0.30000000074505806,
+        "lastDurationMs": 0.2000000011175871,
+        "meta": {
+          "fixtureId": "mdx-preview-block",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": true,
@@ -403,7 +710,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\">MDX Preview Block</h1><div class=\"markdown-mdx error\" data-mdx-ref=\"pending\" data-mdx-status=\"error\" data-mdx-mode=\"server\"><strong>MDX failed</strong><div>Expected a closing tag for `&lt;Preview&gt;` (1:1-1:20)</div></div><blockquote class=\"markdown-blockquote\">Text that is a quote\n&lt;/Preview&gt;</blockquote><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span></code></pre></div></div></div></div></div></div></pre><div class=\"markdown-mdx\" data-mdx-ref=\"worker:2d55d81a\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">James Madison</li>\n<li class=\"mdx-li\">James Monroe</li>\n<li class=\"mdx-li\">John Quincy Adams</li>\n</ol></figure></div><p class=\"markdown-paragraph streaming-partial\">``</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\">MDX Preview Block</h1><div class=\"markdown-mdx error\" data-mdx-ref=\"pending\" data-mdx-status=\"error\" data-mdx-mode=\"server\"><strong>MDX failed</strong><div>Expected a closing tag for `&lt;Preview&gt;` (1:1-1:20)</div></div><blockquote class=\"markdown-blockquote\">Text that is a quote\n&lt;/Preview&gt;</blockquote><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"258629ff\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span></code></pre></div></div></div></div></div></div></pre><div class=\"markdown-mdx\" data-mdx-ref=\"worker:2d55d81a\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">James Madison</li>\n<li class=\"mdx-li\">James Monroe</li>\n<li class=\"mdx-li\">John Quincy Adams</li>\n</ol></figure></div><p class=\"markdown-paragraph streaming-partial\">``</p></div>",
       "textSample": "MDX Preview BlockMDX failedExpected a closing tag for `<Preview>` (1:1-1:20)Text that is a quote\n</Preview>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overfl",
       "structure": {
         "topLevelTags": [
@@ -419,12 +726,51 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [
+          {
+            "status": "error",
+            "textSample": "MDX failedExpected a closing tag for `<Preview>` (1:1-1:20)"
+          },
+          {
+            "status": "compiled",
+            "textSample": "\nJames Madison\nJames Monroe\nJohn Quincy Adams\n"
+          }
+        ],
+        "codeBlocks": [
+          {
+            "text": "Text that is not a quote\n> Text that is a quote",
+            "lineCount": 2
+          }
+        ]
       }
     },
     {
       "id": "progress-275",
       "appendedChars": 280,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 31,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 28,
+        "lastPatchToDomMs": 8.900000000372529,
+        "lastDurationMs": 0.8000000007450581,
+        "meta": {
+          "fixtureId": "mdx-preview-block",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": true,
@@ -444,7 +790,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\">MDX Preview Block</h1><div class=\"markdown-mdx error\" data-mdx-ref=\"pending\" data-mdx-status=\"error\" data-mdx-mode=\"server\"><strong>MDX failed</strong><div>Expected a closing tag for `&lt;Preview&gt;` (1:1-1:20)</div></div><blockquote class=\"markdown-blockquote\">Text that is a quote\n&lt;/Preview&gt;</blockquote><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span></code></pre></div></div></div></div></div></div></pre><div class=\"markdown-mdx\" data-mdx-ref=\"worker:2d55d81a\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">James Madison</li>\n<li class=\"mdx-li\">James Monroe</li>\n<li class=\"mdx-li\">John Quincy Adams</li>\n</ol></figure></div><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre><code><span class=\"line\" data-line=\"1\">1. James Madison</span>\n<span class=\"line\" data-line=\"2\">2. James Monroe</span>\n<span class=\"line\" data-line=\"3\"></span>\n</code></pre></div></div></div></div></div></div></pre></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\">MDX Preview Block</h1><div class=\"markdown-mdx error\" data-mdx-ref=\"pending\" data-mdx-status=\"error\" data-mdx-mode=\"server\"><strong>MDX failed</strong><div>Expected a closing tag for `&lt;Preview&gt;` (1:1-1:20)</div></div><blockquote class=\"markdown-blockquote\">Text that is a quote\n&lt;/Preview&gt;</blockquote><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"258629ff\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span></code></pre></div></div></div></div></div></div></pre><div class=\"markdown-mdx\" data-mdx-ref=\"worker:2d55d81a\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">James Madison</li>\n<li class=\"mdx-li\">James Monroe</li>\n<li class=\"mdx-li\">John Quincy Adams</li>\n</ol></figure></div><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"13005f04\" data-code-virtualized=\"false\" data-code-total-lines=\"3\" data-code-mounted-lines=\"3\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"text\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>1. James Madison</span></span>\n<span class=\"line\" data-line=\"2\"><span>2. James Monroe</span></span>\n<span class=\"line\" data-line=\"3\"></span></code></pre></div></div></div></div></div></div></pre></div>",
       "textSample": "MDX Preview BlockMDX failedExpected a closing tag for `<Preview>` (1:1-1:20)Text that is a quote\n</Preview>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overfl",
       "structure": {
         "topLevelTags": [
@@ -460,12 +806,55 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [
+          {
+            "status": "error",
+            "textSample": "MDX failedExpected a closing tag for `<Preview>` (1:1-1:20)"
+          },
+          {
+            "status": "compiled",
+            "textSample": "\nJames Madison\nJames Monroe\nJohn Quincy Adams\n"
+          }
+        ],
+        "codeBlocks": [
+          {
+            "text": "Text that is not a quote\n> Text that is a quote",
+            "lineCount": 2
+          },
+          {
+            "text": "1. James Madison\n2. James Monroe\n",
+            "lineCount": 3
+          }
+        ]
       }
     },
     {
       "id": "progress-305",
       "appendedChars": 305,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 34,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 31,
+        "lastPatchToDomMs": 12.700000001117587,
+        "lastDurationMs": 0.40000000037252903,
+        "meta": {
+          "fixtureId": "mdx-preview-block",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": true,
@@ -485,7 +874,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\">MDX Preview Block</h1><div class=\"markdown-mdx error\" data-mdx-ref=\"pending\" data-mdx-status=\"error\" data-mdx-mode=\"server\"><strong>MDX failed</strong><div>Expected a closing tag for `&lt;Preview&gt;` (1:1-1:20)</div></div><blockquote class=\"markdown-blockquote\">Text that is a quote\n&lt;/Preview&gt;</blockquote><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span></code></pre></div></div></div></div></div></div></pre><div class=\"markdown-mdx\" data-mdx-ref=\"worker:2d55d81a\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">James Madison</li>\n<li class=\"mdx-li\">James Monroe</li>\n<li class=\"mdx-li\">John Quincy Adams</li>\n</ol></figure></div><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre><code><span class=\"line\" data-line=\"1\">1. James Madison</span>\n<span class=\"line\" data-line=\"2\">2. James Monroe</span>\n<span class=\"line\" data-line=\"3\">3. John Quincy Adams</span>\n</code></pre></div></div></div></div></div></div></pre></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\">MDX Preview Block</h1><div class=\"markdown-mdx error\" data-mdx-ref=\"pending\" data-mdx-status=\"error\" data-mdx-mode=\"server\"><strong>MDX failed</strong><div>Expected a closing tag for `&lt;Preview&gt;` (1:1-1:20)</div></div><blockquote class=\"markdown-blockquote\">Text that is a quote\n&lt;/Preview&gt;</blockquote><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"258629ff\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span></code></pre></div></div></div></div></div></div></pre><div class=\"markdown-mdx\" data-mdx-ref=\"worker:2d55d81a\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">James Madison</li>\n<li class=\"mdx-li\">James Monroe</li>\n<li class=\"mdx-li\">John Quincy Adams</li>\n</ol></figure></div><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"13005f04\" data-code-virtualized=\"false\" data-code-total-lines=\"3\" data-code-mounted-lines=\"3\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"text\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>1. James Madison</span></span>\n<span class=\"line\" data-line=\"2\"><span>2. James Monroe</span></span>\n<span class=\"line\" data-line=\"3\">3. John Quincy Adams</span></code></pre></div></div></div></div></div></div></pre></div>",
       "textSample": "MDX Preview BlockMDX failedExpected a closing tag for `<Preview>` (1:1-1:20)Text that is a quote\n</Preview>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overfl",
       "structure": {
         "topLevelTags": [
@@ -501,6 +890,29 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [
+          {
+            "status": "error",
+            "textSample": "MDX failedExpected a closing tag for `<Preview>` (1:1-1:20)"
+          },
+          {
+            "status": "compiled",
+            "textSample": "\nJames Madison\nJames Monroe\nJohn Quincy Adams\n"
+          }
+        ],
+        "codeBlocks": [
+          {
+            "text": "Text that is not a quote\n> Text that is a quote",
+            "lineCount": 2
+          },
+          {
+            "text": "1. James Madison\n2. James Monroe\n3. John Quincy Adams",
+            "lineCount": 3
+          }
+        ]
       }
     }
   ],
@@ -517,7 +929,27 @@
       "hasBlockquote": true,
       "hasMath": false
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\">MDX Preview Block</h1><div class=\"markdown-mdx error\" data-mdx-ref=\"pending\" data-mdx-status=\"error\" data-mdx-mode=\"server\"><strong>MDX failed</strong><div>Expected a closing tag for `&lt;Preview&gt;` (1:1-1:20)</div></div><blockquote class=\"markdown-blockquote\">Text that is a quote\n&lt;/Preview&gt;</blockquote><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span></code></pre></div></div></div></div></div></div></pre><div class=\"markdown-mdx\" data-mdx-ref=\"worker:2d55d81a\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">James Madison</li>\n<li class=\"mdx-li\">James Monroe</li>\n<li class=\"mdx-li\">John Quincy Adams</li>\n</ol></figure></div><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>1. James Madison</span></span>\n<span class=\"line\" data-line=\"2\"><span>2. James Monroe</span></span>\n<span class=\"line\" data-line=\"3\"><span>3. John Quincy Adams</span></span></code></pre></div></div></div></div></div></div></pre></div>",
+    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Preview Block\">MDX Preview Block</h1><div class=\"markdown-mdx error\" data-mdx-ref=\"pending\" data-mdx-status=\"error\" data-mdx-mode=\"server\"><strong>MDX failed</strong><div>Expected a closing tag for `&lt;Preview&gt;` (1:1-1:20)</div></div><blockquote class=\"markdown-blockquote\">Text that is a quote\n&lt;/Preview&gt;</blockquote><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"258629ff\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>Text that is not a quote</span></span>\n<span class=\"line\" data-line=\"2\"><span>&gt; Text that is a quote</span></span></code></pre></div></div></div></div></div></div></pre><div class=\"markdown-mdx\" data-mdx-ref=\"worker:2d55d81a\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><ol class=\"mdx-ol\">\n<li class=\"mdx-li\">James Madison</li>\n<li class=\"mdx-li\">James Monroe</li>\n<li class=\"mdx-li\">John Quincy Adams</li>\n</ol></figure></div><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"13005f04\" data-code-virtualized=\"false\" data-code-total-lines=\"3\" data-code-mounted-lines=\"3\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>1. James Madison</span></span>\n<span class=\"line\" data-line=\"2\"><span>2. James Monroe</span></span>\n<span class=\"line\" data-line=\"3\"><span>3. John Quincy Adams</span></span></code></pre></div></div></div></div></div></div></pre></div>",
+    "runtimeState": {
+      "rendererVersion": 35,
+      "queueDepth": 0,
+      "pendingBatches": 0,
+      "workerReady": true,
+      "lastTx": 32,
+      "lastPatchToDomMs": 4.399999998509884,
+      "lastDurationMs": 1.599999999627471,
+      "meta": {
+        "fixtureId": "mdx-preview-block",
+        "scenarioId": "S1_slow_small",
+        "seed": null,
+        "schedulerMode": null
+      },
+      "storeCounters": {
+        "appendLineGuardRejected": 0,
+        "staleEpochRejected": 0,
+        "storeInvariantViolationCount": 0
+      }
+    },
     "structure": {
       "topLevelTags": [
         "div"
@@ -537,9 +969,32 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "3dce989c715c60b97803e61bf0cb39e9f39adf36138fead8bac6ea921d364a74",
+        "hash": "85689d8cb63d5f4ec69144f836d916e565ce9be8552ccc0e5667e857e1a42bbd",
         "textSample": "MDX Preview BlockMDX failedExpected a closing tag for `<Preview>` (1:1-1:20)Text that is a quote\n</Preview>[data-radix-s"
       }
-    ]
+    ],
+    "inspection": {
+      "tables": [],
+      "mdxBlocks": [
+        {
+          "status": "error",
+          "textSample": "MDX failedExpected a closing tag for `<Preview>` (1:1-1:20)"
+        },
+        {
+          "status": "compiled",
+          "textSample": "\nJames Madison\nJames Monroe\nJohn Quincy Adams\n"
+        }
+      ],
+      "codeBlocks": [
+        {
+          "text": "Text that is not a quote\n> Text that is a quote",
+          "lineCount": 2
+        },
+        {
+          "text": "1. James Madison\n2. James Monroe\n3. John Quincy Adams",
+          "lineCount": 3
+        }
+      ]
+    }
   }
 }

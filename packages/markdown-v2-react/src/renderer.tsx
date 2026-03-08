@@ -4,18 +4,18 @@ import type { Block, PatchMetrics, WorkerIn, WorkerOut } from "@stream-mdx/core"
 import type { PatchCommitSchedulerOptions, PatchFlushResult } from "./renderer/patch-commit-scheduler";
 import type { BlockComponents, CodeHighlightRangeRequest, InlineComponents, Renderer, RendererConfig } from "./types";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
-import { getBlockKey, PATCH_ROOT_ID } from "@stream-mdx/core";
 import { createDefaultWorker, releaseDefaultWorker } from "@stream-mdx/worker";
 import { ComponentRegistry } from "./components";
 import { getMDXComponentFactory, registerMDXComponents } from "./mdx-client";
 import { CodeHighlightRequestContext } from "./renderer/code-highlight-context";
-import { useRendererChildren } from "./renderer/hooks";
-import { BlockNodeRenderer } from "./renderer/node-views";
-import { isHeavyPatch, splitPatchBatch } from "./renderer/patch-batching";
+import { getPatchKind, isHeavyPatch, splitPatchBatch } from "./renderer/patch-batching";
 import { PatchCommitScheduler } from "./renderer/patch-commit-scheduler";
 import { createRendererStore } from "./renderer/store";
+import { MarkdownBlocksRenderer } from "./renderer/blocks-renderer";
+
+export { MarkdownBlocksRenderer } from "./renderer/blocks-renderer";
 
 const WORKER_DEBUG_ENABLED =
   (() => {
@@ -310,18 +310,8 @@ export class MarkdownRenderer implements Renderer {
           const receivedAt = typeof performance !== "undefined" && typeof performance.now === "function" ? performance.now() : Date.now();
           const batches = splitPatchBatch(message.patches);
           batches.forEach((batch, index) => {
-            const hasStructural = batch.some((patch) => {
-              switch (patch.op) {
-                case "insertChild":
-                case "replaceChild":
-                case "deleteChild":
-                case "reorder":
-                  return true;
-                default:
-                  return false;
-              }
-            });
-            const priority: "high" | "low" = hasStructural ? "high" : batch.some(isHeavyPatch) ? "low" : "high";
+            const hasSemantic = batch.some((patch) => getPatchKind(patch) === "semantic");
+            const priority: "high" | "low" = hasSemantic ? "high" : batch.some(isHeavyPatch) ? "low" : "high";
             this.patchScheduler.enqueue({
               patches: batch,
               meta: {
@@ -352,6 +342,10 @@ export class MarkdownRenderer implements Renderer {
 
       case "DEBUG_STATE":
         // Debug-only worker payloads; ignore in the renderer.
+        break;
+
+      case "FINALIZED":
+        // Server/CLI compile completion signal; ignore in the renderer.
         break;
 
       default:
@@ -575,84 +569,6 @@ export function useMarkdownRenderer(config: RendererConfig = {}): {
     store: renderer.getStore(),
   };
 }
-
-/**
- * React component for rendering markdown blocks
- */
-export const MarkdownBlocksRenderer = React.memo<{
-  blocks: ReadonlyArray<Block>;
-  componentRegistry: ComponentRegistry;
-  className?: string;
-  style?: React.CSSProperties;
-  store?: ReturnType<typeof createRendererStore>;
-}>(({ blocks, componentRegistry, className = "markdown-renderer", style, store }) => {
-  if (store) {
-    return React.createElement(
-      "div",
-      {
-        className,
-        style: { contain: "content", ...(style ?? {}) }, // CSS containment for performance
-      },
-      React.createElement(StoreBackedBlocks, { store, componentRegistry }),
-    );
-  }
-
-  const renderedBlocks = useMemo(() => {
-    return blocks.map((block) => {
-      const key = getBlockKey(block);
-      return React.createElement(BlockRenderer, {
-        key,
-        block,
-        componentRegistry,
-        isFinalized: block.isFinalized,
-      });
-    });
-  }, [blocks, componentRegistry]);
-
-  return React.createElement(
-    "div",
-    {
-      className,
-      style: { contain: "content", ...(style ?? {}) }, // CSS containment for performance
-    },
-    renderedBlocks,
-  );
-});
-
-const StoreBackedBlocks = React.memo<{ store: ReturnType<typeof createRendererStore>; componentRegistry: ComponentRegistry }>(
-  ({ store, componentRegistry }) => {
-    const blockIds = useRendererChildren(store, PATCH_ROOT_ID);
-    return React.createElement(
-      React.Fragment,
-      null,
-      blockIds.map((blockId) => React.createElement(BlockNodeRenderer, { key: blockId, store, blockId, registry: componentRegistry })),
-    );
-  },
-);
-
-StoreBackedBlocks.displayName = "StoreBackedBlocks";
-
-/**
- * Individual block renderer with memoization
- */
-const BlockRenderer = React.memo<{
-  block: Block;
-  componentRegistry: ComponentRegistry;
-  isFinalized: boolean;
-}>(({ block, componentRegistry, isFinalized }) => {
-  const element = useMemo(() => {
-    return componentRegistry.renderBlock(block);
-  }, [block, componentRegistry]);
-
-  // Add finalization indicator for debugging
-  const className = `markdown-block markdown-block-${block.type} ${isFinalized ? "finalized" : "dirty"}`;
-
-  return React.cloneElement(element, {
-    className: `${element.props.className || ""} ${className}`.trim(),
-    "data-block-id": block.id,
-    "data-finalized": isFinalized,
-  });
-});
 
 /**
  * Complete markdown renderer component

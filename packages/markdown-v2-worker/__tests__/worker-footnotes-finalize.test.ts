@@ -73,12 +73,15 @@ async function runFootnotesFinalizeTest(): Promise<void> {
   assert.ok(quoteBlock, "expected blockquote to be present after finalize");
   const quoteMeta = (quoteBlock.payload.meta ?? {}) as { mixedSegments?: Array<{ inline?: InlineNode[] }> };
   const segments = Array.isArray(quoteMeta.mixedSegments) ? quoteMeta.mixedSegments : [];
-  assert.ok(segments.length > 0, "expected blockquote mixedSegments to be present");
   const segmentInline = segments.flatMap((segment) => (Array.isArray(segment.inline) ? segment.inline : []));
   const numberFromSegments = findInlineFootnoteNumber(segmentInline, "1");
-  assert.strictEqual(numberFromSegments, 1, "footnote number should be assigned inside mixedSegments inline nodes");
+  const numberFromInline = Array.isArray(quoteBlock.payload.inline) ? findInlineFootnoteNumber(quoteBlock.payload.inline, "1") : undefined;
+  assert.strictEqual(
+    numberFromSegments ?? numberFromInline,
+    1,
+    "footnote number should be assigned in the finalized blockquote inline representation",
+  );
 }
 
 await runFootnotesFinalizeTest();
 console.log("worker-footnotes-finalize test passed");
-

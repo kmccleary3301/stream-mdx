@@ -4,7 +4,19 @@ import crypto from "node:crypto";
 
 import { chromium } from "@playwright/test";
 
-import { getFixtures, loadScenarioFiles, readFixtureFile, splitMarkers, buildChunks, progressCheckpoints, shouldRunScenario, isSplitScenario } from "./utils";
+import {
+  getFixtures,
+  loadScenarioFiles,
+  readFixtureFile,
+  splitMarkers,
+  buildChunks,
+  buildSeededChunks,
+  progressCheckpoints,
+  shouldRunScenario,
+  isSplitScenario,
+  firstDiffIndex,
+  diffContext,
+} from "./utils";
 import type { RegressionScenario } from "./utils";
 
 const UPDATE = process.env.UPDATE_SNAPSHOTS === "1" || process.env.UPDATE_SNAPSHOTS === "true";
@@ -16,22 +28,6 @@ function getArg(flag: string): string | null {
   const index = process.argv.indexOf(flag);
   if (index === -1) return null;
   return process.argv[index + 1] ?? null;
-}
-
-function firstDiffIndex(a: string, b: string): number {
-  const len = Math.min(a.length, b.length);
-  for (let i = 0; i < len; i += 1) {
-    if (a[i] !== b[i]) return i;
-  }
-  if (a.length !== b.length) return len;
-  return -1;
-}
-
-function diffContext(value: string, index: number, span = 80): string {
-  if (index < 0) return "";
-  const start = Math.max(0, index - span);
-  const end = Math.min(value.length, index + span);
-  return value.slice(start, end);
 }
 
 async function ensureDir(dir: string): Promise<void> {
@@ -59,6 +55,22 @@ type SnapshotCheckpoint = {
   id: string;
   appendedChars: number;
   rootChildCount: number;
+  runtimeState?: {
+    rendererVersion: number;
+    queueDepth: number;
+    pendingBatches: number;
+    workerReady: boolean;
+    lastTx: number | null;
+    lastPatchToDomMs: number | null;
+    lastDurationMs: number | null;
+    meta?: {
+      fixtureId?: string;
+      scenarioId?: string;
+      seed?: string;
+      schedulerMode?: string;
+    };
+    storeCounters?: Record<string, number>;
+  };
   selectors: Record<string, boolean>;
   counts?: Record<string, number>;
   html: string;
@@ -67,6 +79,23 @@ type SnapshotCheckpoint = {
     topLevelTags: string[];
     counts: Record<string, number>;
   };
+  inspection?: RenderInspection;
+};
+
+type RenderInspection = {
+  tables: Array<{
+    headerColumns: number;
+    rowCellCounts: number[];
+    emptyBodyCellCount: number;
+  }>;
+  mdxBlocks: Array<{
+    status: string | null;
+    textSample: string;
+  }>;
+  codeBlocks: Array<{
+    text: string;
+    lineCount: number;
+  }>;
 };
 
 type HtmlSnapshot = {
@@ -74,6 +103,12 @@ type HtmlSnapshot = {
   fixtureTitle: string;
   scenarioId: string;
   scenario: RegressionScenario;
+  runMeta?: {
+    seed?: string | null;
+    schedulerMode?: string | null;
+    usedSplitMarkers: boolean;
+    fixtureTags: string[];
+  };
   totalLength: number;
   checkpoints: SnapshotCheckpoint[];
   final: {
@@ -82,6 +117,7 @@ type HtmlSnapshot = {
     rootChildCount: number;
     selectors: Record<string, boolean>;
     html: string;
+    runtimeState?: SnapshotCheckpoint["runtimeState"];
     structure?: {
       topLevelTags: string[];
       counts: Record<string, number>;
@@ -92,6 +128,7 @@ type HtmlSnapshot = {
       hash: string;
       textSample: string;
     }>;
+    inspection?: RenderInspection;
   };
 };
 
@@ -128,6 +165,8 @@ function compareSnapshots(expected: HtmlSnapshot, received: HtmlSnapshot): { ok:
         ok: false,
         message: [
           `HTML mismatch at checkpoint ${exp.id}`,
+          `expected lastTx: ${exp.runtimeState?.lastTx ?? "n/a"}`,
+          `received lastTx: ${rec.runtimeState?.lastTx ?? "n/a"}`,
           `first diff index: ${index}`,
           `expected context: ${expectedContext}`,
           `received context: ${receivedContext}`,
@@ -202,6 +241,8 @@ function compareSnapshots(expected: HtmlSnapshot, received: HtmlSnapshot): { ok:
       ok: false,
       message: [
         `Final HTML mismatch`,
+        `expected lastTx: ${expected.final.runtimeState?.lastTx ?? "n/a"}`,
+        `received lastTx: ${received.final.runtimeState?.lastTx ?? "n/a"}`,
         `first diff index: ${index}`,
         `expected context: ${expectedContext}`,
         `received context: ${receivedContext}`,
@@ -253,9 +294,158 @@ async function readRootChildren(page: import("@playwright/test").Page): Promise<
   });
 }
 
+async function readInspection(page: import("@playwright/test").Page): Promise<RenderInspection> {
+  return await page.evaluate(() => {
+    const root = document.getElementById("regression-root");
+    if (!root) {
+      return { tables: [], mdxBlocks: [], codeBlocks: [] };
+    }
+
+    const tables = Array.from(root.querySelectorAll("table")).map((table) => {
+      const headerRow = table.querySelector("thead tr");
+      const headerColumns = headerRow ? headerRow.querySelectorAll("th,td").length : 0;
+      const bodyRows = Array.from(table.querySelectorAll("tbody tr"));
+      const rowCellCounts = bodyRows.map((row) => row.querySelectorAll("td,th").length);
+      let emptyBodyCellCount = 0;
+      for (const row of bodyRows) {
+        for (const cell of Array.from(row.querySelectorAll("td,th"))) {
+          if ((cell.textContent ?? "").trim().length === 0) {
+            emptyBodyCellCount += 1;
+          }
+        }
+      }
+      return { headerColumns, rowCellCounts, emptyBodyCellCount };
+    });
+
+    const mdxBlocks = Array.from(root.querySelectorAll(".markdown-mdx")).map((node) => ({
+      status: node instanceof HTMLElement ? node.dataset.mdxStatus ?? null : null,
+      textSample: (node.textContent ?? "").slice(0, 160),
+    }));
+
+    const codeBlocks = Array.from(root.querySelectorAll("pre code")).map((node) => {
+      const text = (node.textContent ?? "").replace(/\r\n?/g, "\n");
+      return {
+        text,
+        lineCount: text.length === 0 ? 0 : text.split("\n").length,
+      };
+    });
+
+    return { tables, mdxBlocks, codeBlocks };
+  });
+}
+
+function normalizeCodeText(text: string): string {
+  return text.replace(/\r\n?/g, "\n");
+}
+
+function getSchedulerPreset(mode: string | null): Record<string, unknown> | null {
+  if (!mode) return null;
+  const presets: Record<string, Record<string, unknown>> = {
+    smooth: {
+      scheduling: {
+        batch: "rAF",
+        frameBudgetMs: 6,
+        maxBatchesPerFlush: 4,
+        lowPriorityFrameBudgetMs: 3,
+        maxLowPriorityBatchesPerFlush: 1,
+        urgentQueueThreshold: 2,
+      },
+    },
+    timeout: {
+      scheduling: {
+        batch: "timeout",
+        frameBudgetMs: 8,
+        maxBatchesPerFlush: 8,
+        lowPriorityFrameBudgetMs: 4,
+        maxLowPriorityBatchesPerFlush: 2,
+        urgentQueueThreshold: 3,
+      },
+    },
+    microtask: {
+      scheduling: {
+        batch: "microtask",
+        frameBudgetMs: 10,
+        maxBatchesPerFlush: 12,
+        lowPriorityFrameBudgetMs: 6,
+        maxLowPriorityBatchesPerFlush: 2,
+        urgentQueueThreshold: 4,
+      },
+    },
+  };
+  return presets[mode] ?? null;
+}
+
+function validateTableInspection(
+  fixture: ReturnType<typeof getFixtures>[number],
+  inspection: RenderInspection,
+  label: string,
+  failures: string[],
+): void {
+  if (!fixture.forbidIncompleteTableRows) return;
+  const expectedColumns = fixture.expectedTableColumnCount ?? null;
+  inspection.tables.forEach((table, tableIndex) => {
+    const targetColumns = expectedColumns ?? table.headerColumns;
+    if (targetColumns <= 0) {
+      failures.push(`${label}: table ${tableIndex} has no header columns.`);
+      return;
+    }
+    if (table.headerColumns > 0 && table.headerColumns !== targetColumns) {
+      failures.push(`${label}: table ${tableIndex} header column mismatch (${table.headerColumns} vs ${targetColumns}).`);
+    }
+    table.rowCellCounts.forEach((cellCount, rowIndex) => {
+      if (cellCount !== targetColumns) {
+        failures.push(`${label}: table ${tableIndex} row ${rowIndex} cell count mismatch (${cellCount} vs ${targetColumns}).`);
+      }
+    });
+  });
+}
+
+function validateCodePrefixInvariant(
+  fixture: ReturnType<typeof getFixtures>[number],
+  checkpoints: SnapshotCheckpoint[],
+  finalInspection: RenderInspection,
+  failures: string[],
+): void {
+  if (!fixture.enforceCodeTextPrefix) return;
+  const finalCodeBlocks = finalInspection.codeBlocks.map((block) => normalizeCodeText(block.text));
+  if (typeof fixture.expectedCodeBlockCount === "number" && finalCodeBlocks.length !== fixture.expectedCodeBlockCount) {
+    failures.push(`final code block count mismatch: expected ${fixture.expectedCodeBlockCount}, got ${finalCodeBlocks.length}.`);
+  }
+
+  const previousLineCounts = new Map<number, number>();
+  for (const checkpoint of checkpoints) {
+    const codeBlocks = checkpoint.inspection?.codeBlocks ?? [];
+    if (codeBlocks.length > finalCodeBlocks.length) {
+      failures.push(`${checkpoint.id}: code block count exceeded final count (${codeBlocks.length} > ${finalCodeBlocks.length}).`);
+      continue;
+    }
+    codeBlocks.forEach((block, index) => {
+      const currentText = normalizeCodeText(block.text);
+      const finalText = finalCodeBlocks[index] ?? "";
+      if (finalText && !finalText.startsWith(currentText)) {
+        failures.push(`${checkpoint.id}: code block ${index} is not a prefix of final rendered text.`);
+      }
+      const previousLineCount = previousLineCounts.get(index) ?? 0;
+      if (block.lineCount < previousLineCount) {
+        failures.push(`${checkpoint.id}: code block ${index} line count regressed (${previousLineCount} -> ${block.lineCount}).`);
+      }
+      previousLineCounts.set(index, block.lineCount);
+    });
+  }
+}
+
 async function run(): Promise<void> {
   const fixtureFilter = getArg("--filter");
   const scenarioFilter = getArg("--scenario");
+  const seed = getArg("--seed");
+  const seedCountRaw = getArg("--seed-count");
+  const schedulerMode = getArg("--scheduler");
+  const seedCount = seedCountRaw ? Math.max(1, Number.parseInt(seedCountRaw, 10) || 1) : 1;
+  const requestedSeeds =
+    seedCount > 1
+      ? Array.from({ length: seedCount }, (_, index) => `${seed ?? "seed"}-${index + 1}`)
+      : [seed ?? null];
+  const replayMode = requestedSeeds.some((value) => value !== null) || Boolean(schedulerMode);
 
   const fixtures = getFixtures().filter((fixture) => (fixtureFilter ? fixture.id.includes(fixtureFilter) : true));
   const scenarios = (await loadScenarioFiles()).filter((scenario) => (scenarioFilter ? scenario.id.includes(scenarioFilter) : true));
@@ -318,311 +508,377 @@ async function run(): Promise<void> {
   for (const fixture of fixtures) {
     currentFixtureId = fixture.id;
     suppressNameNotResolved = (fixture.tags ?? []).includes("mdx");
-    const enforcePrefixInvariant = (fixture.tags ?? []).includes("prefix-safe");
     const rawContent = await readFixtureFile(fixture.file);
 
     for (const scenario of scenarios) {
       if (!shouldRunScenario(fixture, scenario)) continue;
-      let scenarioFailed = false;
 
       const split = splitMarkers(rawContent);
       const text = split ? split.text : rawContent;
-      const chunks = isSplitScenario(scenario) && split ? split.chunks : buildChunks(text, scenario);
-      const tableTargetPct = fixture.expectTableByPct;
-      const tableTargetChars =
-        typeof tableTargetPct === "number" && scenario.maxChunkChars <= 512
-          ? Math.max(1, Math.round(text.length * tableTargetPct))
-          : null;
+      const snapshotPath = path.join(SNAPSHOT_ROOT, fixture.id, `${scenario.id}.snap.json`);
+      const expected = await loadSnapshot(snapshotPath);
+      let scenarioFailed = false;
+      let baselineReplaySnapshot: HtmlSnapshot | null = null;
 
-      const progressTargets = progressCheckpoints(text.length);
-      const checkpointTargets = [...progressTargets];
-      const checkpointSet = new Set<number>();
+      for (const activeSeed of requestedSeeds) {
+        const chunks = isSplitScenario(scenario) && split
+          ? split.chunks
+          : activeSeed
+            ? buildSeededChunks(text, scenario, `${fixture.id}:${scenario.id}:${activeSeed}`)
+            : buildChunks(text, scenario);
+        const enforcePrefixInvariant = !["article", "footnotes", "html", "lists", "math", "mdx", "table"].some((tag) =>
+          (fixture.tags ?? []).includes(tag),
+        );
+        const tableTargetPct = fixture.expectTableByPct;
+        const tableTargetChars =
+          typeof tableTargetPct === "number" && scenario.maxChunkChars <= 512
+            ? Math.max(1, Math.round(text.length * tableTargetPct))
+            : null;
+        const progressTargets = progressCheckpoints(text.length);
+        const checkpointTargets = [...progressTargets];
+        const checkpointSet = new Set<number>();
+        const seenEvents: Record<string, boolean> = {
+          hasTable: false,
+          hasPre: false,
+          hasFootnotes: false,
+          hasMdxPending: false,
+          hasMdxCompiled: false,
+          hasBlockquote: false,
+          hasMath: false,
+        };
+        const checkpoints: SnapshotCheckpoint[] = [];
 
-      const seenEvents: Record<string, boolean> = {
-        hasTable: false,
-        hasPre: false,
-        hasFootnotes: false,
-        hasMdxPending: false,
-        hasMdxCompiled: false,
-        hasBlockquote: false,
-        hasMath: false,
-      };
+        await page.goto(`${BASE_URL}/regression/html/`, { waitUntil: "networkidle" });
+        await page.waitForFunction(() => Boolean(window.__streammdxRegression));
+        await page.evaluate(
+          async ({ fixtureId, scenarioId, nextSeed, nextSchedulerMode, preset }) => {
+            window.__streammdxRegression?.setMeta({
+              fixtureId,
+              scenarioId,
+              seed: nextSeed,
+              schedulerMode: nextSchedulerMode,
+            });
+            if (preset && window.__streammdxRegression?.setConfig) {
+              await window.__streammdxRegression.setConfig(preset);
+            }
+          },
+          {
+            fixtureId: fixture.id,
+            scenarioId: scenario.id,
+            nextSeed: activeSeed,
+            nextSchedulerMode: schedulerMode,
+            preset: getSchedulerPreset(schedulerMode),
+          },
+        );
+        await page.evaluate(() => window.__streammdxRegression?.waitForReady());
 
-      const checkpoints: SnapshotCheckpoint[] = [];
+        let appended = 0;
+        let firstChunkCaptured = false;
+        let tableFirstSeenAt: number | null = null;
+        let lastCheckpointText = "";
+        let lastCheckpointChildCount = 0;
+        const streamInvariantFailures: string[] = [];
 
-      await page.goto(`${BASE_URL}/regression/html/`, { waitUntil: "networkidle" });
-      await page.waitForFunction(() => Boolean(window.__streammdxRegression));
-      await page.evaluate(
-        ({ fixtureId, scenarioId }) => window.__streammdxRegression?.setMeta({ fixtureId, scenarioId }),
-        { fixtureId: fixture.id, scenarioId: scenario.id },
-      );
-      await page.evaluate(() => window.__streammdxRegression?.waitForReady());
-
-      let appended = 0;
-      let firstChunkCaptured = false;
-      let tableFirstSeenAt: number | null = null;
-      let lastCheckpointText = "";
-      let lastCheckpointChildCount = 0;
-      const streamInvariantFailures: string[] = [];
-
-      for (const chunk of chunks) {
-        await page.evaluate((value) => window.__streammdxRegression?.appendAndFlush(value), chunk);
-        appended += chunk.length;
-
-        const summary = await readSummary(page);
-        if (tableFirstSeenAt === null && summary.selectors.hasTable) {
-          tableFirstSeenAt = appended;
-        }
-        if (summary.counts?.table && tableFirstSeenAt === null) {
-          tableFirstSeenAt = appended;
-        }
-
-        if (!firstChunkCaptured) {
+        const captureCheckpoint = async (
+          id: string,
+          summary: { rootChildCount: number; selectors: Record<string, boolean>; counts?: Record<string, number> },
+        ) => {
           const html = await page.evaluate(() => window.__streammdxRegression?.getHtml());
+          const runtimeState = (await page.evaluate(
+            () => window.__streammdxRegression?.getRuntimeState?.(),
+          )) as SnapshotCheckpoint["runtimeState"];
           const structure = await readStructure(page);
+          const inspection = await readInspection(page);
           const textContent = await readRootText(page);
           if (enforcePrefixInvariant && !summary.selectors.hasMdxPending && lastCheckpointText && !textContent.startsWith(lastCheckpointText)) {
-            streamInvariantFailures.push(`text prefix invariant failed at after-first-chunk (${fixture.id}/${scenario.id})`);
+            streamInvariantFailures.push(`text prefix invariant failed at ${id} (${fixture.id}/${scenario.id}).`);
           }
           if (summary.rootChildCount < lastCheckpointChildCount) {
-            streamInvariantFailures.push(
-              `root child count decreased at after-first-chunk (${lastCheckpointChildCount} -> ${summary.rootChildCount})`,
-            );
+            streamInvariantFailures.push(`${id}: root child count decreased (${lastCheckpointChildCount} -> ${summary.rootChildCount}).`);
+          }
+          if (fixture.forbidIncompleteTableRowsDuringStreaming) {
+            validateTableInspection(fixture, inspection, id, streamInvariantFailures);
           }
           lastCheckpointText = textContent;
           lastCheckpointChildCount = summary.rootChildCount;
           checkpoints.push({
-            id: "after-first-chunk",
+            id,
             appendedChars: appended,
             rootChildCount: summary.rootChildCount,
+            runtimeState,
             selectors: summary.selectors,
             counts: summary.counts,
             html: html ?? "",
             textSample: textContent.slice(0, 200),
             structure,
+            inspection,
           });
-          firstChunkCaptured = true;
-        }
+        };
 
-        while (checkpointTargets.length > 0 && appended >= checkpointTargets[0]) {
-          const target = checkpointTargets.shift();
-          if (target !== undefined && !checkpointSet.has(target)) {
-            checkpointSet.add(target);
-            const html = await page.evaluate(() => window.__streammdxRegression?.getHtml());
-            const structure = await readStructure(page);
-            const textContent = await readRootText(page);
-            if (enforcePrefixInvariant && !summary.selectors.hasMdxPending && lastCheckpointText && !textContent.startsWith(lastCheckpointText)) {
-              streamInvariantFailures.push(`text prefix invariant failed at progress-${target} (${fixture.id}/${scenario.id})`);
+        for (const chunk of chunks) {
+          await page.evaluate((value) => window.__streammdxRegression?.appendAndFlush(value), chunk);
+          appended += chunk.length;
+
+          const summary = await readSummary(page);
+          if (tableFirstSeenAt === null && summary.selectors.hasTable) {
+            tableFirstSeenAt = appended;
+          }
+          if (summary.counts?.table && tableFirstSeenAt === null) {
+            tableFirstSeenAt = appended;
+          }
+
+          if (!firstChunkCaptured) {
+            await captureCheckpoint("after-first-chunk", summary);
+            firstChunkCaptured = true;
+          }
+
+          while (checkpointTargets.length > 0 && appended >= checkpointTargets[0]) {
+            const target = checkpointTargets.shift();
+            if (target !== undefined && !checkpointSet.has(target)) {
+              checkpointSet.add(target);
+              await captureCheckpoint(`progress-${target}`, summary);
             }
-            if (summary.rootChildCount < lastCheckpointChildCount) {
-              streamInvariantFailures.push(
-                `root child count decreased at progress-${target} (${lastCheckpointChildCount} -> ${summary.rootChildCount})`,
-              );
+          }
+
+          for (const [key, value] of Object.entries(summary.selectors)) {
+            if (value && !seenEvents[key]) {
+              seenEvents[key] = true;
+              await captureCheckpoint(`event-${key}`, summary);
             }
-            lastCheckpointText = textContent;
-            lastCheckpointChildCount = summary.rootChildCount;
-            checkpoints.push({
-              id: `progress-${target}`,
-              appendedChars: appended,
-              rootChildCount: summary.rootChildCount,
-              selectors: summary.selectors,
-              counts: summary.counts,
-              html: html ?? "",
-              textSample: textContent.slice(0, 200),
-              structure,
-            });
           }
         }
 
-        for (const [key, value] of Object.entries(summary.selectors)) {
-          if (value && !seenEvents[key]) {
-            seenEvents[key] = true;
-            const html = await page.evaluate(() => window.__streammdxRegression?.getHtml());
-            const structure = await readStructure(page);
-            const textContent = await readRootText(page);
-            if (enforcePrefixInvariant && !summary.selectors.hasMdxPending && lastCheckpointText && !textContent.startsWith(lastCheckpointText)) {
-              streamInvariantFailures.push(`text prefix invariant failed at event-${key} (${fixture.id}/${scenario.id})`);
-            }
-            if (summary.rootChildCount < lastCheckpointChildCount) {
-              streamInvariantFailures.push(
-                `root child count decreased at event-${key} (${lastCheckpointChildCount} -> ${summary.rootChildCount})`,
-              );
-            }
-            lastCheckpointText = textContent;
-            lastCheckpointChildCount = summary.rootChildCount;
-            checkpoints.push({
-              id: `event-${key}`,
-              appendedChars: appended,
-              rootChildCount: summary.rootChildCount,
-              selectors: summary.selectors,
-              counts: summary.counts,
-              html: html ?? "",
-              textSample: textContent.slice(0, 200),
-              structure,
+        await page.evaluate(() => window.__streammdxRegression?.finalizeAndFlush());
+
+        if (fixture.tags?.includes("mdx")) {
+          try {
+            await page.waitForFunction(() => {
+              const summary = window.__streammdxRegression?.getSummary();
+              if (!summary) return false;
+              return summary.selectors.hasMdxCompiled && !summary.selectors.hasMdxPending;
             });
+          } catch (error) {
+            failures += 1;
+            scenarioFailed = true;
+            console.error(`\nMDX compile timeout for ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}`);
+            console.error(error);
           }
         }
-      }
 
-      await page.evaluate(() => window.__streammdxRegression?.finalizeAndFlush());
-
-      if (fixture.tags?.includes("mdx")) {
-        try {
-          await page.waitForFunction(() => {
-            const summary = window.__streammdxRegression?.getSummary();
-            if (!summary) return false;
-            return summary.selectors.hasMdxCompiled && !summary.selectors.hasMdxPending;
-          });
-        } catch (error) {
+        const invariantViolations = (await page.evaluate(
+          () => window.__streammdxRegression?.getInvariantViolations?.() ?? [],
+        )) as { message: string }[];
+        if (streamInvariantFailures.length > 0) {
           failures += 1;
           scenarioFailed = true;
-          console.error(`\nMDX compile timeout for ${fixture.id}/${scenario.id}`);
-          console.error(error);
+          console.error(`\nStreaming invariant violations for ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}:`);
+          for (const message of streamInvariantFailures) {
+            console.error(`- ${message}`);
+          }
         }
-      }
+        if (invariantViolations.length > 0) {
+          failures += 1;
+          scenarioFailed = true;
+          console.error(`\nInvariant violations for ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}:`);
+          for (const violation of invariantViolations) {
+            console.error(`- ${violation.message}`);
+          }
+        }
 
-      const invariantViolations = (await page.evaluate(
-        () => window.__streammdxRegression?.getInvariantViolations?.() ?? [],
-      )) as { message: string }[];
-      if (streamInvariantFailures.length > 0) {
-        failures += 1;
-        scenarioFailed = true;
-        console.error(`\nStreaming invariant violations for ${fixture.id}/${scenario.id}:`);
-        for (const message of streamInvariantFailures) {
-          console.error(`- ${message}`);
-        }
-      }
-      if (invariantViolations.length > 0) {
-        failures += 1;
-        scenarioFailed = true;
-        console.error(`\nInvariant violations for ${fixture.id}/${scenario.id}:`);
-        for (const violation of invariantViolations) {
-          console.error(`- ${violation.message}`);
-        }
-      }
+        const finalSummary = (await page.evaluate(() => window.__streammdxRegression?.getSummary())) as {
+          rootChildCount: number;
+          selectors: Record<string, boolean>;
+          counts?: Record<string, number>;
+        };
+        const finalHtml = await page.evaluate(() => window.__streammdxRegression?.getHtml());
+        const finalRuntimeState = (await page.evaluate(
+          () => window.__streammdxRegression?.getRuntimeState?.(),
+        )) as SnapshotCheckpoint["runtimeState"];
+        const finalStructure = await readStructure(page);
+        const finalInspection = await readInspection(page);
+        const rootChildren = await readRootChildren(page);
+        const childHashes = rootChildren.map((child, index) => ({
+          index,
+          tag: child.tag,
+          hash: hashHtml(child.html),
+          textSample: child.text,
+        }));
+        const htmlInvariantFailures: string[] = [];
+        const finalHtmlValue = finalHtml ?? "";
+        const rawBlockMathNeedle = '<p class="markdown-paragraph">$$';
+        const rawInlineCodeNeedle =
+          "`this is a really really really really really really really really really really really really really really really really really really really really really long inline code span`";
+        const isSanitizationFixture = (fixture.tags ?? []).includes("sanitization");
+        const emptyNestedListCount = fixture.forbidEmptyNestedLists
+          ? await page.evaluate(() => {
+              const root = document.getElementById("regression-root");
+              if (!root) return 0;
+              const nestedLists = root.querySelectorAll(
+                ".markdown-list-item-children > ol.markdown-list, .markdown-list-item-children > ul.markdown-list",
+              );
+              let emptyCount = 0;
+              for (const list of nestedLists) {
+                const hasItems = Array.from(list.children).some(
+                  (child) => child instanceof HTMLElement && child.classList.contains("markdown-list-item"),
+                );
+                if (!hasItems) emptyCount += 1;
+              }
+              return emptyCount;
+            })
+          : 0;
 
-      const finalSummary = (await page.evaluate(() => window.__streammdxRegression?.getSummary())) as {
-        rootChildCount: number;
-        selectors: Record<string, boolean>;
-        counts?: Record<string, number>;
-      };
-      const finalHtml = await page.evaluate(() => window.__streammdxRegression?.getHtml());
-      const finalStructure = await readStructure(page);
-      const rootChildren = await readRootChildren(page);
-      const childHashes = rootChildren.map((child, index) => ({
-        index,
-        tag: child.tag,
-        hash: hashHtml(child.html),
-        textSample: child.text,
-      }));
-      const htmlInvariantFailures: string[] = [];
-      const finalHtmlValue = finalHtml ?? "";
-      const rawBlockMathNeedle = '<p class="markdown-paragraph">$$';
-      const rawInlineCodeNeedle =
-        "`this is a really really really really really really really really really really really really really really really really really really really really really long inline code span`";
-      const emptyListNeedle =
-        '<div class="markdown-list-item-children"><ul class="markdown-list unordered" data-list-depth="1"></ul></div>';
-      const isSanitizationFixture = (fixture.tags ?? []).includes("sanitization");
-
-      if (finalHtmlValue.includes(rawBlockMathNeedle)) {
-        htmlInvariantFailures.push("raw block math detected in paragraph (expected KaTeX output).");
-      }
-      if (finalHtmlValue.includes(rawInlineCodeNeedle)) {
-        htmlInvariantFailures.push("raw backtick inline code detected (expected <code> output).");
-      }
-      if (finalHtmlValue.includes(emptyListNeedle)) {
-        htmlInvariantFailures.push("empty nested list container detected.");
-      }
-      if (isSanitizationFixture) {
-        if (finalHtmlValue.includes("<script")) {
-          htmlInvariantFailures.push("sanitization failure: <script> tag present.");
+        if (finalHtmlValue.includes(rawBlockMathNeedle)) {
+          htmlInvariantFailures.push("raw block math detected in paragraph (expected KaTeX output).");
         }
-        if (finalHtmlValue.includes("onerror=")) {
-          htmlInvariantFailures.push("sanitization failure: onerror attribute present.");
+        if (finalHtmlValue.includes(rawInlineCodeNeedle)) {
+          htmlInvariantFailures.push("raw backtick inline code detected (expected <code> output).");
         }
-        if (finalHtmlValue.includes("onclick=")) {
-          htmlInvariantFailures.push("sanitization failure: onclick attribute present.");
+        if (emptyNestedListCount > 0) {
+          htmlInvariantFailures.push(`empty nested list container detected (${emptyNestedListCount}).`);
         }
-      }
-      if (tableTargetChars !== null) {
-        if (tableFirstSeenAt === null || tableFirstSeenAt > tableTargetChars) {
+        if (isSanitizationFixture) {
+          if (finalHtmlValue.includes("<script")) {
+            htmlInvariantFailures.push("sanitization failure: <script> tag present.");
+          }
+          if (finalHtmlValue.includes("onerror=")) {
+            htmlInvariantFailures.push("sanitization failure: onerror attribute present.");
+          }
+          if (finalHtmlValue.includes("onclick=")) {
+            htmlInvariantFailures.push("sanitization failure: onclick attribute present.");
+          }
+        }
+        if (tableTargetChars !== null && (tableFirstSeenAt === null || tableFirstSeenAt > tableTargetChars)) {
           htmlInvariantFailures.push(
             `table was not visible by ${Math.round(tableTargetPct! * 100)}% (first seen at ${tableFirstSeenAt ?? "never"} / ${tableTargetChars} chars).`,
           );
         }
-      }
-      if (htmlInvariantFailures.length > 0) {
-        failures += 1;
-        scenarioFailed = true;
-        console.error(`\nHTML invariant violations for ${fixture.id}/${scenario.id}:`);
-        for (const message of htmlInvariantFailures) {
-          console.error(`- ${message}`);
+        if (typeof fixture.expectedListItemCount === "number") {
+          const listItemCount = await page.evaluate(() => {
+            const root = document.getElementById("regression-root");
+            return root?.querySelectorAll("li").length ?? 0;
+          });
+          if (listItemCount !== fixture.expectedListItemCount) {
+            htmlInvariantFailures.push(`list item count mismatch: expected ${fixture.expectedListItemCount}, got ${listItemCount}.`);
+          }
         }
-      }
+        if (fixture.requiredTextFragments?.length) {
+          const missingFragments = fixture.requiredTextFragments.filter((fragment) => !finalHtmlValue.includes(fragment));
+          if (missingFragments.length > 0) {
+            htmlInvariantFailures.push(`missing required text fragments: ${missingFragments.join(", ")}.`);
+          }
+        }
+        if (typeof fixture.expectedMdxBlockCount === "number" && finalInspection.mdxBlocks.length !== fixture.expectedMdxBlockCount) {
+          htmlInvariantFailures.push(
+            `final mdx block count mismatch: expected ${fixture.expectedMdxBlockCount}, got ${finalInspection.mdxBlocks.length}.`,
+          );
+        }
+        validateTableInspection(fixture, finalInspection, "after-finalize", htmlInvariantFailures);
+        validateCodePrefixInvariant(fixture, checkpoints, finalInspection, htmlInvariantFailures);
 
-      const requiredSelectors = fixture.requiredSelectors ?? [];
-      if (requiredSelectors.length > 0) {
-        const missing = (await page.evaluate((selectors) => {
-          const root = document.getElementById("regression-root");
-          if (!root) return selectors;
-          return selectors.filter((selector) => !root.querySelector(selector));
-        }, requiredSelectors)) as string[];
-        if (missing.length > 0) {
+        if (htmlInvariantFailures.length > 0) {
           failures += 1;
           scenarioFailed = true;
-          console.error(`\nMissing required selectors for ${fixture.id}/${scenario.id}: ${missing.join(", ")}`);
+          console.error(`\nHTML invariant violations for ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}:`);
+          for (const message of htmlInvariantFailures) {
+            console.error(`- ${message}`);
+          }
         }
-      }
 
-      const snapshot: HtmlSnapshot = {
-        fixtureId: fixture.id,
-        fixtureTitle: fixture.title,
-        scenarioId: scenario.id,
-        scenario,
-        totalLength: text.length,
-        checkpoints,
-        final: {
-          id: "after-finalize",
-          appendedChars: appended,
-          rootChildCount: finalSummary.rootChildCount,
-          selectors: finalSummary.selectors,
-          html: finalHtml ?? "",
-          structure: finalStructure,
-          children: childHashes,
-        },
-      };
-
-      const snapshotPath = path.join(SNAPSHOT_ROOT, fixture.id, `${scenario.id}.snap.json`);
-
-      if (UPDATE) {
-        if (scenarioFailed) {
-          console.warn(`skipped update for ${fixture.id}/${scenario.id} due to failures`);
-        } else {
-          await writeSnapshot(snapshotPath, snapshot);
-          console.log(`updated ${fixture.id}/${scenario.id}`);
+        const requiredSelectors = fixture.requiredSelectors ?? [];
+        if (requiredSelectors.length > 0) {
+          const missing = (await page.evaluate((selectors) => {
+            const root = document.getElementById("regression-root");
+            if (!root) return selectors;
+            return selectors.filter((selector) => !root.querySelector(selector));
+          }, requiredSelectors)) as string[];
+          if (missing.length > 0) {
+            failures += 1;
+            scenarioFailed = true;
+            console.error(`\nMissing required selectors for ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}: ${missing.join(", ")}`);
+          }
         }
-        continue;
-      }
 
-      const expected = await loadSnapshot(snapshotPath);
-      if (!expected) {
-        console.error(`missing snapshot for ${fixture.id}/${scenario.id}`);
-        failures += 1;
-        continue;
-      }
+        const snapshot: HtmlSnapshot = {
+          fixtureId: fixture.id,
+          fixtureTitle: fixture.title,
+          scenarioId: scenario.id,
+          scenario,
+          runMeta: {
+            seed: activeSeed,
+            schedulerMode,
+            usedSplitMarkers: isSplitScenario(scenario) && Boolean(split),
+            fixtureTags: [...(fixture.tags ?? [])],
+          },
+          totalLength: text.length,
+          checkpoints,
+          final: {
+            id: "after-finalize",
+            appendedChars: appended,
+            rootChildCount: finalSummary.rootChildCount,
+            selectors: finalSummary.selectors,
+            html: finalHtml ?? "",
+            runtimeState: finalRuntimeState,
+            structure: finalStructure,
+            children: childHashes,
+            inspection: finalInspection,
+          },
+        };
 
-      const result = compareSnapshots(expected, snapshot);
-      if (!result.ok) {
-        failures += 1;
-        const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-        const artifactDir = path.join(ARTIFACT_ROOT, stamp, fixture.id, scenario.id);
-        await ensureDir(artifactDir);
-        await fs.writeFile(path.join(artifactDir, "expected.html"), expected.final.html);
-        await fs.writeFile(path.join(artifactDir, "received.html"), snapshot.final.html);
-        console.error(`\nHTML regression: ${fixture.id} / ${scenario.id}\n${result.message}\n`);
-        console.error(`artifacts: ${artifactDir}`);
-      } else {
-        console.log(`ok ${fixture.id}/${scenario.id}`);
+        if (!replayMode) {
+          if (UPDATE) {
+            if (scenarioFailed) {
+              console.warn(`skipped update for ${fixture.id}/${scenario.id} due to failures`);
+            } else {
+              await writeSnapshot(snapshotPath, snapshot);
+              console.log(`updated ${fixture.id}/${scenario.id}`);
+            }
+            continue;
+          }
+
+          if (!expected) {
+            console.error(`missing snapshot for ${fixture.id}/${scenario.id}`);
+            failures += 1;
+            scenarioFailed = true;
+            continue;
+          }
+
+          const result = compareSnapshots(expected, snapshot);
+          if (!result.ok) {
+            failures += 1;
+            const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+            const artifactDir = path.join(ARTIFACT_ROOT, stamp, fixture.id, scenario.id);
+            await ensureDir(artifactDir);
+            await fs.writeFile(path.join(artifactDir, "expected.html"), expected.final.html);
+            await fs.writeFile(path.join(artifactDir, "received.html"), snapshot.final.html);
+            await fs.writeFile(path.join(artifactDir, "expected.snap.json"), JSON.stringify(expected, null, 2));
+            await fs.writeFile(path.join(artifactDir, "received.snap.json"), JSON.stringify(snapshot, null, 2));
+            console.error(`\nHTML regression: ${fixture.id} / ${scenario.id}\n${result.message}\n`);
+            console.error(`artifacts: ${artifactDir}`);
+          } else {
+            console.log(`ok ${fixture.id}/${scenario.id}`);
+          }
+          continue;
+        }
+
+        if (UPDATE) {
+          console.warn(`skipping snapshot update in replay mode for ${fixture.id}/${scenario.id}`);
+        }
+        if (expected && expected.final.html !== snapshot.final.html) {
+          failures += 1;
+          scenarioFailed = true;
+          console.error(`\nFinal HTML parity mismatch vs baseline snapshot for ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}`);
+        }
+        if (!baselineReplaySnapshot) {
+          baselineReplaySnapshot = snapshot;
+        } else if (baselineReplaySnapshot.final.html !== snapshot.final.html) {
+          failures += 1;
+          scenarioFailed = true;
+          console.error(
+            `\nReplay divergence for ${fixture.id}/${scenario.id}: baseline seed=${baselineReplaySnapshot.runMeta?.seed ?? "baseline"} vs ${activeSeed ?? "baseline"}`,
+          );
+        } else if (!scenarioFailed) {
+          console.log(`ok ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}`);
+        }
       }
     }
   }
@@ -645,7 +901,6 @@ async function run(): Promise<void> {
     process.exitCode = 1;
   }
 }
-
 run().catch((error) => {
   console.error(error);
   process.exitCode = 1;

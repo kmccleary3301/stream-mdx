@@ -72,6 +72,11 @@ export function getBlockKey(block: Block): string {
  */
 export function detectMDX(content: string, options?: { protectedRanges?: ReadonlyArray<ProtectedRange>; baseOffset?: number }): boolean {
   const inlineCodeRanges = collectInlineCodeRanges(content);
+  const protectedRanges = options?.protectedRanges ?? [];
+  const baseOffset = typeof options?.baseOffset === "number" ? options.baseOffset : 0;
+  const protectedKinds = protectedRanges.length
+    ? new Set<ProtectedRange["kind"]>(["math-inline", "math-display", "code-inline", "code-block", "html-inline", "html-block", "autolink"])
+    : null;
 
   // Basic heuristic for MDX detection
   const componentPattern = /<([A-Z][\w-]*)(\s|\/?>)/g;
@@ -79,10 +84,20 @@ export function detectMDX(content: string, options?: { protectedRanges?: Readonl
   while (componentMatch !== null) {
     const start = componentMatch.index;
     const end = start + componentMatch[0].length;
-    if (!isWithinRanges(start, end, inlineCodeRanges)) {
-      return true;
+    if (isWithinRanges(start, end, inlineCodeRanges)) {
+      componentMatch = componentPattern.exec(content);
+      continue;
     }
-    componentMatch = componentPattern.exec(content);
+    if (protectedKinds) {
+      const absoluteStart = baseOffset + start;
+      const absoluteEnd = baseOffset + end;
+      const covered = protectedRanges.some((range) => protectedKinds.has(range.kind) && range.from <= absoluteStart && range.to >= absoluteEnd);
+      if (covered) {
+        componentMatch = componentPattern.exec(content);
+        continue;
+      }
+    }
+    return true;
   }
 
   // Detect import/export statements (MDX/ESM)
@@ -92,9 +107,6 @@ export function detectMDX(content: string, options?: { protectedRanges?: Readonl
 
   // Detect inline JSX expressions while ignoring TeX/LaTeX braces (`\command{}`)
   const expressionPattern = /\{[^{}]+\}/g;
-  const protectedRanges = options?.protectedRanges ?? [];
-  const baseOffset = typeof options?.baseOffset === "number" ? options.baseOffset : 0;
-  const protectedKinds = protectedRanges.length ? new Set<ProtectedRange["kind"]>(["math-inline", "math-display", "code-inline", "code-block"]) : null;
 
   for (let match = expressionPattern.exec(content); match !== null; match = expressionPattern.exec(content)) {
     const index = match.index;

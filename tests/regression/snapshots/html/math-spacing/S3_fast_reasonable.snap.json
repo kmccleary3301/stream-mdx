@@ -9,12 +9,40 @@
     "charRateCps": 3000,
     "maxChunkChars": 512
   },
+  "runMeta": {
+    "seed": null,
+    "schedulerMode": null,
+    "usedSplitMarkers": false,
+    "fixtureTags": [
+      "math"
+    ]
+  },
   "totalLength": 182,
   "checkpoints": [
     {
       "id": "after-first-chunk",
       "appendedChars": 24,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 4,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 1,
+        "lastPatchToDomMs": 0.40000000037252903,
+        "lastDurationMs": 0.30000000074505806,
+        "meta": {
+          "fixtureId": "math-spacing",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -50,12 +78,37 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
       "id": "progress-9",
       "appendedChars": 24,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 4,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 1,
+        "lastPatchToDomMs": 0.40000000037252903,
+        "lastDurationMs": 0.30000000074505806,
+        "meta": {
+          "fixtureId": "math-spacing",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -91,12 +144,37 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
       "id": "progress-18",
       "appendedChars": 24,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 4,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 1,
+        "lastPatchToDomMs": 0.40000000037252903,
+        "lastDurationMs": 0.30000000074505806,
+        "meta": {
+          "fixtureId": "math-spacing",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -132,12 +210,37 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
       "id": "progress-46",
       "appendedChars": 48,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 5,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 2,
+        "lastPatchToDomMs": 0.19999999925494194,
+        "lastDurationMs": 0.19999999925494194,
+        "meta": {
+          "fixtureId": "math-spacing",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -173,12 +276,37 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
       "id": "event-hasMath",
       "appendedChars": 48,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 5,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 2,
+        "lastPatchToDomMs": 0.19999999925494194,
+        "lastDurationMs": 0.19999999925494194,
+        "meta": {
+          "fixtureId": "math-spacing",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -214,12 +342,37 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
       "id": "progress-91",
       "appendedChars": 96,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 7,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 4,
+        "lastPatchToDomMs": 12.800000000745058,
+        "lastDurationMs": 0.2000000011175871,
+        "meta": {
+          "fixtureId": "math-spacing",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -255,12 +408,37 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
       "id": "progress-137",
       "appendedChars": 144,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 9,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 6,
+        "lastPatchToDomMs": 13.399999998509884,
+        "lastDurationMs": 0.09999999962747097,
+        "meta": {
+          "fixtureId": "math-spacing",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -296,12 +474,37 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
       "id": "progress-164",
       "appendedChars": 168,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 10,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 7,
+        "lastPatchToDomMs": 7.600000001490116,
+        "lastDurationMs": 0.10000000149011612,
+        "meta": {
+          "fixtureId": "math-spacing",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -315,13 +518,13 @@
         "table": 0,
         "pre": 0,
         "blockquote": 0,
-        "katex": 3,
+        "katex": 4,
         "mdxPending": 0,
         "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Spacing\">Math Spacing</h1><p class=\"markdown-paragraph\">Inline math with spaces: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.05764em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span> and <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.05764em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>.</p><p class=\"markdown-paragraph\">Display math with spaces:</p><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>x</mi><mo>+</mo><mi>y</mi></mrow><annotation encoding=\"application/x-tex\">x + y</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6667em;vertical-align:-0.0833em;\"></span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.03588em;\">y</span></span></span></span></span></span></div></div></div></div></div><p class=\"markdown-paragraph\">Display math with newlines and indentation:</p><p class=\"markdown-paragraph streaming-partial\">$$\n  x</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Spacing\">Math Spacing</h1><p class=\"markdown-paragraph\">Inline math with spaces: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.05764em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span> and <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.05764em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>.</p><p class=\"markdown-paragraph\">Display math with spaces:</p><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>x</mi><mo>+</mo><mi>y</mi></mrow><annotation encoding=\"application/x-tex\">x + y</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6667em;vertical-align:-0.0833em;\"></span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.03588em;\">y</span></span></span></span></span></span></div></div></div></div></div><p class=\"markdown-paragraph\">Display math with newlines and indentation:</p><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>x</mi></mrow><annotation encoding=\"application/x-tex\">x</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.4306em;\"></span><span class=\"mord mathnormal\">x</span></span></span></span></span></span></div></div></div></div></div></div>",
       "textSample": "Math SpacingInline math with spaces: E=mc2E = mc^2E=mc2 and E=mc2E = mc^2E=mc2.Display math with spaces:[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-",
       "structure": {
         "topLevelTags": [
@@ -331,18 +534,43 @@
           "table": 0,
           "pre": 0,
           "blockquote": 0,
-          "katex": 3,
+          "katex": 4,
           "mdxPending": 0,
           "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
       "id": "progress-182",
       "appendedChars": 182,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 11,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 8,
+        "lastPatchToDomMs": 5.899999998509884,
+        "lastDurationMs": 0,
+        "meta": {
+          "fixtureId": "math-spacing",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -378,6 +606,11 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     }
   ],
@@ -395,6 +628,26 @@
       "hasMath": true
     },
     "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Spacing\">Math Spacing</h1><p class=\"markdown-paragraph\">Inline math with spaces: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.05764em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span> and <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">E = mc^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.05764em;\">E</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord mathnormal\">m</span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span>.</p><p class=\"markdown-paragraph\">Display math with spaces:</p><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>x</mi><mo>+</mo><mi>y</mi></mrow><annotation encoding=\"application/x-tex\">x + y</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6667em;vertical-align:-0.0833em;\"></span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.03588em;\">y</span></span></span></span></span></span></div></div></div></div></div><p class=\"markdown-paragraph\">Display math with newlines and indentation:</p><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>x</mi><mo>+</mo><mi>y</mi><mo>=</mo><mi>z</mi></mrow><annotation encoding=\"application/x-tex\">x + y\n  = z</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6667em;vertical-align:-0.0833em;\"></span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.03588em;\">y</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.4306em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.04398em;\">z</span></span></span></span></span></span></div></div></div></div></div></div>",
+    "runtimeState": {
+      "rendererVersion": 12,
+      "queueDepth": 0,
+      "pendingBatches": 0,
+      "workerReady": true,
+      "lastTx": 9,
+      "lastPatchToDomMs": 7,
+      "lastDurationMs": 0.10000000149011612,
+      "meta": {
+        "fixtureId": "math-spacing",
+        "scenarioId": "S3_fast_reasonable",
+        "seed": null,
+        "schedulerMode": null
+      },
+      "storeCounters": {
+        "appendLineGuardRejected": 0,
+        "staleEpochRejected": 0,
+        "storeInvariantViolationCount": 0
+      }
+    },
     "structure": {
       "topLevelTags": [
         "div"
@@ -417,6 +670,11 @@
         "hash": "aaae2f04d15cc8b500e77c1eab1aaf479529ed61e0c7d40f61e8d1c03605b908",
         "textSample": "Math SpacingInline math with spaces: E=mc2E = mc^2E=mc2 and E=mc2E = mc^2E=mc2.Display math with spaces:[data-radix-scro"
       }
-    ]
+    ],
+    "inspection": {
+      "tables": [],
+      "mdxBlocks": [],
+      "codeBlocks": []
+    }
   }
 }

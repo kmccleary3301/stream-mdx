@@ -168,9 +168,10 @@ export type WorkerIn =
   | { type: "APPEND"; text: string }
   | { type: "FINALIZE" }
   | { type: "DEBUG_STATE" }
+  | { type: "DUMP_BLOCKS" }
   | { type: "TOKENIZE_RANGE"; blockId: string; startLine: number; endLine: number; priority?: LazyTokenizationPriority }
-  | { type: "MDX_COMPILED"; blockId: string; compiledId: string }
-  | { type: "MDX_ERROR"; blockId: string; error?: string }
+  | { type: "MDX_COMPILED"; blockId: string; compiledId: string; rawSignature?: string }
+  | { type: "MDX_ERROR"; blockId: string; error?: string; rawSignature?: string }
   | { type: "SET_CREDITS"; credits: number };
 
 export type WorkerPhase = WorkerIn["type"] | "UNKNOWN";
@@ -183,9 +184,11 @@ export interface WorkerErrorPayload {
 
 export type WorkerOut =
   | { type: "INITIALIZED"; blocks: Block[] }
+  | { type: "FINALIZED" }
   | { type: "PATCH"; tx: number; patches: Patch[]; metrics?: PatchMetrics }
   | { type: "RESET"; reason: string }
   | { type: "METRICS"; metrics: PerformanceMetrics }
+  | { type: "DUMP_BLOCKS"; blocks: Block[]; tocHeadings?: TocHeading[] }
   | {
       type: "DEBUG_STATE";
       state: {
@@ -312,14 +315,42 @@ export interface NodePath {
   indexPath?: number[];
 }
 
+export type PatchKind = "semantic" | "enrichment";
+
+export interface PatchMeta {
+  /**
+   * Explicit correctness class for this patch.
+   * - `semantic`: changes visible meaning, structure, ordering, or finalized content
+   * - `enrichment`: decorates already-correct semantic output
+   *
+   * Ambiguous patches should default to `semantic`.
+   */
+  kind?: PatchKind;
+  /**
+   * Reserved for epoch-aware targeting and stale-patch rejection.
+   * These fields are optional until the semantic-envelope workstream is complete.
+   */
+  streamSeq?: number;
+  parseEpoch?: number;
+  tx?: number;
+  blockEpoch?: number;
+}
+
+export interface TocHeading {
+  id: string;
+  text: string;
+  level: number;
+  blockId: string;
+}
+
 export type Patch =
-  | { op: "insertChild"; at: NodePath; index: number; node: NodeSnapshot }
-  | { op: "deleteChild"; at: NodePath; index: number }
-  | { op: "replaceChild"; at: NodePath; index: number; node: NodeSnapshot }
-  | { op: "setProps"; at: NodePath; props: Record<string, unknown> }
-  | { op: "setPropsBatch"; entries: SetPropsBatchEntry[] }
-  | { op: "finalize"; at: NodePath }
-  | { op: "reorder"; at: NodePath; from: number; to: number; count: number }
+  | { op: "insertChild"; at: NodePath; index: number; node: NodeSnapshot; meta?: PatchMeta }
+  | { op: "deleteChild"; at: NodePath; index: number; meta?: PatchMeta }
+  | { op: "replaceChild"; at: NodePath; index: number; node: NodeSnapshot; meta?: PatchMeta }
+  | { op: "setProps"; at: NodePath; props: Record<string, unknown>; meta?: PatchMeta }
+  | { op: "setPropsBatch"; entries: SetPropsBatchEntry[]; meta?: PatchMeta }
+  | { op: "finalize"; at: NodePath; meta?: PatchMeta }
+  | { op: "reorder"; at: NodePath; from: number; to: number; count: number; meta?: PatchMeta }
   | {
       op: "appendLines";
       at: NodePath;
@@ -330,6 +361,7 @@ export type Patch =
       diffKind?: Array<DiffKind | null>;
       oldNo?: Array<number | null>;
       newNo?: Array<number | null>;
+      meta?: PatchMeta;
     }
   | {
       op: "setHTML";
@@ -339,6 +371,7 @@ export type Patch =
       block?: Block;
       meta?: Record<string, unknown>;
       sanitized?: boolean;
+      patchMeta?: PatchMeta;
     };
 
 export interface PatchMetrics {
@@ -357,6 +390,7 @@ export interface PatchMetrics {
 export interface SetPropsBatchEntry {
   at: NodePath;
   props: Record<string, unknown>;
+  meta?: PatchMeta;
 }
 
 export interface CoalescingMetrics {

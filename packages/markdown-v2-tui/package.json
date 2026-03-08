@@ -1,0 +1,40 @@
+{
+  "name": "@stream-mdx/tui",
+  "version": "0.4.0",
+  "description": "StreamMDX TUI helpers (NDJSON parsing and snapshot store)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kmccleary3301/stream-mdx.git",
+    "directory": "packages/markdown-v2-tui"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf dist",
+    "prepack": "npm run build"
+  },
+  "dependencies": {
+    "@stream-mdx/core": "0.4.0",
+    "@stream-mdx/protocol": "0.4.0"
+  }
+}
