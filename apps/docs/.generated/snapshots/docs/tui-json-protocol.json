@@ -1,0 +1,3374 @@
+{
+  "version": 1,
+  "schemaId": "streammdx.snapshot.v1",
+  "createdAt": "2026-02-11T20:25:52.834Z",
+  "hash": "483cf9a15d5efa7f85d7d9b284f01acd8acc03a828191da884b8bfcab8bb4f88",
+  "contentHash": "e0316ae9cd41b81d88b3ef8794ec23e672b8aa679a91bd8925bdffbc4677149e",
+  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
+  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "blocks": [
+    {
+      "id": "db082c0",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "StreamMDX JSON/TUI Protocol + Diff Highlighting Spec",
+        "range": {
+          "from": 0,
+          "to": 54
+        },
+        "meta": {
+          "headingLevel": 1,
+          "headingText": "StreamMDX JSON/TUI Protocol + Diff Highlighting Spec",
+          "headingId": "streammdx-json-tui-protocol-diff-highlighting-spec"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "StreamMDX JSON/TUI Protocol + Diff Highlighting Spec"
+          }
+        ]
+      }
+    },
+    {
+      "id": "391ef55f",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "1) Purpose",
+        "range": {
+          "from": 56,
+          "to": 69
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "1) Purpose",
+          "headingId": "1-purpose"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "1) Purpose"
+          }
+        ]
+      }
+    },
+    {
+      "id": "56a59767",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Define a production-ready JSON/object stream protocol for StreamMDX and add\nShiki-powered diff highlighting with incremental performance. This spec\ntargets terminal UIs (Ink+Effect and OpenTUI) while preserving the existing\nHTML/web pipeline.",
+        "range": {
+          "from": 70,
+          "to": 312
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Define a production-ready JSON/object stream protocol for StreamMDX and add\nShiki-powered diff highlighting with incremental performance. This spec\ntargets terminal UIs (Ink+Effect and OpenTUI) while preserving the existing\nHTML/web pipeline."
+          }
+        ]
+      }
+    },
+    {
+      "id": "58af855a",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "2) Goals",
+        "range": {
+          "from": 314,
+          "to": 325
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "2) Goals",
+          "headingId": "2-goals"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "2) Goals"
+          }
+        ]
+      }
+    },
+    {
+      "id": "59057fdd",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Provide a stable, versioned JSON protocol for streaming blocks, patches, and\n  finalization signals.\n- Emit token-level syntax highlighting data suitable for terminal rendering\n  (no HTML parsing required).\n- Add diff highlighting (unified diff and line-diff styles) with incremental\n  tokenization and JSON output.\n- Preserve web behavior (HTML rendering) without breaking existing APIs.\n- Add validation, determinism checks, and regression tests for protocol output.",
+        "range": {
+          "from": 326,
+          "to": 796
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Provide a stable, versioned JSON protocol for streaming blocks, patches, and\nfinalization signals."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Emit token-level syntax highlighting data suitable for terminal rendering\n(no HTML parsing required)."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Add diff highlighting (unified diff and line-diff styles) with incremental\ntokenization and JSON output."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Preserve web behavior (HTML rendering) without breaking existing APIs."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Add validation, determinism checks, and regression tests for protocol output."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "11bf755a",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "3) Non-Goals",
+        "range": {
+          "from": 798,
+          "to": 813
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "3) Non-Goals",
+          "headingId": "3-non-goals"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "3) Non-Goals"
+          }
+        ]
+      }
+    },
+    {
+      "id": "281b73b9",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Replacing the current HTML renderer or removing HTML output.\n- Executing MDX in terminals (MDX blocks remain opaque in JSON output).\n- Introducing a new rendering framework for TUIs beyond reference utilities.",
+        "range": {
+          "from": 814,
+          "to": 1025
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Replacing the current HTML renderer or removing HTML output."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Executing MDX in terminals (MDX blocks remain opaque in JSON output)."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Introducing a new rendering framework for TUIs beyond reference utilities."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "c05ec5c",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "4) Current State (Summary)",
+        "range": {
+          "from": 1027,
+          "to": 1056
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "4) Current State (Summary)",
+          "headingId": "4-current-state-summary"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "4) Current State (Summary)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6d64e065",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Worker emits `WorkerOut` messages with `PATCH` and `Patch[]`.\n- Patch protocol supports `appendLines` with `highlight` HTML line fragments.\n- Node snapshots are generic (`type: string`, `props: Record<string, unknown>`).\n- Incremental Shiki exists in `stream-mdx/packages/markdown-v2-worker/src/worker.ts`.\n- React store normalizes code-line props (`text`, `html`) and drops other props.",
+        "range": {
+          "from": 1057,
+          "to": 1446
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Worker emits "
+              },
+              {
+                "kind": "code",
+                "text": "WorkerOut"
+              },
+              {
+                "kind": "text",
+                "text": " messages with "
+              },
+              {
+                "kind": "code",
+                "text": "PATCH"
+              },
+              {
+                "kind": "text",
+                "text": " and "
+              },
+              {
+                "kind": "code",
+                "text": "Patch[]"
+              },
+              {
+                "kind": "text",
+                "text": "."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Patch protocol supports "
+              },
+              {
+                "kind": "code",
+                "text": "appendLines"
+              },
+              {
+                "kind": "text",
+                "text": " with "
+              },
+              {
+                "kind": "code",
+                "text": "highlight"
+              },
+              {
+                "kind": "text",
+                "text": " HTML line fragments."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Node snapshots are generic ("
+              },
+              {
+                "kind": "code",
+                "text": "type: string"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "props: Record<string, unknown>"
+              },
+              {
+                "kind": "text",
+                "text": ")."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Incremental Shiki exists in "
+              },
+              {
+                "kind": "code",
+                "text": "stream-mdx/packages/markdown-v2-worker/src/worker.ts"
+              },
+              {
+                "kind": "text",
+                "text": "."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "React store normalizes code-line props ("
+              },
+              {
+                "kind": "code",
+                "text": "text"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "html"
+              },
+              {
+                "kind": "text",
+                "text": ") and drops other props."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "3b9bd019",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "5) Requirements",
+        "range": {
+          "from": 1448,
+          "to": 1466
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "5) Requirements",
+          "headingId": "5-requirements"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "5) Requirements"
+          }
+        ]
+      }
+    },
+    {
+      "id": "18b2a324",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Functional",
+        "range": {
+          "from": 1467,
+          "to": 1481
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "Functional",
+          "headingId": "functional"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Functional"
+          }
+        ]
+      }
+    },
+    {
+      "id": "37b5b641",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- JSON protocol must be versioned and fully documented.\n- Token output must include per-token colors and styles.\n- Diff blocks must provide per-line semantics (`add`, `remove`, `context`, etc).\n- Protocol must support append-only streaming and finalization.",
+        "range": {
+          "from": 1482,
+          "to": 1739
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "JSON protocol must be versioned and fully documented."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Token output must include per-token colors and styles."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Diff blocks must provide per-line semantics ("
+              },
+              {
+                "kind": "code",
+                "text": "add"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "remove"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "context"
+              },
+              {
+                "kind": "text",
+                "text": ", etc)."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Protocol must support append-only streaming and finalization."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "75333f23",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Non-Functional",
+        "range": {
+          "from": 1741,
+          "to": 1759
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "Non-Functional",
+          "headingId": "non-functional"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Non-Functional"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6d485764",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Deterministic output for identical inputs.\n- Bounded performance under streaming loads.\n- Backwards compatibility with existing web pipeline.",
+        "range": {
+          "from": 1760,
+          "to": 1903
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Deterministic output for identical inputs."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Bounded performance under streaming loads."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Backwards compatibility with existing web pipeline."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "1ee89c2d",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "6) Protocol v1",
+        "range": {
+          "from": 1905,
+          "to": 1922
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "6) Protocol v1",
+          "headingId": "6-protocol-v1"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "6) Protocol v1"
+          }
+        ]
+      }
+    },
+    {
+      "id": "210d5f97",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "6.1 Event Envelope",
+        "range": {
+          "from": 1923,
+          "to": 1945
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "6.1 Event Envelope",
+          "headingId": "6-1-event-envelope"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "6.1 Event Envelope"
+          }
+        ]
+      }
+    },
+    {
+      "id": "4cb0bfd6",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "All events must include:",
+        "range": {
+          "from": 1946,
+          "to": 1970
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "All events must include:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "66eae9c6",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `protocol`: `\"streammdx\"`\n- `schemaVersion`: `\"1.0\"`\n- `streamId`: string (uuid)\n- `event`: `\"init\" | \"snapshot\" | \"patch\" | \"metrics\" | \"error\" | \"done\"`\n- `tx`: number (monotonic for `patch` events; optional otherwise)",
+        "range": {
+          "from": 1971,
+          "to": 2193
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "protocol"
+              },
+              {
+                "kind": "text",
+                "text": ": "
+              },
+              {
+                "kind": "code",
+                "text": "\"streammdx\""
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "schemaVersion"
+              },
+              {
+                "kind": "text",
+                "text": ": "
+              },
+              {
+                "kind": "code",
+                "text": "\"1.0\""
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "streamId"
+              },
+              {
+                "kind": "text",
+                "text": ": string (uuid)"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "event"
+              },
+              {
+                "kind": "text",
+                "text": ": "
+              },
+              {
+                "kind": "code",
+                "text": "\"init\" | \"snapshot\" | \"patch\" | \"metrics\" | \"error\" | \"done\""
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "tx"
+              },
+              {
+                "kind": "text",
+                "text": ": number (monotonic for "
+              },
+              {
+                "kind": "code",
+                "text": "patch"
+              },
+              {
+                "kind": "text",
+                "text": " events; optional otherwise)"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "4d57a225",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Example:",
+        "range": {
+          "from": 2195,
+          "to": 2203
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Example:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "62771a16",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```json\n{\n  \"protocol\": \"streammdx\",\n  \"schemaVersion\": \"1.0\",\n  \"streamId\": \"a9f2c0c1-7c9c-4b2b-8c29-f2df20c30f6a\",\n  \"event\": \"patch\",\n  \"tx\": 42,\n  \"patches\": []\n}\n```",
+        "range": {
+          "from": 2204,
+          "to": 2374
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"json\"><code data-language=\"json\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">  \"protocol\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"streammdx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">  \"schemaVersion\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"1.0\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">  \"streamId\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"a9f2c0c1-7c9c-4b2b-8c29-f2df20c30f6a\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">  \"event\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"patch\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">  \"tx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">42</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">  \"patches\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: []</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}</span></span></code></pre>",
+        "meta": {
+          "lang": "json",
+          "code": "{\n  \"protocol\": \"streammdx\",\n  \"schemaVersion\": \"1.0\",\n  \"streamId\": \"a9f2c0c1-7c9c-4b2b-8c29-f2df20c30f6a\",\n  \"event\": \"patch\",\n  \"tx\": 42,\n  \"patches\": []\n}"
+        }
+      }
+    },
+    {
+      "id": "147b6820",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "6.2 Init Event",
+        "range": {
+          "from": 2376,
+          "to": 2394
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "6.2 Init Event",
+          "headingId": "6-2-init-event"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "6.2 Init Event"
+          }
+        ]
+      }
+    },
+    {
+      "id": "70519523",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Include capability negotiation and theme metadata.",
+        "range": {
+          "from": 2395,
+          "to": 2445
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Include capability negotiation and theme metadata."
+          }
+        ]
+      }
+    },
+    {
+      "id": "93c1216",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```json\n{\n  \"event\": \"init\",\n  \"capabilities\": {\n    \"tokens\": \"v1\",\n    \"diff\": \"v1\",\n    \"mdx\": \"compile-ref\",\n    \"htmlBlocks\": \"sanitized\",\n    \"math\": \"tex\"\n  },\n  \"theme\": { \"mode\": \"dual\", \"dark\": \"github-dark\", \"light\": \"github-light\" }\n}\n```",
+        "range": {
+          "from": 2446,
+          "to": 2696
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"json\"><code data-language=\"json\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">  \"event\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"init\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">  \"capabilities\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: {</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">    \"tokens\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"v1\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">    \"diff\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"v1\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">    \"mdx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"compile-ref\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">    \"htmlBlocks\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"sanitized\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">    \"math\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"tex\"</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  },</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">  \"theme\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: { </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">\"mode\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"dual\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">\"dark\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"github-dark\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">\"light\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"github-light\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}</span></span></code></pre>",
+        "meta": {
+          "lang": "json",
+          "code": "{\n  \"event\": \"init\",\n  \"capabilities\": {\n    \"tokens\": \"v1\",\n    \"diff\": \"v1\",\n    \"mdx\": \"compile-ref\",\n    \"htmlBlocks\": \"sanitized\",\n    \"math\": \"tex\"\n  },\n  \"theme\": { \"mode\": \"dual\", \"dark\": \"github-dark\", \"light\": \"github-light\" }\n}"
+        }
+      }
+    },
+    {
+      "id": "44b18f9d",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "6.3 Done Event",
+        "range": {
+          "from": 2698,
+          "to": 2716
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "6.3 Done Event",
+          "headingId": "6-3-done-event"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "6.3 Done Event"
+          }
+        ]
+      }
+    },
+    {
+      "id": "35f6bf6b",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Explicit end-of-stream semantics:",
+        "range": {
+          "from": 2717,
+          "to": 2750
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Explicit end-of-stream semantics:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6d3d98d9",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```json\n{ \"event\": \"done\", \"finalTx\": 128, \"status\": \"ok\" }\n```",
+        "range": {
+          "from": 2751,
+          "to": 2814
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"json\"><code data-language=\"json\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{ </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">\"event\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"done\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">\"finalTx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">128</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">\"status\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"ok\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }</span></span></code></pre>",
+        "meta": {
+          "lang": "json",
+          "code": "{ \"event\": \"done\", \"finalTx\": 128, \"status\": \"ok\" }"
+        }
+      }
+    },
+    {
+      "id": "1a436eeb",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "6.4 Compatibility Rules",
+        "range": {
+          "from": 2816,
+          "to": 2843
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "6.4 Compatibility Rules",
+          "headingId": "6-4-compatibility-rules"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "6.4 Compatibility Rules"
+          }
+        ]
+      }
+    },
+    {
+      "id": "2be43076",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- New fields are additive only in minor versions.\n- Consumers must ignore unknown fields and unknown node types.\n- Breaking changes require a major schema version bump.",
+        "range": {
+          "from": 2844,
+          "to": 3012
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "New fields are additive only in minor versions."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Consumers must ignore unknown fields and unknown node types."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Breaking changes require a major schema version bump."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "5246a040",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "7) Node Taxonomy and Props",
+        "range": {
+          "from": 3014,
+          "to": 3043
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "7) Node Taxonomy and Props",
+          "headingId": "7-node-taxonomy-and-props"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "7) Node Taxonomy and Props"
+          }
+        ]
+      }
+    },
+    {
+      "id": "2f22f39d",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "7.1 Root",
+        "range": {
+          "from": 3044,
+          "to": 3056
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "7.1 Root",
+          "headingId": "7-1-root"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "7.1 Root"
+          }
+        ]
+      }
+    },
+    {
+      "id": "44dc0263",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `id`: `\"__root__\"`\n- `type`: `\"root\"`\n- `children`: block ids",
+        "range": {
+          "from": 3057,
+          "to": 3120
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "id"
+              },
+              {
+                "kind": "text",
+                "text": ": "
+              },
+              {
+                "kind": "code",
+                "text": "\"__root__\""
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "type"
+              },
+              {
+                "kind": "text",
+                "text": ": "
+              },
+              {
+                "kind": "code",
+                "text": "\"root\""
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "children"
+              },
+              {
+                "kind": "text",
+                "text": ": block ids"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "4d1419e2",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "7.2 Core Block Types (Minimum)",
+        "range": {
+          "from": 3122,
+          "to": 3156
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "7.2 Core Block Types (Minimum)",
+          "headingId": "7-2-core-block-types-minimum"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "7.2 Core Block Types (Minimum)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "23052a7c",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `paragraph`, `heading`, `blockquote`\n- `list`, `list-item`\n- `code` (code block), `code-line`\n- `table`, `table-row`, `table-cell`\n- `footnotes`, `footnote-def`\n- `html` (html block)\n- `mdx` (mdx block)\n- `thematic-break`",
+        "range": {
+          "from": 3157,
+          "to": 3380
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "paragraph"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "heading"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "blockquote"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "list"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "list-item"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "code"
+              },
+              {
+                "kind": "text",
+                "text": " (code block), "
+              },
+              {
+                "kind": "code",
+                "text": "code-line"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "table"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "table-row"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "table-cell"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "footnotes"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "footnote-def"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "html"
+              },
+              {
+                "kind": "text",
+                "text": " (html block)"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "mdx"
+              },
+              {
+                "kind": "text",
+                "text": " (mdx block)"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "thematic-break"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "69920da6",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "7.3 List Props",
+        "range": {
+          "from": 3382,
+          "to": 3400
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "7.3 List Props",
+          "headingId": "7-3-list-props"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "7.3 List Props"
+          }
+        ]
+      }
+    },
+    {
+      "id": "38c2605e",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "List node props:",
+        "range": {
+          "from": 3401,
+          "to": 3417
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "List node props:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "2378092",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```ts\ntype ListProps = {\n  ordered: boolean;\n  start?: number;\n  delimiter?: \".\" | \")\" | \":\" | string;\n  tight?: boolean;\n};\n```",
+        "range": {
+          "from": 3418,
+          "to": 3546
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"typescript\"><code data-language=\"typescript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">type</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> ListProps</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  ordered</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> boolean</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  start</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> number</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  delimiter</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \".\"</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> |</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \")\"</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> |</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \":\"</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> |</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  tight</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> boolean</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">};</span></span></code></pre>",
+        "meta": {
+          "lang": "typescript",
+          "code": "type ListProps = {\n  ordered: boolean;\n  start?: number;\n  delimiter?: \".\" | \")\" | \":\" | string;\n  tight?: boolean;\n};"
+        }
+      }
+    },
+    {
+      "id": "1937e11a",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "List item props:",
+        "range": {
+          "from": 3548,
+          "to": 3564
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "List item props:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6d794bd9",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```ts\ntype ListItemProps = {\n  depth: number;\n  checked?: boolean | null;\n  marker?: string;\n  number?: number;\n};\n```",
+        "range": {
+          "from": 3565,
+          "to": 3683
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"typescript\"><code data-language=\"typescript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">type</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> ListItemProps</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  depth</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> number</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  checked</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> boolean</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> |</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> null</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  marker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  number</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> number</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">};</span></span></code></pre>",
+        "meta": {
+          "lang": "typescript",
+          "code": "type ListItemProps = {\n  depth: number;\n  checked?: boolean | null;\n  marker?: string;\n  number?: number;\n};"
+        }
+      }
+    },
+    {
+      "id": "11e957a0",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "7.4 Inline Segment Props",
+        "range": {
+          "from": 3685,
+          "to": 3713
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "7.4 Inline Segment Props",
+          "headingId": "7-4-inline-segment-props"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "7.4 Inline Segment Props"
+          }
+        ]
+      }
+    },
+    {
+      "id": "592670c7",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Inline segments are used for paragraph, blockquote, and list item text:",
+        "range": {
+          "from": 3714,
+          "to": 3785
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Inline segments are used for paragraph, blockquote, and list item text:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "57430b48",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```ts\ntype InlineSegmentProps = {\n  text: string;\n  inline?: InlineNode[];\n  inlineStatus?: \"raw\" | \"anticipated\" | \"complete\";\n};\n```",
+        "range": {
+          "from": 3786,
+          "to": 3920
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"typescript\"><code data-language=\"typescript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">type</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> InlineSegmentProps</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  inline</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> InlineNode</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">[];</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  inlineStatus</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"raw\"</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> |</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"anticipated\"</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> |</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"complete\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">};</span></span></code></pre>",
+        "meta": {
+          "lang": "typescript",
+          "code": "type InlineSegmentProps = {\n  text: string;\n  inline?: InlineNode[];\n  inlineStatus?: \"raw\" | \"anticipated\" | \"complete\";\n};"
+        }
+      }
+    },
+    {
+      "id": "5a117c26",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "7.5 Code Block Props",
+        "range": {
+          "from": 3922,
+          "to": 3946
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "7.5 Code Block Props",
+          "headingId": "7-5-code-block-props"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "7.5 Code Block Props"
+          }
+        ]
+      }
+    },
+    {
+      "id": "5964c5ef",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```ts\ntype CodeBlockProps = {\n  lang?: string;\n  fence?: \"```\" | \"~~~\";\n  title?: string;\n  showLineNumbers?: boolean;\n  highlighting: {\n    mode: \"final\" | \"incremental\" | \"live\";\n    theme: { mode: \"dual\"; dark: string; light: string } | { mode: \"single\"; theme: string };\n    tokens: \"none\" | \"v1\";\n  };\n  diff?: {\n    kind: \"line-diff\" | \"unified-diff\";\n    baseLang?: string;\n  };\n};\n```",
+        "range": {
+          "from": 3947,
+          "to": 4339
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"typescript\"><code data-language=\"typescript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">type</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> CodeBlockProps</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  lang</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  fence</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"```\"</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> |</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"~~~\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  title</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  showLineNumbers</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> boolean</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  highlighting</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">    mode</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"final\"</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> |</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"incremental\"</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> |</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"live\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">    theme</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">mode</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"dual\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">; </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">dark</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">; </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">light</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">|</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">mode</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"single\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">; </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">theme</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> };</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">    tokens</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"none\"</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> |</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"v1\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  };</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  diff</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">    kind</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"line-diff\"</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> |</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"unified-diff\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">    baseLang</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  };</span></span>\n<span class=\"line\" data-line=\"15\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">};</span></span></code></pre>",
+        "meta": {
+          "lang": "typescript",
+          "code": "type CodeBlockProps = {\n  lang?: string;\n  fence?: \"```\" | \"~~~\";\n  title?: string;\n  showLineNumbers?: boolean;\n  highlighting: {\n    mode: \"final\" | \"incremental\" | \"live\";\n    theme: { mode: \"dual\"; dark: string; light: string } | { mode: \"single\"; theme: string };\n    tokens: \"none\" | \"v1\";\n  };\n  diff?: {\n    kind: \"line-diff\" | \"unified-diff\";\n    baseLang?: string;\n  };\n};"
+        }
+      }
+    },
+    {
+      "id": "38b5643c",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "7.6 Code Line Props",
+        "range": {
+          "from": 4341,
+          "to": 4364
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "7.6 Code Line Props",
+          "headingId": "7-6-code-line-props"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "7.6 Code Line Props"
+          }
+        ]
+      }
+    },
+    {
+      "id": "31fb611c",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```ts\ntype CodeLineProps = {\n  index: number;\n  text: string;\n  html?: string;\n  tokens?: TokenLineV1;\n  diffKind?: \"add\" | \"remove\" | \"context\" | \"hunk\" | \"meta\";\n  oldNo?: number | null;\n  newNo?: number | null;\n};\n```",
+        "range": {
+          "from": 4365,
+          "to": 4585
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"typescript\"><code data-language=\"typescript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">type</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> CodeLineProps</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  index</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> number</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  html</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  tokens</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> TokenLineV1</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  diffKind</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"add\"</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> |</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"remove\"</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> |</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"context\"</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> |</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"hunk\"</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> |</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"meta\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  oldNo</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> number</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> |</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> null</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  newNo</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> number</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> |</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> null</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">};</span></span></code></pre>",
+        "meta": {
+          "lang": "typescript",
+          "code": "type CodeLineProps = {\n  index: number;\n  text: string;\n  html?: string;\n  tokens?: TokenLineV1;\n  diffKind?: \"add\" | \"remove\" | \"context\" | \"hunk\" | \"meta\";\n  oldNo?: number | null;\n  newNo?: number | null;\n};"
+        }
+      }
+    },
+    {
+      "id": "52c0d7c0",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "7.7 MDX and HTML Blocks",
+        "range": {
+          "from": 4587,
+          "to": 4614
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "7.7 MDX and HTML Blocks",
+          "headingId": "7-7-mdx-and-html-blocks"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "7.7 MDX and HTML Blocks"
+          }
+        ]
+      }
+    },
+    {
+      "id": "1e9a195a",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "MDX blocks are opaque in JSON output.",
+        "range": {
+          "from": 4615,
+          "to": 4652
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "MDX blocks are opaque in JSON output."
+          }
+        ]
+      }
+    },
+    {
+      "id": "314efb3a",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```ts\ntype MdxBlockProps = {\n  raw: string;\n  status: \"detected\" | \"compiled\" | \"error\";\n  compiledRef?: { id: string } | null;\n  error?: string;\n};\n```",
+        "range": {
+          "from": 4653,
+          "to": 4805
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"typescript\"><code data-language=\"typescript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">type</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> MdxBlockProps</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  raw</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  status</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"detected\"</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> |</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"compiled\"</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> |</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"error\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  compiledRef</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">id</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">|</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> null</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  error</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">};</span></span></code></pre>",
+        "meta": {
+          "lang": "typescript",
+          "code": "type MdxBlockProps = {\n  raw: string;\n  status: \"detected\" | \"compiled\" | \"error\";\n  compiledRef?: { id: string } | null;\n  error?: string;\n};"
+        }
+      }
+    },
+    {
+      "id": "1f7c4c35",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "HTML blocks should be treated as text in TUI.",
+        "range": {
+          "from": 4807,
+          "to": 4852
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "HTML blocks should be treated as text in TUI."
+          }
+        ]
+      }
+    },
+    {
+      "id": "11154f8",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```ts\ntype HtmlBlockProps = {\n  raw: string;\n  sanitized?: string;\n  policy?: \"strip\" | \"sanitize\" | \"raw\";\n};\n```",
+        "range": {
+          "from": 4853,
+          "to": 4967
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"typescript\"><code data-language=\"typescript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">type</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> HtmlBlockProps</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  raw</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  sanitized</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  policy</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"strip\"</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> |</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"sanitize\"</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> |</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"raw\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">};</span></span></code></pre>",
+        "meta": {
+          "lang": "typescript",
+          "code": "type HtmlBlockProps = {\n  raw: string;\n  sanitized?: string;\n  policy?: \"strip\" | \"sanitize\" | \"raw\";\n};"
+        }
+      }
+    },
+    {
+      "id": "40c7ef08",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "7.8 Extension Nodes",
+        "range": {
+          "from": 4969,
+          "to": 4992
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "7.8 Extension Nodes",
+          "headingId": "7-8-extension-nodes"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "7.8 Extension Nodes"
+          }
+        ]
+      }
+    },
+    {
+      "id": "3f4d4061",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Custom nodes must be namespaced:",
+        "range": {
+          "from": 4993,
+          "to": 5025
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Custom nodes must be namespaced:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "4347cae5",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```ts\ntype CustomNodeSnapshot = {\n  type: `x:${string}`;\n  props?: Record<string, unknown>;\n  meta?: { fallbackText?: string; pluginId?: string };\n};\n```",
+        "range": {
+          "from": 5026,
+          "to": 5179
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"typescript\"><code data-language=\"typescript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">type</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> CustomNodeSnapshot</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  type</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> `x:${</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">string</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">}`</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  props</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> Record</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">unknown</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>;</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  meta</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">fallbackText</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">; </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">pluginId</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> };</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">};</span></span></code></pre>",
+        "meta": {
+          "lang": "typescript",
+          "code": "type CustomNodeSnapshot = {\n  type: `x:${string}`;\n  props?: Record<string, unknown>;\n  meta?: { fallbackText?: string; pluginId?: string };\n};"
+        }
+      }
+    },
+    {
+      "id": "183c976b",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "8) Token Schema v1",
+        "range": {
+          "from": 5181,
+          "to": 5202
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "8) Token Schema v1",
+          "headingId": "8-token-schema-v1"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "8) Token Schema v1"
+          }
+        ]
+      }
+    },
+    {
+      "id": "2e57060",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "8.1 Inline Style Encoding (v1)",
+        "range": {
+          "from": 5203,
+          "to": 5237
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "8.1 Inline Style Encoding (v1)",
+          "headingId": "8-1-inline-style-encoding-v1"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "8.1 Inline Style Encoding (v1)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "3b3584a8",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```ts\ntype TokenStyle = {\n  fg?: string; // \"#RRGGBB\"\n  bg?: string; // \"#RRGGBB\"\n  fs?: number; // bitmask (bold/italic/underline/etc)\n};\n\ntype TokenSpan = {\n  t: string;\n  v?: { dark?: TokenStyle; light?: TokenStyle };\n  s?: TokenStyle; // single-theme fallback\n};\n\ntype TokenLineV1 = {\n  spans: TokenSpan[];\n};\n```",
+        "range": {
+          "from": 5238,
+          "to": 5555
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"typescript\"><code data-language=\"typescript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">type</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> TokenStyle</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  fg</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">; </span><span style=\"--shiki-dark:#6A737D;--shiki-light:#6A737D\">// \"#RRGGBB\"</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  bg</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">; </span><span style=\"--shiki-dark:#6A737D;--shiki-light:#6A737D\">// \"#RRGGBB\"</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  fs</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> number</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">; </span><span style=\"--shiki-dark:#6A737D;--shiki-light:#6A737D\">// bitmask (bold/italic/underline/etc)</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">};</span></span>\n<span class=\"line\" data-line=\"6\"></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">type</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> TokenSpan</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  t</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  v</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">dark</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> TokenStyle</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">; </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">light</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> TokenStyle</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> };</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  s</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> TokenStyle</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">; </span><span style=\"--shiki-dark:#6A737D;--shiki-light:#6A737D\">// single-theme fallback</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">};</span></span>\n<span class=\"line\" data-line=\"12\"></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">type</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> TokenLineV1</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  spans</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> TokenSpan</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">[];</span></span>\n<span class=\"line\" data-line=\"15\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">};</span></span></code></pre>",
+        "meta": {
+          "lang": "typescript",
+          "code": "type TokenStyle = {\n  fg?: string; // \"#RRGGBB\"\n  bg?: string; // \"#RRGGBB\"\n  fs?: number; // bitmask (bold/italic/underline/etc)\n};\n\ntype TokenSpan = {\n  t: string;\n  v?: { dark?: TokenStyle; light?: TokenStyle };\n  s?: TokenStyle; // single-theme fallback\n};\n\ntype TokenLineV1 = {\n  spans: TokenSpan[];\n};"
+        }
+      }
+    },
+    {
+      "id": "27eb85be",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "8.2 Optional Style Table Encoding (v2 candidate)",
+        "range": {
+          "from": 5557,
+          "to": 5609
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "8.2 Optional Style Table Encoding (v2 candidate)",
+          "headingId": "8-2-optional-style-table-encoding-v2-candidate"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "8.2 Optional Style Table Encoding (v2 candidate)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "2533cd80",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Consider a per-block style table for payload size reduction; v1 ships inline\nstyles for simplicity.",
+        "range": {
+          "from": 5610,
+          "to": 5709
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Consider a per-block style table for payload size reduction; v1 ships inline\nstyles for simplicity."
+          }
+        ]
+      }
+    },
+    {
+      "id": "48e27ebe",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "9) Diff Model",
+        "range": {
+          "from": 5711,
+          "to": 5727
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "9) Diff Model",
+          "headingId": "9-diff-model"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "9) Diff Model"
+          }
+        ]
+      }
+    },
+    {
+      "id": "46ba0498",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "9.1 Diff Line Semantics",
+        "range": {
+          "from": 5728,
+          "to": 5755
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "9.1 Diff Line Semantics",
+          "headingId": "9-1-diff-line-semantics"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "9.1 Diff Line Semantics"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6571ff03",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "`diffKind` values:",
+        "range": {
+          "from": 5756,
+          "to": 5774
+        },
+        "inline": [
+          {
+            "kind": "code",
+            "text": "diffKind"
+          },
+          {
+            "kind": "text",
+            "text": " values:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "2137dafc",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `add`: \"+\" lines\n- `remove`: \"-\" lines\n- `context`: \" \" lines\n- `hunk`: \"@@\" lines\n- `meta`: \"diff --git\", \"index\", \"+++ / ---\" lines",
+        "range": {
+          "from": 5775,
+          "to": 5910
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "add"
+              },
+              {
+                "kind": "text",
+                "text": ": \"+\" lines"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "remove"
+              },
+              {
+                "kind": "text",
+                "text": ": \"-\" lines"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "context"
+              },
+              {
+                "kind": "text",
+                "text": ": \" \" lines"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "hunk"
+              },
+              {
+                "kind": "text",
+                "text": ": \"@@\" lines"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "meta"
+              },
+              {
+                "kind": "text",
+                "text": ": \"diff --git\", \"index\", \"+++ / ---\" lines"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "752b55c5",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "9.2 Diff Line Numbers",
+        "range": {
+          "from": 5912,
+          "to": 5937
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "9.2 Diff Line Numbers",
+          "headingId": "9-2-diff-line-numbers"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "9.2 Diff Line Numbers"
+          }
+        ]
+      }
+    },
+    {
+      "id": "5cde26c9",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "For unified diffs, track per-line numbers:",
+        "range": {
+          "from": 5938,
+          "to": 5980
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "For unified diffs, track per-line numbers:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "1f0d0d7f",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `oldNo` for removed/context lines\n- `newNo` for added/context lines",
+        "range": {
+          "from": 5981,
+          "to": 6050
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "oldNo"
+              },
+              {
+                "kind": "text",
+                "text": " for removed/context lines"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "newNo"
+              },
+              {
+                "kind": "text",
+                "text": " for added/context lines"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "11f876d7",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "9.3 Tokenization Strategy (Unified Diff)",
+        "range": {
+          "from": 6052,
+          "to": 6096
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "9.3 Tokenization Strategy (Unified Diff)",
+          "headingId": "9-3-tokenization-strategy-unified-diff"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "9.3 Tokenization Strategy (Unified Diff)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "4b8a37a4",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Maintain two Shiki grammar states: old and new.\n- Tokenize context lines against both states; emit tokens from the \"new\"\n  state but advance both.\n- Tokenize removed lines against old state only.\n- Tokenize added lines against new state only.",
+        "range": {
+          "from": 6097,
+          "to": 6341
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Maintain two Shiki grammar states: old and new."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Tokenize context lines against both states; emit tokens from the \"new\"\nstate but advance both."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Tokenize removed lines against old state only."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Tokenize added lines against new state only."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "70a18cfc",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "9.4 Line-Diff Mode",
+        "range": {
+          "from": 6343,
+          "to": 6365
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "9.4 Line-Diff Mode",
+          "headingId": "9-4-line-diff-mode"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "9.4 Line-Diff Mode"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6b0aac03",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "If the code fence is `diff` without a base language, treat as text and apply\ndiff markers only. Optional base language can be inferred from file headers.",
+        "range": {
+          "from": 6366,
+          "to": 6519
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "If the code fence is "
+          },
+          {
+            "kind": "code",
+            "text": "diff"
+          },
+          {
+            "kind": "text",
+            "text": " without a base language, treat as text and apply\ndiff markers only. Optional base language can be inferred from file headers."
+          }
+        ]
+      }
+    },
+    {
+      "id": "76b0cdc2",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "10) Patch Extensions",
+        "range": {
+          "from": 6521,
+          "to": 6544
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "10) Patch Extensions",
+          "headingId": "10-patch-extensions"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "10) Patch Extensions"
+          }
+        ]
+      }
+    },
+    {
+      "id": "324c9c80",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Extend `appendLines` patches to carry tokens and diff metadata:",
+        "range": {
+          "from": 6545,
+          "to": 6608
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Extend "
+          },
+          {
+            "kind": "code",
+            "text": "appendLines"
+          },
+          {
+            "kind": "text",
+            "text": " patches to carry tokens and diff metadata:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "5b95c4b1",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```ts\ntype AppendLinesPatchV1 = {\n  op: \"appendLines\";\n  at: NodePath;\n  startIndex: number;\n  lines: string[];\n  highlight?: (string | null)[];\n  tokens?: (TokenLineV1 | null)[];\n  diffKind?: (string | null)[];\n  oldNo?: (number | null)[];\n  newNo?: (number | null)[];\n};\n```",
+        "range": {
+          "from": 6609,
+          "to": 6885
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"typescript\"><code data-language=\"typescript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">type</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> AppendLinesPatchV1</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  op</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"appendLines\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  at</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> NodePath</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  startIndex</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> number</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  lines</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">[];</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  highlight</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> (</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">string</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> |</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> null</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)[];</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  tokens</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> (</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">TokenLineV1</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> |</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> null</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)[];</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  diffKind</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> (</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">string</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> |</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> null</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)[];</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  oldNo</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> (</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">number</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> |</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> null</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)[];</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  newNo</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> (</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">number</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> |</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> null</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)[];</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">};</span></span></code></pre>",
+        "meta": {
+          "lang": "typescript",
+          "code": "type AppendLinesPatchV1 = {\n  op: \"appendLines\";\n  at: NodePath;\n  startIndex: number;\n  lines: string[];\n  highlight?: (string | null)[];\n  tokens?: (TokenLineV1 | null)[];\n  diffKind?: (string | null)[];\n  oldNo?: (number | null)[];\n  newNo?: (number | null)[];\n};"
+        }
+      }
+    },
+    {
+      "id": "7b508b41",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "11) Transport",
+        "range": {
+          "from": 6887,
+          "to": 6903
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "11) Transport",
+          "headingId": "11-transport"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "11) Transport"
+          }
+        ]
+      }
+    },
+    {
+      "id": "4ee397f9",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "11.1 Default Transport",
+        "range": {
+          "from": 6904,
+          "to": 6930
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "11.1 Default Transport",
+          "headingId": "11-1-default-transport"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "11.1 Default Transport"
+          }
+        ]
+      }
+    },
+    {
+      "id": "552dabc5",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- NDJSON for CLI/TUI pipelines.\n- SSE for HTTP streaming (optional).",
+        "range": {
+          "from": 6931,
+          "to": 6999
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "NDJSON for CLI/TUI pipelines."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "SSE for HTTP streaming (optional)."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "40098866",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "11.2 Snapshot Events",
+        "range": {
+          "from": 7001,
+          "to": 7025
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "11.2 Snapshot Events",
+          "headingId": "11-2-snapshot-events"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "11.2 Snapshot Events"
+          }
+        ]
+      }
+    },
+    {
+      "id": "737c8b63",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Allow an optional snapshot event for recovery and debugging. Patches remain the\ncanonical incremental transport.",
+        "range": {
+          "from": 7026,
+          "to": 7138
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Allow an optional snapshot event for recovery and debugging. Patches remain the\ncanonical incremental transport."
+          }
+        ]
+      }
+    },
+    {
+      "id": "6e43802a",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "12) API Surface",
+        "range": {
+          "from": 7140,
+          "to": 7158
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "12) API Surface",
+          "headingId": "12-api-surface"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "12) API Surface"
+          }
+        ]
+      }
+    },
+    {
+      "id": "43922802",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "12.1 Worker Init Options",
+        "range": {
+          "from": 7159,
+          "to": 7187
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "12.1 Worker Init Options",
+          "headingId": "12-1-worker-init-options"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "12.1 Worker Init Options"
+          }
+        ]
+      }
+    },
+    {
+      "id": "2d063f26",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Add output mode:",
+        "range": {
+          "from": 7188,
+          "to": 7204
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Add output mode:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "49821dba",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```ts\ntype WorkerInitOutputMode = \"html\" | \"tokens\" | \"both\";\n```",
+        "range": {
+          "from": 7205,
+          "to": 7270
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"typescript\"><code data-language=\"typescript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">type</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> WorkerInitOutputMode</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"html\"</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> |</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"tokens\"</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> |</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"both\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span></code></pre>",
+        "meta": {
+          "lang": "typescript",
+          "code": "type WorkerInitOutputMode = \"html\" | \"tokens\" | \"both\";"
+        }
+      }
+    },
+    {
+      "id": "2c0663f6",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "12.2 Public Exports",
+        "range": {
+          "from": 7272,
+          "to": 7295
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "12.2 Public Exports",
+          "headingId": "12-2-public-exports"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "12.2 Public Exports"
+          }
+        ]
+      }
+    },
+    {
+      "id": "609af8c8",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Proposed:",
+        "range": {
+          "from": 7296,
+          "to": 7305
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Proposed:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "39a53f5a",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `@stream-mdx/protocol` for schemas and event types.\n- Optional `@stream-mdx/tui` for a reference store and ANSI helpers.",
+        "range": {
+          "from": 7306,
+          "to": 7428
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "@stream-mdx/protocol"
+              },
+              {
+                "kind": "text",
+                "text": " for schemas and event types."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Optional "
+              },
+              {
+                "kind": "code",
+                "text": "@stream-mdx/tui"
+              },
+              {
+                "kind": "text",
+                "text": " for a reference store and ANSI helpers."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "5c2126fa",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "13) Implementation Notes",
+        "range": {
+          "from": 7430,
+          "to": 7457
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "13) Implementation Notes",
+          "headingId": "13-implementation-notes"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "13) Implementation Notes"
+          }
+        ]
+      }
+    },
+    {
+      "id": "19287ec0",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "13.1 Worker",
+        "range": {
+          "from": 7458,
+          "to": 7473
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "13.1 Worker",
+          "headingId": "13-1-worker"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "13.1 Worker"
+          }
+        ]
+      }
+    },
+    {
+      "id": "106859c2",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Preserve HTML highlighting for web.\n- Add token emission per completed line for incremental mode.\n- For finalized blocks, emit full token arrays in one batch.\n- Diff detection via code fence info (e.g., `diff`, `diff-ts`, `ts diff`).",
+        "range": {
+          "from": 7474,
+          "to": 7709
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Preserve HTML highlighting for web."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Add token emission per completed line for incremental mode."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "For finalized blocks, emit full token arrays in one batch."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Diff detection via code fence info (e.g., "
+              },
+              {
+                "kind": "code",
+                "text": "diff"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "diff-ts"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "ts diff"
+              },
+              {
+                "kind": "text",
+                "text": ")."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "397f3400",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "13.2 React Store",
+        "range": {
+          "from": 7711,
+          "to": 7731
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "13.2 React Store",
+          "headingId": "13-2-react-store"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "13.2 React Store"
+          }
+        ]
+      }
+    },
+    {
+      "id": "7109421d",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Option A (default): leave tokens out of the React store (web only).\n- Option B: preserve `tokens` in code-line props for future web tooling.",
+        "range": {
+          "from": 7732,
+          "to": 7874
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Option A (default): leave tokens out of the React store (web only)."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Option B: preserve "
+              },
+              {
+                "kind": "code",
+                "text": "tokens"
+              },
+              {
+                "kind": "text",
+                "text": " in code-line props for future web tooling."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "58baf80",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "13.3 TUI Snapshot Store",
+        "range": {
+          "from": 7876,
+          "to": 7903
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "13.3 TUI Snapshot Store",
+          "headingId": "13-3-tui-snapshot-store"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "13.3 TUI Snapshot Store"
+          }
+        ]
+      }
+    },
+    {
+      "id": "4a0e011a",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Provide a small store to apply patches and retrieve a node tree for rendering.",
+        "range": {
+          "from": 7904,
+          "to": 7982
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Provide a small store to apply patches and retrieve a node tree for rendering."
+          }
+        ]
+      }
+    },
+    {
+      "id": "5b19965e",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "14) Tests and Validation",
+        "range": {
+          "from": 7984,
+          "to": 8011
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "14) Tests and Validation",
+          "headingId": "14-tests-and-validation"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "14) Tests and Validation"
+          }
+        ]
+      }
+    },
+    {
+      "id": "5035fd19",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "14.1 Schema Validation",
+        "range": {
+          "from": 8012,
+          "to": 8038
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "14.1 Schema Validation",
+          "headingId": "14-1-schema-validation"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "14.1 Schema Validation"
+          }
+        ]
+      }
+    },
+    {
+      "id": "3a17635e",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- JSON schema tests for protocol events and patch shapes.",
+        "range": {
+          "from": 8039,
+          "to": 8096
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "JSON schema tests for protocol events and patch shapes."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "6c1c2017",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "14.2 Deterministic Replay",
+        "range": {
+          "from": 8098,
+          "to": 8127
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "14.2 Deterministic Replay",
+          "headingId": "14-2-deterministic-replay"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "14.2 Deterministic Replay"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6b5d7c5d",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Replay patch streams and compare normalized outputs.",
+        "range": {
+          "from": 8128,
+          "to": 8182
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Replay patch streams and compare normalized outputs."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "445a5a4b",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "14.3 Token Invariants",
+        "range": {
+          "from": 8184,
+          "to": 8209
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "14.3 Token Invariants",
+          "headingId": "14-3-token-invariants"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "14.3 Token Invariants"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6f4e56fd",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Token spans must reconstruct the original line text.\n- Tokens must not overlap or omit characters.",
+        "range": {
+          "from": 8210,
+          "to": 8310
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Token spans must reconstruct the original line text."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Tokens must not overlap or omit characters."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "ee4155c",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "14.4 Diff Tests",
+        "range": {
+          "from": 8312,
+          "to": 8331
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "14.4 Diff Tests",
+          "headingId": "14-4-diff-tests"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "14.4 Diff Tests"
+          }
+        ]
+      }
+    },
+    {
+      "id": "65c8fda2",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Unified diff parsing tests (hunks, headers, no newline).\n- Diff tokenization correctness for add/remove/context lines.",
+        "range": {
+          "from": 8332,
+          "to": 8452
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Unified diff parsing tests (hunks, headers, no newline)."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Diff tokenization correctness for add/remove/context lines."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "62889565",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "14.5 Performance",
+        "range": {
+          "from": 8454,
+          "to": 8474
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "14.5 Performance",
+          "headingId": "14-5-performance"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "14.5 Performance"
+          }
+        ]
+      }
+    },
+    {
+      "id": "599e5e9e",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Limit Shiki time per update (target p95 < 8ms per batch).\n- Ensure patch sizes remain bounded during streaming.",
+        "range": {
+          "from": 8475,
+          "to": 8588
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Limit Shiki time per update (target p95 < 8ms per batch)."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Ensure patch sizes remain bounded during streaming."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "4d8fda2c",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "15) Migration and Compatibility",
+        "range": {
+          "from": 8590,
+          "to": 8624
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "15) Migration and Compatibility",
+          "headingId": "15-migration-and-compatibility"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "15) Migration and Compatibility"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6da4d2db",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Protocol v1 is additive; existing web output remains unchanged.\n- Tokens are gated by output mode or feature flag.\n- Update docs and release notes to explain schema and compatibility.",
+        "range": {
+          "from": 8625,
+          "to": 8810
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Protocol v1 is additive; existing web output remains unchanged."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Tokens are gated by output mode or feature flag."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Update docs and release notes to explain schema and compatibility."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "8a46cdf",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "16) Milestones (Phased)",
+        "range": {
+          "from": 8812,
+          "to": 8838
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "16) Milestones (Phased)",
+          "headingId": "16-milestones-phased"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "16) Milestones (Phased)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "7920ca56",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "1) Protocol v1 scaffolding + docs.\n2) Token output for code blocks (non-diff).\n3) Reference TUI store + NDJSON helpers.\n4) Diff semantics + incremental tokenization.\n5) Validation + benchmarks + release readiness.",
+        "range": {
+          "from": 8839,
+          "to": 9052
+        },
+        "meta": {
+          "ordered": false,
+          "items": [],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "519644f6",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "17) Open Questions",
+        "range": {
+          "from": 9054,
+          "to": 9075
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "17) Open Questions",
+          "headingId": "17-open-questions"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "17) Open Questions"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6329ca7a",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Should `tokens` be emitted in web mode by default?\n- Single-theme vs dual-theme token outputs for TUI.\n- How aggressively to infer base language in diffs.",
+        "range": {
+          "from": 9076,
+          "to": 9232
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Should "
+              },
+              {
+                "kind": "code",
+                "text": "tokens"
+              },
+              {
+                "kind": "text",
+                "text": " be emitted in web mode by default?"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Single-theme vs dual-theme token outputs for TUI."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "How aggressively to infer base language in diffs."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "6d3337c6",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "18) Default Decisions (Unless Overridden)",
+        "range": {
+          "from": 9234,
+          "to": 9278
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "18) Default Decisions (Unless Overridden)",
+          "headingId": "18-default-decisions-unless-overridden"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "18) Default Decisions (Unless Overridden)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "71b71921",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Use inline token styles in v1.\n- Output mode default: `\"html\"` for web, `\"both\"` for dev, `\"tokens\"` for TUI.\n- Diff model: unified diff with per-line semantics; line-diff fallback.",
+        "range": {
+          "from": 9279,
+          "to": 9462
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Use inline token styles in v1."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Output mode default: "
+              },
+              {
+                "kind": "code",
+                "text": "\"html\""
+              },
+              {
+                "kind": "text",
+                "text": " for web, "
+              },
+              {
+                "kind": "code",
+                "text": "\"both\""
+              },
+              {
+                "kind": "text",
+                "text": " for dev, "
+              },
+              {
+                "kind": "code",
+                "text": "\"tokens\""
+              },
+              {
+                "kind": "text",
+                "text": " for TUI."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Diff model: unified diff with per-line semantics; line-diff fallback."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    }
+  ],
+  "tocHeadings": [
+    {
+      "id": "streammdx-json-tui-protocol-diff-highlighting-spec",
+      "text": "StreamMDX JSON/TUI Protocol + Diff Highlighting Spec",
+      "level": 1,
+      "blockId": "db082c0"
+    },
+    {
+      "id": "1-purpose",
+      "text": "1) Purpose",
+      "level": 2,
+      "blockId": "391ef55f"
+    },
+    {
+      "id": "2-goals",
+      "text": "2) Goals",
+      "level": 2,
+      "blockId": "58af855a"
+    },
+    {
+      "id": "3-non-goals",
+      "text": "3) Non-Goals",
+      "level": 2,
+      "blockId": "11bf755a"
+    },
+    {
+      "id": "4-current-state-summary",
+      "text": "4) Current State (Summary)",
+      "level": 2,
+      "blockId": "c05ec5c"
+    },
+    {
+      "id": "5-requirements",
+      "text": "5) Requirements",
+      "level": 2,
+      "blockId": "3b9bd019"
+    },
+    {
+      "id": "functional",
+      "text": "Functional",
+      "level": 3,
+      "blockId": "18b2a324"
+    },
+    {
+      "id": "non-functional",
+      "text": "Non-Functional",
+      "level": 3,
+      "blockId": "75333f23"
+    },
+    {
+      "id": "6-protocol-v1",
+      "text": "6) Protocol v1",
+      "level": 2,
+      "blockId": "1ee89c2d"
+    },
+    {
+      "id": "6-1-event-envelope",
+      "text": "6.1 Event Envelope",
+      "level": 3,
+      "blockId": "210d5f97"
+    },
+    {
+      "id": "6-2-init-event",
+      "text": "6.2 Init Event",
+      "level": 3,
+      "blockId": "147b6820"
+    },
+    {
+      "id": "6-3-done-event",
+      "text": "6.3 Done Event",
+      "level": 3,
+      "blockId": "44b18f9d"
+    },
+    {
+      "id": "6-4-compatibility-rules",
+      "text": "6.4 Compatibility Rules",
+      "level": 3,
+      "blockId": "1a436eeb"
+    },
+    {
+      "id": "7-node-taxonomy-and-props",
+      "text": "7) Node Taxonomy and Props",
+      "level": 2,
+      "blockId": "5246a040"
+    },
+    {
+      "id": "7-1-root",
+      "text": "7.1 Root",
+      "level": 3,
+      "blockId": "2f22f39d"
+    },
+    {
+      "id": "7-2-core-block-types-minimum",
+      "text": "7.2 Core Block Types (Minimum)",
+      "level": 3,
+      "blockId": "4d1419e2"
+    },
+    {
+      "id": "7-3-list-props",
+      "text": "7.3 List Props",
+      "level": 3,
+      "blockId": "69920da6"
+    },
+    {
+      "id": "7-4-inline-segment-props",
+      "text": "7.4 Inline Segment Props",
+      "level": 3,
+      "blockId": "11e957a0"
+    },
+    {
+      "id": "7-5-code-block-props",
+      "text": "7.5 Code Block Props",
+      "level": 3,
+      "blockId": "5a117c26"
+    },
+    {
+      "id": "7-6-code-line-props",
+      "text": "7.6 Code Line Props",
+      "level": 3,
+      "blockId": "38b5643c"
+    },
+    {
+      "id": "7-7-mdx-and-html-blocks",
+      "text": "7.7 MDX and HTML Blocks",
+      "level": 3,
+      "blockId": "52c0d7c0"
+    },
+    {
+      "id": "7-8-extension-nodes",
+      "text": "7.8 Extension Nodes",
+      "level": 3,
+      "blockId": "40c7ef08"
+    },
+    {
+      "id": "8-token-schema-v1",
+      "text": "8) Token Schema v1",
+      "level": 2,
+      "blockId": "183c976b"
+    },
+    {
+      "id": "8-1-inline-style-encoding-v1",
+      "text": "8.1 Inline Style Encoding (v1)",
+      "level": 3,
+      "blockId": "2e57060"
+    },
+    {
+      "id": "8-2-optional-style-table-encoding-v2-candidate",
+      "text": "8.2 Optional Style Table Encoding (v2 candidate)",
+      "level": 3,
+      "blockId": "27eb85be"
+    },
+    {
+      "id": "9-diff-model",
+      "text": "9) Diff Model",
+      "level": 2,
+      "blockId": "48e27ebe"
+    },
+    {
+      "id": "9-1-diff-line-semantics",
+      "text": "9.1 Diff Line Semantics",
+      "level": 3,
+      "blockId": "46ba0498"
+    },
+    {
+      "id": "9-2-diff-line-numbers",
+      "text": "9.2 Diff Line Numbers",
+      "level": 3,
+      "blockId": "752b55c5"
+    },
+    {
+      "id": "9-3-tokenization-strategy-unified-diff",
+      "text": "9.3 Tokenization Strategy (Unified Diff)",
+      "level": 3,
+      "blockId": "11f876d7"
+    },
+    {
+      "id": "9-4-line-diff-mode",
+      "text": "9.4 Line-Diff Mode",
+      "level": 3,
+      "blockId": "70a18cfc"
+    },
+    {
+      "id": "10-patch-extensions",
+      "text": "10) Patch Extensions",
+      "level": 2,
+      "blockId": "76b0cdc2"
+    },
+    {
+      "id": "11-transport",
+      "text": "11) Transport",
+      "level": 2,
+      "blockId": "7b508b41"
+    },
+    {
+      "id": "11-1-default-transport",
+      "text": "11.1 Default Transport",
+      "level": 3,
+      "blockId": "4ee397f9"
+    },
+    {
+      "id": "11-2-snapshot-events",
+      "text": "11.2 Snapshot Events",
+      "level": 3,
+      "blockId": "40098866"
+    },
+    {
+      "id": "12-api-surface",
+      "text": "12) API Surface",
+      "level": 2,
+      "blockId": "6e43802a"
+    },
+    {
+      "id": "12-1-worker-init-options",
+      "text": "12.1 Worker Init Options",
+      "level": 3,
+      "blockId": "43922802"
+    },
+    {
+      "id": "12-2-public-exports",
+      "text": "12.2 Public Exports",
+      "level": 3,
+      "blockId": "2c0663f6"
+    },
+    {
+      "id": "13-implementation-notes",
+      "text": "13) Implementation Notes",
+      "level": 2,
+      "blockId": "5c2126fa"
+    },
+    {
+      "id": "13-1-worker",
+      "text": "13.1 Worker",
+      "level": 3,
+      "blockId": "19287ec0"
+    },
+    {
+      "id": "13-2-react-store",
+      "text": "13.2 React Store",
+      "level": 3,
+      "blockId": "397f3400"
+    },
+    {
+      "id": "13-3-tui-snapshot-store",
+      "text": "13.3 TUI Snapshot Store",
+      "level": 3,
+      "blockId": "58baf80"
+    },
+    {
+      "id": "14-tests-and-validation",
+      "text": "14) Tests and Validation",
+      "level": 2,
+      "blockId": "5b19965e"
+    },
+    {
+      "id": "14-1-schema-validation",
+      "text": "14.1 Schema Validation",
+      "level": 3,
+      "blockId": "5035fd19"
+    },
+    {
+      "id": "14-2-deterministic-replay",
+      "text": "14.2 Deterministic Replay",
+      "level": 3,
+      "blockId": "6c1c2017"
+    },
+    {
+      "id": "14-3-token-invariants",
+      "text": "14.3 Token Invariants",
+      "level": 3,
+      "blockId": "445a5a4b"
+    },
+    {
+      "id": "14-4-diff-tests",
+      "text": "14.4 Diff Tests",
+      "level": 3,
+      "blockId": "ee4155c"
+    },
+    {
+      "id": "14-5-performance",
+      "text": "14.5 Performance",
+      "level": 3,
+      "blockId": "62889565"
+    },
+    {
+      "id": "15-migration-and-compatibility",
+      "text": "15) Migration and Compatibility",
+      "level": 2,
+      "blockId": "4d8fda2c"
+    },
+    {
+      "id": "16-milestones-phased",
+      "text": "16) Milestones (Phased)",
+      "level": 2,
+      "blockId": "8a46cdf"
+    },
+    {
+      "id": "17-open-questions",
+      "text": "17) Open Questions",
+      "level": 2,
+      "blockId": "519644f6"
+    },
+    {
+      "id": "18-default-decisions-unless-overridden",
+      "text": "18) Default Decisions (Unless Overridden)",
+      "level": 2,
+      "blockId": "6d3337c6"
+    }
+  ],
+  "init": {
+    "docPlugins": {
+      "tables": true,
+      "html": true,
+      "mdx": true,
+      "math": true,
+      "footnotes": true,
+      "callouts": true
+    },
+    "mdx": {
+      "compileMode": "server"
+    },
+    "prewarmLangs": [
+      "typescript",
+      "tsx",
+      "javascript",
+      "json",
+      "bash",
+      "diff"
+    ]
+  }
+}

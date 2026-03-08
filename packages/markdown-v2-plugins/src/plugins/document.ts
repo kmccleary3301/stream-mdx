@@ -40,6 +40,11 @@ export class DocumentPluginRegistry {
   private plugins: DocumentPlugin[] = [];
 
   register(plugin: DocumentPlugin): void {
+    const existingIndex = this.plugins.findIndex((current) => current.name === plugin.name);
+    if (existingIndex >= 0) {
+      this.plugins.splice(existingIndex, 1, plugin);
+      return;
+    }
     this.plugins.push(plugin);
   }
 
@@ -54,6 +59,10 @@ export class DocumentPluginRegistry {
 
   getAll(): DocumentPlugin[] {
     return [...this.plugins];
+  }
+
+  clear(): void {
+    this.plugins = [];
   }
 
   /**

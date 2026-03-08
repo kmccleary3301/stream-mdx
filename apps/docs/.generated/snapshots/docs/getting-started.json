@@ -1,0 +1,526 @@
+{
+  "version": 1,
+  "schemaId": "streammdx.snapshot.v1",
+  "createdAt": "2026-02-11T20:25:44.115Z",
+  "hash": "1a0ed5085e4a39a1af8480807194af252d4f0a58a63030678134b48879cce213",
+  "contentHash": "e23592edbad81efe58307722b7d547ff25dfe5b2580c07bd37bf663f0cab849d",
+  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
+  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "blocks": [
+    {
+      "id": "db082c0",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Getting Started",
+        "range": {
+          "from": 0,
+          "to": 17
+        },
+        "meta": {
+          "headingLevel": 1,
+          "headingText": "Getting Started",
+          "headingId": "getting-started"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Getting Started"
+          }
+        ]
+      }
+    },
+    {
+      "id": "4d776cd8",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Install",
+        "range": {
+          "from": 19,
+          "to": 29
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Install",
+          "headingId": "install"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Install"
+          }
+        ]
+      }
+    },
+    {
+      "id": "21941f04",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```bash\nnpm install stream-mdx\n```",
+        "range": {
+          "from": 31,
+          "to": 65
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> install</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> stream-mdx</span></span></code></pre>",
+        "meta": {
+          "lang": "bash",
+          "code": "npm install stream-mdx"
+        }
+      }
+    },
+    {
+      "id": "4f6eeac1",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Host the worker bundle",
+        "range": {
+          "from": 67,
+          "to": 92
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Host the worker bundle",
+          "headingId": "host-the-worker-bundle"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Host the worker bundle"
+          }
+        ]
+      }
+    },
+    {
+      "id": "c507e5b",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "In production, host the worker bundle from static assets (avoid `blob:` CSP requirements):",
+        "range": {
+          "from": 94,
+          "to": 184
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "In production, host the worker bundle from static assets (avoid "
+          },
+          {
+            "kind": "code",
+            "text": "blob:"
+          },
+          {
+            "kind": "text",
+            "text": " CSP requirements):"
+          }
+        ]
+      }
+    },
+    {
+      "id": "7780ed7b",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```bash\nmkdir -p public/workers\ncp node_modules/@stream-mdx/worker/dist/hosted/markdown-worker.js public/workers/markdown-worker.js\n```",
+        "range": {
+          "from": 186,
+          "to": 321
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">mkdir</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> -p</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> public/workers</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">cp</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> node_modules/@stream-mdx/worker/dist/hosted/markdown-worker.js</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> public/workers/markdown-worker.js</span></span></code></pre>",
+        "meta": {
+          "lang": "bash",
+          "code": "mkdir -p public/workers\ncp node_modules/@stream-mdx/worker/dist/hosted/markdown-worker.js public/workers/markdown-worker.js"
+        }
+      }
+    },
+    {
+      "id": "7557cc4",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Render Markdown (CLI / Node)",
+        "range": {
+          "from": 323,
+          "to": 354
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Render Markdown (CLI / Node)",
+          "headingId": "render-markdown-cli-node"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Render Markdown (CLI / Node)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "55d6067c",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "If you want to reuse the worker + patch stream in a terminal UI (Ink, etc.), use the Node worker helper:",
+        "range": {
+          "from": 356,
+          "to": 460
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "If you want to reuse the worker + patch stream in a terminal UI (Ink, etc.), use the Node worker helper:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "7253c8bc",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `stream-mdx/worker/node` (or `@stream-mdx/worker/node`)",
+        "range": {
+          "from": 462,
+          "to": 519
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "stream-mdx/worker/node"
+              },
+              {
+                "kind": "text",
+                "text": " (or "
+              },
+              {
+                "kind": "code",
+                "text": "@stream-mdx/worker/node"
+              },
+              {
+                "kind": "text",
+                "text": ")"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "334fa59c",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "See `docs/CLI_USAGE.md` for a complete example that consumes `PATCH` messages into a `DocumentSnapshot`.",
+        "range": {
+          "from": 521,
+          "to": 625
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "See "
+          },
+          {
+            "kind": "code",
+            "text": "docs/CLI_USAGE.md"
+          },
+          {
+            "kind": "text",
+            "text": " for a complete example that consumes "
+          },
+          {
+            "kind": "code",
+            "text": "PATCH"
+          },
+          {
+            "kind": "text",
+            "text": " messages into a "
+          },
+          {
+            "kind": "code",
+            "text": "DocumentSnapshot"
+          },
+          {
+            "kind": "text",
+            "text": "."
+          }
+        ]
+      }
+    },
+    {
+      "id": "1715510b",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Render Markdown (React)",
+        "range": {
+          "from": 627,
+          "to": 653
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Render Markdown (React)",
+          "headingId": "render-markdown-react"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Render Markdown (React)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "3497399a",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Next.js (App Router)",
+        "range": {
+          "from": 655,
+          "to": 679
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "Next.js (App Router)",
+          "headingId": "next-js-app-router"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Next.js (App Router)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "4ffc8c57",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "`StreamingMarkdown` is a client component.",
+        "range": {
+          "from": 681,
+          "to": 723
+        },
+        "inline": [
+          {
+            "kind": "code",
+            "text": "StreamingMarkdown"
+          },
+          {
+            "kind": "text",
+            "text": " is a client component."
+          }
+        ]
+      }
+    },
+    {
+      "id": "47541c66",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```tsx\n\"use client\";\n\nimport { StreamingMarkdown } from \"stream-mdx\";\n\nexport function Demo({ text }: { text: string }) {\n  return <StreamingMarkdown text={text} worker=\"/workers/markdown-worker.js\" />;\n}\n```",
+        "range": {
+          "from": 725,
+          "to": 933
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"use client\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { StreamingMarkdown } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"4\"></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">export</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> function</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> Demo</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">({ </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">text</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }) {</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  return</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{text} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> />;</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}</span></span></code></pre>",
+        "meta": {
+          "lang": "tsx",
+          "code": "\"use client\";\n\nimport { StreamingMarkdown } from \"stream-mdx\";\n\nexport function Demo({ text }: { text: string }) {\n  return <StreamingMarkdown text={text} worker=\"/workers/markdown-worker.js\" />;\n}"
+        }
+      }
+    },
+    {
+      "id": "5e7c0395",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Vite React",
+        "range": {
+          "from": 935,
+          "to": 949
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "Vite React",
+          "headingId": "vite-react"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Vite React"
+          }
+        ]
+      }
+    },
+    {
+      "id": "204d8c9f",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```tsx\nimport { StreamingMarkdown } from \"stream-mdx\";\n\nexport default function App() {\n  return <StreamingMarkdown text=\"## Hello\\n\\nStreaming **markdown**\" worker=\"/workers/markdown-worker.js\" />;\n}\n```",
+        "range": {
+          "from": 951,
+          "to": 1155
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { StreamingMarkdown } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">export</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> default</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> function</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> App</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">() {</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  return</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"## Hello\\n\\nStreaming **markdown**\"</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> />;</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}</span></span></code></pre>",
+        "meta": {
+          "lang": "tsx",
+          "code": "import { StreamingMarkdown } from \"stream-mdx\";\n\nexport default function App() {\n  return <StreamingMarkdown text=\"## Hello\\n\\nStreaming **markdown**\" worker=\"/workers/markdown-worker.js\" />;\n}"
+        }
+      }
+    },
+    {
+      "id": "65bb19c2",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Next steps",
+        "range": {
+          "from": 1157,
+          "to": 1170
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Next steps",
+          "headingId": "next-steps"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Next steps"
+          }
+        ]
+      }
+    },
+    {
+      "id": "5bc087e1",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Props/types: `docs/PUBLIC_API.md`\n- MDX + customization: `docs/REACT_INTEGRATION_GUIDE.md`\n- Plugin/worker cookbook: `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`",
+        "range": {
+          "from": 1172,
+          "to": 1336
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Props/types: "
+              },
+              {
+                "kind": "code",
+                "text": "docs/PUBLIC_API.md"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "MDX + customization: "
+              },
+              {
+                "kind": "code",
+                "text": "docs/REACT_INTEGRATION_GUIDE.md"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Plugin/worker cookbook: "
+              },
+              {
+                "kind": "code",
+                "text": "docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    }
+  ],
+  "tocHeadings": [
+    {
+      "id": "getting-started",
+      "text": "Getting Started",
+      "level": 1,
+      "blockId": "db082c0"
+    },
+    {
+      "id": "install",
+      "text": "Install",
+      "level": 2,
+      "blockId": "4d776cd8"
+    },
+    {
+      "id": "host-the-worker-bundle",
+      "text": "Host the worker bundle",
+      "level": 2,
+      "blockId": "4f6eeac1"
+    },
+    {
+      "id": "render-markdown-cli-node",
+      "text": "Render Markdown (CLI / Node)",
+      "level": 2,
+      "blockId": "7557cc4"
+    },
+    {
+      "id": "render-markdown-react",
+      "text": "Render Markdown (React)",
+      "level": 2,
+      "blockId": "1715510b"
+    },
+    {
+      "id": "next-js-app-router",
+      "text": "Next.js (App Router)",
+      "level": 3,
+      "blockId": "3497399a"
+    },
+    {
+      "id": "vite-react",
+      "text": "Vite React",
+      "level": 3,
+      "blockId": "5e7c0395"
+    },
+    {
+      "id": "next-steps",
+      "text": "Next steps",
+      "level": 2,
+      "blockId": "65bb19c2"
+    }
+  ],
+  "init": {
+    "docPlugins": {
+      "tables": true,
+      "html": true,
+      "mdx": true,
+      "math": true,
+      "footnotes": true,
+      "callouts": true
+    },
+    "mdx": {
+      "compileMode": "server"
+    },
+    "prewarmLangs": [
+      "typescript",
+      "tsx",
+      "javascript",
+      "json",
+      "bash",
+      "diff"
+    ]
+  }
+}

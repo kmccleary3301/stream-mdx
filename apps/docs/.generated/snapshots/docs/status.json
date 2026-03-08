@@ -1,0 +1,1538 @@
+{
+  "version": 1,
+  "schemaId": "streammdx.snapshot.v1",
+  "createdAt": "2026-02-11T20:25:51.132Z",
+  "hash": "2c2dcec99bbc8ae909340d8a783ea9a22ce8829feaa0ce21ad7f37d02bd34963",
+  "contentHash": "dcff74e14ee99221fd82899edcc84c9d85a49793b1146bcfd2ae3e154541d51b",
+  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
+  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "blocks": [
+    {
+      "id": "db082c0",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "StreamMDX Handbook",
+        "range": {
+          "from": 0,
+          "to": 20
+        },
+        "meta": {
+          "headingLevel": 1,
+          "headingText": "StreamMDX Handbook",
+          "headingId": "streammdx-handbook"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "StreamMDX Handbook"
+          }
+        ]
+      }
+    },
+    {
+      "id": "53546cc0",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "_Last updated: 2025-12-17_",
+        "range": {
+          "from": 22,
+          "to": 48
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "_Last updated: 2025-12-17_"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6608e225",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "This handbook is the “current state” reference for StreamMDX: architecture, key decisions, and the workflows we expect contributors and maintainers to use.",
+        "range": {
+          "from": 50,
+          "to": 205
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "This handbook is the “current state” reference for StreamMDX: architecture, key decisions, and the workflows we expect contributors and maintainers to use."
+          }
+        ]
+      }
+    },
+    {
+      "id": "2a40881f",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "If you’re looking for the consumer API first, start with:",
+        "range": {
+          "from": 207,
+          "to": 264
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "If you’re looking for the consumer API first, start with:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "3b42bffe",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `docs/PUBLIC_API.md`\n- `docs/REACT_INTEGRATION_GUIDE.md`",
+        "range": {
+          "from": 266,
+          "to": 324
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "docs/PUBLIC_API.md"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "docs/REACT_INTEGRATION_GUIDE.md"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "2be24de3",
+      "type": "hr",
+      "isFinalized": true,
+      "payload": {
+        "raw": "---",
+        "range": {
+          "from": 326,
+          "to": 329
+        }
+      }
+    },
+    {
+      "id": "2ce9f01f",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "1) Project Summary",
+        "range": {
+          "from": 331,
+          "to": 352
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "1) Project Summary",
+          "headingId": "1-project-summary"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "1) Project Summary"
+          }
+        ]
+      }
+    },
+    {
+      "id": "2c0ca0fa",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "StreamMDX is a streaming-first Markdown/MDX renderer for React built around:",
+        "range": {
+          "from": 354,
+          "to": 430
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "StreamMDX is a streaming-first Markdown/MDX renderer for React built around:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "11067a7f",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- **Worker-first parsing** (keeps heavy work off the main thread)\n- **Incremental patching** (updates are applied to an existing render)\n- **Backpressure guardrails** (prevents UI lockups on large documents/high update rates)\n- **Modular feature flags** (tables/html/mdx/math/footnotes/callouts)",
+        "range": {
+          "from": 432,
+          "to": 727
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Worker-first parsing"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": " (keeps heavy work off the main thread)"
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Incremental patching"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": " (updates are applied to an existing render)"
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Backpressure guardrails"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": " (prevents UI lockups on large documents/high update rates)"
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Modular feature flags"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": " (tables/html/mdx/math/footnotes/callouts)"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "250d8e4a",
+      "type": "hr",
+      "isFinalized": true,
+      "payload": {
+        "raw": "---",
+        "range": {
+          "from": 729,
+          "to": 732
+        }
+      }
+    },
+    {
+      "id": "1c89d818",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "2) Packages",
+        "range": {
+          "from": 734,
+          "to": 748
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "2) Packages",
+          "headingId": "2-packages"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "2) Packages"
+          }
+        ]
+      }
+    },
+    {
+      "id": "5e8b7d46",
+      "type": "table",
+      "isFinalized": true,
+      "payload": {
+        "raw": "| Package | Notes |\n| --- | --- |\n| `stream-mdx` | Convenience wrapper; stable import paths for apps (recommended). |\n| `@stream-mdx/react` | `<StreamingMarkdown />`, renderer store, patch scheduler, node views. |\n| `@stream-mdx/worker` | Worker client utilities + hosted worker bundle (`dist/hosted/markdown-worker.js`). |\n| `@stream-mdx/core` | Types, snapshot helpers, sanitization primitives, perf helpers. |\n| `@stream-mdx/plugins/*` | Worker/plugin primitives and built-in domain helpers. |",
+        "range": {
+          "from": 750,
+          "to": 1246
+        },
+        "inline": [],
+        "meta": {
+          "header": [
+            [
+              {
+                "kind": "text",
+                "text": "Package"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Notes"
+              }
+            ]
+          ],
+          "rows": [
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "stream-mdx"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Convenience wrapper; stable import paths for apps (recommended)."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "@stream-mdx/react"
+                }
+              ],
+              [
+                {
+                  "kind": "code",
+                  "text": "<StreamingMarkdown />"
+                },
+                {
+                  "kind": "text",
+                  "text": ", renderer store, patch scheduler, node views."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "@stream-mdx/worker"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Worker client utilities + hosted worker bundle ("
+                },
+                {
+                  "kind": "code",
+                  "text": "dist/hosted/markdown-worker.js"
+                },
+                {
+                  "kind": "text",
+                  "text": ")."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "@stream-mdx/core"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Types, snapshot helpers, sanitization primitives, perf helpers."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "@stream-mdx/plugins/*"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Worker/plugin primitives and built-in domain helpers."
+                }
+              ]
+            ]
+          ],
+          "align": [
+            null,
+            null
+          ]
+        }
+      }
+    },
+    {
+      "id": "45ae55cf",
+      "type": "hr",
+      "isFinalized": true,
+      "payload": {
+        "raw": "---",
+        "range": {
+          "from": 1248,
+          "to": 1251
+        }
+      }
+    },
+    {
+      "id": "5671ef81",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "3) Pipeline Overview",
+        "range": {
+          "from": 1253,
+          "to": 1276
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "3) Pipeline Overview",
+          "headingId": "3-pipeline-overview"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "3) Pipeline Overview"
+          }
+        ]
+      }
+    },
+    {
+      "id": "77771dc2",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "3.1 Worker",
+        "range": {
+          "from": 1278,
+          "to": 1292
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "3.1 Worker",
+          "headingId": "3-1-worker"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "3.1 Worker"
+          }
+        ]
+      }
+    },
+    {
+      "id": "30d7dc80",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Source: `packages/markdown-v2-worker/src/worker.ts`\n- Output: `packages/markdown-v2-worker/dist/hosted/markdown-worker.js` (self-contained, browser-targeted)\n- Responsibilities:\n  - Parse Markdown incrementally.\n  - Enrich blocks (e.g., syntax highlighting, MDX detection).\n  - Emit patch batches + optional worker-side metrics.",
+        "range": {
+          "from": 1294,
+          "to": 1624
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Source: "
+              },
+              {
+                "kind": "code",
+                "text": "packages/markdown-v2-worker/src/worker.ts"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Output: "
+              },
+              {
+                "kind": "code",
+                "text": "packages/markdown-v2-worker/dist/hosted/markdown-worker.js"
+              },
+              {
+                "kind": "text",
+                "text": " (self-contained, browser-targeted)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Responsibilities:"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Parse Markdown incrementally."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Enrich blocks (e.g., syntax highlighting, MDX detection)."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Emit patch batches + optional worker-side metrics."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "22ee2ad7",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "3.2 React renderer",
+        "range": {
+          "from": 1626,
+          "to": 1648
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "3.2 React renderer",
+          "headingId": "3-2-react-renderer"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "3.2 React renderer"
+          }
+        ]
+      }
+    },
+    {
+      "id": "a0fbf84",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Source: `packages/markdown-v2-react/src/streaming-markdown.tsx`\n- Responsibilities:\n  - Own the renderer store + patch scheduler.\n  - Attach/detach the worker and forward text/stream updates.\n  - Apply patches incrementally and render blocks with stable keys.\n  - Emit flush metrics via `onMetrics`.",
+        "range": {
+          "from": 1650,
+          "to": 1951
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Source: "
+              },
+              {
+                "kind": "code",
+                "text": "packages/markdown-v2-react/src/streaming-markdown.tsx"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Responsibilities:"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Own the renderer store + patch scheduler."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Attach/detach the worker and forward text/stream updates."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Apply patches incrementally and render blocks with stable keys."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Emit flush metrics via "
+              },
+              {
+                "kind": "code",
+                "text": "onMetrics"
+              },
+              {
+                "kind": "text",
+                "text": "."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "44310c3a",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "3.3 Backpressure and scheduling",
+        "range": {
+          "from": 1953,
+          "to": 1988
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "3.3 Backpressure and scheduling",
+          "headingId": "3-3-backpressure-and-scheduling"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "3.3 Backpressure and scheduling"
+          }
+        ]
+      }
+    },
+    {
+      "id": "12cb41d",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Credits/budgets live in `@stream-mdx/core/perf/backpressure`.\n- Patch scheduling (frame budgets, batch caps, adaptive throttling) is implemented in `@stream-mdx/react`’s patch scheduler.\n- Default scheduling uses a microtask batch with a 10ms frame budget (`DEFAULT_SCHEDULING` in `packages/markdown-v2-react/src/streaming-markdown.tsx`).\n- For smoother UI at the cost of latency, use the rAF-based preset (`DEFAULT_SCHEDULING_SMOOTH`) or pass `scheduling` explicitly.",
+        "range": {
+          "from": 1990,
+          "to": 2460
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Credits/budgets live in "
+              },
+              {
+                "kind": "code",
+                "text": "@stream-mdx/core/perf/backpressure"
+              },
+              {
+                "kind": "text",
+                "text": "."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Patch scheduling (frame budgets, batch caps, adaptive throttling) is implemented in "
+              },
+              {
+                "kind": "code",
+                "text": "@stream-mdx/react"
+              },
+              {
+                "kind": "text",
+                "text": "’s patch scheduler."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Default scheduling uses a microtask batch with a 10ms frame budget ("
+              },
+              {
+                "kind": "code",
+                "text": "DEFAULT_SCHEDULING"
+              },
+              {
+                "kind": "text",
+                "text": " in "
+              },
+              {
+                "kind": "code",
+                "text": "packages/markdown-v2-react/src/streaming-markdown.tsx"
+              },
+              {
+                "kind": "text",
+                "text": ")."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "For smoother UI at the cost of latency, use the rAF-based preset ("
+              },
+              {
+                "kind": "code",
+                "text": "DEFAULT_SCHEDULING_SMOOTH"
+              },
+              {
+                "kind": "text",
+                "text": ") or pass "
+              },
+              {
+                "kind": "code",
+                "text": "scheduling"
+              },
+              {
+                "kind": "text",
+                "text": " explicitly."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "7e17b716",
+      "type": "hr",
+      "isFinalized": true,
+      "payload": {
+        "raw": "---",
+        "range": {
+          "from": 2462,
+          "to": 2465
+        }
+      }
+    },
+    {
+      "id": "20644883",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "4) MDX",
+        "range": {
+          "from": 2467,
+          "to": 2476
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "4) MDX",
+          "headingId": "4-mdx"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "4) MDX"
+          }
+        ]
+      }
+    },
+    {
+      "id": "2d7c3ee3",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "StreamMDX supports two MDX compilation modes:",
+        "range": {
+          "from": 2478,
+          "to": 2523
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "StreamMDX supports two MDX compilation modes:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "73d6f40a",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `mdxCompileMode=\"worker\"`: compile in the worker.\n- `mdxCompileMode=\"server\"`: compile via an app-provided endpoint (default `/api/mdx-compile-v2`).",
+        "range": {
+          "from": 2525,
+          "to": 2675
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "mdxCompileMode=\"worker\""
+              },
+              {
+                "kind": "text",
+                "text": ": compile in the worker."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "mdxCompileMode=\"server\""
+              },
+              {
+                "kind": "text",
+                "text": ": compile via an app-provided endpoint (default "
+              },
+              {
+                "kind": "code",
+                "text": "/api/mdx-compile-v2"
+              },
+              {
+                "kind": "text",
+                "text": ")."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "759d9924",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "To keep parity between both strategies, use:",
+        "range": {
+          "from": 2677,
+          "to": 2721
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "To keep parity between both strategies, use:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "5881b476",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `compileMdxContent` from `stream-mdx/worker/mdx-compile` (or `@stream-mdx/worker/mdx-compile`)",
+        "range": {
+          "from": 2723,
+          "to": 2819
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "compileMdxContent"
+              },
+              {
+                "kind": "text",
+                "text": " from "
+              },
+              {
+                "kind": "code",
+                "text": "stream-mdx/worker/mdx-compile"
+              },
+              {
+                "kind": "text",
+                "text": " (or "
+              },
+              {
+                "kind": "code",
+                "text": "@stream-mdx/worker/mdx-compile"
+              },
+              {
+                "kind": "text",
+                "text": ")"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "5130c53b",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "See `docs/REACT_INTEGRATION_GUIDE.md` for a working Next.js route example.",
+        "range": {
+          "from": 2821,
+          "to": 2895
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "See "
+          },
+          {
+            "kind": "code",
+            "text": "docs/REACT_INTEGRATION_GUIDE.md"
+          },
+          {
+            "kind": "text",
+            "text": " for a working Next.js route example."
+          }
+        ]
+      }
+    },
+    {
+      "id": "7ae85a10",
+      "type": "hr",
+      "isFinalized": true,
+      "payload": {
+        "raw": "---",
+        "range": {
+          "from": 2897,
+          "to": 2900
+        }
+      }
+    },
+    {
+      "id": "69ccf489",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "5) Security Model (HTML)",
+        "range": {
+          "from": 2902,
+          "to": 2929
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "5) Security Model (HTML)",
+          "headingId": "5-security-model-html"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "5) Security Model (HTML)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "59c09837",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Raw HTML is an XSS surface; StreamMDX sanitizes by default.\n- Prefer hosted workers + strict CSP in production.\n- If you extend HTML allowlists/schemas, do it only for trusted content.",
+        "range": {
+          "from": 2931,
+          "to": 3117
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Raw HTML is an XSS surface; StreamMDX sanitizes by default."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Prefer hosted workers + strict CSP in production."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "If you extend HTML allowlists/schemas, do it only for trusted content."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "5263de72",
+      "type": "hr",
+      "isFinalized": true,
+      "payload": {
+        "raw": "---",
+        "range": {
+          "from": 3119,
+          "to": 3122
+        }
+      }
+    },
+    {
+      "id": "248b3be0",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "6) Repo Workflows",
+        "range": {
+          "from": 3124,
+          "to": 3144
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "6) Repo Workflows",
+          "headingId": "6-repo-workflows"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "6) Repo Workflows"
+          }
+        ]
+      }
+    },
+    {
+      "id": "136f7ba0",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Build + test",
+        "range": {
+          "from": 3146,
+          "to": 3162
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "Build + test",
+          "headingId": "build-test"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Build + test"
+          }
+        ]
+      }
+    },
+    {
+      "id": "52ccdbe0",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Install: `npm install`\n- Build packages: `npm run build:packages`\n- Run tests: `npm test`",
+        "range": {
+          "from": 3164,
+          "to": 3255
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Install: "
+              },
+              {
+                "kind": "code",
+                "text": "npm install"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Build packages: "
+              },
+              {
+                "kind": "code",
+                "text": "npm run build:packages"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Run tests: "
+              },
+              {
+                "kind": "code",
+                "text": "npm test"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "a031741",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Build hosted worker for the example app",
+        "range": {
+          "from": 3257,
+          "to": 3300
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "Build hosted worker for the example app",
+          "headingId": "build-hosted-worker-for-the-example-app"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Build hosted worker for the example app"
+          }
+        ]
+      }
+    },
+    {
+      "id": "1e3fdf26",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `npm run worker:build`",
+        "range": {
+          "from": 3302,
+          "to": 3326
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "npm run worker:build"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "5a138da",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "This builds the hosted worker bundle and copies it into:",
+        "range": {
+          "from": 3328,
+          "to": 3384
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "This builds the hosted worker bundle and copies it into:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "703aa2a2",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `examples/streaming-markdown-starter/public/workers/markdown-worker.js`",
+        "range": {
+          "from": 3386,
+          "to": 3459
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "examples/streaming-markdown-starter/public/workers/markdown-worker.js"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "5184ac24",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Example app",
+        "range": {
+          "from": 3461,
+          "to": 3476
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "Example app",
+          "headingId": "example-app"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Example app"
+          }
+        ]
+      }
+    },
+    {
+      "id": "39d5ffc6",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `examples/streaming-markdown-starter` is the minimal Next.js sandbox used for manual QA.",
+        "range": {
+          "from": 3478,
+          "to": 3568
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "examples/streaming-markdown-starter"
+              },
+              {
+                "kind": "text",
+                "text": " is the minimal Next.js sandbox used for manual QA."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "5c9af745",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Perf baselines (local)",
+        "range": {
+          "from": 3570,
+          "to": 3596
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "Perf baselines (local)",
+          "headingId": "perf-baselines-local"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Perf baselines (local)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "68285c65",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Latest baselines live in `docs/perf/LOCAL_BENCHMARKS.md` (naive-bayes + table-large scenarios).\n- Comparisons and guardrail notes are recorded in `docs/PERF_QUALITY_CHANGELOG.md`.\n- Re-run comparisons with:\n  - `npm run perf:compare -- --base <base> --candidate <candidate>`",
+        "range": {
+          "from": 3598,
+          "to": 3874
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Latest baselines live in "
+              },
+              {
+                "kind": "code",
+                "text": "docs/perf/LOCAL_BENCHMARKS.md"
+              },
+              {
+                "kind": "text",
+                "text": " (naive-bayes + table-large scenarios)."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Comparisons and guardrail notes are recorded in "
+              },
+              {
+                "kind": "code",
+                "text": "docs/PERF_QUALITY_CHANGELOG.md"
+              },
+              {
+                "kind": "text",
+                "text": "."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Re-run comparisons with:"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "npm run perf:compare -- --base <base> --candidate <candidate>"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "461ec230",
+      "type": "hr",
+      "isFinalized": true,
+      "payload": {
+        "raw": "---",
+        "range": {
+          "from": 3876,
+          "to": 3879
+        }
+      }
+    },
+    {
+      "id": "155efee2",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "7) Tabled / Future Work",
+        "range": {
+          "from": 3881,
+          "to": 3907
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "7) Tabled / Future Work",
+          "headingId": "7-tabled-future-work"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "7) Tabled / Future Work"
+          }
+        ]
+      }
+    },
+    {
+      "id": "16f2562f",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "The following are intentionally out-of-scope for the current “quality bridge” sprint:",
+        "range": {
+          "from": 3909,
+          "to": 3994
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "The following are intentionally out-of-scope for the current “quality bridge” sprint:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "33f2a5d9",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Deep benchmark harnesses and standardized perf reporting.\n- Expanded plugin ecosystems (`presets`, `themes`, `highlighters`) beyond documentation and packaging boundaries.\n- Marketing surfaces (domain/branding site) beyond a minimal docs portal.",
+        "range": {
+          "from": 3996,
+          "to": 4243
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Deep benchmark harnesses and standardized perf reporting."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Expanded plugin ecosystems ("
+              },
+              {
+                "kind": "code",
+                "text": "presets"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "themes"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "highlighters"
+              },
+              {
+                "kind": "text",
+                "text": ") beyond documentation and packaging boundaries."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Marketing surfaces (domain/branding site) beyond a minimal docs portal."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    }
+  ],
+  "tocHeadings": [
+    {
+      "id": "streammdx-handbook",
+      "text": "StreamMDX Handbook",
+      "level": 1,
+      "blockId": "db082c0"
+    },
+    {
+      "id": "1-project-summary",
+      "text": "1) Project Summary",
+      "level": 2,
+      "blockId": "2ce9f01f"
+    },
+    {
+      "id": "2-packages",
+      "text": "2) Packages",
+      "level": 2,
+      "blockId": "1c89d818"
+    },
+    {
+      "id": "3-pipeline-overview",
+      "text": "3) Pipeline Overview",
+      "level": 2,
+      "blockId": "5671ef81"
+    },
+    {
+      "id": "3-1-worker",
+      "text": "3.1 Worker",
+      "level": 3,
+      "blockId": "77771dc2"
+    },
+    {
+      "id": "3-2-react-renderer",
+      "text": "3.2 React renderer",
+      "level": 3,
+      "blockId": "22ee2ad7"
+    },
+    {
+      "id": "3-3-backpressure-and-scheduling",
+      "text": "3.3 Backpressure and scheduling",
+      "level": 3,
+      "blockId": "44310c3a"
+    },
+    {
+      "id": "4-mdx",
+      "text": "4) MDX",
+      "level": 2,
+      "blockId": "20644883"
+    },
+    {
+      "id": "5-security-model-html",
+      "text": "5) Security Model (HTML)",
+      "level": 2,
+      "blockId": "69ccf489"
+    },
+    {
+      "id": "6-repo-workflows",
+      "text": "6) Repo Workflows",
+      "level": 2,
+      "blockId": "248b3be0"
+    },
+    {
+      "id": "build-test",
+      "text": "Build + test",
+      "level": 3,
+      "blockId": "136f7ba0"
+    },
+    {
+      "id": "build-hosted-worker-for-the-example-app",
+      "text": "Build hosted worker for the example app",
+      "level": 3,
+      "blockId": "a031741"
+    },
+    {
+      "id": "example-app",
+      "text": "Example app",
+      "level": 3,
+      "blockId": "5184ac24"
+    },
+    {
+      "id": "perf-baselines-local",
+      "text": "Perf baselines (local)",
+      "level": 3,
+      "blockId": "5c9af745"
+    },
+    {
+      "id": "7-tabled-future-work",
+      "text": "7) Tabled / Future Work",
+      "level": 2,
+      "blockId": "155efee2"
+    }
+  ],
+  "init": {
+    "docPlugins": {
+      "tables": true,
+      "html": true,
+      "mdx": true,
+      "math": true,
+      "footnotes": true,
+      "callouts": true
+    },
+    "mdx": {
+      "compileMode": "server"
+    },
+    "prewarmLangs": [
+      "typescript",
+      "tsx",
+      "javascript",
+      "json",
+      "bash",
+      "diff"
+    ]
+  }
+}

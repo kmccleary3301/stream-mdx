@@ -1,0 +1,403 @@
+{
+  "version": 1,
+  "schemaId": "streammdx.snapshot.v1",
+  "createdAt": "2026-02-11T20:25:48.717Z",
+  "hash": "a0f3dc60f8c9c546004c52cba14357823895a2d03bd0c135b917385b17ffbff6",
+  "contentHash": "e359e59487089cda6071073ed953d7cc12ab1aee9cc53187d88c62e4689b9037",
+  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
+  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "blocks": [
+    {
+      "id": "db082c0",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Security Model (HTML + CSP)",
+        "range": {
+          "from": 0,
+          "to": 29
+        },
+        "meta": {
+          "headingLevel": 1,
+          "headingText": "Security Model (HTML + CSP)",
+          "headingId": "security-model-html-csp"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Security Model (HTML + CSP)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "70802a2",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "HTML is an XSS surface",
+        "range": {
+          "from": 31,
+          "to": 56
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "HTML is an XSS surface",
+          "headingId": "html-is-an-xss-surface"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "HTML is an XSS surface"
+          }
+        ]
+      }
+    },
+    {
+      "id": "411cb3e3",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "If you enable raw/inline HTML (`features.html`), treat the input as untrusted by default:",
+        "range": {
+          "from": 58,
+          "to": 147
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "If you enable raw/inline HTML ("
+          },
+          {
+            "kind": "code",
+            "text": "features.html"
+          },
+          {
+            "kind": "text",
+            "text": "), treat the input as untrusted by default:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "7d1d982",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Keep sanitization enabled.\n- Prefer hosted workers (parsing off the main thread; clearer CSP posture).\n- Only extend allowlists/schemas for content you trust.",
+        "range": {
+          "from": 149,
+          "to": 309
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Keep sanitization enabled."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Prefer hosted workers (parsing off the main thread; clearer CSP posture)."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Only extend allowlists/schemas for content you trust."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "157cd25d",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "CSP recommendations",
+        "range": {
+          "from": 311,
+          "to": 333
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "CSP recommendations",
+          "headingId": "csp-recommendations"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "CSP recommendations"
+          }
+        ]
+      }
+    },
+    {
+      "id": "2427cbe5",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Prefer hosted workers",
+        "range": {
+          "from": 335,
+          "to": 360
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "Prefer hosted workers",
+          "headingId": "prefer-hosted-workers"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Prefer hosted workers"
+          }
+        ]
+      }
+    },
+    {
+      "id": "9f4e0d7",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Host the worker bundle and point StreamMDX at it:",
+        "range": {
+          "from": 362,
+          "to": 411
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Host the worker bundle and point StreamMDX at it:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "48b8707e",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```tsx\n<StreamingMarkdown worker=\"/workers/markdown-worker.js\" />\n```",
+        "range": {
+          "from": 413,
+          "to": 482
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> /></span></span></code></pre>",
+        "meta": {
+          "lang": "tsx",
+          "code": "<StreamingMarkdown worker=\"/workers/markdown-worker.js\" />"
+        }
+      }
+    },
+    {
+      "id": "31a49798",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "This avoids needing to allow `blob:` in `worker-src`/`script-src`.",
+        "range": {
+          "from": 484,
+          "to": 550
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "This avoids needing to allow "
+          },
+          {
+            "kind": "code",
+            "text": "blob:"
+          },
+          {
+            "kind": "text",
+            "text": " in "
+          },
+          {
+            "kind": "code",
+            "text": "worker-src"
+          },
+          {
+            "kind": "text",
+            "text": "/"
+          },
+          {
+            "kind": "code",
+            "text": "script-src"
+          },
+          {
+            "kind": "text",
+            "text": "."
+          }
+        ]
+      }
+    },
+    {
+      "id": "79b6c6a2",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Avoid `unsafe-eval`",
+        "range": {
+          "from": 552,
+          "to": 575
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "Avoid `unsafe-eval`",
+          "headingId": "avoid-unsafe-eval"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Avoid "
+          },
+          {
+            "kind": "code",
+            "text": "unsafe-eval"
+          }
+        ]
+      }
+    },
+    {
+      "id": "28dbef03",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "StreamMDX does not require `unsafe-eval` for its core pipeline. If your MDX components embed third-party scripts, treat those as a separate surface and lock them down per-component.",
+        "range": {
+          "from": 577,
+          "to": 758
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "StreamMDX does not require "
+          },
+          {
+            "kind": "code",
+            "text": "unsafe-eval"
+          },
+          {
+            "kind": "text",
+            "text": " for its core pipeline. If your MDX components embed third-party scripts, treat those as a separate surface and lock them down per-component."
+          }
+        ]
+      }
+    },
+    {
+      "id": "6f40bf41",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Reporting security issues",
+        "range": {
+          "from": 760,
+          "to": 788
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Reporting security issues",
+          "headingId": "reporting-security-issues"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Reporting security issues"
+          }
+        ]
+      }
+    },
+    {
+      "id": "4eb37a8a",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "See the repo root `SECURITY.md` once added.",
+        "range": {
+          "from": 790,
+          "to": 833
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "See the repo root "
+          },
+          {
+            "kind": "code",
+            "text": "SECURITY.md"
+          },
+          {
+            "kind": "text",
+            "text": " once added."
+          }
+        ]
+      }
+    }
+  ],
+  "tocHeadings": [
+    {
+      "id": "security-model-html-csp",
+      "text": "Security Model (HTML + CSP)",
+      "level": 1,
+      "blockId": "db082c0"
+    },
+    {
+      "id": "html-is-an-xss-surface",
+      "text": "HTML is an XSS surface",
+      "level": 2,
+      "blockId": "70802a2"
+    },
+    {
+      "id": "csp-recommendations",
+      "text": "CSP recommendations",
+      "level": 2,
+      "blockId": "157cd25d"
+    },
+    {
+      "id": "prefer-hosted-workers",
+      "text": "Prefer hosted workers",
+      "level": 3,
+      "blockId": "2427cbe5"
+    },
+    {
+      "id": "avoid-unsafe-eval",
+      "text": "Avoid `unsafe-eval`",
+      "level": 3,
+      "blockId": "79b6c6a2"
+    },
+    {
+      "id": "reporting-security-issues",
+      "text": "Reporting security issues",
+      "level": 2,
+      "blockId": "6f40bf41"
+    }
+  ],
+  "init": {
+    "docPlugins": {
+      "tables": true,
+      "html": true,
+      "mdx": true,
+      "math": true,
+      "footnotes": true,
+      "callouts": true
+    },
+    "mdx": {
+      "compileMode": "server"
+    },
+    "prewarmLangs": [
+      "typescript",
+      "tsx",
+      "javascript",
+      "json",
+      "bash",
+      "diff"
+    ]
+  }
+}

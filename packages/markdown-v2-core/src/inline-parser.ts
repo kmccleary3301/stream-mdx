@@ -293,16 +293,18 @@ export class InlineParser {
       fastCheck: (text) => text.indexOf("![") !== -1,
     } as RegexInlinePlugin);
 
-    // Strong emphasis (***text*** or **text**)
+    // Strong emphasis:
+    // - ***text*** or **text**
+    // - __text__ (avoid intraword underscores)
     this.registerPlugin({
       id: "strong-emphasis",
       priority: 6,
-      re: /\*\*\*([^*\n]+?)\*\*\*|\*\*([^*\n]+?)\*\*/g,
+      re: /\*\*\*([^*\n]+?)\*\*\*|\*\*([^*\n]+?)\*\*|(?<![\w\\])__([^_\n]+?)__(?!\w)/g,
       toNode: (match) => ({
         kind: "strong",
-        children: [{ kind: "text", text: match[1] || match[2] }],
+        children: [{ kind: "text", text: match[1] || match[2] || match[3] }],
       }),
-      fastCheck: (text) => text.indexOf("**") !== -1,
+      fastCheck: (text) => text.indexOf("**") !== -1 || text.indexOf("__") !== -1,
     } as RegexInlinePlugin);
 
     // Strikethrough (~~text~~)
@@ -317,16 +319,18 @@ export class InlineParser {
       fastCheck: (text) => text.indexOf("~~") !== -1,
     } as RegexInlinePlugin);
 
-    // Regular emphasis (*text*)
+    // Regular emphasis:
+    // - *text*
+    // - _text_ (avoid intraword underscores)
     this.registerPlugin({
       id: "emphasis",
       priority: 8,
-      re: /\*([^*\n]+?)\*/g,
+      re: /\*([^*\n]+?)\*|(?<![\w\\])_([^_\n]+?)_(?!\w)/g,
       toNode: (match) => ({
         kind: "em",
-        children: [{ kind: "text", text: match[1] }],
+        children: [{ kind: "text", text: match[1] || match[2] }],
       }),
-      fastCheck: (text) => text.indexOf("*") !== -1,
+      fastCheck: (text) => text.indexOf("*") !== -1 || text.indexOf("_") !== -1,
     } as RegexInlinePlugin);
 
     // Citations plugin: [^id], @cite{...}, or {cite:...}

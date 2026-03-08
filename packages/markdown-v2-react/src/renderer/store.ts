@@ -62,12 +62,30 @@ function snapshotToBlock(node: NodeSnapshot): Block | null {
 
 type NodeMap = Map<string, NodeRecord>;
 
-const nodeSnapshotCache = new Map<string, { version: number; node?: NodeRecord }>();
-const childrenSnapshotCache = new Map<string, { version: number; children: ReadonlyArray<string> }>();
+const nodeSnapshotCacheByMap = new WeakMap<NodeMap, Map<string, { version: number; node?: NodeRecord }>>();
+const childrenSnapshotCacheByMap = new WeakMap<NodeMap, Map<string, { version: number; children: ReadonlyArray<string> }>>();
 const NODE_SNAPSHOT_CACHE_LIMIT = 50000;
 const CHILDREN_SNAPSHOT_CACHE_LIMIT = 50000;
 const NODE_SNAPSHOT_CACHE_BUFFER = Math.max(200, Math.floor(NODE_SNAPSHOT_CACHE_LIMIT * 0.1));
 const CHILDREN_SNAPSHOT_CACHE_BUFFER = Math.max(200, Math.floor(CHILDREN_SNAPSHOT_CACHE_LIMIT * 0.1));
+
+function getNodeSnapshotCacheForMap(map: NodeMap): Map<string, { version: number; node?: NodeRecord }> {
+  let cache = nodeSnapshotCacheByMap.get(map);
+  if (!cache) {
+    cache = new Map<string, { version: number; node?: NodeRecord }>();
+    nodeSnapshotCacheByMap.set(map, cache);
+  }
+  return cache;
+}
+
+function getChildrenSnapshotCacheForMap(map: NodeMap): Map<string, { version: number; children: ReadonlyArray<string> }> {
+  let cache = childrenSnapshotCacheByMap.get(map);
+  if (!cache) {
+    cache = new Map<string, { version: number; children: ReadonlyArray<string> }>();
+    childrenSnapshotCacheByMap.set(map, cache);
+  }
+  return cache;
+}
 
 function pruneCache<T>(cache: Map<string, T>, max: number, buffer: number) {
   if (cache.size <= max + buffer) return;
@@ -77,6 +95,16 @@ function pruneCache<T>(cache: Map<string, T>, max: number, buffer: number) {
     remaining -= 1;
     if (remaining <= 0) break;
   }
+}
+
+function deleteSnapshotCacheEntry(map: NodeMap, id: string) {
+  getNodeSnapshotCacheForMap(map).delete(id);
+  getChildrenSnapshotCacheForMap(map).delete(id);
+}
+
+function clearSnapshotCaches(map: NodeMap) {
+  getNodeSnapshotCacheForMap(map).clear();
+  getChildrenSnapshotCacheForMap(map).clear();
 }
 const EMPTY_CHILDREN: ReadonlyArray<string> = Object.freeze([]);
 const EMPTY_NODE_SNAPSHOT = Object.freeze<{ version: number; node?: NodeRecord }>({ version: -1, node: undefined });
@@ -456,7 +484,7 @@ function escapeHtml(value: string): string {
 
 function stripOuterLineSpan(html: string): string | null {
   if (!html) return null;
-  const openTagMatch = html.match(/<span[^>]*>/i);
+  const openTagMatch = html.match(/<span[^>]*class="[^"]*\bline\b[^"]*"[^>]*>/i);
   if (!openTagMatch) {
     return null;
   }
@@ -509,8 +537,7 @@ function normalizeCodeBlockChildren(nodes: NodeMap, parent: NodeRecord, touched:
     if (node.type !== "code-line") {
       anomalies.push(`type-mismatch:${node.id}:${node.type}`);
       nodes.delete(node.id);
-      nodeSnapshotCache.delete(node.id);
-      childrenSnapshotCache.delete(node.id);
+      deleteSnapshotCacheEntry(nodes, node.id);
       touched.add(node.id);
       continue;
     }
@@ -558,8 +585,7 @@ function normalizeCodeBlockChildren(nodes: NodeMap, parent: NodeRecord, touched:
     const existing = nodes.get(desiredId);
     if (existing && existing !== node) {
       nodes.delete(desiredId);
-      nodeSnapshotCache.delete(desiredId);
-      childrenSnapshotCache.delete(desiredId);
+      deleteSnapshotCacheEntry(nodes, desiredId);
       touched.add(desiredId);
       mutated = true;
     }
@@ -567,8 +593,7 @@ function normalizeCodeBlockChildren(nodes: NodeMap, parent: NodeRecord, touched:
     if (node.id !== desiredId) {
       const previousId = node.id;
       nodes.delete(node.id);
-      nodeSnapshotCache.delete(previousId);
-      childrenSnapshotCache.delete(previousId);
+      deleteSnapshotCacheEntry(nodes, previousId);
       node.id = desiredId;
       nodes.set(desiredId, node);
       touched.add(desiredId);
@@ -603,8 +628,7 @@ function normalizeCodeBlockChildren(nodes: NodeMap, parent: NodeRecord, touched:
   for (const [id, record] of nodes) {
     if (record.parentId === parent.id && record.type === "code-line" && !allowed.has(id)) {
       nodes.delete(id);
-      nodeSnapshotCache.delete(id);
-      childrenSnapshotCache.delete(id);
+      deleteSnapshotCacheEntry(nodes, id);
       touched.add(id);
       mutated = true;
     }
@@ -849,6 +873,19 @@ function validateCodeBlockChildren(nodes: NodeMap, parent: NodeRecord): CodeBloc
     }
   }
 
+  if (parent.block?.isFinalized) {
+    const snapshot = createBlockSnapshot(cloneBlock(parent.block));
+    const expectedChildren = ensureArray(snapshot.children).filter((child) => child.type === "code-line");
+    if (expectedChildren.length !== parent.children.length) {
+      issues.push({
+        kind: "line-count-mismatch",
+        id: parent.id,
+        expected: expectedChildren.length,
+        actual: parent.children.length,
+      });
+    }
+  }
+
   return { ok: issues.length === 0, issues };
 }
 
@@ -997,8 +1034,7 @@ function removeSubtree(map: NodeMap, id: string, touched: Set<string>) {
       }
     }
     map.delete(node.id);
-    nodeSnapshotCache.delete(node.id);
-    childrenSnapshotCache.delete(node.id);
+    deleteSnapshotCacheEntry(map, node.id);
     touched.add(node.id);
     for (const childId of node.children) {
       const child = map.get(childId);
@@ -1164,8 +1200,7 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
   }
 
   function rebuildFromBlocks(blocks: Block[]) {
-    nodeSnapshotCache.clear();
-    childrenSnapshotCache.clear();
+    clearSnapshotCaches(nodes);
     nodes = new Map();
     const root = createRootRecord();
     nodes.set(root.id, root);
@@ -1318,7 +1353,7 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
         const perfStartLocal = perfEnabled ? getPerfNow() : 0;
         const targetId = at.nodeId ?? at.blockId;
         if (!targetId) return;
-        const target = nodes.get(targetId);
+        let target = nodes.get(targetId);
         if (!target) return;
         const parentType = target.parentId ? nodes.get(target.parentId)?.type : undefined;
         if (debugListPatches && (isListRelated(target.type) || isListRelated(parentType))) {
@@ -1410,18 +1445,55 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
         }
 
         let blockChanged = false;
+        let typeChanged = false;
+        let rebuiltFromFinalizedBlock = false;
         const incomingBlock = props?.block as Block | undefined;
         if (incomingBlock && typeof incomingBlock === "object") {
           target.block = cloneBlock(incomingBlock as Block);
+          const previousType = target.type;
+          const incomingType = typeof target.block.type === "string" ? target.block.type : target.type;
+          if (incomingType !== target.type) {
+            target.type = incomingType;
+            typeChanged = true;
+            if (isListRelated(previousType) || isListRelated(target.type)) {
+              markListDepthDirty(target.id);
+            }
+          }
           if (target.type === "code") {
             applyCodeBlockMetadata(target);
           }
           advanceBlockEpoch(at.blockId, touched, preferredEpoch, tx);
+          const shouldRebuildFinalizedTree =
+            !at.nodeId &&
+            target.id === at.blockId &&
+            Boolean(target.block?.isFinalized) &&
+            target.type !== "code" &&
+            Boolean(target.parentId);
+          if (shouldRebuildFinalizedTree) {
+            const parent = target.parentId ? nodes.get(target.parentId) : undefined;
+            const index = parent ? parent.children.indexOf(target.id) : -1;
+            if (parent && index !== -1) {
+              const snapshot = createBlockSnapshot(cloneBlock(target.block as Block));
+              replaceSnapshotAt(nodes, parent, index, snapshot, touched, target.blockEpoch);
+              mutatedBlocks = true;
+              blockChanged = true;
+              rebuiltFromFinalizedBlock = true;
+              const rebuilt = nodes.get(target.id);
+              if (isListRelated(previousType) || isListRelated(rebuilt?.type)) {
+                markListDepthDirty(target.id);
+              }
+              target = rebuilt ?? target;
+            }
+          }
           mutatedBlocks = true;
           blockChanged = true;
         }
 
-        if (propsChanged || blockChanged) {
+        if (rebuiltFromFinalizedBlock) {
+          return;
+        }
+
+        if (propsChanged || blockChanged || typeChanged) {
           target.version++;
           touched.add(target.id);
 
@@ -1593,6 +1665,18 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
               target.version++;
               touched.add(target.id);
               mutatedBlocks = true;
+
+              if (!patch.at.nodeId && target.id === patch.at.blockId && target.type !== "code" && target.parentId) {
+                const parent = nodes.get(target.parentId);
+                const index = parent ? parent.children.indexOf(target.id) : -1;
+                if (parent && index !== -1) {
+                  const snapshot = createBlockSnapshot(cloneBlock(target.block));
+                  replaceSnapshotAt(nodes, parent, index, snapshot, touched, target.blockEpoch);
+                  if (isListRelated(target.type) || isListRelated(snapshot.type)) {
+                    markListDepthDirty(target.id);
+                  }
+                }
+              }
             }
             if (isListRelated(target.type)) {
               markListDepthDirty(target.id);
@@ -1810,6 +1894,31 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
         }
       }
 
+      const finalizedTableRoots = new Set<string>();
+      for (const touchedId of touched) {
+        let cursor = nodes.get(touchedId);
+        while (cursor && cursor.id !== PATCH_ROOT_ID) {
+          if (cursor.type === "table" && cursor.block?.isFinalized && cursor.parentId) {
+            finalizedTableRoots.add(cursor.id);
+            break;
+          }
+          cursor = cursor.parentId ? nodes.get(cursor.parentId) : undefined;
+        }
+      }
+      if (finalizedTableRoots.size > 0) {
+        for (const tableId of finalizedTableRoots) {
+          const tableNode = nodes.get(tableId);
+          if (!tableNode || !tableNode.block || !tableNode.parentId) continue;
+          const parent = nodes.get(tableNode.parentId);
+          if (!parent) continue;
+          const index = parent.children.indexOf(tableNode.id);
+          if (index === -1) continue;
+          const snapshot = createBlockSnapshot(cloneBlock(tableNode.block));
+          replaceSnapshotAt(nodes, parent, index, snapshot, touched, tableNode.blockEpoch);
+          mutatedBlocks = true;
+        }
+      }
+
       if (mutatedBlocks) {
         blocksDirty = true;
       }
@@ -1891,6 +2000,7 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
       if (!record) {
         return EMPTY_NODE_SNAPSHOT;
       }
+      const nodeSnapshotCache = getNodeSnapshotCacheForMap(nodes);
       const cached = nodeSnapshotCache.get(id);
       if (cached && cached.version === record.version && cached.node === record) {
         return cached;
@@ -1912,6 +2022,7 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
       if (!record) {
         return EMPTY_CHILDREN_SNAPSHOT;
       }
+      const childrenSnapshotCache = getChildrenSnapshotCacheForMap(nodes);
       const cached = childrenSnapshotCache.get(id);
       if (cached && cached.version === record.version) {
         return cached;

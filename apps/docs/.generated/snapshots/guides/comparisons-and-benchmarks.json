@@ -1,0 +1,701 @@
+{
+  "version": 1,
+  "schemaId": "streammdx.snapshot.v1",
+  "createdAt": "2026-02-11T20:25:57.244Z",
+  "hash": "0b8750aa974cf83672843b6ed0c76e23ad0d3bd380d5977f837a55d88af83e3f",
+  "contentHash": "9ab4898f58320e62190a25a0f9793f9da729a4e0c95f691b1c2724edb104e919",
+  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
+  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "blocks": [
+    {
+      "id": "db082c0",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Comparisons and Benchmarks",
+        "range": {
+          "from": 0,
+          "to": 28
+        },
+        "meta": {
+          "headingLevel": 1,
+          "headingText": "Comparisons and Benchmarks",
+          "headingId": "comparisons-and-benchmarks"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Comparisons and Benchmarks"
+          }
+        ]
+      }
+    },
+    {
+      "id": "756c2ce3",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "This article is a roadmap for making fair, reproducible comparisons against other renderers (streamdown, react-markdown, or any custom pipeline). It focuses on testing methodology and on how to interpret the metrics StreamMDX records.",
+        "range": {
+          "from": 30,
+          "to": 264
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "This article is a roadmap for making fair, reproducible comparisons against other renderers (streamdown, react-markdown, or any custom pipeline). It focuses on testing methodology and on how to interpret the metrics StreamMDX records."
+          }
+        ]
+      }
+    },
+    {
+      "id": "63db82",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "What to compare",
+        "range": {
+          "from": 266,
+          "to": 284
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "What to compare",
+          "headingId": "what-to-compare"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "What to compare"
+          }
+        ]
+      }
+    },
+    {
+      "id": "2e89b684",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- **Time to first visible render**: first flush time with a realistic streaming scenario.\n- **Total stream duration**: time until the final render is stable.\n- **Stutter and jank**: long tasks and RAF delta p95.\n- **Memory growth**: peak heap size over the full stream.\n- **Output correctness**: HTML regression snapshots for the same fixture.",
+        "range": {
+          "from": 286,
+          "to": 629
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Time to first visible render"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": first flush time with a realistic streaming scenario."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Total stream duration"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": time until the final render is stable."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Stutter and jank"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": long tasks and RAF delta p95."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Memory growth"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": peak heap size over the full stream."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Output correctness"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": HTML regression snapshots for the same fixture."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "6e3bd7dc",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Recommended workflow",
+        "range": {
+          "from": 631,
+          "to": 654
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Recommended workflow",
+          "headingId": "recommended-workflow"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Recommended workflow"
+          }
+        ]
+      }
+    },
+    {
+      "id": "2f5bb83d",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "1. Capture StreamMDX baselines locally using the perf harness.\n2. Re-run the same fixture against competitors using their recommended API.\n3. Keep scenario definitions and chunk/tick sizes identical.\n4. Compare deltas with the harness comparator and log results.\n5. Validate final HTML output against baseline snapshots.",
+        "range": {
+          "from": 656,
+          "to": 976
+        },
+        "meta": {
+          "ordered": true,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Capture StreamMDX baselines locally using the perf harness."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Re-run the same fixture against competitors using their recommended API."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Keep scenario definitions and chunk/tick sizes identical."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Compare deltas with the harness comparator and log results."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Validate final HTML output against baseline snapshots."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "2f770dea",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Fixtures and scenarios (current local baselines)",
+        "range": {
+          "from": 978,
+          "to": 1029
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Fixtures and scenarios (current local baselines)",
+          "headingId": "fixtures-and-scenarios-current-local-baselines"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Fixtures and scenarios (current local baselines)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "1e91955f",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `naive-bayes`: `S1_slow_small`, `S2_typical`, `S4_chunky_network`\n- `table-large`: `S2_typical`, `S6_extreme`",
+        "range": {
+          "from": 1031,
+          "to": 1142
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "naive-bayes"
+              },
+              {
+                "kind": "text",
+                "text": ": "
+              },
+              {
+                "kind": "code",
+                "text": "S1_slow_small"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "S2_typical"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "S4_chunky_network"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "table-large"
+              },
+              {
+                "kind": "text",
+                "text": ": "
+              },
+              {
+                "kind": "code",
+                "text": "S2_typical"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "S6_extreme"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "4b5ba460",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "StreamMDX perf harness",
+        "range": {
+          "from": 1144,
+          "to": 1169
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "StreamMDX perf harness",
+          "headingId": "streammdx-perf-harness"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "StreamMDX perf harness"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6dd47e7a",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Start the docs server (required for harness runs):",
+        "range": {
+          "from": 1171,
+          "to": 1221
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Start the docs server (required for harness runs):"
+          }
+        ]
+      }
+    },
+    {
+      "id": "364a48f8",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```bash\nNEXT_PUBLIC_STREAMING_DEMO_API=true npm run docs:dev\n```",
+        "range": {
+          "from": 1223,
+          "to": 1287
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">NEXT_PUBLIC_STREAMING_DEMO_API</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">true</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> docs:dev</span></span></code></pre>",
+        "meta": {
+          "lang": "bash",
+          "code": "NEXT_PUBLIC_STREAMING_DEMO_API=true npm run docs:dev"
+        }
+      }
+    },
+    {
+      "id": "b2ec062",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Run the harness (examples):",
+        "range": {
+          "from": 1289,
+          "to": 1316
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Run the harness (examples):"
+          }
+        ]
+      }
+    },
+    {
+      "id": "71cd75b1",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```bash\nnpm run perf:harness -- --fixture naive-bayes --scenario S1_slow_small --runs 3 --warmup 1 --out tmp/perf-baselines\nnpm run perf:harness -- --fixture naive-bayes --scenario S2_typical --runs 3 --warmup 1 --out tmp/perf-baselines\nnpm run perf:harness -- --fixture naive-bayes --scenario S4_chunky_network --runs 3 --warmup 1 --out tmp/perf-baselines\nnpm run perf:harness -- --fixture table-large --scenario S2_typical --runs 3 --warmup 1 --out tmp/perf-baselines\nnpm run perf:harness -- --fixture table-large --scenario S6_extreme --runs 3 --warmup 1 --out tmp/perf-baselines\n```",
+        "range": {
+          "from": 1318,
+          "to": 1904
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:harness</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --fixture</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> naive-bayes</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --scenario</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> S1_slow_small</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --runs</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 3</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --warmup</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 1</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --out</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/perf-baselines</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:harness</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --fixture</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> naive-bayes</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --scenario</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> S2_typical</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --runs</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 3</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --warmup</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 1</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --out</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/perf-baselines</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:harness</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --fixture</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> naive-bayes</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --scenario</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> S4_chunky_network</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --runs</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 3</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --warmup</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 1</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --out</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/perf-baselines</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:harness</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --fixture</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> table-large</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --scenario</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> S2_typical</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --runs</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 3</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --warmup</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 1</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --out</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/perf-baselines</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:harness</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --fixture</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> table-large</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --scenario</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> S6_extreme</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --runs</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 3</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --warmup</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 1</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --out</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/perf-baselines</span></span></code></pre>",
+        "meta": {
+          "lang": "bash",
+          "code": "npm run perf:harness -- --fixture naive-bayes --scenario S1_slow_small --runs 3 --warmup 1 --out tmp/perf-baselines\nnpm run perf:harness -- --fixture naive-bayes --scenario S2_typical --runs 3 --warmup 1 --out tmp/perf-baselines\nnpm run perf:harness -- --fixture naive-bayes --scenario S4_chunky_network --runs 3 --warmup 1 --out tmp/perf-baselines\nnpm run perf:harness -- --fixture table-large --scenario S2_typical --runs 3 --warmup 1 --out tmp/perf-baselines\nnpm run perf:harness -- --fixture table-large --scenario S6_extreme --runs 3 --warmup 1 --out tmp/perf-baselines"
+        }
+      }
+    },
+    {
+      "id": "6b775552",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Compare candidates:",
+        "range": {
+          "from": 1906,
+          "to": 1925
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Compare candidates:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "1445e58d",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```bash\nnpm run perf:compare -- --base tmp/perf-baselines/<baseline> --candidate tmp/perf-baselines/<candidate>\n```",
+        "range": {
+          "from": 1927,
+          "to": 2042
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:compare</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --base</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/perf-baselines/</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">&#x3C;</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">baselin</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">e</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">></span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --candidate</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/perf-baselines/</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">&#x3C;</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">candidat</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">e</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">></span></span></code></pre>",
+        "meta": {
+          "lang": "bash",
+          "code": "npm run perf:compare -- --base tmp/perf-baselines/<baseline> --candidate tmp/perf-baselines/<candidate>"
+        }
+      }
+    },
+    {
+      "id": "8c869be",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Record results in `/docs/perf-quality-changelog` and keep run paths up to date in `/docs/perf-harness`.",
+        "range": {
+          "from": 2044,
+          "to": 2147
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Record results in "
+          },
+          {
+            "kind": "code",
+            "text": "/docs/perf-quality-changelog"
+          },
+          {
+            "kind": "text",
+            "text": " and keep run paths up to date in "
+          },
+          {
+            "kind": "code",
+            "text": "/docs/perf-harness"
+          },
+          {
+            "kind": "text",
+            "text": "."
+          }
+        ]
+      }
+    },
+    {
+      "id": "5e53d3fc",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Notes on interpretation",
+        "range": {
+          "from": 2149,
+          "to": 2175
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Notes on interpretation",
+          "headingId": "notes-on-interpretation"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Notes on interpretation"
+          }
+        ]
+      }
+    },
+    {
+      "id": "772ce03",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- **First flush** is the most user-visible latency metric.\n- **Long task p95** tracks stutter; lower is better.\n- **RAF p95** near 16-17ms indicates smoother animation/scrolling.\n- **Memory peak** is most important for multi-stream dashboards.",
+        "range": {
+          "from": 2177,
+          "to": 2420
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "First flush"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": " is the most user-visible latency metric."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Long task p95"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": " tracks stutter; lower is better."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "RAF p95"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": " near 16-17ms indicates smoother animation/scrolling."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Memory peak"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": " is most important for multi-stream dashboards."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "69e85902",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "When the comparison is not apples-to-apples",
+        "range": {
+          "from": 2422,
+          "to": 2468
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "When the comparison is not apples-to-apples",
+          "headingId": "when-the-comparison-is-not-apples-to-apples"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "When the comparison is not apples-to-apples"
+          }
+        ]
+      }
+    },
+    {
+      "id": "79a95725",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "If another renderer doesn't support MDX, HTML sanitization, or streaming patches, call that out. Use a \"reduced\" fixture if needed, but keep a second \"full\" fixture to show StreamMDX's complete feature coverage.",
+        "range": {
+          "from": 2470,
+          "to": 2681
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "If another renderer doesn't support MDX, HTML sanitization, or streaming patches, call that out. Use a \"reduced\" fixture if needed, but keep a second \"full\" fixture to show StreamMDX's complete feature coverage."
+          }
+        ]
+      }
+    }
+  ],
+  "tocHeadings": [
+    {
+      "id": "comparisons-and-benchmarks",
+      "text": "Comparisons and Benchmarks",
+      "level": 1,
+      "blockId": "db082c0"
+    },
+    {
+      "id": "what-to-compare",
+      "text": "What to compare",
+      "level": 2,
+      "blockId": "63db82"
+    },
+    {
+      "id": "recommended-workflow",
+      "text": "Recommended workflow",
+      "level": 2,
+      "blockId": "6e3bd7dc"
+    },
+    {
+      "id": "fixtures-and-scenarios-current-local-baselines",
+      "text": "Fixtures and scenarios (current local baselines)",
+      "level": 2,
+      "blockId": "2f770dea"
+    },
+    {
+      "id": "streammdx-perf-harness",
+      "text": "StreamMDX perf harness",
+      "level": 2,
+      "blockId": "4b5ba460"
+    },
+    {
+      "id": "notes-on-interpretation",
+      "text": "Notes on interpretation",
+      "level": 2,
+      "blockId": "5e53d3fc"
+    },
+    {
+      "id": "when-the-comparison-is-not-apples-to-apples",
+      "text": "When the comparison is not apples-to-apples",
+      "level": 2,
+      "blockId": "69e85902"
+    }
+  ],
+  "init": {
+    "docPlugins": {
+      "tables": true,
+      "html": true,
+      "mdx": true,
+      "math": true,
+      "footnotes": true,
+      "callouts": true
+    },
+    "mdx": {
+      "compileMode": "server"
+    },
+    "prewarmLangs": [
+      "typescript",
+      "tsx",
+      "javascript",
+      "json",
+      "bash",
+      "diff"
+    ]
+  }
+}

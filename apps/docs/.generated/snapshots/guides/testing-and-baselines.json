@@ -1,0 +1,463 @@
+{
+  "version": 1,
+  "schemaId": "streammdx.snapshot.v1",
+  "createdAt": "2026-02-11T20:25:56.839Z",
+  "hash": "2a4bf4d9ee62c604a907c207b6993597f0db28770f41aedfa3ee8895488e6991",
+  "contentHash": "1ed7cba9d783955d0a3e23fcf878ca803dc5c5c1790284dea697fa7990f5abee",
+  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
+  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "blocks": [
+    {
+      "id": "db082c0",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Testing and Baselines",
+        "range": {
+          "from": 0,
+          "to": 23
+        },
+        "meta": {
+          "headingLevel": 1,
+          "headingText": "Testing and Baselines",
+          "headingId": "testing-and-baselines"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Testing and Baselines"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6b59ab83",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "StreamMDX includes **local-only** regression baselines that lock in HTML output and critical CSS styles while streaming.",
+        "range": {
+          "from": 25,
+          "to": 145
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "StreamMDX includes "
+          },
+          {
+            "kind": "strong",
+            "children": [
+              {
+                "kind": "text",
+                "text": "local-only"
+              }
+            ]
+          },
+          {
+            "kind": "text",
+            "text": " regression baselines that lock in HTML output and critical CSS styles while streaming."
+          }
+        ]
+      }
+    },
+    {
+      "id": "1730b584",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "What is covered",
+        "range": {
+          "from": 147,
+          "to": 165
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "What is covered",
+          "headingId": "what-is-covered"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "What is covered"
+          }
+        ]
+      }
+    },
+    {
+      "id": "5e90ebc2",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- HTML snapshots across streaming scenarios (slow, typical, fast, chunky, split boundaries).\n- Computed styles for typography, tables, lists, blockquotes, footnotes, and preview/code adjacency.",
+        "range": {
+          "from": 167,
+          "to": 360
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "HTML snapshots across streaming scenarios (slow, typical, fast, chunky, split boundaries)."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Computed styles for typography, tables, lists, blockquotes, footnotes, and preview/code adjacency."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "4436d23f",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Update baselines (local)",
+        "range": {
+          "from": 362,
+          "to": 389
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Update baselines (local)",
+          "headingId": "update-baselines-local"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Update baselines (local)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "7b609397",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```bash\nnpm run test:regression:html:update\nnpm run test:regression:styles:update\n```",
+        "range": {
+          "from": 391,
+          "to": 476
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> test:regression:html:update</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> test:regression:styles:update</span></span></code></pre>",
+        "meta": {
+          "lang": "bash",
+          "code": "npm run test:regression:html:update\nnpm run test:regression:styles:update"
+        }
+      }
+    },
+    {
+      "id": "46ff9025",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Validate (no changes expected)",
+        "range": {
+          "from": 478,
+          "to": 511
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Validate (no changes expected)",
+          "headingId": "validate-no-changes-expected"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Validate (no changes expected)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "4f6662a3",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```bash\nnpm run test:regression:html\nnpm run test:regression:styles\n```",
+        "range": {
+          "from": 513,
+          "to": 584
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> test:regression:html</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> test:regression:styles</span></span></code></pre>",
+        "meta": {
+          "lang": "bash",
+          "code": "npm run test:regression:html\nnpm run test:regression:styles"
+        }
+      }
+    },
+    {
+      "id": "49f1039b",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Artifacts for failures are written to `tests/regression/artifacts/` and are ignored by git.",
+        "range": {
+          "from": 586,
+          "to": 677
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Artifacts for failures are written to "
+          },
+          {
+            "kind": "code",
+            "text": "tests/regression/artifacts/"
+          },
+          {
+            "kind": "text",
+            "text": " and are ignored by git."
+          }
+        ]
+      }
+    },
+    {
+      "id": "50d64a8",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Performance baseline (local)",
+        "range": {
+          "from": 679,
+          "to": 710
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Performance baseline (local)",
+          "headingId": "performance-baseline-local"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Performance baseline (local)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "62774000",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "The demo page exposes an automation API for perf capture. Run the dev server with the API enabled:",
+        "range": {
+          "from": 712,
+          "to": 810
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "The demo page exposes an automation API for perf capture. Run the dev server with the API enabled:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "1977b4a5",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```bash\nNEXT_PUBLIC_STREAMING_DEMO_API=true npm run docs:dev\n```",
+        "range": {
+          "from": 812,
+          "to": 876
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">NEXT_PUBLIC_STREAMING_DEMO_API</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">true</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> docs:dev</span></span></code></pre>",
+        "meta": {
+          "lang": "bash",
+          "code": "NEXT_PUBLIC_STREAMING_DEMO_API=true npm run docs:dev"
+        }
+      }
+    },
+    {
+      "id": "3791d741",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Then capture a baseline:",
+        "range": {
+          "from": 878,
+          "to": 902
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Then capture a baseline:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "1cecee37",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```bash\nnpm run perf:demo -- --rate 12000 --tick 5 --runs 1\n```",
+        "range": {
+          "from": 904,
+          "to": 967
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:demo</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --rate</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 12000</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --tick</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 5</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --runs</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 1</span></span></code></pre>",
+        "meta": {
+          "lang": "bash",
+          "code": "npm run perf:demo -- --rate 12000 --tick 5 --runs 1"
+        }
+      }
+    },
+    {
+      "id": "4cb814dc",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "The script writes JSON output under `tmp/perf-baseline/`.",
+        "range": {
+          "from": 969,
+          "to": 1026
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "The script writes JSON output under "
+          },
+          {
+            "kind": "code",
+            "text": "tmp/perf-baseline/"
+          },
+          {
+            "kind": "text",
+            "text": "."
+          }
+        ]
+      }
+    },
+    {
+      "id": "77c17d5b",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Notes",
+        "range": {
+          "from": 1028,
+          "to": 1036
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Notes",
+          "headingId": "notes"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Notes"
+          }
+        ]
+      }
+    },
+    {
+      "id": "2a8381b8",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Release/publish gates run the regression checks on the docs app.\n- If you add fixtures, update `tests/regression/fixtures/index.ts` and regenerate snapshots.",
+        "range": {
+          "from": 1038,
+          "to": 1197
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Release/publish gates run the regression checks on the docs app."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "If you add fixtures, update "
+              },
+              {
+                "kind": "code",
+                "text": "tests/regression/fixtures/index.ts"
+              },
+              {
+                "kind": "text",
+                "text": " and regenerate snapshots."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    }
+  ],
+  "tocHeadings": [
+    {
+      "id": "testing-and-baselines",
+      "text": "Testing and Baselines",
+      "level": 1,
+      "blockId": "db082c0"
+    },
+    {
+      "id": "what-is-covered",
+      "text": "What is covered",
+      "level": 2,
+      "blockId": "1730b584"
+    },
+    {
+      "id": "update-baselines-local",
+      "text": "Update baselines (local)",
+      "level": 2,
+      "blockId": "4436d23f"
+    },
+    {
+      "id": "validate-no-changes-expected",
+      "text": "Validate (no changes expected)",
+      "level": 2,
+      "blockId": "46ff9025"
+    },
+    {
+      "id": "performance-baseline-local",
+      "text": "Performance baseline (local)",
+      "level": 2,
+      "blockId": "50d64a8"
+    },
+    {
+      "id": "notes",
+      "text": "Notes",
+      "level": 2,
+      "blockId": "77c17d5b"
+    }
+  ],
+  "init": {
+    "docPlugins": {
+      "tables": true,
+      "html": true,
+      "mdx": true,
+      "math": true,
+      "footnotes": true,
+      "callouts": true
+    },
+    "mdx": {
+      "compileMode": "server"
+    },
+    "prewarmLangs": [
+      "typescript",
+      "tsx",
+      "javascript",
+      "json",
+      "bash",
+      "diff"
+    ]
+  }
+}

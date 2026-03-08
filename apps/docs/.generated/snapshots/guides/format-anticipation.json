@@ -1,0 +1,595 @@
+{
+  "version": 1,
+  "schemaId": "streammdx.snapshot.v1",
+  "createdAt": "2026-02-11T20:25:56.450Z",
+  "hash": "5eccfe4fa149aca2aa716d0d99d1b681fe34f2786548659d53fe677d35449d54",
+  "contentHash": "a3b6c0c5ec64693f8a237c919acc1886fbaf7869cd549b5228a513fc378996bd",
+  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
+  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "blocks": [
+    {
+      "id": "db082c0",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Format Anticipation",
+        "range": {
+          "from": 0,
+          "to": 21
+        },
+        "meta": {
+          "headingLevel": 1,
+          "headingText": "Format Anticipation",
+          "headingId": "format-anticipation"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Format Anticipation"
+          }
+        ]
+      }
+    },
+    {
+      "id": "41904601",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Format anticipation lets StreamMDX render inline formatting *before* closing delimiters arrive. The goal is a smoother, more \"live\" feel while still avoiding runaway parsing.",
+        "range": {
+          "from": 23,
+          "to": 197
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Format anticipation lets StreamMDX render inline formatting "
+          },
+          {
+            "kind": "em",
+            "children": [
+              {
+                "kind": "text",
+                "text": "before"
+              }
+            ]
+          },
+          {
+            "kind": "text",
+            "text": " closing delimiters arrive. The goal is a smoother, more \"live\" feel while still avoiding runaway parsing."
+          }
+        ]
+      }
+    },
+    {
+      "id": "528c921",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "What it does",
+        "range": {
+          "from": 199,
+          "to": 214
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "What it does",
+          "headingId": "what-it-does"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "What it does"
+          }
+        ]
+      }
+    },
+    {
+      "id": "43c1e843",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Allows partial emphasis/strong/strike to render as soon as the opening marker is seen.\n- Lets inline and block math render early (within safe bounds).\n- Can be toggled per feature, so you keep the strict behavior where you need it.",
+        "range": {
+          "from": 216,
+          "to": 449
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Allows partial emphasis/strong/strike to render as soon as the opening marker is seen."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Lets inline and block math render early (within safe bounds)."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Can be toggled per feature, so you keep the strict behavior where you need it."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "508da4e0",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Enable it",
+        "range": {
+          "from": 451,
+          "to": 463
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Enable it",
+          "headingId": "enable-it"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Enable it"
+          }
+        ]
+      }
+    },
+    {
+      "id": "54a14a01",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```tsx\n<StreamingMarkdown\n  text={content}\n  features={{\n    formatAnticipation: {\n      inline: true,\n      mathInline: true,\n      mathBlock: true,\n      html: true,\n      mdx: true,\n      regex: false,\n    },\n  }}\n/>\n```",
+        "range": {
+          "from": 465,
+          "to": 688
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content}</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    formatAnticipation: {</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      inline: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      mathInline: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      mathBlock: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      regex: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">false</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    },</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }}</span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/></span></span></code></pre>",
+        "meta": {
+          "lang": "tsx",
+          "code": "<StreamingMarkdown\n  text={content}\n  features={{\n    formatAnticipation: {\n      inline: true,\n      mathInline: true,\n      mathBlock: true,\n      html: true,\n      mdx: true,\n      regex: false,\n    },\n  }}\n/>"
+        }
+      }
+    },
+    {
+      "id": "48c7a023",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Inline and block math",
+        "range": {
+          "from": 690,
+          "to": 714
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Inline and block math",
+          "headingId": "inline-and-block-math"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Inline and block math"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ee474fc",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "The block math toggle is guarded by a newline threshold so unclosed blocks do not \"capture\" the rest of the article. Inline math is scoped to a single line.",
+        "range": {
+          "from": 716,
+          "to": 872
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "The block math toggle is guarded by a newline threshold so unclosed blocks do not \"capture\" the rest of the article. Inline math is scoped to a single line."
+          }
+        ]
+      }
+    },
+    {
+      "id": "2757601f",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```md\nInline: $E = mc^2$ and $f(x) = x^2$\n\nBlock:\n\n$$\n\\mathbf{J}_f(\\mathbf{x}) = \\nabla f(\\mathbf{x})\n$$\n```",
+        "range": {
+          "from": 874,
+          "to": 982
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"md\"><code data-language=\"md\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">Inline: $E = mc^2$ and $f(x) = x^2$</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">Block:</span></span>\n<span class=\"line\" data-line=\"4\"></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">$$</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">\\mathbf{J}_f(\\mathbf{x}) = \\nabla f(\\mathbf{x})</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">$$</span></span></code></pre>",
+        "meta": {
+          "lang": "md",
+          "code": "Inline: $E = mc^2$ and $f(x) = x^2$\n\nBlock:\n\n$$\n\\mathbf{J}_f(\\mathbf{x}) = \\nabla f(\\mathbf{x})\n$$"
+        }
+      }
+    },
+    {
+      "id": "2d513cfb",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "HTML and MDX",
+        "range": {
+          "from": 984,
+          "to": 999
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "HTML and MDX",
+          "headingId": "html-and-mdx"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "HTML and MDX"
+          }
+        ]
+      }
+    },
+    {
+      "id": "7fdee39c",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- HTML: only allowlisted tags are eligible for anticipation.\n- MDX: anticipation applies to known component tags provided in `mdxComponents`.",
+        "range": {
+          "from": 1001,
+          "to": 1142
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "HTML: only allowlisted tags are eligible for anticipation."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "MDX: anticipation applies to known component tags provided in "
+              },
+              {
+                "kind": "code",
+                "text": "mdxComponents"
+              },
+              {
+                "kind": "text",
+                "text": "."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "156da6a0",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "This keeps the streaming state stable while letting rich components appear as early as possible.",
+        "range": {
+          "from": 1144,
+          "to": 1240
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "This keeps the streaming state stable while letting rich components appear as early as possible."
+          }
+        ]
+      }
+    },
+    {
+      "id": "2100305f",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "When to keep it off",
+        "range": {
+          "from": 1242,
+          "to": 1264
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "When to keep it off",
+          "headingId": "when-to-keep-it-off"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "When to keep it off"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6a712405",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Content with ambiguous markers (e.g., heavy use of stray `*` or `$`).\n- Strict Markdown pipelines where you want the renderer to wait for a full, valid token.",
+        "range": {
+          "from": 1266,
+          "to": 1426
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Content with ambiguous markers (e.g., heavy use of stray "
+              },
+              {
+                "kind": "code",
+                "text": "*"
+              },
+              {
+                "kind": "text",
+                "text": " or "
+              },
+              {
+                "kind": "code",
+                "text": "$"
+              },
+              {
+                "kind": "text",
+                "text": ")."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Strict Markdown pipelines where you want the renderer to wait for a full, valid token."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "242eb257",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Toggles and caveats",
+        "range": {
+          "from": 1428,
+          "to": 1450
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Toggles and caveats",
+          "headingId": "toggles-and-caveats"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Toggles and caveats"
+          }
+        ]
+      }
+    },
+    {
+      "id": "299797fc",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- **Inline emphasis/strong**: safest to enable; closes at line boundaries.\n- **Math blocks**: guarded by a newline threshold (default 2) so unclosed blocks don’t swallow the document.\n- **HTML/MDX**: limited to allowlisted tags/components to avoid invalid nesting.\n- **Regex plugins**: require start/partial/full definitions to anticipate safely.",
+        "range": {
+          "from": 1452,
+          "to": 1798
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Inline emphasis/strong"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": safest to enable; closes at line boundaries."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Math blocks"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": guarded by a newline threshold (default 2) so unclosed blocks don’t swallow the document."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "HTML/MDX"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": limited to allowlisted tags/components to avoid invalid nesting."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Regex plugins"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": require start/partial/full definitions to anticipate safely."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "5b524199",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Debugging tips",
+        "range": {
+          "from": 1800,
+          "to": 1817
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Debugging tips",
+          "headingId": "debugging-tips"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Debugging tips"
+          }
+        ]
+      }
+    },
+    {
+      "id": "1754acd",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Toggle one flag at a time to see the effect.\n- Use the demo page to compare strict vs anticipated rendering.",
+        "range": {
+          "from": 1819,
+          "to": 1929
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Toggle one flag at a time to see the effect."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Use the demo page to compare strict vs anticipated rendering."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    }
+  ],
+  "tocHeadings": [
+    {
+      "id": "format-anticipation",
+      "text": "Format Anticipation",
+      "level": 1,
+      "blockId": "db082c0"
+    },
+    {
+      "id": "what-it-does",
+      "text": "What it does",
+      "level": 2,
+      "blockId": "528c921"
+    },
+    {
+      "id": "enable-it",
+      "text": "Enable it",
+      "level": 2,
+      "blockId": "508da4e0"
+    },
+    {
+      "id": "inline-and-block-math",
+      "text": "Inline and block math",
+      "level": 2,
+      "blockId": "48c7a023"
+    },
+    {
+      "id": "html-and-mdx",
+      "text": "HTML and MDX",
+      "level": 2,
+      "blockId": "2d513cfb"
+    },
+    {
+      "id": "when-to-keep-it-off",
+      "text": "When to keep it off",
+      "level": 2,
+      "blockId": "2100305f"
+    },
+    {
+      "id": "toggles-and-caveats",
+      "text": "Toggles and caveats",
+      "level": 2,
+      "blockId": "242eb257"
+    },
+    {
+      "id": "debugging-tips",
+      "text": "Debugging tips",
+      "level": 2,
+      "blockId": "5b524199"
+    }
+  ],
+  "init": {
+    "docPlugins": {
+      "tables": true,
+      "html": true,
+      "mdx": true,
+      "math": true,
+      "footnotes": true,
+      "callouts": true
+    },
+    "mdx": {
+      "compileMode": "server"
+    },
+    "prewarmLangs": [
+      "typescript",
+      "tsx",
+      "javascript",
+      "json",
+      "bash",
+      "diff"
+    ]
+  }
+}

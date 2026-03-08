@@ -8,7 +8,7 @@ on:
 jobs:
   build-test-pack:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
 
@@ -26,10 +26,28 @@ jobs:
       - name: Test
         run: npm run test
 
-      - name: Determinism matrix (node vs browser worker)
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Worker regression guards
         run: |
-          npx playwright install --with-deps chromium
-          npm run determinism:matrix
+          cd packages/markdown-v2-worker
+          npx tsx __tests__/worker-init-idempotency.test.ts
+          npx tsx __tests__/deferred-stale-replay-guard.test.ts
+          npx tsx __tests__/mixed-segment-canonicalization.test.ts
+
+      - name: Worker streaming fidelity matrix (x2)
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: |
+          cd packages/markdown-v2-worker
+          for run in 1 2; do
+            echo "[stream-mdx] matrix run ${run}/2"
+            npx tsx __tests__/streaming-fidelity-matrix.test.ts
+          done
+
+      - name: Determinism matrix (node vs browser worker)
+        run: npm run determinism:matrix
 
       - name: HTML parity (server blocks renderer vs browser final DOM)
         run: npm run determinism:html-parity
@@ -47,8 +65,39 @@ jobs:
           DOCS_CHECK_ANCHORS: "1"
         run: npm run docs:check-links
 
+      - name: Sticky scroll + docs surface checks
+        run: |
+          python3 -m http.server 4173 --directory apps/docs/out >/tmp/stream-mdx-docs-http.log 2>&1 &
+          SERVER_PID=$!
+          trap "kill $SERVER_PID" EXIT
+          READY=0
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null 2>&1; then
+              READY=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$READY" -ne 1 ]; then
+            echo "docs static server did not become ready in time"
+            exit 1
+          fi
+          STICKY_SCROLL_URL=http://127.0.0.1:4173/demo/sticky-scroll/ \
+          STICKY_SCROLL_DEMO_URL=http://127.0.0.1:4173/demo/ \
+          STICKY_SCROLL_DOCS_URL=http://127.0.0.1:4173/docs/getting-started/ \
+          STICKY_SCROLL_EVIDENCE_DIR=tmp/sticky-scroll-check-ci \
+          npm run docs:sticky-scroll:check
+
       - name: Docs screenshots (smoke)
         run: npm run docs:screenshots:smoke
+
+      - name: Upload sticky-scroll evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sticky-scroll-check-evidence
+          path: tmp/sticky-scroll-check-ci
+          if-no-files-found: ignore
 
   docs-seeded-regression:
     runs-on: ubuntu-latest

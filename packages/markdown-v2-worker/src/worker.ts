@@ -626,47 +626,74 @@ function countChangedBlocksFromPatches(patches: Patch[]): number {
   return ids.size;
 }
 
-function partitionPatchesForCredits(patches: Patch[], maxImmediate?: number): Patch[] {
+function isPriorityImmediatePatch(patch: Patch): boolean {
+  if (patch.op === "finalize") {
+    return true;
+  }
+  if (patch.op === "setProps") {
+    const candidate = patch.props?.block;
+    if (!candidate || typeof candidate !== "object") {
+      return false;
+    }
+    const block = candidate as Block;
+    return block.isFinalized === true;
+  }
+  if (patch.op === "insertChild" || patch.op === "replaceChild") {
+    const candidate = (patch.node?.props as { block?: unknown } | undefined)?.block;
+    return Boolean(candidate && typeof candidate === "object" && typeof (candidate as { id?: unknown }).id === "string");
+  }
+  return false;
+}
+
+function dedupeSetPropsByTargetKeepingLatest(patches: Patch[]): Patch[] {
+  if (patches.length < 2) {
+    return patches;
+  }
+  const seen = new Set<string>();
+  const dedupedReversed: Patch[] = [];
+  for (let i = patches.length - 1; i >= 0; i--) {
+    const patch = patches[i];
+    if (patch.op === "setProps") {
+      const target = patch.at.nodeId ?? patch.at.blockId;
+      const key = `${patch.at.blockId}::${target}`;
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+    }
+    dedupedReversed.push(patch);
+  }
+  dedupedReversed.reverse();
+  return dedupedReversed;
+}
+
+function partitionPatchesForCredits(
+  patches: Patch[],
+  maxImmediate?: number,
+  options?: {
+    ignoreCredits?: boolean;
+  },
+): Patch[] {
   let combined: Patch[] = patches;
   if (deferredPatchQueue.length > 0) {
     combined = deferredPatchQueue.concat(patches);
     deferredPatchQueue = [];
   }
+  combined = dedupeSetPropsByTargetKeepingLatest(combined);
   if (combined.length === 0) {
     return [];
   }
 
-  const immediate: Patch[] = [];
+  let immediate: Patch[] = [];
   const deferred: Patch[] = [];
 
+  const bypassCreditBudget = options?.ignoreCredits || workerCredits >= 0.999;
   let heavyBudget = computeHeavyPatchBudget(workerCredits);
-  let nonStructuralImmediate = 0;
-
-  const isStructuralPatch = (patch: Patch): boolean => {
-    switch (patch.op) {
-      case "insertChild":
-      case "deleteChild":
-      case "replaceChild":
-      case "reorder":
-        return true;
-      default:
-        return false;
-    }
-  };
 
   for (const patch of combined) {
-    if (isStructuralPatch(patch)) {
-      immediate.push(patch);
-      continue;
-    }
-
-    if (getPatchKind(patch) === "semantic") {
-      immediate.push(patch);
-      continue;
-    }
-
     const heavy = isHeavyPatch(patch);
-    if (heavy) {
+    const priorityImmediate = isPriorityImmediatePatch(patch);
+    if (heavy && !bypassCreditBudget && !priorityImmediate) {
       if (heavyBudget <= 0) {
         if (deferred.length < MAX_DEFERRED_PATCHES) {
           deferred.push(patch);
@@ -677,47 +704,50 @@ function partitionPatchesForCredits(patches: Patch[], maxImmediate?: number): Pa
       }
     }
 
-    if (typeof maxImmediate === "number" && nonStructuralImmediate >= maxImmediate) {
-      deferred.push(patch);
+    if (priorityImmediate || getPatchKind(patch) === "semantic") {
+      immediate.push(patch);
       continue;
     }
-
-    immediate.push(patch);
-    nonStructuralImmediate += 1;
   }
 
-  deferredPatchQueue = deferred;
+  if (typeof maxImmediate === "number" && immediate.length > maxImmediate) {
+    const priorityCount = immediate.reduce((count, patch) => count + (isPriorityImmediatePatch(patch) ? 1 : 0), 0);
+    const maxNonPriority = Math.max(0, maxImmediate - priorityCount);
+    const kept: Patch[] = [];
+    const overflow: Patch[] = [];
+    let nonPriorityKept = 0;
+    for (const patch of immediate) {
+      if (isPriorityImmediatePatch(patch)) {
+        kept.push(patch);
+        continue;
+      }
+      if (nonPriorityKept < maxNonPriority) {
+        kept.push(patch);
+        nonPriorityKept += 1;
+      } else {
+        overflow.push(patch);
+      }
+    }
+    immediate = kept;
+    deferredPatchQueue = overflow.concat(deferred);
+  } else {
+    deferredPatchQueue = deferred;
+  }
   return immediate;
 }
 
-function flushDeferredPatches() {
+function flushDeferredPatches(options?: { ignoreCredits?: boolean }) {
   if (workerCredits <= 0 || deferredPatchQueue.length === 0) {
     return;
   }
-  const immediate = partitionPatchesForCredits([], MAX_DEFERRED_FLUSH_PATCHES);
+  const immediate = partitionPatchesForCredits([], MAX_DEFERRED_FLUSH_PATCHES, options);
   if (immediate.length === 0) {
     return;
   }
 
   const metricsCollector = new WorkerMetricsCollector(workerGrammarEngine);
   metricsCollector.setBlocksProduced(blocks.length);
-  const tx = ++txCounter;
-  const patchBytes = estimatePatchSize(immediate);
-  metricsCollector.finalizePatch(tx, immediate.length, deferredPatchQueue.length, patchBytes);
-  const changedBlocks = countChangedBlocksFromPatches(immediate);
-  const patchMetrics = metricsCollector.toPatchMetrics(changedBlocks);
-
-  postMessage({
-    type: "PATCH",
-    tx,
-    patches: immediate,
-    metrics: patchMetrics,
-  } as WorkerOut);
-
-  emitMetricsSample(metricsCollector);
-  if (getActiveMetricsCollector() === metricsCollector) {
-    setActiveMetricsCollector(null);
-  }
+  dispatchPatchBatch(immediate, metricsCollector);
 }
 
 function emitMetricsSample(collector: WorkerMetricsCollector | null): void {
@@ -4190,7 +4220,7 @@ async function finalizeAllBlocks() {
 
     for (let i = 0; i < maxIterations && deferredPatchQueue.length > 0; i++) {
       const before = deferredPatchQueue.length;
-      flushDeferredPatches();
+      flushDeferredPatches({ ignoreCredits: true });
       if (deferredPatchQueue.length >= before) {
         break;
       }

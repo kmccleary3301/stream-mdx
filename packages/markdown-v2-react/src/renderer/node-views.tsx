@@ -428,8 +428,10 @@ const ListBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
         isFinalized: block?.isFinalized ?? false,
       });
     }, [listDebugEnabled, blockId, depth, ordered, childIds, listItemIds, store, block?.isFinalized]);
-    const listStyle = React.useMemo(() => {
-      if (!ordered || listItemIds.length === 0) return undefined;
+    const { listStyle, markerDigits } = React.useMemo(() => {
+      if (!ordered || listItemIds.length === 0) {
+        return { listStyle: undefined, markerDigits: 1 };
+      }
       let maxDigits = 1;
       listItemIds.forEach((childId, index) => {
         const childNode = store.getNode(childId);
@@ -444,14 +446,19 @@ const ListBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
       const baseIndent = depth === 0 ? "2rem" : depth === 1 ? "1.75rem" : "1.5rem";
       const extraDigits = Math.max(0, maxDigits - 1);
       return {
-        ["--list-indent" as const]: extraDigits > 0 ? `calc(${baseIndent} + ${extraDigits}ch)` : baseIndent,
-      } as React.CSSProperties;
+        markerDigits: maxDigits,
+        listStyle: {
+          ["--list-indent" as const]: extraDigits > 0 ? `calc(${baseIndent} + ${extraDigits}ch)` : baseIndent,
+          ["--list-marker-digits" as const]: String(maxDigits),
+        } as React.CSSProperties,
+      };
     }, [ordered, listItemIds, store, depth]);
     if (listItemIds.length === 0) return null;
     return (
       <Tag
         className={`markdown-list ${ordered ? "ordered" : "unordered"}`}
         data-list-depth={depth}
+        data-marker-digits={ordered ? markerDigits : undefined}
         data-list-id={listDebugEnabled ? blockId : undefined}
         style={listStyle}
       >

@@ -79,6 +79,8 @@ export interface PatchCommitSchedulerOptions {
   urgentQueueThreshold?: number;
   batch?: "rAF" | "microtask" | "timeout";
   historyLimit?: number;
+  startupMicrotaskFlushes?: number;
+  adaptiveBudgeting?: boolean;
 }
 
 interface PatchBatchInternal {
@@ -97,6 +99,10 @@ const COALESCING_DURATION_DEACTIVATE_MS = 4;
 const RETAIN_TOUCHED_IN_HISTORY =
   typeof process !== "undefined" && process.env ? process.env.NODE_ENV !== "production" : true;
 const EMPTY_TOUCHED_SET = new Set<string>();
+
+function shouldSkipCoalescing(patches: Patch[]): boolean {
+  return patches.length <= 1;
+}
 
 function getDefaultNow(): NowFn {
   if (typeof performance !== "undefined" && typeof performance.now === "function") {
@@ -138,6 +144,7 @@ export class PatchCommitScheduler {
   private lowPriorityFrameBudgetMs: number;
   private maxLowPriorityBatchesPerFlush?: number;
   private urgentQueueThreshold: number;
+  private adaptiveBudgeting: boolean;
 
   private semanticQueue: PatchBatchInternal[] = [];
   private enrichmentHighQueue: PatchBatchInternal[] = [];
@@ -157,6 +164,8 @@ export class PatchCommitScheduler {
   private adaptiveBudgetActive = false;
   private adaptiveHighBatchCap: number | undefined;
   private adaptiveLowBatchCap: number | undefined;
+  private startupMicrotaskFlushes: number;
+  private flushCount = 0;
 
   constructor(params: {
     store: RendererStore;
@@ -178,6 +187,8 @@ export class PatchCommitScheduler {
     this.maxLowPriorityBatchesPerFlush = params.options?.maxLowPriorityBatchesPerFlush ?? 2;
     this.urgentQueueThreshold = Math.max(1, params.options?.urgentQueueThreshold ?? 4);
     this.historyLimit = Math.max(1, params.options?.historyLimit ?? 200);
+    this.startupMicrotaskFlushes = Math.max(0, Math.floor(params.options?.startupMicrotaskFlushes ?? 0));
+    this.adaptiveBudgeting = params.options?.adaptiveBudgeting ?? true;
     const requestedBatch = params.options?.batch;
     if (requestedBatch === "microtask") {
       this.batchStrategy = "microtask";
@@ -242,6 +253,7 @@ export class PatchCommitScheduler {
     this.enrichmentHighQueue = [];
     this.enrichmentLowQueue = [];
     this.flushing = false;
+    this.flushCount = 0;
     this.coalescingDurationSamples = [];
     this.adaptiveBudgetActive = false;
     this.adaptiveHighBatchCap = undefined;
@@ -303,7 +315,13 @@ export class PatchCommitScheduler {
       this.maybeResolveIdle();
     };
 
-    if (this.batchStrategy === "microtask" && typeof queueMicrotask === "function") {
+    const useStartupMicrotask =
+      this.batchStrategy !== "microtask" &&
+      this.startupMicrotaskFlushes > 0 &&
+      this.flushCount < this.startupMicrotaskFlushes &&
+      typeof queueMicrotask === "function";
+
+    if ((this.batchStrategy === "microtask" || useStartupMicrotask) && typeof queueMicrotask === "function") {
       this.scheduledViaRaf = false;
       this.scheduledHandle = token;
       queueMicrotask(execute);
@@ -359,7 +377,15 @@ export class PatchCommitScheduler {
         consumed += 1;
         const applyStart = this.now();
         const queueDelayMs = Math.max(0, applyStart - next.receivedAt);
-        const { patches: coalesced, metrics: coalescingMetrics } = coalescePatchesWithMetrics(next.patches, DEFAULT_COALESCE_CONFIG);
+        let coalesced: Patch[];
+        let coalescingMetrics: CoalescingMetrics | undefined;
+        if (shouldSkipCoalescing(next.patches)) {
+          coalesced = next.patches;
+        } else {
+          const result = coalescePatchesWithMetrics(next.patches, DEFAULT_COALESCE_CONFIG);
+          coalesced = result.patches;
+          coalescingMetrics = result.metrics;
+        }
         const touched = this.store.applyPatches(coalesced, {
           coalesced: true,
           metrics: coalescingMetrics,
@@ -404,7 +430,7 @@ export class PatchCommitScheduler {
     const initialHighQueueSize = this.enrichmentHighQueue.length;
     const configuredHighLimit =
       manual || !this.maxBatchesPerFlush ? undefined : initialHighQueueSize > this.maxBatchesPerFlush ? undefined : this.maxBatchesPerFlush;
-    const highBatchLimit = this.adaptiveHighBatchCap ?? configuredHighLimit;
+    const highBatchLimit = this.adaptiveBudgeting ? (this.adaptiveHighBatchCap ?? configuredHighLimit) : configuredHighLimit;
 
     processQueue(this.enrichmentHighQueue, highBatchLimit, budgetMs);
 
@@ -422,7 +448,7 @@ export class PatchCommitScheduler {
             : initialLowQueueSize > this.maxLowPriorityBatchesPerFlush
               ? undefined
               : this.maxLowPriorityBatchesPerFlush;
-        const lowBatchLimit = this.adaptiveLowBatchCap ?? configuredLowLimit;
+        const lowBatchLimit = this.adaptiveBudgeting ? (this.adaptiveLowBatchCap ?? configuredLowLimit) : configuredLowLimit;
 
         processQueue(this.enrichmentLowQueue, lowBatchLimit, budgetForLow);
       }
@@ -436,6 +462,7 @@ export class PatchCommitScheduler {
     const remaining = remainingSemantic + remainingEnrichment;
 
     if (batches.length > 0) {
+      this.flushCount += 1;
       try {
         this.onFlush({
           batches,
@@ -460,9 +487,13 @@ export class PatchCommitScheduler {
       this.schedule();
     }
 
-    const coalescingStats = this.computeCoalescingDurationStats();
-    this.updateAdaptiveBudget(coalescingStats.p95);
-    const adaptiveState = this.snapshotAdaptiveBudget(coalescingStats.p95 ?? null);
+    const coalescingStats = this.adaptiveBudgeting
+      ? this.computeCoalescingDurationStats()
+      : { sampleCount: this.coalescingDurationSamples.length, p95: null };
+    if (this.adaptiveBudgeting) {
+      this.updateAdaptiveBudget(coalescingStats.p95);
+    }
+    const adaptiveState = this.adaptiveBudgeting ? this.snapshotAdaptiveBudget(coalescingStats.p95 ?? null) : undefined;
 
     const flushResult =
       batches.length > 0
@@ -481,7 +512,7 @@ export class PatchCommitScheduler {
             flushCompletedAt: completedAt,
             coalescingDurationP95: coalescingStats.p95 ?? undefined,
             coalescingDurationSampleCount: coalescingStats.sampleCount,
-            adaptiveBudgetActive: adaptiveState.active,
+            adaptiveBudgetActive: adaptiveState?.active,
             adaptiveBudgetState: adaptiveState,
           }
         : null;
@@ -524,6 +555,9 @@ export class PatchCommitScheduler {
   }
 
   private updateAdaptiveBudget(p95: number | null): void {
+    if (!this.adaptiveBudgeting) {
+      return;
+    }
     if (p95 !== null && p95 > COALESCING_DURATION_ACTIVATE_MS) {
       if (!this.adaptiveBudgetActive) {
         this.adaptiveBudgetActive = true;
@@ -610,6 +644,7 @@ export class PatchCommitScheduler {
     this.flushing = false;
     this.sequence = 0;
     this.history = [];
+    this.flushCount = 0;
     this.scheduleToken++;
     this.paused = false;
     this.coalescingDurationSamples = [];
@@ -659,6 +694,12 @@ export class PatchCommitScheduler {
     }
     if (typeof options.historyLimit !== "undefined") {
       this.setHistoryLimit(options.historyLimit);
+    }
+    if (typeof options.startupMicrotaskFlushes !== "undefined") {
+      this.startupMicrotaskFlushes = Math.max(0, Math.floor(options.startupMicrotaskFlushes));
+    }
+    if (typeof options.adaptiveBudgeting !== "undefined") {
+      this.adaptiveBudgeting = options.adaptiveBudgeting;
     }
     if (typeof options.batch !== "undefined") {
       const requestedBatch = options.batch;

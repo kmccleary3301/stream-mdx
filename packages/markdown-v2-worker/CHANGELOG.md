@@ -1,14 +1,5 @@
 # @stream-mdx/worker
 
-## 0.1.1
-
-### Patch Changes
-
-- Refine streaming scheduling and list layout, add worker append batching/debug state support, and refresh docs/README examples.
-- Updated dependencies
-  - @stream-mdx/core@0.1.1
-  - @stream-mdx/plugins@0.1.1
-
 ## 0.1.0
 
 ### Minor Changes

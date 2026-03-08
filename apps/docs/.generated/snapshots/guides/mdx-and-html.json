@@ -1,0 +1,622 @@
+{
+  "version": 1,
+  "schemaId": "streammdx.snapshot.v1",
+  "createdAt": "2026-02-11T20:25:54.614Z",
+  "hash": "8185cb41fb6efdd5004eed70a3676df93c871b2257b5953977d6ae1e70716a6a",
+  "contentHash": "85e1603d391d43fd36416feff36054573349a08edc485d53f00b8ef6f1e809c3",
+  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
+  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "blocks": [
+    {
+      "id": "db082c0",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "MDX and HTML in StreamMDX",
+        "range": {
+          "from": 0,
+          "to": 27
+        },
+        "meta": {
+          "headingLevel": 1,
+          "headingText": "MDX and HTML in StreamMDX",
+          "headingId": "mdx-and-html-in-streammdx"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "MDX and HTML in StreamMDX"
+          }
+        ]
+      }
+    },
+    {
+      "id": "592dfbb9",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Why MDX is optional",
+        "range": {
+          "from": 29,
+          "to": 51
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Why MDX is optional",
+          "headingId": "why-mdx-is-optional"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Why MDX is optional"
+          }
+        ]
+      }
+    },
+    {
+      "id": "58a5361e",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "StreamMDX treats MDX as an opt-in feature. Plain Markdown streams fast and predictably. MDX adds custom components, but requires compilation. You can enable it only where you need it:",
+        "range": {
+          "from": 53,
+          "to": 236
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "StreamMDX treats MDX as an opt-in feature. Plain Markdown streams fast and predictably. MDX adds custom components, but requires compilation. You can enable it only where you need it:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "14b537a3",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```tsx\n<StreamingMarkdown\n  text={content}\n  features={{ mdx: true, html: true }}\n  mdxCompileMode=\"worker\"\n/>\n```",
+        "range": {
+          "from": 238,
+          "to": 352
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content}</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }}</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  mdxCompileMode</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"worker\"</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/></span></span></code></pre>",
+        "meta": {
+          "lang": "tsx",
+          "code": "<StreamingMarkdown\n  text={content}\n  features={{ mdx: true, html: true }}\n  mdxCompileMode=\"worker\"\n/>"
+        }
+      }
+    },
+    {
+      "id": "2c0ca0fa",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "If you do not need MDX, leave it off for the simplest and fastest path.",
+        "range": {
+          "from": 354,
+          "to": 425
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "If you do not need MDX, leave it off for the simplest and fastest path."
+          }
+        ]
+      }
+    },
+    {
+      "id": "12b41477",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Compile strategies",
+        "range": {
+          "from": 427,
+          "to": 448
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Compile strategies",
+          "headingId": "compile-strategies"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Compile strategies"
+          }
+        ]
+      }
+    },
+    {
+      "id": "43b6ca21",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Worker mode (default recommendation)",
+        "range": {
+          "from": 450,
+          "to": 490
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "Worker mode (default recommendation)",
+          "headingId": "worker-mode-default-recommendation"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Worker mode (default recommendation)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "2c5ee907",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- all compilation happens in the worker\n- no server endpoint needed\n- worker and server behavior are identical",
+        "range": {
+          "from": 492,
+          "to": 602
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "all compilation happens in the worker"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "no server endpoint needed"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "worker and server behavior are identical"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "1ab69866",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```tsx\n<StreamingMarkdown mdxCompileMode=\"worker\" />\n```",
+        "range": {
+          "from": 604,
+          "to": 660
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> mdxCompileMode</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"worker\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> /></span></span></code></pre>",
+        "meta": {
+          "lang": "tsx",
+          "code": "<StreamingMarkdown mdxCompileMode=\"worker\" />"
+        }
+      }
+    },
+    {
+      "id": "2e4ea82",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Server mode",
+        "range": {
+          "from": 662,
+          "to": 677
+        },
+        "meta": {
+          "headingLevel": 3,
+          "headingText": "Server mode",
+          "headingId": "server-mode"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Server mode"
+          }
+        ]
+      }
+    },
+    {
+      "id": "61b94764",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- you host a compile endpoint (useful for stricter build control)\n- the worker requests compiled output\n- you must keep server and worker compile settings aligned",
+        "range": {
+          "from": 679,
+          "to": 841
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "you host a compile endpoint (useful for stricter build control)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "the worker requests compiled output"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "you must keep server and worker compile settings aligned"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "79102a43",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```tsx\n<StreamingMarkdown mdxCompileMode=\"server\" />\n```",
+        "range": {
+          "from": 843,
+          "to": 899
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> mdxCompileMode</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"server\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> /></span></span></code></pre>",
+        "meta": {
+          "lang": "tsx",
+          "code": "<StreamingMarkdown mdxCompileMode=\"server\" />"
+        }
+      }
+    },
+    {
+      "id": "7395ed0a",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "MDX component registry",
+        "range": {
+          "from": 901,
+          "to": 926
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "MDX component registry",
+          "headingId": "mdx-component-registry"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "MDX component registry"
+          }
+        ]
+      }
+    },
+    {
+      "id": "635d19",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "MDX components are passed separately from block overrides:",
+        "range": {
+          "from": 928,
+          "to": 986
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "MDX components are passed separately from block overrides:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "350dd545",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```tsx\nconst mdxComponents = {\n  Callout: ({ title, children }: { title: string; children: React.ReactNode }) => (\n    <div className=\"rounded border border-border p-4\">\n      <div className=\"font-semibold\">{title}</div>\n      <div className=\"mt-2\">{children}</div>\n    </div>\n  ),\n};\n\n<StreamingMarkdown text={content} mdxComponents={mdxComponents} />\n```",
+        "range": {
+          "from": 988,
+          "to": 1344
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> mdxComponents</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  Callout</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: ({ </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">title</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">children</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">title</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">; </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">children</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> React</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">ReactNode</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> (</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    &#x3C;</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> className</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"rounded border border-border p-4\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      &#x3C;</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> className</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"font-semibold\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>{title}&#x3C;/</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      &#x3C;</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> className</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"mt-2\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>{children}&#x3C;/</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    &#x3C;/</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  ),</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">};</span></span>\n<span class=\"line\" data-line=\"9\"></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">mdxComponents</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{mdxComponents} /></span></span></code></pre>",
+        "meta": {
+          "lang": "tsx",
+          "code": "const mdxComponents = {\n  Callout: ({ title, children }: { title: string; children: React.ReactNode }) => (\n    <div className=\"rounded border border-border p-4\">\n      <div className=\"font-semibold\">{title}</div>\n      <div className=\"mt-2\">{children}</div>\n    </div>\n  ),\n};\n\n<StreamingMarkdown text={content} mdxComponents={mdxComponents} />"
+        }
+      }
+    },
+    {
+      "id": "6f69f24",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "HTML blocks",
+        "range": {
+          "from": 1346,
+          "to": 1360
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "HTML blocks",
+          "headingId": "html-blocks"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "HTML blocks"
+          }
+        ]
+      }
+    },
+    {
+      "id": "27f26722",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "When HTML is enabled, raw HTML blocks are sanitized and rendered with a configurable allowlist. You can also swap HTML tags for your own components:",
+        "range": {
+          "from": 1362,
+          "to": 1510
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "When HTML is enabled, raw HTML blocks are sanitized and rendered with a configurable allowlist. You can also swap HTML tags for your own components:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "3752bbb5",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```tsx\nconst htmlElements = {\n  blockquote: ({ children }: { children: React.ReactNode }) => (\n    <blockquote className=\"border-l-2 border-border pl-4 text-muted-old\">{children}</blockquote>\n  ),\n};\n\n<StreamingMarkdown text={content} htmlElements={htmlElements} features={{ html: true }} />\n```",
+        "range": {
+          "from": 1512,
+          "to": 1807
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> htmlElements</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  blockquote</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: ({ </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">children</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">children</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> React</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">ReactNode</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> (</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    &#x3C;</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">blockquote</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> className</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"border-l-2 border-border pl-4 text-muted-old\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>{children}&#x3C;/</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">blockquote</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  ),</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">};</span></span>\n<span class=\"line\" data-line=\"6\"></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">htmlElements</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{htmlElements} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }} /></span></span></code></pre>",
+        "meta": {
+          "lang": "tsx",
+          "code": "const htmlElements = {\n  blockquote: ({ children }: { children: React.ReactNode }) => (\n    <blockquote className=\"border-l-2 border-border pl-4 text-muted-old\">{children}</blockquote>\n  ),\n};\n\n<StreamingMarkdown text={content} htmlElements={htmlElements} features={{ html: true }} />"
+        }
+      }
+    },
+    {
+      "id": "24ea5a90",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "When to use each feature",
+        "range": {
+          "from": 1809,
+          "to": 1836
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "When to use each feature",
+          "headingId": "when-to-use-each-feature"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "When to use each feature"
+          }
+        ]
+      }
+    },
+    {
+      "id": "698ce8b0",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- **Markdown only**: most content, best performance\n- **HTML**: when you need raw HTML tags (tables, custom spans)\n- **MDX**: when you need React components in content",
+        "range": {
+          "from": 1838,
+          "to": 2005
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Markdown only"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": most content, best performance"
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "HTML"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": when you need raw HTML tags (tables, custom spans)"
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "MDX"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": when you need React components in content"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "1318d6c5",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Example MDX snippet",
+        "range": {
+          "from": 2007,
+          "to": 2029
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Example MDX snippet",
+          "headingId": "example-mdx-snippet"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Example MDX snippet"
+          }
+        ]
+      }
+    },
+    {
+      "id": "2c48e83e",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```\n<Callout title=\"Heads up\">\n  This is a custom component rendered inside the stream.\n</Callout>\n\nHere is a YouTube embed:\n\n<YouTube videoId=\"dQw4w9WgXcQ\" />\n```",
+        "range": {
+          "from": 2031,
+          "to": 2194
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>&#x3C;Callout title=\"Heads up\"></span></span>\n<span class=\"line\" data-line=\"2\"><span>  This is a custom component rendered inside the stream.</span></span>\n<span class=\"line\" data-line=\"3\"><span>&#x3C;/Callout></span></span>\n<span class=\"line\" data-line=\"4\"><span></span></span>\n<span class=\"line\" data-line=\"5\"><span>Here is a YouTube embed:</span></span>\n<span class=\"line\" data-line=\"6\"><span></span></span>\n<span class=\"line\" data-line=\"7\"><span>&#x3C;YouTube videoId=\"dQw4w9WgXcQ\" /></span></span></code></pre>",
+        "meta": {
+          "lang": "text",
+          "code": "<Callout title=\"Heads up\">\n  This is a custom component rendered inside the stream.\n</Callout>\n\nHere is a YouTube embed:\n\n<YouTube videoId=\"dQw4w9WgXcQ\" />"
+        }
+      }
+    },
+    {
+      "id": "478d109c",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "In worker mode, this compiles inside the worker and renders as soon as the block completes.",
+        "range": {
+          "from": 2196,
+          "to": 2287
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "In worker mode, this compiles inside the worker and renders as soon as the block completes."
+          }
+        ]
+      }
+    }
+  ],
+  "tocHeadings": [
+    {
+      "id": "mdx-and-html-in-streammdx",
+      "text": "MDX and HTML in StreamMDX",
+      "level": 1,
+      "blockId": "db082c0"
+    },
+    {
+      "id": "why-mdx-is-optional",
+      "text": "Why MDX is optional",
+      "level": 2,
+      "blockId": "592dfbb9"
+    },
+    {
+      "id": "compile-strategies",
+      "text": "Compile strategies",
+      "level": 2,
+      "blockId": "12b41477"
+    },
+    {
+      "id": "worker-mode-default-recommendation",
+      "text": "Worker mode (default recommendation)",
+      "level": 3,
+      "blockId": "43b6ca21"
+    },
+    {
+      "id": "server-mode",
+      "text": "Server mode",
+      "level": 3,
+      "blockId": "2e4ea82"
+    },
+    {
+      "id": "mdx-component-registry",
+      "text": "MDX component registry",
+      "level": 2,
+      "blockId": "7395ed0a"
+    },
+    {
+      "id": "html-blocks",
+      "text": "HTML blocks",
+      "level": 2,
+      "blockId": "6f69f24"
+    },
+    {
+      "id": "when-to-use-each-feature",
+      "text": "When to use each feature",
+      "level": 2,
+      "blockId": "24ea5a90"
+    },
+    {
+      "id": "example-mdx-snippet",
+      "text": "Example MDX snippet",
+      "level": 2,
+      "blockId": "1318d6c5"
+    }
+  ],
+  "init": {
+    "docPlugins": {
+      "tables": true,
+      "html": true,
+      "mdx": true,
+      "math": true,
+      "footnotes": true,
+      "callouts": true
+    },
+    "mdx": {
+      "compileMode": "server"
+    },
+    "prewarmLangs": [
+      "typescript",
+      "tsx",
+      "javascript",
+      "json",
+      "bash",
+      "diff"
+    ]
+  }
+}

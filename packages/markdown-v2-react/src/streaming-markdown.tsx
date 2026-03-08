@@ -41,6 +41,8 @@ export interface StreamingSchedulerOptions {
   urgentQueueThreshold?: number;
   batch?: "rAF" | "microtask" | "timeout";
   historyLimit?: number;
+  startupMicrotaskFlushes?: number;
+  adaptiveBudgeting?: boolean;
   adaptiveSwitch?: boolean;
   adaptiveQueueThreshold?: number;
 }
@@ -351,6 +353,8 @@ function StreamingMarkdownComponent(
         urgentQueueThreshold: effectiveScheduling.urgentQueueThreshold,
         batch: effectiveScheduling.batch,
         historyLimit,
+        startupMicrotaskFlushes: effectiveScheduling.startupMicrotaskFlushes,
+        adaptiveBudgeting: effectiveScheduling.adaptiveBudgeting,
       },
       mdx: mdxConfig,
     };

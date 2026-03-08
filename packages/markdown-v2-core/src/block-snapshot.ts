@@ -88,6 +88,12 @@ export function createBlockSnapshot(block: Block): NodeSnapshot {
 }
 
 const listInlineParser = new InlineParser();
+const LIST_STREAMING_ANTICIPATION = {
+  inline: true,
+  mathInline: true,
+  mathBlock: true,
+  regex: true,
+} as const;
 
 function enrichListSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot {
   const raw = block.payload.raw ?? "";
@@ -208,7 +214,7 @@ function buildListItemSnapshot(
         const nestedId = `${id}::list:${subListIndex++}`;
         const nestedOrdered = name === "OrderedList";
         const nestedSnapshot = buildListNodeSnapshot(block, cursor.node, nestedOrdered, nestedId, baseOffset, raw);
-        if (Array.isArray(nestedSnapshot.children) && nestedSnapshot.children.length > 0) {
+        if (nestedSnapshot && Array.isArray(nestedSnapshot.children) && nestedSnapshot.children.length > 0) {
           childSnapshots.push(nestedSnapshot);
         }
       } else if (name === "Blockquote") {
@@ -262,21 +268,20 @@ type ListItemInlineOptions = {
 };
 
 function parseListInline(raw: string, options?: ListItemInlineOptions): InlineNode[] {
-  if (!options?.streaming || !options.formatAnticipation) {
+  if (!options?.streaming) {
     return listInlineParser.parse(raw);
   }
-  const prepared = prepareInlineStreamingContent(raw, { formatAnticipation: options.formatAnticipation, math: options.math });
+  const effectiveFormatAnticipation = options.formatAnticipation ?? LIST_STREAMING_ANTICIPATION;
+  const prepared = prepareInlineStreamingContent(raw, { formatAnticipation: effectiveFormatAnticipation, math: options.math ?? true });
   if (prepared.kind === "raw") {
     return [{ kind: "text", text: raw }];
   }
   let preparedContent = prepared.content;
-  let appended = prepared.appended;
-  const normalized = normalizeFormatAnticipation(options.formatAnticipation);
+  const normalized = normalizeFormatAnticipation(effectiveFormatAnticipation);
   if (normalized.regex) {
     const regexAppend = listInlineParser.getRegexAnticipationAppend(raw);
     if (regexAppend) {
       preparedContent += regexAppend;
-      appended += regexAppend;
     }
   }
   return listInlineParser.parse(preparedContent, { cache: false });
@@ -385,7 +390,11 @@ function buildHeadingSnapshot(block: Block, headingNode: any, id: string, baseOf
   return createBlockSnapshot(headingBlock);
 }
 
-function buildListNodeSnapshot(block: Block, listNode: any, ordered: boolean, id: string, baseOffset: number, raw: string): NodeSnapshot {
+function buildListNodeSnapshot(block: Block, listNode: any, ordered: boolean, id: string, baseOffset: number, raw: string): NodeSnapshot | null {
+  const children = buildListItemSnapshots(block, listNode, ordered, id, baseOffset, raw);
+  if (children.length === 0) {
+    return null;
+  }
   return {
     id,
     type: "list",
@@ -393,7 +402,7 @@ function buildListNodeSnapshot(block: Block, listNode: any, ordered: boolean, id
       ordered,
     },
     range: createRange(baseOffset + listNode.from, baseOffset + listNode.to),
-    children: buildListItemSnapshots(block, listNode, ordered, id, baseOffset, raw),
+    children,
   };
 }
 
