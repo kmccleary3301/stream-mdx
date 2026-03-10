@@ -1,17 +1,23 @@
-# @stream-mdx/tui
+# `@stream-mdx/tui`
 
-Reference utilities for terminal and CLI integrations.
-
-## Features
-- NDJSON encoder/decoder helpers for StreamMDX protocol events.
-- Lightweight snapshot store that applies patches and yields blocks.
+`@stream-mdx/tui` provides terminal-oriented helpers for StreamMDX protocol streams: NDJSON encoding/decoding and a lightweight snapshot store that can apply events and materialize blocks outside React.
 
 ## Install
+
 ```bash
-npm install @stream-mdx/tui @stream-mdx/core @stream-mdx/protocol
+npm install @stream-mdx/tui @stream-mdx/protocol @stream-mdx/core
 ```
 
-## NDJSON
+## Main Capabilities
+
+| Capability | Notes |
+| --- | --- |
+| NDJSON helpers | Encode/decode protocol events for line-oriented transports |
+| Snapshot store | Apply patch streams and recover block state |
+| Non-React usage | Useful in TUIs, CLIs, log viewers, and replay tools |
+
+## NDJSON Example
+
 ```ts
 import { NdjsonDecoder, encodeNdjsonEvent } from "@stream-mdx/tui";
 
@@ -20,7 +26,8 @@ const chunk = encodeNdjsonEvent({ event: "done" } as any);
 const events = decoder.push(chunk);
 ```
 
-## Snapshot Store
+## Snapshot Store Example
+
 ```ts
 import { createSnapshotStore } from "@stream-mdx/tui";
 
@@ -30,11 +37,12 @@ const blocks = store.getBlocks();
 ```
 
 ## Notes
-- Token output is gated by the worker output mode ("tokens" or "both").
-- The store is intended for non-React environments (TUIs, CLIs).
 
-## Docs
+- Token output depends on the worker output mode (`tokens` or `both`).
+- The store is intentionally lightweight and aimed at non-React consumers.
 
-- CLI usage: https://github.com/kmccleary3301/stream-mdx/blob/main/docs/CLI_USAGE.md
-- Protocol spec: https://github.com/kmccleary3301/stream-mdx/blob/main/docs/STREAMMDX_JSON_DIFF_SPEC.md
-- Public API: https://github.com/kmccleary3301/stream-mdx/blob/main/docs/PUBLIC_API.md
+## Documentation
+
+- [`../../docs/CLI_USAGE.md`](../../docs/CLI_USAGE.md)
+- [`../../docs/STREAMMDX_JSON_DIFF_SPEC.md`](../../docs/STREAMMDX_JSON_DIFF_SPEC.md)
+- [`../../docs/PUBLIC_API.md`](../../docs/PUBLIC_API.md)

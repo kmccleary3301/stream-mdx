@@ -1,16 +1,8 @@
 # `@stream-mdx/plugins`
 
-Plugin primitives and registries used by StreamMDX.
+`@stream-mdx/plugins` is the worker/plugin layer for StreamMDX. It contains the built-in plugin suite plus the registry/base exports you use when you want to customize syntax support or build a custom worker bundle.
 
-Most app consumers **do not** need to import this package directly. Start with:
-
-- `stream-mdx` (recommended)
-- https://github.com/kmccleary3301/stream-mdx/blob/main/docs/GETTING_STARTED.md
-
-Use `@stream-mdx/plugins` when you are:
-
-- building a **custom worker bundle** (custom tokenizers, extra document plugins, custom streaming matchers)
-- integrating StreamMDX into another library and you want explicit control over the worker-side feature set
+Most application code does **not** import this package directly. The normal app-facing switchboard is still the `features` prop on `<StreamingMarkdown />`.
 
 ## Install
 
@@ -18,36 +10,47 @@ Use `@stream-mdx/plugins` when you are:
 npm install @stream-mdx/plugins
 ```
 
-## Entry points
+## Export Surface
 
-- `@stream-mdx/plugins` (root)
-- `@stream-mdx/plugins/registry`
-- `@stream-mdx/plugins/base`
-- `@stream-mdx/plugins/document`
-- `@stream-mdx/plugins/tables`
-- `@stream-mdx/plugins/html`
-- `@stream-mdx/plugins/math`
-- `@stream-mdx/plugins/math/renderer`
-- `@stream-mdx/plugins/mdx`
-- `@stream-mdx/plugins/footnotes`
-- `@stream-mdx/plugins/callouts`
+| Export | Purpose |
+| --- | --- |
+| `@stream-mdx/plugins` | Main plugin surface |
+| `@stream-mdx/plugins/registry` | Registry and plugin registration helpers |
+| `@stream-mdx/plugins/base` | Base plugin contracts |
+| `@stream-mdx/plugins/document` | Core document/plugin preset |
+| `@stream-mdx/plugins/tables` | Table plugin |
+| `@stream-mdx/plugins/html` | HTML plugin |
+| `@stream-mdx/plugins/math` | Math plugin |
+| `@stream-mdx/plugins/math/renderer` | Math rendering helpers |
+| `@stream-mdx/plugins/mdx` | MDX plugin |
+| `@stream-mdx/plugins/footnotes` | Footnotes plugin |
+| `@stream-mdx/plugins/callouts` | Callouts plugin |
 
-## Important note about “plugins”
+## Important Distinction
 
-The primary way to enable/disable capabilities in StreamMDX is the `features` prop on `<StreamingMarkdown />`:
+| You want to... | Use |
+| --- | --- |
+| Turn tables/math/html/MDX on or off in a normal app | `features={{ ... }}` on `<StreamingMarkdown />` |
+| Build a custom worker bundle or extend syntax | `@stream-mdx/plugins/*` |
+| Add diagram rendering | `@stream-mdx/mermaid` at the component layer |
 
-```tsx
-<StreamingMarkdown features={{ tables: true, html: true, math: true, mdx: true }} />
+## Example
+
+```ts
+import { createDocumentPluginPreset } from "@stream-mdx/plugins/document";
+import { createTablesPlugin } from "@stream-mdx/plugins/tables";
+import { createMathPlugin } from "@stream-mdx/plugins/math";
 ```
 
-If you need **custom syntax**, you generally need a **custom worker bundle** rather than “passing plugins as a prop”.
+## When To Reach For This Package
 
-## Addons
+- You are composing your own worker init/plugin preset.
+- You need custom syntax or custom matcher behavior.
+- You are integrating StreamMDX into a library/framework and want explicit worker-side configuration.
 
-- `@stream-mdx/mermaid` is an opt-in diagram renderer that plugs in at the component layer.
+## Documentation
 
-## Docs
-
-- Plugins & worker cookbook: https://github.com/kmccleary3301/stream-mdx/blob/main/docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md
-- Public API: https://github.com/kmccleary3301/stream-mdx/blob/main/docs/PUBLIC_API.md
-- Full docs site: https://kmccleary3301.github.io/stream-mdx/
+- [`../../docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`](../../docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md)
+- [`../../docs/PLUGIN_ABI.md`](../../docs/PLUGIN_ABI.md)
+- [`../../docs/PUBLIC_API.md`](../../docs/PUBLIC_API.md)
+- Docs site: <https://stream-mdx.vercel.app/docs>

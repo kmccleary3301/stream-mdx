@@ -1,14 +1,28 @@
 # `stream-mdx`
 
-High-performance streaming Markdown/MDX renderer for React with a worker-first pipeline, incremental patching, and backpressure guardrails.
+[![npm version](https://img.shields.io/npm/v/stream-mdx?logo=npm&color=CB3837)](https://www.npmjs.com/package/stream-mdx)
+[![Docs](https://img.shields.io/badge/docs-stream--mdx.vercel.app-000000?logo=vercel)](https://stream-mdx.vercel.app/docs)
+[![License](https://img.shields.io/github/license/kmccleary3301/stream-mdx?color=2ea44f)](../../LICENSE)
 
-This is the **convenience** package:
+`stream-mdx` is the convenience package for StreamMDX. If you want the standard React/browser integration without thinking about the scoped package layout, start here.
 
-- `stream-mdx` re-exports the main React API from `@stream-mdx/react`
-- `stream-mdx/{core,react,worker,plugins}` proxy to the scoped packages
-- `stream-mdx/plugins/*` proxies the common plugin entrypoints (helpful for pnpm users)
+**Primary links**: [Root README](../../README.md) · [Docs site](https://stream-mdx.vercel.app/docs) · [Public API](../../docs/PUBLIC_API.md) · [React integration](../../docs/REACT_INTEGRATION_GUIDE.md)
 
-If you want maximum modularity (or you’re publishing your own library), install the scoped packages directly. Otherwise, start here.
+## What This Package Includes
+
+`stream-mdx` re-exports the commonly used parts of the stack under stable app-facing import paths:
+
+| Import | Resolves to | Use when |
+| --- | --- | --- |
+| `stream-mdx` | main React surface | You want `<StreamingMarkdown />` and the default types. |
+| `stream-mdx/react` | `@stream-mdx/react` | You want the React surface explicitly. |
+| `stream-mdx/worker` | `@stream-mdx/worker` | You need worker helpers or hosted worker utilities. |
+| `stream-mdx/worker/node` | `@stream-mdx/worker/node` | You want Node `worker_threads` snapshot compilation. |
+| `stream-mdx/worker/direct` | `@stream-mdx/worker/direct` | You need direct compile helpers in runtimes without `worker_threads`. |
+| `stream-mdx/core` | `@stream-mdx/core` | You need lower-level types or perf helpers. |
+| `stream-mdx/plugins/*` | `@stream-mdx/plugins/*` | You are customizing the worker/plugin layer. |
+
+If you are building a framework integration or need absolute control over dependency edges, install the scoped packages directly instead.
 
 ## Install
 
@@ -16,22 +30,23 @@ If you want maximum modularity (or you’re publishing your own library), instal
 npm install stream-mdx
 ```
 
+Peer dependencies:
+
+| Package | Range |
+| --- | --- |
+| `react` | `>=18.2.0` |
+| `react-dom` | `>=18.2.0` |
+
 ## Quickstart
 
-### 1) Copy the hosted worker bundle
-
-In production you should host the worker bundle from static assets (stricter CSP, no `blob:`).
-
-After installing, copy the worker into your app:
+### 1. Host the worker bundle
 
 ```bash
 mkdir -p public/workers
 cp node_modules/@stream-mdx/worker/dist/hosted/markdown-worker.js public/workers/markdown-worker.js
 ```
 
-### Next.js (App Router)
-
-`StreamingMarkdown` is a **client component**. Import it behind a `"use client"` boundary.
+### 2. Render Markdown in a client component
 
 ```tsx
 "use client";
@@ -43,100 +58,84 @@ export function Demo({ text }: { text: string }) {
     <StreamingMarkdown
       text={text}
       worker="/workers/markdown-worker.js"
-      features={{ html: true, tables: true, math: true, mdx: true }}
+      features={{ tables: true, html: true, math: true, mdx: true, footnotes: true }}
       mdxCompileMode="worker"
+      prewarmLangs={["tsx", "bash", "json"]}
     />
   );
 }
 ```
 
-If you import `StreamingMarkdown` from a server component, you’ll typically see `useRef is not a function`. Fix by moving the import behind a `"use client"` boundary.
-
-### Vite React
+### 3. Optional addon registration
 
 ```tsx
-import { StreamingMarkdown } from "stream-mdx";
-
-export default function App() {
-  return (
-    <StreamingMarkdown
-      text="## Hello\n\nStreaming **markdown**"
-      worker="/workers/markdown-worker.js"
-      features={{ html: true, tables: true, math: true }}
-    />
-  );
-}
-```
-
-## Configuration at a glance
-
-- `text` / `stream`: provide a full string or an append-only `AsyncIterable<string>`.
-- `worker`: a `Worker`, `URL`, URL string, or factory; defaults to the built-in worker strategy and falls back to `/workers/markdown-worker.js`.
-- `features`: `{ html?, tables?, mdx?, math?, footnotes?, callouts? }`.
-- `mdxCompileMode`: `"worker"` (no server) or `"server"` (requires an endpoint; see docs).
-- `components` / `inlineComponents`: override block + inline renders (wrap code/math without losing incremental rendering).
-- `tableElements`: override table tags (e.g. Shadcn table wrappers).
-- `htmlElements`: override HTML tag renders (when HTML is enabled).
-- `mdxComponents`: MDX component registry (when MDX compilation is enabled).
-- `caret`: show a streaming caret while blocks are still in-flight.
-- `linkSafety`: intercept link clicks and require confirmation before navigation.
-- `deferHeavyBlocks`: defer heavy blocks (e.g. Mermaid) until in view/idle.
-- `scheduling`: patch scheduler/backpressure knobs.
-
-## Plugins
-
-Common entrypoints (convenience package):
-
-- `stream-mdx/plugins/document`
-- `stream-mdx/plugins/tables`
-- `stream-mdx/plugins/html`
-- `stream-mdx/plugins/math`
-- `stream-mdx/plugins/mdx`
-
-Scoped equivalents:
-
-- `@stream-mdx/plugins/document` (etc)
-
-## Addons
-
-- `@stream-mdx/mermaid` (optional Mermaid diagram renderer)
-- `@stream-mdx/theme-tailwind` (optional Tailwind theme CSS)
-- `@stream-mdx/tui` + `@stream-mdx/protocol` (terminal/CLI helpers)
-
-Example:
-
-```tsx
-import { StreamingMarkdown } from "stream-mdx";
 import { MermaidBlock } from "@stream-mdx/mermaid";
+import { StreamingMarkdown } from "stream-mdx";
 
-<StreamingMarkdown text={content} components={{ mermaid: MermaidBlock }} />;
+<StreamingMarkdown text={content} worker="/workers/markdown-worker.js" components={{ mermaid: MermaidBlock }} />;
 ```
 
-## Terminal / TUI
+> [!NOTE]
+> `StreamingMarkdown` is a client component. In Next.js App Router, keep the import behind a `"use client"` boundary.
 
-If you're building a terminal UI, use:
+## Package-Specific Guidance
 
-- `@stream-mdx/protocol` for stable event/type contracts
-- `@stream-mdx/tui` for NDJSON helpers and a snapshot store for applying patches
+| Question | Recommendation |
+| --- | --- |
+| I just want the normal React integration. | Use `stream-mdx`. |
+| I need the worker/runtime pieces separately. | Use `@stream-mdx/worker` and `@stream-mdx/core`. |
+| I am building a server/static compilation pipeline. | Use `stream-mdx/worker/node` plus `@stream-mdx/react/server`. |
+| I need plugin customization or a custom worker bundle. | Drop to `@stream-mdx/plugins/*`. |
+| I am building a TUI or protocol consumer. | Use `@stream-mdx/protocol` and `@stream-mdx/tui`. |
 
-## Docs
+## Common Usage Patterns
 
-- Docs site: https://kmccleary3301.github.io/stream-mdx/
-- Live demo: https://kmccleary3301.github.io/stream-mdx/demo
-- Showcase: https://kmccleary3301.github.io/stream-mdx/showcase
-- Manual: https://github.com/kmccleary3301/stream-mdx/blob/main/docs/COMPREHENSIVE_PROJECT_DOCUMENTATION.md
-- Public API: https://github.com/kmccleary3301/stream-mdx/blob/main/docs/PUBLIC_API.md
-- React integration: https://github.com/kmccleary3301/stream-mdx/blob/main/docs/REACT_INTEGRATION_GUIDE.md
-- Plugins cookbook: https://github.com/kmccleary3301/stream-mdx/blob/main/docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md
-- Status/architecture: https://github.com/kmccleary3301/stream-mdx/blob/main/docs/STREAMING_MARKDOWN_V2_STATUS.md
-- TUI/CLI protocol guide: https://github.com/kmccleary3301/stream-mdx/blob/main/docs/CLI_USAGE.md
+### Simple static string
 
-## Package map
+```tsx
+<StreamingMarkdown text="# Hello\n\nStreaming **markdown**" worker="/workers/markdown-worker.js" />
+```
 
-- `stream-mdx` – React surface (`@stream-mdx/react`)
-- `stream-mdx/react` – React renderer + types
-- `stream-mdx/worker` – worker client + default worker helpers
-- `stream-mdx/plugins` – plugin registry + helpers
-- `stream-mdx/plugins/*` – common plugin entrypoints
-- `stream-mdx/core` – structured-clone-safe types + perf utilities
-- `@stream-mdx/theme-tailwind` – optional Tailwind theme CSS
+### Append-only stream
+
+```tsx
+<StreamingMarkdown stream={myAsyncIterable} worker="/workers/markdown-worker.js" caret="block" />
+```
+
+### Server / static snapshot compile
+
+```tsx
+import { ComponentRegistry, MarkdownBlocksRenderer } from "@stream-mdx/react/server";
+import { compileMarkdownSnapshot } from "stream-mdx/worker/node";
+
+const { blocks } = await compileMarkdownSnapshot({
+  text: "# Precompiled page\n\nThis was rendered from a snapshot.",
+  init: {
+    docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true },
+    mdx: { compileMode: "server" },
+  },
+});
+
+return <MarkdownBlocksRenderer blocks={blocks} componentRegistry={new ComponentRegistry()} />;
+```
+
+## Related Packages
+
+| Package | Role |
+| --- | --- |
+| [`@stream-mdx/react`](../markdown-v2-react/README.md) | React renderer and server helpers |
+| [`@stream-mdx/worker`](../markdown-v2-worker/README.md) | Worker utilities, hosted worker, Node helpers |
+| [`@stream-mdx/core`](../markdown-v2-core/README.md) | Core types, snapshots, perf helpers |
+| [`@stream-mdx/plugins`](../markdown-v2-plugins/README.md) | Worker/plugin primitives |
+| [`@stream-mdx/mermaid`](../markdown-v2-mermaid/README.md) | Mermaid addon |
+| [`@stream-mdx/protocol`](../markdown-v2-protocol/README.md) | Protocol contracts |
+| [`@stream-mdx/tui`](../markdown-v2-tui/README.md) | TUI helpers |
+| [`@stream-mdx/theme-tailwind`](../theme-tailwind/README.md) | Optional theme CSS |
+
+## Documentation
+
+- [`../../docs/GETTING_STARTED.md`](../../docs/GETTING_STARTED.md)
+- [`../../docs/PUBLIC_API.md`](../../docs/PUBLIC_API.md)
+- [`../../docs/REACT_INTEGRATION_GUIDE.md`](../../docs/REACT_INTEGRATION_GUIDE.md)
+- [`../../docs/SECURITY_MODEL.md`](../../docs/SECURITY_MODEL.md)
+- [`../../docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`](../../docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md)

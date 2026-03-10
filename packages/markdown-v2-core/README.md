@@ -1,10 +1,8 @@
 # `@stream-mdx/core`
 
-Core types + utilities shared across the StreamMDX stack.
+`@stream-mdx/core` is the React-free foundation of the StreamMDX stack. It provides the shared types, snapshot utilities, sanitization primitives, inline/mixed-content helpers, and performance/backpressure utilities used by the worker and renderer layers.
 
-This package is intentionally React-free. It contains structured-clone-safe types and helpers used by both the worker and the renderer.
-
-Most consumers should install `stream-mdx` and follow the main docs. Use `@stream-mdx/core` directly if you’re building tooling or customizing lower-level behavior.
+If you are building apps, start with [`stream-mdx`](../stream-mdx/README.md). Use `@stream-mdx/core` directly when you are building tooling, protocol consumers, performance instrumentation, or lower-level integrations.
 
 ## Install
 
@@ -12,43 +10,59 @@ Most consumers should install `stream-mdx` and follow the main docs. Use `@strea
 npm install @stream-mdx/core
 ```
 
-## Entry points
+## Export Surface
 
-- `@stream-mdx/core` (root)
-- `@stream-mdx/core/types`
-- `@stream-mdx/core/utils`
-- `@stream-mdx/core/code-highlighting`
-- `@stream-mdx/core/inline-parser`
-- `@stream-mdx/core/mixed-content`
-- `@stream-mdx/core/worker-html-sanitizer`
-- `@stream-mdx/core/security`
-- `@stream-mdx/core/perf/backpressure`
-- `@stream-mdx/core/perf/patch-batching`
-- `@stream-mdx/core/perf/patch-coalescing`
-- `@stream-mdx/core/streaming/custom-matcher`
+| Export | Purpose |
+| --- | --- |
+| `@stream-mdx/core` | Main types/helpers surface |
+| `@stream-mdx/core/types` | Shared types |
+| `@stream-mdx/core/utils` | General utilities |
+| `@stream-mdx/core/code-highlighting` | Code-highlighting helpers |
+| `@stream-mdx/core/inline-parser` | Inline parsing helpers |
+| `@stream-mdx/core/mixed-content` | Mixed-content parsing helpers |
+| `@stream-mdx/core/worker-html-sanitizer` | Worker-side HTML sanitization helpers |
+| `@stream-mdx/core/security` | Security-oriented helpers |
+| `@stream-mdx/core/perf/backpressure` | Backpressure config and helpers |
+| `@stream-mdx/core/perf/patch-batching` | Patch batching helpers |
+| `@stream-mdx/core/perf/patch-coalescing` | Patch coalescing helpers |
+| `@stream-mdx/core/streaming/custom-matcher` | Custom matcher hooks |
+| `@stream-mdx/core/streaming/inline-streaming` | Inline streaming helpers |
 
-## Example
+## Typical Uses
+
+### Backpressure tuning
 
 ```ts
 import { DEFAULT_BACKPRESSURE_CONFIG } from "@stream-mdx/core/perf/backpressure";
 
-export function makeConfig(overrides?: Partial<typeof DEFAULT_BACKPRESSURE_CONFIG>) {
-  return { ...DEFAULT_BACKPRESSURE_CONFIG, ...overrides };
-}
+export const rendererBackpressure = {
+  ...DEFAULT_BACKPRESSURE_CONFIG,
+  maxPendingBatches: 64,
+};
 ```
 
-## Docs
+### Patch batching/coalescing experiments
 
-- API reference: https://github.com/kmccleary3301/stream-mdx/blob/main/docs/PUBLIC_API.md
-- Security model: https://github.com/kmccleary3301/stream-mdx/blob/main/docs/SECURITY_MODEL.md
-- Protocol spec (for typed stream events): https://github.com/kmccleary3301/stream-mdx/blob/main/docs/STREAMMDX_JSON_DIFF_SPEC.md
+```ts
+import { splitPatchBatch } from "@stream-mdx/core/perf/patch-batching";
+```
 
-## Related packages
+### Lower-level typed integrations
 
-- `@stream-mdx/react` for the React renderer
-- `@stream-mdx/worker` for hosted worker bundles
-- `@stream-mdx/plugins` for worker-side plugin primitives (advanced)
-- `@stream-mdx/protocol` for stable protocol/event types (e.g. TUIs)
-- `@stream-mdx/tui` for NDJSON helpers + a snapshot store (terminal UIs)
-- `@stream-mdx/mermaid` for Mermaid diagram rendering (optional)
-- `@stream-mdx/theme-tailwind` for an optional Tailwind-friendly theme (optional)
+Use `@stream-mdx/core` together with `@stream-mdx/protocol` when you want a typed transport or a non-React consumer of StreamMDX patch data.
+
+## Related Packages
+
+| Package | Role |
+| --- | --- |
+| [`@stream-mdx/worker`](../markdown-v2-worker/README.md) | Worker runtime and hosted worker helpers |
+| [`@stream-mdx/react`](../markdown-v2-react/README.md) | React renderer and server helpers |
+| [`@stream-mdx/protocol`](../markdown-v2-protocol/README.md) | Protocol envelope/types for transport |
+| [`@stream-mdx/tui`](../markdown-v2-tui/README.md) | TUI utilities and snapshot store |
+
+## Documentation
+
+- [`../../docs/PUBLIC_API.md`](../../docs/PUBLIC_API.md)
+- [`../../docs/SECURITY_MODEL.md`](../../docs/SECURITY_MODEL.md)
+- [`../../docs/STREAMMDX_JSON_DIFF_SPEC.md`](../../docs/STREAMMDX_JSON_DIFF_SPEC.md)
+- [`../../docs/DETERMINISM.md`](../../docs/DETERMINISM.md)

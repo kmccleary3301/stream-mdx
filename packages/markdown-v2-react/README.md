@@ -1,8 +1,8 @@
 # `@stream-mdx/react`
 
-React renderer for StreamMDX. Exposes the `<StreamingMarkdown />` component, scheduling/backpressure hooks, and the public types used by consumers.
+`@stream-mdx/react` is the renderer package for StreamMDX. It owns the React component surface, the renderer store, patch scheduling, server rendering helpers, and the packaged bottom-stick scroll component used by the docs/demo surfaces.
 
-Most apps should install `stream-mdx` instead of this package directly. Use `@stream-mdx/react` when you want the React surface without the unscoped wrapper.
+**Most apps should install [`stream-mdx`](../stream-mdx/README.md) instead.** Use this package directly when you want the React layer without the convenience wrapper.
 
 ## Install
 
@@ -10,18 +10,33 @@ Most apps should install `stream-mdx` instead of this package directly. Use `@st
 npm install @stream-mdx/react @stream-mdx/worker
 ```
 
-`react` and `react-dom` are peer dependencies.
+Peer dependencies:
+
+| Package | Range |
+| --- | --- |
+| `react` | `>=18.2.0` |
+| `react-dom` | `>=18.2.0` |
+
+## Primary Exports
+
+| Export | Purpose |
+| --- | --- |
+| `@stream-mdx/react` | Main React surface including `<StreamingMarkdown />` |
+| `@stream-mdx/react/server` | Server/static render helpers |
+| `@stream-mdx/react/components` | Shared UI component exports |
+| `@stream-mdx/react/components/bottom-stick-scroll-area` | Packaged sticky-bottom scroll container |
+| `@stream-mdx/react/renderer` | Lower-level renderer exports |
+| `@stream-mdx/react/renderer/patch-commit-scheduler` | Scheduler implementation surface |
+| `@stream-mdx/react/renderer/store` | Renderer store surface |
+| `@stream-mdx/react/mdx-client` | MDX client helpers |
+| `@stream-mdx/react/mdx-coordinator` | MDX coordination helpers |
 
 ## Quickstart
-
-Copy the hosted worker bundle into your app’s static assets:
 
 ```bash
 mkdir -p public/workers
 cp node_modules/@stream-mdx/worker/dist/hosted/markdown-worker.js public/workers/markdown-worker.js
 ```
-
-Render streaming markdown from a client component:
 
 ```tsx
 "use client";
@@ -33,44 +48,55 @@ export function Demo({ text }: { text: string }) {
     <StreamingMarkdown
       text={text}
       worker="/workers/markdown-worker.js"
-      features={{ html: true, tables: true, math: true, mdx: true }}
+      features={{ html: true, tables: true, math: true, mdx: true, footnotes: true }}
       mdxCompileMode="worker"
     />
   );
 }
 ```
 
-## Docs
+## Typical Uses
 
-- API reference: `docs/PUBLIC_API.md`
-- React integration guide: `docs/REACT_INTEGRATION_GUIDE.md`
-- Plugins & worker customization: `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`
-- Full docs site: https://stream-mdx.dev/
+| Use case | API |
+| --- | --- |
+| Browser/client rendering | `<StreamingMarkdown />` |
+| SSR / SSG / static export rendering | `MarkdownBlocksRenderer` from `@stream-mdx/react/server` |
+| Rich streaming/chat container | `BottomStickScrollArea` |
+| Advanced renderer internals | `renderer/store`, `renderer/patch-commit-scheduler` |
 
-## Bottom-stick scroll area (packaged)
-
-`@stream-mdx/react` now exports a reusable bottom-stick scroll container for streaming/chat surfaces:
+### Server-side block rendering
 
 ```tsx
-import { BottomStickScrollArea } from "@stream-mdx/react";
+import { ComponentRegistry, MarkdownBlocksRenderer } from "@stream-mdx/react/server";
+
+return <MarkdownBlocksRenderer blocks={blocks} componentRegistry={new ComponentRegistry()} />;
 ```
 
-Behavior:
+### Bottom-stick scroll area
 
-- sticky-at-bottom while content appends (`STICKY_INSTANT`)
-- detach on upward user scroll (`DETACHED`)
-- smooth return-to-bottom with cancel-on-user-scroll (`RETURNING_SMOOTH`)
+```tsx
+import { BottomStickScrollArea } from "@stream-mdx/react/components/bottom-stick-scroll-area";
 
-This component includes debug hooks (`onDebugStateChange`) and DOM debug attributes (`debugDomAttributes`) used by deterministic checks.
+<BottomStickScrollArea className="h-[32rem]">{children}</BottomStickScrollArea>;
+```
 
-## ShadCN-style drop-in file
+Behavior notes:
 
-For copy/paste distribution (single file), use:
+- sticks to bottom while content appends
+- detaches on upward user scroll
+- supports smooth return-to-bottom behavior
+- exposes debug hooks used by deterministic checks in the repo
 
-- `shadcn/bottom-stick-scroll-area.tsx`
+## When To Use This Package Directly
 
-This is intentionally source-first and meant to be placed directly in app repos (same workflow as ShadCN component files).
+- You are shipping a library that wants `@stream-mdx/react` explicitly in `peerDependencies` or `dependencies`.
+- You need server rendering helpers without the convenience wrapper import path.
+- You are working on renderer internals and want the lower-level exports directly.
 
-## Addons
+## Documentation
 
-- `@stream-mdx/mermaid` (optional Mermaid diagram renderer)
+- [`../../docs/PUBLIC_API.md`](../../docs/PUBLIC_API.md)
+- [`../../docs/REACT_INTEGRATION_GUIDE.md`](../../docs/REACT_INTEGRATION_GUIDE.md)
+- [`../../docs/SECURITY_MODEL.md`](../../docs/SECURITY_MODEL.md)
+- [`../../docs/STREAMING_CORRECTNESS_CONTRACT.md`](../../docs/STREAMING_CORRECTNESS_CONTRACT.md)
+- Docs site: <https://stream-mdx.vercel.app/docs>

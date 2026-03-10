@@ -1,13 +1,13 @@
-# @stream-mdx/protocol
+# `@stream-mdx/protocol`
 
-Protocol types for StreamMDX JSON/object streaming.
+`@stream-mdx/protocol` defines the transport-facing protocol types for structured StreamMDX event/object streaming. It is intended for consumers that need a stable, typed contract outside the React/browser UI layer.
 
-This package defines the event envelope, capability metadata, and token
-structures used by StreamMDX Protocol v1. It is intended for consumers that
-need a stable, versioned contract (e.g., terminal UIs).
+Typical consumers include:
 
-Most web-only consumers do not need this package directly. Start with `stream-mdx`
-or `@stream-mdx/react` for the React renderer.
+- TUIs and CLI tools
+- NDJSON transports
+- service boundaries that want typed event envelopes
+- debugging or replay tooling that records and replays structured patch streams
 
 ## Install
 
@@ -15,21 +15,24 @@ or `@stream-mdx/react` for the React renderer.
 npm install @stream-mdx/protocol
 ```
 
-## What this provides
+## What This Package Provides
 
-- Shared protocol types for streaming events and capability negotiation.
-- Token / block payload shapes intended for structured-clone-safe transport.
+| Surface | Purpose |
+| --- | --- |
+| Event envelope types | Transport-safe event/message contracts |
+| Capability metadata | Describe supported features or modes |
+| Token/block payload types | Structured-clone-safe payload shapes |
 
-## Typical usage (TUI/CLI)
+## Typical Pairings
 
-Pair it with `@stream-mdx/tui` for NDJSON helpers + a lightweight snapshot store:
+| Pair with | Why |
+| --- | --- |
+| [`@stream-mdx/tui`](../markdown-v2-tui/README.md) | NDJSON helpers and snapshot store |
+| [`@stream-mdx/core`](../markdown-v2-core/README.md) | Shared low-level types and helpers |
+| [`@stream-mdx/worker`](../markdown-v2-worker/README.md) | Worker-side generation/consumption paths |
 
-```bash
-npm install @stream-mdx/tui @stream-mdx/protocol @stream-mdx/core
-```
+## Documentation
 
-## Docs
-
-- Public API: https://github.com/kmccleary3301/stream-mdx/blob/main/docs/PUBLIC_API.md
-- CLI usage: https://github.com/kmccleary3301/stream-mdx/blob/main/docs/CLI_USAGE.md
-- Protocol spec: https://github.com/kmccleary3301/stream-mdx/blob/main/docs/STREAMMDX_JSON_DIFF_SPEC.md
+- [`../../docs/STREAMMDX_JSON_DIFF_SPEC.md`](../../docs/STREAMMDX_JSON_DIFF_SPEC.md)
+- [`../../docs/CLI_USAGE.md`](../../docs/CLI_USAGE.md)
+- [`../../docs/PUBLIC_API.md`](../../docs/PUBLIC_API.md)
