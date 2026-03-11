@@ -21,7 +21,7 @@ If you want to reuse the worker + patch stream in a terminal UI (Ink, etc.), use
 
 - `stream-mdx/worker/node` (or `@stream-mdx/worker/node`)
 
-See `docs/CLI_USAGE.md` for a complete example that consumes `PATCH` messages into a `DocumentSnapshot`.
+Start with [`docs/TUI_GUIDE.md`](./TUI_GUIDE.md) for the recommended architecture and package choices, then use [`docs/CLI_USAGE.md`](./CLI_USAGE.md) for the lower-level worker/message examples.
 
 ## Render Markdown (React)
 

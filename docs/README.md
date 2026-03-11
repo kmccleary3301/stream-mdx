@@ -13,7 +13,7 @@ This directory is the canonical repository-side documentation surface for Stream
 | Working on plugins / worker behavior | [`STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`](./STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md) | [`PLUGIN_ABI.md`](./PLUGIN_ABI.md), [`STREAMING_MARKDOWN_V2_STATUS.md`](./STREAMING_MARKDOWN_V2_STATUS.md) |
 | Validating correctness / regressions | [`REGRESSION_TESTING.md`](./REGRESSION_TESTING.md) | [`STREAMING_CORRECTNESS_CONTRACT.md`](./STREAMING_CORRECTNESS_CONTRACT.md), [`STREAMING_CORRECTNESS_EXECUTION_PLAN.md`](./STREAMING_CORRECTNESS_EXECUTION_PLAN.md) |
 | Working on perf claims or harnesses | [`PERF_HARNESS.md`](./PERF_HARNESS.md) | [`PERFORMANCE_GUIDE.md`](./PERFORMANCE_GUIDE.md), [`PERF_QUALITY_CHANGELOG.md`](./PERF_QUALITY_CHANGELOG.md) |
-| Consuming the patch stream in Node / TUI | [`CLI_USAGE.md`](./CLI_USAGE.md) | [`STREAMMDX_JSON_DIFF_SPEC.md`](./STREAMMDX_JSON_DIFF_SPEC.md) |
+| Consuming the patch stream in Node / TUI | [`TUI_GUIDE.md`](./TUI_GUIDE.md) | [`CLI_USAGE.md`](./CLI_USAGE.md), [`STREAMMDX_JSON_DIFF_SPEC.md`](./STREAMMDX_JSON_DIFF_SPEC.md) |
 
 ## Documentation Index
 
@@ -27,6 +27,7 @@ This directory is the canonical repository-side documentation surface for Stream
 | Public API | [`PUBLIC_API.md`](./PUBLIC_API.md) | <https://stream-mdx.vercel.app/docs/public-api> |
 | React integration | [`REACT_INTEGRATION_GUIDE.md`](./REACT_INTEGRATION_GUIDE.md) | <https://stream-mdx.vercel.app/docs/react-integration> |
 | Security model | [`SECURITY_MODEL.md`](./SECURITY_MODEL.md) | <https://stream-mdx.vercel.app/docs/security-model> |
+| TUI guide | [`TUI_GUIDE.md`](./TUI_GUIDE.md) | <https://stream-mdx.vercel.app/docs/tui-guide> |
 | Comprehensive manual | [`COMPREHENSIVE_PROJECT_DOCUMENTATION.md`](./COMPREHENSIVE_PROJECT_DOCUMENTATION.md) | <https://stream-mdx.vercel.app/docs/manual> |
 
 ### Reliability and quality
@@ -56,7 +57,8 @@ This directory is the canonical repository-side documentation surface for Stream
 | --- | --- | --- |
 | Plugin cookbook | [`STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`](./STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md) | Built-in plugin usage and customization patterns |
 | Plugin ABI | [`PLUGIN_ABI.md`](./PLUGIN_ABI.md) | Lower-level plugin contracts |
-| TUI / CLI usage | [`CLI_USAGE.md`](./CLI_USAGE.md) | Node and terminal-oriented usage |
+| TUI guide | [`TUI_GUIDE.md`](./TUI_GUIDE.md) | Recommended first stop for terminal and non-React consumers |
+| TUI / CLI usage | [`CLI_USAGE.md`](./CLI_USAGE.md) | Lower-level Node and terminal runtime usage |
 | JSON diff spec | [`STREAMMDX_JSON_DIFF_SPEC.md`](./STREAMMDX_JSON_DIFF_SPEC.md) | Patch/event protocol for non-React consumers |
 | Styling parity | [`STYLING_PARITY.md`](./STYLING_PARITY.md) | CSS parity and layout consistency notes |
 

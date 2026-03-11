@@ -43,6 +43,7 @@ const blocks = store.getBlocks();
 
 ## Documentation
 
+- [`../../docs/TUI_GUIDE.md`](../../docs/TUI_GUIDE.md)
 - [`../../docs/CLI_USAGE.md`](../../docs/CLI_USAGE.md)
 - [`../../docs/STREAMMDX_JSON_DIFF_SPEC.md`](../../docs/STREAMMDX_JSON_DIFF_SPEC.md)
 - [`../../docs/PUBLIC_API.md`](../../docs/PUBLIC_API.md)
