@@ -10,6 +10,11 @@ This is the execution plan derived from:
 
 This document is not aspirational. It is the working backlog and PR order for the next correctness push.
 
+Companion correctness ledgers:
+
+- `docs/POST_FINALIZE_MUTATION_LEDGER.md`
+- `docs/ESCAPED_BUG_TRACEABILITY_MATRIX.md`
+
 ## 1) Scope
 
 Primary goal:
@@ -168,6 +173,10 @@ Verification:
 - `npm run test:regression:html`
 - targeted replay command for the new fixture
 
+Traceability reference:
+
+- `docs/ESCAPED_BUG_TRACEABILITY_MATRIX.md`
+
 ### PR 2: Store invariants and guarded append path
 
 Includes:
@@ -229,6 +238,8 @@ Verification:
 Includes:
 
 - correctness smoke command in CI
+- scheduler parity gate for promoted fixtures
+- benchmark methodology contract check
 - strict branch gate definition
 - documented baseline update policy
 
@@ -315,6 +326,9 @@ Fast local gate:
 npm -w @stream-mdx/core run test
 npx tsx packages/markdown-v2-worker/__tests__/format-anticipation-streaming.test.ts
 npx tsx packages/markdown-v2-worker/__tests__/worker-nested-code-highlight.test.ts
+npm run test:regression:seeded-smoke
+npm run test:regression:scheduler-parity
+npm run test:benchmarks:methodology
 npm run test:regression:html
 npm run test:regression:styles
 ```

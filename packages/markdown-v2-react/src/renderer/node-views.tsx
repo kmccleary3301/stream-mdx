@@ -1,4 +1,4 @@
-import { stripCodeFence, type Block, type InlineNode, type MixedContentSegment, type TokenLineV1 } from "@stream-mdx/core";
+import { getDefaultCodeWrapperAttributes, stripCodeFence, type Block, type InlineNode, type MixedContentSegment, type TokenLineV1 } from "@stream-mdx/core";
 import React from "react";
 import { renderInlineNodes, renderParagraphMixedSegments } from "../components";
 import type { ComponentRegistry } from "../components";
@@ -918,18 +918,32 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
         : null;
     const sourceText = resolveCodeSourceText(raw, metaCode);
     const sourceEndsWithNewline = sourceText.endsWith("\n");
+    const sourceLines = sourceText.length > 0 ? sourceText.split("\n") : [];
     const rawFallbackLines = buildCodeFallbackLines(raw);
-    if (blockIsFinalized && !shouldVirtualize && blockHtml) {
-      return blockHtml;
-    }
+    const deterministicWrapperAttrs = getDefaultCodeWrapperAttributes(lang);
+    const composedPreAttrs = deterministicWrapperAttrs.preAttrs;
+    const composedCodeAttrs = deterministicWrapperAttrs.codeAttrs;
     const shouldAppendTerminalNewline = (
       renderedLines: ReadonlyArray<{ index: number; text: string; html?: string | null; id?: string }>,
-    ) =>
-      sourceEndsWithNewline &&
-      renderedLines.length > 0 &&
-      lines.length > 0 &&
-      renderedLines[renderedLines.length - 1]?.index === lines[lines.length - 1]?.index &&
-      renderedLines[renderedLines.length - 1]?.text !== "";
+    ) => {
+      if (!sourceEndsWithNewline || renderedLines.length === 0 || lines.length === 0) {
+        return false;
+      }
+      const lastRendered = renderedLines[renderedLines.length - 1];
+      const lastKnown = lines[lines.length - 1];
+      if (!lastRendered || !lastKnown || lastRendered.index !== lastKnown.index || lastRendered.text === "") {
+        return false;
+      }
+
+      // Only synthesize the missing terminal newline when the rendered line
+      // frontier is aligned with the parent source frontier. During streaming,
+      // code-line children can briefly advance ahead of the parent block raw/meta
+      // state; trusting the stale parent newline in that window breaks prefix
+      // monotonicity by inserting a premature trailing newline.
+      const expectedRenderedLineCount = Math.max(0, sourceLines.length - 1);
+      const expectedLastRenderedLine = sourceLines.length >= 2 ? sourceLines[sourceLines.length - 2] ?? "" : "";
+      return renderedLines.length === expectedRenderedLineCount && lastRendered.text === expectedLastRenderedLine;
+    };
 
     // Always prefer composing from line children if they exist.
     // This keeps streaming and finalized projections on the same code path.
@@ -944,20 +958,20 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
         // Only compose visible lines for virtualized code
         return composeHighlightedHtml(
           virtualization.window.visibleLines,
-          preAttrs,
-          codeAttrs,
+          composedPreAttrs,
+          composedCodeAttrs,
           shouldAppendTerminalNewline(virtualization.window.visibleLines),
         );
       }
-      return composeHighlightedHtml(lines, preAttrs, codeAttrs, shouldAppendTerminalNewline(lines));
+      return composeHighlightedHtml(lines, composedPreAttrs, composedCodeAttrs, shouldAppendTerminalNewline(lines));
     }
     if (!shouldVirtualize && blockHtml) {
       const hasHighlightedLines = blockHtml.includes('class="line"');
       if (!hasHighlightedLines && rawFallbackLines.length > 0) {
         return composeHighlightedHtml(
           rawFallbackLines,
-          preAttrs,
-          codeAttrs,
+          composedPreAttrs,
+          composedCodeAttrs,
           sourceEndsWithNewline && rawFallbackLines[rawFallbackLines.length - 1]?.text !== "",
         );
       }
@@ -970,8 +984,8 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
         // Return minimal HTML structure with raw text until lines are available.
         return composeHighlightedHtml(
           rawFallbackLines,
-          preAttrs,
-          codeAttrs,
+          composedPreAttrs,
+          composedCodeAttrs,
           sourceEndsWithNewline && rawFallbackLines[rawFallbackLines.length - 1]?.text !== "",
         );
       }
@@ -979,13 +993,13 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
     if (!blockHtml && rawFallbackLines.length > 0) {
       return composeHighlightedHtml(
         rawFallbackLines,
-        preAttrs,
-        codeAttrs,
+        composedPreAttrs,
+        composedCodeAttrs,
         sourceEndsWithNewline && rawFallbackLines[rawFallbackLines.length - 1]?.text !== "",
       );
     }
     return blockHtml;
-  }, [blockIsFinalized, shouldVirtualize, node.block?.payload.highlightedHtml, node.block?.payload.meta, lines, preAttrs, codeAttrs, virtualization.window.visibleLines, node.block?.payload.raw]);
+  }, [blockIsFinalized, shouldVirtualize, node.block?.payload.highlightedHtml, node.block?.payload.meta, lines, lang, virtualization.window.visibleLines, node.block?.payload.raw]);
 
   const rendered = (
     <CodeComponent

@@ -39,6 +39,9 @@ export async function readFixtureFile(file: string): Promise<string> {
 
 export function shouldRunScenario(fixture: RegressionFixture, scenario: RegressionScenario): boolean {
   const tags = new Set(fixture.tags ?? []);
+  // Fixtures with explicit split markers only make sense when the harness is
+  // instructed to honor them instead of leaving literal HTML comments inline.
+  if (tags.has("split-markers") && !scenario.useSplitMarkers) return false;
   const include = scenario.includeTags ?? [];
   const exclude = scenario.excludeTags ?? [];
   if (include.length > 0 && !include.some((tag) => tags.has(tag))) return false;

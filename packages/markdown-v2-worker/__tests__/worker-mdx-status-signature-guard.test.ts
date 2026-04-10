@@ -73,6 +73,37 @@ async function main() {
   const validBlock = validDump.blocks.find((block) => block.id === blockId);
   assert.ok(validBlock, "expected mdx block after valid response");
   assert.strictEqual(validBlock.payload.compiledMdxRef?.id, "compiled-valid", "valid MDX_COMPILED should update compiled ref");
+
+  const staleErrorMessages = await harness.send({
+    type: "MDX_ERROR",
+    blockId,
+    error: "stale error",
+    rawSignature: `${raw} stale`,
+  });
+  assert.ok(!staleErrorMessages.some((message) => message.type === "PATCH"), "stale MDX_ERROR should be ignored");
+
+  const staleErrorDump = findDumpBlocks(await harness.send({ type: "DUMP_BLOCKS" }));
+  const staleErrorBlock = staleErrorDump.blocks.find((block) => block.id === blockId);
+  assert.ok(staleErrorBlock, "expected mdx block after stale error response");
+  assert.strictEqual(
+    staleErrorBlock.payload.meta?.mdxStatus,
+    "compiled",
+    "stale MDX_ERROR must not overwrite the current finalized MDX status",
+  );
+
+  const validErrorMessages = await harness.send({
+    type: "MDX_ERROR",
+    blockId,
+    error: "compile failed",
+    rawSignature: raw,
+  });
+  assert.ok(validErrorMessages.some((message) => message.type === "PATCH"), "valid MDX_ERROR should emit a patch");
+
+  const validErrorDump = findDumpBlocks(await harness.send({ type: "DUMP_BLOCKS" }));
+  const validErrorBlock = validErrorDump.blocks.find((block) => block.id === blockId);
+  assert.ok(validErrorBlock, "expected mdx block after valid error response");
+  assert.strictEqual(validErrorBlock.payload.compiledMdxRef?.id, undefined, "valid MDX_ERROR should clear compiled ref");
+  assert.strictEqual(validErrorBlock.payload.meta?.mdxStatus, "error", "valid MDX_ERROR should update finalized status");
 }
 
 await main();

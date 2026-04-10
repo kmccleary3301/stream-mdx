@@ -1,0 +1,38 @@
+# MDX Multi Status
+
+This fixture exercises multiple finalized MDX blocks with mixed outcomes, alongside math and fenced code.
+
+Inline math stays active here: $f(x) = x^2 + 1$.
+
+<Preview codeblock>
+Stable preview payload:
+
+1. Alpha lane
+2. Beta lane
+</Preview>
+
+```text
+Stable preview payload:
+
+1. Alpha lane
+2. Beta lane
+```
+
+<Preview count={}>
+This block should fail compilation and render the MDX error state.
+</Preview>
+
+$$
+\sum_{i=1}^{4} i = 10
+$$
+
+```ts
+export const lanes = ["alpha", "beta", "gamma"];
+```
+
+<Preview>
+| Track | Status |
+| --- | --- |
+| Stable | Compiled |
+| Broken | Error |
+</Preview>

@@ -9,7 +9,7 @@ type SnapshotArtifactV1 = {
   tocHeadings?: TocHeading[];
 };
 
-type SnapshotKind = "docs" | "guides";
+type SnapshotKind = "docs" | "guides" | "showcase";
 
 async function readArtifact(kind: SnapshotKind, slug: string): Promise<SnapshotArtifactV1 | null> {
   // `.generated` exists on disk during dev/build, but can be inlined by Next into
@@ -35,6 +35,10 @@ export async function readDocSnapshot(slug: string): Promise<SnapshotArtifactV1 
 
 export async function readGuideSnapshot(slug: string): Promise<SnapshotArtifactV1 | null> {
   return await readArtifact("guides", slug);
+}
+
+export async function readShowcaseSnapshot(slug: string): Promise<SnapshotArtifactV1 | null> {
+  return await readArtifact("showcase", slug);
 }
 
 export function deriveTocHeadingsFromBlocks(blocks: ReadonlyArray<Block>): TocHeading[] {

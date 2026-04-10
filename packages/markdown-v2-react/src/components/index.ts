@@ -209,7 +209,11 @@ export const defaultInlineComponents: InlineComponents = {
     const n = number ?? "?";
     const href = number ? `#fn:${n}` : undefined;
     const id = number ? `fnref:${n}` : undefined;
-    return React.createElement("sup", { className: "footnote-ref" }, React.createElement("a", { href, id, "data-label": label }, String(n)));
+    return React.createElement(
+      "sup",
+      { className: "footnote-ref" },
+      React.createElement("a", { href, id, "data-label": label, style: { color: "var(--foreground)", textDecoration: "underline" } }, String(n)),
+    );
   },
 };
 
@@ -582,7 +586,16 @@ export const defaultBlockComponents: BlockComponents = {
         { key: item.number, id: `fn:${item.number}` },
         renderInlineNodes(item.inlines, defaultInlineComponents),
         " ",
-        React.createElement("a", { href: `#fnref:${item.number}`, className: "footnote-backref", "aria-label": "Back to content" }, "↩"),
+        React.createElement(
+          "a",
+          {
+            href: `#fnref:${item.number}`,
+            className: "footnote-backref",
+            "aria-label": "Back to content",
+            style: { color: "var(--foreground)", textDecoration: "underline" },
+          },
+          "↩",
+        ),
       ),
     );
 

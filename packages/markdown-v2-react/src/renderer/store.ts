@@ -1349,7 +1349,13 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
         return nextEpoch;
       };
 
-      const applyPropsUpdate = (at: NodePath, props: Record<string, unknown> | undefined, preferredEpoch?: number, tx?: number) => {
+      const applyPropsUpdate = (
+        at: NodePath,
+        props: Record<string, unknown> | undefined,
+        preferredEpoch?: number,
+        tx?: number,
+        semanticUpdate = false,
+      ) => {
         const perfStartLocal = perfEnabled ? getPerfNow() : 0;
         const targetId = at.nodeId ?? at.blockId;
         if (!targetId) return;
@@ -1381,6 +1387,9 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
             propsChanged = true;
           }
           if (propsChanged) {
+            if (semanticUpdate) {
+              advanceBlockEpoch(at.blockId, touched, preferredEpoch, tx);
+            }
             target.version++;
             touched.add(target.id);
             const parent = target.parentId ? nodes.get(target.parentId) : undefined;
@@ -1447,6 +1456,7 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
         let blockChanged = false;
         let typeChanged = false;
         let rebuiltFromFinalizedBlock = false;
+        let blockEpochAdvanced = false;
         const incomingBlock = props?.block as Block | undefined;
         if (incomingBlock && typeof incomingBlock === "object") {
           target.block = cloneBlock(incomingBlock as Block);
@@ -1462,7 +1472,10 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
           if (target.type === "code") {
             applyCodeBlockMetadata(target);
           }
-          advanceBlockEpoch(at.blockId, touched, preferredEpoch, tx);
+          if (semanticUpdate) {
+            advanceBlockEpoch(at.blockId, touched, preferredEpoch, tx);
+            blockEpochAdvanced = true;
+          }
           const shouldRebuildFinalizedTree =
             !at.nodeId &&
             target.id === at.blockId &&
@@ -1494,6 +1507,10 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
         }
 
         if (propsChanged || blockChanged || typeChanged) {
+          if (semanticUpdate && !blockEpochAdvanced) {
+            advanceBlockEpoch(at.blockId, touched, preferredEpoch, tx);
+            blockEpochAdvanced = true;
+          }
           target.version++;
           touched.add(target.id);
 
@@ -1635,7 +1652,7 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
 
           case "setProps": {
             if (rejectStaleEpochPatch(patch, patch.at)) break;
-            applyPropsUpdate(patch.at, patch.props, readPatchParseEpoch(patch), readPatchTx(patch));
+            applyPropsUpdate(patch.at, patch.props, readPatchParseEpoch(patch), readPatchTx(patch), getPatchKind(patch) === "semantic");
             break;
           }
 
@@ -1650,7 +1667,13 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
                 meta: entry.meta ?? patch.meta,
               };
               if (rejectStaleEpochPatch(entryPatch, entry.at)) continue;
-              applyPropsUpdate(entry.at, entry.props, readPatchParseEpoch(entryPatch), readPatchTx(entryPatch));
+              applyPropsUpdate(
+                entry.at,
+                entry.props,
+                readPatchParseEpoch(entryPatch),
+                readPatchTx(entryPatch),
+                getPatchKind(entryPatch) === "semantic",
+              );
             }
             break;
           }
@@ -1706,6 +1729,9 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
             parent.children.splice(to, 0, ...moved);
             parent.version++;
             touched.add(parent.id);
+            if (getPatchKind(patch) === "semantic") {
+              advanceBlockEpoch(patch.at.blockId, touched, readPatchParseEpoch(patch), readPatchTx(patch));
+            }
             if (isListRelated(parent.type)) {
               markListDepthDirty(parent.id);
             }

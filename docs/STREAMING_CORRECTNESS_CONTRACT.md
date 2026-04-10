@@ -1,6 +1,6 @@
 # Streaming Correctness Contract
 
-_Last updated: 2026-03-05_
+_Last updated: 2026-04-10_
 
 This document defines the correctness rules for StreamMDX's streaming renderer.
 
@@ -23,7 +23,11 @@ Related docs:
 - `docs/DETERMINISM.md`
 - `docs/STATIC_SNAPSHOT_ARTIFACT_CONTRACT.md`
 - `docs/REGRESSION_FIX_MATRIX_2026-03-04.md`
+- `docs/POST_FINALIZE_MUTATION_LEDGER.md`
+- `docs/ESCAPED_BUG_TRACEABILITY_MATRIX.md`
 - `docs/PERF_HARNESS.md`
+- `docs/SCHEDULING_AND_JITTER.md`
+- `docs/CORRECTNESS_GATE_RESIDUALS_2026-04-03.md`
 
 ## 1) Core Rule
 
@@ -216,7 +220,50 @@ The runtime must expose counters for:
 
 These metrics support correctness, not just performance.
 
-## 12) Required Test Gates
+## 12) Required Fast Gate
+
+The correctness fast gate must keep these command families green:
+
+```bash
+npm run test:regression:seeded-smoke
+npm run test:regression:scheduler-parity
+npm run test:benchmarks:methodology
+```
+
+Supporting merge-time gates still include:
+
+```bash
+npm run docs:build
+npm run test:regression:html
+npm run test:regression:styles
+```
+
+`seeded-smoke` owns high-risk final-HTML convergence.
+
+`scheduler-parity` owns scheduler-mode final-HTML equivalence for the promoted fixtures.
+
+`test:benchmarks:methodology` owns the public benchmark terminology contract so docs, site copy, and harness settings do not drift silently.
+
+## 13) CI vs Release Discipline
+
+CI-required guards:
+
+- `npm run test:benchmarks:methodology`
+- `npm run test:regression:scheduler-parity`
+- `npm run test:regression:seeded-smoke:server`
+- `npm run docs:build`
+- `npm run docs:check-links`
+
+Release-only / characterization commands:
+
+- `npm run perf:characterize:scheduler`
+- wider local perf investigations that are intended for analysis rather than merge gating
+
+The rule is simple: contract checks and parity checks belong in CI; exploratory characterization does not.
+
+Scheduler-parity and HTML-regression failures must write inspectable artifacts under `tests/regression/artifacts/` so failures can be debugged without rerunning blind.
+
+## 14) Required Test Gates
 
 Every escaped bug class must map to:
 

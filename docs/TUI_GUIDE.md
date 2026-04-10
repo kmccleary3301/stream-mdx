@@ -123,6 +123,21 @@ function renderToTerminal(blocks: ReturnType<typeof store.getBlocks>) {
 }
 ```
 
+## Runnable Repo Example
+
+If you want a concrete starting point instead of only architecture notes, use the minimal example in this repo:
+
+- [`../examples/tui-minimal/README.md`](../examples/tui-minimal/README.md)
+- [`../examples/tui-minimal/index.mjs`](../examples/tui-minimal/index.mjs)
+
+Run it from the repo root:
+
+```bash
+npm install
+npm run build:packages
+node examples/tui-minimal/index.mjs
+```
+
 ## Snapshot Store Choices
 
 There are two reasonable ways to maintain terminal state:
@@ -286,9 +301,25 @@ The relevant lower-level references are:
 4. Use `compileMarkdownSnapshot()` when you do not need live incremental streaming.
 5. Use the protocol/NDJSON path only when you actually have a transport boundary.
 
+## Capability Boundaries
+
+The current TUI/protocol surface is strong for:
+
+- worker-driven block snapshots
+- patch/event transport
+- replay and audit tooling
+- custom terminal layout built on top of `Block[]`
+
+It is intentionally still lightweight for:
+
+- arbitrary MDX component rendering in a terminal
+- turnkey ANSI syntax-highlighting helpers
+- a full reference terminal UI beyond the minimal example above
+
 ## Related Docs
 
 - [`CLI_USAGE.md`](./CLI_USAGE.md)
 - [`STREAMMDX_JSON_DIFF_SPEC.md`](./STREAMMDX_JSON_DIFF_SPEC.md)
 - [`PUBLIC_API.md`](./PUBLIC_API.md)
 - [`DETERMINISM.md`](./DETERMINISM.md)
+- [`../examples/tui-minimal/README.md`](../examples/tui-minimal/README.md)

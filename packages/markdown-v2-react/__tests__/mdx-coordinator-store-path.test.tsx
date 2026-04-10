@@ -185,7 +185,133 @@ async function runCoordinatorTest(): Promise<void> {
   }
 }
 
+async function runCoordinatorRejectsStaleSameIdResponseTest(): Promise<void> {
+  const restoreDom = installDom();
+  const originalFetch = globalThis.fetch;
+  const originalWarn = console.warn;
+  try {
+    console.warn = (...args: unknown[]) => {
+      const [first] = args;
+      if (typeof first === "string" && first.includes("MDX compile failed for block")) {
+        return;
+      }
+      originalWarn(...args);
+    };
+
+    const store = createRendererStore([createMdxBlock("mdx-race", "<Demo>alpha</Demo>")]);
+
+    const requests: Array<{ blockId: string; content: string }> = [];
+    let resolveAlpha: ((value: Response) => void) | null = null;
+    let resolveBeta: ((value: Response) => void) | null = null;
+
+    globalThis.fetch = (((input: RequestInfo | URL, init?: RequestInit) => {
+      assert.strictEqual(String(input), "http://mdx.test/api");
+      assert.strictEqual(init?.method, "POST");
+      const payload = JSON.parse(String(init?.body ?? "{}")) as { blockId: string; content: string };
+      requests.push(payload);
+
+      if (payload.content === "<Demo>alpha</Demo>") {
+        return new Promise<Response>((resolve) => {
+          resolveAlpha = resolve;
+        });
+      }
+
+      if (payload.content === "<Demo>beta</Demo>") {
+        return new Promise<Response>((resolve) => {
+          resolveBeta = resolve;
+        });
+      }
+
+      throw new Error(`unexpected MDX payload: ${payload.content}`);
+    }) as unknown) as typeof fetch;
+
+    const container = globalThis.document.getElementById("root");
+    assert.ok(container, "missing root");
+    const root = createRoot(container);
+    root.render(React.createElement(CoordinatorBridge, { store, endpoint: "http://mdx.test/api" }));
+
+    await waitFor(() => requests.some((entry) => entry.content === "<Demo>alpha</Demo>"));
+
+    store.applyPatches([
+      {
+        op: "setProps",
+        at: { blockId: "mdx-race", nodeId: "mdx-race" },
+        props: {
+          block: createMdxBlock("mdx-race", "<Demo>beta</Demo>"),
+        },
+        meta: {
+          kind: "semantic",
+          parseEpoch: 2001,
+          tx: 5001,
+        },
+      },
+    ]);
+
+    await waitFor(() => requests.some((entry) => entry.content === "<Demo>beta</Demo>"));
+    assert.ok(resolveAlpha, "expected first MDX request resolver");
+    assert.ok(resolveBeta, "expected second MDX request resolver");
+
+    resolveAlpha!({
+      ok: true,
+      async json() {
+        return {
+          id: "compiled-alpha",
+          code: "return { default: function MDXContent(){ return React.createElement('div', null, 'compiled alpha'); } };",
+          dependencies: [],
+          cached: false,
+        };
+      },
+    } as Response);
+
+    await sleep(50);
+
+    const afterStale = store.getBlocks().find((block) => block.id === "mdx-race");
+    assert.ok(afterStale, "expected mdx-race block after stale compile result");
+    assert.strictEqual(afterStale.payload.raw, "<Demo>beta</Demo>", "newer raw content must remain current");
+    assert.strictEqual(afterStale.payload.compiledMdxRef, undefined, "stale compile result must not attach a compiled ref");
+    assert.strictEqual(
+      (afterStale.payload.meta as Record<string, unknown> | undefined)?.mdxStatus,
+      "pending",
+      "stale compile result must not overwrite the current pending status",
+    );
+
+    resolveBeta!({
+      ok: true,
+      async json() {
+        return {
+          id: "compiled-beta",
+          code: "return { default: function MDXContent(){ return React.createElement('div', null, 'compiled beta'); } };",
+          dependencies: [],
+          cached: false,
+        };
+      },
+    } as Response);
+
+    await waitFor(() => {
+      const block = store.getBlocks().find((candidate) => candidate.id === "mdx-race");
+      return block?.payload.compiledMdxRef?.id === "compiled-beta";
+    });
+
+    const compiled = store.getBlocks().find((block) => block.id === "mdx-race");
+    assert.ok(compiled, "expected mdx-race block after current compile result");
+    assert.strictEqual(compiled.payload.raw, "<Demo>beta</Demo>", "current raw content must remain current");
+    assert.strictEqual(compiled.payload.compiledMdxRef?.id, "compiled-beta", "current compile result should land");
+    assert.strictEqual(
+      (compiled.payload.meta as Record<string, unknown> | undefined)?.mdxStatus,
+      "compiled",
+      "current compile result should mark the block compiled",
+    );
+
+    root.unmount();
+  } finally {
+    console.warn = originalWarn;
+    globalThis.fetch = originalFetch;
+    restoreDom();
+  }
+}
+
 runCoordinatorTest()
+  .then(() => runCoordinatorRejectsStaleSameIdResponseTest())
   .then(() => {
     console.log("mdx-coordinator-store-path test passed");
   })

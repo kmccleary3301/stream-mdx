@@ -2,7 +2,7 @@
 
 import type { InlineNode } from "@stream-mdx/core";
 import type { RendererStateSnapshot, StreamingSchedulerOptions, StreamingMarkdownProps } from "@stream-mdx/react";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ComponentRegistry, StreamingMarkdown, type StreamingMarkdownHandle } from "@stream-mdx/react";
 
@@ -267,6 +267,8 @@ export function HtmlRegressionHarness(): JSX.Element {
   const [instanceKey, setInstanceKey] = useState(0);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const handleRef = useRef<StreamingMarkdownHandle | null>(null);
+  const instanceKeyRef = useRef(0);
+  const activeInstanceKeyRef = useRef<number | null>(null);
   const metaRef = useRef<{ fixtureId?: string; scenarioId?: string; seed?: string; schedulerMode?: string }>({});
 
   const tableElements = useMemo(() => createDemoTableElements(), []);
@@ -282,6 +284,22 @@ export function HtmlRegressionHarness(): JSX.Element {
     });
     return next;
   }, [tableElements, htmlElements, config.showCodeMeta]);
+
+  useEffect(() => {
+    instanceKeyRef.current = instanceKey;
+  }, [instanceKey]);
+
+  const handleInstanceRef = useCallback(
+    (handle: StreamingMarkdownHandle | null) => {
+      handleRef.current = handle;
+      if (handle) {
+        activeInstanceKeyRef.current = instanceKey;
+      } else if (activeInstanceKeyRef.current === instanceKey) {
+        activeInstanceKeyRef.current = null;
+      }
+    },
+    [instanceKey],
+  );
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -311,9 +329,23 @@ export function HtmlRegressionHarness(): JSX.Element {
 
     const api: RegressionApi = {
       async setConfig(next) {
+        const targetKey = instanceKeyRef.current + 1;
         setConfig((prev) => ({ ...prev, ...next }));
-        setInstanceKey((prev) => prev + 1);
-        await nextFrame();
+        setInstanceKey(targetKey);
+        instanceKeyRef.current = targetKey;
+        handleRef.current = null;
+        activeInstanceKeyRef.current = null;
+        const timeoutMs = 15000;
+        const start = Date.now();
+        while (true) {
+          if (handleRef.current && activeInstanceKeyRef.current === targetKey) {
+            return;
+          }
+          if (Date.now() - start > timeoutMs) {
+            throw new Error("Regression harness renderer did not remount in time.");
+          }
+          await nextFrame();
+        }
       },
       setMeta(meta) {
         const root = rootRef.current;
@@ -357,7 +389,8 @@ export function HtmlRegressionHarness(): JSX.Element {
         const timeoutMs = 15000;
         const start = Date.now();
         while (true) {
-          const ready = Boolean(handleRef.current?.getState().workerReady);
+          const ready =
+            activeInstanceKeyRef.current === instanceKeyRef.current && Boolean(handleRef.current?.getState().workerReady);
           if (ready) return;
           if (Date.now() - start > timeoutMs) {
             throw new Error("Worker did not initialize within the expected window.");
@@ -518,7 +551,7 @@ export function HtmlRegressionHarness(): JSX.Element {
       <div id="regression-root" ref={rootRef} data-fixture="" data-scenario="">
         <StreamingMarkdown
           key={instanceKey}
-          ref={handleRef}
+          ref={handleInstanceRef}
           worker="/workers/markdown-worker.js"
           className="markdown-v2-output"
           features={config.features}

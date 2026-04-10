@@ -1,18 +1,16 @@
 import { Link } from "next-view-transitions";
 
 import { CopyButton } from "@/components/copy-button";
-import { DOC_SECTIONS } from "@/lib/docs";
+import { docHref, getDocsRoleTracks, getDocsShellSections, getPrimaryDocSections } from "@/lib/docs-nav";
 
 import { ArrowUpRight, BookOpenText, Code2, Rocket } from "lucide-react";
 
-function docHref(slug: string) {
-  if (!slug) return "/docs";
-  return `/docs/${slug}`;
-}
-
 export default function DocsIndexPage() {
-  const startHere = DOC_SECTIONS.find((section) => section.title.toLowerCase() === "start here")?.items ?? [];
-  const apiSection = DOC_SECTIONS.find((section) => section.title.toLowerCase() === "api")?.items ?? [];
+  const primarySections = getPrimaryDocSections();
+  const startHere = primarySections.find((section) => section.title.toLowerCase() === "start here")?.items ?? [];
+  const apiSection = primarySections.find((section) => section.title.toLowerCase() === "api")?.items ?? [];
+  const roleTracks = getDocsRoleTracks();
+  const navSections = getDocsShellSections({ includeDocsHomeLink: true });
 
   const installCommand = "npm install @stream-mdx/react";
 
@@ -37,6 +35,13 @@ export default function DocsIndexPage() {
       href: "/docs/public-api",
       cta: "Explore API",
       icon: BookOpenText,
+    },
+    {
+      title: "TUI / protocol",
+      summary: "Terminal and non-React entry point, including the minimal repo example path.",
+      href: "/docs/tui-json-protocol",
+      cta: "Open TUI guide",
+      icon: Code2,
     },
   ];
 
@@ -83,22 +88,33 @@ export default function DocsIndexPage() {
     },
   ];
 
-  const whatsNew = [
-    { version: "v2.4.0", text: "Added support for Mermaid diagrams in streaming mode." },
-    { version: "v2.3.8", text: "Improved backpressure handling for high-frequency updates." },
+  const docsUsageNotes = [
+    {
+      title: "Read by task",
+      text: "Use the role tracks below if you are integrating React, extending worker/plugin behavior, consuming the protocol from a TUI, or validating correctness.",
+    },
+    {
+      title: "Guides as deep dives",
+      text: "The Guides section covers styling, MDX and HTML, testing, architecture, benchmarks, deployment, and Mermaid-specific behavior.",
+    },
+    {
+      title: "Runnable examples",
+      text: "The repo includes a minimal TUI example under examples/tui-minimal so terminal consumers do not have to reverse-engineer the worker and snapshot-store loop from prose alone.",
+    },
   ];
 
   return (
     <div className="flex flex-col gap-12 text-theme-primary">
-      <section className="mx-auto flex w-full max-w-2xl flex-col items-center gap-4 text-center">
-        <div>
+      <section className="route-panel-hero mx-auto flex w-full max-w-5xl flex-col items-center gap-4 px-6 py-10 text-center md:px-10 md:py-12">
+        <div className="route-kicker">Documentation</div>
+        <div className="max-w-3xl">
           <h1 className="text-3xl font-semibold leading-[1.1] tracking-tight md:text-[40px]">Docs</h1>
-          <p className="mt-3 text-sm text-muted-foreground md:text-base">
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground md:text-base">
             Start with Getting Started, then React integration, then the API. StreamMDX is designed to be a
             drop-in replacement for standard markdown renderers with a focus on high-performance streaming.
           </p>
         </div>
-        <div className="inline-flex w-full max-w-md flex-wrap items-center justify-between gap-2 rounded-lg border border-border/40 bg-muted/20 px-3 py-2 text-sm shadow-sm">
+        <div className="route-panel inline-flex w-full max-w-md flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm shadow-sm">
           <code className="text-[13px]">{installCommand}</code>
           <CopyButton iconOnly text={installCommand} />
         </div>
@@ -107,7 +123,7 @@ export default function DocsIndexPage() {
             <Link
               key={item.slug || item.title}
               href={docHref(item.slug)}
-              className="rounded-full border border-border/60 bg-background/60 px-3 py-1 text-[11px] uppercase tracking-[0.12em] transition hover:border-border hover:text-foreground"
+              className="route-chip"
             >
               {item.title}
             </Link>
@@ -116,18 +132,18 @@ export default function DocsIndexPage() {
       </section>
 
       <section className="mx-auto w-full max-w-5xl">
-        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-old">First steps</div>
-        <div className="mt-3 grid gap-4 md:grid-cols-3">
+        <div className="route-kicker">First steps</div>
+        <div className="mt-3 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {firstSteps.map((item) => {
             const Icon = item.icon;
             return (
               <Link
                 key={item.title}
-                className="group rounded-lg border border-border/40 bg-background p-4 transition hover:border-border hover:bg-muted/20"
+                className="route-grid-card group p-4 transition hover:-translate-y-0.5"
                 href={item.href}
               >
                 <div className="flex items-center gap-2">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-md border border-border/40 bg-muted/20 text-foreground">
+                  <span className="route-icon-box text-sky-700 dark:text-sky-300">
                     <Icon size={14} />
                   </span>
                   <div className="text-sm font-semibold text-foreground">{item.title}</div>
@@ -144,12 +160,44 @@ export default function DocsIndexPage() {
       </section>
 
       <section className="mx-auto w-full max-w-5xl">
-        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-old">Explore by topic</div>
+        <div className="route-kicker">Read by role</div>
+        <div className="mt-3 grid gap-4 md:grid-cols-2">
+          {roleTracks.map((track) => (
+            <div key={track.title} className="route-grid-card p-4">
+              <div className="text-sm font-semibold text-foreground">{track.title}</div>
+              <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">{track.summary}</p>
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-[12px]">
+                <span className="font-semibold text-foreground/80">Start with</span>
+                <Link
+                  href={track.start.href}
+                  className="route-chip !px-2.5 !py-1"
+                >
+                  {track.start.title}
+                </Link>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2 text-[12px] text-muted-foreground">
+                {track.followUps.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="rounded-full border border-border/50 bg-background/60 px-2.5 py-1 transition hover:border-border hover:text-foreground"
+                  >
+                    {item.title}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-5xl">
+        <div className="route-kicker">Explore by topic</div>
         <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {topics.map((topic) => (
             <Link
               key={topic.title}
-              className="rounded-lg border border-border/40 bg-background p-4 transition hover:border-border hover:bg-muted/20"
+              className="route-grid-card p-4 transition hover:-translate-y-0.5"
               href={topic.href}
             >
               <div className="text-sm font-semibold text-foreground">{topic.title}</div>
@@ -167,17 +215,51 @@ export default function DocsIndexPage() {
       </section>
 
       <section className="mx-auto w-full max-w-5xl">
-        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-old">What&apos;s new</div>
-        <div className="mt-3 rounded-lg border border-border/40 bg-background p-4">
-          <div className="flex flex-col gap-3 text-[13px]">
-            {whatsNew.map((item) => (
-              <div key={item.version} className="flex flex-wrap items-center gap-3">
-                <span className="rounded-full border border-border/60 bg-muted/20 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em]">
-                  {item.version}
-                </span>
-                <span className="text-muted-foreground">{item.text}</span>
-              </div>
-            ))}
+        <div className="route-kicker">Use the docs site effectively</div>
+        <div className="mt-3 grid gap-4 md:grid-cols-[1.15fr_0.85fr]">
+          <div className="route-panel p-4">
+            <div className="text-sm font-semibold text-foreground">Navigation model</div>
+            <ul className="mt-3 space-y-2 text-[13px] leading-relaxed text-muted-foreground">
+              {docsUsageNotes.map((item) => (
+                <li key={item.title} className="flex items-start gap-2">
+                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-muted-old" />
+                  <span>
+                    <span className="font-medium text-foreground/80">{item.title}:</span> {item.text}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="route-panel p-4">
+            <div className="text-sm font-semibold text-foreground">Browse all sections</div>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              {navSections.map((section) => (
+                <div key={section.title}>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-old">
+                    {section.title}
+                  </div>
+                  <ul className="mt-2 space-y-1.5 text-[12px] text-muted-foreground">
+                    {section.items.slice(0, section.title === "Guides" ? 5 : section.items.length).map((item) => (
+                      <li key={item.href}>
+                        <Link href={item.href} className="transition hover:text-foreground">
+                          {item.title}
+                        </Link>
+                      </li>
+                    ))}
+                    {section.title === "Guides" ? (
+                      <li>
+                        <Link
+                          href="/docs/guides"
+                          className="font-medium text-foreground/80 transition hover:text-foreground"
+                        >
+                          View all guides
+                        </Link>
+                      </li>
+                    ) : null}
+                  </ul>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>

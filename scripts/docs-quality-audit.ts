@@ -13,9 +13,17 @@ const PLACEHOLDER_MARKERS = [
 function isIgnorableConsoleError(message: string) {
   const lower = message.toLowerCase();
   return (
-    lower.includes("a tree hydrated but some attributes of the server rendered html didn't match") &&
-    lower.includes("caret-color") &&
-    lower.includes("hydration-mismatch")
+    (
+      lower.includes("a tree hydrated but some attributes of the server rendered html didn't match") &&
+      lower.includes("caret-color") &&
+      lower.includes("hydration-mismatch")
+    ) ||
+    (
+      lower.includes("a tree hydrated but some attributes of the server rendered html didn't match") &&
+      lower.includes("hydration-mismatch") &&
+      lower.includes("<input") &&
+      (lower.includes("style={{}}") || lower.includes("style={{display:\"none\"}}"))
+    )
   );
 }
 

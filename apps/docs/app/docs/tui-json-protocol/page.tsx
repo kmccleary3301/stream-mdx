@@ -5,7 +5,7 @@ import { Link } from "next-view-transitions";
 import { DocsShell } from "@/components/docs/docs-shell";
 import { StreamingCodeBlock } from "@/components/markdown/streaming-code-block";
 import { Button } from "@/components/ui/button";
-import { DOC_SECTIONS } from "@/lib/docs";
+import { getDocsShellSections } from "@/lib/docs-nav";
 
 import {
   ArrowRight,
@@ -17,18 +17,7 @@ import {
   TerminalSquare,
 } from "lucide-react";
 
-function docHref(slug: string) {
-  if (!slug) return "/docs";
-  return `/docs/${slug}`;
-}
-
-const navSections = DOC_SECTIONS.map((section) => ({
-  title: section.title,
-  items: section.items.map((item) => ({
-    title: item.title,
-    href: docHref(item.slug),
-  })),
-}));
+const navSections = getDocsShellSections({ includeDocsHomeLink: true });
 
 const protocolSchema = `{
   "protocol": "streammdx",

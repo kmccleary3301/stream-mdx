@@ -28,6 +28,7 @@ This directory is the canonical repository-side documentation surface for Stream
 | React integration | [`REACT_INTEGRATION_GUIDE.md`](./REACT_INTEGRATION_GUIDE.md) | <https://stream-mdx.vercel.app/docs/react-integration> |
 | Security model | [`SECURITY_MODEL.md`](./SECURITY_MODEL.md) | <https://stream-mdx.vercel.app/docs/security-model> |
 | TUI guide | [`TUI_GUIDE.md`](./TUI_GUIDE.md) | <https://stream-mdx.vercel.app/docs/tui-guide> |
+| Minimal TUI example | [`../examples/tui-minimal/README.md`](../examples/tui-minimal/README.md) | repo-local runnable example |
 | Comprehensive manual | [`COMPREHENSIVE_PROJECT_DOCUMENTATION.md`](./COMPREHENSIVE_PROJECT_DOCUMENTATION.md) | <https://stream-mdx.vercel.app/docs/manual> |
 
 ### Reliability and quality
@@ -38,6 +39,8 @@ This directory is the canonical repository-side documentation surface for Stream
 | Determinism | [`DETERMINISM.md`](./DETERMINISM.md) | Determinism scope, parity checks, and replay expectations |
 | Correctness contract | [`STREAMING_CORRECTNESS_CONTRACT.md`](./STREAMING_CORRECTNESS_CONTRACT.md) | Non-negotiable streaming guarantees and invariants |
 | Execution plan | [`STREAMING_CORRECTNESS_EXECUTION_PLAN.md`](./STREAMING_CORRECTNESS_EXECUTION_PLAN.md) | Current correctness hardening backlog |
+| Post-finalize mutation ledger | [`POST_FINALIZE_MUTATION_LEDGER.md`](./POST_FINALIZE_MUTATION_LEDGER.md) | Explicit allowlist for visible mutations after `FINALIZED` |
+| Correctness gate residuals | [`CORRECTNESS_GATE_RESIDUALS_2026-04-03.md`](./CORRECTNESS_GATE_RESIDUALS_2026-04-03.md) | Current fast-gate residuals after the latest correctness tranche |
 | Static artifact contract | [`STATIC_SNAPSHOT_ARTIFACT_CONTRACT.md`](./STATIC_SNAPSHOT_ARTIFACT_CONTRACT.md) | Snapshot artifact structure and expectations |
 | Regression fix matrix | [`REGRESSION_FIX_MATRIX_2026-03-04.md`](./REGRESSION_FIX_MATRIX_2026-03-04.md) | Historical issue/fix ledger |
 | Demo reliability plan | [`STREAMING_DEMO_RELIABILITY_REMEDIATION_PLAN.md`](./STREAMING_DEMO_RELIABILITY_REMEDIATION_PLAN.md) | Demo-specific remediation notes |
@@ -48,6 +51,7 @@ This directory is the canonical repository-side documentation surface for Stream
 | --- | --- | --- |
 | Perf harness | [`PERF_HARNESS.md`](./PERF_HARNESS.md) | <https://stream-mdx.vercel.app/perf/harness> |
 | Performance guide | [`PERFORMANCE_GUIDE.md`](./PERFORMANCE_GUIDE.md) | Benchmarks and tuning context |
+| Scheduling and jitter | [`SCHEDULING_AND_JITTER.md`](./SCHEDULING_AND_JITTER.md) | Benchmark scheduler modes and interpretation discipline |
 | Perf quality changelog | [`PERF_QUALITY_CHANGELOG.md`](./PERF_QUALITY_CHANGELOG.md) | Historical perf/correctness changes |
 | Streamdown comparison | [`STREAMDOWN_COMPARISON.md`](./STREAMDOWN_COMPARISON.md) | <https://stream-mdx.vercel.app/docs/streamdown-comparison> |
 
@@ -58,6 +62,7 @@ This directory is the canonical repository-side documentation surface for Stream
 | Plugin cookbook | [`STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`](./STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md) | Built-in plugin usage and customization patterns |
 | Plugin ABI | [`PLUGIN_ABI.md`](./PLUGIN_ABI.md) | Lower-level plugin contracts |
 | TUI guide | [`TUI_GUIDE.md`](./TUI_GUIDE.md) | Recommended first stop for terminal and non-React consumers |
+| Minimal TUI example | [`../examples/tui-minimal/README.md`](../examples/tui-minimal/README.md) | Copy/pasteable worker + snapshot-store loop |
 | TUI / CLI usage | [`CLI_USAGE.md`](./CLI_USAGE.md) | Lower-level Node and terminal runtime usage |
 | JSON diff spec | [`STREAMMDX_JSON_DIFF_SPEC.md`](./STREAMMDX_JSON_DIFF_SPEC.md) | Patch/event protocol for non-React consumers |
 | Styling parity | [`STYLING_PARITY.md`](./STYLING_PARITY.md) | CSS parity and layout consistency notes |
@@ -70,6 +75,7 @@ This directory is the canonical repository-side documentation surface for Stream
 | Showcase index | [`apps/docs/content/showcase`](../apps/docs/content/showcase) |
 | Docs app routes | [`apps/docs/app`](../apps/docs/app) |
 | Example starter | [`examples/streaming-markdown-starter`](../examples/streaming-markdown-starter) |
+| Minimal TUI example | [`examples/tui-minimal`](../examples/tui-minimal) |
 
 ## Local Docs Workflows
 

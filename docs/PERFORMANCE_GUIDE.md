@@ -55,6 +55,17 @@ scheduling?: {
 - Use `batch: "rAF"` when paint smoothness matters more than throughput.
 - Use `batch: "microtask"` when throughput matters more than paint.
 - Start with `frameBudgetMs ~ 8–12` and tune based on paint p95.
+- For claim-grade comparisons, prefer the benchmark lab's locked `rAF` profile instead of ad hoc scheduler tuning.
+
+### Jitter discipline
+
+Keep the interpretation strict:
+
+- scheduler changes may move latency and throughput numbers
+- they must not change final correctness
+- if seeded runs diverge under scheduler variation, treat that as a correctness problem, not a perf footnote
+
+See [`SCHEDULING_AND_JITTER.md`](./SCHEDULING_AND_JITTER.md) for the current benchmark-mode contract.
 
 ---
 
@@ -137,6 +148,7 @@ Capture summary JSON includes normalized metrics and is used by CI gates.
 ## 9) Related Docs
 
 - `docs/PERF_HARNESS.md`
+- `docs/SCHEDULING_AND_JITTER.md`
 - `docs/STREAMING_CAPTURE_SOP.md`
 - `docs/STREAMING_CAPTURE_TOOL.md`
 - `docs/REGRESSION_TESTING.md`

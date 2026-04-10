@@ -146,6 +146,28 @@ async function loadSnapshot(snapshotPath: string): Promise<HtmlSnapshot | null> 
   }
 }
 
+async function writeComparisonArtifacts(
+  params: {
+    fixtureId: string;
+    scenarioId: string;
+    label: string;
+    expected: HtmlSnapshot;
+    received: HtmlSnapshot;
+    message: string;
+  },
+): Promise<string> {
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const safeLabel = params.label.replace(/[^a-z0-9_-]+/gi, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+  const artifactDir = path.join(ARTIFACT_ROOT, stamp, params.fixtureId, params.scenarioId, safeLabel || "comparison");
+  await ensureDir(artifactDir);
+  await fs.writeFile(path.join(artifactDir, "expected.html"), params.expected.final.html);
+  await fs.writeFile(path.join(artifactDir, "received.html"), params.received.final.html);
+  await fs.writeFile(path.join(artifactDir, "expected.snap.json"), JSON.stringify(params.expected, null, 2));
+  await fs.writeFile(path.join(artifactDir, "received.snap.json"), JSON.stringify(params.received, null, 2));
+  await fs.writeFile(path.join(artifactDir, "message.txt"), `${params.message}\n`);
+  return artifactDir;
+}
+
 function compareSnapshots(expected: HtmlSnapshot, received: HtmlSnapshot): { ok: boolean; message?: string } {
   if (expected.checkpoints.length !== received.checkpoints.length) {
     return { ok: false, message: `Checkpoint count mismatch: expected ${expected.checkpoints.length}, got ${received.checkpoints.length}` };
@@ -241,6 +263,71 @@ function compareSnapshots(expected: HtmlSnapshot, received: HtmlSnapshot): { ok:
       ok: false,
       message: [
         `Final HTML mismatch`,
+        `expected lastTx: ${expected.final.runtimeState?.lastTx ?? "n/a"}`,
+        `received lastTx: ${received.final.runtimeState?.lastTx ?? "n/a"}`,
+        `first diff index: ${index}`,
+        `expected context: ${expectedContext}`,
+        `received context: ${receivedContext}`,
+      ].join("\n"),
+    };
+  }
+
+  return { ok: true };
+}
+
+function compareFinalSnapshots(expected: HtmlSnapshot, received: HtmlSnapshot): { ok: boolean; message?: string } {
+  if (expected.final.structure && received.final.structure) {
+    const expStructure = JSON.stringify(expected.final.structure);
+    const recStructure = JSON.stringify(received.final.structure);
+    if (expStructure !== recStructure) {
+      return {
+        ok: false,
+        message: [
+          "Final structure mismatch",
+          `expected: ${expStructure}`,
+          `received: ${recStructure}`,
+        ].join("\n"),
+      };
+    }
+  }
+
+  if (expected.final.children && received.final.children) {
+    const expChildren = expected.final.children;
+    const recChildren = received.final.children;
+    const len = Math.min(expChildren.length, recChildren.length);
+    for (let i = 0; i < len; i += 1) {
+      if (expChildren[i]?.hash !== recChildren[i]?.hash) {
+        return {
+          ok: false,
+          message: [
+            "Final root child mismatch",
+            `child index: ${i}`,
+            `expected: ${expChildren[i]?.tag} ${expChildren[i]?.hash} ${expChildren[i]?.textSample ?? ""}`,
+            `received: ${recChildren[i]?.tag} ${recChildren[i]?.hash} ${recChildren[i]?.textSample ?? ""}`,
+          ].join("\n"),
+        };
+      }
+    }
+    if (expChildren.length !== recChildren.length) {
+      return {
+        ok: false,
+        message: [
+          "Final root child count mismatch",
+          `expected: ${expChildren.length}`,
+          `received: ${recChildren.length}`,
+        ].join("\n"),
+      };
+    }
+  }
+
+  if (expected.final.html !== received.final.html) {
+    const index = firstDiffIndex(expected.final.html, received.final.html);
+    const expectedContext = diffContext(expected.final.html, index);
+    const receivedContext = diffContext(received.final.html, index);
+    return {
+      ok: false,
+      message: [
+        "Final HTML mismatch",
         `expected lastTx: ${expected.final.runtimeState?.lastTx ?? "n/a"}`,
         `received lastTx: ${received.final.runtimeState?.lastTx ?? "n/a"}`,
         `first diff index: ${index}`,
@@ -690,6 +777,12 @@ async function run(): Promise<void> {
           selectors: Record<string, boolean>;
           counts?: Record<string, number>;
         };
+        for (const [key, value] of Object.entries(finalSummary.selectors)) {
+          if (value && !seenEvents[key]) {
+            seenEvents[key] = true;
+            await captureCheckpoint(`event-${key}`, finalSummary);
+          }
+        }
         const finalHtml = await page.evaluate(() => window.__streammdxRegression?.getHtml());
         const finalRuntimeState = (await page.evaluate(
           () => window.__streammdxRegression?.getRuntimeState?.(),
@@ -845,13 +938,14 @@ async function run(): Promise<void> {
           const result = compareSnapshots(expected, snapshot);
           if (!result.ok) {
             failures += 1;
-            const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-            const artifactDir = path.join(ARTIFACT_ROOT, stamp, fixture.id, scenario.id);
-            await ensureDir(artifactDir);
-            await fs.writeFile(path.join(artifactDir, "expected.html"), expected.final.html);
-            await fs.writeFile(path.join(artifactDir, "received.html"), snapshot.final.html);
-            await fs.writeFile(path.join(artifactDir, "expected.snap.json"), JSON.stringify(expected, null, 2));
-            await fs.writeFile(path.join(artifactDir, "received.snap.json"), JSON.stringify(snapshot, null, 2));
+            const artifactDir = await writeComparisonArtifacts({
+              fixtureId: fixture.id,
+              scenarioId: scenario.id,
+              label: "baseline-regression",
+              expected,
+              received: snapshot,
+              message: result.message ?? "HTML regression",
+            });
             console.error(`\nHTML regression: ${fixture.id} / ${scenario.id}\n${result.message}\n`);
             console.error(`artifacts: ${artifactDir}`);
           } else {
@@ -863,21 +957,47 @@ async function run(): Promise<void> {
         if (UPDATE) {
           console.warn(`skipping snapshot update in replay mode for ${fixture.id}/${scenario.id}`);
         }
-        if (expected && expected.final.html !== snapshot.final.html) {
-          failures += 1;
-          scenarioFailed = true;
-          console.error(`\nFinal HTML parity mismatch vs baseline snapshot for ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}`);
+        if (expected) {
+          const result = compareFinalSnapshots(expected, snapshot);
+          if (!result.ok) {
+            failures += 1;
+            scenarioFailed = true;
+            const artifactDir = await writeComparisonArtifacts({
+              fixtureId: fixture.id,
+              scenarioId: scenario.id,
+              label: `baseline-parity-${activeSeed ?? "baseline"}`,
+              expected,
+              received: snapshot,
+              message: result.message ?? "Final HTML parity mismatch vs baseline snapshot",
+            });
+            console.error(
+              `\nFinal HTML parity mismatch vs baseline snapshot for ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}\n${result.message ?? ""}\n`,
+            );
+            console.error(`artifacts: ${artifactDir}`);
+          }
         }
         if (!baselineReplaySnapshot) {
           baselineReplaySnapshot = snapshot;
-        } else if (baselineReplaySnapshot.final.html !== snapshot.final.html) {
-          failures += 1;
-          scenarioFailed = true;
-          console.error(
-            `\nReplay divergence for ${fixture.id}/${scenario.id}: baseline seed=${baselineReplaySnapshot.runMeta?.seed ?? "baseline"} vs ${activeSeed ?? "baseline"}`,
-          );
-        } else if (!scenarioFailed) {
-          console.log(`ok ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}`);
+        } else {
+          const replayResult = compareFinalSnapshots(baselineReplaySnapshot, snapshot);
+          if (!replayResult.ok) {
+            failures += 1;
+            scenarioFailed = true;
+            const artifactDir = await writeComparisonArtifacts({
+              fixtureId: fixture.id,
+              scenarioId: scenario.id,
+              label: `replay-divergence-${baselineReplaySnapshot.runMeta?.seed ?? "baseline"}-vs-${activeSeed ?? "baseline"}`,
+              expected: baselineReplaySnapshot,
+              received: snapshot,
+              message: replayResult.message ?? "Replay divergence",
+            });
+            console.error(
+              `\nReplay divergence for ${fixture.id}/${scenario.id}: baseline seed=${baselineReplaySnapshot.runMeta?.seed ?? "baseline"} vs ${activeSeed ?? "baseline"}\n${replayResult.message ?? ""}\n`,
+            );
+            console.error(`artifacts: ${artifactDir}`);
+          } else if (!scenarioFailed) {
+            console.log(`ok ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}`);
+          }
         }
       }
     }

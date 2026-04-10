@@ -1,0 +1,272 @@
+{
+  "fixtureId": "list-code-nested",
+  "fixtureTitle": "Nested List Code Blocks",
+  "scenarioId": "S2_typical",
+  "scenario": {
+    "id": "S2_typical",
+    "label": "Typical streaming",
+    "updateIntervalMs": 16,
+    "charRateCps": 1200,
+    "maxChunkChars": 256
+  },
+  "targets": {
+    "h1": {
+      "selector": "#regression-root h1",
+      "computed": {
+        "font-family": "Inter, \"Inter Fallback\"",
+        "font-size": "35px",
+        "font-weight": "700",
+        "font-style": "normal",
+        "line-height": "38.5px",
+        "letter-spacing": "-0.35px",
+        "color": "rgb(32, 32, 32)",
+        "margin-top": "52.5px",
+        "margin-bottom": "17.5px"
+      }
+    },
+    "h2": {
+      "missing": true,
+      "selector": "#regression-root h2"
+    },
+    "p": {
+      "missing": true,
+      "selector": "#regression-root p"
+    },
+    "blockquote": {
+      "missing": true,
+      "selector": "#regression-root blockquote"
+    },
+    "code-pre": {
+      "selector": "#regression-root pre",
+      "computed": {
+        "display": "flex",
+        "padding-top": "3.5px",
+        "padding-right": "14px",
+        "padding-bottom": "11.9px",
+        "padding-left": "14px",
+        "margin-top": "10.5px",
+        "margin-bottom": "10.5px",
+        "border-top-width": "1px",
+        "border-right-width": "1px",
+        "border-bottom-width": "1px",
+        "border-left-width": "1px",
+        "border-top-color": "rgb(229, 229, 229)",
+        "border-right-color": "rgb(229, 229, 229)",
+        "border-bottom-color": "rgb(229, 229, 229)",
+        "border-left-color": "rgb(229, 229, 229)",
+        "border-top-left-radius": "7px",
+        "border-top-right-radius": "7px",
+        "border-bottom-left-radius": "7px",
+        "border-bottom-right-radius": "7px",
+        "background-color": "rgba(0, 0, 0, 0)",
+        "box-shadow": "none",
+        "overflow": "auto",
+        "overflow-x": "auto",
+        "overflow-y": "auto",
+        "font-family": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+        "font-size": "12.25px",
+        "white-space": "pre"
+      }
+    },
+    "hr": {
+      "missing": true,
+      "selector": "#regression-root hr"
+    },
+    "kbd": {
+      "missing": true,
+      "selector": "#regression-root kbd"
+    },
+    "table": {
+      "missing": true,
+      "selector": "#regression-root table"
+    },
+    "table-row": {
+      "missing": true,
+      "selector": "#regression-root tbody tr"
+    },
+    "table-th": {
+      "missing": true,
+      "selector": "#regression-root th"
+    },
+    "table-td": {
+      "missing": true,
+      "selector": "#regression-root td"
+    },
+    "list-ol": {
+      "selector": "#regression-root ol",
+      "computed": {
+        "display": "flex",
+        "padding-top": "0px",
+        "padding-right": "0px",
+        "padding-bottom": "0px",
+        "padding-left": "28px",
+        "margin-top": "17.5px",
+        "margin-bottom": "17.5px",
+        "border-top-width": "0px",
+        "border-right-width": "0px",
+        "border-bottom-width": "0px",
+        "border-left-width": "0px",
+        "border-top-color": "rgb(232, 232, 232)",
+        "border-right-color": "rgb(232, 232, 232)",
+        "border-bottom-color": "rgb(232, 232, 232)",
+        "border-left-color": "rgb(232, 232, 232)",
+        "border-top-left-radius": "0px",
+        "border-top-right-radius": "0px",
+        "border-bottom-left-radius": "0px",
+        "border-bottom-right-radius": "0px",
+        "background-color": "rgba(0, 0, 0, 0)",
+        "box-shadow": "none",
+        "overflow": "visible",
+        "overflow-x": "visible",
+        "overflow-y": "visible",
+        "--list-indent": "2rem",
+        "--list-marker-digits": "1"
+      }
+    },
+    "list-nested-ol": {
+      "missing": true,
+      "selector": "#regression-root li ol"
+    },
+    "list-nested-ul": {
+      "selector": "#regression-root li ul",
+      "computed": {
+        "display": "flex",
+        "padding-top": "0px",
+        "padding-right": "0px",
+        "padding-bottom": "0px",
+        "padding-left": "24.5px",
+        "margin-top": "3.5px",
+        "margin-bottom": "17.5px",
+        "border-top-width": "0px",
+        "border-right-width": "0px",
+        "border-bottom-width": "0px",
+        "border-left-width": "0px",
+        "border-top-color": "rgb(232, 232, 232)",
+        "border-right-color": "rgb(232, 232, 232)",
+        "border-bottom-color": "rgb(232, 232, 232)",
+        "border-left-color": "rgb(232, 232, 232)",
+        "border-top-left-radius": "0px",
+        "border-top-right-radius": "0px",
+        "border-bottom-left-radius": "0px",
+        "border-bottom-right-radius": "0px",
+        "background-color": "rgba(0, 0, 0, 0)",
+        "box-shadow": "none",
+        "overflow": "visible",
+        "overflow-x": "visible",
+        "overflow-y": "visible",
+        "--list-indent": "1.75rem",
+        "--list-marker-digits": "1"
+      }
+    },
+    "list-ol-li": {
+      "selector": "#regression-root ol > li",
+      "computed": {
+        "margin-top": "1.4px",
+        "margin-bottom": "1.4px",
+        "padding-left": "0px",
+        "position": "relative",
+        "line-height": "21px"
+      },
+      "pseudo": {
+        "::before": {
+          "content": "\"1. \"",
+          "position": "absolute",
+          "left": "-28px",
+          "top": "0px",
+          "width": "28px",
+          "height": "21px",
+          "margin-top": "0px",
+          "padding-right": "7px",
+          "font-size": "14px",
+          "color": "rgb(32, 32, 32)",
+          "opacity": "0.5",
+          "display": "block"
+        }
+      }
+    },
+    "list-nested-ol-li": {
+      "missing": true,
+      "selector": "#regression-root li ol > li"
+    },
+    "list-ul-li": {
+      "selector": "#regression-root ul > li",
+      "computed": {
+        "margin-top": "1.4px",
+        "margin-bottom": "1.4px",
+        "padding-left": "17.5px",
+        "position": "relative",
+        "line-height": "21px"
+      },
+      "pseudo": {
+        "::before": {
+          "content": "\"•\"",
+          "position": "absolute",
+          "left": "-24.5px",
+          "top": "0px",
+          "width": "24.5px",
+          "height": "21px",
+          "margin-top": "-0.7px",
+          "padding-right": "7px",
+          "font-size": "17.5px",
+          "color": "rgb(32, 32, 32)",
+          "opacity": "0.7",
+          "display": "block"
+        }
+      }
+    },
+    "list-nested-ul-li": {
+      "selector": "#regression-root li ul > li",
+      "computed": {
+        "margin-top": "1.4px",
+        "margin-bottom": "1.4px",
+        "padding-left": "17.5px",
+        "position": "relative",
+        "line-height": "21px"
+      },
+      "pseudo": {
+        "::before": {
+          "content": "\"•\"",
+          "position": "absolute",
+          "left": "-24.5px",
+          "top": "0px",
+          "width": "24.5px",
+          "height": "21px",
+          "margin-top": "-0.7px",
+          "padding-right": "7px",
+          "font-size": "17.5px",
+          "color": "rgb(32, 32, 32)",
+          "opacity": "0.7",
+          "display": "block"
+        }
+      }
+    },
+    "footnotes": {
+      "missing": true,
+      "selector": "#regression-root .footnotes"
+    },
+    "footnotes-ol-li": {
+      "missing": true,
+      "selector": "#regression-root .footnotes ol li"
+    },
+    "footnote-backref": {
+      "missing": true,
+      "selector": "#regression-root .footnotes .footnote-backref"
+    },
+    "preview-pre-adjacent": {
+      "missing": true,
+      "selector": "#regression-root .markdown-mdx + pre"
+    },
+    "mdx-block": {
+      "missing": true,
+      "selector": "#regression-root .markdown-mdx"
+    },
+    "math-inline": {
+      "missing": true,
+      "selector": "#regression-root .katex"
+    },
+    "math-display": {
+      "missing": true,
+      "selector": "#regression-root .katex-display"
+    }
+  }
+}

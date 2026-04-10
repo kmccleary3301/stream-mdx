@@ -2,9 +2,11 @@
 
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { components as mdxComponents } from "@/mdx-components";
+import { configureDemoRegistry, createDemoHtmlElements, createDemoTableElements } from "@/lib/streaming-demo-registry";
 import { cn } from "@/lib/utils";
-import { StreamingMarkdown, type StreamingMarkdownHandle } from "@stream-mdx/react";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { ComponentRegistry, StreamingMarkdown, type StreamingMarkdownHandle, type StreamingMarkdownProps } from "@stream-mdx/react";
+import { useCallback, useMemo, useRef, useState, type ComponentType } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Streamdown } from "streamdown";
@@ -18,11 +20,48 @@ const ENGINE_META: Array<{ key: EngineKey; label: string; accent: string }> = [
   { key: "react-markdown", label: "react-markdown", accent: "text-amber-700 dark:text-amber-300" },
 ];
 
+type StaticFixture = {
+  key: string;
+  label: string;
+  description: string;
+  support: Record<EngineKey, boolean>;
+  streamMdxFeatures?: NonNullable<StreamingMarkdownProps["features"]>;
+  markdown: string;
+};
+
+const PARITY_FEATURES: NonNullable<StreamingMarkdownProps["features"]> = {
+  html: false,
+  tables: true,
+  math: false,
+  mdx: false,
+  footnotes: false,
+  callouts: false,
+};
+
+const RICH_FEATURE_STRESS: NonNullable<StreamingMarkdownProps["features"]> = {
+  html: true,
+  tables: true,
+  math: true,
+  mdx: true,
+  footnotes: true,
+  callouts: true,
+  formatAnticipation: {
+    inline: true,
+    mathInline: true,
+    mathBlock: true,
+    html: true,
+    mdx: true,
+    regex: false,
+  },
+};
+
 const STATIC_FIXTURES = [
   {
     key: "prose",
     label: "Prose heavy",
     description: "Long narrative text with headings, lists, and inline formatting.",
+    support: { streammdx: true, streamdown: true, "react-markdown": true },
+    streamMdxFeatures: PARITY_FEATURES,
     markdown: `# Incident review
 
 The rollout was completed in two waves. The first wave targeted internal users, and the second wave targeted 10% of production traffic.
@@ -44,6 +83,8 @@ The rollout was completed in two waves. The first wave targeted internal users, 
     key: "tables",
     label: "Table heavy",
     description: "Large table blocks with short explanatory text.",
+    support: { streammdx: true, streamdown: true, "react-markdown": true },
+    streamMdxFeatures: PARITY_FEATURES,
     markdown: `# Capacity dashboard
 
 | Region | Requests/s | p95 latency | Error rate | Notes |
@@ -65,6 +106,8 @@ The rollout was completed in two waves. The first wave targeted internal users, 
     key: "code",
     label: "Code heavy",
     description: "Multiple fenced code blocks with surrounding markdown.",
+    support: { streammdx: true, streamdown: true, "react-markdown": true },
+    streamMdxFeatures: PARITY_FEATURES,
     markdown: `# Patch scheduler excerpt
 
 \`\`\`ts
@@ -104,6 +147,8 @@ npm run perf:harness -- --fixture naive-bayes --scenario S2_typical --runs 3
     key: "mixed",
     label: "Mixed rich markdown",
     description: "Lists, quotes, links, tasks, and tables in one document.",
+    support: { streammdx: true, streamdown: true, "react-markdown": true },
+    streamMdxFeatures: PARITY_FEATURES,
     markdown: `# Mixed rendering sample
 
 > This fixture mixes markdown features commonly seen in AI assistant outputs.
@@ -126,7 +171,42 @@ Use [comparison docs](/docs/guides/comparisons-and-benchmarks) for reproducible 
 \`inline code\`, **bold**, and _italic_ should all render correctly.
 `,
   },
-] as const;
+  {
+    key: "rich",
+    label: "Rich feature stress",
+    description: "Math, MDX, HTML, tables, and code in one workload. Timed only where the engine exposes those capabilities in this harness.",
+    support: { streammdx: true, streamdown: false, "react-markdown": false },
+    streamMdxFeatures: RICH_FEATURE_STRESS,
+    markdown: `# Rich capability stress
+
+<PreviewExample />
+
+This workload mixes inline math like $E = mc^2$ with a block equation:
+
+$$
+\\int_0^1 x^2 \\, dx = \\frac{1}{3}
+$$
+
+| Layer | Status | Notes |
+| --- | --- | --- |
+| Worker parse | green | semantic patches |
+| Renderer commit | green | scheduler-aware |
+| Docs shell | yellow | public surface still evolving |
+
+\`\`\`ts
+export function summarize(inputs: number[]) {
+  return inputs.reduce((acc, value) => acc + value, 0);
+}
+\`\`\`
+
+<div class="rounded-md border border-border/60 bg-muted/20 px-3 py-2">
+  Raw HTML is part of the stress case because docs pages use the same sanitization and element mapping path.
+</div>
+
+[^rich-note]: Footnotes are enabled in the stress workload too.
+`,
+  },
+] satisfies ReadonlyArray<StaticFixture>;
 
 type FixtureKey = (typeof STATIC_FIXTURES)[number]["key"];
 type FixtureSpec = (typeof STATIC_FIXTURES)[number];
@@ -155,6 +235,7 @@ function createMeasureStore(): MeasureStore {
     tables: createEngineStore(),
     code: createEngineStore(),
     mixed: createEngineStore(),
+    rich: createEngineStore(),
   };
 }
 
@@ -196,6 +277,7 @@ export function StaticRenderComparison() {
   const [revision, setRevision] = useState(0);
   const [reactMarkdownText, setReactMarkdownText] = useState("");
   const [streamdownText, setStreamdownText] = useState("");
+  const [streamMdxFeatures, setStreamMdxFeatures] = useState<NonNullable<StreamingMarkdownProps["features"]>>(PARITY_FEATURES);
 
   const panelRefs = useRef<Record<EngineKey, HTMLDivElement | null>>({
     streammdx: null,
@@ -205,6 +287,19 @@ export function StaticRenderComparison() {
   const runCancelledRef = useRef(false);
   const resultsRef = useRef<MeasureStore>(createMeasureStore());
   const streamHandleRef = useRef<StreamingMarkdownHandle | null>(null);
+
+  const tableElements = useMemo(() => createDemoTableElements(), []);
+  const htmlElements = useMemo(() => createDemoHtmlElements(), []);
+  const registry = useMemo(() => {
+    const next = new ComponentRegistry();
+    configureDemoRegistry({
+      registry: next,
+      tableElements,
+      htmlElements,
+      showCodeMeta: false,
+    });
+    return next;
+  }, [tableElements, htmlElements]);
 
   const setStreamHandle = useCallback((handle: StreamingMarkdownHandle | null) => {
     streamHandleRef.current = handle;
@@ -343,8 +438,14 @@ export function StaticRenderComparison() {
 
   const runSingleCase = useCallback(
     async (fixture: FixtureSpec, engine: EngineKey): Promise<CaseResult> => {
+      if (!fixture.support[engine]) {
+        return { firstMs: null, finalMs: null, timedOut: false };
+      }
       setActiveFixture(fixture.key);
       setActiveEngine(engine);
+      if (engine === "streammdx") {
+        setStreamMdxFeatures(fixture.streamMdxFeatures ?? PARITY_FEATURES);
+      }
       await clearEngineContent(engine);
       await waitFrames(2);
 
@@ -388,6 +489,7 @@ export function StaticRenderComparison() {
     for (let run = 0; run < iterations; run += 1) {
       for (const fixture of STATIC_FIXTURES) {
         for (const engine of ENGINE_META.map((meta) => meta.key)) {
+          if (!fixture.support[engine]) continue;
           queue.push({ fixture, engine });
         }
       }
@@ -451,6 +553,7 @@ export function StaticRenderComparison() {
       let winner: EngineKey | null = null;
       let winnerValue: number | null = null;
       for (const engine of ENGINE_META) {
+        if (!fixture.support[engine.key]) continue;
         const value = perEngine[engine.key].finalP50;
         if (value === null) continue;
         if (winnerValue === null || value < winnerValue) {
@@ -464,16 +567,16 @@ export function StaticRenderComparison() {
   }, [revision]);
 
   return (
-    <section className="rounded-xl border border-border/60 bg-background p-5">
+    <section className="route-panel p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-foreground">Static render comparison (content types)</h2>
           <p className="mt-1 max-w-3xl text-sm text-muted">
-            Measures one-shot static rendering across prose, tables, code, and mixed markdown fixtures. Times are captured per engine as first
-            mutation and final settled mutation.
+            Measures one-shot static rendering across common-markdown content classes plus one richer StreamMDX-only stress workload. Times are
+            captured per engine as first mutation and final settled mutation.
           </p>
         </div>
-        <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted">
+        <div className="route-panel-soft px-3 py-2 text-xs text-muted">
           <div>State: {runState}</div>
           <div>Iterations: {iterations.toLocaleString()}</div>
           <div>
@@ -486,7 +589,7 @@ export function StaticRenderComparison() {
       </div>
 
       <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto_auto]">
-        <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2">
+        <div className="route-panel-soft px-3 py-2">
           <div className="flex items-center justify-between gap-3 text-xs">
             <span className="font-semibold text-foreground">Iterations per fixture</span>
             <span className="font-mono text-muted">{iterations}</span>
@@ -517,7 +620,7 @@ export function StaticRenderComparison() {
 
       <div className="mt-4 flex flex-wrap gap-2 text-xs text-muted">
         {STATIC_FIXTURES.map((fixture) => (
-          <span key={fixture.key} className="rounded-full border border-border/50 bg-muted/20 px-2.5 py-1">
+          <span key={fixture.key} className="route-chip !px-2.5 !py-1">
             {fixture.label}
           </span>
         ))}
@@ -542,8 +645,14 @@ export function StaticRenderComparison() {
                 <td className="px-2 py-2 text-muted">{row.fixture.description}</td>
                 {ENGINE_META.map((engine) => (
                   <td key={`${row.fixture.key}-${engine.key}`} className="px-2 py-2 text-muted">
-                    {formatMs(row.perEngine[engine.key].firstP50)} / {formatMs(row.perEngine[engine.key].finalP50)}
-                    <span className="ml-2 text-[11px] opacity-70">n={row.perEngine[engine.key].sampleCount}</span>
+                    {row.fixture.support[engine.key] ? (
+                      <>
+                        {formatMs(row.perEngine[engine.key].firstP50)} / {formatMs(row.perEngine[engine.key].finalP50)}
+                        <span className="ml-2 text-[11px] opacity-70">n={row.perEngine[engine.key].sampleCount}</span>
+                      </>
+                    ) : (
+                      <span className="text-[11px] uppercase tracking-wide opacity-70">unsupported in this harness</span>
+                    )}
                   </td>
                 ))}
                 <td className="px-2 py-2">
@@ -562,7 +671,7 @@ export function StaticRenderComparison() {
       </div>
 
       <div className="mt-5 grid gap-4 xl:grid-cols-3">
-        <div className={cn("overflow-hidden rounded-xl border border-border/60", activeEngine === "streammdx" ? "ring-1 ring-blue-500/40" : "")}>
+        <div className={cn("route-panel overflow-hidden", activeEngine === "streammdx" ? "ring-1 ring-blue-500/40" : "")}>
           <div className="border-border/60 border-b px-3 py-2 text-sm font-semibold text-foreground">StreamMDX</div>
           <div
             ref={(node) => {
@@ -575,14 +684,19 @@ export function StaticRenderComparison() {
                 ref={setStreamHandle}
                 worker="/workers/markdown-worker.js"
                 className="markdown-v2-output"
-                features={{ html: false, tables: true, math: false, mdx: false, footnotes: false, callouts: false }}
+                features={streamMdxFeatures}
                 scheduling={{ batch: "rAF", startupMicrotaskFlushes: 4 }}
+                mdxComponents={mdxComponents as Record<string, ComponentType<unknown>>}
+                components={registry.getBlockComponentMap()}
+                inlineComponents={registry.getInlineComponentMap()}
+                tableElements={tableElements}
+                htmlElements={htmlElements}
               />
             </div>
           </div>
         </div>
 
-        <div className={cn("overflow-hidden rounded-xl border border-border/60", activeEngine === "streamdown" ? "ring-1 ring-emerald-500/40" : "")}>
+        <div className={cn("route-panel overflow-hidden", activeEngine === "streamdown" ? "ring-1 ring-emerald-500/40" : "")}>
           <div className="border-border/60 border-b px-3 py-2 text-sm font-semibold text-foreground">Streamdown</div>
           <div
             ref={(node) => {
@@ -598,7 +712,7 @@ export function StaticRenderComparison() {
 
         <div
           className={cn(
-            "overflow-hidden rounded-xl border border-border/60",
+            "route-panel overflow-hidden",
             activeEngine === "react-markdown" ? "ring-1 ring-amber-500/40" : "",
           )}
         >

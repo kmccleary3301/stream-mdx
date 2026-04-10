@@ -1,9 +1,9 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-02-11T20:25:50.572Z",
-  "hash": "1428470136956901819a58655ed847edcee53ec7ec075ee98d05f778d11cd176",
-  "contentHash": "aa713fa5d81d34a605b2c00166f67377064b8f8dd0b9c3e7414a85ae0d08e01f",
+  "createdAt": "2026-04-10T17:51:28.155Z",
+  "hash": "92d8290beea4de86179440ecaebb6a983475d2bd9100b54eb79e988b067a3832",
+  "contentHash": "a0aa44c40eb3c18c9242afd99f33d04e17bacec0d2ba56bb587a4d5c66b6fb77",
   "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
   "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
   "blocks": [
@@ -588,27 +588,27 @@
       "type": "code",
       "isFinalized": true,
       "payload": {
-        "raw": "```\n--batch microtask|timeout|rAF\n--frameBudgetMs 8\n--maxBatchesPerFlush 8\n--lowPriorityFrameBudgetMs 4\n--maxLowPriorityBatchesPerFlush 2\n--urgentQueueThreshold 3\n--historyLimit 200\n--adaptiveSwitch true|false\n--adaptiveQueueThreshold 12\n```",
+        "raw": "```\n--batch microtask|timeout|rAF\n--frameBudgetMs 8\n--maxBatchesPerFlush 8\n--lowPriorityFrameBudgetMs 4\n--maxLowPriorityBatchesPerFlush 2\n--urgentQueueThreshold 3\n--historyLimit 200\n--startupMicrotaskFlushes 4\n--adaptiveBudgeting true|false\n--adaptiveSwitch true|false\n--adaptiveQueueThreshold 12\n```",
         "range": {
           "from": 1776,
-          "to": 2017
+          "to": 2076
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>--batch microtask|timeout|rAF</span></span>\n<span class=\"line\" data-line=\"2\"><span>--frameBudgetMs 8</span></span>\n<span class=\"line\" data-line=\"3\"><span>--maxBatchesPerFlush 8</span></span>\n<span class=\"line\" data-line=\"4\"><span>--lowPriorityFrameBudgetMs 4</span></span>\n<span class=\"line\" data-line=\"5\"><span>--maxLowPriorityBatchesPerFlush 2</span></span>\n<span class=\"line\" data-line=\"6\"><span>--urgentQueueThreshold 3</span></span>\n<span class=\"line\" data-line=\"7\"><span>--historyLimit 200</span></span>\n<span class=\"line\" data-line=\"8\"><span>--adaptiveSwitch true|false</span></span>\n<span class=\"line\" data-line=\"9\"><span>--adaptiveQueueThreshold 12</span></span></code></pre>",
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>--batch microtask|timeout|rAF</span></span>\n<span class=\"line\" data-line=\"2\"><span>--frameBudgetMs 8</span></span>\n<span class=\"line\" data-line=\"3\"><span>--maxBatchesPerFlush 8</span></span>\n<span class=\"line\" data-line=\"4\"><span>--lowPriorityFrameBudgetMs 4</span></span>\n<span class=\"line\" data-line=\"5\"><span>--maxLowPriorityBatchesPerFlush 2</span></span>\n<span class=\"line\" data-line=\"6\"><span>--urgentQueueThreshold 3</span></span>\n<span class=\"line\" data-line=\"7\"><span>--historyLimit 200</span></span>\n<span class=\"line\" data-line=\"8\"><span>--startupMicrotaskFlushes 4</span></span>\n<span class=\"line\" data-line=\"9\"><span>--adaptiveBudgeting true|false</span></span>\n<span class=\"line\" data-line=\"10\"><span>--adaptiveSwitch true|false</span></span>\n<span class=\"line\" data-line=\"11\"><span>--adaptiveQueueThreshold 12</span></span></code></pre>",
         "meta": {
           "lang": "text",
-          "code": "--batch microtask|timeout|rAF\n--frameBudgetMs 8\n--maxBatchesPerFlush 8\n--lowPriorityFrameBudgetMs 4\n--maxLowPriorityBatchesPerFlush 2\n--urgentQueueThreshold 3\n--historyLimit 200\n--adaptiveSwitch true|false\n--adaptiveQueueThreshold 12"
+          "code": "--batch microtask|timeout|rAF\n--frameBudgetMs 8\n--maxBatchesPerFlush 8\n--lowPriorityFrameBudgetMs 4\n--maxLowPriorityBatchesPerFlush 2\n--urgentQueueThreshold 3\n--historyLimit 200\n--startupMicrotaskFlushes 4\n--adaptiveBudgeting true|false\n--adaptiveSwitch true|false\n--adaptiveQueueThreshold 12"
         }
       }
     },
     {
-      "id": "25d5089a",
+      "id": "737024df",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "These map to `StreamingSchedulerOptions` in `@stream-mdx/react`.",
         "range": {
-          "from": 2019,
-          "to": 2083
+          "from": 2078,
+          "to": 2142
         },
         "inline": [
           {
@@ -635,14 +635,197 @@
       }
     },
     {
-      "id": "73247e45",
+      "id": "8b48fc1",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Interpretation rule:",
+        "range": {
+          "from": 2144,
+          "to": 2164
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Interpretation rule:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "3e0de1e3",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- use a fixed scheduler preset when comparing candidate vs baseline\n- do not change scheduler knobs mid-comparison and then treat the result as a pure renderer win/loss\n- if you need claim-grade browser comparisons, line them up with the locked methodology described in [`SCHEDULING_AND_JITTER.md`](./SCHEDULING_AND_JITTER.md)",
+        "range": {
+          "from": 2166,
+          "to": 2492
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "use a fixed scheduler preset when comparing candidate vs baseline"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "do not change scheduler knobs mid-comparison and then treat the result as a pure renderer win/loss"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "if you need claim-grade browser comparisons, line them up with the locked methodology described in ["
+              },
+              {
+                "kind": "code",
+                "text": "SCHEDULING_AND_JITTER.md"
+              },
+              {
+                "kind": "text",
+                "text": "](./SCHEDULING_AND_JITTER.md)"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "16b34163",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Useful scheduler-specific commands:",
+        "range": {
+          "from": 2494,
+          "to": 2529
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Useful scheduler-specific commands:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "33aec899",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```bash\nnpm run test:regression:scheduler-parity\nSTREAM_MDX_PERF_BASE_URL=http://127.0.0.1:3012 npm run perf:characterize:scheduler\n```",
+        "range": {
+          "from": 2531,
+          "to": 2666
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> test:regression:scheduler-parity</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">STREAM_MDX_PERF_BASE_URL</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">http://127.0.0.1:3012</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:characterize:scheduler</span></span></code></pre>",
+        "meta": {
+          "lang": "bash",
+          "code": "npm run test:regression:scheduler-parity\nSTREAM_MDX_PERF_BASE_URL=http://127.0.0.1:3012 npm run perf:characterize:scheduler"
+        }
+      }
+    },
+    {
+      "id": "333e504a",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `test:regression:scheduler-parity` checks that representative fixtures converge to the same final HTML under `smooth`, `timeout`, and `microtask`.\n- `perf:characterize:scheduler` writes a local `CI locked` vs `Explore` summary to `tmp/perf-runs/scheduler-characterization/`.",
+        "range": {
+          "from": 2668,
+          "to": 2944
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "test:regression:scheduler-parity"
+              },
+              {
+                "kind": "text",
+                "text": " checks that representative fixtures converge to the same final HTML under "
+              },
+              {
+                "kind": "code",
+                "text": "smooth"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "timeout"
+              },
+              {
+                "kind": "text",
+                "text": ", and "
+              },
+              {
+                "kind": "code",
+                "text": "microtask"
+              },
+              {
+                "kind": "text",
+                "text": "."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "perf:characterize:scheduler"
+              },
+              {
+                "kind": "text",
+                "text": " writes a local "
+              },
+              {
+                "kind": "code",
+                "text": "CI locked"
+              },
+              {
+                "kind": "text",
+                "text": " vs "
+              },
+              {
+                "kind": "code",
+                "text": "Explore"
+              },
+              {
+                "kind": "text",
+                "text": " summary to "
+              },
+              {
+                "kind": "code",
+                "text": "tmp/perf-runs/scheduler-characterization/"
+              },
+              {
+                "kind": "text",
+                "text": "."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "73fb8af7",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Optional React profiler",
         "range": {
-          "from": 2085,
-          "to": 2111
+          "from": 2946,
+          "to": 2972
         },
         "meta": {
           "headingLevel": 2,
@@ -658,14 +841,14 @@
       }
     },
     {
-      "id": "4b51cd61",
+      "id": "7d876b9c",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Capture React commit durations for the `StreamingMarkdown` subtree:",
         "range": {
-          "from": 2113,
-          "to": 2180
+          "from": 2974,
+          "to": 3041
         },
         "inline": [
           {
@@ -684,14 +867,14 @@
       }
     },
     {
-      "id": "61a1e9ff",
+      "id": "722bc42",
       "type": "code",
       "isFinalized": true,
       "payload": {
         "raw": "```\n--profiler\n```",
         "range": {
-          "from": 2182,
-          "to": 2200
+          "from": 3043,
+          "to": 3061
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>--profiler</span></span></code></pre>",
         "meta": {
@@ -701,14 +884,14 @@
       }
     },
     {
-      "id": "62c1843e",
+      "id": "6524cb5a",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "This adds `profiler actual/base` stats to the summary output.",
         "range": {
-          "from": 2202,
-          "to": 2263
+          "from": 3063,
+          "to": 3124
         },
         "inline": [
           {
@@ -727,14 +910,14 @@
       }
     },
     {
-      "id": "31edfb01",
+      "id": "3fda222",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Optional CPU throttling",
         "range": {
-          "from": 2265,
-          "to": 2291
+          "from": 3126,
+          "to": 3152
         },
         "meta": {
           "headingLevel": 2,
@@ -750,14 +933,14 @@
       }
     },
     {
-      "id": "7761feda",
+      "id": "1f2520c3",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "You can apply a CDP CPU throttle to reduce variance (Chromium only):",
         "range": {
-          "from": 2293,
-          "to": 2361
+          "from": 3154,
+          "to": 3222
         },
         "inline": [
           {
@@ -768,14 +951,14 @@
       }
     },
     {
-      "id": "608d1dc",
+      "id": "6087ff99",
       "type": "code",
       "isFinalized": true,
       "payload": {
         "raw": "```\n--cpuThrottle 4\n```",
         "range": {
-          "from": 2363,
-          "to": 2386
+          "from": 3224,
+          "to": 3247
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>--cpuThrottle 4</span></span></code></pre>",
         "meta": {
@@ -785,14 +968,14 @@
       }
     },
     {
-      "id": "46aaddc1",
+      "id": "4fdc41dc",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Omit the flag to run unthrottled.",
         "range": {
-          "from": 2388,
-          "to": 2421
+          "from": 3249,
+          "to": 3282
         },
         "inline": [
           {
@@ -803,14 +986,14 @@
       }
     },
     {
-      "id": "1d337fd",
+      "id": "2a121d9b",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Compare / gate perf runs",
         "range": {
-          "from": 2423,
-          "to": 2450
+          "from": 3284,
+          "to": 3311
         },
         "meta": {
           "headingLevel": 2,
@@ -826,14 +1009,14 @@
       }
     },
     {
-      "id": "374eeadb",
+      "id": "6e31e768",
       "type": "code",
       "isFinalized": true,
       "payload": {
         "raw": "```\nnpm run perf:compare -- --base tmp/perf-runs/<base>/summary.json --candidate tmp/perf-runs/<cand>/summary.json\n```",
         "range": {
-          "from": 2452,
-          "to": 2570
+          "from": 3313,
+          "to": 3431
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>npm run perf:compare -- --base tmp/perf-runs/&#x3C;base>/summary.json --candidate tmp/perf-runs/&#x3C;cand>/summary.json</span></span></code></pre>",
         "meta": {
@@ -843,14 +1026,14 @@
       }
     },
     {
-      "id": "615ceb22",
+      "id": "81bf541",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Add `--gate` to fail on regressions. Defaults are conservative; override per metric:",
         "range": {
-          "from": 2572,
-          "to": 2656
+          "from": 3433,
+          "to": 3517
         },
         "inline": [
           {
@@ -869,14 +1052,14 @@
       }
     },
     {
-      "id": "114e5853",
+      "id": "6bcd8610",
       "type": "code",
       "isFinalized": true,
       "payload": {
         "raw": "```\n--durationP95MaxPct 0.1\n--firstFlushP95MaxPct 0.1\n--longTaskP95MaxPct 0.25\n--rafP95MaxPct 0.2\n--memoryPeakP95MaxPct 0.15\n```",
         "range": {
-          "from": 2658,
-          "to": 2786
+          "from": 3519,
+          "to": 3647
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>--durationP95MaxPct 0.1</span></span>\n<span class=\"line\" data-line=\"2\"><span>--firstFlushP95MaxPct 0.1</span></span>\n<span class=\"line\" data-line=\"3\"><span>--longTaskP95MaxPct 0.25</span></span>\n<span class=\"line\" data-line=\"4\"><span>--rafP95MaxPct 0.2</span></span>\n<span class=\"line\" data-line=\"5\"><span>--memoryPeakP95MaxPct 0.15</span></span></code></pre>",
         "meta": {
@@ -886,14 +1069,14 @@
       }
     },
     {
-      "id": "5be9b205",
+      "id": "6e2ab0d8",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Gate both baselines in one command",
         "range": {
-          "from": 2788,
-          "to": 2826
+          "from": 3649,
+          "to": 3687
         },
         "meta": {
           "headingLevel": 3,
@@ -909,14 +1092,14 @@
       }
     },
     {
-      "id": "425e004e",
+      "id": "45fa51b6",
       "type": "code",
       "isFinalized": true,
       "payload": {
         "raw": "```\nnpm run perf:gate -- --candidateS2 tmp/perf-runs/<s2-run> --candidateS3 tmp/perf-runs/<s3-run> --gate\n```",
         "range": {
-          "from": 2828,
-          "to": 2937
+          "from": 3689,
+          "to": 3798
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>npm run perf:gate -- --candidateS2 tmp/perf-runs/&#x3C;s2-run> --candidateS3 tmp/perf-runs/&#x3C;s3-run> --gate</span></span></code></pre>",
         "meta": {
@@ -926,14 +1109,14 @@
       }
     },
     {
-      "id": "548850ed",
+      "id": "4beef6db",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Optional edge-like long-run gate",
         "range": {
-          "from": 2939,
-          "to": 2975
+          "from": 3800,
+          "to": 3836
         },
         "meta": {
           "headingLevel": 3,
@@ -949,14 +1132,14 @@
       }
     },
     {
-      "id": "4126aca7",
+      "id": "556072f6",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "To include an edge-like stress scenario in the same gate command, pass `--candidateEdge`\n(alias: `--candidateS6`) and provide a matching baseline path:",
         "range": {
-          "from": 2977,
-          "to": 3128
+          "from": 3838,
+          "to": 3989
         },
         "inline": [
           {
@@ -983,14 +1166,14 @@
       }
     },
     {
-      "id": "26b9ab7f",
+      "id": "5b22b164",
       "type": "code",
       "isFinalized": true,
       "payload": {
         "raw": "```\nnpm run perf:gate -- \\\n  --candidateS2 tmp/perf-runs/<s2-run> \\\n  --candidateS3 tmp/perf-runs/<s3-run> \\\n  --candidateEdge tmp/perf-runs/<table-large-s6-run> \\\n  --baseEdge tmp/perf-baselines/S6_extreme_edge_like \\\n  --gate\n```",
         "range": {
-          "from": 3130,
-          "to": 3361
+          "from": 3991,
+          "to": 4222
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>npm run perf:gate -- \\</span></span>\n<span class=\"line\" data-line=\"2\"><span>  --candidateS2 tmp/perf-runs/&#x3C;s2-run> \\</span></span>\n<span class=\"line\" data-line=\"3\"><span>  --candidateS3 tmp/perf-runs/&#x3C;s3-run> \\</span></span>\n<span class=\"line\" data-line=\"4\"><span>  --candidateEdge tmp/perf-runs/&#x3C;table-large-s6-run> \\</span></span>\n<span class=\"line\" data-line=\"5\"><span>  --baseEdge tmp/perf-baselines/S6_extreme_edge_like \\</span></span>\n<span class=\"line\" data-line=\"6\"><span>  --gate</span></span></code></pre>",
         "meta": {
@@ -1000,14 +1183,14 @@
       }
     },
     {
-      "id": "30addedd",
+      "id": "65d940c0",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "If `candidateEdge` is omitted, the edge-like gate is skipped.",
         "range": {
-          "from": 3363,
-          "to": 3424
+          "from": 4224,
+          "to": 4285
         },
         "inline": [
           {
@@ -1026,14 +1209,14 @@
       }
     },
     {
-      "id": "3d54459b",
+      "id": "116ef003",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Baselines",
         "range": {
-          "from": 3426,
-          "to": 3438
+          "from": 4287,
+          "to": 4299
         },
         "meta": {
           "headingLevel": 2,
@@ -1049,14 +1232,14 @@
       }
     },
     {
-      "id": "511f825d",
+      "id": "45679d40",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Canonical baselines live under:",
         "range": {
-          "from": 3440,
-          "to": 3471
+          "from": 4301,
+          "to": 4332
         },
         "inline": [
           {
@@ -1067,14 +1250,14 @@
       }
     },
     {
-      "id": "3714a8fd",
+      "id": "6e6c2946",
       "type": "code",
       "isFinalized": true,
       "payload": {
         "raw": "```\ntmp/perf-baselines/S2_typical\ntmp/perf-baselines/S3_fast_reasonable\ntmp/perf-baselines/S6_extreme_edge_like (optional edge-like stress baseline)\n```",
         "range": {
-          "from": 3473,
-          "to": 3625
+          "from": 4334,
+          "to": 4486
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>tmp/perf-baselines/S2_typical</span></span>\n<span class=\"line\" data-line=\"2\"><span>tmp/perf-baselines/S3_fast_reasonable</span></span>\n<span class=\"line\" data-line=\"3\"><span>tmp/perf-baselines/S6_extreme_edge_like (optional edge-like stress baseline)</span></span></code></pre>",
         "meta": {
@@ -1084,14 +1267,14 @@
       }
     },
     {
-      "id": "7f467118",
+      "id": "53611b80",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Notes",
         "range": {
-          "from": 3627,
-          "to": 3635
+          "from": 4488,
+          "to": 4496
         },
         "meta": {
           "headingLevel": 2,
@@ -1107,14 +1290,14 @@
       }
     },
     {
-      "id": "3f616bab",
+      "id": "3bc51a43",
       "type": "list",
       "isFinalized": true,
       "payload": {
-        "raw": "- Memory sampling is only available in Chromium (`performance.memory`).\n- CDP metrics and DOM counters come from `Performance.getMetrics` and `Memory.getDOMCounters` (Chromium only).\n- This harness uses the docs worker (`/workers/markdown-worker.js`) and demo registry.\n- `perf:demo` targets the `/demo` page and is separate from this harness.",
+        "raw": "- Memory sampling is only available in Chromium (`performance.memory`).\n- CDP metrics and DOM counters come from `Performance.getMetrics` and `Memory.getDOMCounters` (Chromium only).\n- This harness uses the docs worker (`/workers/markdown-worker.js`) and demo registry.\n- `perf:demo` targets the `/demo` page and is separate from this harness.\n- Treat shipped client bundle, hosted worker asset, runtime loaded code, and peak memory as different cost categories.",
         "range": {
-          "from": 3637,
-          "to": 3980
+          "from": 4498,
+          "to": 4960
         },
         "meta": {
           "ordered": false,
@@ -1186,6 +1369,12 @@
                 "kind": "text",
                 "text": " page and is separate from this harness."
               }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Treat shipped client bundle, hosted worker asset, runtime loaded code, and peak memory as different cost categories."
+              }
             ]
           ],
           "mathEnabled": true
@@ -1228,43 +1417,43 @@
       "id": "optional-react-profiler",
       "text": "Optional React profiler",
       "level": 2,
-      "blockId": "73247e45"
+      "blockId": "73fb8af7"
     },
     {
       "id": "optional-cpu-throttling",
       "text": "Optional CPU throttling",
       "level": 2,
-      "blockId": "31edfb01"
+      "blockId": "3fda222"
     },
     {
       "id": "compare-gate-perf-runs",
       "text": "Compare / gate perf runs",
       "level": 2,
-      "blockId": "1d337fd"
+      "blockId": "2a121d9b"
     },
     {
       "id": "gate-both-baselines-in-one-command",
       "text": "Gate both baselines in one command",
       "level": 3,
-      "blockId": "5be9b205"
+      "blockId": "6e2ab0d8"
     },
     {
       "id": "optional-edge-like-long-run-gate",
       "text": "Optional edge-like long-run gate",
       "level": 3,
-      "blockId": "548850ed"
+      "blockId": "4beef6db"
     },
     {
       "id": "baselines",
       "text": "Baselines",
       "level": 2,
-      "blockId": "3d54459b"
+      "blockId": "116ef003"
     },
     {
       "id": "notes",
       "text": "Notes",
       "level": 2,
-      "blockId": "7f467118"
+      "blockId": "53611b80"
     }
   ],
   "init": {

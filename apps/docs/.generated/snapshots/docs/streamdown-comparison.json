@@ -1,9 +1,9 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-02-11T20:25:51.411Z",
-  "hash": "ecd4709c85fb48b710361e8aaf99f58d521edee8ed0d432c5cff53940804be30",
-  "contentHash": "01f0a6b144e563e11fe5511bc4caf0aaddd10def59ac4624b9e583bad5bc2045",
+  "createdAt": "2026-04-03T23:38:46.087Z",
+  "hash": "1dc2c4cf96add666af1173b58ea29c514dca2d588a65baeee5aee4414c3b1b9d",
+  "contentHash": "ad04638bfa7fc5937f6b2d456826bbb3250089374510b421c0a6ecf7d0061e7c",
   "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
   "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
   "blocks": [
@@ -35,51 +35,165 @@
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "This page is a practical comparison to help you choose the right tool and understand the tradeoffs.",
+        "raw": "This comparison is deliberately narrow. It is not a claim that one project is globally \"better\" than the other. It is a technical comparison of runtime model, integration shape, and the behaviors our current harnesses are actually built to measure.",
         "range": {
           "from": 27,
-          "to": 126
+          "to": 275
         },
         "inline": [
           {
             "kind": "text",
-            "text": "This page is a practical comparison to help you choose the right tool and understand the tradeoffs."
+            "text": "This comparison is deliberately narrow. It is not a claim that one project is globally \"better\" than the other. It is a technical comparison of runtime model, integration shape, and the behaviors our current harnesses are actually built to measure."
           }
         ]
       }
     },
     {
-      "id": "3d1dbdb9",
+      "id": "770e445e",
       "type": "heading",
       "isFinalized": true,
       "payload": {
-        "raw": "High-level positioning",
+        "raw": "Scope of this comparison",
         "range": {
-          "from": 128,
-          "to": 153
+          "from": 277,
+          "to": 304
         },
         "meta": {
           "headingLevel": 2,
-          "headingText": "High-level positioning",
-          "headingId": "high-level-positioning"
+          "headingText": "Scope of this comparison",
+          "headingId": "scope-of-this-comparison"
         },
         "inline": [
           {
             "kind": "text",
-            "text": "High-level positioning"
+            "text": "Scope of this comparison"
           }
         ]
       }
     },
     {
-      "id": "2640ff43",
+      "id": "2f5dcba1",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "The current comparison is grounded in:",
+        "range": {
+          "from": 306,
+          "to": 344
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "The current comparison is grounded in:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "3d2e09a1",
       "type": "list",
       "isFinalized": true,
       "payload": {
-        "raw": "- **Streamdown**: a drop-in replacement for `react-markdown` optimized for streaming/incomplete markdown via memoization + unterminated-block recovery (`remend`).\n- **StreamMDX**: a worker-first incremental patch pipeline designed for high-frequency updates and large documents, with backpressure guardrails.",
+        "raw": "- local browser runs\n- shared markdown fixtures\n- seeded streaming scenarios\n- one-shot static content-class runs",
         "range": {
-          "from": 155,
-          "to": 463
+          "from": 346,
+          "to": 459
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "local browser runs"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "shared markdown fixtures"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "seeded streaming scenarios"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "one-shot static content-class runs"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "63933497",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "It does **not** claim universal latency or memory superiority across every browser, machine, or integration pattern.",
+        "range": {
+          "from": 461,
+          "to": 577
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "It does "
+          },
+          {
+            "kind": "strong",
+            "children": [
+              {
+                "kind": "text",
+                "text": "not"
+              }
+            ]
+          },
+          {
+            "kind": "text",
+            "text": " claim universal latency or memory superiority across every browser, machine, or integration pattern."
+          }
+        ]
+      }
+    },
+    {
+      "id": "7028b1e7",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Short version",
+        "range": {
+          "from": 579,
+          "to": 595
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Short version",
+          "headingId": "short-version"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Short version"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6337aeff",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- **Choose Streamdown** if your priority is a minimal migration from `react-markdown` and you want streaming-tolerant formatting behavior without introducing a worker runtime.\n- **Choose StreamMDX** if your priority is worker isolation, explicit incremental patching, richer plugin/runtime control, or better guardrails for long-running / high-frequency streams.",
+        "range": {
+          "from": 597,
+          "to": 959
         },
         "meta": {
           "ordered": false,
@@ -90,13 +204,13 @@
                 "children": [
                   {
                     "kind": "text",
-                    "text": "Streamdown"
+                    "text": "Choose Streamdown"
                   }
                 ]
               },
               {
                 "kind": "text",
-                "text": ": a drop-in replacement for "
+                "text": " if your priority is a minimal migration from "
               },
               {
                 "kind": "code",
@@ -104,15 +218,7 @@
               },
               {
                 "kind": "text",
-                "text": " optimized for streaming/incomplete markdown via memoization + unterminated-block recovery ("
-              },
-              {
-                "kind": "code",
-                "text": "remend"
-              },
-              {
-                "kind": "text",
-                "text": ")."
+                "text": " and you want streaming-tolerant formatting behavior without introducing a worker runtime."
               }
             ],
             [
@@ -121,13 +227,13 @@
                 "children": [
                   {
                     "kind": "text",
-                    "text": "StreamMDX"
+                    "text": "Choose StreamMDX"
                   }
                 ]
               },
               {
                 "kind": "text",
-                "text": ": a worker-first incremental patch pipeline designed for high-frequency updates and large documents, with backpressure guardrails."
+                "text": " if your priority is worker isolation, explicit incremental patching, richer plugin/runtime control, or better guardrails for long-running / high-frequency streams."
               }
             ]
           ],
@@ -136,14 +242,14 @@
       }
     },
     {
-      "id": "6a172dfd",
+      "id": "2d4e93c4",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Architecture",
         "range": {
-          "from": 465,
-          "to": 480
+          "from": 961,
+          "to": 976
         },
         "meta": {
           "headingLevel": 2,
@@ -159,351 +265,14 @@
       }
     },
     {
-      "id": "3e5198c2",
-      "type": "heading",
-      "isFinalized": true,
-      "payload": {
-        "raw": "Streamdown",
-        "range": {
-          "from": 482,
-          "to": 496
-        },
-        "meta": {
-          "headingLevel": 3,
-          "headingText": "Streamdown",
-          "headingId": "streamdown"
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "Streamdown"
-          }
-        ]
-      }
-    },
-    {
-      "id": "369bfcc1",
-      "type": "list",
-      "isFinalized": true,
-      "payload": {
-        "raw": "- Main-thread parsing/rendering (React component)\n- Focus on resilient markdown formatting while content is incomplete/unterminated\n- Single-package distribution (`streamdown`)",
-        "range": {
-          "from": 498,
-          "to": 674
-        },
-        "meta": {
-          "ordered": false,
-          "items": [
-            [
-              {
-                "kind": "text",
-                "text": "Main-thread parsing/rendering (React component)"
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "Focus on resilient markdown formatting while content is incomplete/unterminated"
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "Single-package distribution ("
-              },
-              {
-                "kind": "code",
-                "text": "streamdown"
-              },
-              {
-                "kind": "text",
-                "text": ")"
-              }
-            ]
-          ],
-          "mathEnabled": true
-        }
-      }
-    },
-    {
-      "id": "484017a5",
-      "type": "heading",
-      "isFinalized": true,
-      "payload": {
-        "raw": "StreamMDX",
-        "range": {
-          "from": 676,
-          "to": 689
-        },
-        "meta": {
-          "headingLevel": 3,
-          "headingText": "StreamMDX",
-          "headingId": "streammdx"
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "StreamMDX"
-          }
-        ]
-      }
-    },
-    {
-      "id": "59395da",
-      "type": "list",
-      "isFinalized": true,
-      "payload": {
-        "raw": "- Worker-first parsing (off main thread)\n- Incremental diff → patch batches → patch scheduler applies to a stable render tree\n- Separate hosted worker bundle (`/workers/markdown-worker.js`) recommended for production CSP\n- Modular packages + convenience wrapper (`stream-mdx`)",
-        "range": {
-          "from": 691,
-          "to": 967
-        },
-        "meta": {
-          "ordered": false,
-          "items": [
-            [
-              {
-                "kind": "text",
-                "text": "Worker-first parsing (off main thread)"
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "Incremental diff → patch batches → patch scheduler applies to a stable render tree"
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "Separate hosted worker bundle ("
-              },
-              {
-                "kind": "code",
-                "text": "/workers/markdown-worker.js"
-              },
-              {
-                "kind": "text",
-                "text": ") recommended for production CSP"
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "Modular packages + convenience wrapper ("
-              },
-              {
-                "kind": "code",
-                "text": "stream-mdx"
-              },
-              {
-                "kind": "text",
-                "text": ")"
-              }
-            ]
-          ],
-          "mathEnabled": true
-        }
-      }
-    },
-    {
-      "id": "308df434",
-      "type": "heading",
-      "isFinalized": true,
-      "payload": {
-        "raw": "Developer experience",
-        "range": {
-          "from": 969,
-          "to": 992
-        },
-        "meta": {
-          "headingLevel": 2,
-          "headingText": "Developer experience",
-          "headingId": "developer-experience"
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "Developer experience"
-          }
-        ]
-      }
-    },
-    {
-      "id": "372e7aa0",
-      "type": "list",
-      "isFinalized": true,
-      "payload": {
-        "raw": "- **Streamdown** is “install and render” for users already using `react-markdown`.\n- **StreamMDX** requires hosting a worker bundle (or allowing `blob:`), but provides stronger responsiveness and long-document guardrails.",
-        "range": {
-          "from": 994,
-          "to": 1215
-        },
-        "meta": {
-          "ordered": false,
-          "items": [
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Streamdown"
-                  }
-                ]
-              },
-              {
-                "kind": "text",
-                "text": " is “install and render” for users already using "
-              },
-              {
-                "kind": "code",
-                "text": "react-markdown"
-              },
-              {
-                "kind": "text",
-                "text": "."
-              }
-            ],
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "StreamMDX"
-                  }
-                ]
-              },
-              {
-                "kind": "text",
-                "text": " requires hosting a worker bundle (or allowing "
-              },
-              {
-                "kind": "code",
-                "text": "blob:"
-              },
-              {
-                "kind": "text",
-                "text": "), but provides stronger responsiveness and long-document guardrails."
-              }
-            ]
-          ],
-          "mathEnabled": true
-        }
-      }
-    },
-    {
-      "id": "297a0807",
-      "type": "heading",
-      "isFinalized": true,
-      "payload": {
-        "raw": "Security",
-        "range": {
-          "from": 1217,
-          "to": 1228
-        },
-        "meta": {
-          "headingLevel": 2,
-          "headingText": "Security",
-          "headingId": "security"
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "Security"
-          }
-        ]
-      }
-    },
-    {
-      "id": "1360e982",
-      "type": "list",
-      "isFinalized": true,
-      "payload": {
-        "raw": "- **Streamdown** emphasizes hardened rehype pipelines (e.g., `rehype-harden`) and runs in the main thread.\n- **StreamMDX** sanitizes HTML by default and can isolate parsing/enrichment in a worker; CSP posture is clearer when you host the worker bundle.",
-        "range": {
-          "from": 1230,
-          "to": 1482
-        },
-        "meta": {
-          "ordered": false,
-          "items": [
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Streamdown"
-                  }
-                ]
-              },
-              {
-                "kind": "text",
-                "text": " emphasizes hardened rehype pipelines (e.g., "
-              },
-              {
-                "kind": "code",
-                "text": "rehype-harden"
-              },
-              {
-                "kind": "text",
-                "text": ") and runs in the main thread."
-              }
-            ],
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "StreamMDX"
-                  }
-                ]
-              },
-              {
-                "kind": "text",
-                "text": " sanitizes HTML by default and can isolate parsing/enrichment in a worker; CSP posture is clearer when you host the worker bundle."
-              }
-            ]
-          ],
-          "mathEnabled": true
-        }
-      }
-    },
-    {
-      "id": "4478385f",
-      "type": "heading",
-      "isFinalized": true,
-      "payload": {
-        "raw": "Tradeoffs",
-        "range": {
-          "from": 1484,
-          "to": 1496
-        },
-        "meta": {
-          "headingLevel": 2,
-          "headingText": "Tradeoffs",
-          "headingId": "tradeoffs"
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "Tradeoffs"
-          }
-        ]
-      }
-    },
-    {
-      "id": "1a4eee02",
+      "id": "40f19482",
       "type": "table",
       "isFinalized": true,
       "payload": {
-        "raw": "| Category | Streamdown | StreamMDX |\n| --- | --- | --- |\n| Integration | Drop-in for `react-markdown` | Dedicated API (`<StreamingMarkdown />`) |\n| Runtime model | Main thread | Worker + incremental patches |\n| CSP | No worker hosting step | Worker hosting recommended |\n| Custom syntax | `remend`-style recovery + rehype/remark plugins | Custom worker bundles for custom tokenizers/matchers |\n| Packaging | Single package | Modular packages + wrapper |",
+        "raw": "| Category | Streamdown | StreamMDX |\n| --- | --- | --- |\n| Execution model | Main-thread React rendering | Worker-first parse pipeline with incremental patch application |\n| Rendering surface | React component, close to `react-markdown` ergonomics | Dedicated `StreamingMarkdown` renderer plus lower-level packages |\n| Incremental model | Incomplete-markdown resilience + memoized rerendering | Explicit semantic/enrichment patch batches committed to a stable render tree |\n| Long-document posture | Main-thread work scales with content updates | Worker offload, queueing, and patch scheduling intended to reduce main-thread pressure |\n| Packaging | Single package | Modular packages plus `stream-mdx` convenience wrapper |",
         "range": {
-          "from": 1498,
-          "to": 1952
+          "from": 978,
+          "to": 1702
         },
         "inline": [],
         "meta": {
@@ -532,31 +301,55 @@
               [
                 {
                   "kind": "text",
-                  "text": "Integration"
+                  "text": "Execution model"
                 }
               ],
               [
                 {
                   "kind": "text",
-                  "text": "Drop-in for "
+                  "text": "Main-thread React rendering"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Worker-first parse pipeline with incremental patch application"
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "text",
+                  "text": "Rendering surface"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "React component, close to "
                 },
                 {
                   "kind": "code",
                   "text": "react-markdown"
+                },
+                {
+                  "kind": "text",
+                  "text": " ergonomics"
                 }
               ],
               [
                 {
                   "kind": "text",
-                  "text": "Dedicated API ("
+                  "text": "Dedicated "
                 },
                 {
                   "kind": "code",
-                  "text": "<StreamingMarkdown />"
+                  "text": "StreamingMarkdown"
                 },
                 {
                   "kind": "text",
-                  "text": ")"
+                  "text": " renderer plus lower-level packages"
                 }
               ]
             ],
@@ -564,19 +357,19 @@
               [
                 {
                   "kind": "text",
-                  "text": "Runtime model"
+                  "text": "Incremental model"
                 }
               ],
               [
                 {
                   "kind": "text",
-                  "text": "Main thread"
+                  "text": "Incomplete-markdown resilience + memoized rerendering"
                 }
               ],
               [
                 {
                   "kind": "text",
-                  "text": "Worker + incremental patches"
+                  "text": "Explicit semantic/enrichment patch batches committed to a stable render tree"
                 }
               ]
             ],
@@ -584,43 +377,19 @@
               [
                 {
                   "kind": "text",
-                  "text": "CSP"
+                  "text": "Long-document posture"
                 }
               ],
               [
                 {
                   "kind": "text",
-                  "text": "No worker hosting step"
+                  "text": "Main-thread work scales with content updates"
                 }
               ],
               [
                 {
                   "kind": "text",
-                  "text": "Worker hosting recommended"
-                }
-              ]
-            ],
-            [
-              [
-                {
-                  "kind": "text",
-                  "text": "Custom syntax"
-                }
-              ],
-              [
-                {
-                  "kind": "code",
-                  "text": "remend"
-                },
-                {
-                  "kind": "text",
-                  "text": "-style recovery + rehype/remark plugins"
-                }
-              ],
-              [
-                {
-                  "kind": "text",
-                  "text": "Custom worker bundles for custom tokenizers/matchers"
+                  "text": "Worker offload, queueing, and patch scheduling intended to reduce main-thread pressure"
                 }
               ]
             ],
@@ -640,7 +409,15 @@
               [
                 {
                   "kind": "text",
-                  "text": "Modular packages + wrapper"
+                  "text": "Modular packages plus "
+                },
+                {
+                  "kind": "code",
+                  "text": "stream-mdx"
+                },
+                {
+                  "kind": "text",
+                  "text": " convenience wrapper"
                 }
               ]
             ]
@@ -654,37 +431,228 @@
       }
     },
     {
-      "id": "501362c7",
+      "id": "60dac7aa",
       "type": "heading",
       "isFinalized": true,
       "payload": {
-        "raw": "When to choose which",
+        "raw": "Integration tradeoffs",
         "range": {
-          "from": 1954,
-          "to": 1977
+          "from": 1704,
+          "to": 1728
         },
         "meta": {
           "headingLevel": 2,
-          "headingText": "When to choose which",
-          "headingId": "when-to-choose-which"
+          "headingText": "Integration tradeoffs",
+          "headingId": "integration-tradeoffs"
         },
         "inline": [
           {
             "kind": "text",
-            "text": "When to choose which"
+            "text": "Integration tradeoffs"
           }
         ]
       }
     },
     {
-      "id": "594424ce",
+      "id": "3f5cac3d",
+      "type": "table",
+      "isFinalized": true,
+      "payload": {
+        "raw": "| Topic | Streamdown | StreamMDX |\n| --- | --- | --- |\n| Install / adopt | Lower friction for existing `react-markdown` users | Higher setup cost because worker/runtime configuration matters |\n| CSP / hosting | No worker hosting requirement | Hosted worker strongly recommended for production CSP clarity |\n| Custom syntax | remark/rehype ecosystem, plus Streamdown behavior | Worker/plugin model, custom matcher paths, and more explicit runtime composition |\n| Terminal / protocol use | React-first surface | Dedicated TUI / protocol path exists |\n| Operational visibility | Mostly renderer-level behavior | More moving parts, but more instrumentation and runtime controls |",
+        "range": {
+          "from": 1730,
+          "to": 2405
+        },
+        "inline": [],
+        "meta": {
+          "header": [
+            [
+              {
+                "kind": "text",
+                "text": "Topic"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Streamdown"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "StreamMDX"
+              }
+            ]
+          ],
+          "rows": [
+            [
+              [
+                {
+                  "kind": "text",
+                  "text": "Install / adopt"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Lower friction for existing "
+                },
+                {
+                  "kind": "code",
+                  "text": "react-markdown"
+                },
+                {
+                  "kind": "text",
+                  "text": " users"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Higher setup cost because worker/runtime configuration matters"
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "text",
+                  "text": "CSP / hosting"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "No worker hosting requirement"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Hosted worker strongly recommended for production CSP clarity"
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "text",
+                  "text": "Custom syntax"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "remark/rehype ecosystem, plus Streamdown behavior"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Worker/plugin model, custom matcher paths, and more explicit runtime composition"
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "text",
+                  "text": "Terminal / protocol use"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "React-first surface"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Dedicated TUI / protocol path exists"
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "text",
+                  "text": "Operational visibility"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Mostly renderer-level behavior"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "More moving parts, but more instrumentation and runtime controls"
+                }
+              ]
+            ]
+          ],
+          "align": [
+            null,
+            null,
+            null
+          ]
+        }
+      }
+    },
+    {
+      "id": "66aba1c9",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "What the current harnesses are good at measuring",
+        "range": {
+          "from": 2407,
+          "to": 2458
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "What the current harnesses are good at measuring",
+          "headingId": "what-the-current-harnesses-are-good-at-measuring"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "What the current harnesses are good at measuring"
+          }
+        ]
+      }
+    },
+    {
+      "id": "7ea5037c",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "The current StreamMDX harnesses are good at comparing:",
+        "range": {
+          "from": 2460,
+          "to": 2514
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "The current StreamMDX harnesses are good at comparing:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "58f7a954",
       "type": "list",
       "isFinalized": true,
       "payload": {
-        "raw": "- Choose **Streamdown** if you want drop-in `react-markdown` compatibility and a minimal setup.\n- Choose **StreamMDX** if you need worker isolation, high-frequency streaming stability, or long-document responsiveness guardrails.",
+        "raw": "- first visible render under live incremental streaming\n- final convergence under live incremental streaming\n- patch-to-DOM latency distributions\n- static render timing across prose / tables / code / mixed markdown",
         "range": {
-          "from": 1979,
-          "to": 2207
+          "from": 2516,
+          "to": 2730
         },
         "meta": {
           "ordered": false,
@@ -692,20 +660,272 @@
             [
               {
                 "kind": "text",
-                "text": "Choose "
-              },
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Streamdown"
-                  }
-                ]
-              },
+                "text": "first visible render under live incremental streaming"
+              }
+            ],
+            [
               {
                 "kind": "text",
-                "text": " if you want drop-in "
+                "text": "final convergence under live incremental streaming"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "patch-to-DOM latency distributions"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "static render timing across prose / tables / code / mixed markdown"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "5ce28c64",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "The harnesses are **not** yet a definitive public source for:",
+        "range": {
+          "from": 2732,
+          "to": 2793
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "The harnesses are "
+          },
+          {
+            "kind": "strong",
+            "children": [
+              {
+                "kind": "text",
+                "text": "not"
+              }
+            ]
+          },
+          {
+            "kind": "text",
+            "text": " yet a definitive public source for:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "31c8fb85",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- absolute bundle-cost comparisons across all deployment shapes\n- absolute memory superiority claims across all browsers\n- every edge of incomplete-markdown recovery semantics",
+        "range": {
+          "from": 2795,
+          "to": 2970
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "absolute bundle-cost comparisons across all deployment shapes"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "absolute memory superiority claims across all browsers"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "every edge of incomplete-markdown recovery semantics"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "17cf0c62",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Security and isolation",
+        "range": {
+          "from": 2972,
+          "to": 2997
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Security and isolation",
+          "headingId": "security-and-isolation"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Security and isolation"
+          }
+        ]
+      }
+    },
+    {
+      "id": "28d4c567",
+      "type": "table",
+      "isFinalized": true,
+      "payload": {
+        "raw": "| Topic | Streamdown | StreamMDX |\n| --- | --- | --- |\n| HTML / pipeline posture | Main-thread rehype/remark pipeline | HTML sanitization plus worker isolation options |\n| Security operational model | Simpler runtime surface | Stronger isolation story when the worker is hosted deliberately |\n| CSP implications | Simpler by default | Requires intentional worker policy (`blob:` vs hosted worker asset) |",
+        "range": {
+          "from": 2999,
+          "to": 3403
+        },
+        "inline": [],
+        "meta": {
+          "header": [
+            [
+              {
+                "kind": "text",
+                "text": "Topic"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Streamdown"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "StreamMDX"
+              }
+            ]
+          ],
+          "rows": [
+            [
+              [
+                {
+                  "kind": "text",
+                  "text": "HTML / pipeline posture"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Main-thread rehype/remark pipeline"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "HTML sanitization plus worker isolation options"
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "text",
+                  "text": "Security operational model"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Simpler runtime surface"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Stronger isolation story when the worker is hosted deliberately"
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "text",
+                  "text": "CSP implications"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Simpler by default"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Requires intentional worker policy ("
+                },
+                {
+                  "kind": "code",
+                  "text": "blob:"
+                },
+                {
+                  "kind": "text",
+                  "text": " vs hosted worker asset)"
+                }
+              ]
+            ]
+          ],
+          "align": [
+            null,
+            null,
+            null
+          ]
+        }
+      }
+    },
+    {
+      "id": "45d46926",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Where Streamdown is the better fit",
+        "range": {
+          "from": 3405,
+          "to": 3442
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Where Streamdown is the better fit",
+          "headingId": "where-streamdown-is-the-better-fit"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Where Streamdown is the better fit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "20a3ebfb",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- You already use `react-markdown` and want the smallest possible change.\n- You want streaming-aware formatting behavior without adding worker infrastructure.\n- Your documents are modest in size and your throughput requirements are ordinary.",
+        "range": {
+          "from": 3444,
+          "to": 3685
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "You already use "
               },
               {
                 "kind": "code",
@@ -713,26 +933,282 @@
               },
               {
                 "kind": "text",
-                "text": " compatibility and a minimal setup."
+                "text": " and want the smallest possible change."
               }
             ],
             [
               {
                 "kind": "text",
-                "text": "Choose "
+                "text": "You want streaming-aware formatting behavior without adding worker infrastructure."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Your documents are modest in size and your throughput requirements are ordinary."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "3a7235a2",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Where StreamMDX is the better fit",
+        "range": {
+          "from": 3687,
+          "to": 3723
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Where StreamMDX is the better fit",
+          "headingId": "where-streammdx-is-the-better-fit"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Where StreamMDX is the better fit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "fd02b4b",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- You care about main-thread isolation during frequent streaming updates.\n- You need explicit control over incremental behavior, batching, and queueing.\n- You want the same project to cover React rendering, worker composition, and TUI/protocol consumers.\n- You are willing to pay a slightly more complex setup cost to get those controls.",
+        "range": {
+          "from": 3725,
+          "to": 4062
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "You care about main-thread isolation during frequent streaming updates."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "You need explicit control over incremental behavior, batching, and queueing."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "You want the same project to cover React rendering, worker composition, and TUI/protocol consumers."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "You are willing to pay a slightly more complex setup cost to get those controls."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "1f677b3a",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Benchmark reading guidance",
+        "range": {
+          "from": 4064,
+          "to": 4093
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Benchmark reading guidance",
+          "headingId": "benchmark-reading-guidance"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Benchmark reading guidance"
+          }
+        ]
+      }
+    },
+    {
+      "id": "781f1568",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "When you look at StreamMDX vs Streamdown numbers on the benchmark page, keep the interpretation disciplined:",
+        "range": {
+          "from": 4095,
+          "to": 4203
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "When you look at StreamMDX vs Streamdown numbers on the benchmark page, keep the interpretation disciplined:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "1341ecd9",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Compare engines under the same fixture and scenario.\n- Separate **live incremental** results from **static render** results.\n- Treat first visible render and final convergence as different metrics.\n- Treat memory, bundle cost, and CSP/runtime shape as adjacent tradeoffs, not as interchangeable latency claims.",
+        "range": {
+          "from": 4205,
+          "to": 4517
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Compare engines under the same fixture and scenario."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Separate "
               },
               {
                 "kind": "strong",
                 "children": [
                   {
                     "kind": "text",
-                    "text": "StreamMDX"
+                    "text": "live incremental"
                   }
                 ]
               },
               {
                 "kind": "text",
-                "text": " if you need worker isolation, high-frequency streaming stability, or long-document responsiveness guardrails."
+                "text": " results from "
+              },
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "static render"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": " results."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Treat first visible render and final convergence as different metrics."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Treat memory, bundle cost, and CSP/runtime shape as adjacent tradeoffs, not as interchangeable latency claims."
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "27c5ee69",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Related references",
+        "range": {
+          "from": 4519,
+          "to": 4540
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Related references",
+          "headingId": "related-references"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Related references"
+          }
+        ]
+      }
+    },
+    {
+      "id": "195fd69d",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- [`PERF_HARNESS.md`](./PERF_HARNESS.md)\n- [`PERFORMANCE_GUIDE.md`](./PERFORMANCE_GUIDE.md)\n- [`STREAMING_CORRECTNESS_CONTRACT.md`](./STREAMING_CORRECTNESS_CONTRACT.md)\n- Public benchmark route: <https://stream-mdx.vercel.app/benchmarks>",
+        "range": {
+          "from": 4542,
+          "to": 4779
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "["
+              },
+              {
+                "kind": "code",
+                "text": "PERF_HARNESS.md"
+              },
+              {
+                "kind": "text",
+                "text": "](./PERF_HARNESS.md)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "["
+              },
+              {
+                "kind": "code",
+                "text": "PERFORMANCE_GUIDE.md"
+              },
+              {
+                "kind": "text",
+                "text": "](./PERFORMANCE_GUIDE.md)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "["
+              },
+              {
+                "kind": "code",
+                "text": "STREAMING_CORRECTNESS_CONTRACT.md"
+              },
+              {
+                "kind": "text",
+                "text": "](./STREAMING_CORRECTNESS_CONTRACT.md)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Public benchmark route: <https://stream-mdx.vercel.app/benchmarks>"
               }
             ]
           ],
@@ -749,52 +1225,64 @@
       "blockId": "db082c0"
     },
     {
-      "id": "high-level-positioning",
-      "text": "High-level positioning",
+      "id": "scope-of-this-comparison",
+      "text": "Scope of this comparison",
       "level": 2,
-      "blockId": "3d1dbdb9"
+      "blockId": "770e445e"
+    },
+    {
+      "id": "short-version",
+      "text": "Short version",
+      "level": 2,
+      "blockId": "7028b1e7"
     },
     {
       "id": "architecture",
       "text": "Architecture",
       "level": 2,
-      "blockId": "6a172dfd"
+      "blockId": "2d4e93c4"
     },
     {
-      "id": "streamdown",
-      "text": "Streamdown",
-      "level": 3,
-      "blockId": "3e5198c2"
-    },
-    {
-      "id": "streammdx",
-      "text": "StreamMDX",
-      "level": 3,
-      "blockId": "484017a5"
-    },
-    {
-      "id": "developer-experience",
-      "text": "Developer experience",
+      "id": "integration-tradeoffs",
+      "text": "Integration tradeoffs",
       "level": 2,
-      "blockId": "308df434"
+      "blockId": "60dac7aa"
     },
     {
-      "id": "security",
-      "text": "Security",
+      "id": "what-the-current-harnesses-are-good-at-measuring",
+      "text": "What the current harnesses are good at measuring",
       "level": 2,
-      "blockId": "297a0807"
+      "blockId": "66aba1c9"
     },
     {
-      "id": "tradeoffs",
-      "text": "Tradeoffs",
+      "id": "security-and-isolation",
+      "text": "Security and isolation",
       "level": 2,
-      "blockId": "4478385f"
+      "blockId": "17cf0c62"
     },
     {
-      "id": "when-to-choose-which",
-      "text": "When to choose which",
+      "id": "where-streamdown-is-the-better-fit",
+      "text": "Where Streamdown is the better fit",
       "level": 2,
-      "blockId": "501362c7"
+      "blockId": "45d46926"
+    },
+    {
+      "id": "where-streammdx-is-the-better-fit",
+      "text": "Where StreamMDX is the better fit",
+      "level": 2,
+      "blockId": "3a7235a2"
+    },
+    {
+      "id": "benchmark-reading-guidance",
+      "text": "Benchmark reading guidance",
+      "level": 2,
+      "blockId": "1f677b3a"
+    },
+    {
+      "id": "related-references",
+      "text": "Related references",
+      "level": 2,
+      "blockId": "27c5ee69"
     }
   ],
   "init": {
