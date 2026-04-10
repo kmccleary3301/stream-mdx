@@ -14,8 +14,16 @@ function run(command: string, args: string[], options: { env?: NodeJS.ProcessEnv
   });
 }
 
-async function waitForServer(url: string, retries = 45, delayMs = 1500): Promise<void> {
+async function waitForServer(
+  url: string,
+  child: ReturnType<typeof spawn>,
+  retries = 45,
+  delayMs = 1500,
+): Promise<void> {
   for (let attempt = 0; attempt < retries; attempt += 1) {
+    if (child.exitCode !== null) {
+      throw new Error(`Static docs server exited before readiness check completed (exit ${child.exitCode}).`);
+    }
     try {
       const res = await fetch(url);
       if (res.ok) return;
@@ -29,12 +37,13 @@ async function waitForServer(url: string, retries = 45, delayMs = 1500): Promise
 
 function startServer(): ReturnType<typeof spawn> {
   mkdirSync(TMP_DIR, { recursive: true });
-  const logPath = path.join(TMP_DIR, "docs-dev.log");
+  const logPath = path.join(TMP_DIR, "docs-server.log");
   const logStream = createWriteStream(logPath, { flags: "a" });
   const child = spawn(
-    "npm",
-    ["-w", "stream-mdx-docs", "run", "dev", "--", "--hostname", HOST, "--port", String(PORT)],
+    "python3",
+    ["-m", "http.server", String(PORT), "--bind", HOST],
     {
+      cwd: path.resolve(process.cwd(), "apps/docs/out"),
       env: {
         ...process.env,
         NEXT_PUBLIC_STREAMING_DEMO_API: "true",
@@ -71,9 +80,9 @@ async function stopServer(child: ReturnType<typeof spawn>): Promise<void> {
 async function main(): Promise<void> {
   let server: ReturnType<typeof spawn> | null = null;
   try {
-    run("npm", ["run", "docs:worker:build"]);
+    run("npm", ["run", "docs:build"]);
     server = startServer();
-    await waitForServer(`${BASE_URL}/regression/html`);
+    await waitForServer(`${BASE_URL}/regression/html/`, server);
     run("npm", ["run", "test:regression:seeded-smoke"], {
       env: {
         STREAM_MDX_REGRESSION_BASE_URL: BASE_URL,

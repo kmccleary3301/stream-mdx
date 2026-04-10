@@ -2319,16 +2319,17 @@ function getIncrementalHighlightState(blockId: string, lang: string): Incrementa
 
 async function resolveHighlightLanguage(requestedLanguage: string): Promise<string> {
   if (!highlighter) return "text";
+  const normalizedLanguage = normalizeLang(requestedLanguage);
   const loadedLangs = highlighter.getLoadedLanguages();
-  if (!loadedLangs.includes(requestedLanguage)) {
+  if (!loadedLangs.includes(normalizedLanguage)) {
     try {
-      await highlighter.loadLanguage(requestedLanguage);
+      await highlighter.loadLanguage(normalizedLanguage);
     } catch (loadError) {
-      console.warn(`Failed to load language ${requestedLanguage}, falling back to text:`, loadError);
+      console.warn(`Failed to load language ${normalizedLanguage}, falling back to text:`, loadError);
     }
   }
   const nextLangs = highlighter.getLoadedLanguages();
-  return nextLangs.includes(requestedLanguage) ? requestedLanguage : "text";
+  return nextLangs.includes(normalizedLanguage) ? normalizedLanguage : "text";
 }
 
 function makeLazySignature(codeBody: string, lang: string, tokenLang: string, diffEnabled: boolean): string {
