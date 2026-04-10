@@ -14,14 +14,14 @@
       "selector": "#regression-root h1",
       "computed": {
         "font-family": "Inter, \"Inter Fallback\"",
-        "font-size": "28px",
+        "font-size": "35px",
         "font-weight": "700",
         "font-style": "normal",
-        "line-height": "36.4px",
-        "letter-spacing": "-0.28px",
+        "line-height": "38.5px",
+        "letter-spacing": "-0.35px",
         "color": "rgb(32, 32, 32)",
-        "margin-top": "42px",
-        "margin-bottom": "14px"
+        "margin-top": "52.5px",
+        "margin-bottom": "17.5px"
       }
     },
     "h2": {
@@ -71,7 +71,7 @@
         "padding-top": "0px",
         "padding-right": "0px",
         "padding-bottom": "0px",
-        "padding-left": "44px",
+        "padding-left": "28px",
         "margin-top": "17.5px",
         "margin-bottom": "17.5px",
         "border-top-width": "0px",
@@ -90,7 +90,71 @@
         "box-shadow": "none",
         "overflow": "visible",
         "overflow-x": "visible",
-        "overflow-y": "visible"
+        "overflow-y": "visible",
+        "--list-indent": "2rem",
+        "--list-marker-digits": "1"
+      }
+    },
+    "list-nested-ol": {
+      "selector": "#regression-root li ol",
+      "computed": {
+        "display": "flex",
+        "padding-top": "0px",
+        "padding-right": "0px",
+        "padding-bottom": "0px",
+        "padding-left": "21px",
+        "margin-top": "3.5px",
+        "margin-bottom": "17.5px",
+        "border-top-width": "0px",
+        "border-right-width": "0px",
+        "border-bottom-width": "0px",
+        "border-left-width": "0px",
+        "border-top-color": "rgb(232, 232, 232)",
+        "border-right-color": "rgb(232, 232, 232)",
+        "border-bottom-color": "rgb(232, 232, 232)",
+        "border-left-color": "rgb(232, 232, 232)",
+        "border-top-left-radius": "0px",
+        "border-top-right-radius": "0px",
+        "border-bottom-left-radius": "0px",
+        "border-bottom-right-radius": "0px",
+        "background-color": "rgba(0, 0, 0, 0)",
+        "box-shadow": "none",
+        "overflow": "visible",
+        "overflow-x": "visible",
+        "overflow-y": "visible",
+        "--list-indent": "1.5rem",
+        "--list-marker-digits": "1"
+      }
+    },
+    "list-nested-ul": {
+      "selector": "#regression-root li ul",
+      "computed": {
+        "display": "flex",
+        "padding-top": "0px",
+        "padding-right": "0px",
+        "padding-bottom": "0px",
+        "padding-left": "24.5px",
+        "margin-top": "3.5px",
+        "margin-bottom": "17.5px",
+        "border-top-width": "0px",
+        "border-right-width": "0px",
+        "border-bottom-width": "0px",
+        "border-left-width": "0px",
+        "border-top-color": "rgb(232, 232, 232)",
+        "border-right-color": "rgb(232, 232, 232)",
+        "border-bottom-color": "rgb(232, 232, 232)",
+        "border-left-color": "rgb(232, 232, 232)",
+        "border-top-left-radius": "0px",
+        "border-top-right-radius": "0px",
+        "border-bottom-left-radius": "0px",
+        "border-bottom-right-radius": "0px",
+        "background-color": "rgba(0, 0, 0, 0)",
+        "box-shadow": "none",
+        "overflow": "visible",
+        "overflow-x": "visible",
+        "overflow-y": "visible",
+        "--list-indent": "1.75rem",
+        "--list-marker-digits": "1"
       }
     },
     "list-ol-li": {
@@ -106,10 +170,35 @@
         "::before": {
           "content": "\"1. \"",
           "position": "absolute",
-          "left": "-44px",
-          "right": "554px",
+          "left": "-28px",
           "top": "0px",
-          "width": "44px",
+          "width": "28px",
+          "height": "21px",
+          "margin-top": "0px",
+          "padding-right": "7px",
+          "font-size": "14px",
+          "color": "rgb(32, 32, 32)",
+          "opacity": "0.5",
+          "display": "block"
+        }
+      }
+    },
+    "list-nested-ol-li": {
+      "selector": "#regression-root li ol > li",
+      "computed": {
+        "margin-top": "1.4px",
+        "margin-bottom": "1.4px",
+        "padding-left": "17.5px",
+        "position": "relative",
+        "line-height": "21px"
+      },
+      "pseudo": {
+        "::before": {
+          "content": "\"1. \"",
+          "position": "absolute",
+          "left": "-21px",
+          "top": "0px",
+          "width": "21px",
           "height": "21px",
           "margin-top": "0px",
           "padding-right": "7px",
@@ -133,23 +222,56 @@
         "::before": {
           "content": "\"•\"",
           "position": "absolute",
-          "left": "-21px",
-          "right": "519px",
+          "left": "-24.5px",
           "top": "0px",
-          "width": "21px",
+          "width": "24.5px",
           "height": "21px",
-          "margin-top": "-1.4px",
-          "padding-right": "0px",
+          "margin-top": "-0.7px",
+          "padding-right": "7px",
           "font-size": "17.5px",
           "color": "rgb(32, 32, 32)",
           "opacity": "0.7",
-          "display": "flex"
+          "display": "block"
+        }
+      }
+    },
+    "list-nested-ul-li": {
+      "selector": "#regression-root li ul > li",
+      "computed": {
+        "margin-top": "1.4px",
+        "margin-bottom": "1.4px",
+        "padding-left": "17.5px",
+        "position": "relative",
+        "line-height": "21px"
+      },
+      "pseudo": {
+        "::before": {
+          "content": "\"•\"",
+          "position": "absolute",
+          "left": "-24.5px",
+          "top": "0px",
+          "width": "24.5px",
+          "height": "21px",
+          "margin-top": "-0.7px",
+          "padding-right": "7px",
+          "font-size": "17.5px",
+          "color": "rgb(32, 32, 32)",
+          "opacity": "0.7",
+          "display": "block"
         }
       }
     },
     "footnotes": {
       "missing": true,
       "selector": "#regression-root .footnotes"
+    },
+    "footnotes-ol-li": {
+      "missing": true,
+      "selector": "#regression-root .footnotes ol li"
+    },
+    "footnote-backref": {
+      "missing": true,
+      "selector": "#regression-root .footnotes .footnote-backref"
     },
     "preview-pre-adjacent": {
       "missing": true,

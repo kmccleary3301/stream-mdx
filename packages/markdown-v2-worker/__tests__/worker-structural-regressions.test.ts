@@ -222,9 +222,72 @@ async function runFinalizedMdxStateTest(): Promise<void> {
   }
 }
 
+async function runMdxTransitionsRendererStoreInvariantTest(): Promise<void> {
+  const content = await loadFixture("mdx-transitions.mdx");
+  const harness = await createWorkerHarness();
+  const store = createRendererStore();
+
+  const initMessages = await harness.send({
+    type: "INIT",
+    initialContent: "",
+    prewarmLangs: [],
+    docPlugins: DOC_PLUGINS,
+    mdx: { compileMode: "worker" },
+  });
+  const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
+  assert.ok(init, "worker failed to initialize");
+  store.reset(init.blocks);
+
+  for (let index = 0; index < content.length; index += 31) {
+    const appendMessages = await harness.send({ type: "APPEND", text: content.slice(index, index + 31) });
+    for (const message of appendMessages) {
+      if (message.type !== "PATCH") continue;
+      const patches = message.patches as Patch[];
+
+      const appendIndices = new Map<string, number>();
+      const setPropsIndices = new Map<string, number>();
+      patches.forEach((patch, patchIndex) => {
+        const targetId = patch.at.nodeId ?? patch.at.blockId;
+        if (patch.op === "appendLines") {
+          appendIndices.set(targetId, patchIndex);
+        } else if (patch.op === "setProps") {
+          const blockCandidate = (patch.props as { block?: unknown } | undefined)?.block;
+          if (blockCandidate && typeof blockCandidate === "object") {
+            setPropsIndices.set(targetId, patchIndex);
+          }
+        }
+      });
+
+      for (const [targetId, appendIndex] of appendIndices) {
+        const setPropsIndex = setPropsIndices.get(targetId);
+        if (setPropsIndex !== undefined) {
+          assert.ok(
+            appendIndex < setPropsIndex,
+            `appendLines must precede block setProps for ${targetId} (append=${appendIndex}, setProps=${setPropsIndex})`,
+          );
+        }
+      }
+
+      store.applyPatches(patches, { captureMetrics: false });
+      const violations = store
+        .getInvariantViolations()
+        .filter((message) => message.includes("appendLines guard rejected"));
+      assert.deepStrictEqual(violations, [], `renderer store rejected appendLines during mdx-transitions chunk @${index}`);
+    }
+  }
+
+  const finalizeMessages = await harness.send({ type: "FINALIZE" });
+  applyPatchMessages(store, finalizeMessages);
+  const finalViolations = store
+    .getInvariantViolations()
+    .filter((message) => message.includes("appendLines guard rejected"));
+  assert.deepStrictEqual(finalViolations, [], "renderer store rejected appendLines during mdx-transitions finalize");
+}
+
 await runAppendLinesTailGuardTest();
 await runStreamingTableDeferralTest();
 await runCurrencyDoesNotTriggerStreamingMathTest();
 await runFinalizedTableShapeTest();
 await runFinalizedMdxStateTest();
+await runMdxTransitionsRendererStoreInvariantTest();
 console.log("worker structural regressions test passed");

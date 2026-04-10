@@ -76,11 +76,29 @@ The harness accepts `--scheduling` (`default`, `smooth`, `aggressive`) and optio
 --maxLowPriorityBatchesPerFlush 2
 --urgentQueueThreshold 3
 --historyLimit 200
+--startupMicrotaskFlushes 4
+--adaptiveBudgeting true|false
 --adaptiveSwitch true|false
 --adaptiveQueueThreshold 12
 ```
 
 These map to `StreamingSchedulerOptions` in `@stream-mdx/react`.
+
+Interpretation rule:
+
+- use a fixed scheduler preset when comparing candidate vs baseline
+- do not change scheduler knobs mid-comparison and then treat the result as a pure renderer win/loss
+- if you need claim-grade browser comparisons, line them up with the locked methodology described in [`SCHEDULING_AND_JITTER.md`](./SCHEDULING_AND_JITTER.md)
+
+Useful scheduler-specific commands:
+
+```bash
+npm run test:regression:scheduler-parity
+STREAM_MDX_PERF_BASE_URL=http://127.0.0.1:3012 npm run perf:characterize:scheduler
+```
+
+- `test:regression:scheduler-parity` checks that representative fixtures converge to the same final HTML under `smooth`, `timeout`, and `microtask`.
+- `perf:characterize:scheduler` writes a local `CI locked` vs `Explore` summary to `tmp/perf-runs/scheduler-characterization/`.
 
 ## Optional React profiler
 
@@ -156,3 +174,4 @@ tmp/perf-baselines/S6_extreme_edge_like (optional edge-like stress baseline)
 - CDP metrics and DOM counters come from `Performance.getMetrics` and `Memory.getDOMCounters` (Chromium only).
 - This harness uses the docs worker (`/workers/markdown-worker.js`) and demo registry.
 - `perf:demo` targets the `/demo` page and is separate from this harness.
+- Treat shipped client bundle, hosted worker asset, runtime loaded code, and peak memory as different cost categories.

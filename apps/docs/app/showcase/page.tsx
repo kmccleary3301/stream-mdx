@@ -18,15 +18,6 @@ const filters: { key: FilterKey; label: string }[] = [
   { key: "performance", label: "Performance" },
 ];
 
-const tagsBySlug: Record<string, string[]> = {
-  "stream-mdx-devx-catalog": ["docs", "mdx", "performance", "safety"],
-  "html-overrides": ["rendering", "components", "safety"],
-  "custom-regex": ["plugin", "extensibility", "rendering"],
-  "mdx-components": ["mdx", "rendering", "extensibility", "safety"],
-  "mermaid-diagrams": ["plugin", "visualization", "rendering"],
-  "perf-harness": ["performance", "testing", "safety"],
-};
-
 export default function ShowcaseIndexPage() {
   const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
   const [query, setQuery] = useState("");
@@ -41,7 +32,7 @@ export default function ShowcaseIndexPage() {
     };
 
     return SHOWCASE_ITEMS.filter((item) => {
-      const tags = tagsBySlug[item.slug] ?? ["streaming"];
+      const tags = item.tags.length > 0 ? item.tags : ["streaming"];
       const matchesFilter =
         activeFilter === "all" ||
         tags.some((tag) => filterSetByKey[activeFilter as Exclude<FilterKey, "all">].has(tag));
@@ -54,12 +45,18 @@ export default function ShowcaseIndexPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-10">
-      <header className="flex flex-col gap-3">
-        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">Showcase</div>
-        <h1 className="text-3xl font-semibold text-foreground">Feature-focused demos and references</h1>
-        <p className="max-w-2xl text-sm text-muted">
-          Browse demos, harnesses, and integrations that highlight high-performance streaming behavior.
+      <header className="route-panel-hero flex flex-col gap-4 px-6 py-8 md:px-8">
+        <div className="route-kicker">Showcase</div>
+        <h1 className="text-3xl font-semibold text-foreground md:text-4xl">Feature-focused demos and references</h1>
+        <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground md:text-base">
+          Browse demos, harnesses, and integrations that highlight high-performance streaming behavior, design-system overrides, and
+          reliability-oriented workflows.
         </p>
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <span className="route-chip">Implementation notes</span>
+          <span className="route-chip">Reproducible scripts</span>
+          <span className="route-chip">Feature-specific articles</span>
+        </div>
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
           {filters.map((filter) => (
             <button
@@ -67,10 +64,10 @@ export default function ShowcaseIndexPage() {
               type="button"
               onClick={() => setActiveFilter(filter.key)}
               className={cn(
-                "rounded-full border px-3 py-1 transition",
+                "rounded-full border px-3 py-1.5 transition",
                 activeFilter === filter.key
-                  ? "border-foreground/20 bg-foreground/5 text-foreground"
-                  : "border-border/40 bg-background text-muted hover:text-foreground",
+                  ? "border-foreground/20 bg-foreground/7 text-foreground shadow-[0_14px_32px_-28px_rgba(15,23,42,0.55)]"
+                  : "border-border/50 bg-background/75 text-muted hover:border-border hover:text-foreground",
               )}
             >
               {filter.label}
@@ -80,7 +77,7 @@ export default function ShowcaseIndexPage() {
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              className="h-8 w-48 rounded-full border border-border/40 bg-background px-3 text-xs text-foreground placeholder:text-muted max-sm:w-full"
+              className="h-9 w-52 rounded-full border border-border/50 bg-background/80 px-4 text-xs text-foreground placeholder:text-muted shadow-[0_14px_30px_-28px_rgba(15,23,42,0.55)] max-sm:w-full"
               placeholder="Search features..."
             />
           </div>
@@ -92,18 +89,18 @@ export default function ShowcaseIndexPage() {
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {filteredItems.map((item) => (
-          <div key={item.slug} className="rounded-lg border border-border/40 bg-background p-5">
+          <div key={item.slug} className="route-grid-card flex flex-col p-5">
             <div className="text-sm font-semibold text-foreground">{item.title}</div>
-            {item.description ? <p className="mt-2 text-sm text-muted">{item.description}</p> : null}
+            {item.description ? <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.description}</p> : null}
             <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-muted">
-              {(tagsBySlug[item.slug] ?? ["streaming"]).map((tag) => (
-                <span key={tag} className="rounded-full border border-border/40 px-2 py-0.5">
+              {(item.tags.length > 0 ? item.tags : ["streaming"]).map((tag) => (
+                <span key={tag} className="rounded-full border border-border/50 bg-background/70 px-2.5 py-1">
                   {tag}
                 </span>
               ))}
             </div>
             <Link
-              className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-foreground underline decoration-1 decoration-gray-a4 underline-offset-4"
+              className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-foreground underline decoration-1 decoration-gray-a4 underline-offset-4"
               href={`/showcase/${item.slug}`}
             >
               Open
@@ -113,13 +110,13 @@ export default function ShowcaseIndexPage() {
       </section>
 
       {filteredItems.length === 0 ? (
-        <section className="rounded-lg border border-border/40 bg-muted/20 p-6 text-sm text-muted">
+        <section className="route-panel p-6 text-sm text-muted">
           No showcase entries match this filter/query yet. Try clearing the search or switching filters.
         </section>
       ) : null}
 
-      <section className="rounded-lg border border-border/40 bg-muted/20 p-6 text-sm text-muted">
-        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">How to use this page</div>
+      <section className="route-panel p-6 text-sm text-muted">
+        <div className="route-kicker">How to use this page</div>
         <p className="mt-2">
           Each demo page includes implementation notes, toggles, and reproducible scripts. Use the perf harness to validate changes before
           publishing.

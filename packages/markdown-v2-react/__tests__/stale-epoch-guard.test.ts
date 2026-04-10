@@ -1,8 +1,14 @@
 import assert from "node:assert";
 
 import { PATCH_ROOT_ID, type Block, type Patch } from "@stream-mdx/core";
+import DOMPurifyFactory from "dompurify";
 
 import { createRendererStore } from "../src/renderer/store";
+
+const dompurifyShim = DOMPurifyFactory as unknown as { sanitize?: (html: string, config?: unknown) => string };
+if (typeof dompurifyShim.sanitize !== "function") {
+  dompurifyShim.sanitize = (html: string) => html;
+}
 
 function createParagraphBlock(raw: string): Block {
   return {
@@ -11,6 +17,18 @@ function createParagraphBlock(raw: string): Block {
     isFinalized: false,
     payload: {
       raw,
+    },
+  };
+}
+
+function createCodeBlock(): Block {
+  return {
+    id: "code-block",
+    type: "code",
+    isFinalized: false,
+    payload: {
+      raw: ["alpha()", "beta()"].join("\n"),
+      meta: { lang: "ts" },
     },
   };
 }
@@ -36,6 +54,7 @@ async function main() {
   assert.ok(replaced, "expected paragraph block node after semantic replacement");
   assert.ok(replaced.blockEpoch > staleEpoch, "semantic block replacement should advance block epoch");
   assert.strictEqual(replaced.block?.payload.raw, "beta", "expected semantic replacement to update block payload");
+  const replacedEpoch = replaced.blockEpoch;
 
   store.applyPatches([
     {
@@ -67,6 +86,34 @@ async function main() {
     violations.some((message) => message.includes("stale epoch rejected:setProps:paragraph-block")),
     "expected stale epoch rejection to be recorded in diagnostics",
   );
+
+  const codeStore = createRendererStore([createCodeBlock()]);
+  const initialCode = codeStore.getNode("code-block");
+  assert.ok(initialCode, "expected code block node");
+  const initialCodeEpoch = initialCode.blockEpoch;
+  const codeLineId = initialCode.children[0];
+  assert.ok(typeof codeLineId === "string" && codeLineId.length > 0, "expected first code line child");
+
+  codeStore.applyPatches([
+    {
+      op: "setProps",
+      at: { blockId: "code-block", nodeId: codeLineId },
+      props: {
+        index: 0,
+        text: "alpha(updated)",
+      },
+      meta: {
+        kind: "semantic",
+        blockEpoch: initialCodeEpoch,
+        parseEpoch: initialCodeEpoch + 1,
+        tx: 101,
+      },
+    } satisfies Patch,
+  ]);
+
+  const updatedCode = codeStore.getNode("code-block");
+  assert.ok(updatedCode, "expected code block after semantic line update");
+  assert.ok(updatedCode.blockEpoch > initialCodeEpoch, "semantic code-line update should advance owning block epoch");
 
   store.applyPatches([
     {

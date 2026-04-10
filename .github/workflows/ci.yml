@@ -52,6 +52,9 @@ jobs:
       - name: HTML parity (server blocks renderer vs browser final DOM)
         run: npm run determinism:html-parity
 
+      - name: Benchmark methodology contract
+        run: npm run test:benchmarks:methodology
+
       - name: Pack (dry-run)
         run: npm --workspaces --if-present pack --dry-run
 
@@ -87,6 +90,8 @@ jobs:
           STICKY_SCROLL_DOCS_URL=http://127.0.0.1:4173/docs/getting-started/ \
           STICKY_SCROLL_EVIDENCE_DIR=tmp/sticky-scroll-check-ci \
           npm run docs:sticky-scroll:check
+          STREAM_MDX_REGRESSION_BASE_URL=http://127.0.0.1:4173 \
+          npm run test:regression:scheduler-parity
 
       - name: Docs screenshots (smoke)
         run: npm run docs:screenshots:smoke

@@ -1,12 +1,13 @@
 # HTML Overrides (ShadCN)
 
-This showcase demonstrates mapping raw HTML/markdown tags to design-system components while keeping StreamMDX's patch model and deterministic output.
+This showcase demonstrates mapping raw HTML and standard markdown tags to design-system components while keeping StreamMDX's patch model and deterministic output intact. The important point is that you can adopt your design system without forking parser behavior.
 
 ## Why this matters
 
 - You can keep the default worker/parser behavior and only swap the render layer.
 - Streaming performance remains stable because overrides run after block parsing.
 - This is the safest path for design-system alignment without forking parser behavior.
+- It keeps your docs/demo surface aligned with the same renderer logic used in production.
 
 ## Example: map table tags to ShadCN wrappers
 
@@ -66,3 +67,26 @@ const htmlElements: Partial<HtmlElements> = {
 - Keep sanitization enabled for untrusted HTML.
 - Use overflow wrappers for `table`, `pre`, and block math renders.
 - Avoid adding heavy client hooks in overrides unless deferred.
+
+## When not to use overrides
+
+Do **not** reach for `htmlElements` or `tableElements` when the thing you want is actually parser behavior.
+
+Use overrides when:
+
+- the semantics are already correct
+- you only need different presentation
+- the design system requires wrappers, spacing, or custom component shells
+
+Reach for plugins or worker-side extension points when you need:
+
+- new syntax
+- new semantic nodes
+- custom anticipation behavior
+- domain-specific parsing
+
+## Next steps
+
+- API details: [Public API](/docs/public-api)
+- MDX and HTML guide: [MDX and HTML](/docs/guides/mdx-and-html)
+- Showcase index: [Showcase](/showcase)

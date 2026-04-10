@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
-import { GUIDE_ITEMS, findGuideBySlug, getAllGuideSlugs, readGuideFile } from "@/lib/guides";
+import { findGuideBySlug, getAllGuideSlugs, readGuideFile } from "@/lib/guides";
+import { getDocsShellSections, getGuideCollectionItems } from "@/lib/docs-nav";
 import { deriveTocHeadingsFromBlocks, readGuideSnapshot } from "@/lib/snapshot-artifacts";
 import { SnapshotArticle } from "@/components/articles/snapshot-article";
 import { StreamingArticle } from "@/components/articles/streaming-article";
@@ -18,26 +19,8 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
 
   const snapshot = await readGuideSnapshot(slug);
   const markdown = await readGuideFile(item.file);
-  const navItems = GUIDE_ITEMS.map((guide) => ({ slug: guide.slug, title: guide.title }));
-  const navSections = [
-    {
-      title: "Docs",
-      items: [
-        { title: "Docs home", href: "/docs" },
-        { title: "Getting started", href: "/docs/getting-started" },
-        { title: "Configuration", href: "/docs/configuration" },
-        { title: "React integration", href: "/docs/react-integration" },
-        { title: "Public API", href: "/docs/public-api" },
-      ],
-    },
-    {
-      title: "Guides",
-      items: GUIDE_ITEMS.map((guide) => ({
-        title: guide.title,
-        href: `/docs/guides/${guide.slug}`,
-      })),
-    },
-  ];
+  const navItems = getGuideCollectionItems();
+  const navSections = getDocsShellSections({ includeDocsHomeLink: true });
 
   return (
     <DocsShell

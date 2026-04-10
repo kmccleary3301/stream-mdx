@@ -570,6 +570,29 @@ function withPatchControlMeta(
   };
 }
 
+function withPatchKind(patch: Patch, kind: PatchKind): Patch {
+  if (patch.op === "setHTML") {
+    return {
+      ...patch,
+      patchMeta: {
+        ...(patch.patchMeta ?? {}),
+        kind,
+      },
+    };
+  }
+  return {
+    ...patch,
+    meta: {
+      ...(patch.meta ?? {}),
+      kind,
+    },
+  };
+}
+
+function withPatchKindBatch(patches: Patch[], kind: PatchKind): Patch[] {
+  return patches.map((patch) => withPatchKind(patch, kind));
+}
+
 function annotatePatchBatch(patches: Patch[], tx: number, parseEpoch: number): Patch[] {
   const streamSeq = ++patchStreamSeq;
   return patches.map((patch) => {
@@ -611,7 +634,6 @@ function ensureAnnotatedPatchBatch(
     return { patches, parseEpoch: resolvedParseEpoch };
   }
   const annotated = annotatePatchBatch(patches, tx, resolvedParseEpoch);
-  syncEmittedBlockEpochsFromPatches(annotated, resolvedParseEpoch);
   return { patches: annotated, parseEpoch: resolvedParseEpoch };
 }
 
@@ -1785,14 +1807,72 @@ function renderShikiToken(token: ShikiThemedToken): string {
       styles.push(`text-decoration: ${decorations.join(" ")}`);
     }
   }
+  if (styles.length === 0) {
+    return escapeHtmlText(token.content);
+  }
   const styleAttr = styles.length > 0 ? ` style="${styles.join(";")}"` : "";
   return `<span${styleAttr}>${escapeHtmlText(token.content)}</span>`;
 }
 
+function hasOnlyWhitespace(content: string): boolean {
+  return /^[\t ]+$/.test(content);
+}
+
+function sameShikiTokenStyle(a: ShikiThemedToken, b: ShikiThemedToken): boolean {
+  const variantKeys = new Set([...Object.keys(a.variants), ...Object.keys(b.variants)]);
+  for (const key of variantKeys) {
+    const aStyle = a.variants[key];
+    const bStyle = b.variants[key];
+    if ((aStyle?.color ?? null) !== (bStyle?.color ?? null)) return false;
+    if ((aStyle?.fontStyle ?? null) !== (bStyle?.fontStyle ?? null)) return false;
+  }
+  return true;
+}
+
 function mergeWhitespaceTokens(tokens: ShikiThemedToken[][]): ShikiThemedToken[][] {
-  // Keep token boundaries stable so incremental snapshots are deterministic
-  // across different chunking scenarios.
-  return tokens;
+  return tokens.map((lineTokens) => {
+    if (lineTokens.length <= 1) return lineTokens;
+
+    const redistributed: ShikiThemedToken[] = [];
+    let pendingWhitespace = "";
+
+    for (let i = 0; i < lineTokens.length; i += 1) {
+      const token = lineTokens[i];
+      if (hasOnlyWhitespace(token.content)) {
+        pendingWhitespace += token.content;
+        continue;
+      }
+
+      const normalizedToken: ShikiThemedToken = pendingWhitespace
+        ? {
+            content: `${pendingWhitespace}${token.content}`,
+            variants: token.variants,
+          }
+        : token;
+      pendingWhitespace = "";
+
+      const previous = redistributed[redistributed.length - 1];
+      if (previous && sameShikiTokenStyle(previous, normalizedToken)) {
+        previous.content += normalizedToken.content;
+      } else {
+        redistributed.push({
+          content: normalizedToken.content,
+          variants: normalizedToken.variants,
+        });
+      }
+    }
+
+    if (pendingWhitespace) {
+      const previous = redistributed[redistributed.length - 1];
+      if (previous) {
+        previous.content += pendingWhitespace;
+      } else {
+        redistributed.push({ content: pendingWhitespace, variants: {} });
+      }
+    }
+
+    return redistributed;
+  });
 }
 
 function renderShikiLines(tokens: ShikiThemedToken[][]): Array<string | null> {
@@ -2532,7 +2612,7 @@ async function handleLazyTokenizationRequest(request: LazyTokenizationRequest): 
   const patches: Patch[] = [];
   diffNodeSnapshot(updated.id, prevSnapshot, nextSnapshot, patches, metricsCollector);
   if (patches.length > 0) {
-    dispatchPatchBatch(patches, metricsCollector);
+    dispatchPatchBatch(withPatchKindBatch(patches, "enrichment"), metricsCollector);
   } else {
     emitMetricsSample(metricsCollector);
     if (getActiveMetricsCollector() === metricsCollector) {
@@ -3332,7 +3412,8 @@ async function emitDocumentPatch(currentBlocks: Block[]) {
   }
   if (patches.length > 0) {
     const tx = ++txCounter;
-    const { patches: annotated } = ensureAnnotatedPatchBatch(patches, tx, nextParseEpoch());
+    const { patches: annotated, parseEpoch } = ensureAnnotatedPatchBatch(patches, tx, nextParseEpoch());
+    syncEmittedBlockEpochsFromPatches(annotated, parseEpoch);
     postMessage({
       type: "PATCH",
       tx,
@@ -3488,7 +3569,8 @@ function dispatchPatchBatch(patches: Patch[], metrics?: WorkerMetricsCollector |
   }
 
   const tx = ++txCounter;
-  const { patches: annotatedPatches } = ensureAnnotatedPatchBatch(patches, tx);
+  const { patches: annotatedPatches, parseEpoch } = ensureAnnotatedPatchBatch(patches, tx);
+  syncEmittedBlockEpochsFromPatches(annotatedPatches, parseEpoch);
   const patchBytes = metrics ? estimatePatchSize(annotatedPatches) : 0;
   metrics?.finalizePatch(tx, annotatedPatches.length, deferredPatchQueue.length, patchBytes);
   const changedBlockReport = countChangedBlocksFromPatches(annotatedPatches);
@@ -3712,24 +3794,29 @@ function reportWorkerStructuralInvariantViolations(context: string, nextBlocks: 
 function diffNodeSnapshot(blockId: string, prevNode: NodeSnapshot, nextNode: NodeSnapshot, patches: Patch[], metrics?: WorkerMetricsCollector | null) {
   const prevProps = prevNode.props ?? {};
   const nextProps = nextNode.props ?? {};
+  const propsChanged = !shallowEqual(prevProps, nextProps);
 
-  if (!shallowEqual(prevProps, nextProps)) {
+  const emitSetProps = () => {
+    if (!propsChanged) return;
     patches.push({
       op: "setProps",
       at: { blockId, nodeId: prevNode.id },
       props: nextProps ?? {},
     });
-  }
+  };
 
   const prevChildren = prevNode.children ?? [];
   const nextChildren = nextNode.children ?? [];
 
   if (prevNode.type === "list" && nextNode.type === "list") {
+    emitSetProps();
     diffListChildren(blockId, prevNode, prevChildren, nextChildren, patches, metrics);
     return;
   }
 
   // Special handling for code blocks: detect pure append and emit appendLines.
+  // Defer the code-block setProps until after child mutations so the renderer
+  // store does not normalize the code subtree before an appendLines patch lands.
   if (prevNode.type === "code" && nextNode.type === "code") {
     const commonLength = Math.min(prevChildren.length, nextChildren.length);
     let divergeIndex = 0;
@@ -3789,10 +3876,13 @@ function diffNodeSnapshot(blockId: string, prevNode: NodeSnapshot, nextNode: Nod
           : {}),
       });
       metrics?.recordAppendLines(appended.length);
+      emitSetProps();
       return;
     }
 
     // Fall through to generic handling for other mutations (edits/deletes)
+  } else {
+    emitSetProps();
   }
 
   const minLen = Math.min(prevChildren.length, nextChildren.length);
@@ -3874,6 +3964,10 @@ function diffNodeSnapshot(blockId: string, prevNode: NodeSnapshot, nextNode: Nod
       index: i,
       node: nextChildren[i],
     });
+  }
+
+  if (prevNode.type === "code" && nextNode.type === "code") {
+    emitSetProps();
   }
 }
 
@@ -4273,13 +4367,13 @@ function handleMdxStatus(blockId: string, update: MdxStatusUpdate) {
 
   reportWorkerStructuralInvariantViolations("handleMdxStatus", blocks);
   dispatchPatchBatch([
-    {
+    withPatchKind({
       op: "setProps",
       at: { blockId },
       props: {
         block: updated,
       },
-    },
+    }, "semantic"),
   ]);
 }
 

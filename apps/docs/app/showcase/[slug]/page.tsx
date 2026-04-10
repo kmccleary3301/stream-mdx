@@ -2,22 +2,15 @@ import { notFound } from "next/navigation";
 import { Link } from "next-view-transitions";
 
 import { findShowcaseBySlug, getAllShowcaseSlugs, readShowcaseFile } from "@/lib/showcase";
-import { renderMarkdownToHtml } from "@/lib/docs";
 import { SHOWCASE_ITEMS } from "@/lib/showcase";
+import { readShowcaseSnapshot } from "@/lib/snapshot-artifacts";
+import { SnapshotArticle } from "@/components/articles/snapshot-article";
+import { StreamingArticle } from "@/components/articles/streaming-article";
 import { CollectionNavigation } from "@/components/collection-navigation";
 
 export function generateStaticParams() {
   return getAllShowcaseSlugs().map((slug) => ({ slug }));
 }
-
-const tagsBySlug: Record<string, string[]> = {
-  "stream-mdx-devx-catalog": ["docs", "mdx"],
-  "html-overrides": ["rendering", "components"],
-  "custom-regex": ["plugin", "extensibility"],
-  "mdx-components": ["mdx", "rendering"],
-  "mermaid-diagrams": ["plugin", "visualization"],
-  "perf-harness": ["performance", "testing"],
-};
 
 export default async function ShowcasePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -25,10 +18,10 @@ export default async function ShowcasePage({ params }: { params: Promise<{ slug:
   if (!item) return notFound();
 
   const markdown = await readShowcaseFile(item.file);
-  const html = await renderMarkdownToHtml(markdown);
+  const snapshot = await readShowcaseSnapshot(slug);
 
   const navItems = SHOWCASE_ITEMS.map((showcaseItem) => ({ slug: showcaseItem.slug, title: showcaseItem.title }));
-  const tags = tagsBySlug[item.slug] ?? ["streaming"];
+  const tags = item.tags.length > 0 ? item.tags : ["streaming"];
 
   return (
     <div className="mx-auto flex w-full max-w-screen-xl flex-col gap-6 px-4 py-10">
@@ -54,11 +47,7 @@ export default async function ShowcasePage({ params }: { params: Promise<{ slug:
       </div>
 
       <div className="rounded-xl border border-border bg-background p-6 shadow-sm">
-        <div
-          id="article-content-wrapper"
-          className="prose markdown max-w-none text-theme-primary"
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
+        {snapshot ? <SnapshotArticle blocks={snapshot.blocks} /> : <StreamingArticle content={markdown} />}
       </div>
 
       <CollectionNavigation items={navItems} basePath="/showcase" />

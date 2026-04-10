@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { findDocBySlug, getAllDocSlugs, readDocFile } from "../../../lib/docs";
-import { DOC_SECTIONS } from "../../../lib/docs";
+import { getDocCollectionItems, getDocsShellSections } from "@/lib/docs-nav";
 import { deriveTocHeadingsFromBlocks, readDocSnapshot } from "../../../lib/snapshot-artifacts";
 import { SnapshotArticle } from "@/components/articles/snapshot-article";
 import { StreamingArticle } from "@/components/articles/streaming-article";
@@ -12,11 +12,6 @@ export function generateStaticParams() {
   return getAllDocSlugs().map((slug) => ({ slug }));
 }
 
-function docHref(slug: string) {
-  if (!slug) return "/docs";
-  return `/docs/${slug}`;
-}
-
 export default async function DocPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const doc = findDocBySlug(slug);
@@ -25,17 +20,8 @@ export default async function DocPage({ params }: { params: Promise<{ slug: stri
   const snapshot = await readDocSnapshot(slug);
   const markdown = await readDocFile(doc.file);
 
-  const navItems = DOC_SECTIONS.flatMap((section) => section.items)
-    .filter((item) => item.slug.length > 0)
-    .map((item) => ({ slug: item.slug, title: item.title }));
-
-  const navSections = DOC_SECTIONS.map((section) => ({
-    title: section.title,
-    items: section.items.map((item) => ({
-      title: item.title,
-      href: docHref(item.slug),
-    })),
-  }));
+  const navItems = getDocCollectionItems();
+  const navSections = getDocsShellSections({ includeDocsHomeLink: true });
 
   return (
     <DocsShell

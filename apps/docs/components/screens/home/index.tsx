@@ -14,20 +14,33 @@ export default function Home() {
   return (
     <FadeIn.Container>
       <FadeIn.Item>
-        <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
-          <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">StreamMDX</h1>
-          <p className="mt-3 text-base text-muted-old md:text-lg">
-            High-performance streaming Markdown/MDX renderer for React.
+        <div className="route-panel-hero mx-auto flex max-w-5xl flex-col items-center px-6 py-10 text-center md:px-10 md:py-14">
+          <div className="route-kicker">Worker-first streaming markdown</div>
+          <h1 className="mt-4 max-w-4xl text-4xl font-semibold tracking-tight md:text-6xl">
+            Stream Markdown and MDX without treating every update like a full rerender.
+          </h1>
+          <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">
+            StreamMDX combines worker parsing, patch-based rendering, seeded regression gates, and a real benchmark surface for teams that
+            need deterministic incremental behavior rather than cosmetic demos.
           </p>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-xs text-muted-foreground">
+            <span className="route-chip">Worker parser</span>
+            <span className="route-chip">MDX + math + HTML</span>
+            <span className="route-chip">Seeded regression suite</span>
+            <span className="route-chip">Benchmark lab</span>
+          </div>
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
             <Button asChild size="sm">
               <Link href="/demo">Open Demo</Link>
             </Button>
             <Button asChild size="sm" variant="outline">
               <Link href="/docs">Read Docs</Link>
             </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link href="/benchmarks">View Benchmarks</Link>
+            </Button>
           </div>
-          <div className="mt-4 inline-flex items-center gap-2 rounded-lg border border-border/60 bg-background/40 px-3 py-2 text-sm shadow-sm">
+          <div className="route-panel mt-5 inline-flex items-center gap-2 px-3 py-2 text-sm shadow-sm">
             <span className="text-muted-old">$</span>
             <code>npm install stream-mdx</code>
             <CopyButton text="npm install stream-mdx" />
@@ -37,11 +50,11 @@ export default function Home() {
       <Spacer size="lg" />
       <FadeIn.Item>
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
-          <div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-old">Proof, not promises</div>
+          <div className="route-kicker">Proof, not promises</div>
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-lg border border-border/60 bg-background/40 p-5">
+            <div className="route-grid-card p-5">
               <div className="flex items-center gap-2 text-sm font-semibold">
-                <span className="flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background/60">
+                <span className="route-icon-box text-sky-700 dark:text-sky-300">
                   <TerminalSquare size={14} />
                 </span>
                 Worker-first parsing
@@ -58,9 +71,9 @@ export default function Home() {
                 Architecture
               </Link>
             </div>
-            <div className="rounded-lg border border-border/60 bg-background/40 p-5">
+            <div className="route-grid-card p-5">
               <div className="flex items-center gap-2 text-sm font-semibold">
-                <span className="flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background/60">
+                <span className="route-icon-box text-amber-700 dark:text-amber-300">
                   <Blocks size={14} />
                 </span>
                 Patch-based rendering
@@ -74,9 +87,9 @@ export default function Home() {
                 View demo
               </Link>
             </div>
-            <div className="rounded-lg border border-border/60 bg-background/40 p-5">
+            <div className="route-grid-card p-5">
               <div className="flex items-center gap-2 text-sm font-semibold">
-                <span className="flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background/60">
+                <span className="route-icon-box text-emerald-700 dark:text-emerald-300">
                   <ShieldCheck size={14} />
                 </span>
                 Output locked
@@ -100,9 +113,10 @@ export default function Home() {
       <FadeIn.Item>
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
           <div className="max-w-2xl">
-            <div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-old">Feature highlights</div>
-            <p className="mt-3 text-sm text-muted-foreground">
-              Everything you need for production-grade streaming MDX.
+            <div className="route-kicker">Feature highlights</div>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              The public site now covers the integration surface, benchmark methodology, showcase articles, and the regression work that
+              keeps the renderer honest.
             </p>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
@@ -150,9 +164,9 @@ export default function Home() {
                 cta: "Security docs",
               },
             ].map((item) => (
-              <div key={item.title} className="rounded-lg border border-border/60 bg-background/40 p-4">
+              <div key={item.title} className="route-grid-card p-4">
                 <div className="flex items-center gap-2 text-sm font-semibold">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background/60">
+                  <span className="route-icon-box text-rose-700 dark:text-rose-300">
                     <item.icon size={14} />
                   </span>
                   {item.title}

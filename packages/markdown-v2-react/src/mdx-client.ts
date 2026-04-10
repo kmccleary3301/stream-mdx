@@ -53,7 +53,7 @@ export class MDXClient {
       throw new Error("Block is not MDX type");
     }
 
-    const cacheKey = block.id;
+    const cacheKey = `${block.id}\u0000${block.payload.raw ?? ""}`;
 
     // Check if compilation is already in progress
     const cachedPromise = this.cache.get(cacheKey);

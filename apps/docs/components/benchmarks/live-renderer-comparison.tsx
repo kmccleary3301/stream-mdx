@@ -1,10 +1,18 @@
 "use client";
 
+import {
+  BENCHMARK_CI_PROFILE,
+  BENCHMARK_EXPLORE_DEFAULTS,
+  getLiveBenchmarkScheduling,
+  type BenchmarkProfile,
+  type MethodologyMode,
+  type OrderMode,
+} from "@/lib/benchmark-methodology";
 import { BottomStickScrollArea } from "@/components/layout/bottom-stick-scroll-area";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
-import { StreamingMarkdown, type StreamingMarkdownHandle } from "@stream-mdx/react";
+import { StreamingMarkdown, type StreamingMarkdownHandle, type StreamingSchedulerOptions } from "@stream-mdx/react";
 import ReactMarkdown from "react-markdown";
 import { Streamdown } from "streamdown";
 import remarkGfm from "remark-gfm";
@@ -13,11 +21,8 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 type EngineKey = "streammdx" | "streamdown" | "react-markdown";
 type RunState = "idle" | "running" | "paused" | "done";
 type EnginePhase = "warmup" | "measured";
-type OrderMode = "rotate" | "random" | "fixed";
 type ChartMetric = "first" | "final";
 type ChartLayout = "single" | "split";
-type BenchmarkProfile = "parity-gfm" | "streaming-heavy";
-type MethodologyMode = "explore" | "ci-locked";
 
 type DeltaPoint = {
   seq: number;
@@ -101,16 +106,6 @@ const CHART_MARGIN = { top: 12, right: 16, bottom: 34, left: 56 };
 const CHART_PLOT_WIDTH = CHART_WIDTH - CHART_MARGIN.left - CHART_MARGIN.right;
 const CHART_PLOT_HEIGHT = CHART_HEIGHT - CHART_MARGIN.top - CHART_MARGIN.bottom;
 const AXIS_TICK_COUNT = 5;
-const CI_PROFILE = {
-  chunkChars: 42,
-  intervalMs: 32,
-  repeatCount: 16,
-  scoredRuns: 5,
-  orderMode: "rotate" as const,
-  profile: "parity-gfm" as const,
-  chartLayout: "split" as const,
-};
-
 const ENGINE_META: Array<{ key: EngineKey; label: string; color: string; dash?: string; strokeWidth?: number }> = [
   { key: "streammdx", label: "StreamMDX", color: "#2563eb", strokeWidth: 2 },
   { key: "streamdown", label: "Streamdown", color: "#22c55e", dash: "7 5", strokeWidth: 2.6 },
@@ -300,11 +295,7 @@ function StreamMdxPanel({
     footnotes: boolean;
     callouts: boolean;
   };
-  scheduling: {
-    batch: "rAF" | "microtask" | "timeout";
-    startupMicrotaskFlushes: number;
-    adaptiveBudgeting?: boolean;
-  };
+  scheduling: StreamingSchedulerOptions;
 }) {
   const setHandleRef = useCallback(
     (handle: StreamingMarkdownHandle | null) => {
@@ -415,11 +406,7 @@ export function LiveRendererComparison() {
     [profile],
   );
   const streamMdxScheduling = useMemo(
-    () => ({
-      batch: "rAF" as const,
-      startupMicrotaskFlushes: methodologyMode === "ci-locked" ? 8 : 4,
-      adaptiveBudgeting: methodologyMode === "ci-locked" ? false : undefined,
-    }),
+    () => getLiveBenchmarkScheduling(methodologyMode),
     [methodologyMode],
   );
   const reactMarkdownPlugins = useMemo(() => [remarkGfm], []);
@@ -849,19 +836,19 @@ export function LiveRendererComparison() {
   }, [resetState, setRunStateBoth]);
 
   const applyCiProfile = useCallback(() => {
-    setChunkChars(CI_PROFILE.chunkChars);
-    setIntervalMs(CI_PROFILE.intervalMs);
-    setRepeatCount(CI_PROFILE.repeatCount);
-    setScoredRuns(CI_PROFILE.scoredRuns);
-    setOrderMode(CI_PROFILE.orderMode);
-    setProfile(CI_PROFILE.profile);
-    setChartLayout(CI_PROFILE.chartLayout);
+    setChunkChars(BENCHMARK_CI_PROFILE.chunkChars);
+    setIntervalMs(BENCHMARK_CI_PROFILE.intervalMs);
+    setRepeatCount(BENCHMARK_CI_PROFILE.repeatCount);
+    setScoredRuns(BENCHMARK_CI_PROFILE.scoredRuns);
+    setOrderMode(BENCHMARK_CI_PROFILE.orderMode);
+    setProfile(BENCHMARK_CI_PROFILE.profile);
+    setChartLayout(BENCHMARK_CI_PROFILE.chartLayout);
     setChartMetric("final");
   }, []);
 
   const applyExploreDefaults = useCallback(() => {
-    setScoredRuns(DEFAULT_SCORED_RUNS);
-    setOrderMode("fixed");
+    setScoredRuns(BENCHMARK_EXPLORE_DEFAULTS.scoredRuns);
+    setOrderMode(BENCHMARK_EXPLORE_DEFAULTS.orderMode);
   }, []);
 
   useEffect(() => {
@@ -877,12 +864,12 @@ export function LiveRendererComparison() {
 
   const controlsLocked = runState === "running" || runState === "paused" || methodologyMode === "ci-locked";
   const isCiProfile =
-    chunkChars === CI_PROFILE.chunkChars &&
-    intervalMs === CI_PROFILE.intervalMs &&
-    repeatCount === CI_PROFILE.repeatCount &&
-    scoredRuns === CI_PROFILE.scoredRuns &&
-    orderMode === CI_PROFILE.orderMode &&
-    profile === CI_PROFILE.profile;
+    chunkChars === BENCHMARK_CI_PROFILE.chunkChars &&
+    intervalMs === BENCHMARK_CI_PROFILE.intervalMs &&
+    repeatCount === BENCHMARK_CI_PROFILE.repeatCount &&
+    scoredRuns === BENCHMARK_CI_PROFILE.scoredRuns &&
+    orderMode === BENCHMARK_CI_PROFILE.orderMode &&
+    profile === BENCHMARK_CI_PROFILE.profile;
 
   const maxSeq = points.length ? points[points.length - 1]?.seq ?? 1 : 1;
   const maxLatencyFirst = Math.max(
@@ -1154,7 +1141,7 @@ export function LiveRendererComparison() {
   };
 
   return (
-    <section className="rounded-xl border border-border/60 bg-background p-5">
+    <section className="route-panel p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-foreground">Live renderer comparison lab (sequential)</h2>
@@ -1163,7 +1150,7 @@ export function LiveRendererComparison() {
             into first-visible commit vs final-stable commit.
           </p>
         </div>
-        <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted">
+        <div className="route-panel-soft px-3 py-2 text-xs text-muted">
           <div>State: {runState}</div>
           <div>Active engine: {activeEngineLabel}</div>
           <div>Phase: {activePhase}</div>
@@ -1207,7 +1194,7 @@ export function LiveRendererComparison() {
         Current order:{" "}
         {displayOrder.length ? displayOrder.map((engine) => ENGINE_META.find((item) => item.key === engine)?.label ?? engine).join(" → ") : "-"}
       </div>
-      <div className="mt-3 rounded-md border border-border/60 bg-muted/15 p-3 text-xs">
+      <div className="route-panel-soft mt-3 p-3 text-xs">
         <div className="font-semibold text-foreground">Methodology mode</div>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <Button
@@ -1286,7 +1273,7 @@ export function LiveRendererComparison() {
           onChange={setScoredRuns}
           disabled={controlsLocked}
         />
-        <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2">
+        <div className="route-panel-soft px-3 py-2">
           <div className="text-xs font-semibold text-foreground">Order mode</div>
           <div className="mt-2 flex flex-wrap gap-2">
             {(["rotate", "random", "fixed"] satisfies OrderMode[]).map((mode) => (
@@ -1302,7 +1289,7 @@ export function LiveRendererComparison() {
             ))}
           </div>
         </div>
-        <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2">
+        <div className="route-panel-soft px-3 py-2">
           <div className="text-xs font-semibold text-foreground">Benchmark profile</div>
           <div className="mt-2 flex flex-wrap gap-2">
             <Button
@@ -1323,7 +1310,7 @@ export function LiveRendererComparison() {
             </Button>
           </div>
         </div>
-        <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2">
+        <div className="route-panel-soft px-3 py-2">
           <div className="text-xs font-semibold text-foreground">Chart metric</div>
           <div className="mt-2 flex flex-wrap gap-2">
             <Button
@@ -1345,7 +1332,7 @@ export function LiveRendererComparison() {
           </div>
           {chartLayout === "split" ? <div className="mt-1 text-[11px] text-muted">Split mode shows both metrics.</div> : null}
         </div>
-        <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2">
+        <div className="route-panel-soft px-3 py-2">
           <div className="text-xs font-semibold text-foreground">Chart layout</div>
           <div className="mt-2 flex flex-wrap gap-2">
             <Button
@@ -1441,7 +1428,7 @@ export function LiveRendererComparison() {
         </table>
       </div>
 
-      <div className="mt-3 rounded-md border border-border/60 bg-muted/15 p-3 text-xs">
+      <div className="route-panel-soft mt-3 p-3 text-xs">
         <div className="font-semibold text-foreground">Metric leaders</div>
         {(() => {
           const leaderChips: Array<{
@@ -1484,7 +1471,7 @@ export function LiveRendererComparison() {
         </div>
       </div>
 
-      <div className="mt-3 rounded-md border border-border/60 bg-muted/15 p-3 text-xs">
+      <div className="route-panel-soft mt-3 p-3 text-xs">
         <div className="font-semibold text-foreground">CI gate (StreamMDX vs Streamdown)</div>
         <div className="mt-2 flex flex-wrap gap-2">
           <span
@@ -1641,7 +1628,7 @@ function RendererPane({
   children: React.ReactNode;
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-border/60 bg-background shadow-sm">
+    <div className="route-panel overflow-hidden">
       <div className="border-border/60 border-b px-3 py-2">
         <div className="text-sm font-semibold text-foreground">{title}</div>
         <div className="text-xs text-muted">{subtitle}</div>
@@ -1675,7 +1662,7 @@ function ControlSlider({
   onChange: (value: number) => void;
 }) {
   return (
-    <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2">
+    <div className="route-panel-soft px-3 py-2">
       <div className="flex items-center justify-between gap-3 text-xs">
         <span className="font-semibold text-foreground">{label}</span>
         <span className="font-mono text-muted">{value}</span>

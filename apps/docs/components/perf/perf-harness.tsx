@@ -151,6 +151,7 @@ function buildScheduling(presetKey: string, params: URLSearchParams): StreamingS
   const base = SCHEDULING_PRESETS[presetKey] ?? DEFAULT_SCHEDULING;
   const batch = params.get("batch") ?? base.batch;
   const adaptiveSwitch = parseBoolean(params.get("adaptiveSwitch"));
+  const adaptiveBudgeting = parseBoolean(params.get("adaptiveBudgeting"));
   return {
     ...base,
     batch: batch === "microtask" || batch === "timeout" || batch === "rAF" ? batch : base.batch,
@@ -160,6 +161,8 @@ function buildScheduling(presetKey: string, params: URLSearchParams): StreamingS
     maxLowPriorityBatchesPerFlush: parseNumber(params.get("maxLowPriorityBatchesPerFlush")) ?? base.maxLowPriorityBatchesPerFlush,
     urgentQueueThreshold: parseNumber(params.get("urgentQueueThreshold")) ?? base.urgentQueueThreshold,
     historyLimit: parseNumber(params.get("historyLimit")) ?? base.historyLimit,
+    startupMicrotaskFlushes: parseNumber(params.get("startupMicrotaskFlushes")) ?? base.startupMicrotaskFlushes,
+    adaptiveBudgeting: adaptiveBudgeting ?? base.adaptiveBudgeting,
     adaptiveSwitch: adaptiveSwitch ?? base.adaptiveSwitch,
     adaptiveQueueThreshold: parseNumber(params.get("adaptiveQueueThreshold")) ?? base.adaptiveQueueThreshold,
   };

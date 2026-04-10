@@ -48,6 +48,9 @@ const SCHEDULING_OVERRIDES: Record<string, string> = {
     getArg("--maxLowPriorityBatchesPerFlush") ?? process.env.STREAM_MDX_PERF_MAX_LOW_PRIORITY_BATCHES ?? "",
   urgentQueueThreshold: getArg("--urgentQueueThreshold") ?? process.env.STREAM_MDX_PERF_URGENT_THRESHOLD ?? "",
   historyLimit: getArg("--historyLimit") ?? process.env.STREAM_MDX_PERF_HISTORY_LIMIT ?? "",
+  startupMicrotaskFlushes:
+    getArg("--startupMicrotaskFlushes") ?? process.env.STREAM_MDX_PERF_STARTUP_MICROTASK_FLUSHES ?? "",
+  adaptiveBudgeting: getArg("--adaptiveBudgeting") ?? process.env.STREAM_MDX_PERF_ADAPTIVE_BUDGETING ?? "",
   adaptiveSwitch: getArg("--adaptiveSwitch") ?? process.env.STREAM_MDX_PERF_ADAPTIVE_SWITCH ?? "",
   adaptiveQueueThreshold: getArg("--adaptiveQueueThreshold") ?? process.env.STREAM_MDX_PERF_ADAPTIVE_QUEUE_THRESHOLD ?? "",
 };

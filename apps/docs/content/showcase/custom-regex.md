@@ -1,6 +1,6 @@
 # Custom Regex Plugins
 
-Regex plugins let you add domain-specific inline syntax without changing the block parser. This is useful for app-specific tokens that need to render during streaming.
+Regex plugins let you add domain-specific inline syntax without changing the block parser. This is useful when your product has tokens that need to render during streaming but do not justify a full custom block grammar.
 
 ## What this showcases
 
@@ -59,3 +59,26 @@ worker.init({
 - Keep regex patterns linear-time and bounded.
 - Add `fastCheck` whenever possible.
 - Add determinism tests for custom plugins if they are part of your production bundle.
+
+## Good fit vs bad fit
+
+Good fit:
+
+- `@mentions`
+- citation chips
+- lightweight ticket references
+- inline issue keys or build ids
+
+Bad fit:
+
+- nested structures that really need a parser
+- syntax that changes block topology
+- patterns that require backtracking-heavy regexes
+
+If you cross into those cases, move the logic into a real plugin or worker-side extension instead of overloading regex.
+
+## Next steps
+
+- Plugin cookbook: [Plugins cookbook](/docs/plugins-cookbook)
+- Testing discipline: [Testing and baselines](/docs/guides/testing-and-baselines)
+- Showcase index: [Showcase](/showcase)

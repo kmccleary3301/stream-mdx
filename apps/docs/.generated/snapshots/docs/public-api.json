@@ -1,7 +1,7 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-03-08T20:59:00.803Z",
+  "createdAt": "2026-02-18T20:10:39.324Z",
   "hash": "1dfa81e413d8050998502ec46d925395f280c625f841b0ff33e2435aff160e8a",
   "contentHash": "58712b508e07a4ee6fcb355ca05203258b60169046372b5255ca6b9ae16dc41c",
   "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
@@ -3258,7 +3258,33 @@
             "kind": "text",
             "text": ":"
           }
-        ]
+        ],
+        "meta": {
+          "mixedSegments": [
+            {
+              "kind": "text",
+              "value": "You can stream text via an `AsyncIterable<string>`:",
+              "range": {
+                "from": 12381,
+                "to": 12432
+              },
+              "inline": [
+                {
+                  "kind": "text",
+                  "text": "You can stream text via an "
+                },
+                {
+                  "kind": "code",
+                  "text": "AsyncIterable<string>"
+                },
+                {
+                  "kind": "text",
+                  "text": ":"
+                }
+              ]
+            }
+          ]
+        }
       }
     },
     {

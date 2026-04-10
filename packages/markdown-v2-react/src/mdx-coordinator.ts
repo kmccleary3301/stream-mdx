@@ -49,6 +49,9 @@ export function useMdxCoordinator(blocks: ReadonlyArray<Block>, compileEndpoint?
       const index = currentBlocks.findIndex((candidate) => candidate.id === block.id);
       if (index === -1) return;
       const current = currentBlocks[index];
+      if ((current.payload.raw ?? "") !== (block.payload.raw ?? "")) {
+        return;
+      }
       if (current.payload.compiledMdxRef?.id === compiledId) {
         return;
       }
@@ -116,16 +119,21 @@ export function useMdxCoordinator(blocks: ReadonlyArray<Block>, compileEndpoint?
           if (options?.workerClient) {
             options.workerClient.setMdxError(block.id, e instanceof Error ? e.message : String(e), block.payload.raw ?? "");
           } else if (options?.store) {
+            const currentBlocks = options.store.getBlocks();
+            const current = currentBlocks.find((candidate) => candidate.id === block.id);
+            if (!current || (current.payload.raw ?? "") !== (block.payload.raw ?? "")) {
+              continue;
+            }
             options.store.applyPatches([
               {
                 op: "setProps",
                 at: { blockId: block.id, nodeId: block.id },
                 props: {
                   block: {
-                    ...block,
+                    ...current,
                     payload: {
-                      ...block.payload,
-                      meta: { ...(block.payload.meta ?? {}), mdxStatus: "error", mdxError: e instanceof Error ? e.message : String(e) },
+                      ...current.payload,
+                      meta: { ...(current.payload.meta ?? {}), mdxStatus: "error", mdxError: e instanceof Error ? e.message : String(e) },
                     },
                   },
                 },

@@ -1,6 +1,7 @@
 import { Link } from "next-view-transitions";
 
 import { DocsShell } from "@/components/docs/docs-shell";
+import { getDocsRoleTracks, getDocsShellSections } from "@/lib/docs-nav";
 import { GUIDE_ITEMS } from "@/lib/guides";
 import {
   BookOpen,
@@ -20,6 +21,7 @@ import type { LucideIcon } from "lucide-react";
 export const dynamic = "force-static";
 
 export default function GuidesIndexPage() {
+  const roleTracks = getDocsRoleTracks();
   const iconBySlug: Record<string, LucideIcon> = {
     "streaming-fundamentals": Waves,
     "rendering-and-styling": Paintbrush,
@@ -34,25 +36,7 @@ export default function GuidesIndexPage() {
     "mermaid-diagrams": Sparkles,
   };
 
-  const navSections = [
-    {
-      title: "Docs",
-      items: [
-        { title: "Docs home", href: "/docs" },
-        { title: "Getting started", href: "/docs/getting-started" },
-        { title: "Configuration", href: "/docs/configuration" },
-        { title: "React integration", href: "/docs/react-integration" },
-        { title: "Public API", href: "/docs/public-api" },
-      ],
-    },
-    {
-      title: "Guides",
-      items: GUIDE_ITEMS.map((guide) => ({
-        title: guide.title,
-        href: `/docs/guides/${guide.slug}`,
-      })),
-    },
-  ];
+  const navSections = getDocsShellSections({ includeDocsHomeLink: true });
 
   return (
     <DocsShell sections={navSections} showToc={false}>
@@ -62,6 +46,25 @@ export default function GuidesIndexPage() {
           <p className="mt-2 text-sm text-muted-foreground md:text-base">
             Deep dives and implementation notes for StreamMDX.
           </p>
+        </div>
+        <div className="rounded-lg border border-border/40 bg-background p-4">
+          <div className="text-sm font-semibold text-foreground">Where guides fit</div>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            {roleTracks.map((track) => (
+              <div key={track.title} className="rounded-lg border border-border/40 bg-muted/10 p-3">
+                <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-muted-old">
+                  {track.title}
+                </div>
+                <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">{track.summary}</p>
+                <div className="mt-2 text-[12px] text-foreground/80">
+                  Start:{" "}
+                  <Link href={track.start.href} className="underline underline-offset-4">
+                    {track.start.title}
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
           {GUIDE_ITEMS.map((item) => {

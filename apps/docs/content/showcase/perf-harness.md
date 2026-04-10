@@ -1,6 +1,6 @@
 # Perf harness
 
-The perf harness is the reproducible way to measure StreamMDX behavior before and after changes.
+The perf harness is the reproducible way to measure StreamMDX behavior before and after changes. It exists to turn performance claims into comparable local evidence instead of screenshots or isolated anecdotes.
 
 It is designed to answer one question quickly: **did this change make streaming better, worse, or unchanged?**
 
@@ -54,6 +54,15 @@ A practical default policy for release readiness:
 - Fail if long-task count increases by more than `2x`.
 - Warn (but do not fail) on memory increase under `10%`.
 
+## How to interpret results
+
+Use the harness in two modes:
+
+- claim-grade comparisons with fixed fixture/scenario settings
+- exploratory runs when you are diagnosing scheduler or workload cliffs
+
+Do not mix those two uses. If the settings differ, the result is diagnostic, not a published baseline.
+
 ## Example comparison output
 
 ```json
@@ -84,3 +93,4 @@ When this happens, test with one feature disabled at a time (`math`, `mdx`, `htm
 - Benchmarks hub: [Benchmarks](/benchmarks)
 - Integration guide: [Perf harness](/docs/perf-harness)
 - Change log discipline: [Perf quality changelog](/docs/perf-quality-changelog)
+- Scheduler interpretation: [Scheduling and jitter](/docs/guides/comparisons-and-benchmarks)
