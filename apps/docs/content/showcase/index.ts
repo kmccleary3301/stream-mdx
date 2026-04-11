@@ -56,4 +56,11 @@ export const SHOWCASE_ITEMS: ShowcaseItem[] = [
     description: "Worker, protocol, and snapshot-store patterns for TUIs, replay tools, and remote consumers.",
     tags: ["extensibility", "safety", "performance"],
   },
+  {
+    slug: "hosted-worker-deployment",
+    title: "Hosted worker deployment",
+    file: "hosted-worker-deployment.md",
+    description: "Production worker hosting, CSP posture, and static/export-friendly deployment guidance.",
+    tags: ["safety", "performance", "rendering"],
+  },
 ];

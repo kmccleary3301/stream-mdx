@@ -33,6 +33,7 @@
     "docs:screenshots": "npm exec -- tsx scripts/capture-docs-screenshots.ts",
     "docs:screenshots:smoke": "CAPTURE_ONLY=\"/,/docs/getting-started,/docs/tui-json-protocol,/docs/guides/mermaid-diagrams\" CAPTURE_OUT_DIR=\"tmp/screenshots/docs-site-smoke\" CAPTURE_FAIL_ON_ERRORS=1 CAPTURE_FAIL_ON_CONSOLE=1 CAPTURE_FAIL_ON_OVERLAY=1 npm exec -- tsx scripts/capture-docs-screenshots.ts",
     "vercel:parity": "bash scripts/vercel-build-parity.sh",
+    "example:tui-minimal": "node examples/tui-minimal/index.mjs",
   "perf:demo": "tsx scripts/perf/run-demo-perf.ts",
   "perf:compare": "tsx scripts/perf/compare-perf-harness.ts",
   "perf:characterize:scheduler": "tsx scripts/perf/characterize-scheduler-modes.ts",

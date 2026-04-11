@@ -13,7 +13,7 @@ This directory is the canonical repository-side documentation surface for Stream
 | Working on plugins / worker behavior | [`STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`](./STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md) | [`PLUGIN_ABI.md`](./PLUGIN_ABI.md), [`STREAMING_MARKDOWN_V2_STATUS.md`](./STREAMING_MARKDOWN_V2_STATUS.md) |
 | Validating correctness / regressions | [`REGRESSION_TESTING.md`](./REGRESSION_TESTING.md) | [`STREAMING_CORRECTNESS_CONTRACT.md`](./STREAMING_CORRECTNESS_CONTRACT.md), [`STREAMING_CORRECTNESS_EXECUTION_PLAN.md`](./STREAMING_CORRECTNESS_EXECUTION_PLAN.md) |
 | Working on perf claims or harnesses | [`PERF_HARNESS.md`](./PERF_HARNESS.md) | [`PERFORMANCE_GUIDE.md`](./PERFORMANCE_GUIDE.md), [`PERF_QUALITY_CHANGELOG.md`](./PERF_QUALITY_CHANGELOG.md) |
-| Consuming the patch stream in Node / TUI | [`TUI_GUIDE.md`](./TUI_GUIDE.md) | [`CLI_USAGE.md`](./CLI_USAGE.md), [`STREAMMDX_JSON_DIFF_SPEC.md`](./STREAMMDX_JSON_DIFF_SPEC.md) |
+| Consuming the patch stream in Node / TUI | [`TUI_GUIDE.md`](./TUI_GUIDE.md) | [`TUI_MINIMAL_EXAMPLE.md`](./TUI_MINIMAL_EXAMPLE.md), [`CLI_USAGE.md`](./CLI_USAGE.md), [`STREAMMDX_JSON_DIFF_SPEC.md`](./STREAMMDX_JSON_DIFF_SPEC.md) |
 
 ## Documentation Index
 
@@ -28,7 +28,8 @@ This directory is the canonical repository-side documentation surface for Stream
 | React integration | [`REACT_INTEGRATION_GUIDE.md`](./REACT_INTEGRATION_GUIDE.md) | <https://stream-mdx.vercel.app/docs/react-integration> |
 | Security model | [`SECURITY_MODEL.md`](./SECURITY_MODEL.md) | <https://stream-mdx.vercel.app/docs/security-model> |
 | TUI guide | [`TUI_GUIDE.md`](./TUI_GUIDE.md) | <https://stream-mdx.vercel.app/docs/tui-guide> |
-| Minimal TUI example | [`../examples/tui-minimal/README.md`](../examples/tui-minimal/README.md) | repo-local runnable example |
+| CLI / Node usage | [`CLI_USAGE.md`](./CLI_USAGE.md) | <https://stream-mdx.vercel.app/docs/cli-usage> |
+| Minimal TUI example | [`TUI_MINIMAL_EXAMPLE.md`](./TUI_MINIMAL_EXAMPLE.md) | <https://stream-mdx.vercel.app/docs/tui-minimal-example> |
 | Comprehensive manual | [`COMPREHENSIVE_PROJECT_DOCUMENTATION.md`](./COMPREHENSIVE_PROJECT_DOCUMENTATION.md) | <https://stream-mdx.vercel.app/docs/manual> |
 
 ### Reliability and quality
@@ -47,6 +48,8 @@ This directory is the canonical repository-side documentation surface for Stream
 | Release checklist | [`STREAMING_MARKDOWN_RELEASE_CHECKLIST.md`](./STREAMING_MARKDOWN_RELEASE_CHECKLIST.md) | Current release-time operational checklist |
 | Regression fix matrix | [`REGRESSION_FIX_MATRIX_2026-03-04.md`](./REGRESSION_FIX_MATRIX_2026-03-04.md) | Historical issue/fix ledger |
 | Demo reliability plan | [`STREAMING_DEMO_RELIABILITY_REMEDIATION_PLAN.md`](./STREAMING_DEMO_RELIABILITY_REMEDIATION_PLAN.md) | Demo-specific remediation notes |
+| Post-100 roadmap | [`POST_100_ROADMAP.md`](./POST_100_ROADMAP.md) | Explicitly out-of-band work that no longer counts against the active plan |
+| Active plan closeout | [`ACTIVE_PLAN_CLOSEOUT_2026-04-10.md`](./ACTIVE_PLAN_CLOSEOUT_2026-04-10.md) | Scope freeze and remaining external blocker summary |
 
 ### Performance and comparisons
 
@@ -65,7 +68,7 @@ This directory is the canonical repository-side documentation surface for Stream
 | Plugin cookbook | [`STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`](./STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md) | Built-in plugin usage and customization patterns |
 | Plugin ABI | [`PLUGIN_ABI.md`](./PLUGIN_ABI.md) | Lower-level plugin contracts |
 | TUI guide | [`TUI_GUIDE.md`](./TUI_GUIDE.md) | Recommended first stop for terminal and non-React consumers |
-| Minimal TUI example | [`../examples/tui-minimal/README.md`](../examples/tui-minimal/README.md) | Copy/pasteable worker + snapshot-store loop |
+| Minimal TUI example | [`TUI_MINIMAL_EXAMPLE.md`](./TUI_MINIMAL_EXAMPLE.md) | Copy/pasteable worker + snapshot-store loop on the docs site |
 | TUI / CLI usage | [`CLI_USAGE.md`](./CLI_USAGE.md) | Lower-level Node and terminal runtime usage |
 | JSON diff spec | [`STREAMMDX_JSON_DIFF_SPEC.md`](./STREAMMDX_JSON_DIFF_SPEC.md) | Patch/event protocol for non-React consumers |
 | Styling parity | [`STYLING_PARITY.md`](./STYLING_PARITY.md) | CSS parity and layout consistency notes |
@@ -79,6 +82,7 @@ This directory is the canonical repository-side documentation surface for Stream
 | Docs app routes | [`apps/docs/app`](../apps/docs/app) |
 | Example starter | [`examples/streaming-markdown-starter`](../examples/streaming-markdown-starter) |
 | Minimal TUI example | [`examples/tui-minimal`](../examples/tui-minimal) |
+| Terminal protocol showcase | [`apps/docs/content/showcase/terminal-protocol-flow.md`](../apps/docs/content/showcase/terminal-protocol-flow.md) |
 
 ## Local Docs Workflows
 

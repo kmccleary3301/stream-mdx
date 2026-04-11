@@ -7,6 +7,8 @@ export type DocRoleTrack = {
   summary: string;
   start: { title: string; href: string };
   followUps: Array<{ title: string; href: string }>;
+  deepReference?: { title: string; href: string };
+  runnableExample?: { title: string; href: string };
 };
 
 export function docHref(slug: string): string {
@@ -80,6 +82,7 @@ export function getDocsRoleTracks(): DocRoleTrack[] {
         { title: "React integration", href: docHref("react-integration") },
         { title: "Configuration", href: docHref("configuration") },
       ],
+      deepReference: { title: "Security model", href: docHref("security-model") },
     },
     {
       title: "Plugin / worker extender",
@@ -90,16 +93,19 @@ export function getDocsRoleTracks(): DocRoleTrack[] {
         { title: "Correctness contract", href: "/docs/guides/testing-and-baselines" },
         { title: "Security model", href: docHref("security-model") },
       ],
+      deepReference: { title: "Comprehensive manual", href: docHref("manual") },
     },
     {
       title: "TUI / Node consumer",
       summary: "Start from the dedicated terminal guide, then drop into lower-level runtime and protocol details only where needed.",
       start: { title: "TUI guide", href: docHref("tui-guide") },
       followUps: [
-        { title: "CLI / Node usage", href: "/docs/guides/architecture-and-internals" },
+        { title: "CLI / Node usage", href: docHref("cli-usage") },
+        { title: "Minimal TUI example", href: docHref("tui-minimal-example") },
         { title: "JSON / TUI protocol", href: "/docs/tui-json-protocol" },
-        { title: "Public API", href: docHref("public-api") },
       ],
+      deepReference: { title: "Public API", href: docHref("public-api") },
+      runnableExample: { title: "Terminal protocol flow showcase", href: "/showcase/terminal-protocol-flow" },
     },
     {
       title: "Maintainer / correctness reviewer",
@@ -110,6 +116,7 @@ export function getDocsRoleTracks(): DocRoleTrack[] {
         { title: "Performance and backpressure", href: "/docs/guides/performance-and-backpressure" },
         { title: "Comprehensive manual", href: docHref("manual") },
       ],
+      deepReference: { title: "Release checklist", href: docHref("release-checklist") },
     },
   ];
 }

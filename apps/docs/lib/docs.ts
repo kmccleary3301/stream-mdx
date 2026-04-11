@@ -52,6 +52,8 @@ export const DOC_SECTIONS: DocSection[] = [
     title: "TUI",
     items: [
       { title: "TUI guide", slug: "tui-guide", file: "TUI_GUIDE.md" },
+      { title: "CLI / Node usage", slug: "cli-usage", file: "CLI_USAGE.md" },
+      { title: "Minimal TUI example", slug: "tui-minimal-example", file: "TUI_MINIMAL_EXAMPLE.md" },
       { title: "JSON/TUI protocol", slug: "tui-json-protocol", file: "STREAMMDX_JSON_DIFF_SPEC.md" },
     ],
   },

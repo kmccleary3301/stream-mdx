@@ -8,7 +8,7 @@ If you are building an Ink app, a CLI viewer, a log console, or another text-fir
 2. maintain a snapshot store
 3. render `Block[]` into your own terminal components
 
-This document focuses on architecture and practical setup. For lower-level protocol details, see [`STREAMMDX_JSON_DIFF_SPEC.md`](./STREAMMDX_JSON_DIFF_SPEC.md). For Node/CLI runtime details and raw worker examples, see [`CLI_USAGE.md`](./CLI_USAGE.md).
+This document focuses on architecture and practical setup. If you want the shortest runnable path first, read [`TUI_MINIMAL_EXAMPLE.md`](./TUI_MINIMAL_EXAMPLE.md) before this guide. For lower-level protocol details, see [`STREAMMDX_JSON_DIFF_SPEC.md`](./STREAMMDX_JSON_DIFF_SPEC.md). For Node/CLI runtime details and raw worker examples, see [`CLI_USAGE.md`](./CLI_USAGE.md).
 
 ## What To Install
 
@@ -125,8 +125,9 @@ function renderToTerminal(blocks: ReturnType<typeof store.getBlocks>) {
 
 ## Runnable Repo Example
 
-If you want a concrete starting point instead of only architecture notes, use the minimal example in this repo:
+If you want a concrete starting point instead of only architecture notes, use the minimal example path first:
 
+- [`TUI_MINIMAL_EXAMPLE.md`](./TUI_MINIMAL_EXAMPLE.md)
 - [`../examples/tui-minimal/README.md`](../examples/tui-minimal/README.md)
 - [`../examples/tui-minimal/index.mjs`](../examples/tui-minimal/index.mjs)
 
@@ -135,7 +136,7 @@ Run it from the repo root:
 ```bash
 npm install
 npm run build:packages
-node examples/tui-minimal/index.mjs
+npm run example:tui-minimal
 ```
 
 ## Snapshot Store Choices
@@ -318,6 +319,7 @@ It is intentionally still lightweight for:
 
 ## Related Docs
 
+- [`TUI_MINIMAL_EXAMPLE.md`](./TUI_MINIMAL_EXAMPLE.md)
 - [`CLI_USAGE.md`](./CLI_USAGE.md)
 - [`STREAMMDX_JSON_DIFF_SPEC.md`](./STREAMMDX_JSON_DIFF_SPEC.md)
 - [`PUBLIC_API.md`](./PUBLIC_API.md)

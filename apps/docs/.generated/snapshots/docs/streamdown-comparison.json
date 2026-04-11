@@ -1,9 +1,9 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-04-03T23:38:46.087Z",
-  "hash": "1dc2c4cf96add666af1173b58ea29c514dca2d588a65baeee5aee4414c3b1b9d",
-  "contentHash": "ad04638bfa7fc5937f6b2d456826bbb3250089374510b421c0a6ecf7d0061e7c",
+  "createdAt": "2026-04-11T02:32:39.666Z",
+  "hash": "c8a28afb7eb1d640e28ef0b3f9ab8d25a88a900dab2d59811db82c41a88442fe",
+  "contentHash": "08fb1f9245fbf8062c42dbb911bbed198745ee9bf045fce05a0b8e4386689561",
   "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
   "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
   "blocks": [
@@ -163,14 +163,45 @@
       }
     },
     {
-      "id": "7028b1e7",
+      "id": "ed767f",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "It also does **not** treat the rich capability workload on the benchmark page as a direct parity result. That workload exists to show StreamMDX behavior when math, MDX, HTML, tables, code, and footnotes are active together; unsupported cells are intentionally excluded from cross-engine claim language.",
+        "range": {
+          "from": 579,
+          "to": 881
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "It also does "
+          },
+          {
+            "kind": "strong",
+            "children": [
+              {
+                "kind": "text",
+                "text": "not"
+              }
+            ]
+          },
+          {
+            "kind": "text",
+            "text": " treat the rich capability workload on the benchmark page as a direct parity result. That workload exists to show StreamMDX behavior when math, MDX, HTML, tables, code, and footnotes are active together; unsupported cells are intentionally excluded from cross-engine claim language."
+          }
+        ]
+      }
+    },
+    {
+      "id": "567a5ebd",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Short version",
         "range": {
-          "from": 579,
-          "to": 595
+          "from": 883,
+          "to": 899
         },
         "meta": {
           "headingLevel": 2,
@@ -186,14 +217,14 @@
       }
     },
     {
-      "id": "6337aeff",
+      "id": "55f7db7a",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- **Choose Streamdown** if your priority is a minimal migration from `react-markdown` and you want streaming-tolerant formatting behavior without introducing a worker runtime.\n- **Choose StreamMDX** if your priority is worker isolation, explicit incremental patching, richer plugin/runtime control, or better guardrails for long-running / high-frequency streams.",
         "range": {
-          "from": 597,
-          "to": 959
+          "from": 901,
+          "to": 1263
         },
         "meta": {
           "ordered": false,
@@ -242,14 +273,14 @@
       }
     },
     {
-      "id": "2d4e93c4",
+      "id": "399fa060",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Architecture",
         "range": {
-          "from": 961,
-          "to": 976
+          "from": 1265,
+          "to": 1280
         },
         "meta": {
           "headingLevel": 2,
@@ -265,14 +296,14 @@
       }
     },
     {
-      "id": "40f19482",
+      "id": "4c7f7f9b",
       "type": "table",
       "isFinalized": true,
       "payload": {
         "raw": "| Category | Streamdown | StreamMDX |\n| --- | --- | --- |\n| Execution model | Main-thread React rendering | Worker-first parse pipeline with incremental patch application |\n| Rendering surface | React component, close to `react-markdown` ergonomics | Dedicated `StreamingMarkdown` renderer plus lower-level packages |\n| Incremental model | Incomplete-markdown resilience + memoized rerendering | Explicit semantic/enrichment patch batches committed to a stable render tree |\n| Long-document posture | Main-thread work scales with content updates | Worker offload, queueing, and patch scheduling intended to reduce main-thread pressure |\n| Packaging | Single package | Modular packages plus `stream-mdx` convenience wrapper |",
         "range": {
-          "from": 978,
-          "to": 1702
+          "from": 1282,
+          "to": 2006
         },
         "inline": [],
         "meta": {
@@ -431,14 +462,14 @@
       }
     },
     {
-      "id": "60dac7aa",
+      "id": "58a2ba3a",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Integration tradeoffs",
         "range": {
-          "from": 1704,
-          "to": 1728
+          "from": 2008,
+          "to": 2032
         },
         "meta": {
           "headingLevel": 2,
@@ -454,14 +485,14 @@
       }
     },
     {
-      "id": "3f5cac3d",
+      "id": "7aa6a8df",
       "type": "table",
       "isFinalized": true,
       "payload": {
         "raw": "| Topic | Streamdown | StreamMDX |\n| --- | --- | --- |\n| Install / adopt | Lower friction for existing `react-markdown` users | Higher setup cost because worker/runtime configuration matters |\n| CSP / hosting | No worker hosting requirement | Hosted worker strongly recommended for production CSP clarity |\n| Custom syntax | remark/rehype ecosystem, plus Streamdown behavior | Worker/plugin model, custom matcher paths, and more explicit runtime composition |\n| Terminal / protocol use | React-first surface | Dedicated TUI / protocol path exists |\n| Operational visibility | Mostly renderer-level behavior | More moving parts, but more instrumentation and runtime controls |",
         "range": {
-          "from": 1730,
-          "to": 2405
+          "from": 2034,
+          "to": 2709
         },
         "inline": [],
         "meta": {
@@ -604,14 +635,14 @@
       }
     },
     {
-      "id": "66aba1c9",
+      "id": "5ff76edb",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "What the current harnesses are good at measuring",
         "range": {
-          "from": 2407,
-          "to": 2458
+          "from": 2711,
+          "to": 2762
         },
         "meta": {
           "headingLevel": 2,
@@ -627,14 +658,14 @@
       }
     },
     {
-      "id": "7ea5037c",
+      "id": "623f1dfd",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "The current StreamMDX harnesses are good at comparing:",
         "range": {
-          "from": 2460,
-          "to": 2514
+          "from": 2764,
+          "to": 2818
         },
         "inline": [
           {
@@ -645,14 +676,14 @@
       }
     },
     {
-      "id": "58f7a954",
+      "id": "44bba888",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- first visible render under live incremental streaming\n- final convergence under live incremental streaming\n- patch-to-DOM latency distributions\n- static render timing across prose / tables / code / mixed markdown",
         "range": {
-          "from": 2516,
-          "to": 2730
+          "from": 2820,
+          "to": 3034
         },
         "meta": {
           "ordered": false,
@@ -687,14 +718,14 @@
       }
     },
     {
-      "id": "5ce28c64",
+      "id": "cbdf380",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "The harnesses are **not** yet a definitive public source for:",
         "range": {
-          "from": 2732,
-          "to": 2793
+          "from": 3036,
+          "to": 3097
         },
         "inline": [
           {
@@ -718,14 +749,14 @@
       }
     },
     {
-      "id": "31c8fb85",
+      "id": "6dd96421",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- absolute bundle-cost comparisons across all deployment shapes\n- absolute memory superiority claims across all browsers\n- every edge of incomplete-markdown recovery semantics",
         "range": {
-          "from": 2795,
-          "to": 2970
+          "from": 3099,
+          "to": 3274
         },
         "meta": {
           "ordered": false,
@@ -754,14 +785,62 @@
       }
     },
     {
-      "id": "17cf0c62",
+      "id": "88a95fe",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Read the benchmark page in two layers:",
+        "range": {
+          "from": 3276,
+          "to": 3314
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Read the benchmark page in two layers:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "1d79be97",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- parity workloads for direct renderer-vs-renderer comparison\n- capability workloads for richer StreamMDX-only behavior inspection",
+        "range": {
+          "from": 3316,
+          "to": 3446
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "parity workloads for direct renderer-vs-renderer comparison"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "capability workloads for richer StreamMDX-only behavior inspection"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "2c38855b",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Security and isolation",
         "range": {
-          "from": 2972,
-          "to": 2997
+          "from": 3448,
+          "to": 3473
         },
         "meta": {
           "headingLevel": 2,
@@ -777,14 +856,14 @@
       }
     },
     {
-      "id": "28d4c567",
+      "id": "6b933b41",
       "type": "table",
       "isFinalized": true,
       "payload": {
         "raw": "| Topic | Streamdown | StreamMDX |\n| --- | --- | --- |\n| HTML / pipeline posture | Main-thread rehype/remark pipeline | HTML sanitization plus worker isolation options |\n| Security operational model | Simpler runtime surface | Stronger isolation story when the worker is hosted deliberately |\n| CSP implications | Simpler by default | Requires intentional worker policy (`blob:` vs hosted worker asset) |",
         "range": {
-          "from": 2999,
-          "to": 3403
+          "from": 3475,
+          "to": 3879
         },
         "inline": [],
         "meta": {
@@ -887,14 +966,14 @@
       }
     },
     {
-      "id": "45d46926",
+      "id": "155efee2",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Where Streamdown is the better fit",
         "range": {
-          "from": 3405,
-          "to": 3442
+          "from": 3881,
+          "to": 3918
         },
         "meta": {
           "headingLevel": 2,
@@ -910,14 +989,14 @@
       }
     },
     {
-      "id": "20a3ebfb",
+      "id": "48960ca8",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- You already use `react-markdown` and want the smallest possible change.\n- You want streaming-aware formatting behavior without adding worker infrastructure.\n- Your documents are modest in size and your throughput requirements are ordinary.",
         "range": {
-          "from": 3444,
-          "to": 3685
+          "from": 3920,
+          "to": 4161
         },
         "meta": {
           "ordered": false,
@@ -954,14 +1033,14 @@
       }
     },
     {
-      "id": "3a7235a2",
+      "id": "2007befa",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Where StreamMDX is the better fit",
         "range": {
-          "from": 3687,
-          "to": 3723
+          "from": 4163,
+          "to": 4199
         },
         "meta": {
           "headingLevel": 2,
@@ -977,14 +1056,14 @@
       }
     },
     {
-      "id": "fd02b4b",
+      "id": "c6e8a5d",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- You care about main-thread isolation during frequent streaming updates.\n- You need explicit control over incremental behavior, batching, and queueing.\n- You want the same project to cover React rendering, worker composition, and TUI/protocol consumers.\n- You are willing to pay a slightly more complex setup cost to get those controls.",
         "range": {
-          "from": 3725,
-          "to": 4062
+          "from": 4201,
+          "to": 4538
         },
         "meta": {
           "ordered": false,
@@ -1019,14 +1098,14 @@
       }
     },
     {
-      "id": "1f677b3a",
+      "id": "31c5a543",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Benchmark reading guidance",
         "range": {
-          "from": 4064,
-          "to": 4093
+          "from": 4540,
+          "to": 4569
         },
         "meta": {
           "headingLevel": 2,
@@ -1042,14 +1121,14 @@
       }
     },
     {
-      "id": "781f1568",
+      "id": "32860aa5",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "When you look at StreamMDX vs Streamdown numbers on the benchmark page, keep the interpretation disciplined:",
         "range": {
-          "from": 4095,
-          "to": 4203
+          "from": 4571,
+          "to": 4679
         },
         "inline": [
           {
@@ -1060,14 +1139,14 @@
       }
     },
     {
-      "id": "1341ecd9",
+      "id": "532517e1",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- Compare engines under the same fixture and scenario.\n- Separate **live incremental** results from **static render** results.\n- Treat first visible render and final convergence as different metrics.\n- Treat memory, bundle cost, and CSP/runtime shape as adjacent tradeoffs, not as interchangeable latency claims.",
         "range": {
-          "from": 4205,
-          "to": 4517
+          "from": 4681,
+          "to": 4993
         },
         "meta": {
           "ordered": false,
@@ -1128,14 +1207,14 @@
       }
     },
     {
-      "id": "27c5ee69",
+      "id": "336d799f",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Related references",
         "range": {
-          "from": 4519,
-          "to": 4540
+          "from": 4995,
+          "to": 5016
         },
         "meta": {
           "headingLevel": 2,
@@ -1151,14 +1230,14 @@
       }
     },
     {
-      "id": "195fd69d",
+      "id": "11c8c73a",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- [`PERF_HARNESS.md`](./PERF_HARNESS.md)\n- [`PERFORMANCE_GUIDE.md`](./PERFORMANCE_GUIDE.md)\n- [`STREAMING_CORRECTNESS_CONTRACT.md`](./STREAMING_CORRECTNESS_CONTRACT.md)\n- Public benchmark route: <https://stream-mdx.vercel.app/benchmarks>",
         "range": {
-          "from": 4542,
-          "to": 4779
+          "from": 5018,
+          "to": 5255
         },
         "meta": {
           "ordered": false,
@@ -1234,55 +1313,55 @@
       "id": "short-version",
       "text": "Short version",
       "level": 2,
-      "blockId": "7028b1e7"
+      "blockId": "567a5ebd"
     },
     {
       "id": "architecture",
       "text": "Architecture",
       "level": 2,
-      "blockId": "2d4e93c4"
+      "blockId": "399fa060"
     },
     {
       "id": "integration-tradeoffs",
       "text": "Integration tradeoffs",
       "level": 2,
-      "blockId": "60dac7aa"
+      "blockId": "58a2ba3a"
     },
     {
       "id": "what-the-current-harnesses-are-good-at-measuring",
       "text": "What the current harnesses are good at measuring",
       "level": 2,
-      "blockId": "66aba1c9"
+      "blockId": "5ff76edb"
     },
     {
       "id": "security-and-isolation",
       "text": "Security and isolation",
       "level": 2,
-      "blockId": "17cf0c62"
+      "blockId": "2c38855b"
     },
     {
       "id": "where-streamdown-is-the-better-fit",
       "text": "Where Streamdown is the better fit",
       "level": 2,
-      "blockId": "45d46926"
+      "blockId": "155efee2"
     },
     {
       "id": "where-streammdx-is-the-better-fit",
       "text": "Where StreamMDX is the better fit",
       "level": 2,
-      "blockId": "3a7235a2"
+      "blockId": "2007befa"
     },
     {
       "id": "benchmark-reading-guidance",
       "text": "Benchmark reading guidance",
       "level": 2,
-      "blockId": "1f677b3a"
+      "blockId": "31c5a543"
     },
     {
       "id": "related-references",
       "text": "Related references",
       "level": 2,
-      "blockId": "27c5ee69"
+      "blockId": "336d799f"
     }
   ],
   "init": {

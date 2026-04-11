@@ -1,9 +1,9 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-02-11T20:25:48.717Z",
-  "hash": "a0f3dc60f8c9c546004c52cba14357823895a2d03bd0c135b917385b17ffbff6",
-  "contentHash": "e359e59487089cda6071073ed953d7cc12ab1aee9cc53187d88c62e4689b9037",
+  "createdAt": "2026-04-11T02:40:48.872Z",
+  "hash": "cbb14f74432b1cff2071cf79d01ea6bc5e93f98744dea402d3e64195d0307494",
+  "contentHash": "f57a8a097ef71b5be76131d7c103d687ca7763f10af88ce4896d12e14f7ba47b",
   "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
   "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
   "blocks": [
@@ -339,6 +339,101 @@
           }
         ]
       }
+    },
+    {
+      "id": "c9f49aa",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Production verification",
+        "range": {
+          "from": 835,
+          "to": 861
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Production verification",
+          "headingId": "production-verification"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Production verification"
+          }
+        ]
+      }
+    },
+    {
+      "id": "4768b41d",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "When you change worker hosting or attach a custom domain, verify:",
+        "range": {
+          "from": 863,
+          "to": 928
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "When you change worker hosting or attach a custom domain, verify:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "d0a4b62",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- hosted worker URL still resolves from the same intended origin\n- HTTPS is valid on the final public hostname\n- `worker-src` matches the actual production worker source\n- no fallback to `blob:` or looser CSP was introduced accidentally",
+        "range": {
+          "from": 930,
+          "to": 1166
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "hosted worker URL still resolves from the same intended origin"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "HTTPS is valid on the final public hostname"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "worker-src"
+              },
+              {
+                "kind": "text",
+                "text": " matches the actual production worker source"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "no fallback to "
+              },
+              {
+                "kind": "code",
+                "text": "blob:"
+              },
+              {
+                "kind": "text",
+                "text": " or looser CSP was introduced accidentally"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
     }
   ],
   "tocHeadings": [
@@ -377,6 +472,12 @@
       "text": "Reporting security issues",
       "level": 2,
       "blockId": "6f40bf41"
+    },
+    {
+      "id": "production-verification",
+      "text": "Production verification",
+      "level": 2,
+      "blockId": "c9f49aa"
     }
   ],
   "init": {

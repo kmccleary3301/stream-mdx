@@ -15,7 +15,7 @@ From the repo root:
 ```bash
 npm install
 npm run build:packages
-node examples/tui-minimal/index.mjs
+npm run example:tui-minimal
 ```
 
 ## What the example does
@@ -42,3 +42,5 @@ Use it as:
 - a copy/paste starting point
 - a sanity check for `@stream-mdx/tui`
 - a reference for the architecture described in [`../../docs/TUI_GUIDE.md`](../../docs/TUI_GUIDE.md)
+
+If you want the docs-site version of this walkthrough, read [`../../docs/TUI_MINIMAL_EXAMPLE.md`](../../docs/TUI_MINIMAL_EXAMPLE.md).

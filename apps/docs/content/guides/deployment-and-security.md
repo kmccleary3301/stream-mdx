@@ -83,3 +83,15 @@ For this monorepo docs app on Vercel:
 - Include files outside root directory: **Enabled**
 
 This is required so Vercel can access workspace packages and build the hosted worker.
+
+## Custom domain verification
+
+If you attach a custom domain such as `stream-mdx.dev`, verify all of this after the DNS change:
+
+- apex domain serves valid HTTPS without certificate or handshake errors
+- `www` either serves cleanly or redirects to the chosen canonical hostname
+- the docs app and `/workers/markdown-worker.js` stay on the same expected origin
+- the exported site still builds and serves correctly after the domain cutover
+- CSP still permits the hosted worker source you actually ship
+
+Treat a broken TLS handshake as a deployment failure even if DNS already resolves. DNS propagation alone is not enough.

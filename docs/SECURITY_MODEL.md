@@ -28,3 +28,11 @@ StreamMDX does not require `unsafe-eval` for its core pipeline. If your MDX comp
 
 See the repo root `SECURITY.md` once added.
 
+## Production verification
+
+When you change worker hosting or attach a custom domain, verify:
+
+- hosted worker URL still resolves from the same intended origin
+- HTTPS is valid on the final public hostname
+- `worker-src` matches the actual production worker source
+- no fallback to `blob:` or looser CSP was introduced accidentally

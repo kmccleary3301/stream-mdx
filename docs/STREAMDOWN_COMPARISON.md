@@ -13,6 +13,8 @@ The current comparison is grounded in:
 
 It does **not** claim universal latency or memory superiority across every browser, machine, or integration pattern.
 
+It also does **not** treat the rich capability workload on the benchmark page as a direct parity result. That workload exists to show StreamMDX behavior when math, MDX, HTML, tables, code, and footnotes are active together; unsupported cells are intentionally excluded from cross-engine claim language.
+
 ## Short version
 
 - **Choose Streamdown** if your priority is a minimal migration from `react-markdown` and you want streaming-tolerant formatting behavior without introducing a worker runtime.
@@ -52,6 +54,11 @@ The harnesses are **not** yet a definitive public source for:
 - absolute bundle-cost comparisons across all deployment shapes
 - absolute memory superiority claims across all browsers
 - every edge of incomplete-markdown recovery semantics
+
+Read the benchmark page in two layers:
+
+- parity workloads for direct renderer-vs-renderer comparison
+- capability workloads for richer StreamMDX-only behavior inspection
 
 ## Security and isolation
 

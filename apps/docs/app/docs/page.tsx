@@ -39,7 +39,7 @@ export default function DocsIndexPage() {
     {
       title: "TUI / protocol",
       summary: "Terminal and non-React entry point, including the minimal repo example path.",
-      href: "/docs/tui-json-protocol",
+      href: "/docs/tui-guide",
       cta: "Open TUI guide",
       icon: Code2,
     },
@@ -83,8 +83,8 @@ export default function DocsIndexPage() {
     },
     {
       title: "TUI",
-      href: "/docs/tui-json-protocol",
-      items: ["Terminal-based rendering", "JSON stream protocol"],
+      href: "/docs/tui-guide",
+      items: ["Terminal-based rendering", "Runnable example + JSON stream protocol"],
     },
   ];
 
@@ -99,7 +99,7 @@ export default function DocsIndexPage() {
     },
     {
       title: "Runnable examples",
-      text: "The repo includes a minimal TUI example under examples/tui-minimal so terminal consumers do not have to reverse-engineer the worker and snapshot-store loop from prose alone.",
+      text: "The docs now expose the minimal TUI example as a first-class page, so terminal consumers can start from a runnable loop and only drop into the protocol spec when they actually need it.",
     },
   ];
 
@@ -191,6 +191,28 @@ export default function DocsIndexPage() {
                   {track.start.title}
                 </Link>
               </div>
+              {track.deepReference ? (
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-[12px]">
+                  <span className="font-semibold text-foreground/80">Deep reference</span>
+                  <Link
+                    href={track.deepReference.href}
+                    className="route-chip !px-2.5 !py-1"
+                  >
+                    {track.deepReference.title}
+                  </Link>
+                </div>
+              ) : null}
+              {track.runnableExample ? (
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-[12px]">
+                  <span className="font-semibold text-foreground/80">Runnable path</span>
+                  <Link
+                    href={track.runnableExample.href}
+                    className="route-chip !px-2.5 !py-1"
+                  >
+                    {track.runnableExample.title}
+                  </Link>
+                </div>
+              ) : null}
               <div className="mt-3 flex flex-wrap gap-2 text-[12px] text-muted-foreground">
                 {track.followUps.map((item) => (
                   <Link

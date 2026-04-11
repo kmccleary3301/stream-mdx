@@ -81,6 +81,27 @@ export const BENCHMARK_SCHEDULER_MODES = [
   },
 ] as const;
 
+export const BENCHMARK_WORKLOAD_POLICY = [
+  {
+    id: "parity",
+    label: "Parity workloads",
+    definition:
+      "Common-markdown fixtures used for direct StreamMDX/Streamdown/react-markdown comparisons under the same browser session, scheduler mode, and scenario.",
+  },
+  {
+    id: "capability",
+    label: "Capability workloads",
+    definition:
+      "Richer workloads that exercise StreamMDX-specific features such as mixed MDX, math, HTML, footnotes, and worker-aware composition. These are shown for behavior inspection, not direct cross-engine claims.",
+  },
+] as const;
+
+export const BENCHMARK_CONTENT_CLASS_DECISION = {
+  totalClasses: 5,
+  rationale:
+    "The current five-class public set is intentionally final for the active plan: four parity-friendly classes (prose, tables, code, mixed) plus one explicitly marked capability stress class (rich). Adding more public classes is deferred until a distinct behavior family appears that the current set does not already expose.",
+} as const;
+
 export function getLiveBenchmarkScheduling(mode: MethodologyMode): StreamingSchedulerOptions {
   return {
     batch: "rAF",

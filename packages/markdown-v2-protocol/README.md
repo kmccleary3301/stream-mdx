@@ -33,7 +33,9 @@ npm install @stream-mdx/protocol
 
 ## Documentation
 
+- Start from the runnable example path with `npm run example:tui-minimal` from the repo root.
 - [`../../examples/tui-minimal/README.md`](../../examples/tui-minimal/README.md)
+- [`../../docs/TUI_MINIMAL_EXAMPLE.md`](../../docs/TUI_MINIMAL_EXAMPLE.md)
 - [`../../docs/TUI_GUIDE.md`](../../docs/TUI_GUIDE.md)
 - [`../../docs/STREAMMDX_JSON_DIFF_SPEC.md`](../../docs/STREAMMDX_JSON_DIFF_SPEC.md)
 - [`../../docs/CLI_USAGE.md`](../../docs/CLI_USAGE.md)

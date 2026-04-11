@@ -4,9 +4,11 @@ import assert from "node:assert/strict";
 
 import {
   BENCHMARK_CI_PROFILE,
+  BENCHMARK_CONTENT_CLASS_DECISION,
   BENCHMARK_RUNTIME_COST_TERMS,
   BENCHMARK_SCHEDULER_MODES,
   BENCHMARK_STATIC_CONTENT_CLASSES,
+  BENCHMARK_WORKLOAD_POLICY,
   getLiveBenchmarkScheduling,
 } from "../apps/docs/lib/benchmark-methodology";
 
@@ -30,8 +32,10 @@ function main() {
   assert.equal(exploreScheduling.adaptiveBudgeting, undefined, "Explore mode should not hard-disable adaptive budgeting");
 
   assert.equal(BENCHMARK_STATIC_CONTENT_CLASSES.length, 5, "Static content classes should cover the five public fixture families");
+  assert.equal(BENCHMARK_CONTENT_CLASS_DECISION.totalClasses, 5, "Content-class decision should stay aligned with the public fixture set");
   assert.equal(BENCHMARK_RUNTIME_COST_TERMS.length, 4, "Runtime cost terminology set should stay explicit");
   assert.equal(BENCHMARK_SCHEDULER_MODES.length, 2, "Scheduler modes should stay intentionally narrow");
+  assert.equal(BENCHMARK_WORKLOAD_POLICY.length, 2, "Benchmark workload policy should stay narrow and explicit");
 
   console.log(
     JSON.stringify(
@@ -41,8 +45,10 @@ function main() {
         ciScheduling,
         exploreScheduling,
         staticContentClasses: BENCHMARK_STATIC_CONTENT_CLASSES.map((item) => item.id),
+        contentClassDecision: BENCHMARK_CONTENT_CLASS_DECISION,
         runtimeTerms: BENCHMARK_RUNTIME_COST_TERMS.map((item) => item.name),
         schedulerModes: BENCHMARK_SCHEDULER_MODES.map((item) => item.id),
+        workloadPolicy: BENCHMARK_WORKLOAD_POLICY.map((item) => item.id),
       },
       null,
       2,

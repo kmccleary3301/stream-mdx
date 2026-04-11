@@ -2,7 +2,7 @@
 
 StreamMDX is designed for browser + React, but the worker-first architecture makes it easy to reuse the same parsing and patch stream in non-browser runtimes (e.g. Ink-based TUIs).
 
-If you want the cleanest first stop for terminal integrations, read [`TUI_GUIDE.md`](./TUI_GUIDE.md) first. This document is the lower-level companion focused on raw worker/message flows.
+If you want the cleanest first stop for terminal integrations, read [`TUI_MINIMAL_EXAMPLE.md`](./TUI_MINIMAL_EXAMPLE.md) and [`TUI_GUIDE.md`](./TUI_GUIDE.md) first. This document is the lower-level companion focused on raw worker/message flows.
 
 This doc covers:
 

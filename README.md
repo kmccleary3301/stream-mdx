@@ -359,7 +359,7 @@ npm run docs:dev
 | Extending the worker/plugin stack | [`docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`](./docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md) | [`docs/PLUGIN_ABI.md`](./docs/PLUGIN_ABI.md), [`docs/STREAMING_MARKDOWN_V2_STATUS.md`](./docs/STREAMING_MARKDOWN_V2_STATUS.md) |
 | Evaluating correctness/reliability | [`docs/REGRESSION_TESTING.md`](./docs/REGRESSION_TESTING.md) | [`docs/STREAMING_CORRECTNESS_CONTRACT.md`](./docs/STREAMING_CORRECTNESS_CONTRACT.md), [`docs/STREAMING_CORRECTNESS_EXECUTION_PLAN.md`](./docs/STREAMING_CORRECTNESS_EXECUTION_PLAN.md) |
 | Evaluating performance | [`docs/PERF_HARNESS.md`](./docs/PERF_HARNESS.md) | [`docs/PERFORMANCE_GUIDE.md`](./docs/PERFORMANCE_GUIDE.md), [`docs/PERF_QUALITY_CHANGELOG.md`](./docs/PERF_QUALITY_CHANGELOG.md) |
-| Using non-browser / TUI surfaces | [`docs/TUI_GUIDE.md`](./docs/TUI_GUIDE.md) | [`examples/tui-minimal/README.md`](./examples/tui-minimal/README.md), [`docs/CLI_USAGE.md`](./docs/CLI_USAGE.md), [`docs/STREAMMDX_JSON_DIFF_SPEC.md`](./docs/STREAMMDX_JSON_DIFF_SPEC.md) |
+| Using non-browser / TUI surfaces | [`docs/TUI_GUIDE.md`](./docs/TUI_GUIDE.md) | [`docs/TUI_MINIMAL_EXAMPLE.md`](./docs/TUI_MINIMAL_EXAMPLE.md), [`examples/tui-minimal/README.md`](./examples/tui-minimal/README.md), [`docs/CLI_USAGE.md`](./docs/CLI_USAGE.md), [`docs/STREAMMDX_JSON_DIFF_SPEC.md`](./docs/STREAMMDX_JSON_DIFF_SPEC.md) |
 
 ### Docs and site links
 
@@ -372,7 +372,7 @@ npm run docs:dev
 | Plugin cookbook | [`docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`](./docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md) | <https://stream-mdx.vercel.app/docs/plugins-cookbook> |
 | Status / architecture | [`docs/STREAMING_MARKDOWN_V2_STATUS.md`](./docs/STREAMING_MARKDOWN_V2_STATUS.md) | <https://stream-mdx.vercel.app/docs/status> |
 | Streamdown comparison | [`docs/STREAMDOWN_COMPARISON.md`](./docs/STREAMDOWN_COMPARISON.md) | <https://stream-mdx.vercel.app/docs/streamdown-comparison> |
-| Minimal TUI example | [`examples/tui-minimal/README.md`](./examples/tui-minimal/README.md) | n/a |
+| Minimal TUI example | [`docs/TUI_MINIMAL_EXAMPLE.md`](./docs/TUI_MINIMAL_EXAMPLE.md) | [`examples/tui-minimal/README.md`](./examples/tui-minimal/README.md) |
 | Showcase index | [`apps/docs/content/showcase/index.ts`](./apps/docs/content/showcase/index.ts) | <https://stream-mdx.vercel.app/showcase> |
 | Guides index | [`apps/docs/content/guides/index.ts`](./apps/docs/content/guides/index.ts) | <https://stream-mdx.vercel.app/guides> |
 

@@ -3,9 +3,11 @@ import { Link } from "next-view-transitions";
 import { LiveRendererComparison } from "@/components/benchmarks/live-renderer-comparison";
 import { StaticRenderComparison } from "@/components/benchmarks/static-render-comparison";
 import {
+  BENCHMARK_CONTENT_CLASS_DECISION,
   BENCHMARK_RUNTIME_COST_TERMS,
   BENCHMARK_SCHEDULER_MODES,
   BENCHMARK_STATIC_CONTENT_CLASSES,
+  BENCHMARK_WORKLOAD_POLICY,
 } from "@/lib/benchmark-methodology";
 
 export const dynamic = "force-static";
@@ -177,6 +179,39 @@ export default function BenchmarksPage() {
           tables, code, and footnotes are all active in the same document. Unsupported cells are marked explicitly instead of being counted as
           comparable runs.
         </p>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          {BENCHMARK_WORKLOAD_POLICY.map((entry) => (
+            <div key={entry.id} className="route-panel-soft p-4">
+              <div className="text-sm font-semibold text-foreground">{entry.label}</div>
+              <p className="mt-2 text-[13px] leading-relaxed text-muted">{entry.definition}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="route-panel p-6">
+        <div className="route-kicker">Claim discipline</div>
+        <div className="mt-2 text-sm font-semibold text-foreground">What this page can and cannot claim</div>
+        <ul className="mt-4 space-y-2 text-sm text-muted">
+          <li className="flex items-start gap-2">
+            <span className="mt-1 h-1.5 w-1.5 rounded-full bg-muted-foreground/60" />
+            <span>It can compare renderers fairly on the shared parity fixtures under the same local browser session and scheduler mode.</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="mt-1 h-1.5 w-1.5 rounded-full bg-muted-foreground/60" />
+            <span>It can show how StreamMDX behaves on richer feature workloads that other engines in this lab do not fully support.</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="mt-1 h-1.5 w-1.5 rounded-full bg-muted-foreground/60" />
+            <span>It cannot justify universal cross-machine latency or memory superiority claims outside this methodology envelope.</span>
+          </li>
+        </ul>
+      </section>
+
+      <section className="route-panel p-6">
+        <div className="route-kicker">Coverage</div>
+        <div className="mt-2 text-sm font-semibold text-foreground">Why these five static classes are the public set</div>
+        <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted">{BENCHMARK_CONTENT_CLASS_DECISION.rationale}</p>
       </section>
 
       <LiveRendererComparison />

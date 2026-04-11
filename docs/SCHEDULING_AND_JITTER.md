@@ -10,6 +10,15 @@ Use this note when you need to answer one of these questions:
 - What is the difference between a reproducible benchmark run and an exploratory one?
 - Which kinds of variance are expected, and which ones indicate a correctness problem?
 
+## Final supported public scheduler surface
+
+For the active plan, only two public methodology labels are supported:
+
+- `CI locked`
+- `Explore`
+
+Lower-level knobs and preset names still exist for engineering work, but they are not separate public benchmark categories. If a result is described publicly, it should map back to one of those two labels.
+
 ## Two modes that matter
 
 ### CI locked
@@ -41,6 +50,8 @@ Use this mode when:
 - tracing patch-to-DOM latency spikes
 - checking whether a fixture is sensitive to chunk cadence
 - experimenting with repeat count, order mode, or workload profile
+
+Do not turn Explore runs into public claim language without restating the exact non-default inputs.
 
 ## What counts as acceptable variance
 
@@ -75,6 +86,7 @@ If you are tuning `StreamingMarkdown.scheduling`, keep the discipline simple:
 2. Reduce `startupMicrotaskFlushes` only if startup work is visibly front-loading commits.
 3. Disable `adaptiveBudgeting` when you need reproducible measurements.
 4. Treat `frameBudgetMs`, `lowPriorityFrameBudgetMs`, and queue thresholds as diagnosis tools, not public benchmark inputs, unless you document them explicitly.
+5. Treat `smooth`, `timeout`, and `microtask` parity checks as correctness guards, not alternate public benchmark modes.
 
 ## Repeatable characterization commands
 

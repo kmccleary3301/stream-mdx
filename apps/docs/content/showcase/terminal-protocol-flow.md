@@ -2,6 +2,8 @@
 
 This showcase covers the non-React path that is easy to miss if you only look at the browser demo. StreamMDX is not just a React renderer. It also exposes a worker, protocol surface, and snapshot-store model that works for terminal UIs, remote transports, and replay tooling.
 
+Use this page when you already know you want a terminal or protocol consumer and need the shortest route to the right docs and example files.
+
 ## What this showcases
 
 - worker-thread parsing in Node
@@ -33,9 +35,10 @@ This keeps parsing semantics aligned with the browser path while giving the term
 
 ## Minimal runnable example
 
-The repo now includes a minimal end-to-end example:
+The repo now includes a minimal end-to-end example and a dedicated docs-page walkthrough:
 
-- [Repo example README](/docs/tui-guide)
+- [Minimal TUI example docs page](/docs/tui-minimal-example)
+- [TUI guide](/docs/tui-guide)
 - [GitHub example file](https://github.com/kmccleary3301/stream-mdx/blob/main/examples/tui-minimal/index.mjs)
 
 From the repo root:
@@ -43,7 +46,7 @@ From the repo root:
 ```bash
 npm install
 npm run build:packages
-node examples/tui-minimal/index.mjs
+npm run example:tui-minimal
 ```
 
 That example does four things only:
@@ -129,6 +132,7 @@ If you are shipping a TUI or protocol consumer, treat these as the default check
 
 ## Related docs
 
+- [Minimal TUI example](/docs/tui-minimal-example)
 - [TUI guide](/docs/tui-guide)
 - [TUI / JSON protocol](/docs/tui-json-protocol)
 - [Comprehensive manual](/docs/manual)

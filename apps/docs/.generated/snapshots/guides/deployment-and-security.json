@@ -1,9 +1,9 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-02-18T18:24:36.257Z",
-  "hash": "d3fda060d0cde6bab0691fdba00db6dd0473183fbbbe666a2d3d9160c3b5b5c3",
-  "contentHash": "f24d4af807c5e633cd823218d20ec060d95a6c291e3f43c03c4cc157261c9326",
+  "createdAt": "2026-04-11T02:40:49.389Z",
+  "hash": "faf2a65177d01e574200b2e0fb27032358e6ecaedd766dc22aa0ef89f77266ce",
+  "contentHash": "fdf60fd0824340a5cbf5d8a8d658ae39ed159c4caae7e8879738d23b05a4e96a",
   "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
   "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
   "blocks": [
@@ -806,6 +806,133 @@
           }
         ]
       }
+    },
+    {
+      "id": "6df19e68",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Custom domain verification",
+        "range": {
+          "from": 2736,
+          "to": 2765
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "Custom domain verification",
+          "headingId": "custom-domain-verification"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Custom domain verification"
+          }
+        ]
+      }
+    },
+    {
+      "id": "5c6efa46",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "If you attach a custom domain such as `stream-mdx.dev`, verify all of this after the DNS change:",
+        "range": {
+          "from": 2767,
+          "to": 2863
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "If you attach a custom domain such as "
+          },
+          {
+            "kind": "code",
+            "text": "stream-mdx.dev"
+          },
+          {
+            "kind": "text",
+            "text": ", verify all of this after the DNS change:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "689a8069",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- apex domain serves valid HTTPS without certificate or handshake errors\n- `www` either serves cleanly or redirects to the chosen canonical hostname\n- the docs app and `/workers/markdown-worker.js` stay on the same expected origin\n- the exported site still builds and serves correctly after the domain cutover\n- CSP still permits the hosted worker source you actually ship",
+        "range": {
+          "from": 2865,
+          "to": 3237
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "apex domain serves valid HTTPS without certificate or handshake errors"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "www"
+              },
+              {
+                "kind": "text",
+                "text": " either serves cleanly or redirects to the chosen canonical hostname"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "the docs app and "
+              },
+              {
+                "kind": "code",
+                "text": "/workers/markdown-worker.js"
+              },
+              {
+                "kind": "text",
+                "text": " stay on the same expected origin"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "the exported site still builds and serves correctly after the domain cutover"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "CSP still permits the hosted worker source you actually ship"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "578de73b",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Treat a broken TLS handshake as a deployment failure even if DNS already resolves. DNS propagation alone is not enough.",
+        "range": {
+          "from": 3239,
+          "to": 3358
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Treat a broken TLS handshake as a deployment failure even if DNS already resolves. DNS propagation alone is not enough."
+          }
+        ]
+      }
     }
   ],
   "tocHeadings": [
@@ -856,6 +983,12 @@
       "text": "Vercel notes",
       "level": 2,
       "blockId": "48bad503"
+    },
+    {
+      "id": "custom-domain-verification",
+      "text": "Custom domain verification",
+      "level": 2,
+      "blockId": "6df19e68"
     }
   ],
   "init": {

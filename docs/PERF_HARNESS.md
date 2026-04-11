@@ -10,6 +10,16 @@ This harness streams a fixture through the real `StreamingMarkdown` renderer in 
 
 It is local-only by design and is intended for iterative optimization with the regression suite as a hardline behavior lock.
 
+## Methodology contract
+
+Keep the public benchmark story disciplined:
+
+- parity workloads are the only direct cross-engine comparison set
+- capability workloads exist to show StreamMDX behavior on richer feature mixes, not to manufacture apples-to-oranges claims
+- `CI locked` is the claim-grade live mode
+- `Explore` is the diagnosis mode
+- shipped client bundle, hosted worker asset, runtime loaded code, and peak memory are separate cost categories
+
 ## Prereqs
 
 Start the docs dev server (port 3000):
@@ -66,7 +76,16 @@ Example scenario format:
 
 ## Scheduling presets
 
-The harness accepts `--scheduling` (`default`, `smooth`, `aggressive`) and optional overrides. If omitted, it defaults to `aggressive`:
+The harness accepts `--scheduling` (`default`, `smooth`, `aggressive`) and optional overrides. If omitted, it defaults to `aggressive`.
+
+When you translate those harness knobs into the public benchmark surface, keep only these two interpretations:
+
+- `CI locked`: fixed scheduler behavior for reproducible local comparisons
+- `Explore`: freer tuning for diagnosis, never for public claim language
+
+Raw preset names such as `smooth` or `aggressive` are implementation details; they are not public benchmark categories on their own.
+
+Supported raw overrides:
 
 ```
 --batch microtask|timeout|rAF
@@ -89,6 +108,7 @@ Interpretation rule:
 - use a fixed scheduler preset when comparing candidate vs baseline
 - do not change scheduler knobs mid-comparison and then treat the result as a pure renderer win/loss
 - if you need claim-grade browser comparisons, line them up with the locked methodology described in [`SCHEDULING_AND_JITTER.md`](./SCHEDULING_AND_JITTER.md)
+- if you are running the rich capability workload, do not report it as a direct Streamdown/react-markdown parity result
 
 Useful scheduler-specific commands:
 
@@ -175,3 +195,4 @@ tmp/perf-baselines/S6_extreme_edge_like (optional edge-like stress baseline)
 - This harness uses the docs worker (`/workers/markdown-worker.js`) and demo registry.
 - `perf:demo` targets the `/demo` page and is separate from this harness.
 - Treat shipped client bundle, hosted worker asset, runtime loaded code, and peak memory as different cost categories.
+- The current public static benchmark set is intentionally five classes: four parity-friendly classes plus one explicitly marked capability stress class.
