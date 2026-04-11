@@ -730,8 +730,10 @@ function normalizeCodeLineProps(incoming: Record<string, unknown>, previous?: Re
 
 function createCodeLineProps(index: number, text: string, highlight: string | null, tokens?: TokenLineV1 | null): Record<string, unknown> {
   const safeText = typeof text === "string" ? text : "";
-  const sanitized = sanitizeLineInnerHtml(highlight, safeText);
-  const html = sanitized && sanitized.length >= safeText.length ? sanitized : escapeHtml(safeText);
+  const hasIncomingHighlight = typeof highlight === "string" && highlight.trim().length > 0;
+  const sanitized = hasIncomingHighlight ? sanitizeLineInnerHtml(highlight, safeText) : null;
+  const hasRenderableTokens = tokens !== undefined && tokens !== null;
+  const html = sanitized && sanitized.length >= safeText.length ? sanitized : hasRenderableTokens ? null : escapeHtml(safeText);
   const props: Record<string, unknown> = {
     index,
     text: safeText,

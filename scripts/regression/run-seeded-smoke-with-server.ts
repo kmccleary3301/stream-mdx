@@ -6,6 +6,7 @@ const HOST = process.env.STREAM_MDX_GATE_HOST ?? "127.0.0.1";
 const PORT = Number(process.env.STREAM_MDX_GATE_PORT ?? "3000");
 const BASE_URL = `http://${HOST}:${PORT}`;
 const TMP_DIR = path.resolve(process.cwd(), "tmp", "seeded-smoke");
+const LOG_PATH = path.join(TMP_DIR, "docs-server.log");
 
 function run(command: string, args: string[], options: { env?: NodeJS.ProcessEnv } = {}): void {
   execFileSync(command, args, {
@@ -22,7 +23,7 @@ async function waitForServer(
 ): Promise<void> {
   for (let attempt = 0; attempt < retries; attempt += 1) {
     if (child.exitCode !== null) {
-      throw new Error(`Static docs server exited before readiness check completed (exit ${child.exitCode}).`);
+      throw new Error(`Static docs server exited before readiness check completed (exit ${child.exitCode}). Log: ${LOG_PATH}`);
     }
     try {
       const res = await fetch(url);
@@ -32,13 +33,12 @@ async function waitForServer(
     }
     await new Promise((resolve) => setTimeout(resolve, delayMs));
   }
-  throw new Error(`Server at ${url} did not respond after ${retries} attempts`);
+  throw new Error(`Server at ${url} did not respond after ${retries} attempts. Log: ${LOG_PATH}`);
 }
 
 function startServer(): ReturnType<typeof spawn> {
   mkdirSync(TMP_DIR, { recursive: true });
-  const logPath = path.join(TMP_DIR, "docs-server.log");
-  const logStream = createWriteStream(logPath, { flags: "a" });
+  const logStream = createWriteStream(LOG_PATH, { flags: "a" });
   const child = spawn(
     "python3",
     ["-m", "http.server", String(PORT), "--bind", HOST],
@@ -97,5 +97,6 @@ async function main(): Promise<void> {
 
 main().catch((error) => {
   console.error(error);
+  console.error(`seeded-smoke server log: ${LOG_PATH}`);
   process.exit(1);
 });

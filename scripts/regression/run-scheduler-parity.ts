@@ -44,6 +44,7 @@ const MODES: SchedulerMode[] = ["microtask", "smooth", "timeout"];
 const CASES: Case[] = [
   { fixture: "edge-regressions", scenario: "S2_typical" },
   { fixture: "mdx-transitions", scenario: "S2_typical" },
+  { fixture: "mdx-multi-status", scenario: "S2_typical" },
   { fixture: "table-boundary", scenario: "S2_typical" },
 ];
 

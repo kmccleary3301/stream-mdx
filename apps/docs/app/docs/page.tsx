@@ -132,7 +132,15 @@ export default function DocsIndexPage() {
       </section>
 
       <section className="mx-auto w-full max-w-5xl">
-        <div className="route-kicker">First steps</div>
+        <div className="route-section-heading">
+          <div>
+            <div className="route-kicker">First steps</div>
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+              Start here if you want the shortest path from installation to a working stream in React or a first look at the non-React entry
+              points.
+            </p>
+          </div>
+        </div>
         <div className="mt-3 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {firstSteps.map((item) => {
             const Icon = item.icon;
@@ -160,7 +168,15 @@ export default function DocsIndexPage() {
       </section>
 
       <section className="mx-auto w-full max-w-5xl">
-        <div className="route-kicker">Read by role</div>
+        <div className="route-section-heading">
+          <div>
+            <div className="route-kicker">Read by role</div>
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+              These tracks are the real docs IA. React consumers, worker/plugin extenders, TUI consumers, and correctness reviewers should each
+              have a visible path instead of one flat index.
+            </p>
+          </div>
+        </div>
         <div className="mt-3 grid gap-4 md:grid-cols-2">
           {roleTracks.map((track) => (
             <div key={track.title} className="route-grid-card p-4">
@@ -192,7 +208,14 @@ export default function DocsIndexPage() {
       </section>
 
       <section className="mx-auto w-full max-w-5xl">
-        <div className="route-kicker">Explore by topic</div>
+        <div className="route-section-heading">
+          <div>
+            <div className="route-kicker">Explore by topic</div>
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+              Topic browsing stays secondary to the role tracks, but it still needs enough structure to work as a quick reference map.
+            </p>
+          </div>
+        </div>
         <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {topics.map((topic) => (
             <Link
@@ -215,8 +238,16 @@ export default function DocsIndexPage() {
       </section>
 
       <section className="mx-auto w-full max-w-5xl">
-        <div className="route-kicker">Use the docs site effectively</div>
-        <div className="mt-3 grid gap-4 md:grid-cols-[1.15fr_0.85fr]">
+        <div className="route-section-heading">
+          <div>
+            <div className="route-kicker">Use the docs site effectively</div>
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+              If you are scanning rather than reading linearly, use this section as the map from role tracks into the deeper guides and
+              reference material.
+            </p>
+          </div>
+        </div>
+        <div className="mt-3 grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
           <div className="route-panel p-4">
             <div className="text-sm font-semibold text-foreground">Navigation model</div>
             <ul className="mt-3 space-y-2 text-[13px] leading-relaxed text-muted-foreground">
@@ -232,9 +263,9 @@ export default function DocsIndexPage() {
           </div>
           <div className="route-panel p-4">
             <div className="text-sm font-semibold text-foreground">Browse all sections</div>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <div className="mt-3 grid gap-3 xl:grid-cols-3">
               {navSections.map((section) => (
-                <div key={section.title}>
+                <div key={section.title} className="route-panel-soft p-3">
                   <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-old">
                     {section.title}
                   </div>

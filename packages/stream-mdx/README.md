@@ -137,5 +137,7 @@ return <MarkdownBlocksRenderer blocks={blocks} componentRegistry={new ComponentR
 - [`../../docs/GETTING_STARTED.md`](../../docs/GETTING_STARTED.md)
 - [`../../docs/PUBLIC_API.md`](../../docs/PUBLIC_API.md)
 - [`../../docs/REACT_INTEGRATION_GUIDE.md`](../../docs/REACT_INTEGRATION_GUIDE.md)
+- [`../../docs/TUI_GUIDE.md`](../../docs/TUI_GUIDE.md)
 - [`../../docs/SECURITY_MODEL.md`](../../docs/SECURITY_MODEL.md)
 - [`../../docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`](../../docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md)
+- [`../../docs/BASELINE_UPDATE_POLICY.md`](../../docs/BASELINE_UPDATE_POLICY.md)

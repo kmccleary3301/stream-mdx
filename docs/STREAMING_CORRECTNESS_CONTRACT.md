@@ -22,6 +22,7 @@ Related docs:
 
 - `docs/DETERMINISM.md`
 - `docs/STATIC_SNAPSHOT_ARTIFACT_CONTRACT.md`
+- `docs/PATCH_CLASSIFICATION_LEDGER.md`
 - `docs/REGRESSION_FIX_MATRIX_2026-03-04.md`
 - `docs/POST_FINALIZE_MUTATION_LEDGER.md`
 - `docs/ESCAPED_BUG_TRACEABILITY_MATRIX.md`
@@ -44,6 +45,8 @@ Semantic commits must be:
 Anything else is enrichment and may be delayed, coalesced, or dropped.
 
 ## 2) Semantic vs Enrichment
+
+The audited patch-family map lives in `docs/PATCH_CLASSIFICATION_LEDGER.md`.
 
 ### Semantic commits
 
@@ -259,6 +262,11 @@ Release-only / characterization commands:
 - `npm run perf:characterize:scheduler`
 - wider local perf investigations that are intended for analysis rather than merge gating
 
+Policy and operational references:
+
+- [`BASELINE_UPDATE_POLICY.md`](./BASELINE_UPDATE_POLICY.md)
+- [`STREAMING_MARKDOWN_RELEASE_CHECKLIST.md`](./STREAMING_MARKDOWN_RELEASE_CHECKLIST.md)
+
 The rule is simple: contract checks and parity checks belong in CI; exploratory characterization does not.
 
 Scheduler-parity and HTML-regression failures must write inspectable artifacts under `tests/regression/artifacts/` so failures can be debugged without rerunning blind.
@@ -280,7 +288,7 @@ Minimum required gates:
 - HTML regression checkpoints
 - style/computed-geometry checks for high-risk CSS surfaces
 
-## 13) Practical Decision Rule
+## 15) Practical Decision Rule
 
 When evaluating a change:
 

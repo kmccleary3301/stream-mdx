@@ -24,7 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen">
         <Providers>
           <SiteHeader />
-          <main className="mx-auto w-full max-w-screen-xl overflow-x-hidden px-5 pb-24 pt-20 md:px-6 md:overflow-x-visible md:pt-24">
+          <main className="mx-auto w-full max-w-screen-xl overflow-x-hidden px-5 pb-24 pt-16 md:px-6 md:overflow-x-visible md:pt-20">
             <article className="article relative w-full">{children}</article>
           </main>
         </Providers>

@@ -1091,14 +1091,14 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
 CodeBlockView.displayName = "CodeBlockView";
 
 function composeHighlightedHtml(
-  lines: ReadonlyArray<{ index: number; text: string; html?: string | null; id?: string }>,
+  lines: ReadonlyArray<{ index: number; text: string; html?: string | null; id?: string; tokens?: TokenLineV1 | null }>,
   preAttrs?: Record<string, string>,
   codeAttrs?: Record<string, string>,
   appendTerminalNewline = false,
 ): string {
   const lineMarkup = lines
     .map((line) => {
-      const content = line.html ?? escapeHtml(line.text);
+      const content = line.html ?? renderTokenLineHtml(line.tokens) ?? escapeHtml(line.text);
       const dataLine = Number.isFinite(line.index) ? ` data-line="${line.index + 1}"` : "";
       return `<span class="line"${dataLine}>${content}</span>`;
     })
@@ -1106,6 +1106,121 @@ function composeHighlightedHtml(
   const preAttr = attrsToString(preAttrs);
   const codeAttr = attrsToString(codeAttrs);
   return `<pre${preAttr}><code${codeAttr}>${lineMarkup}${appendTerminalNewline ? "\n" : ""}</code></pre>`;
+}
+
+const TOKEN_FONT_STYLE_ITALIC = 1;
+const TOKEN_FONT_STYLE_BOLD = 2;
+const TOKEN_FONT_STYLE_UNDERLINE = 4;
+const TOKEN_FONT_STYLE_STRIKETHROUGH = 8;
+
+function renderTokenLineHtml(tokens: TokenLineV1 | null | undefined): string | null {
+  if (!tokens || !Array.isArray(tokens.spans)) {
+    return null;
+  }
+  return mergeRenderableTokenSpans(tokens.spans)
+    .map((span) => renderTokenSpanHtml(span))
+    .join("");
+}
+
+function renderTokenSpanHtml(span: TokenLineV1["spans"][number]): string {
+  const dark = span.v?.dark;
+  const light = span.v?.light;
+  const single = span.s;
+  const styles: string[] = [];
+
+  if (dark?.fg) {
+    styles.push(`--shiki-dark:${dark.fg}`);
+  }
+  if (light?.fg) {
+    styles.push(`--shiki-light:${light.fg}`);
+  }
+  if (!light?.fg && !dark?.fg && single?.fg) {
+    styles.push(`color:${single.fg}`);
+  }
+
+  const fontStyle = light?.fs ?? dark?.fs ?? single?.fs;
+  if (typeof fontStyle === "number" && fontStyle > 0) {
+    if (fontStyle & TOKEN_FONT_STYLE_ITALIC) {
+      styles.push("font-style: italic");
+    }
+    if (fontStyle & TOKEN_FONT_STYLE_BOLD) {
+      styles.push("font-weight: bold");
+    }
+    const decorations: string[] = [];
+    if (fontStyle & TOKEN_FONT_STYLE_UNDERLINE) {
+      decorations.push("underline");
+    }
+    if (fontStyle & TOKEN_FONT_STYLE_STRIKETHROUGH) {
+      decorations.push("line-through");
+    }
+    if (decorations.length > 0) {
+      styles.push(`text-decoration: ${decorations.join(" ")}`);
+    }
+  }
+
+  const content = escapeHtml(span.t ?? "");
+  if (styles.length === 0) {
+    return content;
+  }
+  return `<span style="${styles.join(";")}">${content}</span>`;
+}
+
+function mergeRenderableTokenSpans(spans: ReadonlyArray<TokenLineV1["spans"][number]>): TokenLineV1["spans"] {
+  if (spans.length <= 1) {
+    return spans.slice();
+  }
+
+  const merged: TokenLineV1["spans"] = [];
+  let pendingWhitespace = "";
+
+  for (const span of spans) {
+    const text = typeof span.t === "string" ? span.t : "";
+    if (/^[\t ]+$/.test(text)) {
+      pendingWhitespace += text;
+      continue;
+    }
+
+    const nextSpan = pendingWhitespace
+      ? { ...span, t: `${pendingWhitespace}${text}` }
+      : span;
+    pendingWhitespace = "";
+
+    const previous = merged[merged.length - 1];
+    if (previous && sameTokenSpanStyle(previous, nextSpan)) {
+      previous.t += nextSpan.t;
+    } else {
+      merged.push({ ...nextSpan });
+    }
+  }
+
+  if (pendingWhitespace) {
+    const previous = merged[merged.length - 1];
+    if (previous) {
+      previous.t += pendingWhitespace;
+    } else {
+      merged.push({ t: pendingWhitespace });
+    }
+  }
+
+  return merged;
+}
+
+function sameTokenSpanStyle(a: TokenLineV1["spans"][number], b: TokenLineV1["spans"][number]): boolean {
+  const variantKeys = new Set<string>([
+    ...Object.keys(a.v ?? {}),
+    ...Object.keys(b.v ?? {}),
+  ]);
+  for (const key of variantKeys) {
+    const aStyle = a.v?.[key as keyof NonNullable<typeof a.v>];
+    const bStyle = b.v?.[key as keyof NonNullable<typeof b.v>];
+    if ((aStyle?.fg ?? null) !== (bStyle?.fg ?? null)) return false;
+    if ((aStyle?.bg ?? null) !== (bStyle?.bg ?? null)) return false;
+    if ((aStyle?.fs ?? null) !== (bStyle?.fs ?? null)) return false;
+  }
+  if ((a.s?.fg ?? null) !== (b.s?.fg ?? null)) return false;
+  if ((a.s?.bg ?? null) !== (b.s?.bg ?? null)) return false;
+  if ((a.s?.fs ?? null) !== (b.s?.fs ?? null)) return false;
+  return true;
 }
 
 function resolveCodeSourceText(raw: string, metaCode: string | null): string {
@@ -1145,11 +1260,14 @@ function buildCodeFallbackLines(raw: string): Array<{ index: number; text: strin
 
 function normalizeCodeFallbackRaw(raw: string): string {
   if (!raw) return "";
-  let normalized = raw.replace(/\r\n?/g, "\n");
-  normalized = normalized.replace(/^```[^\n]*\n?/, "");
-  normalized = normalized.replace(/\n?```[\t ]*$/, "");
-  normalized = normalized.replace(/\n+$/, "");
-  return normalized;
+  const normalized = raw.replace(/\r\n?/g, "\n");
+  const fenced = stripCodeFence(normalized);
+  if (!fenced.hadFence) {
+    return normalized.replace(/\n+$/, "");
+  }
+  let code = fenced.code;
+  code = code.replace(/\n+$/, "");
+  return code;
 }
 
 function escapeHtml(value: string): string {

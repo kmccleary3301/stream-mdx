@@ -1,211 +1,192 @@
-# StreamMDX — Release Checklist
+# StreamMDX Release Checklist
 
-_Last updated: 2025-12-17_
+_Last updated: 2026-04-10_
 
-Use this checklist when cutting releases from the `stream-mdx/` repo. It assumes the current workspace scripts in `package.json`.
+Use this checklist when cutting releases from `stream-mdx/`. This file is the operational release path, not a historical note.
 
----
+## 1. Preflight
 
-## 1. Preflight (local)
+1. Install clean dependencies.
 
-1. **Install deps (clean)**
    ```bash
    npm ci
    ```
-2. **Build packages**
-   - `npm run build` runs all workspace builds (`npm --workspaces --if-present run build`).
+
+2. Build workspaces.
+
    ```bash
    npm run build
    ```
-3. **Sourcemap policy sanity check**
-   - Default: **no sourcemaps** are emitted by package builds.
-   - Optional: enable sourcemaps for local debugging by setting `SOURCEMAP=1`.
+
+3. Build the exported docs site.
+
    ```bash
-   SOURCEMAP=1 npm run build
+   npm run docs:build
    ```
-4. **Build the hosted worker + copy to examples**
+
+4. Check documentation links and anchors.
+
    ```bash
-   npm run worker:build
+   DOCS_CHECK_ANCHORS=1 npm run docs:check-links
    ```
-5. **Run tests**
+
+## 2. Required correctness and docs gates
+
+These are the high-signal release gates and should be green before publishing.
+
+1. Benchmark terminology contract.
+
+   ```bash
+   npm run test:benchmarks:methodology
+   ```
+
+2. Seeded final-HTML convergence against the exported-site serving model.
+
+   ```bash
+   npm run test:regression:seeded-smoke:server
+   ```
+
+3. Scheduler-mode final-HTML parity.
+
+   ```bash
+   npm run test:regression:scheduler-parity
+   ```
+
+4. Docs quality audit.
+
+   ```bash
+   DOCS_AUDIT_BASE_URL=http://127.0.0.1:3012 npm run docs:quality:audit
+   ```
+
+5. Package tests and build-sensitive checks.
+
    ```bash
    npm test
+   npm -ws --if-present pack --dry-run
+   npm run ci:pack-smoke
    ```
-6. **Local regression baselines (local-only, recommended)**
-   ```bash
-   npm run test:regression:html
-   npm run test:regression:styles
-   ```
-   - HTML snapshots capture streaming checkpoints (5/10/25/50/75/90/100%) and run both typical + extreme scenarios for stress fixtures.
-   - Format anticipation is enabled by default in the regression harness.
-   - To update baselines, re-run with `UPDATE_SNAPSHOTS=1`.
-   - CSS parity checks to confirm after styles update:
-     - Table row borders (dark mode)
-     - Blockquote + footnote color alignment
-     - Preview + code adjacency (no top gap/radius)
-7. **Perf baseline capture (optional, local)**
-   ```bash
-   NEXT_PUBLIC_STREAMING_DEMO_API=true npm run docs:dev
-   npm run perf:demo -- --rate 12000 --tick 5 --runs 1
-   ```
-   - Output includes a `longTasks` summary (count, total duration, max, p95).
-   - Baseline runs are tracked in `docs/perf/LOCAL_BENCHMARKS.md`.
-8. **Perf compare + changelog update (recommended)**
-   ```bash
-   npm run perf:compare -- --base tmp/perf-baselines/<baseline> --candidate tmp/perf-baselines/<candidate>
-   ```
-   - Record the deltas in `docs/PERF_QUALITY_CHANGELOG.md`.
-   - Update `docs/perf/LOCAL_BENCHMARKS.md` when new baselines are captured.
-9. **Sanity-check hosted worker outputs**
-   - Built worker artifact:
-     - `packages/markdown-v2-worker/dist/hosted/markdown-worker.js`
-   - Copied artifact (for the example app):
-     - `examples/streaming-markdown-starter/public/workers/markdown-worker.js`
 
----
+## 3. Merge-time local checks
 
-## 2. Pack + external install gate (high signal)
-
-This is the most reliable “will npm users succeed?” gate.
-
-### 2.1 CI-equivalent smoke test (recommended)
-
-Runs a fully automated pack+install+`next build` using the included starter (no workspace links):
+These are not all CI-required, but they should be run before a release if the touched surface warrants it.
 
 ```bash
-npm run ci:pack-smoke
+STREAM_MDX_REGRESSION_BASE_URL=http://127.0.0.1:3012 npm run test:regression:html
+STREAM_MDX_REGRESSION_BASE_URL=http://127.0.0.1:3012 npm run test:regression:styles
+npm run test:regression:style-invariants
 ```
 
-### 2.2 Manual pack (optional)
+Use the exported docs server model:
 
-1. **Pack tarballs locally**
-     ```bash
-     mkdir -p tmp/release-packs
-     (cd packages/markdown-v2-core && npm pack --pack-destination ../../tmp/release-packs)
-     (cd packages/markdown-v2-plugins && npm pack --pack-destination ../../tmp/release-packs)
-     (cd packages/markdown-v2-protocol && npm pack --pack-destination ../../tmp/release-packs)
-     (cd packages/markdown-v2-worker && npm pack --pack-destination ../../tmp/release-packs)
-     (cd packages/markdown-v2-react && npm pack --pack-destination ../../tmp/release-packs)
-     (cd packages/markdown-v2-mermaid && npm pack --pack-destination ../../tmp/release-packs)
-     (cd packages/markdown-v2-tui && npm pack --pack-destination ../../tmp/release-packs)
-     (cd packages/theme-tailwind && npm pack --pack-destination ../../tmp/release-packs)
-     (cd packages/stream-mdx && npm pack --pack-destination ../../tmp/release-packs)
-     ```
-2. **In a clean scratch dir, install from tarballs and build**
-   - Minimum expectation:
-     - `npm install ./tmp/release-packs/*.tgz` (or explicit paths)
-     - `next build` succeeds for a simple Next app using `stream-mdx` (or `@stream-mdx/react`)
-   - If you use the included starter:
-     - point the starter deps at the tarballs (no workspace/file links)
-     - ensure it can `npm install`, `npm run worker:build`, and `npm run build`
+```bash
+cd apps/docs/out
+python3 -m http.server 3012 --bind 127.0.0.1
+```
 
----
+## 4. Snapshot and baseline policy
 
-## 3. Versioning & tagging (Changesets)
+Do not refresh snapshots blindly.
 
-This repo is set up for Changesets.
+Read first:
 
-1. **Add changesets for the release**
+- [`BASELINE_UPDATE_POLICY.md`](./BASELINE_UPDATE_POLICY.md)
+
+Rules:
+
+- correctness bugs require a fixture + invariant/test + scenario or seed
+- seeded-smoke and scheduler-parity failures are not fixed by snapshot refresh alone
+- deterministic drift must be explained in the PR or release notes
+
+Update commands, only after the policy is satisfied:
+
+```bash
+UPDATE_SNAPSHOTS=1 npm run test:regression:html
+UPDATE_SNAPSHOTS=1 npm run test:regression:styles
+```
+
+## 5. Perf and scheduler characterization
+
+These are release-time characterization steps, not CI-required merge gates.
+
+```bash
+npm run perf:characterize:scheduler
+npm run perf:demo -- --rate 12000 --tick 5 --runs 1
+```
+
+When capturing new public-claim baselines, update the related docs:
+
+- [`PERF_HARNESS.md`](./PERF_HARNESS.md)
+- [`SCHEDULING_AND_JITTER.md`](./SCHEDULING_AND_JITTER.md)
+- [`docs/perf/LOCAL_BENCHMARKS.md`](./perf/LOCAL_BENCHMARKS.md)
+
+## 6. Packaging and publish gates
+
+1. Generate or review changesets.
+
    ```bash
    npm run changeset
-   ```
-2. **Version packages**
-   ```bash
    npm run changeset:version
    ```
-3. **Commit**
-   - Example:
-     - `chore(release): version packages`
-4. **Tag (optional but recommended)**
-   - Prefer a single repo tag per release:
-     - `v0.0.1` / `v0.1.0` / `v1.0.0`
 
----
+2. Confirm npm auth.
 
-## 4. Publish
-
-1. **Ensure you are logged into npm**
    ```bash
    npm whoami
    ```
-2. **Trusted Publishing (recommended)**
-   - Configure npm “Trusted Publisher” for:
-     - `@stream-mdx/core`
-     - `@stream-mdx/plugins`
-     - `@stream-mdx/protocol`
-     - `@stream-mdx/worker`
-     - `@stream-mdx/react`
-     - `@stream-mdx/mermaid`
-     - `@stream-mdx/tui`
-     - `@stream-mdx/theme-tailwind`
-     - `stream-mdx`
-   - Required workflow permissions:
-     - `id-token: write`
-   - Workflows:
-     - `.github/workflows/release.yml` (auto release PRs / publish)
-     - `.github/workflows/publish.yml` (manual workflow_dispatch)
 
-3. **Publish via Changesets**
+3. Publish via Changesets.
+
    ```bash
    npm run changeset:publish
    ```
-4. **Optional: local interactive publish helper**
-   ```bash
-   scripts/publish-v0.4.0.sh
-   ```
-   - Requires `npm login --auth-type=web`.
-   - Publishes in dependency order, verifies all local versions match, and skips packages already published at that version.
-5. **Confirm all packages are published**
-   - `@stream-mdx/core`
-   - `@stream-mdx/plugins`
-   - `@stream-mdx/protocol`
-   - `@stream-mdx/worker`
-   - `@stream-mdx/react`
-   - `@stream-mdx/mermaid`
-   - `@stream-mdx/tui`
-   - `@stream-mdx/theme-tailwind`
-   - `stream-mdx`
 
----
+4. Confirm the expected packages are published:
 
-## 5. CI gates (current repo)
+- `@stream-mdx/core`
+- `@stream-mdx/plugins`
+- `@stream-mdx/protocol`
+- `@stream-mdx/worker`
+- `@stream-mdx/react`
+- `@stream-mdx/mermaid`
+- `@stream-mdx/tui`
+- `@stream-mdx/theme-tailwind`
+- `stream-mdx`
 
-This repo’s CI (`.github/workflows/ci.yml`) enforces:
+## 7. Public surface verification
 
-- `npm ci`
-- `npm run build`
-- `npm test`
-- `npm -ws --if-present pack --dry-run`
-- `npm run ci:pack-smoke` (pack+install+`next build`)
+After publish/deploy, verify:
 
-Before publishing, run the same commands locally (plus the external install gate in §2).
+- docs site: <https://stream-mdx.vercel.app/docs>
+- demo: <https://stream-mdx.vercel.app/demo>
+- showcase: <https://stream-mdx.vercel.app/showcase>
+- benchmarks: <https://stream-mdx.vercel.app/benchmarks>
+- npm package README rendering for `stream-mdx`
 
----
+If `stream-mdx.dev` is configured as the canonical production domain, verify the same surfaces there and ensure redirects behave intentionally.
 
-## 6. Post-publish checks
+## 8. Worker and deployment checks
 
-1. **Verify npm README renders**
-   - `stream-mdx` should display `packages/stream-mdx/README.md` on npmjs.com.
-2. **Verify docs + demo links**
-   - Docs: https://kmccleary3301.github.io/stream-mdx/
-   - Demo: https://kmccleary3301.github.io/stream-mdx/demo
-   - Showcase: https://kmccleary3301.github.io/stream-mdx/showcase
-3. **Verify hosted worker guidance**
-   - The worker is expected at `/workers/markdown-worker.js` in most examples.
-4. **Confirm Trusted Publishing works**
-   - Once configured on npm, use `.github/workflows/publish.yml` (manual) or `.github/workflows/release.yml` (auto).
+Verify the hosted worker outputs expected by examples:
 
----
+- built worker artifact:
+  - `packages/markdown-v2-worker/dist/hosted/markdown-worker.js`
+- copied example artifact:
+  - `examples/streaming-markdown-starter/public/workers/markdown-worker.js`
 
-## 7. Docs & release notes
+## 9. Artifact and log triage
 
-- Update `docs/STREAMING_MARKDOWN_V2_STATUS.md` as implementation details change.
-- Publish release notes via GitHub Releases (recommended), or add a `CHANGELOG.md` if you want a file-based changelog.
-- When publishing packages, ensure badges and docs links remain correct.
+If a release gate fails, inspect:
 
----
+- regression artifacts under `tests/regression/artifacts/**`
+- managed seeded-smoke server log at `tmp/seeded-smoke/docs-server.log`
+- release-gates server log at `tmp/release-gates/docs-server.log`
 
-## 8. Rollback plan
+Do not rerun blind before inspecting the failure artifacts.
 
-- Tag every release; rollback is typically “revert and republish as `-patch`” or “yank with `npm deprecate` + publish fix”.
-- Keep the hosted worker build deterministic so it can be regenerated from tags.
+## 10. Final branch state
+
+Before cutting the release, confirm:
+
+- `main` is clean
+- `main` is pushed
+- the release commit/tag reflects the verified state

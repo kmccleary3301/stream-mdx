@@ -1,9 +1,9 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-02-11T21:58:24.198Z",
-  "hash": "9182fb2c36f3e9e99c0228e3e880824fa07e671bdff687b98029b3388f4b652b",
-  "contentHash": "c1b7f4ae926c8140156a123ec1487a51b0bd8c43594ff0ea15a7e7f04b1df0ad",
+  "createdAt": "2026-04-10T22:26:53.807Z",
+  "hash": "8307f817c80b1b22af95222b9d893b8451ae16fb17d9faf5556d3985435831c2",
+  "contentHash": "d8c71bd4a918aecc947a8889cc6e3b9c48e53c4ba3a5398f64fa466a4f8764ba",
   "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
   "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
   "blocks": [
@@ -12,56 +12,61 @@
       "type": "heading",
       "isFinalized": true,
       "payload": {
-        "raw": "StreamMDX — Release Checklist",
+        "raw": "StreamMDX Release Checklist",
         "range": {
           "from": 0,
-          "to": 31
+          "to": 29
         },
         "meta": {
           "headingLevel": 1,
-          "headingText": "StreamMDX — Release Checklist",
+          "headingText": "StreamMDX Release Checklist",
           "headingId": "streammdx-release-checklist"
         },
         "inline": [
           {
             "kind": "text",
-            "text": "StreamMDX — Release Checklist"
+            "text": "StreamMDX Release Checklist"
           }
         ]
       }
     },
     {
-      "id": "4941eb60",
+      "id": "1f7885de",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "_Last updated: 2025-12-17_",
+        "raw": "_Last updated: 2026-04-10_",
         "range": {
-          "from": 33,
-          "to": 59
+          "from": 31,
+          "to": 57
         },
         "inline": [
           {
-            "kind": "text",
-            "text": "_Last updated: 2025-12-17_"
+            "kind": "em",
+            "children": [
+              {
+                "kind": "text",
+                "text": "Last updated: 2026-04-10"
+              }
+            ]
           }
         ]
       }
     },
     {
-      "id": "368d75fb",
+      "id": "29fe995c",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "Use this checklist when cutting releases from the `stream-mdx/` repo. It assumes the current workspace scripts in `package.json`.",
+        "raw": "Use this checklist when cutting releases from `stream-mdx/`. This file is the operational release path, not a historical note.",
         "range": {
-          "from": 61,
-          "to": 190
+          "from": 59,
+          "to": 185
         },
         "inline": [
           {
             "kind": "text",
-            "text": "Use this checklist when cutting releases from the "
+            "text": "Use this checklist when cutting releases from "
           },
           {
             "kind": "code",
@@ -69,283 +74,559 @@
           },
           {
             "kind": "text",
-            "text": " repo. It assumes the current workspace scripts in "
-          },
-          {
-            "kind": "code",
-            "text": "package.json"
-          },
-          {
-            "kind": "text",
-            "text": "."
+            "text": ". This file is the operational release path, not a historical note."
           }
         ]
       }
     },
     {
-      "id": "2eeb2c16",
-      "type": "hr",
-      "isFinalized": true,
-      "payload": {
-        "raw": "---",
-        "range": {
-          "from": 192,
-          "to": 195
-        }
-      }
-    },
-    {
-      "id": "236014e1",
+      "id": "17a98600",
       "type": "heading",
       "isFinalized": true,
       "payload": {
-        "raw": "1. Preflight (local)",
+        "raw": "1. Preflight",
         "range": {
-          "from": 197,
-          "to": 220
+          "from": 187,
+          "to": 202
         },
         "meta": {
           "headingLevel": 2,
-          "headingText": "1. Preflight (local)",
-          "headingId": "1-preflight-local"
+          "headingText": "1. Preflight",
+          "headingId": "1-preflight"
         },
         "inline": [
           {
             "kind": "text",
-            "text": "1. Preflight (local)"
+            "text": "1. Preflight"
           }
         ]
       }
     },
     {
-      "id": "15af0f7e",
+      "id": "7c11d4c2",
       "type": "list",
       "isFinalized": true,
       "payload": {
-        "raw": "1. **Install deps (clean)**\n   ```bash\n   npm ci\n   ```\n2. **Build packages**\n   - `npm run build` runs all workspace builds (`npm --workspaces --if-present run build`).\n   ```bash\n   npm run build\n   ```\n3. **Sourcemap policy sanity check**\n   - Default: **no sourcemaps** are emitted by package builds.\n   - Optional: enable sourcemaps for local debugging by setting `SOURCEMAP=1`.\n   ```bash\n   SOURCEMAP=1 npm run build\n   ```\n4. **Build the hosted worker + copy to examples**\n   ```bash\n   npm run worker:build\n   ```\n5. **Run tests**\n   ```bash\n   npm test\n   ```\n6. **Local regression baselines (local-only, recommended)**\n   ```bash\n   npm run test:regression:html\n   npm run test:regression:styles\n   ```\n   - HTML snapshots capture streaming checkpoints (5/10/25/50/75/90/100%) and run both typical + extreme scenarios for stress fixtures.\n   - Format anticipation is enabled by default in the regression harness.\n   - To update baselines, re-run with `UPDATE_SNAPSHOTS=1`.\n   - CSS parity checks to confirm after styles update:\n     - Table row borders (dark mode)\n     - Blockquote + footnote color alignment\n     - Preview + code adjacency (no top gap/radius)\n7. **Perf baseline capture (optional, local)**\n   ```bash\n   NEXT_PUBLIC_STREAMING_DEMO_API=true npm run docs:dev\n   npm run perf:demo -- --rate 12000 --tick 5 --runs 1\n   ```\n   - Output includes a `longTasks` summary (count, total duration, max, p95).\n   - Baseline runs are tracked in `docs/perf/LOCAL_BENCHMARKS.md`.\n8. **Perf compare + changelog update (recommended)**\n   ```bash\n   npm run perf:compare -- --base tmp/perf-baselines/<baseline> --candidate tmp/perf-baselines/<candidate>\n   ```\n   - Record the deltas in `docs/PERF_QUALITY_CHANGELOG.md`.\n   - Update `docs/perf/LOCAL_BENCHMARKS.md` when new baselines are captured.\n9. **Sanity-check hosted worker outputs**\n   - Built worker artifact:\n     - `packages/markdown-v2-worker/dist/hosted/markdown-worker.js`\n   - Copied artifact (for the example app):\n     - `examples/streaming-markdown-starter/public/workers/markdown-worker.js`",
+        "raw": "1. Install clean dependencies.\n\n   ```bash\n   npm ci\n   ```\n\n2. Build workspaces.\n\n   ```bash\n   npm run build\n   ```\n\n3. Build the exported docs site.\n\n   ```bash\n   npm run docs:build\n   ```\n\n4. Check documentation links and anchors.\n\n   ```bash\n   DOCS_CHECK_ANCHORS=1 npm run docs:check-links\n   ```",
         "range": {
-          "from": 222,
-          "to": 2291
+          "from": 204,
+          "to": 507
         },
         "meta": {
           "ordered": true,
           "items": [
             [
               {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Install deps (clean)"
-                  }
-                ]
-              },
+                "kind": "text",
+                "text": "Install clean dependencies.\n\n```bash\nnpm ci\n```\n"
+              }
+            ],
+            [
               {
                 "kind": "text",
-                "text": "\n```bash\nnpm ci\n```"
+                "text": "Build workspaces.\n\n```bash\nnpm run build\n```\n"
               }
             ],
             [
               {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Build packages"
-                  }
-                ]
+                "kind": "text",
+                "text": "Build the exported docs site.\n\n```bash\nnpm run docs:build\n```\n"
               }
             ],
             [
+              {
+                "kind": "text",
+                "text": "Check documentation links and anchors.\n\n```bash\nDOCS_CHECK_ANCHORS=1 npm run docs:check-links\n```"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "3dd965f2",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "2. Required correctness and docs gates",
+        "range": {
+          "from": 509,
+          "to": 550
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "2. Required correctness and docs gates",
+          "headingId": "2-required-correctness-and-docs-gates"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "2. Required correctness and docs gates"
+          }
+        ]
+      }
+    },
+    {
+      "id": "20b6b786",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "These are the high-signal release gates and should be green before publishing.",
+        "range": {
+          "from": 552,
+          "to": 630
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "These are the high-signal release gates and should be green before publishing."
+          }
+        ]
+      }
+    },
+    {
+      "id": "414420c1",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "1. Benchmark terminology contract.\n\n   ```bash\n   npm run test:benchmarks:methodology\n   ```\n\n2. Seeded final-HTML convergence against the exported-site serving model.\n\n   ```bash\n   npm run test:regression:seeded-smoke:server\n   ```\n\n3. Scheduler-mode final-HTML parity.\n\n   ```bash\n   npm run test:regression:scheduler-parity\n   ```\n\n4. Docs quality audit.\n\n   ```bash\n   DOCS_AUDIT_BASE_URL=http://127.0.0.1:3012 npm run docs:quality:audit\n   ```\n\n5. Package tests and build-sensitive checks.\n\n   ```bash\n   npm test\n   npm -ws --if-present pack --dry-run\n   npm run ci:pack-smoke\n   ```",
+        "range": {
+          "from": 632,
+          "to": 1222
+        },
+        "meta": {
+          "ordered": true,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Benchmark terminology contract.\n\n```bash\nnpm run test:benchmarks:methodology\n```\n"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Seeded final-HTML convergence against the exported-site serving model.\n\n```bash\nnpm run test:regression:seeded-smoke:server\n```\n"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Scheduler-mode final-HTML parity.\n\n```bash\nnpm run test:regression:scheduler-parity\n```\n"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Docs quality audit.\n\n```bash\nDOCS_AUDIT_BASE_URL=http://127.0.0.1:3012 npm run docs:quality:audit\n```\n"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Package tests and build-sensitive checks.\n\n```bash\nnpm test\nnpm -ws --if-present pack --dry-run\nnpm run ci:pack-smoke\n```"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "60f62c23",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "3. Merge-time local checks",
+        "range": {
+          "from": 1224,
+          "to": 1253
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "3. Merge-time local checks",
+          "headingId": "3-merge-time-local-checks"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "3. Merge-time local checks"
+          }
+        ]
+      }
+    },
+    {
+      "id": "5f78fabf",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "These are not all CI-required, but they should be run before a release if the touched surface warrants it.",
+        "range": {
+          "from": 1255,
+          "to": 1361
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "These are not all CI-required, but they should be run before a release if the touched surface warrants it."
+          }
+        ]
+      }
+    },
+    {
+      "id": "71c462db",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```bash\nSTREAM_MDX_REGRESSION_BASE_URL=http://127.0.0.1:3012 npm run test:regression:html\nSTREAM_MDX_REGRESSION_BASE_URL=http://127.0.0.1:3012 npm run test:regression:styles\nnpm run test:regression:style-invariants\n```",
+        "range": {
+          "from": 1363,
+          "to": 1581
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">STREAM_MDX_REGRESSION_BASE_URL</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">http://127.0.0.1:3012</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> test:regression:html</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">STREAM_MDX_REGRESSION_BASE_URL</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">http://127.0.0.1:3012</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> test:regression:styles</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> test:regression:style-invariants</span></span></code></pre>",
+        "meta": {
+          "lang": "bash",
+          "code": "STREAM_MDX_REGRESSION_BASE_URL=http://127.0.0.1:3012 npm run test:regression:html\nSTREAM_MDX_REGRESSION_BASE_URL=http://127.0.0.1:3012 npm run test:regression:styles\nnpm run test:regression:style-invariants"
+        }
+      }
+    },
+    {
+      "id": "595ba35f",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Use the exported docs server model:",
+        "range": {
+          "from": 1583,
+          "to": 1618
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Use the exported docs server model:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "2f4f8d69",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```bash\ncd apps/docs/out\npython3 -m http.server 3012 --bind 127.0.0.1\n```",
+        "range": {
+          "from": 1620,
+          "to": 1693
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">cd</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> apps/docs/out</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">python3</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> -m</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> http.server</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 3012</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --bind</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 127.0.0.1</span></span></code></pre>",
+        "meta": {
+          "lang": "bash",
+          "code": "cd apps/docs/out\npython3 -m http.server 3012 --bind 127.0.0.1"
+        }
+      }
+    },
+    {
+      "id": "93081ff",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "4. Snapshot and baseline policy",
+        "range": {
+          "from": 1695,
+          "to": 1729
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "4. Snapshot and baseline policy",
+          "headingId": "4-snapshot-and-baseline-policy"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "4. Snapshot and baseline policy"
+          }
+        ]
+      }
+    },
+    {
+      "id": "19dfeffc",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Do not refresh snapshots blindly.",
+        "range": {
+          "from": 1731,
+          "to": 1764
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Do not refresh snapshots blindly."
+          }
+        ]
+      }
+    },
+    {
+      "id": "1a53821a",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Read first:",
+        "range": {
+          "from": 1766,
+          "to": 1777
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Read first:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "29067e8c",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- [`BASELINE_UPDATE_POLICY.md`](./BASELINE_UPDATE_POLICY.md)",
+        "range": {
+          "from": 1779,
+          "to": 1839
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "["
+              },
               {
                 "kind": "code",
-                "text": "npm run build"
+                "text": "BASELINE_UPDATE_POLICY.md"
               },
               {
                 "kind": "text",
-                "text": " runs all workspace builds ("
+                "text": "](./BASELINE_UPDATE_POLICY.md)"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "23ab441c",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Rules:",
+        "range": {
+          "from": 1841,
+          "to": 1847
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Rules:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "5fd80370",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- correctness bugs require a fixture + invariant/test + scenario or seed\n- seeded-smoke and scheduler-parity failures are not fixed by snapshot refresh alone\n- deterministic drift must be explained in the PR or release notes",
+        "range": {
+          "from": 1849,
+          "to": 2073
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "correctness bugs require a fixture + invariant/test + scenario or seed"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "seeded-smoke and scheduler-parity failures are not fixed by snapshot refresh alone"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "deterministic drift must be explained in the PR or release notes"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "4b3df364",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Update commands, only after the policy is satisfied:",
+        "range": {
+          "from": 2075,
+          "to": 2127
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Update commands, only after the policy is satisfied:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6cea9ed4",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```bash\nUPDATE_SNAPSHOTS=1 npm run test:regression:html\nUPDATE_SNAPSHOTS=1 npm run test:regression:styles\n```",
+        "range": {
+          "from": 2129,
+          "to": 2238
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">UPDATE_SNAPSHOTS</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">1</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> test:regression:html</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">UPDATE_SNAPSHOTS</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">1</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> test:regression:styles</span></span></code></pre>",
+        "meta": {
+          "lang": "bash",
+          "code": "UPDATE_SNAPSHOTS=1 npm run test:regression:html\nUPDATE_SNAPSHOTS=1 npm run test:regression:styles"
+        }
+      }
+    },
+    {
+      "id": "28f7bc",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "5. Perf and scheduler characterization",
+        "range": {
+          "from": 2240,
+          "to": 2281
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "5. Perf and scheduler characterization",
+          "headingId": "5-perf-and-scheduler-characterization"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "5. Perf and scheduler characterization"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6fb0597b",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "These are release-time characterization steps, not CI-required merge gates.",
+        "range": {
+          "from": 2283,
+          "to": 2358
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "These are release-time characterization steps, not CI-required merge gates."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ea47ff",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```bash\nnpm run perf:characterize:scheduler\nnpm run perf:demo -- --rate 12000 --tick 5 --runs 1\n```",
+        "range": {
+          "from": 2360,
+          "to": 2459
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:characterize:scheduler</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:demo</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --rate</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 12000</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --tick</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 5</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --runs</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 1</span></span></code></pre>",
+        "meta": {
+          "lang": "bash",
+          "code": "npm run perf:characterize:scheduler\nnpm run perf:demo -- --rate 12000 --tick 5 --runs 1"
+        }
+      }
+    },
+    {
+      "id": "1389b63d",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "When capturing new public-claim baselines, update the related docs:",
+        "range": {
+          "from": 2461,
+          "to": 2528
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "When capturing new public-claim baselines, update the related docs:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "4778f3e4",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- [`PERF_HARNESS.md`](./PERF_HARNESS.md)\n- [`SCHEDULING_AND_JITTER.md`](./SCHEDULING_AND_JITTER.md)\n- [`docs/perf/LOCAL_BENCHMARKS.md`](./perf/LOCAL_BENCHMARKS.md)",
+        "range": {
+          "from": 2530,
+          "to": 2693
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "["
               },
               {
                 "kind": "code",
-                "text": "npm --workspaces --if-present run build"
+                "text": "PERF_HARNESS.md"
               },
               {
                 "kind": "text",
-                "text": ").\n```bash\nnpm run build\n```"
-              }
-            ],
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Sourcemap policy sanity check"
-                  }
-                ]
+                "text": "](./PERF_HARNESS.md)"
               }
             ],
             [
               {
                 "kind": "text",
-                "text": "Default: "
-              },
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "no sourcemaps"
-                  }
-                ]
-              },
-              {
-                "kind": "text",
-                "text": " are emitted by package builds."
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "Optional: enable sourcemaps for local debugging by setting "
+                "text": "["
               },
               {
                 "kind": "code",
-                "text": "SOURCEMAP=1"
+                "text": "SCHEDULING_AND_JITTER.md"
               },
               {
                 "kind": "text",
-                "text": ".\n```bash\nSOURCEMAP=1 npm run build\n```"
-              }
-            ],
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Build the hosted worker + copy to examples"
-                  }
-                ]
-              },
-              {
-                "kind": "text",
-                "text": "\n```bash\nnpm run worker:build\n```"
-              }
-            ],
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Run tests"
-                  }
-                ]
-              },
-              {
-                "kind": "text",
-                "text": "\n```bash\nnpm test\n```"
-              }
-            ],
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Local regression baselines (local-only, recommended)"
-                  }
-                ]
-              },
-              {
-                "kind": "text",
-                "text": "\n```bash\nnpm run test:regression:html\nnpm run test:regression:styles\n```"
+                "text": "](./SCHEDULING_AND_JITTER.md)"
               }
             ],
             [
               {
                 "kind": "text",
-                "text": "HTML snapshots capture streaming checkpoints (5/10/25/50/75/90/100%) and run both typical + extreme scenarios for stress fixtures."
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "Format anticipation is enabled by default in the regression harness."
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "To update baselines, re-run with "
-              },
-              {
-                "kind": "code",
-                "text": "UPDATE_SNAPSHOTS=1"
-              },
-              {
-                "kind": "text",
-                "text": "."
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "CSS parity checks to confirm after styles update:"
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "Table row borders (dark mode)"
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "Blockquote + footnote color alignment"
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "Preview + code adjacency (no top gap/radius)"
-              }
-            ],
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Perf baseline capture (optional, local)"
-                  }
-                ]
-              },
-              {
-                "kind": "text",
-                "text": "\n```bash\nNEXT_PUBLIC_STREAMING_DEMO_API=true npm run docs:dev\nnpm run perf:demo -- --rate 12000 --tick 5 --runs 1\n```"
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "Output includes a "
-              },
-              {
-                "kind": "code",
-                "text": "longTasks"
-              },
-              {
-                "kind": "text",
-                "text": " summary (count, total duration, max, p95)."
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "Baseline runs are tracked in "
+                "text": "["
               },
               {
                 "kind": "code",
@@ -353,67 +634,328 @@
               },
               {
                 "kind": "text",
-                "text": "."
+                "text": "](./perf/LOCAL_BENCHMARKS.md)"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "17edca0",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "6. Packaging and publish gates",
+        "range": {
+          "from": 2695,
+          "to": 2728
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "6. Packaging and publish gates",
+          "headingId": "6-packaging-and-publish-gates"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "6. Packaging and publish gates"
+          }
+        ]
+      }
+    },
+    {
+      "id": "77b69a26",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "1. Generate or review changesets.\n\n   ```bash\n   npm run changeset\n   npm run changeset:version\n   ```\n\n2. Confirm npm auth.\n\n   ```bash\n   npm whoami\n   ```\n\n3. Publish via Changesets.\n\n   ```bash\n   npm run changeset:publish\n   ```\n\n4. Confirm the expected packages are published:",
+        "range": {
+          "from": 2730,
+          "to": 3012
+        },
+        "meta": {
+          "ordered": true,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Generate or review changesets.\n\n```bash\nnpm run changeset\nnpm run changeset:version\n```\n"
               }
             ],
             [
               {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Perf compare + changelog update (recommended)"
-                  }
-                ]
-              },
-              {
                 "kind": "text",
-                "text": "\n```bash\nnpm run perf:compare -- --base tmp/perf-baselines/<baseline> --candidate tmp/perf-baselines/<candidate>\n```"
+                "text": "Confirm npm auth.\n\n```bash\nnpm whoami\n```\n"
               }
             ],
             [
               {
                 "kind": "text",
-                "text": "Record the deltas in "
+                "text": "Publish via Changesets.\n\n```bash\nnpm run changeset:publish\n```\n"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Confirm the expected packages are published:"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "1d937944",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- `@stream-mdx/core`\n- `@stream-mdx/plugins`\n- `@stream-mdx/protocol`\n- `@stream-mdx/worker`\n- `@stream-mdx/react`\n- `@stream-mdx/mermaid`\n- `@stream-mdx/tui`\n- `@stream-mdx/theme-tailwind`\n- `stream-mdx`",
+        "range": {
+          "from": 3014,
+          "to": 3218
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "code",
+                "text": "@stream-mdx/core"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "@stream-mdx/plugins"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "@stream-mdx/protocol"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "@stream-mdx/worker"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "@stream-mdx/react"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "@stream-mdx/mermaid"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "@stream-mdx/tui"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "@stream-mdx/theme-tailwind"
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "stream-mdx"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "1f47badd",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "7. Public surface verification",
+        "range": {
+          "from": 3220,
+          "to": 3253
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "7. Public surface verification",
+          "headingId": "7-public-surface-verification"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "7. Public surface verification"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6442987f",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "After publish/deploy, verify:",
+        "range": {
+          "from": 3255,
+          "to": 3284
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "After publish/deploy, verify:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "27e4307f",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- docs site: <https://stream-mdx.vercel.app/docs>\n- demo: <https://stream-mdx.vercel.app/demo>\n- showcase: <https://stream-mdx.vercel.app/showcase>\n- benchmarks: <https://stream-mdx.vercel.app/benchmarks>\n- npm package README rendering for `stream-mdx`",
+        "range": {
+          "from": 3286,
+          "to": 3538
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "docs site: <https://stream-mdx.vercel.app/docs>"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "demo: <https://stream-mdx.vercel.app/demo>"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "showcase: <https://stream-mdx.vercel.app/showcase>"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "benchmarks: <https://stream-mdx.vercel.app/benchmarks>"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "npm package README rendering for "
               },
               {
                 "kind": "code",
-                "text": "docs/PERF_QUALITY_CHANGELOG.md"
-              },
-              {
-                "kind": "text",
-                "text": "."
+                "text": "stream-mdx"
               }
-            ],
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "3fa288de",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "If `stream-mdx.dev` is configured as the canonical production domain, verify the same surfaces there and ensure redirects behave intentionally.",
+        "range": {
+          "from": 3540,
+          "to": 3683
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "If "
+          },
+          {
+            "kind": "code",
+            "text": "stream-mdx.dev"
+          },
+          {
+            "kind": "text",
+            "text": " is configured as the canonical production domain, verify the same surfaces there and ensure redirects behave intentionally."
+          }
+        ]
+      }
+    },
+    {
+      "id": "11e957a0",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "8. Worker and deployment checks",
+        "range": {
+          "from": 3685,
+          "to": 3719
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "8. Worker and deployment checks",
+          "headingId": "8-worker-and-deployment-checks"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "8. Worker and deployment checks"
+          }
+        ]
+      }
+    },
+    {
+      "id": "5dd6021d",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Verify the hosted worker outputs expected by examples:",
+        "range": {
+          "from": 3721,
+          "to": 3775
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Verify the hosted worker outputs expected by examples:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "3e751c8",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- built worker artifact:\n  - `packages/markdown-v2-worker/dist/hosted/markdown-worker.js`\n- copied example artifact:\n  - `examples/streaming-markdown-starter/public/workers/markdown-worker.js`",
+        "range": {
+          "from": 3777,
+          "to": 3969
+        },
+        "meta": {
+          "ordered": false,
+          "items": [
             [
               {
                 "kind": "text",
-                "text": "Update "
-              },
-              {
-                "kind": "code",
-                "text": "docs/perf/LOCAL_BENCHMARKS.md"
-              },
-              {
-                "kind": "text",
-                "text": " when new baselines are captured."
-              }
-            ],
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Sanity-check hosted worker outputs"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "Built worker artifact:"
+                "text": "built worker artifact:"
               }
             ],
             [
@@ -425,7 +967,7 @@
             [
               {
                 "kind": "text",
-                "text": "Copied artifact (for the example app):"
+                "text": "copied example artifact:"
               }
             ],
             [
@@ -440,1078 +982,55 @@
       }
     },
     {
-      "id": "7ad8c0ba",
-      "type": "hr",
-      "isFinalized": true,
-      "payload": {
-        "raw": "---",
-        "range": {
-          "from": 2293,
-          "to": 2296
-        }
-      }
-    },
-    {
-      "id": "67bba55f",
+      "id": "74c3bd40",
       "type": "heading",
       "isFinalized": true,
       "payload": {
-        "raw": "2. Pack + external install gate (high signal)",
+        "raw": "9. Artifact and log triage",
         "range": {
-          "from": 2298,
-          "to": 2346
+          "from": 3971,
+          "to": 4000
         },
         "meta": {
           "headingLevel": 2,
-          "headingText": "2. Pack + external install gate (high signal)",
-          "headingId": "2-pack-external-install-gate-high-signal"
+          "headingText": "9. Artifact and log triage",
+          "headingId": "9-artifact-and-log-triage"
         },
         "inline": [
           {
             "kind": "text",
-            "text": "2. Pack + external install gate (high signal)"
+            "text": "9. Artifact and log triage"
           }
         ]
       }
     },
     {
-      "id": "27e44845",
+      "id": "7c0bfe02",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "This is the most reliable “will npm users succeed?” gate.",
+        "raw": "If a release gate fails, inspect:",
         "range": {
-          "from": 2348,
-          "to": 2405
+          "from": 4002,
+          "to": 4035
         },
         "inline": [
           {
             "kind": "text",
-            "text": "This is the most reliable “will npm users succeed?” gate."
+            "text": "If a release gate fails, inspect:"
           }
         ]
       }
     },
     {
-      "id": "66aba1c9",
-      "type": "heading",
-      "isFinalized": true,
-      "payload": {
-        "raw": "2.1 CI-equivalent smoke test (recommended)",
-        "range": {
-          "from": 2407,
-          "to": 2453
-        },
-        "meta": {
-          "headingLevel": 3,
-          "headingText": "2.1 CI-equivalent smoke test (recommended)",
-          "headingId": "2-1-ci-equivalent-smoke-test-recommended"
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "2.1 CI-equivalent smoke test (recommended)"
-          }
-        ]
-      }
-    },
-    {
-      "id": "5f6adbe2",
-      "type": "paragraph",
-      "isFinalized": true,
-      "payload": {
-        "raw": "Runs a fully automated pack+install+`next build` using the included starter (no workspace links):",
-        "range": {
-          "from": 2455,
-          "to": 2552
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "Runs a fully automated pack+install+"
-          },
-          {
-            "kind": "code",
-            "text": "next build"
-          },
-          {
-            "kind": "text",
-            "text": " using the included starter (no workspace links):"
-          }
-        ]
-      }
-    },
-    {
-      "id": "5d663708",
-      "type": "code",
-      "isFinalized": true,
-      "payload": {
-        "raw": "```bash\nnpm run ci:pack-smoke\n```",
-        "range": {
-          "from": 2554,
-          "to": 2587
-        },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> ci:pack-smoke</span></span></code></pre>",
-        "meta": {
-          "lang": "bash",
-          "code": "npm run ci:pack-smoke"
-        }
-      }
-    },
-    {
-      "id": "399b447c",
-      "type": "heading",
-      "isFinalized": true,
-      "payload": {
-        "raw": "2.2 Manual pack (optional)",
-        "range": {
-          "from": 2589,
-          "to": 2619
-        },
-        "meta": {
-          "headingLevel": 3,
-          "headingText": "2.2 Manual pack (optional)",
-          "headingId": "2-2-manual-pack-optional"
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "2.2 Manual pack (optional)"
-          }
-        ]
-      }
-    },
-    {
-      "id": "12c929a7",
+      "id": "1a6409e4",
       "type": "list",
       "isFinalized": true,
       "payload": {
-        "raw": "1. **Pack tarballs locally**\n     ```bash\n     mkdir -p tmp/release-packs\n     (cd packages/markdown-v2-core && npm pack --pack-destination ../../tmp/release-packs)\n     (cd packages/markdown-v2-plugins && npm pack --pack-destination ../../tmp/release-packs)\n     (cd packages/markdown-v2-protocol && npm pack --pack-destination ../../tmp/release-packs)\n     (cd packages/markdown-v2-worker && npm pack --pack-destination ../../tmp/release-packs)\n     (cd packages/markdown-v2-react && npm pack --pack-destination ../../tmp/release-packs)\n     (cd packages/markdown-v2-mermaid && npm pack --pack-destination ../../tmp/release-packs)\n     (cd packages/markdown-v2-tui && npm pack --pack-destination ../../tmp/release-packs)\n     (cd packages/theme-tailwind && npm pack --pack-destination ../../tmp/release-packs)\n     (cd packages/stream-mdx && npm pack --pack-destination ../../tmp/release-packs)\n     ```\n2. **In a clean scratch dir, install from tarballs and build**\n   - Minimum expectation:\n     - `npm install ./tmp/release-packs/*.tgz` (or explicit paths)\n     - `next build` succeeds for a simple Next app using `stream-mdx` (or `@stream-mdx/react`)\n   - If you use the included starter:\n     - point the starter deps at the tarballs (no workspace/file links)\n     - ensure it can `npm install`, `npm run worker:build`, and `npm run build`",
+        "raw": "- regression artifacts under `tests/regression/artifacts/**`\n- managed seeded-smoke server log at `tmp/seeded-smoke/docs-server.log`\n- release-gates server log at `tmp/release-gates/docs-server.log`",
         "range": {
-          "from": 2621,
-          "to": 3967
-        },
-        "meta": {
-          "ordered": true,
-          "items": [
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Pack tarballs locally"
-                  }
-                ]
-              },
-              {
-                "kind": "text",
-                "text": "\n```bash\nmkdir -p tmp/release-packs\n(cd packages/markdown-v2-core && npm pack --pack-destination ../../tmp/release-packs)\n(cd packages/markdown-v2-plugins && npm pack --pack-destination ../../tmp/release-packs)\n(cd packages/markdown-v2-protocol && npm pack --pack-destination ../../tmp/release-packs)\n(cd packages/markdown-v2-worker && npm pack --pack-destination ../../tmp/release-packs)\n(cd packages/markdown-v2-react && npm pack --pack-destination ../../tmp/release-packs)\n(cd packages/markdown-v2-mermaid && npm pack --pack-destination ../../tmp/release-packs)\n(cd packages/markdown-v2-tui && npm pack --pack-destination ../../tmp/release-packs)\n(cd packages/theme-tailwind && npm pack --pack-destination ../../tmp/release-packs)\n(cd packages/stream-mdx && npm pack --pack-destination ../../tmp/release-packs)\n```"
-              }
-            ],
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "In a clean scratch dir, install from tarballs and build"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "Minimum expectation:"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "npm install ./tmp/release-packs/*.tgz"
-              },
-              {
-                "kind": "text",
-                "text": " (or explicit paths)"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "next build"
-              },
-              {
-                "kind": "text",
-                "text": " succeeds for a simple Next app using "
-              },
-              {
-                "kind": "code",
-                "text": "stream-mdx"
-              },
-              {
-                "kind": "text",
-                "text": " (or "
-              },
-              {
-                "kind": "code",
-                "text": "@stream-mdx/react"
-              },
-              {
-                "kind": "text",
-                "text": ")"
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "If you use the included starter:"
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "point the starter deps at the tarballs (no workspace/file links)"
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "ensure it can "
-              },
-              {
-                "kind": "code",
-                "text": "npm install"
-              },
-              {
-                "kind": "text",
-                "text": ", "
-              },
-              {
-                "kind": "code",
-                "text": "npm run worker:build"
-              },
-              {
-                "kind": "text",
-                "text": ", and "
-              },
-              {
-                "kind": "code",
-                "text": "npm run build"
-              }
-            ]
-          ],
-          "mathEnabled": true
-        }
-      }
-    },
-    {
-      "id": "4476a3f5",
-      "type": "hr",
-      "isFinalized": true,
-      "payload": {
-        "raw": "---",
-        "range": {
-          "from": 3969,
-          "to": 3972
-        }
-      }
-    },
-    {
-      "id": "48098fc3",
-      "type": "heading",
-      "isFinalized": true,
-      "payload": {
-        "raw": "3. Versioning & tagging (Changesets)",
-        "range": {
-          "from": 3974,
-          "to": 4013
-        },
-        "meta": {
-          "headingLevel": 2,
-          "headingText": "3. Versioning & tagging (Changesets)",
-          "headingId": "3-versioning-tagging-changesets"
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "3. Versioning & tagging (Changesets)"
-          }
-        ]
-      }
-    },
-    {
-      "id": "4a53bfa0",
-      "type": "paragraph",
-      "isFinalized": true,
-      "payload": {
-        "raw": "This repo is set up for Changesets.",
-        "range": {
-          "from": 4015,
-          "to": 4050
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "This repo is set up for Changesets."
-          }
-        ]
-      }
-    },
-    {
-      "id": "46e03183",
-      "type": "list",
-      "isFinalized": true,
-      "payload": {
-        "raw": "1. **Add changesets for the release**\n   ```bash\n   npm run changeset\n   ```\n2. **Version packages**\n   ```bash\n   npm run changeset:version\n   ```\n3. **Commit**\n   - Example:\n     - `chore(release): version packages`\n4. **Tag (optional but recommended)**\n   - Prefer a single repo tag per release:\n     - `v0.0.1` / `v0.1.0` / `v1.0.0`",
-        "range": {
-          "from": 4052,
-          "to": 4388
-        },
-        "meta": {
-          "ordered": true,
-          "items": [
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Add changesets for the release"
-                  }
-                ]
-              },
-              {
-                "kind": "text",
-                "text": "\n```bash\nnpm run changeset\n```"
-              }
-            ],
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Version packages"
-                  }
-                ]
-              },
-              {
-                "kind": "text",
-                "text": "\n```bash\nnpm run changeset:version\n```"
-              }
-            ],
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Commit"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "Example:"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "chore(release): version packages"
-              }
-            ],
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Tag (optional but recommended)"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "Prefer a single repo tag per release:"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "v0.0.1"
-              },
-              {
-                "kind": "text",
-                "text": " / "
-              },
-              {
-                "kind": "code",
-                "text": "v0.1.0"
-              },
-              {
-                "kind": "text",
-                "text": " / "
-              },
-              {
-                "kind": "code",
-                "text": "v1.0.0"
-              }
-            ]
-          ],
-          "mathEnabled": true
-        }
-      }
-    },
-    {
-      "id": "19a74d42",
-      "type": "hr",
-      "isFinalized": true,
-      "payload": {
-        "raw": "---",
-        "range": {
-          "from": 4390,
-          "to": 4393
-        }
-      }
-    },
-    {
-      "id": "4f3655db",
-      "type": "heading",
-      "isFinalized": true,
-      "payload": {
-        "raw": "4. Publish",
-        "range": {
-          "from": 4395,
-          "to": 4408
-        },
-        "meta": {
-          "headingLevel": 2,
-          "headingText": "4. Publish",
-          "headingId": "4-publish"
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "4. Publish"
-          }
-        ]
-      }
-    },
-    {
-      "id": "f6246bd",
-      "type": "list",
-      "isFinalized": true,
-      "payload": {
-        "raw": "1. **Ensure you are logged into npm**\n   ```bash\n   npm whoami\n   ```\n2. **Trusted Publishing (recommended)**\n   - Configure npm “Trusted Publisher” for:\n     - `@stream-mdx/core`\n     - `@stream-mdx/plugins`\n     - `@stream-mdx/protocol`\n     - `@stream-mdx/worker`\n     - `@stream-mdx/react`\n     - `@stream-mdx/mermaid`\n     - `@stream-mdx/tui`\n     - `@stream-mdx/theme-tailwind`\n     - `stream-mdx`\n   - Required workflow permissions:\n     - `id-token: write`\n   - Workflows:\n     - `.github/workflows/release.yml` (auto release PRs / publish)\n     - `.github/workflows/publish.yml` (manual workflow_dispatch)\n\n3. **Publish via Changesets**\n   ```bash\n   npm run changeset:publish\n   ```\n4. **Optional: local interactive publish helper**\n   ```bash\n   scripts/publish-v0.4.0.sh\n   ```\n   - Requires `npm login --auth-type=web`.\n   - Publishes in dependency order, verifies all local versions match, and skips packages already published at that version.\n5. **Confirm all packages are published**\n   - `@stream-mdx/core`\n   - `@stream-mdx/plugins`\n   - `@stream-mdx/protocol`\n   - `@stream-mdx/worker`\n   - `@stream-mdx/react`\n   - `@stream-mdx/mermaid`\n   - `@stream-mdx/tui`\n   - `@stream-mdx/theme-tailwind`\n   - `stream-mdx`",
-        "range": {
-          "from": 4410,
-          "to": 5641
-        },
-        "meta": {
-          "ordered": true,
-          "items": [
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Ensure you are logged into npm"
-                  }
-                ]
-              },
-              {
-                "kind": "text",
-                "text": "\n```bash\nnpm whoami\n```"
-              }
-            ],
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Trusted Publishing (recommended)"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "Configure npm “Trusted Publisher” for:"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "@stream-mdx/core"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "@stream-mdx/plugins"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "@stream-mdx/protocol"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "@stream-mdx/worker"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "@stream-mdx/react"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "@stream-mdx/mermaid"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "@stream-mdx/tui"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "@stream-mdx/theme-tailwind"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "stream-mdx"
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "Required workflow permissions:"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "id-token: write"
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "Workflows:"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": ".github/workflows/release.yml"
-              },
-              {
-                "kind": "text",
-                "text": " (auto release PRs / publish)"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": ".github/workflows/publish.yml"
-              },
-              {
-                "kind": "text",
-                "text": " (manual workflow_dispatch)\n"
-              }
-            ],
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Publish via Changesets"
-                  }
-                ]
-              },
-              {
-                "kind": "text",
-                "text": "\n```bash\nnpm run changeset:publish\n```"
-              }
-            ],
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Optional: local interactive publish helper"
-                  }
-                ]
-              },
-              {
-                "kind": "text",
-                "text": "\n```bash\nscripts/publish-v0.4.0.sh\n```"
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "Requires "
-              },
-              {
-                "kind": "code",
-                "text": "npm login --auth-type=web"
-              },
-              {
-                "kind": "text",
-                "text": "."
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "Publishes in dependency order, verifies all local versions match, and skips packages already published at that version."
-              }
-            ],
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Confirm all packages are published"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "@stream-mdx/core"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "@stream-mdx/plugins"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "@stream-mdx/protocol"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "@stream-mdx/worker"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "@stream-mdx/react"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "@stream-mdx/mermaid"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "@stream-mdx/tui"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "@stream-mdx/theme-tailwind"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "stream-mdx"
-              }
-            ]
-          ],
-          "mathEnabled": true
-        }
-      }
-    },
-    {
-      "id": "20185f74",
-      "type": "hr",
-      "isFinalized": true,
-      "payload": {
-        "raw": "---",
-        "range": {
-          "from": 5643,
-          "to": 5646
-        }
-      }
-    },
-    {
-      "id": "cf42ae5",
-      "type": "heading",
-      "isFinalized": true,
-      "payload": {
-        "raw": "5. CI gates (current repo)",
-        "range": {
-          "from": 5648,
-          "to": 5677
-        },
-        "meta": {
-          "headingLevel": 2,
-          "headingText": "5. CI gates (current repo)",
-          "headingId": "5-ci-gates-current-repo"
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "5. CI gates (current repo)"
-          }
-        ]
-      }
-    },
-    {
-      "id": "45005b83",
-      "type": "paragraph",
-      "isFinalized": true,
-      "payload": {
-        "raw": "This repo’s CI (`.github/workflows/ci.yml`) enforces:",
-        "range": {
-          "from": 5679,
-          "to": 5732
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "This repo’s CI ("
-          },
-          {
-            "kind": "code",
-            "text": ".github/workflows/ci.yml"
-          },
-          {
-            "kind": "text",
-            "text": ") enforces:"
-          }
-        ]
-      }
-    },
-    {
-      "id": "4bea1559",
-      "type": "list",
-      "isFinalized": true,
-      "payload": {
-        "raw": "- `npm ci`\n- `npm run build`\n- `npm test`\n- `npm -ws --if-present pack --dry-run`\n- `npm run ci:pack-smoke` (pack+install+`next build`)",
-        "range": {
-          "from": 5734,
-          "to": 5869
-        },
-        "meta": {
-          "ordered": false,
-          "items": [
-            [
-              {
-                "kind": "code",
-                "text": "npm ci"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "npm run build"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "npm test"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "npm -ws --if-present pack --dry-run"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "npm run ci:pack-smoke"
-              },
-              {
-                "kind": "text",
-                "text": " (pack+install+"
-              },
-              {
-                "kind": "code",
-                "text": "next build"
-              },
-              {
-                "kind": "text",
-                "text": ")"
-              }
-            ]
-          ],
-          "mathEnabled": true
-        }
-      }
-    },
-    {
-      "id": "7ae0d27d",
-      "type": "paragraph",
-      "isFinalized": true,
-      "payload": {
-        "raw": "Before publishing, run the same commands locally (plus the external install gate in §2).",
-        "range": {
-          "from": 5871,
-          "to": 5959
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "Before publishing, run the same commands locally (plus the external install gate in §2)."
-          }
-        ]
-      }
-    },
-    {
-      "id": "25522f95",
-      "type": "hr",
-      "isFinalized": true,
-      "payload": {
-        "raw": "---",
-        "range": {
-          "from": 5961,
-          "to": 5964
-        }
-      }
-    },
-    {
-      "id": "7453b89c",
-      "type": "heading",
-      "isFinalized": true,
-      "payload": {
-        "raw": "6. Post-publish checks",
-        "range": {
-          "from": 5966,
-          "to": 5991
-        },
-        "meta": {
-          "headingLevel": 2,
-          "headingText": "6. Post-publish checks",
-          "headingId": "6-post-publish-checks"
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "6. Post-publish checks"
-          }
-        ]
-      }
-    },
-    {
-      "id": "575cf9fe",
-      "type": "list",
-      "isFinalized": true,
-      "payload": {
-        "raw": "1. **Verify npm README renders**\n   - `stream-mdx` should display `packages/stream-mdx/README.md` on npmjs.com.\n2. **Verify docs + demo links**\n   - Docs: https://kmccleary3301.github.io/stream-mdx/\n   - Demo: https://kmccleary3301.github.io/stream-mdx/demo\n   - Showcase: https://kmccleary3301.github.io/stream-mdx/showcase\n3. **Verify hosted worker guidance**\n   - The worker is expected at `/workers/markdown-worker.js` in most examples.\n4. **Confirm Trusted Publishing works**\n   - Once configured on npm, use `.github/workflows/publish.yml` (manual) or `.github/workflows/release.yml` (auto).",
-        "range": {
-          "from": 5993,
-          "to": 6590
-        },
-        "meta": {
-          "ordered": true,
-          "items": [
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Verify npm README renders"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "stream-mdx"
-              },
-              {
-                "kind": "text",
-                "text": " should display "
-              },
-              {
-                "kind": "code",
-                "text": "packages/stream-mdx/README.md"
-              },
-              {
-                "kind": "text",
-                "text": " on npmjs.com."
-              }
-            ],
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Verify docs + demo links"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "Docs: https://kmccleary3301.github.io/stream-mdx/"
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "Demo: https://kmccleary3301.github.io/stream-mdx/demo"
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "Showcase: https://kmccleary3301.github.io/stream-mdx/showcase"
-              }
-            ],
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Verify hosted worker guidance"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "The worker is expected at "
-              },
-              {
-                "kind": "code",
-                "text": "/workers/markdown-worker.js"
-              },
-              {
-                "kind": "text",
-                "text": " in most examples."
-              }
-            ],
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Confirm Trusted Publishing works"
-                  }
-                ]
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "Once configured on npm, use "
-              },
-              {
-                "kind": "code",
-                "text": ".github/workflows/publish.yml"
-              },
-              {
-                "kind": "text",
-                "text": " (manual) or "
-              },
-              {
-                "kind": "code",
-                "text": ".github/workflows/release.yml"
-              },
-              {
-                "kind": "text",
-                "text": " (auto)."
-              }
-            ]
-          ],
-          "mathEnabled": true
-        }
-      }
-    },
-    {
-      "id": "538fc33c",
-      "type": "hr",
-      "isFinalized": true,
-      "payload": {
-        "raw": "---",
-        "range": {
-          "from": 6592,
-          "to": 6595
-        }
-      }
-    },
-    {
-      "id": "4f141be3",
-      "type": "heading",
-      "isFinalized": true,
-      "payload": {
-        "raw": "7. Docs & release notes",
-        "range": {
-          "from": 6597,
-          "to": 6623
-        },
-        "meta": {
-          "headingLevel": 2,
-          "headingText": "7. Docs & release notes",
-          "headingId": "7-docs-release-notes"
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "7. Docs & release notes"
-          }
-        ]
-      }
-    },
-    {
-      "id": "451bf4d9",
-      "type": "list",
-      "isFinalized": true,
-      "payload": {
-        "raw": "- Update `docs/STREAMING_MARKDOWN_V2_STATUS.md` as implementation details change.\n- Publish release notes via GitHub Releases (recommended), or add a `CHANGELOG.md` if you want a file-based changelog.\n- When publishing packages, ensure badges and docs links remain correct.",
-        "range": {
-          "from": 6625,
-          "to": 6898
+          "from": 4037,
+          "to": 4235
         },
         "meta": {
           "ordered": false,
@@ -1519,35 +1038,31 @@
             [
               {
                 "kind": "text",
-                "text": "Update "
+                "text": "regression artifacts under "
               },
               {
                 "kind": "code",
-                "text": "docs/STREAMING_MARKDOWN_V2_STATUS.md"
-              },
-              {
-                "kind": "text",
-                "text": " as implementation details change."
+                "text": "tests/regression/artifacts/**"
               }
             ],
             [
               {
                 "kind": "text",
-                "text": "Publish release notes via GitHub Releases (recommended), or add a "
+                "text": "managed seeded-smoke server log at "
               },
               {
                 "kind": "code",
-                "text": "CHANGELOG.md"
-              },
-              {
-                "kind": "text",
-                "text": " if you want a file-based changelog."
+                "text": "tmp/seeded-smoke/docs-server.log"
               }
             ],
             [
               {
                 "kind": "text",
-                "text": "When publishing packages, ensure badges and docs links remain correct."
+                "text": "release-gates server log at "
+              },
+              {
+                "kind": "code",
+                "text": "tmp/release-gates/docs-server.log"
               }
             ]
           ],
@@ -1556,79 +1071,101 @@
       }
     },
     {
-      "id": "59e36971",
-      "type": "hr",
+      "id": "60867ce2",
+      "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "---",
+        "raw": "Do not rerun blind before inspecting the failure artifacts.",
         "range": {
-          "from": 6900,
-          "to": 6903
-        }
-      }
-    },
-    {
-      "id": "4560d708",
-      "type": "heading",
-      "isFinalized": true,
-      "payload": {
-        "raw": "8. Rollback plan",
-        "range": {
-          "from": 6905,
-          "to": 6924
-        },
-        "meta": {
-          "headingLevel": 2,
-          "headingText": "8. Rollback plan",
-          "headingId": "8-rollback-plan"
+          "from": 4237,
+          "to": 4296
         },
         "inline": [
           {
             "kind": "text",
-            "text": "8. Rollback plan"
+            "text": "Do not rerun blind before inspecting the failure artifacts."
           }
         ]
       }
     },
     {
-      "id": "7e745415",
+      "id": "771ef01d",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "10. Final branch state",
+        "range": {
+          "from": 4298,
+          "to": 4323
+        },
+        "meta": {
+          "headingLevel": 2,
+          "headingText": "10. Final branch state",
+          "headingId": "10-final-branch-state"
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "10. Final branch state"
+          }
+        ]
+      }
+    },
+    {
+      "id": "1d8e7882",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Before cutting the release, confirm:",
+        "range": {
+          "from": 4325,
+          "to": 4361
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Before cutting the release, confirm:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "4ae13400",
       "type": "list",
       "isFinalized": true,
       "payload": {
-        "raw": "- Tag every release; rollback is typically “revert and republish as `-patch`” or “yank with `npm deprecate` + publish fix”.\n- Keep the hosted worker build deterministic so it can be regenerated from tags.",
+        "raw": "- `main` is clean\n- `main` is pushed\n- the release commit/tag reflects the verified state",
         "range": {
-          "from": 6926,
-          "to": 7130
+          "from": 4363,
+          "to": 4452
         },
         "meta": {
           "ordered": false,
           "items": [
             [
               {
-                "kind": "text",
-                "text": "Tag every release; rollback is typically “revert and republish as "
+                "kind": "code",
+                "text": "main"
               },
+              {
+                "kind": "text",
+                "text": " is clean"
+              }
+            ],
+            [
               {
                 "kind": "code",
-                "text": "-patch"
+                "text": "main"
               },
               {
                 "kind": "text",
-                "text": "” or “yank with "
-              },
-              {
-                "kind": "code",
-                "text": "npm deprecate"
-              },
-              {
-                "kind": "text",
-                "text": " + publish fix”."
+                "text": " is pushed"
               }
             ],
             [
               {
                 "kind": "text",
-                "text": "Keep the hosted worker build deterministic so it can be regenerated from tags."
+                "text": "the release commit/tag reflects the verified state"
               }
             ]
           ],
@@ -1640,69 +1177,69 @@
   "tocHeadings": [
     {
       "id": "streammdx-release-checklist",
-      "text": "StreamMDX — Release Checklist",
+      "text": "StreamMDX Release Checklist",
       "level": 1,
       "blockId": "db082c0"
     },
     {
-      "id": "1-preflight-local",
-      "text": "1. Preflight (local)",
+      "id": "1-preflight",
+      "text": "1. Preflight",
       "level": 2,
-      "blockId": "236014e1"
+      "blockId": "17a98600"
     },
     {
-      "id": "2-pack-external-install-gate-high-signal",
-      "text": "2. Pack + external install gate (high signal)",
+      "id": "2-required-correctness-and-docs-gates",
+      "text": "2. Required correctness and docs gates",
       "level": 2,
-      "blockId": "67bba55f"
+      "blockId": "3dd965f2"
     },
     {
-      "id": "2-1-ci-equivalent-smoke-test-recommended",
-      "text": "2.1 CI-equivalent smoke test (recommended)",
-      "level": 3,
-      "blockId": "66aba1c9"
-    },
-    {
-      "id": "2-2-manual-pack-optional",
-      "text": "2.2 Manual pack (optional)",
-      "level": 3,
-      "blockId": "399b447c"
-    },
-    {
-      "id": "3-versioning-tagging-changesets",
-      "text": "3. Versioning & tagging (Changesets)",
+      "id": "3-merge-time-local-checks",
+      "text": "3. Merge-time local checks",
       "level": 2,
-      "blockId": "48098fc3"
+      "blockId": "60f62c23"
     },
     {
-      "id": "4-publish",
-      "text": "4. Publish",
+      "id": "4-snapshot-and-baseline-policy",
+      "text": "4. Snapshot and baseline policy",
       "level": 2,
-      "blockId": "4f3655db"
+      "blockId": "93081ff"
     },
     {
-      "id": "5-ci-gates-current-repo",
-      "text": "5. CI gates (current repo)",
+      "id": "5-perf-and-scheduler-characterization",
+      "text": "5. Perf and scheduler characterization",
       "level": 2,
-      "blockId": "cf42ae5"
+      "blockId": "28f7bc"
     },
     {
-      "id": "6-post-publish-checks",
-      "text": "6. Post-publish checks",
+      "id": "6-packaging-and-publish-gates",
+      "text": "6. Packaging and publish gates",
       "level": 2,
-      "blockId": "7453b89c"
+      "blockId": "17edca0"
     },
     {
-      "id": "7-docs-release-notes",
-      "text": "7. Docs & release notes",
+      "id": "7-public-surface-verification",
+      "text": "7. Public surface verification",
       "level": 2,
-      "blockId": "4f141be3"
+      "blockId": "1f47badd"
     },
     {
-      "id": "8-rollback-plan",
-      "text": "8. Rollback plan",
+      "id": "8-worker-and-deployment-checks",
+      "text": "8. Worker and deployment checks",
       "level": 2,
-      "blockId": "4560d708"
+      "blockId": "11e957a0"
+    },
+    {
+      "id": "9-artifact-and-log-triage",
+      "text": "9. Artifact and log triage",
+      "level": 2,
+      "blockId": "74c3bd40"
+    },
+    {
+      "id": "10-final-branch-state",
+      "text": "10. Final branch state",
+      "level": 2,
+      "blockId": "771ef01d"
     }
   ],
   "init": {

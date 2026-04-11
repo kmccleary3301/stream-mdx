@@ -8,12 +8,14 @@ type SeededCase = {
 
 const CASES: SeededCase[] = [
   { fixture: "code-huge", scenario: "S1_slow_small", seedCount: 2 },
+  { fixture: "code-highlight-incremental", scenario: "S2_typical", seedCount: 2 },
   { fixture: "mdx-transitions", scenario: "S2_typical", seedCount: 2 },
   { fixture: "edge-regressions", scenario: "S2_typical", seedCount: 2 },
+  { fixture: "imaginary-empty-list", scenario: "S2_typical", seedCount: 2 },
   { fixture: "lists-nested", scenario: "S2_typical", seedCount: 2 },
   { fixture: "table-boundary", scenario: "S2_typical", seedCount: 2 },
-  { fixture: "mdx-math-code-mixed", scenario: "S2_typical", seedCount: 2 },
-  { fixture: "mdx-multi-status", scenario: "S2_typical", seedCount: 2 },
+  { fixture: "mdx-math-code-mixed", scenario: "S2_typical", seedCount: 3 },
+  { fixture: "mdx-multi-status", scenario: "S2_typical", seedCount: 3 },
 ];
 
 async function runCase(testCase: SeededCase): Promise<void> {

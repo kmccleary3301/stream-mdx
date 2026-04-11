@@ -22,6 +22,42 @@ function testSemanticDefaultClassification(): void {
       startIndex: 0,
       lines: ["const x = 1;"],
     },
+    {
+      op: "deleteChild",
+      at: { blockId: "list-1", nodeId: "list-1" },
+      index: 0,
+    },
+    {
+      op: "replaceChild",
+      at: { blockId: "list-1", nodeId: "list-1" },
+      index: 0,
+      node: { id: "item-2", type: "list-item" },
+    },
+    {
+      op: "finalize",
+      at: { blockId: "paragraph-1", nodeId: "paragraph-1" },
+    },
+    {
+      op: "reorder",
+      at: { blockId: "list-1", nodeId: "list-1" },
+      from: 0,
+      to: 1,
+      count: 1,
+    },
+    {
+      op: "setPropsBatch",
+      entries: [
+        {
+          at: { blockId: "p-1", nodeId: "p-1" },
+          props: { text: "batched semantic" },
+        },
+      ],
+    },
+    {
+      op: "setHTML",
+      at: { blockId: "html-1", nodeId: "html-1" },
+      html: "<div>semantic html</div>",
+    },
   ];
 
   for (const patch of patches) {
@@ -41,9 +77,27 @@ function testExplicitEnrichmentClassification(): void {
     props: { highlightedHtml: "<pre><code><span>x</span></code></pre>" },
     meta: { kind: "enrichment" },
   };
+  const enrichmentBatch: Patch = {
+    op: "setPropsBatch",
+    entries: [
+      {
+        at: { blockId: "code-1", nodeId: "code-1" },
+        props: { highlightedHtml: "<pre><code><span>a</span></code></pre>" },
+      },
+    ],
+    meta: { kind: "enrichment" },
+  };
+  const reservedHtmlEnrichment: Patch = {
+    op: "setHTML",
+    at: { blockId: "html-1", nodeId: "html-1" },
+    html: "<div>decorated</div>",
+    patchMeta: { kind: "enrichment" },
+  };
 
   assert.strictEqual(getPatchKind(semanticPatch), "semantic");
   assert.strictEqual(getPatchKind(enrichmentPatch), "enrichment");
+  assert.strictEqual(getPatchKind(enrichmentBatch), "enrichment");
+  assert.strictEqual(getPatchKind(reservedHtmlEnrichment), "enrichment");
 }
 
 function testSemanticBatchesDoNotMixWithEnrichment(): void {

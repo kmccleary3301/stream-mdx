@@ -393,10 +393,12 @@ This repo is unusually heavy on verification because streaming renderers fail in
 Useful references:
 
 - [`docs/REGRESSION_TESTING.md`](./docs/REGRESSION_TESTING.md)
+- [`docs/BASELINE_UPDATE_POLICY.md`](./docs/BASELINE_UPDATE_POLICY.md)
 - [`docs/DETERMINISM.md`](./docs/DETERMINISM.md)
 - [`docs/PERF_HARNESS.md`](./docs/PERF_HARNESS.md)
 - [`docs/PERF_QUALITY_CHANGELOG.md`](./docs/PERF_QUALITY_CHANGELOG.md)
 - [`docs/STREAMING_CORRECTNESS_CONTRACT.md`](./docs/STREAMING_CORRECTNESS_CONTRACT.md)
+- [`docs/STREAMING_MARKDOWN_RELEASE_CHECKLIST.md`](./docs/STREAMING_MARKDOWN_RELEASE_CHECKLIST.md)
 
 ## Security and Deployment Notes
 

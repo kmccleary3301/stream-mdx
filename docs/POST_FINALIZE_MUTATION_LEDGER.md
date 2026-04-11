@@ -36,6 +36,8 @@ Guard coverage:
 
 - `packages/markdown-v2-worker/__tests__/worker-post-finalize-boundary.test.ts`
 - `packages/markdown-v2-react/__tests__/post-finalize-store-boundary.test.ts`
+- `packages/markdown-v2-react/__tests__/finalized-semantic-stability.test.ts`
+- `packages/markdown-v2-react/__tests__/post-finalize-contract.test.ts`
 
 ### 2. MDX compiled transition
 
@@ -56,6 +58,8 @@ Guard coverage:
 - `packages/markdown-v2-worker/__tests__/worker-post-finalize-boundary.test.ts`
 - `packages/markdown-v2-worker/__tests__/worker-mdx-status-signature-guard.test.ts`
 - `packages/markdown-v2-react/__tests__/post-finalize-store-boundary.test.ts`
+- `packages/markdown-v2-react/__tests__/finalized-semantic-stability.test.ts`
+- `packages/markdown-v2-react/__tests__/post-finalize-contract.test.ts`
 
 ### 3. MDX error transition
 
@@ -76,6 +80,8 @@ Guard coverage:
 - `packages/markdown-v2-worker/__tests__/worker-post-finalize-boundary.test.ts`
 - `packages/markdown-v2-worker/__tests__/worker-mdx-status-signature-guard.test.ts`
 - `packages/markdown-v2-react/__tests__/post-finalize-store-boundary.test.ts`
+- `packages/markdown-v2-react/__tests__/finalized-semantic-stability.test.ts`
+- `packages/markdown-v2-react/__tests__/post-finalize-contract.test.ts`
 
 ## Disallowed Post-Finalize Mutations
 
@@ -86,9 +92,12 @@ These are not allowed after `FINALIZED` unless they arrive under a newer semanti
 - delayed semantic reparses for finalized non-MDX blocks
 - deferred patch queue replays from the pre-finalize parse
 - semantic mutations with stale `blockEpoch`
+- stale semantic code-line updates, list reorders, or table replacements against finalized blocks
 
 These are guarded by:
 
 - stale epoch rejection in `packages/markdown-v2-react/src/renderer/store.ts`
 - deferred queue clearing on append/finalize in `packages/markdown-v2-worker/src/worker.ts`
 - direct boundary tests listed above
+- `packages/markdown-v2-react/__tests__/finalized-semantic-stability.test.ts`
+- `packages/markdown-v2-react/__tests__/post-finalize-contract.test.ts`

@@ -35,13 +35,16 @@ This directory is the canonical repository-side documentation surface for Stream
 
 | Topic | File | Why it matters |
 | --- | --- | --- |
-| Regression testing | [`REGRESSION_TESTING.md`](./REGRESSION_TESTING.md) | HTML/style snapshot workflows and update policy |
+| Regression testing | [`REGRESSION_TESTING.md`](./REGRESSION_TESTING.md) | HTML/style/smoke/parity workflows and artifact handling |
+| Baseline update policy | [`BASELINE_UPDATE_POLICY.md`](./BASELINE_UPDATE_POLICY.md) | When snapshot refreshes are valid and when they are not |
 | Determinism | [`DETERMINISM.md`](./DETERMINISM.md) | Determinism scope, parity checks, and replay expectations |
 | Correctness contract | [`STREAMING_CORRECTNESS_CONTRACT.md`](./STREAMING_CORRECTNESS_CONTRACT.md) | Non-negotiable streaming guarantees and invariants |
+| Patch classification ledger | [`PATCH_CLASSIFICATION_LEDGER.md`](./PATCH_CLASSIFICATION_LEDGER.md) | Audited semantic/enrichment map for the `Patch` union |
 | Execution plan | [`STREAMING_CORRECTNESS_EXECUTION_PLAN.md`](./STREAMING_CORRECTNESS_EXECUTION_PLAN.md) | Current correctness hardening backlog |
 | Post-finalize mutation ledger | [`POST_FINALIZE_MUTATION_LEDGER.md`](./POST_FINALIZE_MUTATION_LEDGER.md) | Explicit allowlist for visible mutations after `FINALIZED` |
 | Correctness gate residuals | [`CORRECTNESS_GATE_RESIDUALS_2026-04-03.md`](./CORRECTNESS_GATE_RESIDUALS_2026-04-03.md) | Current fast-gate residuals after the latest correctness tranche |
 | Static artifact contract | [`STATIC_SNAPSHOT_ARTIFACT_CONTRACT.md`](./STATIC_SNAPSHOT_ARTIFACT_CONTRACT.md) | Snapshot artifact structure and expectations |
+| Release checklist | [`STREAMING_MARKDOWN_RELEASE_CHECKLIST.md`](./STREAMING_MARKDOWN_RELEASE_CHECKLIST.md) | Current release-time operational checklist |
 | Regression fix matrix | [`REGRESSION_FIX_MATRIX_2026-03-04.md`](./REGRESSION_FIX_MATRIX_2026-03-04.md) | Historical issue/fix ledger |
 | Demo reliability plan | [`STREAMING_DEMO_RELIABILITY_REMEDIATION_PLAN.md`](./STREAMING_DEMO_RELIABILITY_REMEDIATION_PLAN.md) | Demo-specific remediation notes |
 

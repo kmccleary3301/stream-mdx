@@ -57,27 +57,29 @@ export default function ShowcaseIndexPage() {
           <span className="route-chip">Reproducible scripts</span>
           <span className="route-chip">Feature-specific articles</span>
         </div>
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
-          {filters.map((filter) => (
-            <button
-              key={filter.key}
-              type="button"
-              onClick={() => setActiveFilter(filter.key)}
-              className={cn(
-                "rounded-full border px-3 py-1.5 transition",
-                activeFilter === filter.key
-                  ? "border-foreground/20 bg-foreground/7 text-foreground shadow-[0_14px_32px_-28px_rgba(15,23,42,0.55)]"
-                  : "border-border/50 bg-background/75 text-muted hover:border-border hover:text-foreground",
-              )}
-            >
-              {filter.label}
-            </button>
-          ))}
-          <div className="ml-auto flex items-center gap-2 text-xs text-muted max-sm:w-full">
+        <div className="route-panel grid gap-3 px-4 py-4 md:grid-cols-[1fr_auto]">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
+            {filters.map((filter) => (
+              <button
+                key={filter.key}
+                type="button"
+                onClick={() => setActiveFilter(filter.key)}
+                className={cn(
+                  "rounded-full border px-3 py-1.5 transition",
+                  activeFilter === filter.key
+                    ? "border-foreground/20 bg-foreground/7 text-foreground shadow-[0_14px_32px_-28px_rgba(15,23,42,0.55)]"
+                    : "border-border/50 bg-background/75 text-muted hover:border-border hover:text-foreground",
+                )}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted max-md:w-full">
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              className="h-9 w-52 rounded-full border border-border/50 bg-background/80 px-4 text-xs text-foreground placeholder:text-muted shadow-[0_14px_30px_-28px_rgba(15,23,42,0.55)] max-sm:w-full"
+              className="h-10 w-56 rounded-full border border-border/50 bg-background/88 px-4 text-xs text-foreground placeholder:text-muted shadow-[0_14px_30px_-28px_rgba(15,23,42,0.55)] max-md:w-full"
               placeholder="Search features..."
             />
           </div>
@@ -90,7 +92,8 @@ export default function ShowcaseIndexPage() {
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {filteredItems.map((item) => (
           <div key={item.slug} className="route-grid-card flex flex-col p-5">
-            <div className="text-sm font-semibold text-foreground">{item.title}</div>
+            <div className="route-stat-label">Showcase</div>
+            <div className="mt-2 text-sm font-semibold text-foreground">{item.title}</div>
             {item.description ? <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.description}</p> : null}
             <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-muted">
               {(item.tags.length > 0 ? item.tags : ["streaming"]).map((tag) => (
@@ -115,12 +118,18 @@ export default function ShowcaseIndexPage() {
         </section>
       ) : null}
 
-      <section className="route-panel p-6 text-sm text-muted">
-        <div className="route-kicker">How to use this page</div>
-        <p className="mt-2">
-          Each demo page includes implementation notes, toggles, and reproducible scripts. Use the perf harness to validate changes before
-          publishing.
-        </p>
+      <section className="route-panel grid gap-4 p-6 text-sm text-muted md:grid-cols-[1fr_0.9fr]">
+        <div>
+          <div className="route-kicker">How to use this page</div>
+          <p className="mt-2">
+            Each demo page includes implementation notes, toggles, and reproducible scripts. Use the perf harness to validate changes before
+            publishing.
+          </p>
+        </div>
+        <div className="route-panel-soft p-4 text-xs leading-relaxed">
+          Use showcase entries as capability references: each page points to the surface it exercises and the corresponding docs or harness
+          you can use to go deeper.
+        </div>
       </section>
     </div>
   );

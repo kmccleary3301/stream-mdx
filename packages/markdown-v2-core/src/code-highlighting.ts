@@ -8,6 +8,10 @@ function isFenceLine(line: string): boolean {
   return /^```/.test(line.trim());
 }
 
+function isTrailingPartialFenceLine(line: string): boolean {
+  return /^[\t ]*`{1,2}[\t ]*$/.test(line);
+}
+
 export function stripCodeFence(raw: string): { code: string; info: string; hadFence: boolean } {
   if (!raw) {
     return { code: "", info: "", hadFence: false };
@@ -36,6 +40,9 @@ export function stripCodeFence(raw: string): { code: string; info: string; hadFe
   // During streaming, code block may not have closing fence yet
   // Still extract and return the info from the opening fence
   const codeLines = lines.slice(1);
+  if (!normalized.endsWith("\n") && codeLines.length > 0 && isTrailingPartialFenceLine(codeLines[codeLines.length - 1] ?? "")) {
+    codeLines.pop();
+  }
   return { code: codeLines.join("\n"), info, hadFence: true };
 }
 

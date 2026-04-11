@@ -90,6 +90,8 @@ jobs:
           STICKY_SCROLL_DOCS_URL=http://127.0.0.1:4173/docs/getting-started/ \
           STICKY_SCROLL_EVIDENCE_DIR=tmp/sticky-scroll-check-ci \
           npm run docs:sticky-scroll:check
+          DOCS_AUDIT_BASE_URL=http://127.0.0.1:4173 \
+          npm run docs:quality:audit
           STREAM_MDX_REGRESSION_BASE_URL=http://127.0.0.1:4173 \
           npm run test:regression:scheduler-parity
 
