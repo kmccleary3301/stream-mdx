@@ -1,6 +1,6 @@
 {
   "name": "@stream-mdx/tui",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "StreamMDX TUI helpers (NDJSON parsing and snapshot store)",
   "license": "MIT",
   "repository": {
@@ -34,7 +34,7 @@
     "prepack": "npm run build"
   },
   "dependencies": {
-    "@stream-mdx/core": "0.4.0",
-    "@stream-mdx/protocol": "0.4.0"
+    "@stream-mdx/core": "0.5.0",
+    "@stream-mdx/protocol": "0.5.0"
   }
 }

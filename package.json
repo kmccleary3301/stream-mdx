@@ -57,6 +57,9 @@
     "determinism:matrix": "npm run worker:build && tsx scripts/determinism/run-worker-matrix.ts",
     "determinism:html-parity": "tsx scripts/determinism/html-parity.ts",
     "release:gates": "tsx scripts/release-gates.ts",
+    "release:prepare:v0.5.0": "STREAM_MDX_EXPECT_VERSION=0.5.0 bash scripts/release-v0.5.0.sh --prepare-only",
+    "release:publish:v0.5.0": "bash scripts/publish-v0.5.0.sh",
+    "release:v0.5.0": "bash scripts/release-v0.5.0.sh",
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "changeset:publish": "changeset publish"

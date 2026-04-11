@@ -121,11 +121,12 @@ When capturing new public-claim baselines, update the related docs:
 
 ## 6. Packaging and publish gates
 
-1. Generate or review changesets.
+Preferred release path for the `0.5.0` cut:
+
+1. Run the full release preflight.
 
    ```bash
-   npm run changeset
-   npm run changeset:version
+   npm run release:prepare:v0.5.0
    ```
 
 2. Confirm npm auth.
@@ -134,13 +135,19 @@ When capturing new public-claim baselines, update the related docs:
    npm whoami
    ```
 
-3. Publish via Changesets.
+3. Publish all public packages in dependency order.
 
    ```bash
-   npm run changeset:publish
+   npm run release:publish:v0.5.0
    ```
 
-4. Confirm the expected packages are published:
+4. Or run the combined gate + publish flow in one interactive terminal.
+
+   ```bash
+   npm run release:v0.5.0
+   ```
+
+5. Confirm the expected packages are published:
 
 - `@stream-mdx/core`
 - `@stream-mdx/plugins`
@@ -151,6 +158,14 @@ When capturing new public-claim baselines, update the related docs:
 - `@stream-mdx/tui`
 - `@stream-mdx/theme-tailwind`
 - `stream-mdx`
+
+6. Changesets remains the fallback/manual path if you intentionally need to cut a different version line:
+
+   ```bash
+   npm run changeset
+   npm run changeset:version
+   npm run changeset:publish
+   ```
 
 ## 7. Public surface verification
 

@@ -1,9 +1,9 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-04-10T22:26:53.807Z",
-  "hash": "8307f817c80b1b22af95222b9d893b8451ae16fb17d9faf5556d3985435831c2",
-  "contentHash": "d8c71bd4a918aecc947a8889cc6e3b9c48e53c4ba3a5398f64fa466a4f8764ba",
+  "createdAt": "2026-04-11T19:48:48.317Z",
+  "hash": "206fb76036c7aed57ef04c040a2a160ac7155a45b8d73055d4bd255a5687d89b",
+  "contentHash": "8a25b95f615214ad87335d2a786a3f5fe13e20e6af856391b8e6b656dc2dfe73",
   "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
   "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
   "blocks": [
@@ -666,14 +666,40 @@
       }
     },
     {
-      "id": "77b69a26",
+      "id": "331926e2",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Preferred release path for the `0.5.0` cut:",
+        "range": {
+          "from": 2730,
+          "to": 2773
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Preferred release path for the "
+          },
+          {
+            "kind": "code",
+            "text": "0.5.0"
+          },
+          {
+            "kind": "text",
+            "text": " cut:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "646a8df9",
       "type": "list",
       "isFinalized": true,
       "payload": {
-        "raw": "1. Generate or review changesets.\n\n   ```bash\n   npm run changeset\n   npm run changeset:version\n   ```\n\n2. Confirm npm auth.\n\n   ```bash\n   npm whoami\n   ```\n\n3. Publish via Changesets.\n\n   ```bash\n   npm run changeset:publish\n   ```\n\n4. Confirm the expected packages are published:",
+        "raw": "1. Run the full release preflight.\n\n   ```bash\n   npm run release:prepare:v0.5.0\n   ```\n\n2. Confirm npm auth.\n\n   ```bash\n   npm whoami\n   ```\n\n3. Publish all public packages in dependency order.\n\n   ```bash\n   npm run release:publish:v0.5.0\n   ```\n\n4. Or run the combined gate + publish flow in one interactive terminal.\n\n   ```bash\n   npm run release:v0.5.0\n   ```\n\n5. Confirm the expected packages are published:",
         "range": {
-          "from": 2730,
-          "to": 3012
+          "from": 2775,
+          "to": 3190
         },
         "meta": {
           "ordered": true,
@@ -681,7 +707,7 @@
             [
               {
                 "kind": "text",
-                "text": "Generate or review changesets.\n\n```bash\nnpm run changeset\nnpm run changeset:version\n```\n"
+                "text": "Run the full release preflight.\n\n```bash\nnpm run release:prepare:v0.5.0\n```\n"
               }
             ],
             [
@@ -693,7 +719,13 @@
             [
               {
                 "kind": "text",
-                "text": "Publish via Changesets.\n\n```bash\nnpm run changeset:publish\n```\n"
+                "text": "Publish all public packages in dependency order.\n\n```bash\nnpm run release:publish:v0.5.0\n```\n"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Or run the combined gate + publish flow in one interactive terminal.\n\n```bash\nnpm run release:v0.5.0\n```\n"
               }
             ],
             [
@@ -708,14 +740,14 @@
       }
     },
     {
-      "id": "1d937944",
+      "id": "11ea239b",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- `@stream-mdx/core`\n- `@stream-mdx/plugins`\n- `@stream-mdx/protocol`\n- `@stream-mdx/worker`\n- `@stream-mdx/react`\n- `@stream-mdx/mermaid`\n- `@stream-mdx/tui`\n- `@stream-mdx/theme-tailwind`\n- `stream-mdx`",
         "range": {
-          "from": 3014,
-          "to": 3218
+          "from": 3192,
+          "to": 3396
         },
         "meta": {
           "ordered": false,
@@ -780,14 +812,38 @@
       }
     },
     {
-      "id": "1f47badd",
+      "id": "37eab623",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "6. Changesets remains the fallback/manual path if you intentionally need to cut a different version line:\n\n   ```bash\n   npm run changeset\n   npm run changeset:version\n   npm run changeset:publish\n   ```",
+        "range": {
+          "from": 3398,
+          "to": 3601
+        },
+        "meta": {
+          "ordered": true,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Changesets remains the fallback/manual path if you intentionally need to cut a different version line:\n\n```bash\nnpm run changeset\nnpm run changeset:version\nnpm run changeset:publish\n```"
+              }
+            ]
+          ],
+          "mathEnabled": true
+        }
+      }
+    },
+    {
+      "id": "4714f0a6",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "7. Public surface verification",
         "range": {
-          "from": 3220,
-          "to": 3253
+          "from": 3603,
+          "to": 3636
         },
         "meta": {
           "headingLevel": 2,
@@ -803,14 +859,14 @@
       }
     },
     {
-      "id": "6442987f",
+      "id": "32667ff8",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "After publish/deploy, verify:",
         "range": {
-          "from": 3255,
-          "to": 3284
+          "from": 3638,
+          "to": 3667
         },
         "inline": [
           {
@@ -821,14 +877,14 @@
       }
     },
     {
-      "id": "27e4307f",
+      "id": "62baf756",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- docs site: <https://stream-mdx.vercel.app/docs>\n- demo: <https://stream-mdx.vercel.app/demo>\n- showcase: <https://stream-mdx.vercel.app/showcase>\n- benchmarks: <https://stream-mdx.vercel.app/benchmarks>\n- npm package README rendering for `stream-mdx`",
         "range": {
-          "from": 3286,
-          "to": 3538
+          "from": 3669,
+          "to": 3921
         },
         "meta": {
           "ordered": false,
@@ -873,14 +929,14 @@
       }
     },
     {
-      "id": "3fa288de",
+      "id": "57068f99",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "If `stream-mdx.dev` is configured as the canonical production domain, verify the same surfaces there and ensure redirects behave intentionally.",
         "range": {
-          "from": 3540,
-          "to": 3683
+          "from": 3923,
+          "to": 4066
         },
         "inline": [
           {
@@ -899,14 +955,14 @@
       }
     },
     {
-      "id": "11e957a0",
+      "id": "7079373e",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "8. Worker and deployment checks",
         "range": {
-          "from": 3685,
-          "to": 3719
+          "from": 4068,
+          "to": 4102
         },
         "meta": {
           "headingLevel": 2,
@@ -922,14 +978,14 @@
       }
     },
     {
-      "id": "5dd6021d",
+      "id": "63bf91ff",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Verify the hosted worker outputs expected by examples:",
         "range": {
-          "from": 3721,
-          "to": 3775
+          "from": 4104,
+          "to": 4158
         },
         "inline": [
           {
@@ -940,14 +996,14 @@
       }
     },
     {
-      "id": "3e751c8",
+      "id": "1fc2179b",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- built worker artifact:\n  - `packages/markdown-v2-worker/dist/hosted/markdown-worker.js`\n- copied example artifact:\n  - `examples/streaming-markdown-starter/public/workers/markdown-worker.js`",
         "range": {
-          "from": 3777,
-          "to": 3969
+          "from": 4160,
+          "to": 4352
         },
         "meta": {
           "ordered": false,
@@ -982,14 +1038,14 @@
       }
     },
     {
-      "id": "74c3bd40",
+      "id": "1633dda2",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "9. Artifact and log triage",
         "range": {
-          "from": 3971,
-          "to": 4000
+          "from": 4354,
+          "to": 4383
         },
         "meta": {
           "headingLevel": 2,
@@ -1005,14 +1061,14 @@
       }
     },
     {
-      "id": "7c0bfe02",
+      "id": "4bb858bc",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "If a release gate fails, inspect:",
         "range": {
-          "from": 4002,
-          "to": 4035
+          "from": 4385,
+          "to": 4418
         },
         "inline": [
           {
@@ -1023,14 +1079,14 @@
       }
     },
     {
-      "id": "1a6409e4",
+      "id": "444881fe",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- regression artifacts under `tests/regression/artifacts/**`\n- managed seeded-smoke server log at `tmp/seeded-smoke/docs-server.log`\n- release-gates server log at `tmp/release-gates/docs-server.log`",
         "range": {
-          "from": 4037,
-          "to": 4235
+          "from": 4420,
+          "to": 4618
         },
         "meta": {
           "ordered": false,
@@ -1071,14 +1127,14 @@
       }
     },
     {
-      "id": "60867ce2",
+      "id": "a00e40",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Do not rerun blind before inspecting the failure artifacts.",
         "range": {
-          "from": 4237,
-          "to": 4296
+          "from": 4620,
+          "to": 4679
         },
         "inline": [
           {
@@ -1089,14 +1145,14 @@
       }
     },
     {
-      "id": "771ef01d",
+      "id": "3776bf05",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "10. Final branch state",
         "range": {
-          "from": 4298,
-          "to": 4323
+          "from": 4681,
+          "to": 4706
         },
         "meta": {
           "headingLevel": 2,
@@ -1112,14 +1168,14 @@
       }
     },
     {
-      "id": "1d8e7882",
+      "id": "791a9ff5",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Before cutting the release, confirm:",
         "range": {
-          "from": 4325,
-          "to": 4361
+          "from": 4708,
+          "to": 4744
         },
         "inline": [
           {
@@ -1130,14 +1186,14 @@
       }
     },
     {
-      "id": "4ae13400",
+      "id": "100a6d29",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- `main` is clean\n- `main` is pushed\n- the release commit/tag reflects the verified state",
         "range": {
-          "from": 4363,
-          "to": 4452
+          "from": 4746,
+          "to": 4835
         },
         "meta": {
           "ordered": false,
@@ -1221,25 +1277,25 @@
       "id": "7-public-surface-verification",
       "text": "7. Public surface verification",
       "level": 2,
-      "blockId": "1f47badd"
+      "blockId": "4714f0a6"
     },
     {
       "id": "8-worker-and-deployment-checks",
       "text": "8. Worker and deployment checks",
       "level": 2,
-      "blockId": "11e957a0"
+      "blockId": "7079373e"
     },
     {
       "id": "9-artifact-and-log-triage",
       "text": "9. Artifact and log triage",
       "level": 2,
-      "blockId": "74c3bd40"
+      "blockId": "1633dda2"
     },
     {
       "id": "10-final-branch-state",
       "text": "10. Final branch state",
       "level": 2,
-      "blockId": "771ef01d"
+      "blockId": "3776bf05"
     }
   ],
   "init": {

@@ -1,6 +1,6 @@
 {
   "name": "@stream-mdx/theme-tailwind",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Optional Tailwind theme styles for StreamMDX streaming Markdown output",
   "license": "MIT",
   "repository": {

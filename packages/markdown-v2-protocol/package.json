@@ -1,6 +1,6 @@
 {
   "name": "@stream-mdx/protocol",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "StreamMDX protocol types and event envelope for JSON/object streaming",
   "license": "MIT",
   "repository": {
@@ -34,6 +34,6 @@
     "prepack": "npm run build"
   },
   "dependencies": {
-    "@stream-mdx/core": "0.4.0"
+    "@stream-mdx/core": "0.5.0"
   }
 }
