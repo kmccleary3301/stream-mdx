@@ -1,0 +1,682 @@
+{
+  "fixtureId": "inline-html-allowlist",
+  "fixtureTitle": "Inline HTML Allowlist",
+  "scenarioId": "S2_typical",
+  "scenario": {
+    "id": "S2_typical",
+    "label": "Typical streaming",
+    "updateIntervalMs": 16,
+    "charRateCps": 1200,
+    "maxChunkChars": 256
+  },
+  "runMeta": {
+    "seed": null,
+    "schedulerMode": null,
+    "usedSplitMarkers": false,
+    "fixtureTags": [
+      "anticipation",
+      "html",
+      "inline"
+    ]
+  },
+  "totalLength": 591,
+  "checkpoints": [
+    {
+      "id": "after-first-chunk",
+      "appendedChars": 19,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 4,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 1,
+        "lastPatchToDomMs": 2.5999999940395355,
+        "lastDurationMs": 2.2000000029802322,
+        "meta": {
+          "fixtureId": "inline-html-allowlist",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML Allow\">Inline HTML Allow</h1></div>",
+      "textSample": "Inline HTML Allow",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-30",
+      "appendedChars": 38,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 5,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 2,
+        "lastPatchToDomMs": 0.19999998807907104,
+        "lastDurationMs": 0.19999998807907104,
+        "meta": {
+          "fixtureId": "inline-html-allowlist",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML Allowlist\">Inline HTML Allowlist</h1><p class=\"markdown-paragraph streaming-partial\">Inline allowl</p></div>",
+      "textSample": "Inline HTML AllowlistInline allowl",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-59",
+      "appendedChars": 76,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 7,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 4,
+        "lastPatchToDomMs": 10.5,
+        "lastDurationMs": 0.29999999701976776,
+        "meta": {
+          "fixtureId": "inline-html-allowlist",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML Allowlist\">Inline HTML Allowlist</h1><p class=\"markdown-paragraph streaming-partial\">Inline allowlisted HTML should stay bounded and sho</p></div>",
+      "textSample": "Inline HTML AllowlistInline allowlisted HTML should stay bounded and sho",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-148",
+      "appendedChars": 152,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 11,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 8,
+        "lastPatchToDomMs": 6.700000002980232,
+        "lastDurationMs": 0.5,
+        "meta": {
+          "fixtureId": "inline-html-allowlist",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML Allowlist\">Inline HTML Allowlist</h1><p class=\"markdown-paragraph\">Inline allowlisted HTML should stay bounded and should not swallow nearby text.</p><p class=\"markdown-paragraph\">Paragraph with <kbd>Ctrl</kbd> + <kbd>K</kbd>,</p></div>",
+      "textSample": "Inline HTML AllowlistInline allowlisted HTML should stay bounded and should not swallow nearby text.Paragraph with Ctrl + K,",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-296",
+      "appendedChars": 304,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 19,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 16,
+        "lastPatchToDomMs": 12.799999997019768,
+        "lastDurationMs": 0.29999999701976776,
+        "meta": {
+          "fixtureId": "inline-html-allowlist",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML Allowlist\">Inline HTML Allowlist</h1><p class=\"markdown-paragraph\">Inline allowlisted HTML should stay bounded and should not swallow nearby text.</p><p class=\"markdown-paragraph\">Paragraph with <kbd>Ctrl</kbd> + <kbd>K</kbd>, plus <sup>2</sup> and H<sub>2</sub>O.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with inline HTML: <span>hint text</span> followed by markdown <em>emphasis</em>.</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List it</li></ul></div>",
+      "textSample": "Inline HTML AllowlistInline allowlisted HTML should stay bounded and should not swallow nearby text.Paragraph with Ctrl + K, plus 2 and H2O.List item with inline HTML: hint text followed by markdown e",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "event-hasBlockquote",
+      "appendedChars": 418,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 25,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 22,
+        "lastPatchToDomMs": 11,
+        "lastDurationMs": 0.19999998807907104,
+        "meta": {
+          "fixtureId": "inline-html-allowlist",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": true,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 1,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML Allowlist\">Inline HTML Allowlist</h1><p class=\"markdown-paragraph\">Inline allowlisted HTML should stay bounded and should not swallow nearby text.</p><p class=\"markdown-paragraph\">Paragraph with <kbd>Ctrl</kbd> + <kbd>K</kbd>, plus <sup>2</sup> and H<sub>2</sub>O.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with inline HTML: <span>hint text</span> followed by markdown <em>emphasis</em>.</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with link-shaped HTML: <a href=\"https://example.com/docs\">docs</a> followed by trailing text.</li></ul><blockquote class=\"markdown-blockquote\">Blockquote wit</blockquote></div>",
+      "textSample": "Inline HTML AllowlistInline allowlisted HTML should stay bounded and should not swallow nearby text.Paragraph with Ctrl + K, plus 2 and H2O.List item with inline HTML: hint text followed by markdown e",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 1,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-443",
+      "appendedChars": 456,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 27,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 24,
+        "lastPatchToDomMs": 6.299999997019768,
+        "lastDurationMs": 0.29999999701976776,
+        "meta": {
+          "fixtureId": "inline-html-allowlist",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": true,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 1,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML Allowlist\">Inline HTML Allowlist</h1><p class=\"markdown-paragraph\">Inline allowlisted HTML should stay bounded and should not swallow nearby text.</p><p class=\"markdown-paragraph\">Paragraph with <kbd>Ctrl</kbd> + <kbd>K</kbd>, plus <sup>2</sup> and H<sub>2</sub>O.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with inline HTML: <span>hint text</span> followed by markdown <em>emphasis</em>.</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with link-shaped HTML: <a href=\"https://example.com/docs\">docs</a> followed by trailing text.</li></ul><blockquote class=\"markdown-blockquote\">Blockquote with nested inline HTML: <code>npm run do</code></blockquote></div>",
+      "textSample": "Inline HTML AllowlistInline allowlisted HTML should stay bounded and should not swallow nearby text.Paragraph with Ctrl + K, plus 2 and H2O.List item with inline HTML: hint text followed by markdown e",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 1,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-532",
+      "appendedChars": 532,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 31,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 28,
+        "lastPatchToDomMs": 9.300000011920929,
+        "lastDurationMs": 0.10000000894069672,
+        "meta": {
+          "fixtureId": "inline-html-allowlist",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": true,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 1,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML Allowlist\">Inline HTML Allowlist</h1><p class=\"markdown-paragraph\">Inline allowlisted HTML should stay bounded and should not swallow nearby text.</p><p class=\"markdown-paragraph\">Paragraph with <kbd>Ctrl</kbd> + <kbd>K</kbd>, plus <sup>2</sup> and H<sub>2</sub>O.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with inline HTML: <span>hint text</span> followed by markdown <em>emphasis</em>.</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with link-shaped HTML: <a href=\"https://example.com/docs\">docs</a> followed by trailing text.</li></ul><blockquote class=\"markdown-blockquote\">Blockquote with nested inline HTML: <code>npm run docs:dev</code> and trailing prose.</blockquote><p class=\"markdown-paragraph streaming-partial\">Final paragraph after inline HTML to make</p></div>",
+      "textSample": "Inline HTML AllowlistInline allowlisted HTML should stay bounded and should not swallow nearby text.Paragraph with Ctrl + K, plus 2 and H2O.List item with inline HTML: hint text followed by markdown e",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 1,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-591",
+      "appendedChars": 591,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 35,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 32,
+        "lastPatchToDomMs": 12.099999994039536,
+        "lastDurationMs": 0.20000000298023224,
+        "meta": {
+          "fixtureId": "inline-html-allowlist",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": true,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 1,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML Allowlist\">Inline HTML Allowlist</h1><p class=\"markdown-paragraph\">Inline allowlisted HTML should stay bounded and should not swallow nearby text.</p><p class=\"markdown-paragraph\">Paragraph with <kbd>Ctrl</kbd> + <kbd>K</kbd>, plus <sup>2</sup> and H<sub>2</sub>O.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with inline HTML: <span>hint text</span> followed by markdown <em>emphasis</em>.</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with link-shaped HTML: <a href=\"https://example.com/docs\">docs</a> followed by trailing text.</li></ul><blockquote class=\"markdown-blockquote\">Blockquote with nested inline HTML: <code>npm run docs:dev</code> and trailing prose.</blockquote><p class=\"markdown-paragraph streaming-partial\">Final paragraph after inline HTML to make sure open-tag anticipation cannot capture the next block.</p></div>",
+      "textSample": "Inline HTML AllowlistInline allowlisted HTML should stay bounded and should not swallow nearby text.Paragraph with Ctrl + K, plus 2 and H2O.List item with inline HTML: hint text followed by markdown e",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 1,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    }
+  ],
+  "final": {
+    "id": "after-finalize",
+    "appendedChars": 591,
+    "rootChildCount": 1,
+    "selectors": {
+      "hasTable": false,
+      "hasPre": false,
+      "hasFootnotes": false,
+      "hasMdxPending": false,
+      "hasMdxCompiled": false,
+      "hasBlockquote": true,
+      "hasMath": false
+    },
+    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML Allowlist\">Inline HTML Allowlist</h1><p class=\"markdown-paragraph\">Inline allowlisted HTML should stay bounded and should not swallow nearby text.</p><p class=\"markdown-paragraph\">Paragraph with <kbd>Ctrl</kbd> + <kbd>K</kbd>, plus <sup>2</sup> and H<sub>2</sub>O.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with inline HTML: <span>hint text</span> followed by markdown <em>emphasis</em>.</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with link-shaped HTML: <a href=\"https://example.com/docs\">docs</a> followed by trailing text.</li></ul><blockquote class=\"markdown-blockquote\">Blockquote with nested inline HTML: <code>npm run docs:dev</code> and trailing prose.</blockquote><p class=\"markdown-paragraph\">Final paragraph after inline HTML to make sure open-tag anticipation cannot capture the next block.</p></div>",
+    "runtimeState": {
+      "rendererVersion": 36,
+      "queueDepth": 0,
+      "pendingBatches": 0,
+      "workerReady": true,
+      "lastTx": 33,
+      "lastPatchToDomMs": 3.7999999970197678,
+      "lastDurationMs": 0.8999999910593033,
+      "meta": {
+        "fixtureId": "inline-html-allowlist",
+        "scenarioId": "S2_typical",
+        "seed": null,
+        "schedulerMode": null
+      },
+      "storeCounters": {
+        "appendLineGuardRejected": 0,
+        "staleEpochRejected": 0,
+        "storeInvariantViolationCount": 0
+      }
+    },
+    "structure": {
+      "topLevelTags": [
+        "div"
+      ],
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 1,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      }
+    },
+    "children": [
+      {
+        "index": 0,
+        "tag": "div",
+        "hash": "c3df125817e4644d178944ac93f74a4461140d4cba7825935fb22b22534ad0cc",
+        "textSample": "Inline HTML AllowlistInline allowlisted HTML should stay bounded and should not swallow nearby text.Paragraph with Ctrl "
+      }
+    ],
+    "inspection": {
+      "tables": [],
+      "mdxBlocks": [],
+      "codeBlocks": []
+    }
+  }
+}

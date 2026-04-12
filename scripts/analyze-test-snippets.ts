@@ -4,6 +4,7 @@
  * Runs each snippet through V2 renderer, captures HTML, and performs detailed analysis
  */
 import type { Page } from "@playwright/test";
+import type { LookaheadTraceStep } from "../packages/markdown-v2-core/src/streaming/lookahead-contract";
 
 import { promises as fs } from "fs";
 import path from "path";
@@ -14,6 +15,7 @@ import { chromium } from "@playwright/test";
 const TEST_PAGE_URL = process.env.SNIPPET_TEST_URL ?? "http://localhost:3000/regression/snippet-test";
 const SNIPPETS_DIR = process.env.SNIPPET_DIR ?? "tests/regression/fixtures";
 const OUTPUT_DIR = "tmp/snippet_analysis";
+const LOOKAHEAD_TRACE_DIR = path.join(OUTPUT_DIR, "lookahead-traces");
 const COALESCING_CSV_PATH = path.join(OUTPUT_DIR, "coalescing.csv");
 const ARTIFACT_MANIFEST_PATH = path.join(OUTPUT_DIR, "artifacts.json");
 const GUARDRAIL_SUMMARY_PATH = path.join(OUTPUT_DIR, "guardrails.json");
@@ -52,6 +54,25 @@ function readNumericFlag(flag: string): number | null {
   return null;
 }
 
+function readStringFlag(flag: string): string | null {
+  const name = `--${flag}`;
+  for (let i = 0; i < CLI_ARGS.length; i += 1) {
+    const arg = CLI_ARGS[i];
+    if (arg.startsWith(`${name}=`)) {
+      return arg.slice(name.length + 1);
+    }
+    if (arg === name) {
+      return CLI_ARGS[i + 1] ?? null;
+    }
+  }
+  return null;
+}
+
+function hasFlag(flag: string): boolean {
+  const name = `--${flag}`;
+  return CLI_ARGS.some((arg) => arg === name || arg.startsWith(`${name}=`));
+}
+
 function getNumericFlag(flag: string, fallback: number): number {
   const parsed = readNumericFlag(flag);
   return parsed === null ? fallback : parsed;
@@ -59,6 +80,10 @@ function getNumericFlag(flag: string, fallback: number): number {
 
 const MIN_COALESCING_REDUCTION_PCT = getNumericFlag("min-coalescing-reduction", 10);
 const MAX_COALESCING_DURATION_P95_MS = getNumericFlag("max-coalescing-duration", 8);
+const TRACE_LOOKAHEAD = hasFlag("trace-lookahead");
+const TRACE_MODE = (readStringFlag("trace-mode") ?? "chunk").toLowerCase() === "char" ? "char" : "chunk";
+const TRACE_SNIPPET = readStringFlag("trace-snippet");
+const TRACE_MAX_STEPS = Math.max(1, getNumericFlag("trace-max-steps", TRACE_MODE === "char" ? 160 : 48));
 type AnalyzerSuppressionEntry = {
   snippet: string;
   rule: string;
@@ -311,6 +336,19 @@ type TelemetrySnapshot = {
     durationMs: number;
   } | null;
   flushBatches?: FlushBatchSample[] | null;
+};
+
+type RuntimeStateSnapshot = {
+  demoState: Record<string, unknown> | null;
+  blocks: Array<{
+    id: string;
+    type: string;
+    isFinalized: boolean;
+    rawLength: number;
+    inlineStatus?: unknown;
+    inlineLookahead?: LookaheadTraceStep["blocks"][number]["inlineLookahead"];
+    mixedSegmentKinds?: string[];
+  }>;
 };
 
 type CoalescingBreakdown = {
@@ -733,12 +771,54 @@ async function listSnippets(): Promise<string[]> {
     .sort();
 }
 
-async function renderSnippet(page: Page, snippetContent: string): Promise<{ html: string; telemetry: TelemetrySnapshot | null }> {
+async function captureRuntimeState(page: Page): Promise<RuntimeStateSnapshot> {
+  return await page.evaluate<RuntimeStateSnapshot>(() => {
+    const api = window.__STREAMING_DEMO__;
+    const store = window.__STREAMING_RENDERER_STORE__;
+    const demoState = api && typeof api.getState === "function" ? (api.getState() as Record<string, unknown>) : null;
+    const blocks =
+      store && typeof store.getBlocks === "function"
+        ? store.getBlocks().map((block: any) => ({
+            id: String(block.id),
+            type: String(block.type),
+            isFinalized: Boolean(block.isFinalized),
+            rawLength: typeof block?.payload?.raw === "string" ? block.payload.raw.length : 0,
+            inlineStatus: block?.payload?.meta?.inlineStatus,
+            inlineContainerSignature:
+              typeof block?.payload?.meta?.inlineContainerSignature === "string" ? block.payload.meta.inlineContainerSignature : undefined,
+            inlineLookaheadInvalidated:
+              typeof block?.payload?.meta?.inlineLookaheadInvalidated === "string"
+                ? block.payload.meta.inlineLookaheadInvalidated
+                : undefined,
+            inlineLookahead: Array.isArray(block?.payload?.meta?.inlineLookahead) ? block.payload.meta.inlineLookahead : [],
+            mixedSegmentKinds: Array.isArray(block?.payload?.meta?.mixedSegments)
+              ? block.payload.meta.mixedSegments
+                  .map((segment: any) => (segment && typeof segment.kind === "string" ? segment.kind : null))
+                  .filter((kind: string | null): kind is string => kind !== null)
+              : undefined,
+          }))
+        : [];
+    return { demoState, blocks };
+  });
+}
+
+async function renderSnippet(
+  page: Page,
+  snippetContent: string,
+  options?: { traceFast?: boolean; streamLimit?: number },
+): Promise<{ html: string; telemetry: TelemetrySnapshot | null; state: RuntimeStateSnapshot }> {
+  const minVisibleLength = Math.min(10, Math.max(1, normalizeWhitespace(snippetContent).length));
+  const compileMode = process.env.MDX_COMPILE_MODE && process.env.MDX_COMPILE_MODE.toLowerCase() === "worker" ? "worker" : "server";
   await page.addInitScript(
-    ({ content }) => {
+    ({ content, config }) => {
       const runtimeWindow = window as typeof window & {
         __name?: (target: unknown) => unknown;
         __TEST_SNIPPET_CONTENT__?: string;
+        __TEST_SNIPPET_CONFIG__?: {
+          initialStreamLimit?: number | null;
+          initialIsRunning?: boolean;
+          initialMdxStrategy?: "server" | "worker";
+        };
       };
       // Some MDX fixtures expect this helper to exist in the browser.
       if (typeof runtimeWindow.__name !== "function") {
@@ -747,8 +827,22 @@ async function renderSnippet(page: Page, snippetContent: string): Promise<{ html
         };
       }
       runtimeWindow.__TEST_SNIPPET_CONTENT__ = content;
+      runtimeWindow.__TEST_SNIPPET_CONFIG__ = config;
     },
-    { content: snippetContent },
+    {
+      content: snippetContent,
+      config: options?.traceFast
+        ? {
+            initialStreamLimit: options.streamLimit ?? null,
+            initialIsRunning: false,
+            initialMdxStrategy: compileMode,
+          }
+        : {
+            initialStreamLimit: null,
+            initialIsRunning: true,
+            initialMdxStrategy: compileMode,
+          },
+    },
   );
 
   // Large regression fixtures exceed practical query-string limits, so inject
@@ -758,79 +852,110 @@ async function renderSnippet(page: Page, snippetContent: string): Promise<{ html
   // Navigate to test page with content in URL
   await page.goto(url, { waitUntil: "domcontentloaded", timeout: NAVIGATION_TIMEOUT_MS });
 
-  // Wait for React to hydrate and component to render
-  await page.waitForTimeout(1500);
-
-  // Wait for component to render with our content
-  await page.waitForFunction(
-    () => {
-      const output = document.querySelector('[data-testid="markdown-output"]');
-      if (!output) return false;
-      const text = output.textContent || "";
-      return text !== "Waiting for snippet content... (set via window.__TEST_SNIPPET_CONTENT__ or ?snippet= param)" && text.length > 10;
-    },
-    { timeout: INITIAL_RENDER_TIMEOUT_MS },
-  );
+  // Wait for React to hydrate and either expose the automation API or render visible content.
+  await page.waitForTimeout(options?.traceFast ? 250 : 1500);
 
   // Wait for API
-  await page
-    .waitForFunction(() => typeof window.__STREAMING_DEMO__ !== "undefined" && window.__STREAMING_DEMO__?.getState !== undefined, { timeout: 30000 })
-    .catch(() => {
-      console.warn("[analyze] API not available immediately, continuing...");
-    });
+  await page.waitForFunction(() => typeof window.__STREAMING_DEMO__ !== "undefined" && window.__STREAMING_DEMO__?.getState !== undefined, { timeout: 30000 });
 
-  const compileMode = process.env.MDX_COMPILE_MODE && process.env.MDX_COMPILE_MODE.toLowerCase() === "worker" ? "worker" : "server";
+  if (!options?.traceFast) {
+    // Wait for component to render with our content in the normal interactive path.
+    await page.waitForFunction(
+      ({ minVisible }) => {
+        const output = document.querySelector('[data-testid="markdown-output"]');
+        if (!output) return false;
+        const text = output.textContent || "";
+        return text !== "Waiting for snippet content... (set via window.__TEST_SNIPPET_CONTENT__ or ?snippet= param)" && text.length >= minVisible;
+      },
+      { minVisible: minVisibleLength },
+      { timeout: INITIAL_RENDER_TIMEOUT_MS },
+    );
+  }
 
-  await page.evaluate(
-    ({ mode }) => {
+  if (options?.traceFast) {
+    await page.evaluate(async () => {
       const api = window.__STREAMING_DEMO__;
       if (!api) return;
-      api.setMdxStrategy?.(mode === "worker" ? "worker" : "server");
-      api.restart?.();
-    },
-    { mode: compileMode },
-  );
+      await api.waitForWorker?.();
+    });
+  } else {
+    await page.evaluate(
+      ({ mode, streamLimit }) => {
+        const api = window.__STREAMING_DEMO__;
+        if (!api) return;
+        if (typeof streamLimit === "number") {
+          api.setStreamLimit?.(streamLimit);
+        }
+        api.setMdxStrategy?.(mode === "worker" ? "worker" : "server");
+        api.restart?.();
+      },
+      { mode: compileMode, streamLimit: options?.streamLimit ?? null },
+    );
+  }
+
+  if (options?.traceFast && typeof options.streamLimit === "number") {
+    await page.waitForFunction(
+      ({ expectedTotal }) => {
+        const api = window.__STREAMING_DEMO__;
+        const state = api?.getState?.();
+        return Boolean(state && typeof state.total === "number" && state.total === expectedTotal && state.idx === 0);
+      },
+      { expectedTotal: options.streamLimit },
+      { timeout: Math.max(2000, Math.min(10000, INITIAL_RENDER_TIMEOUT_MS)) },
+    );
+  }
 
   // Wait for streaming to complete
-  const completed = await page
-    .waitForFunction(
-      () => {
-        const api = window.__STREAMING_DEMO__;
-        if (!api) return false;
-        const state = api.getState?.();
-        if (!state || typeof state.total !== "number" || state.total <= 0) {
-          return false;
-        }
-        return state.idx === state.total;
-      },
-      { timeout: STREAM_COMPLETE_TIMEOUT_MS },
-    )
-    .then(() => true)
-    .catch(async () => {
-      console.warn("[analyze] Streaming did not complete within timeout");
-      const state = await page
-        .evaluate(() => {
+  const completed = options?.traceFast
+    ? await page
+        .evaluate(async () => {
           const api = window.__STREAMING_DEMO__;
-          if (!api || typeof api.getState !== "function") return null;
-          return api.getState();
+          if (!api) return false;
+          await api.fastForward?.();
+          await api.flushPending?.();
+          return false;
         })
-        .catch(() => null);
-      if (state) {
-        console.warn("[analyze] Stream state at timeout", state);
-      }
-      return false;
-    });
+    : await page
+        .waitForFunction(
+          () => {
+            const api = window.__STREAMING_DEMO__;
+            if (!api) return false;
+            const state = api.getState?.();
+            if (!state || typeof state.total !== "number" || state.total <= 0) {
+              return false;
+            }
+            return state.idx === state.total;
+          },
+          { timeout: STREAM_COMPLETE_TIMEOUT_MS },
+        )
+        .then(() => true)
+        .catch(async () => {
+          console.warn("[analyze] Streaming did not complete within timeout");
+          const state = await page
+            .evaluate(() => {
+              const api = window.__STREAMING_DEMO__;
+              if (!api || typeof api.getState !== "function") return null;
+              return api.getState();
+            })
+            .catch(() => null);
+          if (state) {
+            console.warn("[analyze] Stream state at timeout", state);
+          }
+          return false;
+        });
 
   // Trigger finalization and give it a moment to settle
-  await page.evaluate(async () => {
-    const api = window.__STREAMING_DEMO__;
-    if (!api) return;
-    await api.finalize?.();
-    await api.flushPending?.();
-    await api.waitForIdle?.();
-  });
+  if (!options?.traceFast) {
+    await page.evaluate(async () => {
+      const api = window.__STREAMING_DEMO__;
+      if (!api) return;
+      await api.finalize?.();
+      await api.flushPending?.();
+      await api.waitForIdle?.();
+    });
+  }
   let storeFinalized = completed;
-  if (!storeFinalized) {
+  if (!options?.traceFast && !storeFinalized) {
     storeFinalized = await page
       .waitForFunction(
         () => {
@@ -860,7 +985,7 @@ async function renderSnippet(page: Page, snippetContent: string): Promise<{ html
       .catch(() => false);
   }
 
-  if (!storeFinalized) {
+  if (!options?.traceFast && !storeFinalized) {
     console.warn("[analyze] Store did not report all blocks finalized before timeout; falling back to DOM check");
     await page
       .waitForFunction(() => !document.querySelector(".streaming-partial"), {
@@ -870,7 +995,7 @@ async function renderSnippet(page: Page, snippetContent: string): Promise<{ html
         console.warn("[analyze] Finalization wait timed out; proceeding with current DOM state");
       });
   }
-  await page.waitForTimeout(50);
+  await page.waitForTimeout(options?.traceFast ? Math.min(250, STREAM_TICK_MS * 2) : 50);
 
   if (process.env.DEBUG_SNIPPET_BLOCKS === "1") {
     const state = await page.evaluate(() => {
@@ -988,7 +1113,200 @@ async function renderSnippet(page: Page, snippetContent: string): Promise<{ html
       flushBatches,
     };
   });
-  return { html, telemetry };
+  const state = await captureRuntimeState(page);
+  return { html, telemetry, state };
+}
+
+function buildTracePrefixLengths(content: string, mode: "chunk" | "char", maxSteps: number): number[] {
+  if (content.length === 0) return [0];
+  if (mode === "char") {
+    const lengths: number[] = [];
+    const limit = Math.min(content.length, maxSteps);
+    for (let index = 1; index <= limit; index += 1) {
+      lengths.push(index);
+    }
+    if (lengths[lengths.length - 1] !== content.length) {
+      lengths.push(content.length);
+    }
+    return lengths;
+  }
+
+  const approxChunk = Math.max(1, Math.floor((STREAM_RATE * STREAM_TICK_MS) / 1000));
+  const lengths: number[] = [];
+  for (let index = approxChunk; index < content.length; index += approxChunk) {
+    lengths.push(index);
+    if (lengths.length >= maxSteps - 1) {
+      break;
+    }
+  }
+  if (lengths.length === 0 || lengths[lengths.length - 1] !== content.length) {
+    lengths.push(content.length);
+  }
+  return lengths;
+}
+
+function summarizeLookaheadDecisions(steps: LookaheadTraceStep[]) {
+  const providerCounts: Record<string, number> = {};
+  const terminationCounts: Record<string, number> = {};
+  const downgradeCounts: Record<string, number> = {};
+
+  for (const step of steps) {
+    for (const block of step.blocks ?? []) {
+      for (const decision of block.inlineLookahead ?? []) {
+        providerCounts[decision.providerId] = (providerCounts[decision.providerId] ?? 0) + 1;
+        if (decision.termination?.reason) {
+          terminationCounts[decision.termination.reason] = (terminationCounts[decision.termination.reason] ?? 0) + 1;
+        }
+        if (decision.downgrade?.mode) {
+          downgradeCounts[decision.downgrade.mode] = (downgradeCounts[decision.downgrade.mode] ?? 0) + 1;
+        }
+      }
+    }
+  }
+
+  return { providerCounts, terminationCounts, downgradeCounts };
+}
+
+function buildStepDecisionSummary(step: LookaheadTraceStep): NonNullable<LookaheadTraceStep["decisionSummary"]> {
+  const providerCounts: Record<string, number> = {};
+  const terminationCounts: Record<string, number> = {};
+  const downgradeCounts: Record<string, number> = {};
+  const blocksWithNoDecision: string[] = [];
+  let totalDecisions = 0;
+
+  for (const block of step.blocks ?? []) {
+    const decisions = block.inlineLookahead ?? [];
+    if (decisions.length === 0) {
+      blocksWithNoDecision.push(block.id);
+      continue;
+    }
+    totalDecisions += decisions.length;
+    for (const decision of decisions) {
+      providerCounts[decision.providerId] = (providerCounts[decision.providerId] ?? 0) + 1;
+      if (decision.termination?.reason) {
+        terminationCounts[decision.termination.reason] = (terminationCounts[decision.termination.reason] ?? 0) + 1;
+      }
+      if (decision.downgrade?.mode) {
+        downgradeCounts[decision.downgrade.mode] = (downgradeCounts[decision.downgrade.mode] ?? 0) + 1;
+      }
+    }
+  }
+
+  return {
+    totalDecisions,
+    providerCounts,
+    terminationCounts,
+    downgradeCounts,
+    blocksWithNoDecision,
+  };
+}
+
+function buildStepDiff(previous: LookaheadTraceStep | null, current: LookaheadTraceStep, currentHtml: string, previousHtml: string | null) {
+  const previousBlocks = new Map((previous?.blocks ?? []).map((block) => [block.id, JSON.stringify(block)]));
+  const changedBlockIds: string[] = [];
+  let firstDecisionChangeBlockId: string | null = null;
+
+  for (const block of current.blocks ?? []) {
+    const serialized = JSON.stringify(block);
+    const before = previousBlocks.get(block.id);
+    if (before !== serialized) {
+      changedBlockIds.push(block.id);
+      if (firstDecisionChangeBlockId === null) {
+        const previousBlock = (previous?.blocks ?? []).find((candidate) => candidate.id === block.id);
+        const beforeDecisions = JSON.stringify(previousBlock?.inlineLookahead ?? []);
+        const afterDecisions = JSON.stringify(block.inlineLookahead ?? []);
+        if (beforeDecisions !== afterDecisions) {
+          firstDecisionChangeBlockId = block.id;
+        }
+      }
+    }
+  }
+
+  return {
+    rawDeltaChars: current.rawInput.length - (previous?.rawInput.length ?? 0),
+    htmlChanged: previousHtml === null ? true : previousHtml !== currentHtml,
+    blockIdsChanged: changedBlockIds,
+    firstDecisionChangeBlockId,
+  };
+}
+
+async function writeLookaheadTrace(browser: typeof chromium, snippetName: string): Promise<void> {
+  const snippetContent = await readSnippet(snippetName);
+  const prefixLengths = buildTracePrefixLengths(snippetContent, TRACE_MODE, TRACE_MAX_STEPS);
+  const slug = snippetName.replace(/\.[^.]+$/, "");
+  const traceRoot = path.join(LOOKAHEAD_TRACE_DIR, `${slug}-${TRACE_MODE}`);
+  const htmlDir = path.join(traceRoot, "html");
+  const stepsDir = path.join(traceRoot, "steps");
+  await fs.rm(traceRoot, { recursive: true, force: true });
+  await fs.mkdir(htmlDir, { recursive: true });
+  await fs.mkdir(stepsDir, { recursive: true });
+
+  const summary = {
+    generatedAt: new Date().toISOString(),
+    snippet: snippetName,
+    mode: TRACE_MODE,
+    totalSteps: prefixLengths.length,
+    lengths: prefixLengths,
+  };
+
+  const traceSteps: LookaheadTraceStep[] = [];
+  let previousStep: LookaheadTraceStep | null = null;
+  let previousHtml: string | null = null;
+
+  for (let stepIndex = 0; stepIndex < prefixLengths.length; stepIndex += 1) {
+    const prefixLength = prefixLengths[stepIndex]!;
+    const rawInput = snippetContent.slice(0, prefixLength);
+    const page = await browser.newPage();
+    try {
+      const { html, telemetry, state } = await renderSnippet(page, snippetContent, { traceFast: true, streamLimit: prefixLength });
+      const htmlRel = path.join("html", `step-${String(stepIndex).padStart(4, "0")}.html`);
+      const stepRel = path.join("steps", `step-${String(stepIndex).padStart(4, "0")}.json`);
+      const telemetryRel = path.join("steps", `telemetry-${String(stepIndex).padStart(4, "0")}.json`);
+      await fs.writeFile(path.join(traceRoot, htmlRel), html, "utf-8");
+      const traceStep: LookaheadTraceStep = {
+        stepIndex,
+        mode: TRACE_MODE,
+        prefixLength,
+        rawInput,
+        htmlPath: htmlRel,
+        telemetryPath: telemetryRel,
+        state: state.demoState,
+        blocks: state.blocks,
+      };
+      traceStep.decisionSummary = buildStepDecisionSummary(traceStep);
+      traceStep.diffFromPrevious = buildStepDiff(previousStep, traceStep, html, previousHtml);
+      traceSteps.push(traceStep);
+      await fs.writeFile(path.join(traceRoot, telemetryRel), JSON.stringify(telemetry, null, 2), "utf-8");
+      await fs.writeFile(path.join(traceRoot, stepRel), JSON.stringify(traceStep, null, 2), "utf-8");
+      previousStep = traceStep;
+      previousHtml = html;
+    } finally {
+      await page.close();
+    }
+  }
+
+  const aggregateSummary = summarizeLookaheadDecisions(traceSteps);
+  const firstRenderableStep = traceSteps.find((step) => Array.isArray(step.blocks) && step.blocks.length > 0)?.stepIndex ?? null;
+  const firstFinalizedStep =
+    traceSteps.find((step) => (step.blocks ?? []).some((block) => block.isFinalized))?.stepIndex ?? null;
+
+  await fs.writeFile(
+    path.join(traceRoot, "trace-summary.json"),
+    JSON.stringify(
+      {
+        ...summary,
+        firstRenderableStep,
+        firstFinalizedStep,
+        aggregate: aggregateSummary,
+      },
+      null,
+      2,
+    ),
+    "utf-8",
+  );
+  await fs.writeFile(path.join(traceRoot, "trace.ndjson"), `${traceSteps.map((step) => JSON.stringify(step)).join("\n")}\n`, "utf-8");
+
+  console.log(`[analyze] Wrote lookahead trace for ${snippetName} to ${traceRoot}`);
 }
 
 function analyzeHtml(html: string, snippetContent: string, snippetName: string): SnippetAnalysis["analysis"] {
@@ -1428,6 +1746,28 @@ async function main() {
   console.log(`[analyze] Found ${snippets.length} snippets to analyze`);
 
   await fs.mkdir(OUTPUT_DIR, { recursive: true });
+  await fs.mkdir(LOOKAHEAD_TRACE_DIR, { recursive: true });
+
+  if (TRACE_LOOKAHEAD) {
+    const snippetName = TRACE_SNIPPET ?? snippets[0];
+    if (!snippetName) {
+      throw new Error("[analyze] No snippets available for lookahead tracing");
+    }
+    const resolvedSnippet = snippets.includes(snippetName)
+      ? snippetName
+      : snippets.find((candidate) => candidate === `${snippetName}.md`) ?? snippetName;
+    if (!snippets.includes(resolvedSnippet)) {
+      throw new Error(`[analyze] Requested trace snippet not found: ${snippetName}`);
+    }
+    const browser = await chromium.launch({ headless: true });
+    try {
+      await writeLookaheadTrace(browser, resolvedSnippet);
+    } finally {
+      await browser.close();
+    }
+    return;
+  }
+
   await fs.writeFile(
     COALESCING_CSV_PATH,
     "snippet,tx,priority,queueDelayMs,durationMs,inputPatches,outputPatches,coalesced,appendLinesMerged,setPropsMerged,insertChildMerged\n",

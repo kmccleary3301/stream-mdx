@@ -9,7 +9,12 @@ import {
   type HighlightedLine,
 } from "./code-highlighting";
 import { InlineParser } from "./inline-parser";
-import { normalizeFormatAnticipation, prepareInlineStreamingContent } from "./streaming/inline-streaming";
+import {
+  createContainerSignature,
+  normalizeFormatAnticipation,
+  prepareInlineStreamingContent,
+  prepareInlineStreamingLookahead,
+} from "./streaming/inline-streaming";
 import type { FormatAnticipationConfig } from "./types";
 import { extractMixedContentSegments } from "./mixed-content";
 import type {
@@ -106,7 +111,11 @@ function enrichListSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot 
 
   const ordered = listNode.type.name === "OrderedList" || Boolean((block.payload.meta as { ordered?: boolean } | undefined)?.ordered);
   snapshot.props = { ...(snapshot.props ?? {}), ordered, items: undefined };
-  snapshot.children = buildListItemSnapshots(block, listNode, ordered, block.id, baseOffset, raw);
+  snapshot.children = buildListItemSnapshots(block, listNode, ordered, block.id, baseOffset, raw, {
+    listDepth: 1,
+    blockquoteDepth: 0,
+    ancestorTypes: ["list"],
+  });
   return snapshot;
 }
 
@@ -128,7 +137,15 @@ function findListNode(node: any | null | undefined): any | null {
   return null;
 }
 
-function buildListItemSnapshots(block: Block, listNode: any, ordered: boolean, idPrefix: string, baseOffset: number, raw: string): NodeSnapshot[] {
+function buildListItemSnapshots(
+  block: Block,
+  listNode: any,
+  ordered: boolean,
+  idPrefix: string,
+  baseOffset: number,
+  raw: string,
+  context?: { listDepth: number; blockquoteDepth: number; ancestorTypes: readonly string[] },
+): NodeSnapshot[] {
   const items: NodeSnapshot[] = [];
   const cursor = listNode.cursor();
   let index = 0;
@@ -136,7 +153,13 @@ function buildListItemSnapshots(block: Block, listNode: any, ordered: boolean, i
     do {
       if (cursor.type.name === "ListItem") {
         const itemId = `${idPrefix}::item:${index}`;
-        items.push(buildListItemSnapshot(block, cursor.node, ordered, index, itemId, baseOffset, raw));
+        items.push(
+          buildListItemSnapshot(block, cursor.node, ordered, index, itemId, baseOffset, raw, {
+            listDepth: context?.listDepth ?? 1,
+            blockquoteDepth: context?.blockquoteDepth ?? 0,
+            ancestorTypes: context?.ancestorTypes ?? ["list"],
+          }),
+        );
         index++;
       }
     } while (cursor.nextSibling());
@@ -152,6 +175,7 @@ function buildListItemSnapshot(
   id: string,
   baseOffset: number,
   raw: string,
+  context?: { listDepth: number; blockquoteDepth: number; ancestorTypes: readonly string[] },
 ): NodeSnapshot {
   const childSnapshots: NodeSnapshot[] = [];
   const segmentSnapshots: NodeSnapshot[] = [];
@@ -181,6 +205,11 @@ function buildListItemSnapshot(
           formatAnticipation: meta.formatAnticipation,
           math: meta.mathEnabled,
           streaming: !block.isFinalized,
+          listDepth: context?.listDepth ?? 1,
+          blockquoteDepth: context?.blockquoteDepth ?? 0,
+          ancestorTypes: context?.ancestorTypes ?? ["list"],
+          blockType: "list-item",
+          localTextField: "list-item-paragraph",
         });
         const parsedInline = paragraphData.inline;
         if (!paragraphHandled) {
@@ -213,13 +242,23 @@ function buildListItemSnapshot(
       } else if (name === "BulletList" || name === "OrderedList") {
         const nestedId = `${id}::list:${subListIndex++}`;
         const nestedOrdered = name === "OrderedList";
-        const nestedSnapshot = buildListNodeSnapshot(block, cursor.node, nestedOrdered, nestedId, baseOffset, raw);
+        const nestedSnapshot = buildListNodeSnapshot(block, cursor.node, nestedOrdered, nestedId, baseOffset, raw, {
+          listDepth: (context?.listDepth ?? 1) + 1,
+          blockquoteDepth: context?.blockquoteDepth ?? 0,
+          ancestorTypes: [...(context?.ancestorTypes ?? ["list"]), "list-item"],
+        });
         if (nestedSnapshot && Array.isArray(nestedSnapshot.children) && nestedSnapshot.children.length > 0) {
           childSnapshots.push(nestedSnapshot);
         }
       } else if (name === "Blockquote") {
         const quoteId = `${id}::blockquote:${blockquoteIndex++}`;
-        childSnapshots.push(buildBlockquoteSnapshot(block, cursor.node, quoteId, baseOffset, raw));
+        childSnapshots.push(
+          buildBlockquoteSnapshot(block, cursor.node, quoteId, baseOffset, raw, {
+            listDepth: context?.listDepth ?? 1,
+            blockquoteDepth: (context?.blockquoteDepth ?? 0) + 1,
+            ancestorTypes: [...(context?.ancestorTypes ?? ["list"]), "list-item"],
+          }),
+        );
       } else if (name === "FencedCode" || name === "IndentedCode") {
         const codeId = `${id}::code:${codeIndex++}`;
         const isFenced = name === "FencedCode";
@@ -265,6 +304,11 @@ type ListItemInlineOptions = {
   formatAnticipation?: FormatAnticipationConfig;
   math?: boolean;
   streaming?: boolean;
+  listDepth?: number;
+  blockquoteDepth?: number;
+  ancestorTypes?: readonly string[];
+  blockType?: string;
+  localTextField?: string;
 };
 
 function parseListInline(raw: string, options?: ListItemInlineOptions): InlineNode[] {
@@ -272,19 +316,31 @@ function parseListInline(raw: string, options?: ListItemInlineOptions): InlineNo
     return listInlineParser.parse(raw);
   }
   const effectiveFormatAnticipation = options.formatAnticipation ?? LIST_STREAMING_ANTICIPATION;
-  const prepared = prepareInlineStreamingContent(raw, { formatAnticipation: effectiveFormatAnticipation, math: options.math ?? true });
+  const containerSignature = createContainerSignature({
+    blockType: options?.blockType ?? "list-item",
+    ancestorTypes: options?.ancestorTypes ?? ["list"],
+    listDepth: options?.listDepth ?? 1,
+    blockquoteDepth: options?.blockquoteDepth ?? 0,
+    provisional: true,
+    localTextField: options?.localTextField ?? "list-item-inline",
+  });
+  const prepared = prepareInlineStreamingLookahead(raw, {
+    formatAnticipation: effectiveFormatAnticipation,
+    math: options.math ?? true,
+    regexAppend: normalizeFormatAnticipation(effectiveFormatAnticipation).regex ? listInlineParser.getRegexAnticipationAppend(raw) : null,
+    context: {
+      blockType: options?.blockType ?? "list-item",
+      ancestorTypes: options?.ancestorTypes ?? ["list"],
+      listDepth: options?.listDepth ?? 1,
+      blockquoteDepth: options?.blockquoteDepth ?? 0,
+      provisional: true,
+      containerSignature,
+    },
+  }).prepared;
   if (prepared.kind === "raw") {
     return [{ kind: "text", text: raw }];
   }
-  let preparedContent = prepared.content;
-  const normalized = normalizeFormatAnticipation(effectiveFormatAnticipation);
-  if (normalized.regex) {
-    const regexAppend = listInlineParser.getRegexAnticipationAppend(raw);
-    if (regexAppend) {
-      preparedContent += regexAppend;
-    }
-  }
-  return listInlineParser.parse(preparedContent, { cache: false });
+  return listInlineParser.parse(prepared.content, { cache: false });
 }
 
 function processListItemParagraph(raw: string, options?: ListItemInlineOptions): ListItemParagraphData {
@@ -314,11 +370,34 @@ function stripTaskMarker(input: string): { content: string; task?: { checked: bo
   };
 }
 
-function buildBlockquoteSnapshot(block: Block, quoteNode: any, id: string, baseOffset: number, raw: string): NodeSnapshot {
+function buildBlockquoteSnapshot(
+  block: Block,
+  quoteNode: any,
+  id: string,
+  baseOffset: number,
+  raw: string,
+  context?: { listDepth: number; blockquoteDepth: number; ancestorTypes: readonly string[] },
+): NodeSnapshot {
   const quoteRaw = raw.slice(quoteNode.from, quoteNode.to);
   const normalized = normalizeBlockquoteText(quoteRaw);
-  const inline = listInlineParser.parse(normalized);
-  const segments = extractMixedContentSegments(normalized, undefined, (value) => listInlineParser.parse(value));
+  const inline = parseListInline(normalized, {
+    streaming: !block.isFinalized,
+    listDepth: context?.listDepth ?? 0,
+    blockquoteDepth: context?.blockquoteDepth ?? 1,
+    ancestorTypes: [...(context?.ancestorTypes ?? []), "blockquote"],
+    blockType: "blockquote",
+    localTextField: "blockquote-inline",
+  });
+  const segments = extractMixedContentSegments(normalized, undefined, (value) =>
+    parseListInline(value, {
+      streaming: !block.isFinalized,
+      listDepth: context?.listDepth ?? 0,
+      blockquoteDepth: context?.blockquoteDepth ?? 1,
+      ancestorTypes: [...(context?.ancestorTypes ?? []), "blockquote"],
+      blockType: "blockquote",
+      localTextField: "blockquote-inline",
+    }),
+  );
 
   const quoteBlock: Block = {
     id,
@@ -390,8 +469,16 @@ function buildHeadingSnapshot(block: Block, headingNode: any, id: string, baseOf
   return createBlockSnapshot(headingBlock);
 }
 
-function buildListNodeSnapshot(block: Block, listNode: any, ordered: boolean, id: string, baseOffset: number, raw: string): NodeSnapshot | null {
-  const children = buildListItemSnapshots(block, listNode, ordered, id, baseOffset, raw);
+function buildListNodeSnapshot(
+  block: Block,
+  listNode: any,
+  ordered: boolean,
+  id: string,
+  baseOffset: number,
+  raw: string,
+  context?: { listDepth: number; blockquoteDepth: number; ancestorTypes: readonly string[] },
+): NodeSnapshot | null {
+  const children = buildListItemSnapshots(block, listNode, ordered, id, baseOffset, raw, context);
   if (children.length === 0) {
     return null;
   }

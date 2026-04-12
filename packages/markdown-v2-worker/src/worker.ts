@@ -53,9 +53,10 @@ import {
   generateBlockId,
   normalizeLang,
   normalizeBlockquoteText,
+  createContainerSignature,
   normalizeFormatAnticipation,
   parseCodeFenceInfo,
-  prepareInlineStreamingContent,
+  prepareInlineStreamingLookahead,
   removeHeadingMarkers,
 } from "@stream-mdx/core";
 import { InlineParser, dedentIndentedCode, sanitizeHtmlInWorker, stripCodeFence } from "@stream-mdx/core";
@@ -806,7 +807,12 @@ function mapToHighlightRecord(map: Map<string, { time: number; count: number }>)
   return result;
 }
 
-type InlineStreamingParseResult = { inline: InlineNode[]; status: InlineStreamingInlineStatus };
+type InlineStreamingParseResult = {
+  inline: InlineNode[];
+  status: InlineStreamingInlineStatus;
+  lookahead?: unknown;
+  containerSignature: string;
+};
 
 /**
  * Safe inline parsing for streaming content that may have incomplete expressions.
@@ -814,24 +820,60 @@ type InlineStreamingParseResult = { inline: InlineNode[]; status: InlineStreamin
  * When format anticipation is on, this will append missing closers (e.g. `*`, `**`, `` ` ``, `~~`, `$`)
  * to allow the inline parser to withhold leading markers while streaming.
  */
-function parseInlineStreaming(content: string): InlineStreamingParseResult {
-  const prepared = prepareInlineStreamingContent(content, { formatAnticipation: formatAnticipationConfig, math: enableMath });
+function parseInlineStreaming(
+  content: string,
+  contextInput?: {
+    blockType?: string;
+    ancestorTypes?: readonly string[];
+    listDepth?: number;
+    blockquoteDepth?: number;
+    insideHtml?: boolean;
+    insideMdx?: boolean;
+    segmentOrigin?: "direct-inline" | "mixed-content";
+    mixedSegmentKind?: "text" | "html" | "mdx";
+    provisional?: boolean;
+    localTextField?: string;
+  },
+): InlineStreamingParseResult {
+  const containerSignature = createContainerSignature({
+    blockType: contextInput?.blockType ?? "paragraph",
+    ancestorTypes: contextInput?.ancestorTypes ?? [],
+    listDepth: contextInput?.listDepth ?? 0,
+    blockquoteDepth: contextInput?.blockquoteDepth ?? 0,
+    insideHtml: contextInput?.insideHtml ?? false,
+    insideMdx: contextInput?.insideMdx ?? false,
+    segmentOrigin: contextInput?.segmentOrigin ?? "direct-inline",
+    mixedSegmentKind: contextInput?.mixedSegmentKind,
+    provisional: contextInput?.provisional ?? true,
+    localTextField: contextInput?.localTextField ?? "raw",
+  });
+  const orchestration = prepareInlineStreamingLookahead(content, {
+    formatAnticipation: formatAnticipationConfig,
+    math: enableMath,
+    regexAppend: formatAnticipationConfig.regex ? inlineParser.getRegexAnticipationAppend(content) : null,
+    context: {
+      blockType: contextInput?.blockType ?? "paragraph",
+      ancestorTypes: contextInput?.ancestorTypes ?? [],
+      listDepth: contextInput?.listDepth ?? 0,
+      blockquoteDepth: contextInput?.blockquoteDepth ?? 0,
+      insideHtml: contextInput?.insideHtml ?? false,
+      insideMdx: contextInput?.insideMdx ?? false,
+      segmentOrigin: contextInput?.segmentOrigin ?? "direct-inline",
+      mixedSegmentKind: contextInput?.mixedSegmentKind,
+      provisional: contextInput?.provisional ?? true,
+      containerSignature,
+    },
+  });
+  const prepared = orchestration.prepared;
   if (prepared.kind === "raw") {
-    return { inline: [{ kind: "text", text: content }], status: prepared.status };
+    return { inline: [{ kind: "text", text: content }], status: prepared.status, lookahead: orchestration.trace, containerSignature };
   }
-  let preparedContent = prepared.content;
-  let appended = prepared.appended;
-  if (formatAnticipationConfig.regex) {
-    const regexAppend = inlineParser.getRegexAnticipationAppend(content);
-    if (regexAppend) {
-      preparedContent += regexAppend;
-      appended += regexAppend;
-    }
-  }
-  const status = appended.length > 0 ? "anticipated" : prepared.status;
+  const status = prepared.appended.length > 0 ? "anticipated" : prepared.status;
   return {
-    inline: inlineParser.parse(preparedContent, { cache: false }),
+    inline: inlineParser.parse(prepared.content, { cache: false }),
     status,
+    lookahead: orchestration.trace,
+    containerSignature,
   };
 }
 
@@ -1395,11 +1437,31 @@ async function enrichBlock(block: Block) {
         if (shouldTrackInlineStatus() && block.payload.meta) {
           (block.payload.meta as Record<string, unknown>).inlineStatus = undefined;
         }
+        if (block.payload.meta) {
+          (block.payload.meta as Record<string, unknown>).inlineContainerSignature = undefined;
+          (block.payload.meta as Record<string, unknown>).inlineLookaheadInvalidated = undefined;
+          (block.payload.meta as Record<string, unknown>).inlineLookahead = undefined;
+        }
       } else {
-        const parsed = parseInlineStreaming(normalizedHeading);
+        const previousSignature =
+          typeof (block.payload.meta as Record<string, unknown> | undefined)?.inlineContainerSignature === "string"
+            ? String((block.payload.meta as Record<string, unknown>).inlineContainerSignature)
+            : null;
+        const parsed = parseInlineStreaming(normalizedHeading, {
+          blockType: "heading",
+          ancestorTypes: [],
+          localTextField: "heading-text",
+          provisional: true,
+        });
         block.payload.inline = parsed.inline;
         if (shouldTrackInlineStatus() && block.payload.meta) {
           (block.payload.meta as Record<string, unknown>).inlineStatus = parsed.status;
+        }
+        if (block.payload.meta) {
+          (block.payload.meta as Record<string, unknown>).inlineContainerSignature = parsed.containerSignature;
+          (block.payload.meta as Record<string, unknown>).inlineLookaheadInvalidated =
+            previousSignature && previousSignature !== parsed.containerSignature ? "container-signature-changed" : undefined;
+          (block.payload.meta as Record<string, unknown>).inlineLookahead = parsed.lookahead;
         }
       }
       break;
@@ -1408,8 +1470,15 @@ async function enrichBlock(block: Block) {
     case "blockquote": {
       const normalized = normalizeBlockquoteText(block.payload.raw ?? "");
       block.payload.raw = normalized;
-      const streamingParsed = !block.isFinalized ? parseInlineStreaming(normalized) : null;
-      const inlineParse = block.isFinalized ? (value: string) => inlineParser.parse(value) : (value: string) => parseInlineStreaming(value).inline;
+      const previousSignature =
+        typeof (block.payload.meta as Record<string, unknown> | undefined)?.inlineContainerSignature === "string"
+          ? String((block.payload.meta as Record<string, unknown>).inlineContainerSignature)
+          : null;
+      const streamingParsed = !block.isFinalized ? parseInlineStreaming(normalized, { blockType: "blockquote", blockquoteDepth: 1, provisional: true }) : null;
+      const inlineParse =
+        block.isFinalized
+          ? (value: string) => inlineParser.parse(value)
+          : (value: string) => parseInlineStreaming(value, { blockType: "blockquote", blockquoteDepth: 1, provisional: true }).inline;
       const mixedOptions =
         !block.isFinalized && shouldAllowMixedStreaming()
           ? {
@@ -1434,6 +1503,10 @@ async function enrichBlock(block: Block) {
       if (shouldTrackInlineStatus()) {
         nextMeta.inlineStatus = block.isFinalized ? undefined : streamingParsed?.status;
       }
+      nextMeta.inlineContainerSignature = block.isFinalized ? undefined : streamingParsed?.containerSignature;
+      nextMeta.inlineLookaheadInvalidated =
+        !block.isFinalized && previousSignature && previousSignature !== streamingParsed?.containerSignature ? "container-signature-changed" : undefined;
+      nextMeta.inlineLookahead = block.isFinalized ? undefined : streamingParsed?.lookahead;
       if (Object.keys(nextMeta).length > 0) {
         block.payload.meta = nextMeta;
       } else {
@@ -1450,13 +1523,15 @@ async function enrichBlock(block: Block) {
 
     case "paragraph": {
       const rawParagraph = typeof block.payload.raw === "string" ? block.payload.raw : "";
-      const streamingParsed = !block.isFinalized ? parseInlineStreaming(rawParagraph) : null;
+      const currentMeta = (block.payload.meta ?? {}) as Record<string, unknown>;
+      const previousSignature =
+        typeof currentMeta?.inlineContainerSignature === "string" ? String(currentMeta.inlineContainerSignature) : null;
+      const streamingParsed = !block.isFinalized ? parseInlineStreaming(rawParagraph, { blockType: "paragraph", provisional: true }) : null;
       // Parse inline content, but be careful with incomplete expressions during streaming
       const inlineParse =
-        block.isFinalized ? (value: string) => inlineParser.parse(value) : (value: string) => parseInlineStreaming(value).inline;
+        block.isFinalized ? (value: string) => inlineParser.parse(value) : (value: string) => parseInlineStreaming(value, { blockType: "paragraph", provisional: true }).inline;
       block.payload.inline = block.isFinalized ? inlineParse(rawParagraph) : streamingParsed?.inline ?? [{ kind: "text", text: rawParagraph }];
 
-      const currentMeta = (block.payload.meta ?? {}) as Record<string, unknown>;
       const nextMeta: Record<string, unknown> = { ...currentMeta };
       let metaChanged = false;
       const allowMixedStreaming = shouldAllowMixedStreaming();
@@ -1475,6 +1550,36 @@ async function enrichBlock(block: Block) {
       } else if (Object.prototype.hasOwnProperty.call(nextMeta, "inlineStatus")) {
         nextMeta.inlineStatus = undefined;
         metaChanged = true;
+      }
+
+      const desiredLookahead = block.isFinalized ? undefined : streamingParsed?.lookahead;
+      const desiredContainerSignature = block.isFinalized ? undefined : streamingParsed?.containerSignature;
+      if (desiredLookahead !== undefined) {
+        nextMeta.inlineLookahead = desiredLookahead;
+        metaChanged = true;
+      } else if (Object.prototype.hasOwnProperty.call(nextMeta, "inlineLookahead")) {
+        nextMeta.inlineLookahead = undefined;
+        metaChanged = true;
+      }
+      if (desiredContainerSignature !== undefined) {
+        if (nextMeta.inlineContainerSignature !== desiredContainerSignature) {
+          nextMeta.inlineContainerSignature = desiredContainerSignature;
+          metaChanged = true;
+        }
+        const invalidated = previousSignature && previousSignature !== desiredContainerSignature ? "container-signature-changed" : undefined;
+        if (nextMeta.inlineLookaheadInvalidated !== invalidated) {
+          nextMeta.inlineLookaheadInvalidated = invalidated;
+          metaChanged = true;
+        }
+      } else {
+        if (Object.prototype.hasOwnProperty.call(nextMeta, "inlineContainerSignature")) {
+          nextMeta.inlineContainerSignature = undefined;
+          metaChanged = true;
+        }
+        if (Object.prototype.hasOwnProperty.call(nextMeta, "inlineLookaheadInvalidated")) {
+          nextMeta.inlineLookaheadInvalidated = undefined;
+          metaChanged = true;
+        }
       }
 
       const baseOffset = typeof block.payload.range?.from === "number" ? block.payload.range.from : undefined;

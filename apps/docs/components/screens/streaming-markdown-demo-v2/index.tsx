@@ -571,9 +571,15 @@ type SchedulingPreset = keyof typeof SCHEDULING_PRESETS;
 export function StreamingMarkdownDemoV2({
   fullText,
   className = "",
+  initialStreamLimit = null,
+  initialIsRunning = true,
+  initialMdxStrategy = "worker",
 }: {
   fullText: string;
   className?: string;
+  initialStreamLimit?: number | null;
+  initialIsRunning?: boolean;
+  initialMdxStrategy?: "server" | "worker";
 }) {
   const tableElements = useMemo(() => createDemoTableElements(), []);
   const htmlElements = useMemo(() => createDemoHtmlElements(), []);
@@ -586,7 +592,7 @@ export function StreamingMarkdownDemoV2({
   const [idx, setIdx] = useState<number>(0);
   const [rate, setRate] = useState<number>(500); // characters per second
   const [tickMs, setTickMs] = useState<number>(50); // update cadence in ms
-  const [isRunning, setIsRunning] = useState<boolean>(true);
+  const [isRunning, setIsRunning] = useState<boolean>(initialIsRunning);
   const [runToken, bumpRunToken] = useState<number>(0);
   const [isPending, startTransition] = useTransition();
   const [showRendering, setShowRendering] = useState<boolean>(false);
@@ -623,8 +629,8 @@ export function StreamingMarkdownDemoV2({
   const listMismatchCountRef = useRef(0);
   const listAutoExportedRef = useRef(false);
   // Default to worker-side MDX compilation so the demo renders MDX blocks without server help.
-  const [mdxStrategy, setMdxStrategy] = useState<"server" | "worker">("worker");
-  const mdxStrategyRef = useRef<"server" | "worker">("worker");
+  const [mdxStrategy, setMdxStrategy] = useState<"server" | "worker">(initialMdxStrategy);
+  const mdxStrategyRef = useRef<"server" | "worker">(initialMdxStrategy);
   const schedulingPresetRef = useRef<SchedulingPreset>(schedulingPreset);
 
   useEffect(() => {
@@ -668,8 +674,13 @@ export function StreamingMarkdownDemoV2({
   const [lastMetrics, setLastMetrics] = useState<PerformanceMetrics | null>(null);
   const lastMetricsRef = useRef<PerformanceMetrics | null>(null);
 
-  const [streamLimit, setStreamLimit] = useState<number | null>(null);
-  const streamLimitRef = useRef<number | null>(null);
+  const normalizeInitialStreamLimit = useCallback(
+    (value: number | null | undefined, textLength: number) =>
+      typeof value === "number" && Number.isFinite(value) ? Math.max(0, Math.min(value, textLength)) : null,
+    [],
+  );
+  const [streamLimit, setStreamLimit] = useState<number | null>(() => normalizeInitialStreamLimit(initialStreamLimit, fullText.length));
+  const streamLimitRef = useRef<number | null>(normalizeInitialStreamLimit(initialStreamLimit, fullText.length));
   const updateStreamLimit = useCallback((value: number | null) => {
     const normalized = typeof value === "number" && Number.isFinite(value) ? Math.max(0, Math.min(value, fullTextRef.current.length)) : null;
     streamLimitRef.current = normalized;
@@ -685,6 +696,13 @@ export function StreamingMarkdownDemoV2({
       updateStreamLimit(streamLimitRef.current);
     }
   }, [fullText.length, updateStreamLimit]);
+
+  useEffect(() => {
+    const normalized = normalizeInitialStreamLimit(initialStreamLimit, fullText.length);
+    if (normalized !== streamLimitRef.current) {
+      updateStreamLimit(normalized);
+    }
+  }, [fullText.length, initialStreamLimit, normalizeInitialStreamLimit, updateStreamLimit]);
 
   const maxLen = fullText.length;
   const effectiveTotal = streamLimit ?? maxLen;

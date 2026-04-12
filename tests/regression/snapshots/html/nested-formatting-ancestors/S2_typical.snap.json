@@ -1,0 +1,683 @@
+{
+  "fixtureId": "nested-formatting-ancestors",
+  "fixtureTitle": "Nested Formatting Ancestors",
+  "scenarioId": "S2_typical",
+  "scenario": {
+    "id": "S2_typical",
+    "label": "Typical streaming",
+    "updateIntervalMs": 16,
+    "charRateCps": 1200,
+    "maxChunkChars": 256
+  },
+  "runMeta": {
+    "seed": null,
+    "schedulerMode": null,
+    "usedSplitMarkers": false,
+    "fixtureTags": [
+      "anticipation",
+      "inline",
+      "lists",
+      "blockquote"
+    ]
+  },
+  "totalLength": 586,
+  "checkpoints": [
+    {
+      "id": "after-first-chunk",
+      "appendedChars": 19,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 4,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 1,
+        "lastPatchToDomMs": 2.7000000029802322,
+        "lastDurationMs": 2.2000000029802322,
+        "meta": {
+          "fixtureId": "nested-formatting-ancestors",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Nested Formatting\">Nested Formatting</h1></div>",
+      "textSample": "Nested Formatting",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-29",
+      "appendedChars": 38,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 5,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 2,
+        "lastPatchToDomMs": 0.3999999910593033,
+        "lastDurationMs": 0.29999999701976776,
+        "meta": {
+          "fixtureId": "nested-formatting-ancestors",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Nested Formatting Ancestors\">Nested Formatting Ancestors</h1><p class=\"markdown-paragraph streaming-partial\">Top-lev</p></div>",
+      "textSample": "Nested Formatting AncestorsTop-lev",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-59",
+      "appendedChars": 76,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 7,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 4,
+        "lastPatchToDomMs": 11.5,
+        "lastDurationMs": 0.29999999701976776,
+        "meta": {
+          "fixtureId": "nested-formatting-ancestors",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Nested Formatting Ancestors\">Nested Formatting Ancestors</h1><p class=\"markdown-paragraph streaming-partial\">Top-level <em>italic</em> and <strong>bold</strong> should behave</p></div>",
+      "textSample": "Nested Formatting AncestorsTop-level italic and bold should behave",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-147",
+      "appendedChars": 152,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 11,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 8,
+        "lastPatchToDomMs": 6.9000000059604645,
+        "lastDurationMs": 0.5999999940395355,
+        "meta": {
+          "fixtureId": "nested-formatting-ancestors",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Nested Formatting Ancestors\">Nested Formatting Ancestors</h1><p class=\"markdown-paragraph\">Top-level <em>italic</em> and <strong>bold</strong> should behave the same as nested streaming text.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Parent item with <em>italic emphasis tha</em></li></ul></div>",
+      "textSample": "Nested Formatting AncestorsTop-level italic and bold should behave the same as nested streaming text.Parent item with italic emphasis tha",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-293",
+      "appendedChars": 304,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 19,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 16,
+        "lastPatchToDomMs": 7.299999997019768,
+        "lastDurationMs": 0.4000000059604645,
+        "meta": {
+          "fixtureId": "nested-formatting-ancestors",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Nested Formatting Ancestors\">Nested Formatting Ancestors</h1><p class=\"markdown-paragraph\">Top-level <em>italic</em> and <strong>bold</strong> should behave the same as nested streaming text.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Parent item with <em>italic emphasis that may stream before the closer arrives</em><div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Child item with <strong>strong formatting that may split mid-token</strong></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Child item with <code class=\"inline-code\">inline code that may str</code></li></ul></div></li></ul></div>",
+      "textSample": "Nested Formatting AncestorsTop-level italic and bold should behave the same as nested streaming text.Parent item with italic emphasis that may stream before the closer arrivesChild item with strong fo",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "event-hasBlockquote",
+      "appendedChars": 342,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 21,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 18,
+        "lastPatchToDomMs": 8.600000008940697,
+        "lastDurationMs": 0.6000000089406967,
+        "meta": {
+          "fixtureId": "nested-formatting-ancestors",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": true,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 1,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Nested Formatting Ancestors\">Nested Formatting Ancestors</h1><p class=\"markdown-paragraph\">Top-level <em>italic</em> and <strong>bold</strong> should behave the same as nested streaming text.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Parent item with <em>italic emphasis that may stream before the closer arrives</em><div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Child item with <strong>strong formatting that may split mid-token</strong></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Child item with <code class=\"inline-code\">inline code that may stream before the closing tick</code></li></ul></div></li></ul><blockquote class=\"markdown-blockquote\">Blockq</blockquote></div>",
+      "textSample": "Nested Formatting AncestorsTop-level italic and bold should behave the same as nested streaming text.Parent item with italic emphasis that may stream before the closer arrivesChild item with strong fo",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 1,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-440",
+      "appendedChars": 456,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 27,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 24,
+        "lastPatchToDomMs": 9.600000008940697,
+        "lastDurationMs": 0.30000001192092896,
+        "meta": {
+          "fixtureId": "nested-formatting-ancestors",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": true,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 1,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Nested Formatting Ancestors\">Nested Formatting Ancestors</h1><p class=\"markdown-paragraph\">Top-level <em>italic</em> and <strong>bold</strong> should behave the same as nested streaming text.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Parent item with <em>italic emphasis that may stream before the closer arrives</em><div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Child item with <strong>strong formatting that may split mid-token</strong></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Child item with <code class=\"inline-code\">inline code that may stream before the closing tick</code></li></ul></div></li></ul><blockquote class=\"markdown-blockquote\">Blockquote line with <em>italic text that should stay local to the quote</em>\n\n- Quoted list item with <strong>nested strong text</strong>**</blockquote></div>",
+      "textSample": "Nested Formatting AncestorsTop-level italic and bold should behave the same as nested streaming text.Parent item with italic emphasis that may stream before the closer arrivesChild item with strong fo",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 1,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-527",
+      "appendedChars": 532,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 31,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 28,
+        "lastPatchToDomMs": 11.700000002980232,
+        "lastDurationMs": 0.20000000298023224,
+        "meta": {
+          "fixtureId": "nested-formatting-ancestors",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": true,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 1,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Nested Formatting Ancestors\">Nested Formatting Ancestors</h1><p class=\"markdown-paragraph\">Top-level <em>italic</em> and <strong>bold</strong> should behave the same as nested streaming text.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Parent item with <em>italic emphasis that may stream before the closer arrives</em><div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Child item with <strong>strong formatting that may split mid-token</strong></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Child item with <code class=\"inline-code\">inline code that may stream before the closing tick</code></li></ul></div></li></ul><blockquote class=\"markdown-blockquote\">Blockquote line with <em>italic text that should stay local to the quote</em>\n\n- Quoted list item with <strong>nested strong text</strong>\n- Quoted list item with <em>nested italic text</em></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Final item to ensure no</li></ul></div>",
+      "textSample": "Nested Formatting AncestorsTop-level italic and bold should behave the same as nested streaming text.Parent item with italic emphasis that may stream before the closer arrivesChild item with strong fo",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 1,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-586",
+      "appendedChars": 586,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 34,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 31,
+        "lastPatchToDomMs": 12,
+        "lastDurationMs": 0.29999999701976776,
+        "meta": {
+          "fixtureId": "nested-formatting-ancestors",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": true,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 1,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Nested Formatting Ancestors\">Nested Formatting Ancestors</h1><p class=\"markdown-paragraph\">Top-level <em>italic</em> and <strong>bold</strong> should behave the same as nested streaming text.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Parent item with <em>italic emphasis that may stream before the closer arrives</em><div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Child item with <strong>strong formatting that may split mid-token</strong></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Child item with <code class=\"inline-code\">inline code that may stream before the closing tick</code></li></ul></div></li></ul><blockquote class=\"markdown-blockquote\">Blockquote line with <em>italic text that should stay local to the quote</em>\n\n- Quoted list item with <strong>nested strong text</strong>\n- Quoted list item with <em>nested italic text</em></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Final item to ensure no earlier unfinished delimiter swallows later siblings.</li></ul></div>",
+      "textSample": "Nested Formatting AncestorsTop-level italic and bold should behave the same as nested streaming text.Parent item with italic emphasis that may stream before the closer arrivesChild item with strong fo",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 1,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    }
+  ],
+  "final": {
+    "id": "after-finalize",
+    "appendedChars": 586,
+    "rootChildCount": 1,
+    "selectors": {
+      "hasTable": false,
+      "hasPre": false,
+      "hasFootnotes": false,
+      "hasMdxPending": false,
+      "hasMdxCompiled": false,
+      "hasBlockquote": true,
+      "hasMath": false
+    },
+    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Nested Formatting Ancestors\">Nested Formatting Ancestors</h1><p class=\"markdown-paragraph\">Top-level <em>italic</em> and <strong>bold</strong> should behave the same as nested streaming text.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Parent item with <em>italic emphasis that may stream before the closer arrives</em><div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Child item with <strong>strong formatting that may split mid-token</strong></li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Child item with <code class=\"inline-code\">inline code that may stream before the closing tick</code></li></ul></div></li></ul><blockquote class=\"markdown-blockquote\">Blockquote line with <em>italic text that should stay local to the quote</em>\n\n- Quoted list item with <strong>nested strong text</strong>\n- Quoted list item with <em>nested italic text</em></blockquote><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Final item to ensure no earlier unfinished delimiter swallows later siblings.</li></ul></div>",
+    "runtimeState": {
+      "rendererVersion": 35,
+      "queueDepth": 0,
+      "pendingBatches": 0,
+      "workerReady": true,
+      "lastTx": 32,
+      "lastPatchToDomMs": 9.600000008940697,
+      "lastDurationMs": 6.100000008940697,
+      "meta": {
+        "fixtureId": "nested-formatting-ancestors",
+        "scenarioId": "S2_typical",
+        "seed": null,
+        "schedulerMode": null
+      },
+      "storeCounters": {
+        "appendLineGuardRejected": 0,
+        "staleEpochRejected": 0,
+        "storeInvariantViolationCount": 0
+      }
+    },
+    "structure": {
+      "topLevelTags": [
+        "div"
+      ],
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 1,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      }
+    },
+    "children": [
+      {
+        "index": 0,
+        "tag": "div",
+        "hash": "16604a3f5c7b3ea5a3e8990c48c29223c81fa261e107a2bf65e5c199f309e26e",
+        "textSample": "Nested Formatting AncestorsTop-level italic and bold should behave the same as nested streaming text.Parent item with it"
+      }
+    ],
+    "inspection": {
+      "tables": [],
+      "mdxBlocks": [],
+      "codeBlocks": []
+    }
+  }
+}

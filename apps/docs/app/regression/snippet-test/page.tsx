@@ -4,8 +4,15 @@ import { StreamingMarkdownDemoV2 } from "@/components/screens/streaming-markdown
 import React from "react";
 
 declare global {
+  type SnippetTestConfig = {
+    initialStreamLimit?: number | null;
+    initialIsRunning?: boolean;
+    initialMdxStrategy?: "server" | "worker";
+  };
+
   interface Window {
     __TEST_SNIPPET_CONTENT__?: string;
+    __TEST_SNIPPET_CONFIG__?: SnippetTestConfig;
   }
 }
 
@@ -20,6 +27,7 @@ export default function Page() {
 
 function SnippetTestClient() {
   const [content, setContent] = React.useState<string>("");
+  const [config, setConfig] = React.useState<SnippetTestConfig>({});
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
@@ -49,6 +57,10 @@ function SnippetTestClient() {
     }
 
     const stored = window.__TEST_SNIPPET_CONTENT__;
+    const storedConfig = window.__TEST_SNIPPET_CONFIG__;
+    if (storedConfig && typeof storedConfig === "object") {
+      setConfig(storedConfig);
+    }
     if (stored && typeof stored === "string") {
       setContent(stored);
     }
@@ -62,5 +74,12 @@ function SnippetTestClient() {
     );
   }
 
-  return <StreamingMarkdownDemoV2 fullText={content} />;
+  return (
+    <StreamingMarkdownDemoV2
+      fullText={content}
+      initialStreamLimit={config.initialStreamLimit ?? null}
+      initialIsRunning={typeof config.initialIsRunning === "boolean" ? config.initialIsRunning : true}
+      initialMdxStrategy={config.initialMdxStrategy ?? "worker"}
+    />
+  );
 }
