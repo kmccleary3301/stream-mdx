@@ -1,0 +1,750 @@
+{
+  "fixtureId": "math-inline-supported",
+  "fixtureTitle": "Math Inline Supported",
+  "scenarioId": "S2_typical",
+  "scenario": {
+    "id": "S2_typical",
+    "label": "Typical streaming",
+    "updateIntervalMs": 16,
+    "charRateCps": 1200,
+    "maxChunkChars": 256
+  },
+  "runMeta": {
+    "seed": null,
+    "schedulerMode": null,
+    "usedSplitMarkers": false,
+    "fixtureTags": [
+      "anticipation",
+      "math",
+      "inline",
+      "lists",
+      "blockquote"
+    ]
+  },
+  "totalLength": 355,
+  "checkpoints": [
+    {
+      "id": "after-first-chunk",
+      "appendedChars": 19,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 4,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 1,
+        "lastPatchToDomMs": 4.099999999627471,
+        "lastDurationMs": 3.5,
+        "meta": {
+          "fixtureId": "math-inline-supported",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Inline Suppo\">Math Inline Suppo</h1></div>",
+      "textSample": "Math Inline Suppo",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-18",
+      "appendedChars": 19,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 4,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 1,
+        "lastPatchToDomMs": 4.099999999627471,
+        "lastDurationMs": 3.5,
+        "meta": {
+          "fixtureId": "math-inline-supported",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Inline Suppo\">Math Inline Suppo</h1></div>",
+      "textSample": "Math Inline Suppo",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-36",
+      "appendedChars": 38,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 5,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 2,
+        "lastPatchToDomMs": 0.6000000014901161,
+        "lastDurationMs": 0.6000000014901161,
+        "meta": {
+          "fixtureId": "math-inline-supported",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Inline Supported\">Math Inline Supported</h1><p class=\"markdown-paragraph streaming-partial\">Top-level inl</p></div>",
+      "textSample": "Math Inline SupportedTop-level inl",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "event-hasMath",
+      "appendedChars": 76,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 7,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 4,
+        "lastPatchToDomMs": 8.799999998882413,
+        "lastDurationMs": 0.2999999988824129,
+        "meta": {
+          "fixtureId": "math-inline-supported",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": true
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 1,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Inline Supported\">Math Inline Supported</h1><p class=\"markdown-paragraph streaming-partial\">Top-level inline math should anticipate cleanly: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>x</mi></mrow><annotation encoding=\"application/x-tex\">x</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.4306em;\"></span><span class=\"mord mathnormal\">x</span></span></span></span></span></p></div>",
+      "textSample": "Math Inline SupportedTop-level inline math should anticipate cleanly: xxx",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 1,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-89",
+      "appendedChars": 95,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 8,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 5,
+        "lastPatchToDomMs": 0.40000000037252903,
+        "lastDurationMs": 0.09999999962747097,
+        "meta": {
+          "fixtureId": "math-inline-supported",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": true
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 1,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Inline Supported\">Math Inline Supported</h1><p class=\"markdown-paragraph streaming-partial\">Top-level inline math should anticipate cleanly: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><msub><mi>y</mi><mi>i</mi></msub></mrow><annotation encoding=\"application/x-tex\">x^2 + y_i</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\" style=\"margin-right:0.03588em;\">y</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.3117em;\"><span style=\"top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mathnormal mtight\">i</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.15em;\"><span></span></span></span></span></span></span></span></span></span></span> with trai</p></div>",
+      "textSample": "Math Inline SupportedTop-level inline math should anticipate cleanly: x2+yix^2 + y_ix2+yi​ with trai",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 1,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-178",
+      "appendedChars": 190,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 13,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 10,
+        "lastPatchToDomMs": 10.300000000745058,
+        "lastDurationMs": 0.30000000074505806,
+        "meta": {
+          "fixtureId": "math-inline-supported",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": true
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 2,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Inline Supported\">Math Inline Supported</h1><p class=\"markdown-paragraph\">Top-level inline math should anticipate cleanly: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><msub><mi>y</mi><mi>i</mi></msub></mrow><annotation encoding=\"application/x-tex\">x^2 + y_i</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\" style=\"margin-right:0.03588em;\">y</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.3117em;\"><span style=\"top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mathnormal mtight\">i</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.15em;\"><span></span></span></span></span></span></span></span></span></span></span> with trailing prose.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with fraction math: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mfrac><mi>a</mi><mi>b</mi></mfrac></mrow><annotation encoding=\"application/x-tex\">\\frac{a}{b}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1.0404em;vertical-align:-0.345em;\"></span><span class=\"mord\"><span class=\"mopen nulldelimiter\"></span><span class=\"mfrac\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.6954em;\"><span style=\"top:-2.655em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mathnormal mtight\">b</span></span></span></span><span style=\"top:-3.23em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"frac-line\" style=\"border-bottom-width:0.04em;\"></span></span><span style=\"top:-3.394em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mathnormal mtight\">a</span></span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.345em;\"><span></span></span></span></span></span><span class=\"mclose nulldelimiter\"></span></span></span></span></span></span> and text after it.<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested item w</li></ul></div></li></ul></div>",
+      "textSample": "Math Inline SupportedTop-level inline math should anticipate cleanly: x2+yix^2 + y_ix2+yi​ with trailing prose.List item with fraction math: ab\\frac{a}{b}ba​ and text after it.Nested item w",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 2,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "event-hasBlockquote",
+      "appendedChars": 247,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 16,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 13,
+        "lastPatchToDomMs": 10,
+        "lastDurationMs": 0.599999999627471,
+        "meta": {
+          "fixtureId": "math-inline-supported",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": true,
+        "hasMath": true
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 1,
+        "katex": 3,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Inline Supported\">Math Inline Supported</h1><p class=\"markdown-paragraph\">Top-level inline math should anticipate cleanly: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><msub><mi>y</mi><mi>i</mi></msub></mrow><annotation encoding=\"application/x-tex\">x^2 + y_i</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\" style=\"margin-right:0.03588em;\">y</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.3117em;\"><span style=\"top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mathnormal mtight\">i</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.15em;\"><span></span></span></span></span></span></span></span></span></span></span> with trailing prose.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with fraction math: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mfrac><mi>a</mi><mi>b</mi></mfrac></mrow><annotation encoding=\"application/x-tex\">\\frac{a}{b}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1.0404em;vertical-align:-0.345em;\"></span><span class=\"mord\"><span class=\"mopen nulldelimiter\"></span><span class=\"mfrac\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.6954em;\"><span style=\"top:-2.655em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mathnormal mtight\">b</span></span></span></span><span style=\"top:-3.23em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"frac-line\" style=\"border-bottom-width:0.04em;\"></span></span><span style=\"top:-3.394em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mathnormal mtight\">a</span></span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.345em;\"><span></span></span></span></span></span><span class=\"mclose nulldelimiter\"></span></span></span></span></span></span> and text after it.<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested item with root math: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msqrt><mi>x</mi></msqrt></mrow><annotation encoding=\"application/x-tex\">\\sqrt{x}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1.04em;vertical-align:-0.2397em;\"></span><span class=\"mord sqrt\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8003em;\"><span class=\"svg-align\" style=\"top:-3em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"mord\" style=\"padding-left:0.833em;\"><span class=\"mord mathnormal\">x</span></span></span><span style=\"top:-2.7603em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"hide-tail\" style=\"min-width:0.853em;height:1.08em;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400em\" height=\"1.08em\" viewBox=\"0 0 400000 1080\" preserveAspectRatio=\"xMinYMin slice\"><path d=\"M95,702\nc-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,-10,-9.5,-14\nc0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54\nc44.2,-33.3,65.8,-50.3,66.5,-51c1.3,-1.3,3,-2,5,-2c4.7,0,8.7,3.3,12,10\ns173,378,173,378c0.7,0,35.3,-71,104,-213c68.7,-142,137.5,-285,206.5,-429\nc69,-144,104.5,-217.7,106.5,-221\nl0 -0\nc5.3,-9.3,12,-14,20,-14\nH400000v40H845.2724\ns-225.272,467,-225.272,467s-235,486,-235,486c-2.7,4.7,-9,7,-19,7\nc-6,0,-10,-1,-12,-3s-194,-422,-194,-422s-65,47,-65,47z\nM834 80h400000v40h-400000z\"></path></svg></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.2397em;\"><span></span></span></span></span></span></span></span></span></span> and more trailing prose.</li></ul></div></li></ul><blockquote class=\"markdown-blockquote\">Blo</blockquote></div>",
+      "textSample": "Math Inline SupportedTop-level inline math should anticipate cleanly: x2+yix^2 + y_ix2+yi​ with trailing prose.List item with fraction math: ab\\frac{a}{b}ba​ and text after it.Nested item with root ma",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 1,
+          "katex": 3,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-266",
+      "appendedChars": 266,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 17,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 14,
+        "lastPatchToDomMs": 0.7999999988824129,
+        "lastDurationMs": 0.19999999925494194,
+        "meta": {
+          "fixtureId": "math-inline-supported",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": true,
+        "hasMath": true
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 1,
+        "katex": 3,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Inline Supported\">Math Inline Supported</h1><p class=\"markdown-paragraph\">Top-level inline math should anticipate cleanly: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><msub><mi>y</mi><mi>i</mi></msub></mrow><annotation encoding=\"application/x-tex\">x^2 + y_i</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\" style=\"margin-right:0.03588em;\">y</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.3117em;\"><span style=\"top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mathnormal mtight\">i</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.15em;\"><span></span></span></span></span></span></span></span></span></span></span> with trailing prose.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with fraction math: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mfrac><mi>a</mi><mi>b</mi></mfrac></mrow><annotation encoding=\"application/x-tex\">\\frac{a}{b}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1.0404em;vertical-align:-0.345em;\"></span><span class=\"mord\"><span class=\"mopen nulldelimiter\"></span><span class=\"mfrac\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.6954em;\"><span style=\"top:-2.655em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mathnormal mtight\">b</span></span></span></span><span style=\"top:-3.23em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"frac-line\" style=\"border-bottom-width:0.04em;\"></span></span><span style=\"top:-3.394em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mathnormal mtight\">a</span></span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.345em;\"><span></span></span></span></span></span><span class=\"mclose nulldelimiter\"></span></span></span></span></span></span> and text after it.<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested item with root math: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msqrt><mi>x</mi></msqrt></mrow><annotation encoding=\"application/x-tex\">\\sqrt{x}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1.04em;vertical-align:-0.2397em;\"></span><span class=\"mord sqrt\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8003em;\"><span class=\"svg-align\" style=\"top:-3em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"mord\" style=\"padding-left:0.833em;\"><span class=\"mord mathnormal\">x</span></span></span><span style=\"top:-2.7603em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"hide-tail\" style=\"min-width:0.853em;height:1.08em;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400em\" height=\"1.08em\" viewBox=\"0 0 400000 1080\" preserveAspectRatio=\"xMinYMin slice\"><path d=\"M95,702\nc-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,-10,-9.5,-14\nc0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54\nc44.2,-33.3,65.8,-50.3,66.5,-51c1.3,-1.3,3,-2,5,-2c4.7,0,8.7,3.3,12,10\ns173,378,173,378c0.7,0,35.3,-71,104,-213c68.7,-142,137.5,-285,206.5,-429\nc69,-144,104.5,-217.7,106.5,-221\nl0 -0\nc5.3,-9.3,12,-14,20,-14\nH400000v40H845.2724\ns-225.272,467,-225.272,467s-235,486,-235,486c-2.7,4.7,-9,7,-19,7\nc-6,0,-10,-1,-12,-3s-194,-422,-194,-422s-65,47,-65,47z\nM834 80h400000v40h-400000z\"></path></svg></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.2397em;\"><span></span></span></span></span></span></span></span></span></span> and more trailing prose.</li></ul></div></li></ul><blockquote class=\"markdown-blockquote\">Blockquote with script</blockquote></div>",
+      "textSample": "Math Inline SupportedTop-level inline math should anticipate cleanly: x2+yix^2 + y_ix2+yi​ with trailing prose.List item with fraction math: ab\\frac{a}{b}ba​ and text after it.Nested item with root ma",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 1,
+          "katex": 3,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-320",
+      "appendedChars": 323,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 20,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 17,
+        "lastPatchToDomMs": 7.099999999627471,
+        "lastDurationMs": 0.2999999988824129,
+        "meta": {
+          "fixtureId": "math-inline-supported",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": true,
+        "hasMath": true
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 1,
+        "katex": 4,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Inline Supported\">Math Inline Supported</h1><p class=\"markdown-paragraph\">Top-level inline math should anticipate cleanly: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><msub><mi>y</mi><mi>i</mi></msub></mrow><annotation encoding=\"application/x-tex\">x^2 + y_i</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\" style=\"margin-right:0.03588em;\">y</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.3117em;\"><span style=\"top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mathnormal mtight\">i</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.15em;\"><span></span></span></span></span></span></span></span></span></span></span> with trailing prose.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with fraction math: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mfrac><mi>a</mi><mi>b</mi></mfrac></mrow><annotation encoding=\"application/x-tex\">\\frac{a}{b}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1.0404em;vertical-align:-0.345em;\"></span><span class=\"mord\"><span class=\"mopen nulldelimiter\"></span><span class=\"mfrac\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.6954em;\"><span style=\"top:-2.655em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mathnormal mtight\">b</span></span></span></span><span style=\"top:-3.23em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"frac-line\" style=\"border-bottom-width:0.04em;\"></span></span><span style=\"top:-3.394em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mathnormal mtight\">a</span></span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.345em;\"><span></span></span></span></span></span><span class=\"mclose nulldelimiter\"></span></span></span></span></span></span> and text after it.<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested item with root math: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msqrt><mi>x</mi></msqrt></mrow><annotation encoding=\"application/x-tex\">\\sqrt{x}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1.04em;vertical-align:-0.2397em;\"></span><span class=\"mord sqrt\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8003em;\"><span class=\"svg-align\" style=\"top:-3em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"mord\" style=\"padding-left:0.833em;\"><span class=\"mord mathnormal\">x</span></span></span><span style=\"top:-2.7603em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"hide-tail\" style=\"min-width:0.853em;height:1.08em;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400em\" height=\"1.08em\" viewBox=\"0 0 400000 1080\" preserveAspectRatio=\"xMinYMin slice\"><path d=\"M95,702\nc-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,-10,-9.5,-14\nc0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54\nc44.2,-33.3,65.8,-50.3,66.5,-51c1.3,-1.3,3,-2,5,-2c4.7,0,8.7,3.3,12,10\ns173,378,173,378c0.7,0,35.3,-71,104,-213c68.7,-142,137.5,-285,206.5,-429\nc69,-144,104.5,-217.7,106.5,-221\nl0 -0\nc5.3,-9.3,12,-14,20,-14\nH400000v40H845.2724\ns-225.272,467,-225.272,467s-235,486,-235,486c-2.7,4.7,-9,7,-19,7\nc-6,0,-10,-1,-12,-3s-194,-422,-194,-422s-65,47,-65,47z\nM834 80h400000v40h-400000z\"></path></svg></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.2397em;\"><span></span></span></span></span></span></span></span></span></span> and more trailing prose.</li></ul></div></li></ul><blockquote class=\"markdown-blockquote\">Blockquote with script operators: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msubsup><mi>z</mi><mi>i</mi><mn>2</mn></msubsup></mrow><annotation encoding=\"application/x-tex\">z_i^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1.0728em;vertical-align:-0.2587em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\" style=\"margin-right:0.04398em;\">z</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-2.4413em;margin-left:-0.044em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mathnormal mtight\">i</span></span></span><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.2587em;\"><span></span></span></span></span></span></span></span></span></span></span> and trailing content.</blockquote><p class=\"markdown-paragraph streaming-partial\">Final paragrap</p></div>",
+      "textSample": "Math Inline SupportedTop-level inline math should anticipate cleanly: x2+yix^2 + y_ix2+yi​ with trailing prose.List item with fraction math: ab\\frac{a}{b}ba​ and text after it.Nested item with root ma",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 1,
+          "katex": 4,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-355",
+      "appendedChars": 355,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 22,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 19,
+        "lastPatchToDomMs": 0.30000000074505806,
+        "lastDurationMs": 0.2000000011175871,
+        "meta": {
+          "fixtureId": "math-inline-supported",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": true,
+        "hasMath": true
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 1,
+        "katex": 4,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Inline Supported\">Math Inline Supported</h1><p class=\"markdown-paragraph\">Top-level inline math should anticipate cleanly: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><msub><mi>y</mi><mi>i</mi></msub></mrow><annotation encoding=\"application/x-tex\">x^2 + y_i</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\" style=\"margin-right:0.03588em;\">y</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.3117em;\"><span style=\"top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mathnormal mtight\">i</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.15em;\"><span></span></span></span></span></span></span></span></span></span></span> with trailing prose.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with fraction math: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mfrac><mi>a</mi><mi>b</mi></mfrac></mrow><annotation encoding=\"application/x-tex\">\\frac{a}{b}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1.0404em;vertical-align:-0.345em;\"></span><span class=\"mord\"><span class=\"mopen nulldelimiter\"></span><span class=\"mfrac\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.6954em;\"><span style=\"top:-2.655em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mathnormal mtight\">b</span></span></span></span><span style=\"top:-3.23em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"frac-line\" style=\"border-bottom-width:0.04em;\"></span></span><span style=\"top:-3.394em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mathnormal mtight\">a</span></span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.345em;\"><span></span></span></span></span></span><span class=\"mclose nulldelimiter\"></span></span></span></span></span></span> and text after it.<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested item with root math: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msqrt><mi>x</mi></msqrt></mrow><annotation encoding=\"application/x-tex\">\\sqrt{x}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1.04em;vertical-align:-0.2397em;\"></span><span class=\"mord sqrt\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8003em;\"><span class=\"svg-align\" style=\"top:-3em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"mord\" style=\"padding-left:0.833em;\"><span class=\"mord mathnormal\">x</span></span></span><span style=\"top:-2.7603em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"hide-tail\" style=\"min-width:0.853em;height:1.08em;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400em\" height=\"1.08em\" viewBox=\"0 0 400000 1080\" preserveAspectRatio=\"xMinYMin slice\"><path d=\"M95,702\nc-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,-10,-9.5,-14\nc0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54\nc44.2,-33.3,65.8,-50.3,66.5,-51c1.3,-1.3,3,-2,5,-2c4.7,0,8.7,3.3,12,10\ns173,378,173,378c0.7,0,35.3,-71,104,-213c68.7,-142,137.5,-285,206.5,-429\nc69,-144,104.5,-217.7,106.5,-221\nl0 -0\nc5.3,-9.3,12,-14,20,-14\nH400000v40H845.2724\ns-225.272,467,-225.272,467s-235,486,-235,486c-2.7,4.7,-9,7,-19,7\nc-6,0,-10,-1,-12,-3s-194,-422,-194,-422s-65,47,-65,47z\nM834 80h400000v40h-400000z\"></path></svg></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.2397em;\"><span></span></span></span></span></span></span></span></span></span> and more trailing prose.</li></ul></div></li></ul><blockquote class=\"markdown-blockquote\">Blockquote with script operators: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msubsup><mi>z</mi><mi>i</mi><mn>2</mn></msubsup></mrow><annotation encoding=\"application/x-tex\">z_i^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1.0728em;vertical-align:-0.2587em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\" style=\"margin-right:0.04398em;\">z</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-2.4413em;margin-left:-0.044em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mathnormal mtight\">i</span></span></span><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.2587em;\"><span></span></span></span></span></span></span></span></span></span></span> and trailing content.</blockquote><p class=\"markdown-paragraph streaming-partial\">Final paragraph after supported math content.</p></div>",
+      "textSample": "Math Inline SupportedTop-level inline math should anticipate cleanly: x2+yix^2 + y_ix2+yi​ with trailing prose.List item with fraction math: ab\\frac{a}{b}ba​ and text after it.Nested item with root ma",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 1,
+          "katex": 4,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    }
+  ],
+  "final": {
+    "id": "after-finalize",
+    "appendedChars": 355,
+    "rootChildCount": 1,
+    "selectors": {
+      "hasTable": false,
+      "hasPre": false,
+      "hasFootnotes": false,
+      "hasMdxPending": false,
+      "hasMdxCompiled": false,
+      "hasBlockquote": true,
+      "hasMath": true
+    },
+    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Inline Supported\">Math Inline Supported</h1><p class=\"markdown-paragraph\">Top-level inline math should anticipate cleanly: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><msub><mi>y</mi><mi>i</mi></msub></mrow><annotation encoding=\"application/x-tex\">x^2 + y_i</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">x</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\" style=\"margin-right:0.03588em;\">y</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.3117em;\"><span style=\"top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mathnormal mtight\">i</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.15em;\"><span></span></span></span></span></span></span></span></span></span></span> with trailing prose.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with fraction math: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mfrac><mi>a</mi><mi>b</mi></mfrac></mrow><annotation encoding=\"application/x-tex\">\\frac{a}{b}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1.0404em;vertical-align:-0.345em;\"></span><span class=\"mord\"><span class=\"mopen nulldelimiter\"></span><span class=\"mfrac\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.6954em;\"><span style=\"top:-2.655em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mathnormal mtight\">b</span></span></span></span><span style=\"top:-3.23em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"frac-line\" style=\"border-bottom-width:0.04em;\"></span></span><span style=\"top:-3.394em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mathnormal mtight\">a</span></span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.345em;\"><span></span></span></span></span></span><span class=\"mclose nulldelimiter\"></span></span></span></span></span></span> and text after it.<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Nested item with root math: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msqrt><mi>x</mi></msqrt></mrow><annotation encoding=\"application/x-tex\">\\sqrt{x}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1.04em;vertical-align:-0.2397em;\"></span><span class=\"mord sqrt\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8003em;\"><span class=\"svg-align\" style=\"top:-3em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"mord\" style=\"padding-left:0.833em;\"><span class=\"mord mathnormal\">x</span></span></span><span style=\"top:-2.7603em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"hide-tail\" style=\"min-width:0.853em;height:1.08em;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400em\" height=\"1.08em\" viewBox=\"0 0 400000 1080\" preserveAspectRatio=\"xMinYMin slice\"><path d=\"M95,702\nc-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,-10,-9.5,-14\nc0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54\nc44.2,-33.3,65.8,-50.3,66.5,-51c1.3,-1.3,3,-2,5,-2c4.7,0,8.7,3.3,12,10\ns173,378,173,378c0.7,0,35.3,-71,104,-213c68.7,-142,137.5,-285,206.5,-429\nc69,-144,104.5,-217.7,106.5,-221\nl0 -0\nc5.3,-9.3,12,-14,20,-14\nH400000v40H845.2724\ns-225.272,467,-225.272,467s-235,486,-235,486c-2.7,4.7,-9,7,-19,7\nc-6,0,-10,-1,-12,-3s-194,-422,-194,-422s-65,47,-65,47z\nM834 80h400000v40h-400000z\"></path></svg></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.2397em;\"><span></span></span></span></span></span></span></span></span></span> and more trailing prose.</li></ul></div></li></ul><blockquote class=\"markdown-blockquote\">Blockquote with script operators: <span class=\"katex-inline\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msubsup><mi>z</mi><mi>i</mi><mn>2</mn></msubsup></mrow><annotation encoding=\"application/x-tex\">z_i^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1.0728em;vertical-align:-0.2587em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\" style=\"margin-right:0.04398em;\">z</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-2.4413em;margin-left:-0.044em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mathnormal mtight\">i</span></span></span><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.2587em;\"><span></span></span></span></span></span></span></span></span></span></span> and trailing content.</blockquote><p class=\"markdown-paragraph\">Final paragraph after supported math content.</p></div>",
+    "runtimeState": {
+      "rendererVersion": 23,
+      "queueDepth": 0,
+      "pendingBatches": 0,
+      "workerReady": true,
+      "lastTx": 20,
+      "lastPatchToDomMs": 1.200000001117587,
+      "lastDurationMs": 1,
+      "meta": {
+        "fixtureId": "math-inline-supported",
+        "scenarioId": "S2_typical",
+        "seed": null,
+        "schedulerMode": null
+      },
+      "storeCounters": {
+        "appendLineGuardRejected": 0,
+        "staleEpochRejected": 0,
+        "storeInvariantViolationCount": 0
+      }
+    },
+    "structure": {
+      "topLevelTags": [
+        "div"
+      ],
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 1,
+        "katex": 4,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      }
+    },
+    "children": [
+      {
+        "index": 0,
+        "tag": "div",
+        "hash": "b05842f1808f6388c58bb7ad9ab2c98ffece69734f11e573a84b341b39360def",
+        "textSample": "Math Inline SupportedTop-level inline math should anticipate cleanly: x2+yix^2 + y_ix2+yi​ with trailing prose.List item"
+      }
+    ],
+    "inspection": {
+      "tables": [],
+      "mdxBlocks": [],
+      "codeBlocks": []
+    }
+  }
+}

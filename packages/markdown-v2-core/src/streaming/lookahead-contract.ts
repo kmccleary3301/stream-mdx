@@ -114,6 +114,10 @@ export interface LookaheadDecisionTrace {
   contextSignature?: string;
   ops?: readonly LookaheadRepairOp[];
   appended?: string;
+  validation?: {
+    valid: boolean;
+    errors?: string[];
+  };
   downgrade?: LookaheadPlan["downgrade"];
   termination?: LookaheadPlan["termination"];
   debug?: LookaheadPlan["debug"];

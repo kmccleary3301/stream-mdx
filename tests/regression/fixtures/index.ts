@@ -5,7 +5,10 @@ export type RegressionFixture = {
   tags?: string[];
   waitForMdxCompiled?: boolean;
   requiredSelectors?: string[];
+  forbidSelectors?: string[];
+  forbidSelectorsDuringStreaming?: string[];
   requiredTextFragments?: string[];
+  forbidTextFragments?: string[];
   expectTableByPct?: number;
   expectedListItemCount?: number;
   forbidEmptyNestedLists?: boolean;
@@ -235,6 +238,30 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
     requiredSelectors: ["ul", "blockquote", ".katex"],
   },
   {
+    id: "math-inline-supported",
+    title: "Math Inline Supported",
+    file: "math-inline-supported.md",
+    tags: ["anticipation", "math", "inline", "lists", "blockquote"],
+    requiredSelectors: ["ul", "blockquote", ".katex"],
+    forbidSelectors: [".katex-error"],
+    forbidSelectorsDuringStreaming: [".katex-error"],
+    requiredTextFragments: ["trailing prose", "Final paragraph after supported math content."],
+  },
+  {
+    id: "math-inline-hard-stop-negative",
+    title: "Math Inline Hard Stop Negative",
+    file: "math-inline-hard-stop-negative.md",
+    tags: ["anticipation", "math", "negative"],
+    requiredTextFragments: [
+      "\\left(x + y",
+      "\\begin{align}",
+      "trailing prose must remain visible",
+      "Final paragraph after the unsupported math cases.",
+    ],
+    forbidSelectors: [".katex-error"],
+    forbidSelectorsDuringStreaming: [".katex-error"],
+  },
+  {
     id: "nested-blockquote-list-crossover",
     title: "Nested Blockquote List Crossover",
     file: "nested-blockquote-list-crossover.md",
@@ -275,6 +302,19 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
       "Prefix text with",
       "trailing prose that must stay visible",
       "This following paragraph must remain outside any speculative MDX repair.",
+    ],
+  },
+  {
+    id: "mdx-expression-no-swallow-negative",
+    title: "MDX Expression No Swallow Negative",
+    file: "mdx-expression-no-swallow-negative.mdx",
+    tags: ["anticipation", "mdx", "negative"],
+    waitForMdxCompiled: false,
+    requiredSelectors: ["ul", "blockquote"],
+    requiredTextFragments: [
+      "Prefix text with {expr and trailing prose that must stay visible.",
+      "sibling prose that must remain visible",
+      "Final paragraph after the MDX expression negatives.",
     ],
   },
   {

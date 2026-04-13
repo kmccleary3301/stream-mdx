@@ -1238,9 +1238,11 @@ async function writeLookaheadTrace(browser: typeof chromium, snippetName: string
   const traceRoot = path.join(LOOKAHEAD_TRACE_DIR, `${slug}-${TRACE_MODE}`);
   const htmlDir = path.join(traceRoot, "html");
   const stepsDir = path.join(traceRoot, "steps");
+  const failuresDir = path.join(traceRoot, "failures");
   await fs.rm(traceRoot, { recursive: true, force: true });
   await fs.mkdir(htmlDir, { recursive: true });
   await fs.mkdir(stepsDir, { recursive: true });
+  await fs.mkdir(failuresDir, { recursive: true });
 
   const summary = {
     generatedAt: new Date().toISOString(),
@@ -1306,6 +1308,37 @@ async function writeLookaheadTrace(browser: typeof chromium, snippetName: string
     "utf-8",
   );
   await fs.writeFile(path.join(traceRoot, "trace.ndjson"), `${traceSteps.map((step) => JSON.stringify(step)).join("\n")}\n`, "utf-8");
+  const firstDivergence =
+    traceSteps.find((step) => {
+      const diff = step.diffFromPrevious;
+      return Boolean(diff && (diff.firstDecisionChangeBlockId !== null || diff.htmlChanged));
+    }) ?? null;
+  await fs.writeFile(
+    path.join(failuresDir, "first-divergence.json"),
+    JSON.stringify(
+      firstDivergence
+        ? {
+            snippet: snippetName,
+            mode: TRACE_MODE,
+            stepIndex: firstDivergence.stepIndex,
+            prefixLength: firstDivergence.prefixLength,
+            diffFromPrevious: firstDivergence.diffFromPrevious,
+            decisionSummary: firstDivergence.decisionSummary,
+            blocks: firstDivergence.blocks,
+            htmlPath: firstDivergence.htmlPath,
+            telemetryPath: firstDivergence.telemetryPath,
+          }
+        : {
+            snippet: snippetName,
+            mode: TRACE_MODE,
+            stepIndex: null,
+            note: "no divergence within captured steps",
+          },
+      null,
+      2,
+    ),
+    "utf-8",
+  );
 
   console.log(`[analyze] Wrote lookahead trace for ${snippetName} to ${traceRoot}`);
 }

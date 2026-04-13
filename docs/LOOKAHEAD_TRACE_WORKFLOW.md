@@ -86,6 +86,17 @@ SNIPPET_TEST_URL=http://127.0.0.1:3002/regression/snippet-test/ \
   --trace-max-steps 8
 ```
 
+MDX expression char-mode trace:
+
+```bash
+SNIPPET_TEST_URL=http://127.0.0.1:3002/regression/snippet-test/ \
+  npx tsx scripts/analyze-test-snippets.ts \
+  --trace-lookahead \
+  --trace-snippet mdx-expression-no-swallow-negative.mdx \
+  --trace-mode char \
+  --trace-max-steps 8
+```
+
 ## Output directory
 
 Trace bundles are written under:
@@ -133,6 +144,33 @@ Key fields in the summary artifact:
 - `next dev` is not the canonical trace path for this tranche
 - HTML / MDX provider traces are now live and show up under `mixedLookahead`
 - Math V1 traces are live for the bounded subset and hard-stop cases, but the hard-stop negative fixture is currently trace/unit-backed rather than browser-regression-backed
+
+## Reduced smoke status
+
+Current reduced smoke promotions:
+- `nested-formatting-ancestors`
+- `inline-html-allowlist`
+- `math-inline-supported`
+- `mdx-tag-allowlist-inline`
+
+Current targeted-only cases:
+- `block-html-no-swallow`
+- `mdx-tag-no-swallow-negative`
+- `mdx-expression-no-swallow-negative`
+- `math-inline-hard-stop-negative`
+- `math-hard-stop-negative`
+
+## Char vs chunk guidance
+
+Use `char` mode when:
+- a provider is boundary-sensitive at single-byte granularity
+- you are debugging hard-stop / fallback transitions
+- you need to inspect first provider activation precisely
+
+Use `chunk` mode when:
+- you want broader convergence sanity on a realistic stream cadence
+- you are checking container invalidation across larger increments
+- you want smaller, less noisy trace bundles
 
 ## Current no-fake-progress rule
 

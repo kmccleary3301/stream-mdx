@@ -1,6 +1,6 @@
 import assert from "node:assert";
 
-import { extractMixedContentSegments } from "../src/mixed-content";
+import { extractMixedContentSegments, extractMixedContentSegmentsWithLookahead } from "../src/mixed-content";
 
 function parseInline(): any[] {
   return [];
@@ -57,6 +57,18 @@ function runMixedContentAutoCloseTest(): void {
     segments4.some((segment) => segment.kind === "text" && segment.value.includes("<Other>")),
     "expected non-allowlisted mdx tag to remain text",
   );
+
+  const mdxExpressionInput = "Prefix {expr and trailing prose";
+  const extractedExpression = extractMixedContentSegmentsWithLookahead(mdxExpressionInput, 0, parseInline, {
+    mdx: { autoClose: true, maxNewlines: 2, componentAllowlist: ["MyComp"] },
+  });
+  assert.ok(
+    extractedExpression.segments.some((segment) => segment.kind === "text" && segment.value.includes("trailing prose")),
+    "expected mdx expression fallback to preserve trailing prose in text",
+  );
+  const expressionDecision = extractedExpression.lookahead.find((entry) => entry.providerId === "mdx-expression-provider");
+  assert.ok(expressionDecision, "expected mdx-expression lookahead decision");
+  assert.strictEqual(expressionDecision?.decision, "terminate");
 }
 
 runMixedContentAutoCloseTest();

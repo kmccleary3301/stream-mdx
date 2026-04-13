@@ -743,6 +743,19 @@ async function run(): Promise<void> {
               await captureCheckpoint(`event-${key}`, summary);
             }
           }
+
+          if ((fixture.forbidSelectorsDuringStreaming?.length ?? 0) > 0) {
+            const forbiddenDuringStreaming = (await page.evaluate((selectors) => {
+              const root = document.getElementById("regression-root");
+              if (!root) return selectors;
+              return selectors.filter((selector) => root.querySelector(selector));
+            }, fixture.forbidSelectorsDuringStreaming ?? [])) as string[];
+            if (forbiddenDuringStreaming.length > 0) {
+              streamInvariantFailures.push(
+                `forbidden selectors visible during streaming: ${forbiddenDuringStreaming.join(", ")}.`,
+              );
+            }
+          }
         }
 
           await page.evaluate(() => window.__streammdxRegression?.finalizeAndFlush());
@@ -870,6 +883,12 @@ async function run(): Promise<void> {
             htmlInvariantFailures.push(`missing required text fragments: ${missingFragments.join(", ")}.`);
           }
         }
+        if (fixture.forbidTextFragments?.length) {
+          const presentForbiddenFragments = fixture.forbidTextFragments.filter((fragment) => finalHtmlValue.includes(fragment));
+          if (presentForbiddenFragments.length > 0) {
+            htmlInvariantFailures.push(`forbidden text fragments present: ${presentForbiddenFragments.join(", ")}.`);
+          }
+        }
         if (typeof fixture.expectedMdxBlockCount === "number" && finalInspection.mdxBlocks.length !== fixture.expectedMdxBlockCount) {
           htmlInvariantFailures.push(
             `final mdx block count mismatch: expected ${fixture.expectedMdxBlockCount}, got ${finalInspection.mdxBlocks.length}.`,
@@ -898,6 +917,21 @@ async function run(): Promise<void> {
             failures += 1;
             scenarioFailed = true;
             console.error(`\nMissing required selectors for ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}: ${missing.join(", ")}`);
+          }
+        }
+        const forbidSelectors = fixture.forbidSelectors ?? [];
+        if (forbidSelectors.length > 0) {
+          const presentForbidden = (await page.evaluate((selectors) => {
+            const root = document.getElementById("regression-root");
+            if (!root) return [];
+            return selectors.filter((selector) => root.querySelector(selector));
+          }, forbidSelectors)) as string[];
+          if (presentForbidden.length > 0) {
+            failures += 1;
+            scenarioFailed = true;
+            console.error(
+              `\nForbidden selectors present for ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}: ${presentForbidden.join(", ")}`,
+            );
           }
         }
 

@@ -60,6 +60,33 @@ async function testMdxTagProviderAppearsInMixedLookahead(): Promise<void> {
   assert.ok(mdxDecision, "expected mdx-tag-provider mixed lookahead decision");
 }
 
+async function testMdxExpressionProviderAppearsInMixedLookahead(): Promise<void> {
+  const harness = await createWorkerHarness();
+  const messages = await harness.send({
+    type: "INIT",
+    initialContent: "Prefix {expr and trailing prose",
+    prewarmLangs: [],
+    docPlugins: {
+      footnotes: true,
+      html: true,
+      mdx: true,
+      tables: true,
+      callouts: true,
+      math: true,
+      formatAnticipation: { inline: true, mdx: true },
+      mdxComponentNames: ["InlineChip"],
+    },
+  });
+
+  const meta = findParagraphMeta(messages);
+  assert.ok(meta, "expected paragraph metadata");
+  const decisions = Array.isArray(meta?.mixedLookahead) ? (meta?.mixedLookahead as Array<Record<string, unknown>>) : [];
+  const mdxExpressionDecision = decisions.find((entry) => entry.providerId === "mdx-expression-provider");
+  assert.ok(mdxExpressionDecision, "expected mdx-expression-provider mixed lookahead decision");
+  assert.strictEqual(mdxExpressionDecision?.decision, "terminate");
+}
+
 await testHtmlInlineProviderAppearsInMixedLookahead();
 await testMdxTagProviderAppearsInMixedLookahead();
+await testMdxExpressionProviderAppearsInMixedLookahead();
 console.log("mixed lookahead provider tests passed");

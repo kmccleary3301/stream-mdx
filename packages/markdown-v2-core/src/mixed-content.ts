@@ -68,7 +68,13 @@ export function extractMixedContentSegmentsWithLookahead(
   const lookahead: LookaheadDecisionTrace[] = [];
   for (const segment of initial) {
     if (segment.kind === "text") {
-      expanded.push(...splitTextSegmentByExpressions(segment, parseInline));
+      const splitSegments = splitTextSegmentByExpressions(segment, parseInline);
+      expanded.push(...splitSegments);
+      for (const splitSegment of splitSegments) {
+        if (Array.isArray(splitSegment.lookahead) && splitSegment.lookahead.length > 0) {
+          lookahead.push(...(splitSegment.lookahead as LookaheadDecisionTrace[]));
+        }
+      }
     } else {
       expanded.push(segment);
     }
@@ -295,12 +301,9 @@ function splitTextSegmentByExpressions(segment: MixedContentSegment, parseInline
     const end = exprPattern.lastIndex;
     if (start > cursor) {
       const textValue = value.slice(cursor, start);
-      results.push({
-        kind: "text",
-        value: textValue,
-        range: createSegmentRange(rangeStart, cursor, start),
-        inline: parseInline(textValue),
-      });
+      results.push(
+        buildTextSegmentWithExpressionLookahead(textValue, createSegmentRange(rangeStart, cursor, start), parseInline),
+      );
     }
     const expressionValue = match[0];
     results.push({
@@ -315,12 +318,9 @@ function splitTextSegmentByExpressions(segment: MixedContentSegment, parseInline
 
   if (cursor < value.length) {
     const textValue = value.slice(cursor);
-    results.push({
-      kind: "text",
-      value: textValue,
-      range: createSegmentRange(rangeStart, cursor, value.length),
-      inline: parseInline(textValue),
-    });
+    results.push(
+      buildTextSegmentWithExpressionLookahead(textValue, createSegmentRange(rangeStart, cursor, value.length), parseInline),
+    );
   }
 
   return results.length > 0 ? results : [segment];
@@ -375,12 +375,64 @@ function pushTextSegment(
   parseInline: (content: string) => InlineNode[],
 ): void {
   if (value.length === 0) return;
-  target.push({
+  target.push(buildTextSegmentWithExpressionLookahead(value, createSegmentRange(from, 0, value.length, to), parseInline));
+}
+
+function buildTextSegmentWithExpressionLookahead(
+  value: string,
+  range: { from: number; to: number } | undefined,
+  parseInline: (content: string) => InlineNode[],
+): MixedContentSegment {
+  const segment: MixedContentSegment = {
     kind: "text",
     value,
-    range: createSegmentRange(from, 0, value.length, to),
+    range,
     inline: parseInline(value),
+  };
+  const expressionStart = findTrailingMdxExpressionStart(value);
+  if (expressionStart === -1) {
+    return segment;
+  }
+  const rawCandidate = value.slice(expressionStart);
+  const anticipated = prepareSurfaceLookahead("mdx-expression", rawCandidate, {
+    context: {
+      insideMdx: true,
+      mixedSegmentKind: "mdx",
+      localTextField: "mixed-text-mdx-expression-tail",
+    },
   });
+  if (anticipated.trace.length > 0) {
+    segment.lookahead = anticipated.trace;
+  }
+  return segment;
+}
+
+function findTrailingMdxExpressionStart(value: string): number {
+  let openIndex = -1;
+  let depth = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    const char = value[i];
+    if (char === "\\") {
+      i += 1;
+      continue;
+    }
+    if (char === "{") {
+      if (depth === 0) {
+        openIndex = i;
+      }
+      depth += 1;
+      continue;
+    }
+    if (char === "}") {
+      if (depth > 0) {
+        depth -= 1;
+        if (depth === 0) {
+          openIndex = -1;
+        }
+      }
+    }
+  }
+  return depth > 0 ? openIndex : -1;
 }
 
 function createSegmentRange(base: number | undefined, relativeFrom: number, relativeTo: number, absoluteTo?: number): { from: number; to: number } | undefined {

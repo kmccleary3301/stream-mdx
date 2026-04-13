@@ -392,11 +392,12 @@ Current status:
 - mixed-content extraction now localizes/classifies and surfaces provider decisions instead of owning repair policy directly
 - `html-inline` allowlist provider behavior is live for bounded local inline tags
 - `mdx-tag` allowlist provider behavior is live for bounded local inline component tags
+- `mdx-expression` now exists as an explicit hard-stop / fallback provider surface with trace visibility
 - browser/regression coverage is green for:
   - `block-html-no-swallow.md`
   - `mdx-tag-allowlist-inline.mdx`
   - `mdx-tag-no-swallow-negative.mdx`
-- `mdx-expression` remains intentionally deferred beyond explicit hard-stop / fallback behavior
+- `mdx-expression` remains intentionally conservative beyond explicit hard-stop / fallback behavior
 
 ## Phase 4. Math V1 bounded repair
 
@@ -442,6 +443,7 @@ Current status:
   - `\\frac` empty-group repair
   - `\\sqrt` empty-group repair
   - tail-local unmatched group closure
+- repaired math candidates are validated before render and emit validation results into trace metadata
 - unsupported math cases explicitly hard-stop and fall back for:
   - `\\left`
   - `\\right`
@@ -449,7 +451,9 @@ Current status:
   - optional-argument ambiguity
 - unit coverage is green for the bounded subset and hard-stop behavior
 - `nested-math-inline.md` remains green in browser regression HTML coverage
-- `math-hard-stop-negative.md` is currently trace-backed and unit-backed, but not promoted into browser regression HTML coverage yet
+- `math-inline-supported.md` is now green in browser regression HTML coverage and seed-stable
+- `math-inline-hard-stop-negative.md` is now green in browser regression HTML coverage for unsupported inline cases
+- `math-hard-stop-negative.md` remains trace-backed and unit-backed for the broader unsupported family, especially display-math negatives
 
 ## Phase 5. Adversarial hardening
 
@@ -494,6 +498,25 @@ Definition of done:
 - failures always have useful artifacts
 - no broad smoke expansion without evidence
 
+Current status:
+- reduced stable cases now promoted into seeded smoke:
+  - `nested-formatting-ancestors`
+  - `inline-html-allowlist`
+  - `math-inline-supported`
+  - `mdx-tag-allowlist-inline`
+- non-smoke items remain targeted-only:
+  - `block-html-no-swallow`
+  - `mdx-tag-no-swallow-negative`
+  - `mdx-expression-no-swallow-negative`
+  - `math-inline-hard-stop-negative`
+  - `math-hard-stop-negative`
+
+Promotion criteria for this reduced smoke set:
+- stable regression HTML output across seeded replay
+- stable char/chunk traces for the surface family
+- no known flaky termination / downgrade behavior
+- useful failure artifacts when parity breaks
+
 ## First Fixture Set
 
 These should be built first.
@@ -532,6 +555,21 @@ Provokes:
 Current status:
 - implemented as a targeted trace/unit fixture
 - intentionally not promoted into browser regression HTML coverage yet
+
+### 7. `math-inline-supported.md`
+Provokes:
+- supported inline math subset
+- no-error rendering under list and blockquote ancestors
+
+### 8. `math-inline-hard-stop-negative.md`
+Provokes:
+- unsupported inline math hard-stop / fallback
+- preserved trailing prose and sibling content
+
+### 9. `mdx-expression-no-swallow-negative.mdx`
+Provokes:
+- explicit `mdx-expression` hard-stop / fallback
+- preserved trailing prose in paragraph, list, and blockquote contexts
 
 ### 7. `kitchen-sink-lookahead.mdx`
 Provokes:

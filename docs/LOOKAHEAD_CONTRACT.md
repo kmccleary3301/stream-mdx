@@ -157,6 +157,7 @@ Allowed in V1:
 - tail-local unmatched group closure
 - dangling `^` / `_` repair
 - allowlisted empty-slot insertion for `\frac` and `\sqrt`
+- validation of repaired math candidates before render
 
 Deferred:
 - macro-name inference
@@ -178,6 +179,7 @@ Default:
 Allowed in V1:
 - allowlisted tag/component closure in bounded local inline cases
 - bounded self-close repair for local unclosed inline component tags
+- explicit `mdx-expression` hard-stop / fallback with trace visibility
 
 Deferred:
 - MDX expression repair beyond explicit hard-stop / fallback
@@ -231,6 +233,35 @@ Current limitations:
 - `mdx-expression` remains deferred and intentionally conservative
 - Math V1 is only partially browser-backed; the hard-stop negative math fixture is currently trace/unit-backed rather than promoted into browser regression HTML coverage
 - the trace workflow is canonicalized around an exported docs build plus a static server, not `next dev`
+
+## Current support matrix
+
+Current V1 implementation status by surface:
+
+- `inline-format`
+  - implemented
+  - bounded delimiter closure
+- `regex`
+  - implemented
+  - bounded adapter around current regex append behavior
+- `html-inline`
+  - implemented
+  - allowlisted and bounded
+- `mdx-tag`
+  - implemented
+  - allowlisted and bounded
+- `mdx-expression`
+  - implemented as explicit hard-stop / fallback only
+  - no repair beyond traceable downgrade
+- `math-inline`
+  - implemented for the bounded V1 subset
+  - repaired candidates are validated before render
+- `math-block`
+  - implemented only for the bounded V1 subset
+  - unsupported cases remain conservative
+- `html-block`
+  - conservative fallback only
+  - no optimistic block capture
 
 ## Current no-fake-progress rule
 

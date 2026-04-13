@@ -143,6 +143,17 @@ function testMdxTagProviderTerminatesOnAmbiguousExpressionTail() {
   assert.strictEqual(result.trace[0]?.termination?.reason, "unsafe-repair-required");
 }
 
+function testMdxExpressionProviderTerminatesWithoutRepair() {
+  const result = prepareSurfaceLookahead("mdx-expression", "{expr", {
+    maxNewlines: 2,
+  });
+
+  assert.strictEqual(result.prepared.kind, "raw");
+  assert.strictEqual(result.trace[0]?.providerId, "mdx-expression-provider");
+  assert.strictEqual(result.trace[0]?.decision, "terminate");
+  assert.strictEqual(result.trace[0]?.termination?.reason, "unsupported-syntax");
+}
+
 testInlineProviderRepairPlan();
 testRegexProviderRepairPlan();
 testProviderDoesNotInventRegexRepairWithoutMatch();
@@ -150,4 +161,5 @@ testContainerSignatureShape();
 testHtmlInlineAllowlistRepairPlan();
 testMdxTagAllowlistRepairPlan();
 testMdxTagProviderTerminatesOnAmbiguousExpressionTail();
+testMdxExpressionProviderTerminatesWithoutRepair();
 console.log("lookahead orchestrator tests passed");

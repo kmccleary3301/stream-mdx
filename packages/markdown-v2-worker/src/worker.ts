@@ -1500,6 +1500,7 @@ async function enrichBlock(block: Block) {
         });
         const segments = mixedExtraction.segments;
         const hasStructuredSegments = segments.some((segment) => segment.kind !== "text");
+        const hasMixedLookahead = mixedExtraction.lookahead.length > 0;
       const currentMeta = (block.payload.meta ?? {}) as Record<string, unknown>;
       const nextMeta: Record<string, unknown> = {
         ...currentMeta,
@@ -1507,10 +1508,10 @@ async function enrichBlock(block: Block) {
       };
       if (hasStructuredSegments) {
         nextMeta.mixedSegments = segments;
-        nextMeta.mixedLookahead = mixedExtraction.lookahead.length > 0 ? mixedExtraction.lookahead : undefined;
+        nextMeta.mixedLookahead = hasMixedLookahead ? mixedExtraction.lookahead : undefined;
       } else {
         nextMeta.mixedSegments = undefined;
-        nextMeta.mixedLookahead = undefined;
+        nextMeta.mixedLookahead = hasMixedLookahead ? mixedExtraction.lookahead : undefined;
       }
       if (shouldTrackInlineStatus()) {
         nextMeta.inlineStatus = block.isFinalized ? undefined : streamingParsed?.status;
@@ -1641,13 +1642,14 @@ async function enrichBlock(block: Block) {
         });
         const segments = mixedExtraction.segments;
         const hasStructuredSegments = segments.some((segment) => segment.kind !== "text");
+        const hasMixedLookahead = mixedExtraction.lookahead.length > 0;
         const htmlRanges = collectHtmlProtectedRangesFromSegments(segments, baseOffset);
         if (htmlRanges.length > 0) {
           protectedRanges.push(...htmlRanges);
         }
         if (hasStructuredSegments) {
           nextMeta.mixedSegments = segments;
-          nextMeta.mixedLookahead = mixedExtraction.lookahead.length > 0 ? mixedExtraction.lookahead : undefined;
+          nextMeta.mixedLookahead = hasMixedLookahead ? mixedExtraction.lookahead : undefined;
           metaChanged = true;
           if (allowMixedStreaming) {
             nextMeta.allowMixedStreaming = true;
@@ -1656,9 +1658,9 @@ async function enrichBlock(block: Block) {
             nextMeta.allowMixedStreaming = undefined;
             metaChanged = true;
           }
-        } else if (Object.prototype.hasOwnProperty.call(nextMeta, "mixedSegments")) {
+        } else if (Object.prototype.hasOwnProperty.call(nextMeta, "mixedSegments") || hasMixedLookahead) {
           nextMeta.mixedSegments = undefined;
-          nextMeta.mixedLookahead = undefined;
+          nextMeta.mixedLookahead = hasMixedLookahead ? mixedExtraction.lookahead : undefined;
           metaChanged = true;
           if (Object.prototype.hasOwnProperty.call(nextMeta, "allowMixedStreaming")) {
             nextMeta.allowMixedStreaming = undefined;

@@ -1,6 +1,6 @@
 import assert from "node:assert";
 
-import { prepareInlineStreamingContent } from "../src/streaming/inline-streaming";
+import { prepareInlineStreamingContent, prepareInlineStreamingLookahead } from "../src/streaming/inline-streaming";
 
 function testWithoutAnticipation() {
   const italic = prepareInlineStreamingContent("*This is incomplete", { formatAnticipation: false });
@@ -86,6 +86,14 @@ function testMathAnticipation() {
   assert.strictEqual(fracRepair.kind, "parse");
   if (fracRepair.kind !== "parse") throw new Error("expected parse result");
   assert.strictEqual(fracRepair.content, "$\\frac{a{}}$");
+
+  const sqrtRepair = prepareInlineStreamingContent("$\\sqrt{x", {
+    formatAnticipation: { mathInline: true },
+    math: true,
+  });
+  assert.strictEqual(sqrtRepair.kind, "parse");
+  if (sqrtRepair.kind !== "parse") throw new Error("expected parse result");
+  assert.strictEqual(sqrtRepair.content, "$\\sqrt{x}$");
 }
 
 function testCurrencyLikeDollarDoesNotAnticipateMath() {
@@ -123,6 +131,58 @@ function testUnsupportedMathRemainsRaw() {
   assert.deepStrictEqual(unsupportedEnvironment, { kind: "raw", status: "raw", reason: "incomplete-math" });
 }
 
+function testMathValidationTrace() {
+  const result = prepareInlineStreamingLookahead("$\\frac{a", {
+    formatAnticipation: { mathInline: true },
+    math: true,
+  });
+  assert.strictEqual(result.trace[0]?.surface, "math-inline");
+  assert.strictEqual(result.trace[0]?.validation?.valid, true);
+
+  const unsupported = prepareInlineStreamingLookahead("$\\left(x + y", {
+    formatAnticipation: { mathInline: true },
+    math: true,
+  });
+  assert.strictEqual(unsupported.trace[0]?.surface, "math-inline");
+  assert.strictEqual(unsupported.trace[0]?.validation?.valid, false);
+  assert.strictEqual(unsupported.trace[0]?.termination?.reason, "unsupported-syntax");
+}
+
+function testMathConvergenceBehavior() {
+  const anticipated = prepareInlineStreamingContent("$\\frac{a", {
+    formatAnticipation: { mathInline: true },
+    math: true,
+  });
+  assert.strictEqual(anticipated.kind, "parse");
+  if (anticipated.kind !== "parse") throw new Error("expected parse result");
+  assert.strictEqual(anticipated.status, "anticipated");
+  assert.strictEqual(anticipated.content, "$\\frac{a{}}$");
+
+  const completed = prepareInlineStreamingContent("$\\frac{a}{b}$", {
+    formatAnticipation: { mathInline: true },
+    math: true,
+  });
+  assert.strictEqual(completed.kind, "parse");
+  if (completed.kind !== "parse") throw new Error("expected parse result");
+  assert.strictEqual(completed.status, "complete");
+  assert.strictEqual(completed.content, "$\\frac{a}{b}$");
+
+  const unsupportedPrefix = prepareInlineStreamingContent("$\\left(x + y", {
+    formatAnticipation: { mathInline: true },
+    math: true,
+  });
+  assert.deepStrictEqual(unsupportedPrefix, { kind: "raw", status: "raw", reason: "incomplete-math" });
+
+  const supportedFinal = prepareInlineStreamingContent("$\\left(x + y\\right)$", {
+    formatAnticipation: { mathInline: true },
+    math: true,
+  });
+  assert.strictEqual(supportedFinal.kind, "parse");
+  if (supportedFinal.kind !== "parse") throw new Error("expected parse result");
+  assert.strictEqual(supportedFinal.status, "complete");
+  assert.strictEqual(supportedFinal.content, "$\\left(x + y\\right)$");
+}
+
 testWithoutAnticipation();
 testWithAnticipation();
 testComplete();
@@ -131,4 +191,6 @@ testMathAnticipation();
 testCurrencyLikeDollarDoesNotAnticipateMath();
 testMathBlockNewlineBoundary();
 testUnsupportedMathRemainsRaw();
+testMathValidationTrace();
+testMathConvergenceBehavior();
 console.log("inline streaming anticipation tests passed");

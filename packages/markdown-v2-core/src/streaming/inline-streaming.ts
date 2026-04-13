@@ -58,6 +58,7 @@ type InlineFormatPlan =
       safety: "safe";
       ops: readonly LookaheadRepairOp[];
       debugNotes: string[];
+      validation?: { valid: boolean; errors?: string[] };
       terminationReason?: never;
       downgradeReason?: never;
     }
@@ -67,6 +68,7 @@ type InlineFormatPlan =
       safety: "safe";
       ops: readonly LookaheadRepairOp[];
       debugNotes: string[];
+      validation?: { valid: boolean; errors?: string[] };
       terminationReason: LookaheadTerminationReason;
       downgradeReason: string;
     }
@@ -76,6 +78,7 @@ type InlineFormatPlan =
       safety: "safe";
       ops: readonly LookaheadRepairOp[];
       debugNotes: string[];
+      validation?: { valid: boolean; errors?: string[] };
       terminationReason?: never;
       downgradeReason?: never;
     };
@@ -247,7 +250,7 @@ export function prepareInlineStreamingLookahead(
 }
 
 export function prepareSurfaceLookahead(
-  surface: "html-inline" | "mdx-tag",
+  surface: "html-inline" | "mdx-tag" | "mdx-expression",
   content: string,
   options?: SurfaceLookaheadPrepareOptions,
 ): SurfaceLookaheadPrepareResult {
@@ -270,7 +273,9 @@ export function prepareSurfaceLookahead(
   const plan =
     surface === "html-inline"
       ? planHtmlInline(request, options?.allowTags)
-      : planMdxTag(request, options?.allowComponents);
+      : surface === "mdx-tag"
+        ? planMdxTag(request, options?.allowComponents)
+        : planMdxExpression(request);
   const trace = [traceFromPlan(plan, context.containerSignature)];
 
   if (plan.decision === "raw" || plan.decision === "surface-fallback" || plan.decision === "terminate") {
@@ -305,6 +310,7 @@ function traceFromFormatPlan(plan: InlineFormatPlan, contextSignature: string): 
     contextSignature,
     ops: plan.ops,
     appended: renderAppendedSuffix(plan.ops),
+    validation: plan.validation,
     downgrade: plan.decision === "raw" ? { mode: "raw", reason: plan.downgradeReason } : undefined,
     termination:
       plan.decision === "raw"
@@ -343,6 +349,7 @@ type SurfacePlan = {
   safety: "safe" | "guarded";
   ops: readonly LookaheadRepairOp[];
   debugNotes: string[];
+  validation?: { valid: boolean; errors?: string[] };
   terminationReason?: LookaheadTerminationReason;
   downgradeReason?: string;
   rearmWhen?: "next-byte" | "new-delimiter" | "newline-change" | "container-change" | "finalization";
@@ -357,6 +364,7 @@ function traceFromPlan(plan: SurfacePlan, contextSignature: string): LookaheadDe
     contextSignature,
     ops: plan.ops,
     appended: renderAppendedSuffix(plan.ops),
+    validation: plan.validation,
     downgrade:
       plan.decision === "surface-fallback" || plan.decision === "raw"
         ? {
@@ -459,6 +467,7 @@ function planInlineFormat(
       decision: "raw",
       safety: "safe",
       ops: [],
+      validation: { valid: false, errors: [mathRepair.reason] },
       terminationReason: "unsupported-syntax",
       downgradeReason: mathRepair.reason,
       debugNotes: mathRepair.notes,
@@ -471,12 +480,37 @@ function planInlineFormat(
         .reverse()
         .flatMap((token) => appendOpsForToken(token, request.raw, scan.mathDisplayCrossedNewline));
 
+  if (hasIncompleteMath) {
+    const repaired = applyRepairOps(request.raw, ops);
+    const validation = validateMathRepairCandidate(repaired, mathMode);
+    if (!validation.valid) {
+      return {
+        surface: hasIncompleteMathDisplay ? "math-block" : "math-inline",
+        decision: "raw",
+        safety: "safe",
+        ops: [],
+        validation,
+        terminationReason: "validation-failed",
+        downgradeReason: validation.errors?.join("; ") ?? "math repair validation failed",
+        debugNotes: [...(mathRepair?.notes ?? []), "repair validation failed"],
+      };
+    }
+    return {
+      surface: hasIncompleteMathDisplay ? "math-block" : "math-inline",
+      decision: "repair",
+      safety: "safe",
+      ops,
+      validation,
+      debugNotes: mathRepair?.notes ?? [],
+    };
+  }
+
   return {
     surface: hasIncompleteMath ? (hasIncompleteMathDisplay ? "math-block" : "math-inline") : "inline-format",
     decision: "repair",
     safety: "safe",
     ops,
-    debugNotes: hasIncompleteMath ? mathRepair?.notes ?? [] : scan.stack.slice().reverse(),
+    debugNotes: scan.stack.slice().reverse(),
   };
 }
 
@@ -607,6 +641,54 @@ function planMdxTag(request: LookaheadRequest, allowComponents?: Iterable<string
     safety: "guarded",
     ops: [{ kind: "self-close-tag" }],
     debugNotes: ["self-close bounded mdx tag opener"],
+  };
+}
+
+function planMdxExpression(request: LookaheadRequest): SurfacePlan {
+  const trimmed = request.raw.trimStart();
+  if (!trimmed.startsWith("{")) {
+    return {
+      providerId: "mdx-expression-provider",
+      surface: "mdx-expression",
+      decision: "surface-fallback",
+      safety: "safe",
+      ops: [],
+      downgradeReason: "not a valid mdx-expression candidate",
+      debugNotes: ["mdx expression candidate parse failed"],
+    };
+  }
+  if (countNewlines(request.raw) > request.budgets.maxNewlines) {
+    return {
+      providerId: "mdx-expression-provider",
+      surface: "mdx-expression",
+      decision: "terminate",
+      safety: "guarded",
+      ops: [],
+      terminationReason: "budget-newlines",
+      rearmWhen: "newline-change",
+      debugNotes: ["newline budget exceeded"],
+    };
+  }
+  if (/\}/.test(trimmed)) {
+    return {
+      providerId: "mdx-expression-provider",
+      surface: "mdx-expression",
+      decision: "accept-as-is",
+      safety: "safe",
+      ops: [],
+      debugNotes: ["mdx expression already complete"],
+    };
+  }
+  return {
+    providerId: "mdx-expression-provider",
+    surface: "mdx-expression",
+    decision: "terminate",
+    safety: "guarded",
+    ops: [],
+    terminationReason: "unsupported-syntax",
+    downgradeReason: "mdx expression repair is deferred",
+    rearmWhen: "new-delimiter",
+    debugNotes: ["mdx expression hard-stop / fallback"],
   };
 }
 
@@ -767,6 +849,39 @@ function classifyMathRepair(
     return { kind: "unsupported", reason: "optional argument math repair is deferred", notes: ["unsupported optional-argument ambiguity"] };
   }
   return { kind: "repair", ops: buildMathRepairOps(raw, mode), notes: mathRepairDebugNotes(raw, mode) };
+}
+
+function validateMathRepairCandidate(repaired: string, mode: "inline" | "display"): { valid: boolean; errors?: string[] } {
+  const mathContent = extractDelimitedMathContent(repaired, mode);
+  const errors: string[] = [];
+  const balance = scanDelimiterBalance(mathContent);
+  if (balance.openBraces > 0) errors.push(`${balance.openBraces} unmatched opening brace(s)`);
+  if (balance.openBrackets > 0) errors.push(`${balance.openBrackets} unmatched opening bracket(s)`);
+  if (balance.openParens > 0) errors.push(`${balance.openParens} unmatched opening parenthesis(es)`);
+  if (/(?:^|[^\\])(?:\^|_)$/.test(mathContent)) {
+    errors.push("dangling script operator");
+  }
+  const trailingControlWord = mathContent.match(/\\[A-Za-z]+$/)?.[0];
+  if (trailingControlWord && !isAllowlistedCompleteControlWord(trailingControlWord)) {
+    errors.push(`incomplete control word: ${trailingControlWord}`);
+  }
+  if (countMissingRequiredGroups(mathContent, "\\frac", 2) > 0) {
+    errors.push("missing required \\frac group");
+  }
+  if (countMissingRequiredGroups(mathContent, "\\sqrt", 1) > 0) {
+    errors.push("missing required \\sqrt group");
+  }
+  return errors.length > 0 ? { valid: false, errors } : { valid: true };
+}
+
+function extractDelimitedMathContent(repaired: string, mode: "inline" | "display"): string {
+  if (mode === "display" && repaired.startsWith("$$") && repaired.endsWith("$$")) {
+    return repaired.slice(2, -2).trim();
+  }
+  if (mode === "inline" && repaired.startsWith("$") && repaired.endsWith("$")) {
+    return repaired.slice(1, -1).trim();
+  }
+  return repaired;
 }
 
 function buildMathRepairOps(raw: string, mode: "inline" | "display"): LookaheadRepairOp[] {
