@@ -16,7 +16,7 @@ import {
   prepareInlineStreamingLookahead,
 } from "./streaming/inline-streaming";
 import type { FormatAnticipationConfig } from "./types";
-import { extractMixedContentSegments } from "./mixed-content";
+import { extractMixedContentSegments, extractMixedContentSegmentsWithLookahead } from "./mixed-content";
 import type {
   Block,
   DiffKind,
@@ -347,7 +347,22 @@ function processListItemParagraph(raw: string, options?: ListItemInlineOptions):
   const normalized = normalizeParagraphText(raw);
   const { content, task } = stripTaskMarker(normalized);
   const inline = parseListInline(content, options);
-  const segments = extractMixedContentSegments(content, undefined, (value) => parseListInline(value, options));
+  const { segments } = extractMixedContentSegmentsWithLookahead(content, undefined, (value) => parseListInline(value, options), {
+    html: normalizeFormatAnticipation(options?.formatAnticipation).html ? { autoClose: true, maxNewlines: 2 } : undefined,
+    mdx: normalizeFormatAnticipation(options?.formatAnticipation).mdx ? { autoClose: true, maxNewlines: 2 } : undefined,
+    lookaheadContext: {
+      blockType: options?.blockType ?? "list-item",
+      ancestorTypes: options?.ancestorTypes ?? ["list"],
+      listDepth: options?.listDepth ?? 1,
+      blockquoteDepth: options?.blockquoteDepth ?? 0,
+      localTextField: options?.localTextField ?? "list-item-paragraph",
+      insideHtml: false,
+      insideMdx: false,
+      segmentOrigin: "mixed-content",
+      mixedSegmentKind: "text",
+      provisional: options?.streaming !== false,
+    },
+  });
   return {
     inline,
     segments,
@@ -388,7 +403,7 @@ function buildBlockquoteSnapshot(
     blockType: "blockquote",
     localTextField: "blockquote-inline",
   });
-  const segments = extractMixedContentSegments(normalized, undefined, (value) =>
+  const { segments } = extractMixedContentSegmentsWithLookahead(normalized, undefined, (value) =>
     parseListInline(value, {
       streaming: !block.isFinalized,
       listDepth: context?.listDepth ?? 0,
@@ -397,6 +412,20 @@ function buildBlockquoteSnapshot(
       blockType: "blockquote",
       localTextField: "blockquote-inline",
     }),
+    {
+      html: normalizeFormatAnticipation(LIST_STREAMING_ANTICIPATION).html ? { autoClose: true, maxNewlines: 2 } : undefined,
+      mdx: normalizeFormatAnticipation(LIST_STREAMING_ANTICIPATION).mdx ? { autoClose: true, maxNewlines: 2 } : undefined,
+      lookaheadContext: {
+        blockType: "blockquote",
+        ancestorTypes: [...(context?.ancestorTypes ?? []), "blockquote"],
+        listDepth: context?.listDepth ?? 0,
+        blockquoteDepth: context?.blockquoteDepth ?? 1,
+        localTextField: "blockquote-inline",
+        segmentOrigin: "mixed-content",
+        mixedSegmentKind: "text",
+        provisional: !block.isFinalized,
+      },
+    },
   );
 
   const quoteBlock: Block = {

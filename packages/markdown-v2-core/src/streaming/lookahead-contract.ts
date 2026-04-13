@@ -51,6 +51,7 @@ export interface LookaheadContainerContext {
   segmentOrigin: "direct-inline" | "mixed-content";
   mixedSegmentKind?: "text" | "html" | "mdx";
   provisional: boolean;
+  localTextField?: string;
   containerSignature: string;
 }
 
@@ -148,6 +149,7 @@ export interface LookaheadTraceStep {
     inlineContainerSignature?: string;
     inlineLookaheadInvalidated?: string;
     inlineLookahead?: LookaheadDecisionTrace[];
+    mixedLookahead?: LookaheadDecisionTrace[];
     mixedSegmentKinds?: string[];
   }>;
 }

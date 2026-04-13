@@ -17,6 +17,22 @@ export const PreviewExample: React.FC = () => (
   </div>
 );
 
+const InlineChip: React.FC<{ tone?: string; children?: React.ReactNode }> = ({ tone = "neutral", children }) => {
+  const toneClass =
+    tone === "warm"
+      ? "bg-amber-100 text-amber-900 border-amber-300"
+      : tone === "cool"
+        ? "bg-sky-100 text-sky-900 border-sky-300"
+        : tone === "sharp"
+          ? "bg-violet-100 text-violet-900 border-violet-300"
+          : "bg-muted text-foreground border-border";
+  return <span className={cn("inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium", toneClass)}>{children ?? tone}</span>;
+};
+
+const DangerChip: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
+  return <span className="inline-flex items-center rounded-full border border-red-300 bg-red-100 px-2 py-0.5 text-red-900 text-xs font-medium">{children ?? "danger"}</span>;
+};
+
 const YouTube: React.FC<{ videoId: string; caption?: string; className?: string }> = ({ videoId, caption, className }) => {
   return (
     <div className={["w-full", className].filter(Boolean).join(" ")}>
@@ -98,6 +114,8 @@ function findCodeElement(
 }
 
 export const components: MDXComponents = {
+  InlineChip,
+  DangerChip,
   PreviewExample,
   Preview: ({ children, codeblock }) => {
     return (

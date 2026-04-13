@@ -389,7 +389,19 @@ export const defaultBlockComponents: BlockComponents = {
     });
   },
 
-  mdx: ({ compiledRef, compiledModule, status, errorMessage }) => {
+  mdx: ({ compiledRef, compiledModule, status, errorMessage, meta }) => {
+    const originalType = typeof meta?.originalType === "string" ? String(meta.originalType) : undefined;
+    const mixedSegments = Array.isArray((meta as { mixedSegments?: MixedContentSegment[] } | undefined)?.mixedSegments)
+      ? ((meta as { mixedSegments?: MixedContentSegment[] }).mixedSegments as MixedContentSegment[])
+      : undefined;
+    if (originalType === "paragraph" && mixedSegments && mixedSegments.length > 0) {
+      const structured = renderParagraphMixedSegments(mixedSegments, defaultInlineComponents, DEFAULT_INLINE_HTML_RENDERERS);
+      if (structured.length === 1) {
+        return structured[0];
+      }
+      return React.createElement(React.Fragment, {}, ...structured);
+    }
+
     const [Comp, setComp] = React.useState<React.ComponentType | null>(null);
     const [internalError, setInternalError] = React.useState<string | null>(null);
     const [renderError, setRenderError] = React.useState<string | null>(null);
@@ -824,6 +836,7 @@ export class ComponentRegistry {
             status,
             errorMessage,
             raw: typeof block.payload.raw === "string" ? block.payload.raw : undefined,
+            meta,
           };
         })();
 

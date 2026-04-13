@@ -619,6 +619,7 @@ async function run(): Promise<void> {
         const enforcePrefixInvariant = !["article", "footnotes", "html", "lists", "math", "mdx", "table"].some((tag) =>
           (fixture.tags ?? []).includes(tag),
         );
+        const waitForMdxCompiled = fixture.waitForMdxCompiled ?? (fixture.tags ?? []).includes("mdx");
         const tableTargetPct = fixture.expectTableByPct;
         const tableTargetChars =
           typeof tableTargetPct === "number" && scenario.maxChunkChars <= 512
@@ -746,7 +747,7 @@ async function run(): Promise<void> {
 
           await page.evaluate(() => window.__streammdxRegression?.finalizeAndFlush());
 
-          if (fixture.tags?.includes("mdx")) {
+        if (waitForMdxCompiled) {
           try {
             await page.waitForFunction(() => {
               const summary = window.__streammdxRegression?.getSummary();

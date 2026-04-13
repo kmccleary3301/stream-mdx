@@ -168,6 +168,23 @@ export type InlineLookaheadPrepareResult = {
   container: LookaheadContainerContext;
 };
 
+export type SurfaceLookaheadPrepareOptions = {
+  context?: Partial<LookaheadContainerContext>;
+  allowTags?: Iterable<string>;
+  allowComponents?: Iterable<string>;
+  maxNewlines?: number;
+};
+
+export type SurfaceLookaheadPrepareResult = {
+  prepared: {
+    kind: "parse" | "raw";
+    content: string;
+    status: "complete" | "anticipated" | "raw";
+  };
+  trace: LookaheadDecisionTrace[];
+  container: LookaheadContainerContext;
+};
+
 export function prepareInlineStreamingContent(
   content: string,
   options?: InlineLookaheadPrepareOptions,
@@ -229,6 +246,56 @@ export function prepareInlineStreamingLookahead(
   };
 }
 
+export function prepareSurfaceLookahead(
+  surface: "html-inline" | "mdx-tag",
+  content: string,
+  options?: SurfaceLookaheadPrepareOptions,
+): SurfaceLookaheadPrepareResult {
+  const context = buildLookaheadContainerContext({
+    segmentOrigin: "mixed-content",
+    mixedSegmentKind: surface === "html-inline" ? "html" : "mdx",
+    ...options?.context,
+  });
+  const request: LookaheadRequest = {
+    surface,
+    raw: content,
+    absoluteRange: { start: 0, end: content.length },
+    context,
+    budgets: {
+      ...DEFAULT_LOOKAHEAD_BUDGETS,
+      maxNewlines: options?.maxNewlines ?? DEFAULT_LOOKAHEAD_BUDGETS.maxNewlines,
+    },
+  };
+
+  const plan =
+    surface === "html-inline"
+      ? planHtmlInline(request, options?.allowTags)
+      : planMdxTag(request, options?.allowComponents);
+  const trace = [traceFromPlan(plan, context.containerSignature)];
+
+  if (plan.decision === "raw" || plan.decision === "surface-fallback" || plan.decision === "terminate") {
+    return {
+      prepared: {
+        kind: "raw",
+        content,
+        status: "raw",
+      },
+      trace,
+      container: context,
+    };
+  }
+
+  return {
+    prepared: {
+      kind: "parse",
+      content: applyRepairOps(content, plan.ops),
+      status: plan.ops.length > 0 ? "anticipated" : "complete",
+    },
+    trace,
+    container: context,
+  };
+}
+
 function traceFromFormatPlan(plan: InlineFormatPlan, contextSignature: string): LookaheadDecisionTrace {
   return {
     providerId: "inline-format-provider",
@@ -264,6 +331,48 @@ function traceFromRegexPlan(plan: RegexPlan, contextSignature: string): Lookahea
     appended: renderAppendedSuffix(plan.ops),
     debug: {
       strategy: plan.decision === "repair" ? "regex-append" : "no-op",
+      notes: plan.debugNotes,
+    },
+  };
+}
+
+type SurfacePlan = {
+  providerId: string;
+  surface: LookaheadSurface;
+  decision: "accept-as-is" | "repair" | "surface-fallback" | "raw" | "terminate";
+  safety: "safe" | "guarded";
+  ops: readonly LookaheadRepairOp[];
+  debugNotes: string[];
+  terminationReason?: LookaheadTerminationReason;
+  downgradeReason?: string;
+  rearmWhen?: "next-byte" | "new-delimiter" | "newline-change" | "container-change" | "finalization";
+};
+
+function traceFromPlan(plan: SurfacePlan, contextSignature: string): LookaheadDecisionTrace {
+  return {
+    providerId: plan.providerId,
+    surface: plan.surface,
+    decision: plan.decision,
+    safety: plan.safety,
+    contextSignature,
+    ops: plan.ops,
+    appended: renderAppendedSuffix(plan.ops),
+    downgrade:
+      plan.decision === "surface-fallback" || plan.decision === "raw"
+        ? {
+            mode: plan.decision === "surface-fallback" ? "surface-fallback" : "raw",
+            reason: plan.downgradeReason ?? "surface fallback",
+          }
+        : undefined,
+    termination:
+      plan.decision === "terminate" || plan.terminationReason
+        ? {
+            reason: plan.terminationReason ?? "unsupported-syntax",
+            rearmWhen: plan.rearmWhen ?? "next-byte",
+          }
+        : undefined,
+    debug: {
+      strategy: plan.providerId,
       notes: plan.debugNotes,
     },
   };
@@ -342,17 +451,162 @@ function planInlineFormat(
     };
   }
 
-  const ops = scan.stack
-    .slice()
-    .reverse()
-    .flatMap((token) => appendOpsForToken(token, request.raw, scan.mathDisplayCrossedNewline));
+  const mathMode = hasIncompleteMathDisplay ? "display" : "inline";
+  const mathRepair = hasIncompleteMath ? classifyMathRepair(request.raw, mathMode) : null;
+  if (mathRepair?.kind === "unsupported") {
+    return {
+      surface: hasIncompleteMathDisplay ? "math-block" : "math-inline",
+      decision: "raw",
+      safety: "safe",
+      ops: [],
+      terminationReason: "unsupported-syntax",
+      downgradeReason: mathRepair.reason,
+      debugNotes: mathRepair.notes,
+    };
+  }
+  const ops = hasIncompleteMath
+    ? mathRepair?.ops ?? []
+    : scan.stack
+        .slice()
+        .reverse()
+        .flatMap((token) => appendOpsForToken(token, request.raw, scan.mathDisplayCrossedNewline));
 
   return {
     surface: hasIncompleteMath ? (hasIncompleteMathDisplay ? "math-block" : "math-inline") : "inline-format",
     decision: "repair",
     safety: "safe",
     ops,
-    debugNotes: scan.stack.slice().reverse(),
+    debugNotes: hasIncompleteMath ? mathRepair?.notes ?? [] : scan.stack.slice().reverse(),
+  };
+}
+
+function planHtmlInline(request: LookaheadRequest, allowTags?: Iterable<string>): SurfacePlan {
+  const candidate = parseTagCandidate(request.raw);
+  if (!candidate || candidate.kind !== "html" || candidate.openEnd === -1) {
+    return {
+      providerId: "html-inline-provider",
+      surface: "html-inline",
+      decision: "surface-fallback",
+      safety: "safe",
+      ops: [],
+      downgradeReason: "not a valid html-inline candidate",
+      debugNotes: ["html candidate parse failed"],
+    };
+  }
+  const allowedTags = normalizeStringAllowlist(allowTags);
+  if (!allowedTags.has(candidate.tagNameLower) || isLikelyBlockTag(candidate.tagNameLower)) {
+    return {
+      providerId: "html-inline-provider",
+      surface: "html-inline",
+      decision: "terminate",
+      safety: "safe",
+      ops: [],
+      terminationReason: "unsupported-syntax",
+      rearmWhen: "container-change",
+      debugNotes: ["tag not allowlisted for inline html repair"],
+    };
+  }
+  const tail = request.raw.slice(candidate.openEnd);
+  if (countNewlines(tail) > request.budgets.maxNewlines) {
+    return {
+      providerId: "html-inline-provider",
+      surface: "html-inline",
+      decision: "terminate",
+      safety: "guarded",
+      ops: [],
+      terminationReason: "budget-newlines",
+      rearmWhen: "newline-change",
+      debugNotes: ["newline budget exceeded"],
+    };
+  }
+  if (candidate.isSelfClosing || hasExplicitClosingTag(request.raw, candidate.tagName)) {
+    return {
+      providerId: "html-inline-provider",
+      surface: "html-inline",
+      decision: "accept-as-is",
+      safety: "safe",
+      ops: [],
+      debugNotes: ["html tag already complete"],
+    };
+  }
+  return {
+    providerId: "html-inline-provider",
+    surface: "html-inline",
+    decision: "repair",
+    safety: "guarded",
+    ops: [{ kind: "close-tag", tagName: candidate.tagName }],
+    debugNotes: ["tail-local inline html auto-close"],
+  };
+}
+
+function planMdxTag(request: LookaheadRequest, allowComponents?: Iterable<string>): SurfacePlan {
+  const candidate = parseTagCandidate(request.raw);
+  if (!candidate || candidate.kind !== "mdx" || candidate.openEnd === -1) {
+    return {
+      providerId: "mdx-tag-provider",
+      surface: "mdx-tag",
+      decision: "surface-fallback",
+      safety: "safe",
+      ops: [],
+      downgradeReason: "not a valid mdx-tag candidate",
+      debugNotes: ["mdx tag candidate parse failed"],
+    };
+  }
+  const allowlist = normalizeStringAllowlist(allowComponents);
+  if (!allowlist.has(candidate.tagName)) {
+    return {
+      providerId: "mdx-tag-provider",
+      surface: "mdx-tag",
+      decision: "terminate",
+      safety: "safe",
+      ops: [],
+      terminationReason: "unsupported-syntax",
+      rearmWhen: "new-delimiter",
+      debugNotes: ["component not allowlisted"],
+    };
+  }
+  const tail = request.raw.slice(candidate.openEnd);
+  if (countNewlines(tail) > request.budgets.maxNewlines) {
+    return {
+      providerId: "mdx-tag-provider",
+      surface: "mdx-tag",
+      decision: "terminate",
+      safety: "guarded",
+      ops: [],
+      terminationReason: "budget-newlines",
+      rearmWhen: "newline-change",
+      debugNotes: ["newline budget exceeded"],
+    };
+  }
+  if (hasExplicitClosingTag(request.raw, candidate.tagName) || candidate.isSelfClosing) {
+    return {
+      providerId: "mdx-tag-provider",
+      surface: "mdx-tag",
+      decision: "accept-as-is",
+      safety: "safe",
+      ops: [],
+      debugNotes: ["mdx tag already complete"],
+    };
+  }
+  if (tail.includes("{")) {
+    return {
+      providerId: "mdx-tag-provider",
+      surface: "mdx-tag",
+      decision: "terminate",
+      safety: "guarded",
+      ops: [],
+      terminationReason: "unsafe-repair-required",
+      rearmWhen: "next-byte",
+      debugNotes: ["mixed mdx tag and expression ambiguity"],
+    };
+  }
+  return {
+    providerId: "mdx-tag-provider",
+    surface: "mdx-tag",
+    decision: "repair",
+    safety: "guarded",
+    ops: [{ kind: "self-close-tag" }],
+    debugNotes: ["self-close bounded mdx tag opener"],
   };
 }
 
@@ -464,7 +718,7 @@ function applyRepairOps(raw: string, ops: readonly LookaheadRepairOp[]): string 
         value += `</${op.tagName}>`;
         break;
       case "self-close-tag":
-        value += " />";
+        value = value.endsWith(">") ? `${value.slice(0, -1)}/>` : `${value} />`;
         break;
       default:
         break;
@@ -488,7 +742,7 @@ function renderAppendedSuffix(ops: readonly LookaheadRepairOp[]): string {
         appended += `</${op.tagName}>`;
         break;
       case "self-close-tag":
-        appended += " />";
+        appended += "/>";
         break;
       case "trim-tail":
         break;
@@ -497,4 +751,164 @@ function renderAppendedSuffix(ops: readonly LookaheadRepairOp[]): string {
     }
   }
   return appended;
+}
+
+function classifyMathRepair(
+  raw: string,
+  mode: "inline" | "display",
+): { kind: "repair"; ops: LookaheadRepairOp[]; notes: string[] } | { kind: "unsupported"; reason: string; notes: string[] } {
+  if (/\\left\b|\\right\b/.test(raw)) {
+    return { kind: "unsupported", reason: "left-right math repair is deferred", notes: ["unsupported \\left/\\right pair"] };
+  }
+  if (/\\begin\{/.test(raw)) {
+    return { kind: "unsupported", reason: "math environments are deferred", notes: ["unsupported math environment"] };
+  }
+  if (/\\[A-Za-z]+\[[^\]]*$/.test(raw)) {
+    return { kind: "unsupported", reason: "optional argument math repair is deferred", notes: ["unsupported optional-argument ambiguity"] };
+  }
+  return { kind: "repair", ops: buildMathRepairOps(raw, mode), notes: mathRepairDebugNotes(raw, mode) };
+}
+
+function buildMathRepairOps(raw: string, mode: "inline" | "display"): LookaheadRepairOp[] {
+  const ops: LookaheadRepairOp[] = [];
+  const trailingControlWord = raw.match(/\\[A-Za-z]+$/);
+  if (trailingControlWord) {
+    const controlWord = trailingControlWord[0];
+    if (!isAllowlistedCompleteControlWord(controlWord)) {
+      ops.push({ kind: "trim-tail", count: controlWord.length });
+    }
+  }
+
+  const danglingOperator = raw.match(/(?:\^|_)$/);
+  if (danglingOperator) {
+    ops.push({ kind: "insert-empty-group" });
+  }
+
+  const missingFracGroups = countMissingRequiredGroups(raw, "\\frac", 2);
+  for (let i = 0; i < missingFracGroups; i += 1) {
+    ops.push({ kind: "insert-empty-group" });
+  }
+  const missingSqrtGroups = countMissingRequiredGroups(raw, "\\sqrt", 1);
+  for (let i = 0; i < missingSqrtGroups; i += 1) {
+    ops.push({ kind: "insert-empty-group" });
+  }
+
+  const balance = scanDelimiterBalance(raw);
+  for (let i = 0; i < balance.openParens; i += 1) ops.push({ kind: "append", text: ")" });
+  for (let i = 0; i < balance.openBrackets; i += 1) ops.push({ kind: "append", text: "]" });
+  for (let i = 0; i < balance.openBraces; i += 1) ops.push({ kind: "append", text: "}" });
+  if (mode === "display" && /[\r\n]/.test(raw) && !(raw.endsWith("\n") || raw.endsWith("\r"))) {
+    ops.push({ kind: "append", text: "\n" });
+  }
+  ops.push(mode === "display" ? { kind: "close-delimiter", text: "$$" } : { kind: "close-delimiter", text: "$" });
+  return ops;
+}
+
+function mathRepairDebugNotes(raw: string, mode: "inline" | "display"): string[] {
+  const notes: string[] = [];
+  if (/\\[A-Za-z]+$/.test(raw)) notes.push("trim trailing control-word fragment");
+  if (/(?:\^|_)$/.test(raw)) notes.push("insert empty group for dangling script operator");
+  if (countMissingRequiredGroups(raw, "\\frac", 2) > 0) notes.push("fill missing \\frac groups");
+  if (countMissingRequiredGroups(raw, "\\sqrt", 1) > 0) notes.push("fill missing \\sqrt group");
+  const balance = scanDelimiterBalance(raw);
+  if (balance.openParens || balance.openBrackets || balance.openBraces) notes.push("close unmatched tail delimiters");
+  notes.push(mode === "display" ? "close display math delimiter" : "close inline math delimiter");
+  return notes;
+}
+
+function countMissingRequiredGroups(raw: string, command: string, requiredGroups: number): number {
+  if (!raw.includes(command)) return 0;
+  const lastIndex = raw.lastIndexOf(command);
+  if (lastIndex === -1) return 0;
+  const suffix = raw.slice(lastIndex + command.length);
+  let groups = 0;
+  for (let i = 0; i < suffix.length; i += 1) {
+    if (suffix[i] === "{") groups += 1;
+  }
+  return Math.max(0, requiredGroups - groups);
+}
+
+function scanDelimiterBalance(raw: string): { openBraces: number; openBrackets: number; openParens: number } {
+  let openBraces = 0;
+  let openBrackets = 0;
+  let openParens = 0;
+  for (let i = 0; i < raw.length; i += 1) {
+    const char = raw[i];
+    if (char === "\\") {
+      i += 1;
+      continue;
+    }
+    if (char === "{") openBraces += 1;
+    else if (char === "}") openBraces = Math.max(0, openBraces - 1);
+    else if (char === "[") openBrackets += 1;
+    else if (char === "]") openBrackets = Math.max(0, openBrackets - 1);
+    else if (char === "(") openParens += 1;
+    else if (char === ")") openParens = Math.max(0, openParens - 1);
+  }
+  return { openBraces, openBrackets, openParens };
+}
+
+function isAllowlistedCompleteControlWord(controlWord: string): boolean {
+  return (
+    controlWord === "\\frac" ||
+    controlWord === "\\sqrt" ||
+    controlWord === "\\sum" ||
+    controlWord === "\\prod" ||
+    controlWord === "\\int"
+  );
+}
+
+type TagCandidate =
+  | { kind: "html" | "mdx"; tagName: string; tagNameLower: string; openEnd: number; isSelfClosing: boolean }
+  | null;
+
+function parseTagCandidate(raw: string): TagCandidate {
+  const match = raw.match(/^<([A-Za-z][\w:-]*)([^<>]*?)\/?>/);
+  if (!match) return null;
+  const tagName = match[1] ?? "";
+  const openEnd = match[0]?.length ?? -1;
+  return {
+    kind: isLikelyMdxComponent(tagName) ? "mdx" : "html",
+    tagName,
+    tagNameLower: tagName.toLowerCase(),
+    openEnd,
+    isSelfClosing: match[0].endsWith("/>"),
+  };
+}
+
+function hasExplicitClosingTag(raw: string, tagName: string): boolean {
+  return new RegExp(`</\\s*${escapeRegExp(tagName)}\\s*>`, "i").test(raw);
+}
+
+function normalizeStringAllowlist(value?: Iterable<string>): Set<string> {
+  const set = new Set<string>();
+  if (!value) return set;
+  for (const entry of value) {
+    if (entry) set.add(entry);
+    if (entry) set.add(entry.toLowerCase());
+  }
+  return set;
+}
+
+function isLikelyBlockTag(tagNameLower: string): boolean {
+  return new Set(["div", "section", "article", "aside", "header", "footer", "main", "nav", "p", "ul", "ol", "li", "table"]).has(
+    tagNameLower,
+  );
+}
+
+function countNewlines(value: string): number {
+  let count = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    if (value.charCodeAt(i) === 10) count += 1;
+  }
+  return count;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function isLikelyMdxComponent(tagName: string): boolean {
+  const first = tagName.charAt(0);
+  return first.toUpperCase() === first && first.toLowerCase() !== first;
 }

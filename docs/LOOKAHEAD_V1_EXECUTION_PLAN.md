@@ -365,7 +365,10 @@ Current status:
   - `inlineLookaheadInvalidated`
 - list and blockquote inline preparation now uses the same core prepare path with normalized context
 - targeted nested tests and nested regression fixtures are in place and passing
-- this phase is materially underway but not yet complete; HTML/MDX/math surfaces still need the same context discipline
+- normalized container signatures now cover paragraph, heading, blockquote, list, and nested list inline preparation paths
+- invalidation metadata is emitted when local text fields or container signatures change
+- sibling-isolation and nested-context tests are in place and green
+- this phase is effectively complete for the current inline, regex, HTML-inline, and MDX-tag surfaces
 
 ## Phase 3. HTML / MDX providers
 
@@ -384,6 +387,16 @@ Definition of done:
 - HTML/MDX anticipation decisions show up in traces as provider decisions, not hidden segmentation behavior
 - adversarial no-swallow fixtures pass
 - no block-level open tag/component can consume unrelated following content
+
+Current status:
+- mixed-content extraction now localizes/classifies and surfaces provider decisions instead of owning repair policy directly
+- `html-inline` allowlist provider behavior is live for bounded local inline tags
+- `mdx-tag` allowlist provider behavior is live for bounded local inline component tags
+- browser/regression coverage is green for:
+  - `block-html-no-swallow.md`
+  - `mdx-tag-allowlist-inline.mdx`
+  - `mdx-tag-no-swallow-negative.mdx`
+- `mdx-expression` remains intentionally deferred beyond explicit hard-stop / fallback behavior
 
 ## Phase 4. Math V1 bounded repair
 
@@ -420,6 +433,23 @@ Definition of done:
 - supported math cases stream incrementally without red KaTeX error UI
 - unsupported cases terminate and downgrade cleanly
 - final parse converges with non-stream parse
+
+Current status:
+- a math tail scanner/classifier is now live in the core prepare path
+- the bounded V1 subset is implemented for:
+  - trailing control-word trim
+  - dangling `^` / `_` repair
+  - `\\frac` empty-group repair
+  - `\\sqrt` empty-group repair
+  - tail-local unmatched group closure
+- unsupported math cases explicitly hard-stop and fall back for:
+  - `\\left`
+  - `\\right`
+  - `\\begin{...}`
+  - optional-argument ambiguity
+- unit coverage is green for the bounded subset and hard-stop behavior
+- `nested-math-inline.md` remains green in browser regression HTML coverage
+- `math-hard-stop-negative.md` is currently trace-backed and unit-backed, but not promoted into browser regression HTML coverage yet
 
 ## Phase 5. Adversarial hardening
 
@@ -499,6 +529,10 @@ Provokes:
 - `\\begin{align}`
 - optional argument ambiguity
 
+Current status:
+- implemented as a targeted trace/unit fixture
+- intentionally not promoted into browser regression HTML coverage yet
+
 ### 7. `kitchen-sink-lookahead.mdx`
 Provokes:
 - integrated stress case
@@ -525,6 +559,7 @@ Current implementation note:
   - `steps/telemetry-XXXX.json`
   - `diffs/step-XXXX.json`
 - the artifact shape is already useful for Phase 0 and Phase 1 work even though the full aspirational layout is not populated yet
+- HTML / MDX mixed lookahead decisions now appear in step artifacts under `mixedLookahead`
 
 Console output should only surface:
 - first provider switch

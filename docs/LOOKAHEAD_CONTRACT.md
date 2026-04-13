@@ -168,19 +168,20 @@ Deferred:
 
 Allowed in V1:
 - allowlisted inline tag auto-close
+- bounded self-close repair for local unclosed inline tags
 
 Default:
-- block HTML anticipation is conservative and usually falls back
+- block HTML anticipation is conservative and falls back to text / surface fallback on ambiguity
 
 ### MDX
 
 Allowed in V1:
-- allowlisted tag/component closure in bounded local cases
-- optional brace-only trivial expression mode
+- allowlisted tag/component closure in bounded local inline cases
+- bounded self-close repair for local unclosed inline component tags
 
 Deferred:
-- ambitious MDX expression repair
-- broad block-component capture behavior
+- MDX expression repair beyond explicit hard-stop / fallback
+- ambitious block-component capture behavior
 
 ## Trace requirements
 
@@ -207,6 +208,14 @@ Current landed pieces:
 - a core prepare path in `packages/markdown-v2-core/src/streaming/inline-streaming.ts`
 - worker metadata plumbing for `inlineLookahead`, `inlineContainerSignature`, and invalidation hints
 - trace artifacts emitted by `scripts/analyze-test-snippets.ts`
+- bounded `html-inline` provider behavior routed through the same prepare path
+- bounded `mdx-tag` provider behavior routed through mixed-content extraction and worker metadata
+- bounded Math V1 subset for:
+  - trailing control-word trim
+  - dangling `^` / `_` empty-group repair
+  - `\\frac` and `\\sqrt` empty missing-group repair
+  - tail-local unmatched group closure
+  - explicit hard-stop / fallback for unsupported cases such as `\\left` and `\\begin{...}`
 
 Current trace artifacts include:
 - provider id
@@ -216,10 +225,11 @@ Current trace artifacts include:
 - termination reason and `rearmWhen` when termination occurs
 - container signature
 - rendered HTML and block summary per step
+- mixed-content lookahead decisions for HTML / MDX provider runs
 
 Current limitations:
-- only `inline-format` and `regex` have contract-shaped runtime paths
-- HTML, MDX, and Math V1 providers are not implemented yet
+- `mdx-expression` remains deferred and intentionally conservative
+- Math V1 is only partially browser-backed; the hard-stop negative math fixture is currently trace/unit-backed rather than promoted into browser regression HTML coverage
 - the trace workflow is canonicalized around an exported docs build plus a static server, not `next dev`
 
 ## Current no-fake-progress rule

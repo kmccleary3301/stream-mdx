@@ -1,6 +1,6 @@
 import assert from "node:assert";
 
-import { createContainerSignature, prepareInlineStreamingLookahead } from "../src/streaming/inline-streaming";
+import { createContainerSignature, prepareInlineStreamingLookahead, prepareSurfaceLookahead } from "../src/streaming/inline-streaming";
 
 function testInlineProviderRepairPlan() {
   const result = prepareInlineStreamingLookahead("*hello", {
@@ -84,8 +84,70 @@ function testContainerSignatureShape() {
   );
 }
 
+function testHtmlInlineAllowlistRepairPlan() {
+  const result = prepareSurfaceLookahead("html-inline", "<kbd>code", {
+    allowTags: ["kbd"],
+    maxNewlines: 2,
+    context: {
+      blockType: "paragraph",
+      ancestorTypes: [],
+      containerSignature: createContainerSignature({
+        blockType: "paragraph",
+        ancestorTypes: [],
+        segmentOrigin: "mixed-content",
+        mixedSegmentKind: "html",
+        localTextField: "paragraph-inline",
+      }),
+    },
+  });
+
+  assert.strictEqual(result.prepared.kind, "parse");
+  assert.strictEqual(result.prepared.content, "<kbd>code</kbd>");
+  assert.strictEqual(result.trace[0]?.providerId, "html-inline-provider");
+  assert.strictEqual(result.trace[0]?.decision, "repair");
+}
+
+function testMdxTagAllowlistRepairPlan() {
+  const result = prepareSurfaceLookahead("mdx-tag", "<InlineChip tone=\"warm\">", {
+    allowComponents: ["InlineChip"],
+    maxNewlines: 2,
+    context: {
+      blockType: "paragraph",
+      ancestorTypes: [],
+      containerSignature: createContainerSignature({
+        blockType: "paragraph",
+        ancestorTypes: [],
+        segmentOrigin: "mixed-content",
+        mixedSegmentKind: "mdx",
+        insideMdx: true,
+        localTextField: "paragraph-inline",
+      }),
+    },
+  });
+
+  assert.strictEqual(result.prepared.kind, "parse");
+  assert.strictEqual(result.prepared.content, "<InlineChip tone=\"warm\"/>");
+  assert.strictEqual(result.trace[0]?.providerId, "mdx-tag-provider");
+  assert.strictEqual(result.trace[0]?.decision, "repair");
+}
+
+function testMdxTagProviderTerminatesOnAmbiguousExpressionTail() {
+  const result = prepareSurfaceLookahead("mdx-tag", "<InlineChip>{expr", {
+    allowComponents: ["InlineChip"],
+    maxNewlines: 2,
+  });
+
+  assert.strictEqual(result.prepared.kind, "raw");
+  assert.strictEqual(result.trace[0]?.providerId, "mdx-tag-provider");
+  assert.strictEqual(result.trace[0]?.decision, "terminate");
+  assert.strictEqual(result.trace[0]?.termination?.reason, "unsafe-repair-required");
+}
+
 testInlineProviderRepairPlan();
 testRegexProviderRepairPlan();
 testProviderDoesNotInventRegexRepairWithoutMatch();
 testContainerSignatureShape();
+testHtmlInlineAllowlistRepairPlan();
+testMdxTagAllowlistRepairPlan();
+testMdxTagProviderTerminatesOnAmbiguousExpressionTail();
 console.log("lookahead orchestrator tests passed");

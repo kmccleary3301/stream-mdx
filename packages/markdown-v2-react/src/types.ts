@@ -56,6 +56,7 @@ export interface BlockComponents {
     status?: "pending" | "compiled" | "error";
     errorMessage?: string;
     raw?: string;
+    meta?: Record<string, unknown>;
   }>;
   hr: React.FC<React.HTMLAttributes<HTMLHRElement>>;
   table: React.FC<{ header?: InlineNode[][]; rows: InlineNode[][][]; align?: Array<"left" | "center" | "right" | null>; elements?: Partial<TableElements> }>;

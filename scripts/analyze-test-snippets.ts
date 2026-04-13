@@ -347,6 +347,7 @@ type RuntimeStateSnapshot = {
     rawLength: number;
     inlineStatus?: unknown;
     inlineLookahead?: LookaheadTraceStep["blocks"][number]["inlineLookahead"];
+    mixedLookahead?: LookaheadTraceStep["blocks"][number]["mixedLookahead"];
     mixedSegmentKinds?: string[];
   }>;
 };
@@ -764,9 +765,8 @@ function isSkipped(fileName: string): boolean {
 
 async function listSnippets(): Promise<string[]> {
   const files = await fs.readdir(SNIPPETS_DIR);
-  // Skip MDX snippets for now as they're expected to fail
   return files
-    .filter((f) => f.endsWith(".md"))
+    .filter((f) => f.endsWith(".md") || f.endsWith(".mdx"))
     .filter((f) => matchesFilter(f) && !isSkipped(f))
     .sort();
 }
@@ -791,6 +791,7 @@ async function captureRuntimeState(page: Page): Promise<RuntimeStateSnapshot> {
                 ? block.payload.meta.inlineLookaheadInvalidated
                 : undefined,
             inlineLookahead: Array.isArray(block?.payload?.meta?.inlineLookahead) ? block.payload.meta.inlineLookahead : [],
+            mixedLookahead: Array.isArray(block?.payload?.meta?.mixedLookahead) ? block.payload.meta.mixedLookahead : [],
             mixedSegmentKinds: Array.isArray(block?.payload?.meta?.mixedSegments)
               ? block.payload.meta.mixedSegments
                   .map((segment: any) => (segment && typeof segment.kind === "string" ? segment.kind : null))
@@ -1152,7 +1153,7 @@ function summarizeLookaheadDecisions(steps: LookaheadTraceStep[]) {
 
   for (const step of steps) {
     for (const block of step.blocks ?? []) {
-      for (const decision of block.inlineLookahead ?? []) {
+      for (const decision of [...(block.inlineLookahead ?? []), ...(block.mixedLookahead ?? [])]) {
         providerCounts[decision.providerId] = (providerCounts[decision.providerId] ?? 0) + 1;
         if (decision.termination?.reason) {
           terminationCounts[decision.termination.reason] = (terminationCounts[decision.termination.reason] ?? 0) + 1;
@@ -1175,7 +1176,7 @@ function buildStepDecisionSummary(step: LookaheadTraceStep): NonNullable<Lookahe
   let totalDecisions = 0;
 
   for (const block of step.blocks ?? []) {
-    const decisions = block.inlineLookahead ?? [];
+    const decisions = [...(block.inlineLookahead ?? []), ...(block.mixedLookahead ?? [])];
     if (decisions.length === 0) {
       blocksWithNoDecision.push(block.id);
       continue;
@@ -1213,8 +1214,8 @@ function buildStepDiff(previous: LookaheadTraceStep | null, current: LookaheadTr
       changedBlockIds.push(block.id);
       if (firstDecisionChangeBlockId === null) {
         const previousBlock = (previous?.blocks ?? []).find((candidate) => candidate.id === block.id);
-        const beforeDecisions = JSON.stringify(previousBlock?.inlineLookahead ?? []);
-        const afterDecisions = JSON.stringify(block.inlineLookahead ?? []);
+        const beforeDecisions = JSON.stringify([...(previousBlock?.inlineLookahead ?? []), ...(previousBlock?.mixedLookahead ?? [])]);
+        const afterDecisions = JSON.stringify([...(block.inlineLookahead ?? []), ...(block.mixedLookahead ?? [])]);
         if (beforeDecisions !== afterDecisions) {
           firstDecisionChangeBlockId = block.id;
         }
@@ -1755,7 +1756,9 @@ async function main() {
     }
     const resolvedSnippet = snippets.includes(snippetName)
       ? snippetName
-      : snippets.find((candidate) => candidate === `${snippetName}.md`) ?? snippetName;
+      : snippets.find((candidate) => candidate === `${snippetName}.md`) ??
+        snippets.find((candidate) => candidate === `${snippetName}.mdx`) ??
+        snippetName;
     if (!snippets.includes(resolvedSnippet)) {
       throw new Error(`[analyze] Requested trace snippet not found: ${snippetName}`);
     }

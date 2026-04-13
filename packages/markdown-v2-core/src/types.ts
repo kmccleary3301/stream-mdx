@@ -35,6 +35,7 @@ export interface MixedContentSegment {
   sanitized?: string;
   status?: "pending" | "compiled" | "error";
   error?: string;
+  lookahead?: unknown[];
 }
 
 export type FormatAnticipationConfig =

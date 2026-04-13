@@ -3,6 +3,7 @@ export type RegressionFixture = {
   title: string;
   file: string;
   tags?: string[];
+  waitForMdxCompiled?: boolean;
   requiredSelectors?: string[];
   requiredTextFragments?: string[];
   expectTableByPct?: number;
@@ -246,6 +247,35 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
     file: "inline-html-allowlist.md",
     tags: ["anticipation", "html", "inline"],
     requiredSelectors: ["kbd", "sup", "sub", "span", "a", "code"],
+  },
+  {
+    id: "block-html-no-swallow",
+    title: "Block HTML No Swallow",
+    file: "block-html-no-swallow.md",
+    tags: ["anticipation", "html", "negative"],
+    requiredSelectors: ["ul"],
+  },
+  {
+    id: "mdx-tag-allowlist-inline",
+    title: "MDX Tag Allowlist Inline",
+    file: "mdx-tag-allowlist-inline.mdx",
+    tags: ["anticipation", "mdx", "inline"],
+    waitForMdxCompiled: false,
+    requiredSelectors: [".markdown-mdx-inline", "ul", "blockquote"],
+    requiredTextFragments: ["Prefix text with", "trailing prose that must remain visible", "Final paragraph after the inline MDX tags."],
+  },
+  {
+    id: "mdx-tag-no-swallow-negative",
+    title: "MDX Tag No Swallow Negative",
+    file: "mdx-tag-no-swallow-negative.mdx",
+    tags: ["anticipation", "mdx", "negative"],
+    waitForMdxCompiled: false,
+    requiredSelectors: [],
+    requiredTextFragments: [
+      "Prefix text with",
+      "trailing prose that must stay visible",
+      "This following paragraph must remain outside any speculative MDX repair.",
+    ],
   },
   {
     id: "delimiter-boundary",

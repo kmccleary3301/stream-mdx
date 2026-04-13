@@ -31,6 +31,11 @@ function runMixedContentAutoCloseTest(): void {
   const mdxSegment = segments3.find((segment) => segment.kind === "mdx");
   assert.ok(mdxSegment, "expected mdx segment with autoclose");
   assert.ok(mdxSegment?.value.includes("/>"), "expected mdx tag to self-close");
+  assert.strictEqual(mdxSegment?.value, '<MyComp prop="x"/>', "expected mdx repair to stay local to the opening tag");
+  assert.ok(
+    segments3.some((segment) => segment.kind === "text" && segment.value.includes(" world")),
+    "expected trailing mdx-adjacent text to remain a text segment",
+  );
 
   const mdxInputClosed = "Hello <MyComp prop=\"x\">world</MyComp> end";
   const segmentsClosed = extractMixedContentSegments(mdxInputClosed, 0, parseInline, {

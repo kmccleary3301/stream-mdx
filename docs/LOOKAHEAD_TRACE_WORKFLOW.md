@@ -64,6 +64,28 @@ SNIPPET_TEST_URL=http://127.0.0.1:3002/regression/snippet-test/ \
   --trace-max-steps 5
 ```
 
+MDX char-mode trace:
+
+```bash
+SNIPPET_TEST_URL=http://127.0.0.1:3002/regression/snippet-test/ \
+  npx tsx scripts/analyze-test-snippets.ts \
+  --trace-lookahead \
+  --trace-snippet mdx-tag-allowlist-inline.mdx \
+  --trace-mode char \
+  --trace-max-steps 8
+```
+
+Math hard-stop char-mode trace:
+
+```bash
+SNIPPET_TEST_URL=http://127.0.0.1:3002/regression/snippet-test/ \
+  npx tsx scripts/analyze-test-snippets.ts \
+  --trace-lookahead \
+  --trace-snippet math-hard-stop-negative.md \
+  --trace-mode char \
+  --trace-max-steps 8
+```
+
 ## Output directory
 
 Trace bundles are written under:
@@ -92,6 +114,7 @@ Key fields in the step artifacts:
 - rendered HTML
 - block summary
 - `inlineLookahead`
+- `mixedLookahead`
 - `inlineContainerSignature`
 - `inlineLookaheadInvalidated`
 
@@ -108,7 +131,8 @@ Key fields in the summary artifact:
 - The docs build must be produced with `NEXT_PUBLIC_STREAMING_DEMO_API=true`
 - The exported site must be served from `apps/docs/out`
 - `next dev` is not the canonical trace path for this tranche
-- HTML, MDX, and Math V1 providers are not implemented yet, so current provider traces are mainly `inline-format` and `regex`
+- HTML / MDX provider traces are now live and show up under `mixedLookahead`
+- Math V1 traces are live for the bounded subset and hard-stop cases, but the hard-stop negative fixture is currently trace/unit-backed rather than browser-regression-backed
 
 ## Current no-fake-progress rule
 

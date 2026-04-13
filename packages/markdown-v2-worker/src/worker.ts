@@ -49,7 +49,7 @@ import {
   createBlockSnapshot,
   detectMDX,
   extractCodeLines,
-  extractMixedContentSegments,
+  extractMixedContentSegmentsWithLookahead,
   generateBlockId,
   normalizeLang,
   normalizeBlockquoteText,
@@ -1479,17 +1479,27 @@ async function enrichBlock(block: Block) {
         block.isFinalized
           ? (value: string) => inlineParser.parse(value)
           : (value: string) => parseInlineStreaming(value, { blockType: "blockquote", blockquoteDepth: 1, provisional: true }).inline;
-      const mixedOptions =
-        !block.isFinalized && shouldAllowMixedStreaming()
-          ? {
-              html: formatAnticipationConfig.html ? { autoClose: true, maxNewlines: MIXED_CONTENT_AUTOCLOSE_NEWLINES } : undefined,
-              mdx: formatAnticipationConfig.mdx
-                ? { autoClose: true, maxNewlines: MIXED_CONTENT_AUTOCLOSE_NEWLINES, componentAllowlist: mdxComponentAllowlist ?? undefined }
-                : undefined,
-            }
-          : undefined;
-      const segments = extractMixedContentSegments(normalized, undefined, inlineParse, mixedOptions);
-      const hasStructuredSegments = segments.some((segment) => segment.kind !== "text");
+      const mixedOptions = shouldAllowMixedStreaming()
+        ? {
+            html: formatAnticipationConfig.html ? { autoClose: true, maxNewlines: MIXED_CONTENT_AUTOCLOSE_NEWLINES } : undefined,
+            mdx: formatAnticipationConfig.mdx
+              ? { autoClose: true, maxNewlines: MIXED_CONTENT_AUTOCLOSE_NEWLINES, componentAllowlist: mdxComponentAllowlist ?? undefined }
+              : undefined,
+          }
+        : undefined;
+        const mixedExtraction = extractMixedContentSegmentsWithLookahead(normalized, undefined, inlineParse, {
+          ...mixedOptions,
+          lookaheadContext: {
+            blockType: "blockquote",
+            blockquoteDepth: 1,
+            provisional: !block.isFinalized,
+            segmentOrigin: "mixed-content",
+            mixedSegmentKind: "text",
+            localTextField: "blockquote-inline",
+          },
+        });
+        const segments = mixedExtraction.segments;
+        const hasStructuredSegments = segments.some((segment) => segment.kind !== "text");
       const currentMeta = (block.payload.meta ?? {}) as Record<string, unknown>;
       const nextMeta: Record<string, unknown> = {
         ...currentMeta,
@@ -1497,8 +1507,10 @@ async function enrichBlock(block: Block) {
       };
       if (hasStructuredSegments) {
         nextMeta.mixedSegments = segments;
+        nextMeta.mixedLookahead = mixedExtraction.lookahead.length > 0 ? mixedExtraction.lookahead : undefined;
       } else {
         nextMeta.mixedSegments = undefined;
+        nextMeta.mixedLookahead = undefined;
       }
       if (shouldTrackInlineStatus()) {
         nextMeta.inlineStatus = block.isFinalized ? undefined : streamingParsed?.status;
@@ -1594,15 +1606,14 @@ async function enrichBlock(block: Block) {
 
       const shouldExtractSegments = typeof rawParagraph === "string" && (rawParagraph.includes("<") || rawParagraph.includes("{"));
       if (shouldExtractSegments) {
-        const mixedOptions =
-          !block.isFinalized && shouldAllowMixedStreaming()
-            ? {
-                html: formatAnticipationConfig.html ? { autoClose: true, maxNewlines: MIXED_CONTENT_AUTOCLOSE_NEWLINES } : undefined,
-                mdx: formatAnticipationConfig.mdx
-                  ? { autoClose: true, maxNewlines: MIXED_CONTENT_AUTOCLOSE_NEWLINES, componentAllowlist: mdxComponentAllowlist ?? undefined }
-                  : undefined,
-              }
-            : undefined;
+        const mixedOptions = shouldAllowMixedStreaming()
+          ? {
+              html: formatAnticipationConfig.html ? { autoClose: true, maxNewlines: MIXED_CONTENT_AUTOCLOSE_NEWLINES } : undefined,
+              mdx: formatAnticipationConfig.mdx
+                ? { autoClose: true, maxNewlines: MIXED_CONTENT_AUTOCLOSE_NEWLINES, componentAllowlist: mdxComponentAllowlist ?? undefined }
+                : undefined,
+            }
+          : undefined;
         const protectedRangesAbsolute =
           typeof baseOffset === "number" && protectedRanges.length > 0
             ? protectedRanges.map((range) => ({
@@ -1618,7 +1629,17 @@ async function enrichBlock(block: Block) {
                 protectedRanges: protectedRangesAbsolute,
               }
             : undefined;
-        const segments = extractMixedContentSegments(rawParagraph, baseOffset, (value) => inlineParse(value), mixedSegmentOptions);
+        const mixedExtraction = extractMixedContentSegmentsWithLookahead(rawParagraph, baseOffset, (value) => inlineParse(value), {
+          ...mixedSegmentOptions,
+          lookaheadContext: {
+            blockType: "paragraph",
+            provisional: !block.isFinalized,
+            segmentOrigin: "mixed-content",
+            mixedSegmentKind: "text",
+            localTextField: "paragraph-inline",
+          },
+        });
+        const segments = mixedExtraction.segments;
         const hasStructuredSegments = segments.some((segment) => segment.kind !== "text");
         const htmlRanges = collectHtmlProtectedRangesFromSegments(segments, baseOffset);
         if (htmlRanges.length > 0) {
@@ -1626,6 +1647,7 @@ async function enrichBlock(block: Block) {
         }
         if (hasStructuredSegments) {
           nextMeta.mixedSegments = segments;
+          nextMeta.mixedLookahead = mixedExtraction.lookahead.length > 0 ? mixedExtraction.lookahead : undefined;
           metaChanged = true;
           if (allowMixedStreaming) {
             nextMeta.allowMixedStreaming = true;
@@ -1636,6 +1658,7 @@ async function enrichBlock(block: Block) {
           }
         } else if (Object.prototype.hasOwnProperty.call(nextMeta, "mixedSegments")) {
           nextMeta.mixedSegments = undefined;
+          nextMeta.mixedLookahead = undefined;
           metaChanged = true;
           if (Object.prototype.hasOwnProperty.call(nextMeta, "allowMixedStreaming")) {
             nextMeta.allowMixedStreaming = undefined;
@@ -1644,6 +1667,7 @@ async function enrichBlock(block: Block) {
         }
       } else if (Object.prototype.hasOwnProperty.call(nextMeta, "mixedSegments")) {
         nextMeta.mixedSegments = undefined;
+        nextMeta.mixedLookahead = undefined;
         metaChanged = true;
         if (Object.prototype.hasOwnProperty.call(nextMeta, "allowMixedStreaming")) {
           nextMeta.allowMixedStreaming = undefined;
@@ -1677,6 +1701,16 @@ async function enrichBlock(block: Block) {
 
     case "html": {
       const rawHtml = typeof block.payload.raw === "string" ? block.payload.raw : "";
+      if (!block.isFinalized && looksLikeUnclosedStreamingHtmlBlock(rawHtml)) {
+        block.type = "paragraph";
+        block.payload.inline = parseInlineStreaming(rawHtml, { blockType: "paragraph", provisional: true }).inline;
+        block.payload.sanitizedHtml = undefined;
+        block.payload.meta = {
+          ...(block.payload.meta || {}),
+          htmlDowngradedToText: true,
+        };
+        break;
+      }
       const sanitized = sanitizeHtmlInWorker(rawHtml);
       block.payload.sanitizedHtml = sanitized;
       const nextMeta = { ...(block.payload.meta || {}), sanitized: true };
@@ -1709,12 +1743,16 @@ async function enrichBlock(block: Block) {
     const mdxOptions =
       normalizedRanges && normalizedRanges.length > 0 ? { protectedRanges: normalizedRanges, baseOffset } : baseOffset ? { baseOffset } : undefined;
     const mdxDetectStart = now();
-    let shouldConvertToMDX = detectMDX(block.payload.raw, mdxOptions);
+    const deferInlineMdx = block.type === "paragraph" && shouldDeferInlineMdxDetection(block.payload.raw, maybeMeta);
+    let shouldConvertToMDX = deferInlineMdx ? false : detectMDX(block.payload.raw, mdxOptions);
     if (!shouldConvertToMDX && block.type === "html") {
       const fallbackOptions = baseOffset ? { baseOffset } : undefined;
       shouldConvertToMDX = detectMDX(block.payload.raw, fallbackOptions);
     }
     metrics?.recordMdxDetect(now() - mdxDetectStart);
+    if (block.type === "paragraph" && shouldKeepParagraphAsMixedMdx(block.payload.raw, maybeMeta)) {
+      shouldConvertToMDX = false;
+    }
     if (shouldConvertToMDX && protectedRanges && protectedRanges.length > 0 && block.type !== "html") {
       const exprPattern = /\{[^{}]+\}/g;
       let match: RegExpExecArray | null;
@@ -1762,11 +1800,84 @@ async function enrichBlock(block: Block) {
     }
   }
 
+  if (block.type === "mdx") {
+    const maybeMeta = block.payload.meta as Record<string, unknown> | undefined;
+    const originalType = typeof maybeMeta?.originalType === "string" ? String(maybeMeta.originalType) : undefined;
+    if (originalType === "paragraph" && shouldKeepParagraphAsMixedMdx(block.payload.raw, maybeMeta)) {
+      const nextMeta = { ...(maybeMeta ?? {}) };
+      delete nextMeta.originalType;
+      delete nextMeta.mdxStatus;
+      delete nextMeta.mdxError;
+      delete block.payload.compiledMdxModule;
+      delete block.payload.compiledMdxRef;
+      block.type = "paragraph";
+      block.payload.meta = Object.keys(nextMeta).length > 0 ? nextMeta : undefined;
+    }
+  }
+
   await updateMdxCompilationState(block);
 
   const enrichDuration = performanceTimer.measure("enrich-block");
   metrics?.recordEnrich(enrichDuration);
   metrics?.recordBlockEnrich(block.type, enrichDuration);
+}
+
+function looksLikeUnclosedStreamingHtmlBlock(raw: string): boolean {
+  const trimmed = raw.trim();
+  if (!trimmed.startsWith("<")) return false;
+  if (/^<!--[\s\S]*-->$/.test(trimmed)) return false;
+  if (/^<\/?[A-Za-z][A-Za-z0-9-]*(?:\s+[^>]*)?\/>$/.test(trimmed)) return false;
+  if (/^<([A-Za-z][A-Za-z0-9-]*)(?:\s+[^>]*)?>[\s\S]*<\/\1>\s*$/m.test(trimmed)) return false;
+  return /^<[A-Za-z][A-Za-z0-9-]*(?:\s+[^>]*)?>/.test(trimmed);
+}
+
+function shouldDeferInlineMdxDetection(raw: string, meta: Record<string, unknown> | undefined): boolean {
+  if (shouldKeepParagraphAsMixedMdx(raw, meta)) {
+    return true;
+  }
+  const mixedLookahead = Array.isArray(meta?.mixedLookahead) ? (meta?.mixedLookahead as Array<Record<string, unknown>>) : [];
+  if (mixedLookahead.some((entry) => entry.providerId === "mdx-tag-provider")) {
+    return true;
+  }
+  const openingTag = raw.match(/<([A-Z][\w-]*)(\s|\/?>)/);
+  if (!openingTag) {
+    return false;
+  }
+  const tagName = openingTag[1] ?? "";
+  if (!tagName) {
+    return false;
+  }
+  if (new RegExp(`</\\s*${escapeRegExp(tagName)}\\s*>`).test(raw) || new RegExp(`<${escapeRegExp(tagName)}[^>]*\\/>`).test(raw)) {
+    return false;
+  }
+  return true;
+}
+
+function shouldKeepParagraphAsMixedMdx(raw: string, meta: Record<string, unknown> | undefined): boolean {
+  const mixedSegments = Array.isArray(meta?.mixedSegments) ? (meta?.mixedSegments as Array<Record<string, unknown>>) : [];
+  if (mixedSegments.some((segment) => segment.kind === "mdx")) {
+    return true;
+  }
+  const inlineOpenTag = raw.match(/<([A-Z][\w-]*)(\s|\/?>)/);
+  if (!inlineOpenTag) {
+    return false;
+  }
+  const tagName = inlineOpenTag[1] ?? "";
+  if (!tagName) {
+    return false;
+  }
+  const startsWithTag = raw.trimStart().startsWith(`<${tagName}`);
+  if (startsWithTag) {
+    return false;
+  }
+  if (new RegExp(`</\\s*${escapeRegExp(tagName)}\\s*>`).test(raw) || new RegExp(`<${escapeRegExp(tagName)}[^>]*\\/>`).test(raw)) {
+    return false;
+  }
+  return true;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function collectMathProtectedRanges(content: string): ProtectedRange[] {

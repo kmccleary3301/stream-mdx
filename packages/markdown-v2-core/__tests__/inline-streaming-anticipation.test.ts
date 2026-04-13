@@ -62,6 +62,30 @@ function testMathAnticipation() {
   assert.strictEqual(display.status, "anticipated");
   assert.strictEqual(display.appended, "$$");
   assert.strictEqual(display.content, "$$x$$");
+
+  const trimmedControlWord = prepareInlineStreamingContent("$x + \\gam", {
+    formatAnticipation: { mathInline: true },
+    math: true,
+  });
+  assert.strictEqual(trimmedControlWord.kind, "parse");
+  if (trimmedControlWord.kind !== "parse") throw new Error("expected parse result");
+  assert.strictEqual(trimmedControlWord.content, "$x + $");
+
+  const danglingScript = prepareInlineStreamingContent("$x^", {
+    formatAnticipation: { mathInline: true },
+    math: true,
+  });
+  assert.strictEqual(danglingScript.kind, "parse");
+  if (danglingScript.kind !== "parse") throw new Error("expected parse result");
+  assert.strictEqual(danglingScript.content, "$x^{}$");
+
+  const fracRepair = prepareInlineStreamingContent("$\\frac{a", {
+    formatAnticipation: { mathInline: true },
+    math: true,
+  });
+  assert.strictEqual(fracRepair.kind, "parse");
+  if (fracRepair.kind !== "parse") throw new Error("expected parse result");
+  assert.strictEqual(fracRepair.content, "$\\frac{a{}}$");
 }
 
 function testCurrencyLikeDollarDoesNotAnticipateMath() {
@@ -85,6 +109,20 @@ function testMathBlockNewlineBoundary() {
   assert.strictEqual(display.content, "$$x\nmore\n$$");
 }
 
+function testUnsupportedMathRemainsRaw() {
+  const unsupportedLeftRight = prepareInlineStreamingContent("$\\left(x + y", {
+    formatAnticipation: { mathInline: true },
+    math: true,
+  });
+  assert.deepStrictEqual(unsupportedLeftRight, { kind: "raw", status: "raw", reason: "incomplete-math" });
+
+  const unsupportedEnvironment = prepareInlineStreamingContent("$$\\begin{align}\nx", {
+    formatAnticipation: { mathBlock: true },
+    math: true,
+  });
+  assert.deepStrictEqual(unsupportedEnvironment, { kind: "raw", status: "raw", reason: "incomplete-math" });
+}
+
 testWithoutAnticipation();
 testWithAnticipation();
 testComplete();
@@ -92,4 +130,5 @@ testMathAlwaysRaw();
 testMathAnticipation();
 testCurrencyLikeDollarDoesNotAnticipateMath();
 testMathBlockNewlineBoundary();
+testUnsupportedMathRemainsRaw();
 console.log("inline streaming anticipation tests passed");
