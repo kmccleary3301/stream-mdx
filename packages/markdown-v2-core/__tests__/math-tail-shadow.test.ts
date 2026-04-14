@@ -1,6 +1,6 @@
 import assert from "node:assert";
 
-import { analyzeMathTailShadow } from "../src/streaming/math-tail-shadow";
+import { analyzeMathTailShadow, analyzeMathTailShadowReport } from "../src/streaming/math-tail-shadow";
 
 function testFixedArityRepairShadow() {
   const analysis = analyzeMathTailShadow({
@@ -21,7 +21,7 @@ function testFixedArityRepairShadow() {
 }
 
 function testLeftRightUnsupportedShadow() {
-  const analysis = analyzeMathTailShadow({
+  const report = analyzeMathTailShadowReport({
     raw: "$$\\left(x + y",
     surface: "math-block",
     decision: "raw",
@@ -30,9 +30,12 @@ function testLeftRightUnsupportedShadow() {
     notes: ["unsupported \\left/\\right pair"],
     downgradeReason: "left-right math repair is deferred",
   });
+  const analysis = report.analysis;
   assert.strictEqual(analysis.family, "left-right-local");
   assert.strictEqual(analysis.unsupportedReason, "left-right math repair is deferred");
   assert.strictEqual(analysis.selectedCandidate, "raw");
+  assert.ok(report.candidates.some((entry) => entry.id === "null-right-candidate"));
+  assert.strictEqual(report.preferredCandidateId, "raw-fallback");
 }
 
 function testAlignmentStructuredShadow() {
@@ -49,7 +52,21 @@ function testAlignmentStructuredShadow() {
   assert.ok(analysis.tokens?.some((entry) => entry.kind === "alignment-op" || entry.kind === "begin-env"));
 }
 
+function testDisplayCheckpointCandidate() {
+  const report = analyzeMathTailShadowReport({
+    raw: "$$\na_n = \\frac{1}{n}\n+ \\sqrt{x\n$$",
+    surface: "math-block",
+    decision: "repair",
+    ops: [{ kind: "insert-empty-group" }, { kind: "append", text: "}" }, { kind: "append", text: "\n" }, { kind: "close-delimiter", text: "$$" }],
+    validation: { valid: true },
+    notes: ["fill missing \\sqrt group", "close unmatched tail delimiters", "close display math delimiter"],
+  });
+  assert.ok(report.candidates.some((entry) => entry.id === "checkpoint-candidate"));
+  assert.ok(report.analysis.comparison);
+}
+
 testFixedArityRepairShadow();
 testLeftRightUnsupportedShadow();
 testAlignmentStructuredShadow();
+testDisplayCheckpointCandidate();
 console.log("math tail shadow tests passed");

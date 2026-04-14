@@ -1,32 +1,55 @@
-import type { LookaheadDecisionTrace, LookaheadRepairOp, LookaheadSurface } from "./lookahead-contract";
+import type { LookaheadDecision, LookaheadDecisionTrace, LookaheadRepairOp, LookaheadSurface } from "./lookahead-contract";
 
 type MathTraceAnalysis = NonNullable<NonNullable<LookaheadDecisionTrace["analysis"]>["math"]>;
 
 export type MathShadowAnalysisInput = {
   raw: string;
   surface: Extract<LookaheadSurface, "math-inline" | "math-block">;
-  decision: LookaheadDecisionTrace["decision"];
+  decision: LookaheadDecision;
   ops: readonly LookaheadRepairOp[];
   validation?: { valid: boolean; errors?: string[] };
   notes: readonly string[];
   downgradeReason?: string;
 };
 
-export function analyzeMathTailShadow(input: MathShadowAnalysisInput): MathTraceAnalysis {
+export type MathTailShadowReport = {
+  analysis: MathTraceAnalysis;
+  candidates: NonNullable<MathTraceAnalysis["candidates"]>;
+  preferredCandidateId: string;
+};
+
+export function analyzeMathTailShadowReport(input: MathShadowAnalysisInput): MathTailShadowReport {
   const raw = input.raw;
   const mode = input.surface === "math-block" ? "display" : "inline";
   const family = classifyMathFamily(raw, input.surface, input.notes);
-  const unsupportedReason = resolveUnsupportedReason(input.notes, input.downgradeReason);
+  const unsupportedReason = resolveUnsupportedReason(input.notes, input.downgradeReason, family);
+  const candidates = buildCandidates(raw, family, input);
+  const preferredCandidate = candidates.find((entry) => entry.accepted) ?? candidates[candidates.length - 1]!;
 
   return {
-    mode,
-    family,
-    unsupportedReason,
-    tokens: buildMathTokens(raw, family),
-    obligations: buildMathObligations(input.ops, input.notes, input.validation, unsupportedReason),
-    checkpoints: buildMathCheckpoints(input.decision, input.validation, unsupportedReason),
-    selectedCandidate: input.decision === "repair" ? "repaired" : "raw",
+    analysis: {
+      mode,
+      family,
+      unsupportedReason,
+      tokens: buildMathTokens(raw, family),
+      obligations: buildMathObligations(input.ops, input.notes, input.validation, unsupportedReason),
+      checkpoints: buildMathCheckpoints(input.decision, input.validation, unsupportedReason, family, candidates),
+      candidates,
+      comparison: {
+        liveDecision: input.decision,
+        preferredCandidate: preferredCandidate.id,
+        differsFromLive:
+          (input.decision === "repair" ? "repair-candidate" : "raw-fallback") !== preferredCandidate.id,
+      },
+      selectedCandidate: input.decision === "repair" ? "repaired" : "raw",
+    },
+    candidates,
+    preferredCandidateId: preferredCandidate.id,
   };
+}
+
+export function analyzeMathTailShadow(input: MathShadowAnalysisInput): MathTraceAnalysis {
+  return analyzeMathTailShadowReport(input).analysis;
 }
 
 function classifyMathFamily(
@@ -36,7 +59,7 @@ function classifyMathFamily(
 ): MathTraceAnalysis["family"] {
   const noteSet = new Set(notes);
 
-  if (/(?:\\begin\{(?:align|aligned|eqnarray|gather|multline)\}|\\(?:align|aligned|eqnarray|gather|multline)\b)/.test(raw)) {
+  if (/(?:\\begin\{(?:align|aligned|eqnarray|gather|multline)\}|\\(?:align|aligned|eqnarray|gather|multline)\b|&)/.test(raw)) {
     return "alignment-structured";
   }
 
@@ -67,11 +90,24 @@ function classifyMathFamily(
   return "local-core";
 }
 
-function resolveUnsupportedReason(notes: readonly string[], downgradeReason?: string): string | undefined {
+function resolveUnsupportedReason(
+  notes: readonly string[],
+  downgradeReason: string | undefined,
+  family: MathTraceAnalysis["family"],
+): string | undefined {
   const noteSet = new Set(notes);
-  if (noteSet.has("unsupported math environment")) return downgradeReason ?? "math environments are deferred";
-  if (noteSet.has("unsupported \\left/\\right pair")) return downgradeReason ?? "left-right math repair is deferred";
-  if (noteSet.has("unsupported optional-argument ambiguity")) return downgradeReason ?? "optional argument math repair is deferred";
+  if (noteSet.has("unsupported math environment") || family === "environment-structured") {
+    return downgradeReason ?? "math environments are deferred";
+  }
+  if (family === "alignment-structured") {
+    return downgradeReason ?? "alignment math is deferred";
+  }
+  if (noteSet.has("unsupported \\left/\\right pair") || family === "left-right-local") {
+    return downgradeReason ?? "left-right math repair is deferred";
+  }
+  if (noteSet.has("unsupported optional-argument ambiguity") || family === "optional-arg-local") {
+    return downgradeReason ?? "optional argument math repair is deferred";
+  }
   return downgradeReason;
 }
 
@@ -82,7 +118,10 @@ function buildMathTokens(raw: string, family: MathTraceAnalysis["family"]): NonN
   if (family === "environment-structured") {
     tokens.push({ kind: "begin-env", text: raw.match(/\\begin\{[^}]+\}/)?.[0] ?? "unsupported math environment" });
   } else if (family === "alignment-structured") {
-    tokens.push({ kind: "alignment-op", text: raw.match(/\\(?:align|aligned|eqnarray|gather|multline)\b/)?.[0] ?? "alignment" });
+    tokens.push({
+      kind: "alignment-op",
+      text: raw.match(/\\(?:align|aligned|eqnarray|gather|multline)\b|&/)?.[0] ?? "alignment",
+    });
   } else if (family === "left-right-local") {
     if (/\\left\b/.test(raw)) tokens.push({ kind: "left", text: raw.match(/\\left\b/)?.[0] ?? "\\left" });
     if (/\\right\b/.test(raw)) tokens.push({ kind: "right", text: raw.match(/\\right\b/)?.[0] ?? "\\right" });
@@ -141,17 +180,115 @@ function buildMathObligations(
 }
 
 function buildMathCheckpoints(
-  decision: LookaheadDecisionTrace["decision"],
+  decision: LookaheadDecision,
   validation: MathShadowAnalysisInput["validation"],
-  unsupportedReason?: string,
+  unsupportedReason: string | undefined,
+  family: MathTraceAnalysis["family"],
+  candidates: NonNullable<MathTraceAnalysis["candidates"]>,
 ): NonNullable<MathTraceAnalysis["checkpoints"]> {
-  return [
-    {
-      label: unsupportedReason ? "unsupported-family" : "current-plan",
-      accepted: decision === "repair" || decision === "accept-as-is",
-      reason:
-        unsupportedReason ??
-        (validation && !validation.valid ? validation.errors?.join("; ") ?? "validation failed" : undefined),
-    },
-  ];
+  return candidates.map((candidate) => ({
+    label: candidate.id,
+    accepted: candidate.accepted,
+    reason:
+      candidate.reason ??
+      unsupportedReason ??
+      (!candidate.accepted && validation && !validation.valid ? validation.errors?.join("; ") ?? "validation failed" : undefined) ??
+      (family === "left-right-local" && candidate.id === "null-right-candidate" && decision !== "repair"
+        ? "shadow-only candidate; live path still conservative"
+        : undefined),
+  }));
+}
+
+function buildCandidates(
+  raw: string,
+  family: MathTraceAnalysis["family"],
+  input: MathShadowAnalysisInput,
+): NonNullable<MathTraceAnalysis["candidates"]> {
+  const candidates: NonNullable<MathTraceAnalysis["candidates"]> = [];
+
+  const liveOps = summarizeOps(input.ops);
+  candidates.push({
+    id: input.decision === "repair" ? "repair-candidate" : "raw-fallback",
+    family,
+    decision: input.decision === "repair" ? "repair" : "raw",
+    supported: input.decision === "repair",
+    accepted: true,
+    ops: liveOps,
+    reason: input.downgradeReason,
+  });
+
+  if (family === "left-right-local") {
+    const leftCount = countCommand(raw, "\\left");
+    const rightCount = countCommand(raw, "\\right");
+    const nestedLeftPressure = leftCount - rightCount > 1;
+    candidates.push({
+      id: "null-right-candidate",
+      family,
+      decision: "repair",
+      supported: !nestedLeftPressure,
+      accepted: false,
+      ops: !nestedLeftPressure ? ["append \\right.", "close display delimiter"] : [],
+      reason: nestedLeftPressure ? "nested left/right pressure exceeds Math V2A scope" : "shadow-only candidate; live path still conservative",
+    });
+  }
+
+  if (family === "display-local" || family === "fixed-arity-local") {
+    candidates.push({
+      id: "checkpoint-candidate",
+      family,
+      decision: "repair",
+      supported: true,
+      accepted: false,
+      ops: family === "display-local" ? ["checkpoint multiline display tail", "close display delimiter"] : ["checkpoint local fixed-arity tail"],
+      reason: "shadow-only checkpoint candidate",
+    });
+  }
+
+  if (family === "environment-structured" || family === "alignment-structured" || family === "optional-arg-local") {
+    candidates.push({
+      id: "raw-fallback",
+      family,
+      decision: "raw",
+      supported: false,
+      accepted: input.decision !== "repair",
+      ops: [],
+      reason: resolveUnsupportedReason(input.notes, input.downgradeReason, family) ?? "unsupported family",
+    });
+  }
+
+  return dedupeCandidates(candidates);
+}
+
+function summarizeOps(ops: readonly LookaheadRepairOp[]): string[] {
+  return ops.map((op) => {
+    switch (op.kind) {
+      case "append":
+      case "close-delimiter":
+        return `${op.kind}:${op.text}`;
+      case "trim-tail":
+        return `${op.kind}:${op.count}`;
+      case "insert-empty-group":
+        return op.kind;
+      case "close-tag":
+        return `${op.kind}:${op.tagName}`;
+      case "self-close-tag":
+        return op.kind;
+      default:
+        return op.kind satisfies never;
+    }
+  });
+}
+
+function dedupeCandidates(candidates: NonNullable<MathTraceAnalysis["candidates"]>): NonNullable<MathTraceAnalysis["candidates"]> {
+  const seen = new Set<string>();
+  return candidates.filter((candidate) => {
+    if (seen.has(candidate.id)) return false;
+    seen.add(candidate.id);
+    return true;
+  });
+}
+
+function countCommand(raw: string, command: string): number {
+  const match = raw.match(new RegExp(command.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"));
+  return match?.length ?? 0;
 }

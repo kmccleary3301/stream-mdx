@@ -362,31 +362,70 @@ export interface LookaheadDecisionTrace {
       unsupportedReason?: string;
       tokens?: Array<{
         kind:
+          | "inline-open"
+          | "display-open"
+          | "command"
           | "control-word"
+          | "control-word-tail"
           | "brace-open"
           | "brace-close"
           | "bracket-open"
           | "bracket-close"
           | "paren-open"
           | "paren-close"
+          | "optional-arg-open"
           | "script-op"
           | "left"
           | "right"
           | "begin-env"
           | "end-env"
           | "align-sep"
+          | "alignment-op"
           | "text";
         text: string;
       }>;
       obligations?: Array<{
-        kind: "close-group" | "fill-required-arg" | "fill-script" | "close-math-fence" | "unsupported-family";
+        kind:
+          | "close-group"
+          | "fill-required-arg"
+          | "fill-script"
+          | "close-math-fence"
+          | "unsupported-family"
+          | "trim-tail"
+          | "missing-group"
+          | "close-delimiter"
+          | "balance-tail"
+          | "validate";
         detail: string;
       }>;
       checkpoints?: Array<{
         label: string;
         accepted: boolean;
+        reason?: string;
       }>;
-      selectedCandidate?: "full" | "checkpoint" | "raw";
+      candidates?: Array<{
+        id: string;
+        family:
+          | "local-core"
+          | "fixed-arity-local"
+          | "left-right-local"
+          | "optional-arg-local"
+          | "display-local"
+          | "environment-structured"
+          | "alignment-structured"
+          | "unknown";
+        decision: "repair" | "raw";
+        supported: boolean;
+        accepted: boolean;
+        ops?: string[];
+        reason?: string;
+      }>;
+      comparison?: {
+        liveDecision: LookaheadDecision;
+        preferredCandidate: string;
+        differsFromLive: boolean;
+      };
+      selectedCandidate?: "full" | "repaired" | "checkpoint" | "raw";
     };
   };
   downgrade?: LookaheadPlan["downgrade"];

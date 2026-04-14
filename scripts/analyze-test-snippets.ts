@@ -1484,6 +1484,8 @@ async function writeLookaheadTrace(browser: typeof chromium, snippetName: string
         decision: entry.decision,
         featureFamily: entry.featureFamily,
         selectedCandidate: entry.analysis.selectedCandidate ?? null,
+        candidates: entry.analysis.candidates ?? [],
+        comparison: entry.analysis.comparison ?? null,
         checkpoints: entry.analysis.checkpoints ?? [],
       })),
       null,

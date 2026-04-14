@@ -11,6 +11,17 @@ It is intentionally narrower than the V2 planner response.
 
 The planner response is directionally right, but this plan only commits to the next **buildable** tranche: **Math V2A**.
 
+## Current Status
+
+- Phase 0: complete
+  - executable feature-registry groundwork is landed
+  - focused trace controls are landed
+  - math-specific trace sidecars are landed
+- Phase 1: started
+  - shadow-only `MathTailEngine` analysis/report scaffolding is landed
+  - live math behavior is still unchanged
+  - first Math V2A trace fixtures and direct fixture-backed shadow tests are landed
+
 ## North Star
 
 Keep the closed V1 contract intact while replacing the shallow math repair path with a structured, traceable, family-aware MathTailEngine.
