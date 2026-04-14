@@ -6,8 +6,8 @@ Repo anchor:
 - planner input anchor: `6f0d03c2732f654063d91e1029db66ba37bd33a8`
 - source planner response: `docs_tmp/LOOKAHEAD/LOOKAHEAD_V1_PLANNER_RESPONSE.md`
 
-This is the repo-local execution plan for the next lookahead / anticipation tranche.
-It is intentionally narrower than the planner response. The planner gave a strong architectural direction; this document translates that into a buildable sequence for StreamMDX as it exists today.
+This is the repo-local execution plan and closeout record for Lookahead V1.
+It is intentionally narrower than the planner response. The planner gave the architectural direction; this document records the bounded V1 contract that actually shipped in StreamMDX.
 
 ## North Star
 
@@ -45,6 +45,8 @@ Do not build these in V1:
 - public third-party provider API beyond the existing regex-style surface
 - broad seeded-smoke expansion before trace tooling exists
 
+These items are out of the active V1 denominator and belong to post-V1 follow-up only.
+
 ## V1 Scope
 
 V1 includes:
@@ -58,6 +60,21 @@ V1 includes:
 - MDX expression off by default or brace-only trivial experimental mode
 - math inline/block bounded repair subset
 - adversarial fixture set and trace-driven debugging workflow
+
+## V1 Status
+
+Lookahead V1 is complete for its bounded scope.
+
+Completed phases:
+- Phase 0: contract + trace skeleton
+- Phase 1: migrate existing inline + regex behavior
+- Phase 2: container context + invalidation
+- Phase 3: HTML / MDX providers
+- Phase 4: Math V1 bounded repair
+- Phase 5: adversarial hardening
+- Phase 6: selective smoke promotion
+
+What remains after V1 is explicitly post-V1 work and is no longer part of the active completion denominator.
 
 ## Reduced V1 Contract
 
@@ -375,12 +392,12 @@ Current status:
 Goal:
 - move bounded tag anticipation out of segmentation policy and into providers
 
-Tasks:
+Implemented:
 - reduce mixed-content layer to localization/classification only
 - implement `html-inline` allowlist provider
 - keep `html-block` conservative: default to fallback/raw on ambiguity
 - implement `mdx-tag` allowlist provider
-- keep `mdx-expression` off by default or brace-only trivial experimental mode
+- keep `mdx-expression` as explicit hard-stop / fallback for V1
 - add explicit no-swallow validation for HTML/MDX providers
 
 Definition of done:
@@ -388,7 +405,7 @@ Definition of done:
 - adversarial no-swallow fixtures pass
 - no block-level open tag/component can consume unrelated following content
 
-Current status:
+Closure status:
 - mixed-content extraction now localizes/classifies and surfaces provider decisions instead of owning repair policy directly
 - `html-inline` allowlist provider behavior is live for bounded local inline tags
 - `mdx-tag` allowlist provider behavior is live for bounded local inline component tags
@@ -398,7 +415,7 @@ Current status:
   - `mdx-tag-allowlist-inline.mdx`
   - `mdx-tag-no-swallow-negative.mdx`
 - `mdx-expression-no-swallow-negative.mdx` is green in browser regression HTML coverage
-- `mdx-tag-allowlist-inline.mdx` now covers nested list-item and quoted-list contexts
+- `mdx-tag-allowlist-inline.mdx` covers the bounded inline paragraph/list/blockquote preview contract
 - `mdx-expression` is intentionally finished as hard-stop / fallback behavior for V1, not a pending repair surface
 
 ## Phase 4. Math V1 bounded repair
@@ -415,14 +432,14 @@ Allowed repair subset:
   - `\\sqrt`
 - handle basic partially complete `\\frac{...` and `\\sqrt{...`
 
-Deferred from V1:
+Post-V1 only:
 - `\\left ... \\right`
 - environments such as `\\begin{align}`
 - optional argument repair
 - macro-name inference
 - deeper semantic healing
 
-Tasks:
+Implemented:
 - add math tail scanner
 - add candidate classification:
   - valid incomplete prefix
@@ -437,7 +454,7 @@ Definition of done:
 - unsupported cases terminate and downgrade cleanly
 - final parse converges with non-stream parse
 
-Current status:
+Closure status:
 - a math tail scanner/classifier is now live in the core prepare path
 - the bounded V1 subset is implemented for:
   - trailing control-word trim
@@ -458,14 +475,14 @@ Current status:
 - `math-display-supported.md` is now part of the reduced browser/regression surface for bounded display math
 - `math-display-hard-stop-negative.md` is now part of the targeted browser/regression surface for conservative unsupported display math
 - display math follows the same bounded subset as inline math only when repairs remain tail-local and validate cleanly
-- `math-hard-stop-negative.md` remains targeted trace/unit coverage for the broader unsupported family
+- `math-hard-stop-negative.md` remains targeted trace/unit coverage for the broader unsupported family and is intentionally not smoke-promoted
 
 ## Phase 5. Adversarial hardening
 
 Goal:
 - tighten the plan under debugger-style observation before smoke promotion
 
-Tasks:
+Implemented:
 - add chunk-mode traces for representative fixtures
 - add char-mode traces for a small adversarial subset
 - add browser checks for:
@@ -482,9 +499,9 @@ Definition of done:
 ## Phase 6. Selective smoke promotion
 
 Goal:
-- promote only reduced, stable cases after trace-driven hardening
+- maintain only reduced, stable cases in seeded smoke after trace-driven hardening
 
-Keep targeted-only for longer:
+Targeted-only by design in V1:
 - MDX tag hard-stop negatives
 - MDX expression negatives
 - regex bound / DOS negatives
@@ -510,15 +527,15 @@ Current status:
   - `math-display-hard-stop-negative`
   - `math-hard-stop-negative`
 
-Promotion criteria for this reduced smoke set:
+Final promotion criteria for this reduced smoke set:
 - stable regression HTML output across seeded replay
 - stable char/chunk traces for the surface family
 - no known flaky termination / downgrade behavior
 - useful failure artifacts when parity breaks
 
-## First Fixture Set
+## Reduced Fixture Set
 
-These should be built first.
+These are the canonical reduced V1 fixtures.
 
 ### 1. `nested-formatting-ancestors.md`
 Provokes:
@@ -580,10 +597,10 @@ Provokes:
 - unsupported display-math hard-stop / fallback
 - preserved trailing prose and following list content
 
-### 7. `kitchen-sink-lookahead.mdx`
+### 12. `kitchen-sink-lookahead.mdx`
 Provokes:
 - integrated stress case
-- keep targeted-only until the subsystem is already stable
+- permanently targeted-only for V1
 
 ## Trace Artifact Layout
 
@@ -618,7 +635,7 @@ Console output should only surface:
 
 ## Initial File Deliverables
 
-Create these first before new repair logic lands:
+These were the original tranche deliverables:
 - `docs/LOOKAHEAD_CONTRACT.md`
 - `docs/LOOKAHEAD_V1_EXECUTION_PLAN.md`
 - lookahead trace mode in `scripts/analyze-test-snippets.ts`
@@ -629,7 +646,7 @@ Create these first before new repair logic lands:
 
 ## Acceptance Criteria For The First Tranche
 
-We should not call the first tranche done unless all of these are true:
+These tranche criteria are now satisfied:
 - existing inline anticipation is running through the new orchestrator in shadow or active mode
 - provider decisions and termination reasons are visible in artifacts
 - nested container anticipation is using normalized container context
@@ -640,22 +657,18 @@ Additional tranche rule:
 - do not count fixture creation or trace emission alone as progress
 - a new fixture only counts when it also has assertions, regression coverage, or stable trace expectations
 
-## Open Design Questions To Resolve Early
+## Resolved Design Decisions
 
-These should be answered before Phase 3 begins:
-- exact ownership split between mixed-content segmentation and provider orchestration
-- exact location of `containerSignature` generation
-- whether `safe-prefix` should be materialized in core or worker
-- whether math validation should be owned by plugin-local code or a shared orchestrator hook
-- how much provider state is cached per local range and when it is invalidated
+The early design questions are now closed for V1:
+- mixed-content localizes/classifies and does not own repair policy
+- `containerSignature` is generated in the current inline preparation path and propagated through worker metadata
+- `safe-prefix` remains available in the contract but is not the mainline path for the shipped V1 surfaces
+- math validation lives in the shared orchestrator/core repair path before render
+- provider state is treated as local to the current range and invalidated by container-signature and local-field changes
 
-## Recommendation On Sequencing
+## Historical Sequencing
 
-Do not start with math.
-Do not start with MDX.
-Do not start with new heuristics.
-
-Start in this order:
+The tranche was executed in this order:
 1. contract
 2. trace harness
 3. migrate existing inline + regex behavior
@@ -665,16 +678,28 @@ Start in this order:
 7. adversarial hardening
 8. selective smoke promotion
 
-That is the shortest path to a subsystem that is both more capable and still explainable.
+That sequencing produced the shipped V1 subsystem and remains the recommended order for any future rework of similar scope.
 
 ## V1 closure notes
 
 MDX V1:
 - bounded inline `mdx-tag` repair is complete for the allowlisted local subset
 - `mdx-expression` is intentionally hard-stop / fallback only
-- broader expression healing remains deferred beyond V1
+- broader expression healing is explicitly post-V1 only
 
 Math V1:
 - inline and display math both use the same bounded repair subset when repair stays local and validation passes
 - unsupported families hard-stop / fallback instead of guessing
 - smoke-eligible math cases are limited to reduced deterministic supported fixtures
+
+## Post-V1 Roadmap Boundary
+
+The following work is explicitly outside completed V1 scope:
+- richer `mdx-expression` healing beyond hard-stop / fallback
+- LaTeX environments
+- `\\left ... \\right`
+- optional-argument repair
+- broad block HTML anticipation
+- public provider / plugin ABI
+- kitchen-sink smoke promotion
+- performance optimization of the settled lookahead subsystem

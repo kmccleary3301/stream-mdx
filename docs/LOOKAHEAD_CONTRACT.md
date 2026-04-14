@@ -3,9 +3,9 @@
 This document defines the V1 lookahead contract for StreamMDX.
 
 It is intentionally smaller than the broader planning packet in
-`docs_tmp/LOOKAHEAD/LOOKAHEAD_V1_PLANNER_RESPONSE.md`. The goal is to freeze
-the narrow waist that Phase 0 and Phase 1 will build around, without
-prematurely turning every idea into a stable API.
+`docs_tmp/LOOKAHEAD/LOOKAHEAD_V1_PLANNER_RESPONSE.md`. The goal of this
+document is now to record the narrow waist that shipped for V1, without
+pretending that every future idea is part of the active contract.
 
 See also:
 - [`LOOKAHEAD_V1_EXECUTION_PLAN.md`](./LOOKAHEAD_V1_EXECUTION_PLAN.md)
@@ -35,7 +35,7 @@ V1 uses these internal surfaces:
 - `mdx-tag`
 - `mdx-expression`
 
-These are internal contract surfaces, not yet a public extension ABI.
+These are internal contract surfaces, not a public extension ABI.
 
 ## Safety classes
 
@@ -159,7 +159,7 @@ Allowed in V1:
 - allowlisted empty-slot insertion for `\frac` and `\sqrt`
 - validation of repaired math candidates before render
 
-Deferred:
+Post-V1 only:
 - macro-name inference
 - environments
 - `\left ... \right`
@@ -181,7 +181,7 @@ Allowed in V1:
 - bounded self-close repair for local unclosed inline component tags
 - explicit `mdx-expression` hard-stop / fallback with trace visibility
 
-Deferred:
+Post-V1 only:
 - MDX expression repair beyond explicit hard-stop / fallback
 - ambitious block-component capture behavior
 
@@ -200,7 +200,7 @@ At minimum the trace layer must make it possible to answer:
 - when it rearms
 - what the rendered HTML looked like at that step
 
-## Current implementation status
+## Implementation status
 
 The first contract-shaped implementation slice is now live internally.
 
@@ -229,12 +229,12 @@ Current trace artifacts include:
 - rendered HTML and block summary per step
 - mixed-content lookahead decisions for HTML / MDX provider runs
 
-Current limitations:
+Active V1 limits:
 - `mdx-expression` is intentionally finished as a hard-stop / fallback surface for V1 rather than a repair surface
 - Math V1 remains bounded by design; environments, `\left...\right`, and optional-argument repair remain outside the V1 contract
 - the trace workflow is canonicalized around an exported docs build plus a static server, not `next dev`
 
-## Current support matrix
+## Support matrix
 
 | Surface | Status | Smoke | Notes |
 | --- | --- | --- | --- |
@@ -267,7 +267,7 @@ Math V1 closure:
 - display math follows the same bounded repair subset as inline math only when the repair remains local and validates cleanly
 - unsupported display math hard-stops / falls back rather than guessing
 
-## Current no-fake-progress rule
+## No-fake-progress rule
 
 This lookahead effort does not count fixture creation or trace output by itself as progress.
 
@@ -290,5 +290,5 @@ This is not:
 - permission to auto-heal arbitrary broken syntax
 - a guarantee that every rich surface gets aggressive anticipation in V1
 
-The purpose of V1 is to make anticipation coherent, bounded, and debuggable
-before making it more ambitious.
+The purpose of V1 is to make anticipation coherent, bounded, and debuggable.
+Anything more ambitious now belongs to post-V1 work, not to the active contract.

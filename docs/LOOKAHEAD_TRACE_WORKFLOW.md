@@ -1,6 +1,6 @@
 # Lookahead Trace Workflow
 
-This document is the operator workflow for the current lookahead tracing stack.
+This document is the operator workflow for the settled Lookahead V1 tracing stack.
 
 See also:
 - [`LOOKAHEAD_CONTRACT.md`](./LOOKAHEAD_CONTRACT.md)
@@ -185,6 +185,8 @@ Current targeted-only cases:
 - `math-display-hard-stop-negative`
 - `math-hard-stop-negative`
 
+These boundaries are final for V1. Any broader smoke expansion is post-V1 work.
+
 ## Char vs chunk guidance
 
 Use `char` mode when:
@@ -223,11 +225,11 @@ Canonical replay commands by fixture family:
 - `math-display-supported.md`
   - `npx tsx scripts/analyze-test-snippets.ts --trace-lookahead --trace-snippet math-display-supported.md --trace-mode char`
 
-## Current no-fake-progress rule
+## No-fake-progress rule
 
 Do not count a fixture or trace run as substantive progress unless at least one of these is true:
 - there is a direct assertion around the behavior
 - there is regression HTML coverage
 - there is a stable trace expectation that is useful for triage
 
-The point of the tracing workflow is to make the next provider slices explainable, not to create piles of unverified artifacts.
+The point of the tracing workflow is to make the settled V1 provider set explainable, and to keep any future post-V1 work from regressing into unverified heuristics.
