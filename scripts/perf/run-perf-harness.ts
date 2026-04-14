@@ -37,6 +37,7 @@ const OUT_DIR = getArg("--out") ?? process.env.STREAM_MDX_PERF_OUT ?? "tmp/perf-
 const HEADLESS = !(hasFlag("--headed") || process.env.STREAM_MDX_PERF_HEADED === "1");
 const CPU_THROTTLE = getNumArg("--cpuThrottle", "STREAM_MDX_PERF_CPU_THROTTLE");
 const PROFILER_ENABLED = hasFlag("--profiler") || process.env.STREAM_MDX_PERF_PROFILER === "1";
+const PATCH_PERF_ENABLED = hasFlag("--patchPerf") || process.env.STREAM_MDX_PERF_PATCH_PERF === "1";
 
 const SCHEDULING_OVERRIDES: Record<string, string> = {
   batch: getArg("--batch") ?? process.env.STREAM_MDX_PERF_BATCH ?? "",
@@ -125,6 +126,7 @@ type PerfReport = {
         ops: Record<string, { count: number; durationMs: number }>;
         setPropsByType: Record<string, { count: number; durationMs: number }>;
         setPropsBySize: Record<string, { count: number; durationMs: number }>;
+        setPropsStages: Record<string, { count: number; durationMs: number }>;
       } | null;
       last: {
         timestamp: string;
@@ -139,6 +141,7 @@ type PerfReport = {
         ops: Record<string, { count: number; durationMs: number }>;
         setPropsByType?: Record<string, { count: number; durationMs: number }>;
         setPropsBySize?: Record<string, { count: number; durationMs: number }>;
+        setPropsStages?: Record<string, { count: number; durationMs: number }>;
       } | null;
     };
     longTasks: Array<{ startTime: number; duration: number }>;
@@ -204,6 +207,7 @@ type Summary = {
     timeoutMs: number;
     cpuThrottle: number | null;
     profiler: boolean;
+    patchPerf: boolean;
   };
   runs: Array<{
     run: number;
@@ -236,6 +240,7 @@ type Summary = {
     patchPerfApplyMs: number | null;
     patchPerfTopOp: { op: string; durationMs: number; count: number } | null;
     patchPerfTopSetPropsType: { type: string; durationMs: number; count: number } | null;
+    patchPerfTopSetPropsStage: { stage: string; durationMs: number; count: number } | null;
   }>;
   aggregate: {
     durationMs: Stats | null;
@@ -410,6 +415,9 @@ function buildUrl(): string {
   if (PROFILER_ENABLED) {
     url.searchParams.set("profiler", "1");
   }
+  if (PATCH_PERF_ENABLED) {
+    url.searchParams.set("patchPerf", "1");
+  }
   return url.toString();
 }
 
@@ -488,6 +496,7 @@ function summarizeRun(entry: PerfRun) {
   const patchPerfTotals = report.samples.patchPerf?.totals ?? null;
   const topPatchOp = topPatchPerfEntry(patchPerfTotals?.ops);
   const topSetPropsType = topPatchPerfEntry(patchPerfTotals?.setPropsByType);
+  const topSetPropsStage = topPatchPerfEntry(patchPerfTotals?.setPropsStages);
   const cdpMetrics = entry.cdp.metrics;
   const domEnd = entry.cdp.domEnd;
   const domDelta = entry.cdp.domDelta;
@@ -531,6 +540,9 @@ function summarizeRun(entry: PerfRun) {
     patchPerfTopOp: topPatchOp ? { op: topPatchOp.key, durationMs: topPatchOp.durationMs, count: topPatchOp.count } : null,
     patchPerfTopSetPropsType: topSetPropsType
       ? { type: topSetPropsType.key, durationMs: topSetPropsType.durationMs, count: topSetPropsType.count }
+      : null,
+    patchPerfTopSetPropsStage: topSetPropsStage
+      ? { stage: topSetPropsStage.key, durationMs: topSetPropsStage.durationMs, count: topSetPropsStage.count }
       : null,
   };
 }
@@ -648,6 +660,11 @@ function formatSummaryText(summary: Summary): string {
         `  patch top setProps type: ${run.patchPerfTopSetPropsType.type} (${run.patchPerfTopSetPropsType.durationMs.toFixed(2)} ms, ${run.patchPerfTopSetPropsType.count} calls)`,
       );
     }
+    if (run.patchPerfTopSetPropsStage) {
+      lines.push(
+        `  patch top setProps stage: ${run.patchPerfTopSetPropsStage.stage} (${run.patchPerfTopSetPropsStage.durationMs.toFixed(2)} ms, ${run.patchPerfTopSetPropsStage.count} calls)`,
+      );
+    }
   }
   return `${lines.join("\n")}\n`;
 }
@@ -696,6 +713,7 @@ async function run(): Promise<void> {
       timeoutMs: TIMEOUT_MS,
       cpuThrottle: CPU_THROTTLE ?? null,
       profiler: PROFILER_ENABLED,
+      patchPerf: PATCH_PERF_ENABLED,
     },
     runs: runSummaries,
     aggregate: {

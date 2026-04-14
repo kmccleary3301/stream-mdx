@@ -99,6 +99,7 @@ type PatchPerfSummary = {
   ops: Record<string, PatchPerfOpSummary>;
   setPropsByType?: Record<string, PatchPerfOpSummary>;
   setPropsBySize?: Record<string, PatchPerfOpSummary>;
+  setPropsStages?: Record<string, PatchPerfOpSummary>;
 };
 
 type PatchPerfTotals = {
@@ -112,6 +113,7 @@ type PatchPerfTotals = {
   ops: Record<string, PatchPerfOpSummary>;
   setPropsByType: Record<string, PatchPerfOpSummary>;
   setPropsBySize: Record<string, PatchPerfOpSummary>;
+  setPropsStages: Record<string, PatchPerfOpSummary>;
 };
 
 type PerfReport = {
@@ -246,6 +248,7 @@ export function PerfHarness(): JSX.Element {
   const scenarioId = searchParams.get("scenario") ?? "S2_typical";
   const schedulingPreset = searchParams.get("scheduling") ?? "aggressive";
   const profilerEnabled = parseBoolean(searchParams.get("profiler")) ?? false;
+  const patchPerfEnabled = parseBoolean(searchParams.get("patchPerf")) ?? false;
   const queryKey = searchParams.toString();
   const scheduling = useMemo(() => buildScheduling(schedulingPreset, new URLSearchParams(queryKey)), [schedulingPreset, queryKey]);
 
@@ -334,7 +337,7 @@ export function PerfHarness(): JSX.Element {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    window.__STREAMING_DEBUG__ = { ...(window.__STREAMING_DEBUG__ ?? {}), patchPerf: true };
+    window.__STREAMING_DEBUG__ = { ...(window.__STREAMING_DEBUG__ ?? {}), patchPerf: patchPerfEnabled };
     window.__STREAM_MDX_PATCH_STATS__ = [];
     window.__STREAM_MDX_PATCH_STATS_LAST__ = undefined;
     window.__STREAM_MDX_PATCH_STATS_TOTALS__ = undefined;
@@ -342,14 +345,14 @@ export function PerfHarness(): JSX.Element {
     window.__streammdxPerfDone = new Promise((resolve) => {
       doneResolveRef.current = resolve;
     });
-  }, []);
+  }, [patchPerfEnabled]);
 
   useEffect(() => {
     let cancelled = false;
     const token = (runTokenRef.current += 1);
 
     if (typeof window !== "undefined") {
-      window.__STREAMING_DEBUG__ = { ...(window.__STREAMING_DEBUG__ ?? {}), patchPerf: true };
+      window.__STREAMING_DEBUG__ = { ...(window.__STREAMING_DEBUG__ ?? {}), patchPerf: patchPerfEnabled };
       window.__STREAM_MDX_PATCH_STATS__ = [];
       window.__STREAM_MDX_PATCH_STATS_LAST__ = undefined;
       window.__STREAM_MDX_PATCH_STATS_TOTALS__ = undefined;
@@ -533,7 +536,7 @@ export function PerfHarness(): JSX.Element {
       stopRaf();
       stopMemory();
     };
-  }, [fixtureId, perfWorker, scenarioId, schedulingPreset, scheduling]);
+  }, [fixtureId, patchPerfEnabled, perfWorker, scenarioId, schedulingPreset, scheduling]);
 
   return (
     <div className="prose markdown">
