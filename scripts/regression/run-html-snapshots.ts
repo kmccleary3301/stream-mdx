@@ -462,6 +462,10 @@ function getSchedulerPreset(mode: string | null): Record<string, unknown> | null
   return presets[mode] ?? null;
 }
 
+function buildTraceReplayCommand(fixtureFile: string, mode: "char" | "chunk" = "char"): string {
+  return `npx tsx scripts/analyze-test-snippets.ts --trace-lookahead --trace-snippet ${fixtureFile} --trace-mode ${mode}`;
+}
+
 function validateTableInspection(
   fixture: ReturnType<typeof getFixtures>[number],
   inspection: RenderInspection,
@@ -756,6 +760,16 @@ async function run(): Promise<void> {
               );
             }
           }
+          if ((fixture.forbidHtmlFragmentsDuringStreaming?.length ?? 0) > 0) {
+            const forbiddenHtmlFragments = (fixture.forbidHtmlFragmentsDuringStreaming ?? []).filter((fragment) =>
+              checkpoints[checkpoints.length - 1]?.html.includes(fragment),
+            );
+            if (forbiddenHtmlFragments.length > 0) {
+              streamInvariantFailures.push(
+                `forbidden html fragments visible during streaming: ${forbiddenHtmlFragments.join(", ")}.`,
+              );
+            }
+          }
         }
 
           await page.evaluate(() => window.__streammdxRegression?.finalizeAndFlush());
@@ -843,7 +857,7 @@ async function run(): Promise<void> {
             })
           : 0;
 
-        if (finalHtmlValue.includes(rawBlockMathNeedle)) {
+        if (!fixture.allowRawBlockMath && finalHtmlValue.includes(rawBlockMathNeedle)) {
           htmlInvariantFailures.push("raw block math detected in paragraph (expected KaTeX output).");
         }
         if (finalHtmlValue.includes(rawInlineCodeNeedle)) {
@@ -887,6 +901,12 @@ async function run(): Promise<void> {
           const presentForbiddenFragments = fixture.forbidTextFragments.filter((fragment) => finalHtmlValue.includes(fragment));
           if (presentForbiddenFragments.length > 0) {
             htmlInvariantFailures.push(`forbidden text fragments present: ${presentForbiddenFragments.join(", ")}.`);
+          }
+        }
+        if (fixture.forbidHtmlFragments?.length) {
+          const presentForbiddenHtmlFragments = fixture.forbidHtmlFragments.filter((fragment) => finalHtmlValue.includes(fragment));
+          if (presentForbiddenHtmlFragments.length > 0) {
+            htmlInvariantFailures.push(`forbidden html fragments present: ${presentForbiddenHtmlFragments.join(", ")}.`);
           }
         }
         if (typeof fixture.expectedMdxBlockCount === "number" && finalInspection.mdxBlocks.length !== fixture.expectedMdxBlockCount) {
@@ -992,6 +1012,7 @@ async function run(): Promise<void> {
             });
             console.error(`\nHTML regression: ${fixture.id} / ${scenario.id}\n${result.message}\n`);
             console.error(`artifacts: ${artifactDir}`);
+            console.error(`trace replay: ${buildTraceReplayCommand(fixture.file)}`);
           } else {
             console.log(`ok ${fixture.id}/${scenario.id}`);
           }
@@ -1018,6 +1039,7 @@ async function run(): Promise<void> {
               `\nFinal HTML parity mismatch vs baseline snapshot for ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}\n${result.message ?? ""}\n`,
             );
             console.error(`artifacts: ${artifactDir}`);
+            console.error(`trace replay: ${buildTraceReplayCommand(fixture.file)}`);
           }
         }
           if (!baselineReplaySnapshot) {
@@ -1039,6 +1061,7 @@ async function run(): Promise<void> {
               `\nReplay divergence for ${fixture.id}/${scenario.id}: baseline seed=${baselineReplaySnapshot.runMeta?.seed ?? "baseline"} vs ${activeSeed ?? "baseline"}\n${replayResult.message ?? ""}\n`,
             );
             console.error(`artifacts: ${artifactDir}`);
+            console.error(`trace replay: ${buildTraceReplayCommand(fixture.file)}`);
           } else if (!scenarioFailed) {
             console.log(`ok ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}`);
           }

@@ -86,6 +86,28 @@ SNIPPET_TEST_URL=http://127.0.0.1:3002/regression/snippet-test/ \
   --trace-max-steps 8
 ```
 
+Math display char-mode trace:
+
+```bash
+SNIPPET_TEST_URL=http://127.0.0.1:3002/regression/snippet-test/ \
+  npx tsx scripts/analyze-test-snippets.ts \
+  --trace-lookahead \
+  --trace-snippet math-display-supported.md \
+  --trace-mode char \
+  --trace-max-steps 8
+```
+
+Math display hard-stop char-mode trace:
+
+```bash
+SNIPPET_TEST_URL=http://127.0.0.1:3002/regression/snippet-test/ \
+  npx tsx scripts/analyze-test-snippets.ts \
+  --trace-lookahead \
+  --trace-snippet math-display-hard-stop-negative.md \
+  --trace-mode char \
+  --trace-max-steps 8
+```
+
 MDX expression char-mode trace:
 
 ```bash
@@ -119,6 +141,7 @@ Each trace bundle currently includes:
 - `steps/step-XXXX.json`
 - `steps/telemetry-XXXX.json`
 - `diffs/step-XXXX.json`
+- `failures/first-divergence.json` when a trace detects the first inconsistent step
 
 Key fields in the step artifacts:
 - raw prefix
@@ -150,14 +173,16 @@ Key fields in the summary artifact:
 Current reduced smoke promotions:
 - `nested-formatting-ancestors`
 - `inline-html-allowlist`
+- `block-html-no-swallow`
 - `math-inline-supported`
+- `math-display-supported`
 - `mdx-tag-allowlist-inline`
 
 Current targeted-only cases:
-- `block-html-no-swallow`
 - `mdx-tag-no-swallow-negative`
 - `mdx-expression-no-swallow-negative`
 - `math-inline-hard-stop-negative`
+- `math-display-hard-stop-negative`
 - `math-hard-stop-negative`
 
 ## Char vs chunk guidance
@@ -171,6 +196,32 @@ Use `chunk` mode when:
 - you want broader convergence sanity on a realistic stream cadence
 - you are checking container invalidation across larger increments
 - you want smaller, less noisy trace bundles
+
+## Maintainer workflow
+
+When a lookahead regression appears, use this order:
+
+1. Run the smallest direct unit test for the affected provider family.
+2. Run the targeted browser regression fixture.
+3. Run the canonical trace command for that fixture in `char` mode if the failure is boundary-sensitive.
+4. Use `chunk` mode for broader convergence or invalidation questions.
+5. Promote a case into smoke only after:
+   - browser output is deterministic
+   - trace expectations are stable
+   - first-divergence artifacts are useful
+   - no known flake remains
+
+Canonical replay commands by fixture family:
+- `inline-html-allowlist.md`
+  - `npx tsx scripts/analyze-test-snippets.ts --trace-lookahead --trace-snippet inline-html-allowlist.md --trace-mode char`
+- `mdx-tag-allowlist-inline.mdx`
+  - `npx tsx scripts/analyze-test-snippets.ts --trace-lookahead --trace-snippet mdx-tag-allowlist-inline.mdx --trace-mode char`
+- `mdx-expression-no-swallow-negative.mdx`
+  - `npx tsx scripts/analyze-test-snippets.ts --trace-lookahead --trace-snippet mdx-expression-no-swallow-negative.mdx --trace-mode char`
+- `math-inline-supported.md`
+  - `npx tsx scripts/analyze-test-snippets.ts --trace-lookahead --trace-snippet math-inline-supported.md --trace-mode char`
+- `math-display-supported.md`
+  - `npx tsx scripts/analyze-test-snippets.ts --trace-lookahead --trace-snippet math-display-supported.md --trace-mode char`
 
 ## Current no-fake-progress rule
 

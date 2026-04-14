@@ -1,6 +1,6 @@
 {
-  "fixtureId": "mdx-tag-allowlist-inline",
-  "fixtureTitle": "MDX Tag Allowlist Inline",
+  "fixtureId": "math-display-hard-stop-negative",
+  "fixtureTitle": "Math Display Hard Stop Negative",
   "scenarioId": "S2_typical",
   "scenario": {
     "id": "S2_typical",
@@ -15,11 +15,12 @@
     "usedSplitMarkers": false,
     "fixtureTags": [
       "anticipation",
-      "mdx",
-      "inline"
+      "math",
+      "display",
+      "negative"
     ]
   },
-  "totalLength": 297,
+  "totalLength": 324,
   "checkpoints": [
     {
       "id": "after-first-chunk",
@@ -31,10 +32,10 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 3.099999997764826,
-        "lastDurationMs": 2.599999997764826,
+        "lastPatchToDomMs": 4.300000000745058,
+        "lastDurationMs": 3.5,
         "meta": {
-          "fixtureId": "mdx-tag-allowlist-inline",
+          "fixtureId": "math-display-hard-stop-negative",
           "scenarioId": "S2_typical",
           "seed": null,
           "schedulerMode": null
@@ -64,8 +65,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist\">MDX Tag Allowlist</h1></div>",
-      "textSample": "MDX Tag Allowlist",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Display Hard\">Math Display Hard</h1></div>",
+      "textSample": "Math Display Hard",
       "structure": {
         "topLevelTags": [
           "div"
@@ -88,7 +89,7 @@
       }
     },
     {
-      "id": "progress-15",
+      "id": "progress-16",
       "appendedChars": 19,
       "rootChildCount": 1,
       "runtimeState": {
@@ -97,10 +98,10 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 3.099999997764826,
-        "lastDurationMs": 2.599999997764826,
+        "lastPatchToDomMs": 4.300000000745058,
+        "lastDurationMs": 3.5,
         "meta": {
-          "fixtureId": "mdx-tag-allowlist-inline",
+          "fixtureId": "math-display-hard-stop-negative",
           "scenarioId": "S2_typical",
           "seed": null,
           "schedulerMode": null
@@ -130,8 +131,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist\">MDX Tag Allowlist</h1></div>",
-      "textSample": "MDX Tag Allowlist",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Display Hard\">Math Display Hard</h1></div>",
+      "textSample": "Math Display Hard",
       "structure": {
         "topLevelTags": [
           "div"
@@ -154,7 +155,7 @@
       }
     },
     {
-      "id": "progress-30",
+      "id": "progress-32",
       "appendedChars": 38,
       "rootChildCount": 1,
       "runtimeState": {
@@ -163,147 +164,10 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 2,
-        "lastPatchToDomMs": 0.30000000074505806,
-        "lastDurationMs": 0.30000000074505806,
-        "meta": {
-          "fixtureId": "mdx-tag-allowlist-inline",
-          "scenarioId": "S2_typical",
-          "seed": null,
-          "schedulerMode": null
-        },
-        "storeCounters": {
-          "appendLineGuardRejected": 0,
-          "staleEpochRejected": 0,
-          "storeInvariantViolationCount": 0
-        }
-      },
-      "selectors": {
-        "hasTable": false,
-        "hasPre": false,
-        "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
-        "hasBlockquote": false,
-        "hasMath": false
-      },
-      "counts": {
-        "table": 0,
-        "pre": 0,
-        "blockquote": 0,
-        "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
-        "footnotes": 0,
-        "hr": 0
-      },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph streaming-partial\">Prefix tex</p></div>",
-      "textSample": "MDX Tag Allowlist InlinePrefix tex",
-      "structure": {
-        "topLevelTags": [
-          "div"
-        ],
-        "counts": {
-          "table": 0,
-          "pre": 0,
-          "blockquote": 0,
-          "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
-          "footnotes": 0,
-          "hr": 0
-        }
-      },
-      "inspection": {
-        "tables": [],
-        "mdxBlocks": [],
-        "codeBlocks": []
-      }
-    },
-    {
-      "id": "event-hasMdxPending",
-      "appendedChars": 57,
-      "rootChildCount": 1,
-      "runtimeState": {
-        "rendererVersion": 6,
-        "queueDepth": 0,
-        "pendingBatches": 0,
-        "workerReady": true,
-        "lastTx": 3,
-        "lastPatchToDomMs": 0.6999999992549419,
-        "lastDurationMs": 0.19999999925494194,
-        "meta": {
-          "fixtureId": "mdx-tag-allowlist-inline",
-          "scenarioId": "S2_typical",
-          "seed": null,
-          "schedulerMode": null
-        },
-        "storeCounters": {
-          "appendLineGuardRejected": 0,
-          "staleEpochRejected": 0,
-          "storeInvariantViolationCount": 0
-        }
-      },
-      "selectors": {
-        "hasTable": false,
-        "hasPre": false,
-        "hasFootnotes": false,
-        "hasMdxPending": true,
-        "hasMdxCompiled": false,
-        "hasBlockquote": false,
-        "hasMath": false
-      },
-      "counts": {
-        "table": 0,
-        "pre": 0,
-        "blockquote": 0,
-        "katex": 0,
-        "mdxPending": 1,
-        "mdxCompiled": 0,
-        "footnotes": 0,
-        "hr": 0
-      },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><div class=\"markdown-mdx\" data-mdx-ref=\"pending\" data-mdx-status=\"pending\" data-mdx-mode=\"server\">Compiling MDX (server)…</div></div>",
-      "textSample": "MDX Tag Allowlist InlineCompiling MDX (server)…",
-      "structure": {
-        "topLevelTags": [
-          "div"
-        ],
-        "counts": {
-          "table": 0,
-          "pre": 0,
-          "blockquote": 0,
-          "katex": 0,
-          "mdxPending": 1,
-          "mdxCompiled": 0,
-          "footnotes": 0,
-          "hr": 0
-        }
-      },
-      "inspection": {
-        "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "pending",
-            "textSample": "Compiling MDX (server)…"
-          }
-        ],
-        "codeBlocks": []
-      }
-    },
-    {
-      "id": "progress-74",
-      "appendedChars": 76,
-      "rootChildCount": 1,
-      "runtimeState": {
-        "rendererVersion": 7,
-        "queueDepth": 0,
-        "pendingBatches": 0,
-        "workerReady": true,
-        "lastTx": 4,
         "lastPatchToDomMs": 0.3999999985098839,
-        "lastDurationMs": 0.19999999925494194,
+        "lastDurationMs": 0.3999999985098839,
         "meta": {
-          "fixtureId": "mdx-tag-allowlist-inline",
+          "fixtureId": "math-display-hard-stop-negative",
           "scenarioId": "S2_typical",
           "seed": null,
           "schedulerMode": null
@@ -333,8 +197,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"warm\"/&gt;</span> and tr</p></div>",
-      "textSample": "MDX Tag Allowlist InlinePrefix text with <InlineChip tone=\"warm\"/> and tr",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Display Hard Stop Negative\">Math Display Hard Stop Negative</h1><p class=\"markdown-paragraph streaming-partial\">Uns</p></div>",
+      "textSample": "Math Display Hard Stop NegativeUns",
       "structure": {
         "topLevelTags": [
           "div"
@@ -357,19 +221,151 @@
       }
     },
     {
-      "id": "progress-149",
-      "appendedChars": 152,
+      "id": "progress-81",
+      "appendedChars": 95,
       "rootChildCount": 1,
       "runtimeState": {
-        "rendererVersion": 11,
+        "rendererVersion": 8,
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 8,
-        "lastPatchToDomMs": 11.300000000745058,
-        "lastDurationMs": 0.6999999992549419,
+        "lastTx": 5,
+        "lastPatchToDomMs": 8.599999997764826,
+        "lastDurationMs": 0.3999999985098839,
         "meta": {
-          "fixtureId": "mdx-tag-allowlist-inline",
+          "fixtureId": "math-display-hard-stop-negative",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": true
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 1,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Display Hard Stop Negative\">Math Display Hard Stop Negative</h1><p class=\"markdown-paragraph\">Unsupported display math should remain conservative.</p><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow></mrow><annotation encoding=\"application/x-tex\"></annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"></span></span></span></span></div></div></div></div></div></div>",
+      "textSample": "Math Display Hard Stop NegativeUnsupported display math should remain conservative.[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[dat",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 1,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "event-hasMath",
+      "appendedChars": 95,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 8,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 5,
+        "lastPatchToDomMs": 8.599999997764826,
+        "lastDurationMs": 0.3999999985098839,
+        "meta": {
+          "fixtureId": "math-display-hard-stop-negative",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": true
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 1,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Display Hard Stop Negative\">Math Display Hard Stop Negative</h1><p class=\"markdown-paragraph\">Unsupported display math should remain conservative.</p><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow></mrow><annotation encoding=\"application/x-tex\"></annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"></span></span></span></span></div></div></div></div></div></div>",
+      "textSample": "Math Display Hard Stop NegativeUnsupported display math should remain conservative.[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[dat",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 1,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-162",
+      "appendedChars": 171,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 12,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 9,
+        "lastPatchToDomMs": 4,
+        "lastDurationMs": 0.19999999925494194,
+        "meta": {
+          "fixtureId": "math-display-hard-stop-negative",
           "scenarioId": "S2_typical",
           "seed": null,
           "schedulerMode": null
@@ -399,8 +395,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"warm\"/&gt;</span> and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"c</li></ul></div>",
-      "textSample": "MDX Tag Allowlist InlinePrefix text with <InlineChip tone=\"warm\"/> and trailing prose that must remain visible.List item with <InlineChip tone=\"c",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Display Hard Stop Negative\">Math Display Hard Stop Negative</h1><p class=\"markdown-paragraph\">Unsupported display math should remain conservative.</p><p class=\"markdown-paragraph\">$$\n\\begin{align}\nx + y</p><p class=\"markdown-paragraph streaming-partial\">This trailing prose must remain visible after the unfinish</p></div>",
+      "textSample": "Math Display Hard Stop NegativeUnsupported display math should remain conservative.$$\n\\begin{align}\nx + yThis trailing prose must remain visible after the unfinish",
       "structure": {
         "topLevelTags": [
           "div"
@@ -423,19 +419,19 @@
       }
     },
     {
-      "id": "event-hasBlockquote",
-      "appendedChars": 190,
+      "id": "progress-243",
+      "appendedChars": 247,
       "rootChildCount": 1,
       "runtimeState": {
-        "rendererVersion": 13,
+        "rendererVersion": 16,
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 10,
-        "lastPatchToDomMs": 10.099999997764826,
-        "lastDurationMs": 0.30000000074505806,
+        "lastTx": 13,
+        "lastPatchToDomMs": 8.599999997764826,
+        "lastDurationMs": 0.3999999985098839,
         "meta": {
-          "fixtureId": "mdx-tag-allowlist-inline",
+          "fixtureId": "math-display-hard-stop-negative",
           "scenarioId": "S2_typical",
           "seed": null,
           "schedulerMode": null
@@ -452,21 +448,21 @@
         "hasFootnotes": false,
         "hasMdxPending": false,
         "hasMdxCompiled": false,
-        "hasBlockquote": true,
+        "hasBlockquote": false,
         "hasMath": false
       },
       "counts": {
         "table": 0,
         "pre": 0,
-        "blockquote": 1,
+        "blockquote": 0,
         "katex": 0,
         "mdxPending": 0,
         "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"warm\"/&gt;</span> and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote\">B</blockquote></div>",
-      "textSample": "MDX Tag Allowlist InlinePrefix text with <InlineChip tone=\"warm\"/> and trailing prose that must remain visible.List item with <InlineChip tone=\"cool\"> and sibling text afterward.B",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Display Hard Stop Negative\">Math Display Hard Stop Negative</h1><p class=\"markdown-paragraph\">Unsupported display math should remain conservative.</p><p class=\"markdown-paragraph\">$$\n\\begin{align}\nx + y</p><p class=\"markdown-paragraph\">This trailing prose must remain visible after the unfinished display block.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">The following list item must remain visible as ordinary</li></ul></div>",
+      "textSample": "Math Display Hard Stop NegativeUnsupported display math should remain conservative.$$\n\\begin{align}\nx + yThis trailing prose must remain visible after the unfinished display block.The following list i",
       "structure": {
         "topLevelTags": [
           "div"
@@ -474,7 +470,7 @@
         "counts": {
           "table": 0,
           "pre": 0,
-          "blockquote": 1,
+          "blockquote": 0,
           "katex": 0,
           "mdxPending": 0,
           "mdxCompiled": 0,
@@ -489,140 +485,8 @@
       }
     },
     {
-      "id": "progress-223",
-      "appendedChars": 228,
-      "rootChildCount": 1,
-      "runtimeState": {
-        "rendererVersion": 15,
-        "queueDepth": 0,
-        "pendingBatches": 0,
-        "workerReady": true,
-        "lastTx": 12,
-        "lastPatchToDomMs": 10.900000002235174,
-        "lastDurationMs": 0.19999999925494194,
-        "meta": {
-          "fixtureId": "mdx-tag-allowlist-inline",
-          "scenarioId": "S2_typical",
-          "seed": null,
-          "schedulerMode": null
-        },
-        "storeCounters": {
-          "appendLineGuardRejected": 0,
-          "staleEpochRejected": 0,
-          "storeInvariantViolationCount": 0
-        }
-      },
-      "selectors": {
-        "hasTable": false,
-        "hasPre": false,
-        "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
-        "hasBlockquote": true,
-        "hasMath": false
-      },
-      "counts": {
-        "table": 0,
-        "pre": 0,
-        "blockquote": 1,
-        "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
-        "footnotes": 0,
-        "hr": 0
-      },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"warm\"/&gt;</span> and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote\">Blockquote with &lt;InlineChip tone=\"sharp</blockquote></div>",
-      "textSample": "MDX Tag Allowlist InlinePrefix text with <InlineChip tone=\"warm\"/> and trailing prose that must remain visible.List item with <InlineChip tone=\"cool\"> and sibling text afterward.Blockquote with <Inlin",
-      "structure": {
-        "topLevelTags": [
-          "div"
-        ],
-        "counts": {
-          "table": 0,
-          "pre": 0,
-          "blockquote": 1,
-          "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
-          "footnotes": 0,
-          "hr": 0
-        }
-      },
-      "inspection": {
-        "tables": [],
-        "mdxBlocks": [],
-        "codeBlocks": []
-      }
-    },
-    {
-      "id": "progress-267",
-      "appendedChars": 285,
-      "rootChildCount": 1,
-      "runtimeState": {
-        "rendererVersion": 18,
-        "queueDepth": 0,
-        "pendingBatches": 0,
-        "workerReady": true,
-        "lastTx": 15,
-        "lastPatchToDomMs": 10.800000000745058,
-        "lastDurationMs": 0.20000000298023224,
-        "meta": {
-          "fixtureId": "mdx-tag-allowlist-inline",
-          "scenarioId": "S2_typical",
-          "seed": null,
-          "schedulerMode": null
-        },
-        "storeCounters": {
-          "appendLineGuardRejected": 0,
-          "staleEpochRejected": 0,
-          "storeInvariantViolationCount": 0
-        }
-      },
-      "selectors": {
-        "hasTable": false,
-        "hasPre": false,
-        "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
-        "hasBlockquote": true,
-        "hasMath": false
-      },
-      "counts": {
-        "table": 0,
-        "pre": 0,
-        "blockquote": 1,
-        "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
-        "footnotes": 0,
-        "hr": 0
-      },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"warm\"/&gt;</span> and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote\">Blockquote with <span data-mdx-status=\"pending\">&lt;InlineChip tone=\"sharp\"/&gt;</span> and trailing content.</blockquote><p class=\"markdown-paragraph streaming-partial\">Final paragraph after the inlin</p></div>",
-      "textSample": "MDX Tag Allowlist InlinePrefix text with <InlineChip tone=\"warm\"/> and trailing prose that must remain visible.List item with <InlineChip tone=\"cool\"> and sibling text afterward.Blockquote with <Inlin",
-      "structure": {
-        "topLevelTags": [
-          "div"
-        ],
-        "counts": {
-          "table": 0,
-          "pre": 0,
-          "blockquote": 1,
-          "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
-          "footnotes": 0,
-          "hr": 0
-        }
-      },
-      "inspection": {
-        "tables": [],
-        "mdxBlocks": [],
-        "codeBlocks": []
-      }
-    },
-    {
-      "id": "progress-297",
-      "appendedChars": 297,
+      "id": "progress-292",
+      "appendedChars": 304,
       "rootChildCount": 1,
       "runtimeState": {
         "rendererVersion": 19,
@@ -630,10 +494,10 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 16,
-        "lastPatchToDomMs": 0.19999999925494194,
-        "lastDurationMs": 0.10000000149011612,
+        "lastPatchToDomMs": 9.699999999254942,
+        "lastDurationMs": 0.29999999701976776,
         "meta": {
-          "fixtureId": "mdx-tag-allowlist-inline",
+          "fixtureId": "math-display-hard-stop-negative",
           "scenarioId": "S2_typical",
           "seed": null,
           "schedulerMode": null
@@ -650,21 +514,21 @@
         "hasFootnotes": false,
         "hasMdxPending": false,
         "hasMdxCompiled": false,
-        "hasBlockquote": true,
+        "hasBlockquote": false,
         "hasMath": false
       },
       "counts": {
         "table": 0,
         "pre": 0,
-        "blockquote": 1,
+        "blockquote": 0,
         "katex": 0,
         "mdxPending": 0,
         "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"warm\"/&gt;</span> and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote\">Blockquote with <span data-mdx-status=\"pending\">&lt;InlineChip tone=\"sharp\"/&gt;</span> and trailing content.</blockquote><p class=\"markdown-paragraph streaming-partial\">Final paragraph after the inline MDX tags.</p></div>",
-      "textSample": "MDX Tag Allowlist InlinePrefix text with <InlineChip tone=\"warm\"/> and trailing prose that must remain visible.List item with <InlineChip tone=\"cool\"> and sibling text afterward.Blockquote with <Inlin",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Display Hard Stop Negative\">Math Display Hard Stop Negative</h1><p class=\"markdown-paragraph\">Unsupported display math should remain conservative.</p><p class=\"markdown-paragraph\">$$\n\\begin{align}\nx + y</p><p class=\"markdown-paragraph\">This trailing prose must remain visible after the unfinished display block.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">The following list item must remain visible as ordinary markdown content.</li></ul><p class=\"markdown-paragraph streaming-partial\">Final paragraph after the unsupported</p></div>",
+      "textSample": "Math Display Hard Stop NegativeUnsupported display math should remain conservative.$$\n\\begin{align}\nx + yThis trailing prose must remain visible after the unfinished display block.The following list i",
       "structure": {
         "topLevelTags": [
           "div"
@@ -672,7 +536,73 @@
         "counts": {
           "table": 0,
           "pre": 0,
-          "blockquote": 1,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-324",
+      "appendedChars": 324,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 20,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 17,
+        "lastPatchToDomMs": 0.5,
+        "lastDurationMs": 0.20000000298023224,
+        "meta": {
+          "fixtureId": "math-display-hard-stop-negative",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Display Hard Stop Negative\">Math Display Hard Stop Negative</h1><p class=\"markdown-paragraph\">Unsupported display math should remain conservative.</p><p class=\"markdown-paragraph\">$$\n\\begin{align}\nx + y</p><p class=\"markdown-paragraph\">This trailing prose must remain visible after the unfinished display block.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">The following list item must remain visible as ordinary markdown content.</li></ul><p class=\"markdown-paragraph streaming-partial\">Final paragraph after the unsupported display math case.</p></div>",
+      "textSample": "Math Display Hard Stop NegativeUnsupported display math should remain conservative.$$\n\\begin{align}\nx + yThis trailing prose must remain visible after the unfinished display block.The following list i",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
           "katex": 0,
           "mdxPending": 0,
           "mdxCompiled": 0,
@@ -689,7 +619,7 @@
   ],
   "final": {
     "id": "after-finalize",
-    "appendedChars": 297,
+    "appendedChars": 324,
     "rootChildCount": 1,
     "selectors": {
       "hasTable": false,
@@ -697,20 +627,20 @@
       "hasFootnotes": false,
       "hasMdxPending": false,
       "hasMdxCompiled": false,
-      "hasBlockquote": true,
+      "hasBlockquote": false,
       "hasMath": false
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"warm\"/&gt;</span> and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote\">Blockquote with <span data-mdx-status=\"pending\">&lt;InlineChip tone=\"sharp\"/&gt;</span> and trailing content.</blockquote><p class=\"markdown-paragraph\">Final paragraph after the inline MDX tags.</p></div>",
+    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Display Hard Stop Negative\">Math Display Hard Stop Negative</h1><p class=\"markdown-paragraph\">Unsupported display math should remain conservative.</p><p class=\"markdown-paragraph\">$$\n\\begin{align}\nx + y</p><p class=\"markdown-paragraph\">This trailing prose must remain visible after the unfinished display block.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">The following list item must remain visible as ordinary markdown content.</li></ul><p class=\"markdown-paragraph\">Final paragraph after the unsupported display math case.</p></div>",
     "runtimeState": {
-      "rendererVersion": 20,
+      "rendererVersion": 21,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
-      "lastTx": 17,
-      "lastPatchToDomMs": 16.600000001490116,
-      "lastDurationMs": 1.4000000022351742,
+      "lastTx": 18,
+      "lastPatchToDomMs": 15.100000001490116,
+      "lastDurationMs": 1.300000000745058,
       "meta": {
-        "fixtureId": "mdx-tag-allowlist-inline",
+        "fixtureId": "math-display-hard-stop-negative",
         "scenarioId": "S2_typical",
         "seed": null,
         "schedulerMode": null
@@ -728,7 +658,7 @@
       "counts": {
         "table": 0,
         "pre": 0,
-        "blockquote": 1,
+        "blockquote": 0,
         "katex": 0,
         "mdxPending": 0,
         "mdxCompiled": 0,
@@ -740,8 +670,8 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "30d39b48ca8b4f3a8c97406de2934dd9ebf888ebaee5f5798b0b8b516012e7a9",
-        "textSample": "MDX Tag Allowlist InlinePrefix text with <InlineChip tone=\"warm\"/> and trailing prose that must remain visible.List item"
+        "hash": "66c2c3129904a8e8607e7e1929b77c157b8f182ff3af5a72742e1ab1c0ebd567",
+        "textSample": "Math Display Hard Stop NegativeUnsupported display math should remain conservative.$$\n\\begin{align}\nx + yThis trailing p"
       }
     ],
     "inspection": {

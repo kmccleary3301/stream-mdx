@@ -117,6 +117,24 @@ function testMathBlockNewlineBoundary() {
   assert.strictEqual(display.content, "$$x\nmore\n$$");
 }
 
+function testMathDisplayAnticipation() {
+  const display = prepareInlineStreamingContent("$$\\frac{a", {
+    formatAnticipation: { mathBlock: true },
+    math: true,
+  });
+  assert.strictEqual(display.kind, "parse");
+  if (display.kind !== "parse") throw new Error("expected parse result");
+  assert.strictEqual(display.status, "anticipated");
+  assert.strictEqual(display.content, "$$\\frac{a{}}$$");
+
+  const displayTrace = prepareInlineStreamingLookahead("$$\\sqrt{x", {
+    formatAnticipation: { mathBlock: true },
+    math: true,
+  });
+  assert.strictEqual(displayTrace.trace[0]?.surface, "math-block");
+  assert.strictEqual(displayTrace.trace[0]?.validation?.valid, true);
+}
+
 function testUnsupportedMathRemainsRaw() {
   const unsupportedLeftRight = prepareInlineStreamingContent("$\\left(x + y", {
     formatAnticipation: { mathInline: true },
@@ -129,6 +147,12 @@ function testUnsupportedMathRemainsRaw() {
     math: true,
   });
   assert.deepStrictEqual(unsupportedEnvironment, { kind: "raw", status: "raw", reason: "incomplete-math" });
+
+  const unsupportedDisplayLeftRight = prepareInlineStreamingContent("$$\\left(x + y", {
+    formatAnticipation: { mathBlock: true },
+    math: true,
+  });
+  assert.deepStrictEqual(unsupportedDisplayLeftRight, { kind: "raw", status: "raw", reason: "incomplete-math" });
 }
 
 function testMathValidationTrace() {
@@ -190,6 +214,7 @@ testMathAlwaysRaw();
 testMathAnticipation();
 testCurrencyLikeDollarDoesNotAnticipateMath();
 testMathBlockNewlineBoundary();
+testMathDisplayAnticipation();
 testUnsupportedMathRemainsRaw();
 testMathValidationTrace();
 testMathConvergenceBehavior();

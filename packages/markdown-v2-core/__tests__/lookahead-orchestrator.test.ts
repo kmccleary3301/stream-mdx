@@ -154,6 +154,29 @@ function testMdxExpressionProviderTerminatesWithoutRepair() {
   assert.strictEqual(result.trace[0]?.termination?.reason, "unsupported-syntax");
 }
 
+function testMathBlockProviderRepairsBoundedSubset() {
+  const result = prepareInlineStreamingLookahead("$$\\frac{a", {
+    formatAnticipation: { mathBlock: true },
+    math: true,
+    context: {
+      blockType: "paragraph",
+      ancestorTypes: [],
+      containerSignature: createContainerSignature({
+        blockType: "paragraph",
+        ancestorTypes: [],
+        localTextField: "raw",
+      }),
+    },
+  });
+
+  assert.strictEqual(result.prepared.kind, "parse");
+  if (result.prepared.kind !== "parse") throw new Error("expected parse result");
+  assert.strictEqual(result.prepared.content, "$$\\frac{a{}}$$");
+  assert.strictEqual(result.trace[0]?.surface, "math-block");
+  assert.strictEqual(result.trace[0]?.decision, "repair");
+  assert.strictEqual(result.trace[0]?.validation?.valid, true);
+}
+
 testInlineProviderRepairPlan();
 testRegexProviderRepairPlan();
 testProviderDoesNotInventRegexRepairWithoutMatch();
@@ -162,4 +185,5 @@ testHtmlInlineAllowlistRepairPlan();
 testMdxTagAllowlistRepairPlan();
 testMdxTagProviderTerminatesOnAmbiguousExpressionTail();
 testMdxExpressionProviderTerminatesWithoutRepair();
+testMathBlockProviderRepairsBoundedSubset();
 console.log("lookahead orchestrator tests passed");

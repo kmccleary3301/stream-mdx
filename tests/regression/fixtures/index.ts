@@ -9,6 +9,9 @@ export type RegressionFixture = {
   forbidSelectorsDuringStreaming?: string[];
   requiredTextFragments?: string[];
   forbidTextFragments?: string[];
+  forbidHtmlFragments?: string[];
+  forbidHtmlFragmentsDuringStreaming?: string[];
+  allowRawBlockMath?: boolean;
   expectTableByPct?: number;
   expectedListItemCount?: number;
   forbidEmptyNestedLists?: boolean;
@@ -248,6 +251,16 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
     requiredTextFragments: ["trailing prose", "Final paragraph after supported math content."],
   },
   {
+    id: "math-display-supported",
+    title: "Math Display Supported",
+    file: "math-display-supported.md",
+    tags: ["anticipation", "math", "display", "lists", "blockquote"],
+    requiredSelectors: [".katex", ".katex-display", "blockquote", "ul"],
+    forbidSelectors: [".katex-error"],
+    forbidSelectorsDuringStreaming: [".katex-error"],
+    requiredTextFragments: ["trailing prose must remain visible", "Final paragraph after supported display math content."],
+  },
+  {
     id: "math-inline-hard-stop-negative",
     title: "Math Inline Hard Stop Negative",
     file: "math-inline-hard-stop-negative.md",
@@ -262,6 +275,22 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
     forbidSelectorsDuringStreaming: [".katex-error"],
   },
   {
+    id: "math-display-hard-stop-negative",
+    title: "Math Display Hard Stop Negative",
+    file: "math-display-hard-stop-negative.md",
+    tags: ["anticipation", "math", "display", "negative"],
+    requiredSelectors: ["ul"],
+    requiredTextFragments: [
+      "$$",
+      "\\begin{align}",
+      "trailing prose must remain visible after the unfinished display block",
+      "Final paragraph after the unsupported display math case.",
+    ],
+    forbidSelectors: [".katex-error"],
+    forbidSelectorsDuringStreaming: [".katex-error"],
+    allowRawBlockMath: true,
+  },
+  {
     id: "nested-blockquote-list-crossover",
     title: "Nested Blockquote List Crossover",
     file: "nested-blockquote-list-crossover.md",
@@ -274,6 +303,7 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
     file: "inline-html-allowlist.md",
     tags: ["anticipation", "html", "inline"],
     requiredSelectors: ["kbd", "sup", "sub", "span", "a", "code"],
+    forbidHtmlFragments: ["&lt;kbd", "&lt;sup", "&lt;sub", "&lt;span"],
   },
   {
     id: "block-html-no-swallow",
@@ -281,6 +311,10 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
     file: "block-html-no-swallow.md",
     tags: ["anticipation", "html", "negative"],
     requiredSelectors: ["ul"],
+    requiredTextFragments: [
+      "This paragraph must remain visible as plain markdown text after the unfinished block tag.",
+      "The following list item must also remain visible.",
+    ],
   },
   {
     id: "mdx-tag-allowlist-inline",
@@ -314,6 +348,7 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
     requiredTextFragments: [
       "Prefix text with {expr and trailing prose that must stay visible.",
       "sibling prose that must remain visible",
+      "quoted sibling prose that must remain visible",
       "Final paragraph after the MDX expression negatives.",
     ],
   },

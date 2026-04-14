@@ -33,6 +33,81 @@ export type LookaheadTerminationReason =
 
 export type LookaheadDowngradeMode = "raw" | "safe-prefix" | "surface-fallback";
 
+export type LookaheadSupportStatus = "implemented" | "bounded" | "hard-stop-only" | "deferred";
+
+export interface LookaheadSupportDescriptor {
+  surface: LookaheadSurface;
+  status: LookaheadSupportStatus;
+  smokeEligible: boolean;
+  smokePromoted: boolean;
+  notes: readonly string[];
+}
+
+export const LOOKAHEAD_SUPPORT_MATRIX: readonly LookaheadSupportDescriptor[] = [
+  {
+    surface: "inline-format",
+    status: "implemented",
+    smokeEligible: true,
+    smokePromoted: false,
+    notes: ["delimiter closure for emphasis, strong, strike, and inline code"],
+  },
+  {
+    surface: "regex",
+    status: "implemented",
+    smokeEligible: false,
+    smokePromoted: false,
+    notes: ["adapter around bounded regex append logic"],
+  },
+  {
+    surface: "math-inline",
+    status: "bounded",
+    smokeEligible: true,
+    smokePromoted: true,
+    notes: [
+      "supports trailing control-word trim, dangling script repair, bounded delimiter closure, and missing groups for \\frac/\\sqrt",
+      "unsupported families hard-stop / fallback",
+    ],
+  },
+  {
+    surface: "math-block",
+    status: "bounded",
+    smokeEligible: true,
+    smokePromoted: false,
+    notes: [
+      "same bounded subset as inline math when repair remains tail-local and validates cleanly",
+      "unsupported environments, optional arguments, and left/right families hard-stop / fallback",
+    ],
+  },
+  {
+    surface: "html-inline",
+    status: "bounded",
+    smokeEligible: true,
+    smokePromoted: true,
+    notes: ["allowlisted inline-tag auto-close only", "newline and ambiguity budgets terminate conservatively"],
+  },
+  {
+    surface: "html-block",
+    status: "hard-stop-only",
+    smokeEligible: false,
+    smokePromoted: false,
+    notes: ["block-style html remains conservative; no speculative block capture"],
+  },
+  {
+    surface: "mdx-tag",
+    status: "bounded",
+    smokeEligible: true,
+    smokePromoted: true,
+    notes: ["allowlisted inline mdx tag self-close only", "mixed expression ambiguity terminates conservatively"],
+  },
+  {
+    surface: "mdx-expression",
+    status: "hard-stop-only",
+    smokeEligible: false,
+    smokePromoted: false,
+    notes: ["explicit hard-stop / fallback policy for V1", "no broad expression healing or child synthesis"],
+  },
+] as const;
+
 export type LookaheadRepairOp =
   | { kind: "append"; text: string }
   | { kind: "trim-tail"; count: number }

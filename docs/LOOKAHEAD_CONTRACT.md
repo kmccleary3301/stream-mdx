@@ -230,38 +230,42 @@ Current trace artifacts include:
 - mixed-content lookahead decisions for HTML / MDX provider runs
 
 Current limitations:
-- `mdx-expression` remains deferred and intentionally conservative
-- Math V1 is only partially browser-backed; the hard-stop negative math fixture is currently trace/unit-backed rather than promoted into browser regression HTML coverage
+- `mdx-expression` is intentionally finished as a hard-stop / fallback surface for V1 rather than a repair surface
+- Math V1 remains bounded by design; environments, `\left...\right`, and optional-argument repair remain outside the V1 contract
 - the trace workflow is canonicalized around an exported docs build plus a static server, not `next dev`
 
 ## Current support matrix
 
-Current V1 implementation status by surface:
+| Surface | Status | Smoke | Notes |
+| --- | --- | --- | --- |
+| `inline-format` | implemented | eligible | bounded delimiter closure |
+| `regex` | implemented | targeted-only | bounded adapter around current regex append behavior |
+| `html-inline` | bounded | promoted | allowlisted inline-tag auto-close only |
+| `html-block` | hard-stop / fallback | targeted-only | no optimistic block capture |
+| `mdx-tag` | bounded | promoted | allowlisted inline component self-close only |
+| `mdx-expression` | hard-stop / fallback | targeted-only | V1 deliberately avoids expression healing |
+| `math-inline` | bounded | promoted | validated bounded repair subset |
+| `math-block` | bounded | eligible | same validated bounded subset when repair stays local |
 
-- `inline-format`
-  - implemented
-  - bounded delimiter closure
-- `regex`
-  - implemented
-  - bounded adapter around current regex append behavior
-- `html-inline`
-  - implemented
-  - allowlisted and bounded
-- `mdx-tag`
-  - implemented
-  - allowlisted and bounded
-- `mdx-expression`
-  - implemented as explicit hard-stop / fallback only
-  - no repair beyond traceable downgrade
-- `math-inline`
-  - implemented for the bounded V1 subset
-  - repaired candidates are validated before render
-- `math-block`
-  - implemented only for the bounded V1 subset
-  - unsupported cases remain conservative
-- `html-block`
-  - conservative fallback only
-  - no optimistic block capture
+MDX V1 closure:
+- `mdx-tag` is the only bounded repair surface for MDX in V1
+- `mdx-tag` currently guarantees bounded pending-shell preview behavior, not inline compiled-render guarantees
+- `mdx-expression` is deliberately conservative hard-stop / fallback behavior
+- no broad expression healing, child synthesis, or block-component optimism is part of V1
+
+Math V1 closure:
+- supported subset:
+  - trailing control-word trim
+  - dangling `^` / `_` empty-group repair
+  - bounded missing-group repair for `\frac` and `\sqrt`
+  - tail-local unmatched delimiter closure
+- unsupported subset:
+  - `\left ... \right`
+  - environments such as `\begin{align}`
+  - optional-argument repair
+  - macro-name inference
+- display math follows the same bounded repair subset as inline math only when the repair remains local and validates cleanly
+- unsupported display math hard-stops / falls back rather than guessing
 
 ## Current no-fake-progress rule
 

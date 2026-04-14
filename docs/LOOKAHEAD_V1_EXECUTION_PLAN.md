@@ -397,7 +397,9 @@ Current status:
   - `block-html-no-swallow.md`
   - `mdx-tag-allowlist-inline.mdx`
   - `mdx-tag-no-swallow-negative.mdx`
-- `mdx-expression` remains intentionally conservative beyond explicit hard-stop / fallback behavior
+- `mdx-expression-no-swallow-negative.mdx` is green in browser regression HTML coverage
+- `mdx-tag-allowlist-inline.mdx` now covers nested list-item and quoted-list contexts
+- `mdx-expression` is intentionally finished as hard-stop / fallback behavior for V1, not a pending repair surface
 
 ## Phase 4. Math V1 bounded repair
 
@@ -453,7 +455,10 @@ Current status:
 - `nested-math-inline.md` remains green in browser regression HTML coverage
 - `math-inline-supported.md` is now green in browser regression HTML coverage and seed-stable
 - `math-inline-hard-stop-negative.md` is now green in browser regression HTML coverage for unsupported inline cases
-- `math-hard-stop-negative.md` remains trace-backed and unit-backed for the broader unsupported family, especially display-math negatives
+- `math-display-supported.md` is now part of the reduced browser/regression surface for bounded display math
+- `math-display-hard-stop-negative.md` is now part of the targeted browser/regression surface for conservative unsupported display math
+- display math follows the same bounded subset as inline math only when repairs remain tail-local and validate cleanly
+- `math-hard-stop-negative.md` remains targeted trace/unit coverage for the broader unsupported family
 
 ## Phase 5. Adversarial hardening
 
@@ -479,15 +484,7 @@ Definition of done:
 Goal:
 - promote only reduced, stable cases after trace-driven hardening
 
-Promote later, not now:
-- nested formatting container case
-- nested math inline case
-- reduced display math case
-- inline HTML allowlist case
-- inline MDX tag allowlist case
-
 Keep targeted-only for longer:
-- block HTML no-swallow negatives
 - MDX tag hard-stop negatives
 - MDX expression negatives
 - regex bound / DOS negatives
@@ -502,13 +499,15 @@ Current status:
 - reduced stable cases now promoted into seeded smoke:
   - `nested-formatting-ancestors`
   - `inline-html-allowlist`
+  - `block-html-no-swallow`
   - `math-inline-supported`
+  - `math-display-supported`
   - `mdx-tag-allowlist-inline`
 - non-smoke items remain targeted-only:
-  - `block-html-no-swallow`
   - `mdx-tag-no-swallow-negative`
   - `mdx-expression-no-swallow-negative`
   - `math-inline-hard-stop-negative`
+  - `math-display-hard-stop-negative`
   - `math-hard-stop-negative`
 
 Promotion criteria for this reduced smoke set:
@@ -571,6 +570,16 @@ Provokes:
 - explicit `mdx-expression` hard-stop / fallback
 - preserved trailing prose in paragraph, list, and blockquote contexts
 
+### 10. `math-display-supported.md`
+Provokes:
+- bounded display-math repair under the supported V1 subset
+- no-error rendering with list and blockquote neighbors
+
+### 11. `math-display-hard-stop-negative.md`
+Provokes:
+- unsupported display-math hard-stop / fallback
+- preserved trailing prose and following list content
+
 ### 7. `kitchen-sink-lookahead.mdx`
 Provokes:
 - integrated stress case
@@ -605,6 +614,7 @@ Console output should only surface:
 - first downgrade
 - first divergence
 - artifact path
+- canonical trace replay command
 
 ## Initial File Deliverables
 
@@ -656,3 +666,15 @@ Start in this order:
 8. selective smoke promotion
 
 That is the shortest path to a subsystem that is both more capable and still explainable.
+
+## V1 closure notes
+
+MDX V1:
+- bounded inline `mdx-tag` repair is complete for the allowlisted local subset
+- `mdx-expression` is intentionally hard-stop / fallback only
+- broader expression healing remains deferred beyond V1
+
+Math V1:
+- inline and display math both use the same bounded repair subset when repair stays local and validation passes
+- unsupported families hard-stop / fallback instead of guessing
+- smoke-eligible math cases are limited to reduced deterministic supported fixtures
