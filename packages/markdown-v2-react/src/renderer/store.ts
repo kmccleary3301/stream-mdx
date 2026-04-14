@@ -185,6 +185,7 @@ type StoreDebugCounters = {
 };
 
 const PATCH_PERF_HISTORY_LIMIT = 120;
+const CODE_WRAPPER_ATTR_PROBE_CHARS = 2048;
 const getPerfNow = (() => {
   if (typeof performance !== "undefined" && typeof performance.now === "function") {
     return () => performance.now();
@@ -794,7 +795,11 @@ function applyCodeBlockMetadata(record: NodeRecord) {
   const block = record.block;
   const highlightedHtml = block?.payload.highlightedHtml ?? "";
   const lang = typeof block?.payload.meta?.lang === "string" ? (block?.payload.meta?.lang as string) : record.props?.lang;
-  let { preAttrs, codeAttrs } = extractCodeWrapperAttributes(highlightedHtml);
+  const wrapperProbe =
+    highlightedHtml.length > CODE_WRAPPER_ATTR_PROBE_CHARS
+      ? highlightedHtml.slice(0, CODE_WRAPPER_ATTR_PROBE_CHARS)
+      : highlightedHtml;
+  let { preAttrs, codeAttrs } = extractCodeWrapperAttributes(wrapperProbe);
   if (!preAttrs || !codeAttrs) {
     const defaults = getDefaultCodeWrapperAttributes(typeof lang === "string" ? lang : undefined);
     preAttrs = preAttrs ?? defaults.preAttrs;
