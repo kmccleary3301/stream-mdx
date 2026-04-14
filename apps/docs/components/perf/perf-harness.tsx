@@ -81,6 +81,39 @@ type ProfilerSample = {
   commitTime: number;
 };
 
+type PatchPerfOpSummary = {
+  count: number;
+  durationMs: number;
+};
+
+type PatchPerfSummary = {
+  timestamp: string;
+  totalMs: number;
+  applyMs: number;
+  coalesceMs: number;
+  listNormalizeMs: number;
+  patches: number;
+  coalescedPatches: number;
+  touchedCount: number;
+  mutatedBlocks: boolean;
+  ops: Record<string, PatchPerfOpSummary>;
+  setPropsByType?: Record<string, PatchPerfOpSummary>;
+  setPropsBySize?: Record<string, PatchPerfOpSummary>;
+};
+
+type PatchPerfTotals = {
+  calls: number;
+  totalMs: number;
+  applyMs: number;
+  coalesceMs: number;
+  listNormalizeMs: number;
+  patches: number;
+  coalescedPatches: number;
+  ops: Record<string, PatchPerfOpSummary>;
+  setPropsByType: Record<string, PatchPerfOpSummary>;
+  setPropsBySize: Record<string, PatchPerfOpSummary>;
+};
+
 type PerfReport = {
   meta: {
     fixtureId: string;
@@ -100,6 +133,10 @@ type PerfReport = {
   samples: {
     flushes: RendererMetrics[];
     workerPerformance: PerformanceMetrics[];
+    patchPerf: {
+      totals: PatchPerfTotals | null;
+      last: PatchPerfSummary | null;
+    };
     longTasks: LongTaskEntry[];
     rafDeltas: number[];
     memory: MemorySample[];
@@ -109,6 +146,14 @@ type PerfReport = {
 
 declare global {
   interface Window {
+    __STREAMING_DEBUG__?: {
+      patchPerf?: boolean;
+      worker?: boolean;
+      codeLines?: boolean;
+    };
+    __STREAM_MDX_PATCH_STATS__?: PatchPerfSummary[];
+    __STREAM_MDX_PATCH_STATS_LAST__?: PatchPerfSummary;
+    __STREAM_MDX_PATCH_STATS_TOTALS__?: PatchPerfTotals;
     __streammdxPerfReport?: PerfReport;
     __streammdxPerfDone?: Promise<void>;
     __streammdxPerfError?: string;
@@ -289,6 +334,10 @@ export function PerfHarness(): JSX.Element {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    window.__STREAMING_DEBUG__ = { ...(window.__STREAMING_DEBUG__ ?? {}), patchPerf: true };
+    window.__STREAM_MDX_PATCH_STATS__ = [];
+    window.__STREAM_MDX_PATCH_STATS_LAST__ = undefined;
+    window.__STREAM_MDX_PATCH_STATS_TOTALS__ = undefined;
     window.__streammdxPerfReport = undefined;
     window.__streammdxPerfDone = new Promise((resolve) => {
       doneResolveRef.current = resolve;
@@ -300,6 +349,10 @@ export function PerfHarness(): JSX.Element {
     const token = (runTokenRef.current += 1);
 
     if (typeof window !== "undefined") {
+      window.__STREAMING_DEBUG__ = { ...(window.__STREAMING_DEBUG__ ?? {}), patchPerf: true };
+      window.__STREAM_MDX_PATCH_STATS__ = [];
+      window.__STREAM_MDX_PATCH_STATS_LAST__ = undefined;
+      window.__STREAM_MDX_PATCH_STATS_TOTALS__ = undefined;
       window.__streammdxPerfReport = undefined;
       window.__streammdxPerfError = undefined;
       window.__streammdxPerfRunStart = undefined;
@@ -451,6 +504,10 @@ export function PerfHarness(): JSX.Element {
           samples: {
             flushes: flushesRef.current,
             workerPerformance: workerPerformanceRef.current,
+            patchPerf: {
+              totals: window.__STREAM_MDX_PATCH_STATS_TOTALS__ ?? null,
+              last: window.__STREAM_MDX_PATCH_STATS_LAST__ ?? null,
+            },
             longTasks: longTasksRef.current,
             rafDeltas: rafDeltasRef.current,
             memory: memorySamplesRef.current,

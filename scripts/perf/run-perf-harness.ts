@@ -113,6 +113,34 @@ type PerfReport = {
         maxQueue: number;
       };
     }>;
+    patchPerf: {
+      totals: {
+        calls: number;
+        totalMs: number;
+        applyMs: number;
+        coalesceMs: number;
+        listNormalizeMs: number;
+        patches: number;
+        coalescedPatches: number;
+        ops: Record<string, { count: number; durationMs: number }>;
+        setPropsByType: Record<string, { count: number; durationMs: number }>;
+        setPropsBySize: Record<string, { count: number; durationMs: number }>;
+      } | null;
+      last: {
+        timestamp: string;
+        totalMs: number;
+        applyMs: number;
+        coalesceMs: number;
+        listNormalizeMs: number;
+        patches: number;
+        coalescedPatches: number;
+        touchedCount: number;
+        mutatedBlocks: boolean;
+        ops: Record<string, { count: number; durationMs: number }>;
+        setPropsByType?: Record<string, { count: number; durationMs: number }>;
+        setPropsBySize?: Record<string, { count: number; durationMs: number }>;
+      } | null;
+    };
     longTasks: Array<{ startTime: number; duration: number }>;
     rafDeltas: number[];
     memory: Array<{ ts: number; usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number }>;
@@ -204,6 +232,10 @@ type Summary = {
     workerPatchBytes: Stats | null;
     workerQueueDepth: Stats | null;
     workerTopBlockEnrichType: { type: string; totalMs: number } | null;
+    patchPerfTotalMs: number | null;
+    patchPerfApplyMs: number | null;
+    patchPerfTopOp: { op: string; durationMs: number; count: number } | null;
+    patchPerfTopSetPropsType: { type: string; durationMs: number; count: number } | null;
   }>;
   aggregate: {
     durationMs: Stats | null;
@@ -226,6 +258,8 @@ type Summary = {
     workerShikiMs: Stats | null;
     workerPatchBytes: Stats | null;
     workerQueueDepth: Stats | null;
+    patchPerfTotalMs: Stats | null;
+    patchPerfApplyMs: Stats | null;
   };
 };
 
@@ -312,6 +346,21 @@ function summarizeWorkerPerformance(samples: WorkerPerformanceSample[]) {
     totalShikiMs: sumDefined(shiki),
     peakQueueDepth: maxDefined(queueDepth),
     topBlockEnrichType: topBlockEnrichType ? { type: topBlockEnrichType[0], totalMs: topBlockEnrichType[1] } : null,
+  };
+}
+
+function topPatchPerfEntry(
+  record: Record<string, { count: number; durationMs: number }> | undefined | null,
+): { key: string; count: number; durationMs: number } | null {
+  if (!record) return null;
+  const top = Object.entries(record)
+    .filter(([, stats]) => stats && typeof stats.durationMs === "number")
+    .sort((a, b) => b[1].durationMs - a[1].durationMs)[0];
+  if (!top) return null;
+  return {
+    key: top[0],
+    count: top[1].count,
+    durationMs: top[1].durationMs,
   };
 }
 
@@ -436,6 +485,9 @@ function summarizeRun(entry: PerfRun) {
   const profilerActual = report.samples.profiler.map((entry) => entry.actualDuration);
   const profilerBase = report.samples.profiler.map((entry) => entry.baseDuration);
   const workerSummary = summarizeWorkerPerformance(report.samples.workerPerformance ?? []);
+  const patchPerfTotals = report.samples.patchPerf?.totals ?? null;
+  const topPatchOp = topPatchPerfEntry(patchPerfTotals?.ops);
+  const topSetPropsType = topPatchPerfEntry(patchPerfTotals?.setPropsByType);
   const cdpMetrics = entry.cdp.metrics;
   const domEnd = entry.cdp.domEnd;
   const domDelta = entry.cdp.domDelta;
@@ -474,6 +526,12 @@ function summarizeRun(entry: PerfRun) {
     workerPatchBytes: workerSummary.patchBytes,
     workerQueueDepth: workerSummary.queueDepth,
     workerTopBlockEnrichType: workerSummary.topBlockEnrichType,
+    patchPerfTotalMs: patchPerfTotals?.totalMs ?? null,
+    patchPerfApplyMs: patchPerfTotals?.applyMs ?? null,
+    patchPerfTopOp: topPatchOp ? { op: topPatchOp.key, durationMs: topPatchOp.durationMs, count: topPatchOp.count } : null,
+    patchPerfTopSetPropsType: topSetPropsType
+      ? { type: topSetPropsType.key, durationMs: topSetPropsType.durationMs, count: topSetPropsType.count }
+      : null,
   };
 }
 
@@ -553,6 +611,14 @@ function formatSummaryText(summary: Summary): string {
       `worker shiki p50/p95: ${summary.aggregate.workerShikiMs.p50.toFixed(2)} / ${summary.aggregate.workerShikiMs.p95.toFixed(2)} ms`,
     );
   }
+  if (summary.aggregate.patchPerfTotalMs && summary.aggregate.patchPerfApplyMs) {
+    lines.push(
+      `patch perf total p50/p95: ${summary.aggregate.patchPerfTotalMs.p50.toFixed(2)} / ${summary.aggregate.patchPerfTotalMs.p95.toFixed(2)} ms`,
+    );
+    lines.push(
+      `patch perf apply p50/p95: ${summary.aggregate.patchPerfApplyMs.p50.toFixed(2)} / ${summary.aggregate.patchPerfApplyMs.p95.toFixed(2)} ms`,
+    );
+  }
   lines.push("");
   for (const run of summary.runs) {
     lines.push(`run ${run.run}`);
@@ -571,6 +637,16 @@ function formatSummaryText(summary: Summary): string {
     }
     if (run.workerTopBlockEnrichType) {
       lines.push(`  worker top enrich block: ${run.workerTopBlockEnrichType.type} (${run.workerTopBlockEnrichType.totalMs.toFixed(2)} ms total)`);
+    }
+    if (run.patchPerfTopOp) {
+      lines.push(
+        `  patch top op: ${run.patchPerfTopOp.op} (${run.patchPerfTopOp.durationMs.toFixed(2)} ms, ${run.patchPerfTopOp.count} calls)`,
+      );
+    }
+    if (run.patchPerfTopSetPropsType) {
+      lines.push(
+        `  patch top setProps type: ${run.patchPerfTopSetPropsType.type} (${run.patchPerfTopSetPropsType.durationMs.toFixed(2)} ms, ${run.patchPerfTopSetPropsType.count} calls)`,
+      );
     }
   }
   return `${lines.join("\n")}\n`;
@@ -643,6 +719,8 @@ async function run(): Promise<void> {
       workerShikiMs: statsFromRuns(runSummaries.map((run) => run.workerShikiMs?.p95 ?? null)),
       workerPatchBytes: statsFromRuns(runSummaries.map((run) => run.workerPatchBytes?.p95 ?? null)),
       workerQueueDepth: statsFromRuns(runSummaries.map((run) => run.workerQueueDepth?.p95 ?? null)),
+      patchPerfTotalMs: statsFromRuns(runSummaries.map((run) => run.patchPerfTotalMs)),
+      patchPerfApplyMs: statsFromRuns(runSummaries.map((run) => run.patchPerfApplyMs)),
     },
   };
 
