@@ -140,9 +140,7 @@ function testUnsupportedMathRemainsRaw() {
     formatAnticipation: { mathInline: true },
     math: true,
   });
-  assert.strictEqual(supportedLeftRight.kind, "parse");
-  if (supportedLeftRight.kind !== "parse") throw new Error("expected parse result");
-  assert.strictEqual(supportedLeftRight.content, "$\\left(x + y)\\right.$");
+  assert.deepStrictEqual(supportedLeftRight, { kind: "raw", status: "raw", reason: "incomplete-math" });
 
   const unsupportedEnvironment = prepareInlineStreamingContent("$$\\begin{align}\nx", {
     formatAnticipation: { mathBlock: true },
@@ -154,9 +152,7 @@ function testUnsupportedMathRemainsRaw() {
     formatAnticipation: { mathBlock: true },
     math: true,
   });
-  assert.strictEqual(supportedDisplayLeftRight.kind, "parse");
-  if (supportedDisplayLeftRight.kind !== "parse") throw new Error("expected parse result");
-  assert.strictEqual(supportedDisplayLeftRight.content, "$$\\left(x + y)\\right.$$");
+  assert.deepStrictEqual(supportedDisplayLeftRight, { kind: "raw", status: "raw", reason: "incomplete-math" });
 
   const nestedUnsupportedLeftRight = prepareInlineStreamingContent("$$\\left( \\frac{\\left[a+b}{c}", {
     formatAnticipation: { mathBlock: true },
@@ -178,8 +174,8 @@ function testMathValidationTrace() {
     math: true,
   });
   assert.strictEqual(unsupported.trace[0]?.surface, "math-inline");
-  assert.strictEqual(unsupported.trace[0]?.validation?.valid, true);
-  assert.strictEqual(unsupported.trace[0]?.decision, "repair");
+  assert.strictEqual(unsupported.trace[0]?.validation?.valid, false);
+  assert.strictEqual(unsupported.trace[0]?.decision, "raw");
   assert.strictEqual(unsupported.trace[0]?.featureFamily, "math-left-right-local");
 }
 
@@ -206,9 +202,7 @@ function testMathConvergenceBehavior() {
     formatAnticipation: { mathInline: true },
     math: true,
   });
-  assert.strictEqual(leftRightPrefix.kind, "parse");
-  if (leftRightPrefix.kind !== "parse") throw new Error("expected parse result");
-  assert.strictEqual(leftRightPrefix.content, "$\\left(x + y)\\right.$");
+  assert.strictEqual(leftRightPrefix.kind, "raw");
 
   const supportedFinal = prepareInlineStreamingContent("$\\left(x + y\\right)$", {
     formatAnticipation: { mathInline: true },
@@ -232,6 +226,26 @@ function testDisplayCheckpointSelection() {
   assert.strictEqual(result.prepared.content, "$$\na_n = \\frac{1}{n}\n$$");
 }
 
+function testStructuredMathFamiliesRemainDistinct() {
+  const environment = prepareInlineStreamingLookahead("$$\\begin{matrix}\na & b", {
+    formatAnticipation: { mathBlock: true },
+    math: true,
+  });
+  assert.strictEqual(environment.prepared.kind, "raw");
+  assert.strictEqual(environment.trace[0]?.featureFamily, "math-environment-structured");
+  assert.strictEqual(environment.trace[0]?.analysis?.math?.family, "environment-structured");
+  assert.strictEqual(environment.trace[0]?.decision, "raw");
+
+  const alignment = prepareInlineStreamingLookahead("$$\\begin{align}\na &= b", {
+    formatAnticipation: { mathBlock: true },
+    math: true,
+  });
+  assert.strictEqual(alignment.prepared.kind, "raw");
+  assert.strictEqual(alignment.trace[0]?.featureFamily, "math-alignment-structured");
+  assert.strictEqual(alignment.trace[0]?.analysis?.math?.family, "alignment-structured");
+  assert.strictEqual(alignment.trace[0]?.decision, "raw");
+}
+
 testWithoutAnticipation();
 testWithAnticipation();
 testComplete();
@@ -244,4 +258,5 @@ testUnsupportedMathRemainsRaw();
 testMathValidationTrace();
 testMathConvergenceBehavior();
 testDisplayCheckpointSelection();
+testStructuredMathFamiliesRemainDistinct();
 console.log("inline streaming anticipation tests passed");

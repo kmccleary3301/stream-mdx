@@ -15,6 +15,15 @@ These items do **not** count against the active V1 completion denominator.
 - kitchen-sink smoke promotion
 - optimization work on the settled lookahead subsystem
 
+## Current gate posture
+
+- Math V2A intentionally made no runtime MDX behavior changes.
+- Reopening `mdx-expression` requires fresh evidence after Math V2A hardening:
+  - a bounded subset definition
+  - no-swallow proof
+  - deterministic trace expectations
+  - a clear smoke-worthiness argument
+
 ## Why these are out of scope
 
 Lookahead V1 is intentionally bounded:

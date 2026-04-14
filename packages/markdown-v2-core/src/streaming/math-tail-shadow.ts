@@ -60,7 +60,7 @@ function classifyMathFamily(
 ): MathTraceAnalysis["family"] {
   const noteSet = new Set(notes);
 
-  if (/(?:\\begin\{(?:align|aligned|eqnarray|gather|multline)\}|\\(?:align|aligned|eqnarray|gather|multline)\b|&)/.test(raw)) {
+  if (/(?:\\begin\{(?:align|aligned|eqnarray|gather|multline)\}|\\(?:align|aligned|eqnarray|gather|multline)\b)/.test(raw)) {
     return "alignment-structured";
   }
 
@@ -70,6 +70,10 @@ function classifyMathFamily(
     /\\end\{[^}]+\}/.test(raw)
   ) {
     return "environment-structured";
+  }
+
+  if (/&/.test(raw)) {
+    return "alignment-structured";
   }
 
   if (noteSet.has("unsupported \\left/\\right pair") || /\\left\b|\\right\b/.test(raw)) {

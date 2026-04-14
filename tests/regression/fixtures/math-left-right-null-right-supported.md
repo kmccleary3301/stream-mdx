@@ -3,7 +3,8 @@
 Inline candidate:
 
 $$
-\left( x + y
+\left( x + y<!--split-->
+\right)
 $$
 
 Target V2A behavior:
@@ -11,3 +12,7 @@ Target V2A behavior:
 - remain tail-local
 - candidate may close with `\right.` only when policy allows it
 - no environment or alignment inference
+
+Trailing prose must remain visible after the supported left-right case.
+
+Final paragraph after the left-right supported case.

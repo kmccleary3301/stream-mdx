@@ -109,8 +109,8 @@ function testMathBlockTrace() {
     context: baseContext,
   });
   assert.strictEqual(result.trace[0]?.surface, "math-block");
-  assert.strictEqual(result.trace[0]?.decision, "repair");
-  assert.strictEqual(result.trace[0]?.validation?.valid, true);
+  assert.strictEqual(result.trace[0]?.decision, "raw");
+  assert.strictEqual(result.trace[0]?.validation?.valid, false);
   assert.strictEqual(result.trace[0]?.analysis?.math?.family, "left-right-local");
   assert.strictEqual(result.trace[0]?.featureFamily, "math-left-right-local");
   assert.ok(result.trace[0]?.analysis?.math?.candidates?.some((entry) => entry.id === "null-right-candidate"));
@@ -124,10 +124,10 @@ function testMathBlockFixtureTrace() {
     math: true,
     context: baseContext,
   });
-  assert.strictEqual(result.trace[0]?.decision, "repair");
+  assert.strictEqual(result.trace[0]?.decision, "raw");
   assert.strictEqual(result.trace[0]?.featureFamily, "math-left-right-local");
-  assert.strictEqual(result.trace[0]?.analysis?.math?.selectedCandidate, "repaired");
-  assert.strictEqual(result.trace[0]?.analysis?.math?.comparison?.preferredCandidate, "repair-candidate");
+  assert.strictEqual(result.trace[0]?.analysis?.math?.selectedCandidate, "raw");
+  assert.strictEqual(result.trace[0]?.analysis?.math?.comparison?.preferredCandidate, "raw-fallback");
 }
 
 function testMathDisplayCheckpointTrace() {
@@ -147,6 +147,32 @@ function testMathDisplayCheckpointTrace() {
   }
 }
 
+function testStructuredMathTraceFamilies() {
+  const environment = prepareInlineStreamingLookahead("$$\\begin{matrix}\na & b", {
+    formatAnticipation: { mathBlock: true },
+    math: true,
+    context: baseContext,
+  });
+  assert.strictEqual(environment.trace[0]?.surface, "math-block");
+  assert.strictEqual(environment.trace[0]?.decision, "raw");
+  assert.strictEqual(environment.trace[0]?.featureFamily, "math-environment-structured");
+  assert.strictEqual(environment.trace[0]?.analysis?.math?.family, "environment-structured");
+  assert.strictEqual(environment.trace[0]?.downgrade?.mode, "raw");
+  assert.strictEqual(environment.trace[0]?.termination?.reason, "unsupported-syntax");
+
+  const alignment = prepareInlineStreamingLookahead("$$\\begin{align}\na &= b", {
+    formatAnticipation: { mathBlock: true },
+    math: true,
+    context: baseContext,
+  });
+  assert.strictEqual(alignment.trace[0]?.surface, "math-block");
+  assert.strictEqual(alignment.trace[0]?.decision, "raw");
+  assert.strictEqual(alignment.trace[0]?.featureFamily, "math-alignment-structured");
+  assert.strictEqual(alignment.trace[0]?.analysis?.math?.family, "alignment-structured");
+  assert.strictEqual(alignment.trace[0]?.analysis?.math?.selectedCandidate, "raw");
+  assert.strictEqual(alignment.trace[0]?.termination?.reason, "unsupported-syntax");
+}
+
 testInlineFormatTrace();
 testRegexTrace();
 testHtmlInlineTrace();
@@ -156,4 +182,5 @@ testMathInlineTrace();
 testMathBlockTrace();
 testMathBlockFixtureTrace();
 testMathDisplayCheckpointTrace();
+testStructuredMathTraceFamilies();
 console.log("lookahead trace contract tests passed");

@@ -4,8 +4,7 @@ This case should remain conservative:
 
 $$
 \left( \frac{\left[a+b}{c}
-$$
 
-Expected direction:
-- detect nested left/right pressure
-- prefer hard-stop / raw fallback over speculative balancing
+Trailing prose must remain visible after the nested left-right negative case.
+
+Final paragraph after the nested left-right negative case.

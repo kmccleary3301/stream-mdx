@@ -888,10 +888,13 @@ function classifyMathRepair(
   raw: string,
   mode: "inline" | "display",
 ): MathRepairClassification {
+  if (/(?:\\begin\{(?:align|aligned|eqnarray|gather|multline)\}|\\(?:align|aligned|eqnarray|gather|multline)\b)/.test(raw)) {
+    return { kind: "unsupported", reason: "alignment math is deferred", notes: ["unsupported math alignment family"] };
+  }
   if (/\\begin\{/.test(raw)) {
     return { kind: "unsupported", reason: "math environments are deferred", notes: ["unsupported math environment"] };
   }
-  if (/(?:\\begin\{(?:align|aligned|eqnarray|gather|multline)\}|\\(?:align|aligned|eqnarray|gather|multline)\b|&)/.test(raw)) {
+  if (/&/.test(raw)) {
     return { kind: "unsupported", reason: "alignment math is deferred", notes: ["unsupported math alignment family"] };
   }
   if (/\\[A-Za-z]+\[[^\]]*$/.test(raw)) {
@@ -980,9 +983,9 @@ function validateMathRepairCandidate(repaired: string, mode: "inline" | "display
   if (/(?:^|[^\\])(?:\^|_)$/.test(mathContent)) {
     errors.push("dangling script operator");
   }
-  const trailingControlWord = mathContent.match(/\\[A-Za-z]+$/)?.[0];
-  if (trailingControlWord && !isAllowlistedCompleteControlWord(trailingControlWord)) {
-    errors.push(`incomplete control word: ${trailingControlWord}`);
+  const trailingControlFragment = mathContent.match(/(?:\\[A-Za-z]+|\\)$/)?.[0];
+  if (trailingControlFragment && !isAllowlistedCompleteControlWord(trailingControlFragment)) {
+    errors.push(`incomplete control word: ${trailingControlFragment}`);
   }
   if (countMissingRequiredGroups(mathContent, "\\frac", 2) > 0) {
     errors.push("missing required \\frac group");
@@ -1005,9 +1008,9 @@ function extractDelimitedMathContent(repaired: string, mode: "inline" | "display
 
 function buildMathRepairOps(raw: string, mode: "inline" | "display"): LookaheadRepairOp[] {
   const ops: LookaheadRepairOp[] = [];
-  const trailingControlWord = raw.match(/\\[A-Za-z]+$/);
-  if (trailingControlWord) {
-    const controlWord = trailingControlWord[0];
+  const trailingControlFragment = raw.match(/(?:\\[A-Za-z]+|\\)$/);
+  if (trailingControlFragment) {
+    const controlWord = trailingControlFragment[0];
     if (!isAllowlistedCompleteControlWord(controlWord)) {
       ops.push({ kind: "trim-tail", count: controlWord.length });
     }
@@ -1058,8 +1061,8 @@ function buildLeftRightNullRepairOps(
   }
   const ops: LookaheadRepairOp[] = [];
   const balance = scanDelimiterBalance(raw);
-  for (let i = 0; i < balance.openParens; i += 1) ops.push({ kind: "append", text: ")" });
-  for (let i = 0; i < balance.openBrackets; i += 1) ops.push({ kind: "append", text: "]" });
+  // Do not synthesize ordinary paren/bracket closers here: the narrow V2A
+  // contract closes a single dangling \left... pair with \right. only.
   for (let i = 0; i < balance.openBraces; i += 1) ops.push({ kind: "append", text: "}" });
   if (mode === "display" && /[\r\n]/.test(raw) && !(raw.endsWith("\n") || raw.endsWith("\r"))) {
     ops.push({ kind: "append", text: "\n" });
@@ -1125,7 +1128,7 @@ function isUnstableDisplayTail(raw: string): boolean {
   if (balance.openParens > 0 || balance.openBrackets > 0 || balance.openBraces > 0) {
     return true;
   }
-  const trailingControlWord = trimmed.match(/\\[A-Za-z]+$/)?.[0];
+  const trailingControlWord = trimmed.match(/(?:\\[A-Za-z]+|\\)$/)?.[0];
   if (trailingControlWord && !isAllowlistedCompleteControlWord(trailingControlWord)) {
     return true;
   }
@@ -1143,7 +1146,7 @@ function isUnstableDisplayTail(raw: string): boolean {
 
 function mathRepairDebugNotes(raw: string, mode: "inline" | "display"): string[] {
   const notes: string[] = [];
-  if (/\\[A-Za-z]+$/.test(raw)) notes.push("trim trailing control-word fragment");
+  if (/(?:\\[A-Za-z]+|\\)$/.test(raw)) notes.push("trim trailing control-word fragment");
   if (/(?:\^|_)$/.test(raw)) notes.push("insert empty group for dangling script operator");
   if (countMissingRequiredGroups(raw, "\\frac", 2) > 0) notes.push("fill missing \\frac groups");
   if (countMissingRequiredGroups(raw, "\\sqrt", 1) > 0) notes.push("fill missing \\sqrt group");

@@ -14,8 +14,12 @@ function extractDisplayPrefix(source: string): string {
   const start = source.indexOf("$$");
   if (start === -1) throw new Error("missing display math opener");
   const end = source.indexOf("\n$$", start + 2);
-  if (end === -1) throw new Error("missing display math closer");
-  return source.slice(start, end);
+  if (end !== -1) {
+    return source.slice(start, end);
+  }
+  const fallbackEnd = source.indexOf("\n\n", start + 2);
+  if (fallbackEnd === -1) throw new Error("missing display math boundary");
+  return source.slice(start, fallbackEnd);
 }
 
 function extractInlinePrefix(source: string): string {
@@ -83,11 +87,45 @@ function testCheckpointVsRawFixture() {
     notes: ["unsupported math environment"],
     downgradeReason: "math environments are deferred",
   });
-  assert.strictEqual(displayReport.analysis.family, "alignment-structured");
+  assert.strictEqual(displayReport.analysis.family, "environment-structured");
   assert.strictEqual(displayReport.preferredCandidateId, "raw-fallback");
+}
+
+function testAlignmentHardStopFixture() {
+  const source = readFixture("math-alignment-hard-stop-negative.md");
+  const raw = extractDisplayPrefix(source);
+  const report = analyzeMathTailShadowReport({
+    raw,
+    surface: "math-block",
+    decision: "raw",
+    ops: [],
+    validation: { valid: false, errors: ["alignment math is deferred"] },
+    notes: ["unsupported math alignment family"],
+    downgradeReason: "alignment math is deferred",
+  });
+  assert.strictEqual(report.analysis.family, "alignment-structured");
+  assert.strictEqual(report.preferredCandidateId, "raw-fallback");
+}
+
+function testOptionalArgClassificationFixture() {
+  const source = readFixture("math-optional-arg-classification.md");
+  const raw = extractDisplayPrefix(source);
+  const report = analyzeMathTailShadowReport({
+    raw,
+    surface: "math-block",
+    decision: "raw",
+    ops: [],
+    validation: { valid: false, errors: ["optional argument math repair is deferred"] },
+    notes: ["unsupported optional-argument ambiguity"],
+    downgradeReason: "optional argument math repair is deferred",
+  });
+  assert.strictEqual(report.analysis.family, "optional-arg-local");
+  assert.strictEqual(report.preferredCandidateId, "raw-fallback");
 }
 
 testLeftRightFixture();
 testDisplayLocalFixture();
 testCheckpointVsRawFixture();
+testAlignmentHardStopFixture();
+testOptionalArgClassificationFixture();
 console.log("math tail shadow fixture tests passed");

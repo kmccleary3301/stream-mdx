@@ -133,6 +133,50 @@ SNIPPET_TEST_URL=http://127.0.0.1:3002/regression/snippet-test/ \
   --trace-max-steps 8
 ```
 
+Math V2A left/right supported trace:
+
+```bash
+SNIPPET_TEST_URL=http://127.0.0.1:3002/regression/snippet-test/ \
+  npx tsx scripts/analyze-test-snippets.ts \
+  --trace-lookahead \
+  --trace-snippet math-left-right-null-right-supported.md \
+  --trace-mode char \
+  --trace-max-steps 80
+```
+
+Math V2A display-local trace:
+
+```bash
+SNIPPET_TEST_URL=http://127.0.0.1:3002/regression/snippet-test/ \
+  npx tsx scripts/analyze-test-snippets.ts \
+  --trace-lookahead \
+  --trace-snippet math-display-checkpoint-supported.md \
+  --trace-mode chunk \
+  --trace-max-steps 24
+```
+
+Math V2A environment hard-stop trace:
+
+```bash
+SNIPPET_TEST_URL=http://127.0.0.1:3002/regression/snippet-test/ \
+  npx tsx scripts/analyze-test-snippets.ts \
+  --trace-lookahead \
+  --trace-snippet math-environment-hard-stop-negative.md \
+  --trace-mode char \
+  --trace-max-steps 80
+```
+
+Math V2A alignment hard-stop trace:
+
+```bash
+SNIPPET_TEST_URL=http://127.0.0.1:3002/regression/snippet-test/ \
+  npx tsx scripts/analyze-test-snippets.ts \
+  --trace-lookahead \
+  --trace-snippet math-alignment-hard-stop-negative.md \
+  --trace-mode char \
+  --trace-max-steps 80
+```
+
 ## Output directory
 
 Trace bundles are written under:

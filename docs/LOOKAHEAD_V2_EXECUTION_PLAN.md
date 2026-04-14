@@ -22,11 +22,41 @@ The planner response is directionally right, but this plan only commits to the n
   - first Math V2A trace fixtures and direct fixture-backed shadow tests are landed
   - shadow traces now emit family, candidate, checkpoint, and live-vs-shadow comparison data
 - Phase 2: started
-  - the first live Math V2A selector seam is landed for current supported math paths
-  - narrow `left-right-local` null-delimiter completion is live under strict rules
-  - bounded display-local multiline checkpoint selection is live for unstable trailing lines
-  - targeted browser regression coverage is landed for the display-local checkpoint path
-  - support matrix and trace contract reflect the new live family
+  - the live Math V2A selector seam now owns the bounded math subset rather than leaving hidden legacy side paths
+  - `left-right-local` and `display-local` are now trace-backed and browser-backed with explicit negative coverage for nested/structured cases
+  - `environment-structured` and `alignment-structured` are classified consistently in live and shadow mode and degrade conservatively
+  - downgrade / termination / selected-candidate metadata is normalized across the live math traces
+  - live-vs-shadow parity coverage is landed for reduced representative families
+- Phase 3: lightly prepared
+  - `optional-arg-local` now has explicit classification evidence and remains a deferred decision gate
+- Phase 4: lightly prepared
+  - no runtime MDX behavior changed in the Math V2A tranche
+  - the `mdx-expression` gate remains deferred until Math V2A hardening settles
+- Phase 5: materially underway
+  - the reduced Math V2A hardening suite now includes supported, negative, and structured-family browser cases
+  - targeted browser regressions are green for:
+    - `math-left-right-null-right-supported`
+    - `math-left-right-nested-negative`
+    - `math-display-checkpoint-supported`
+    - `math-environment-hard-stop-negative`
+    - `math-alignment-hard-stop-negative`
+    - `math-inline-hard-stop-negative`
+
+## Reduced Math V2A hardening suite
+
+This is the current reduced suite for the active tranche.
+
+| Fixture | Failure family it covers |
+| --- | --- |
+| `math-left-right-null-right-supported.md` | bounded `left-right-local` support with no visible KaTeX error |
+| `math-left-right-nested-negative.md` | nested left/right pressure degrades conservatively without swallow |
+| `math-display-checkpoint-supported.md` | display-local checkpoint selection under split boundaries |
+| `math-display-local-multiline.md` | display-local multiline family classification and checkpoint preference |
+| `math-environment-hard-stop-negative.md` | environment-structured classification and raw fallback |
+| `math-alignment-hard-stop-negative.md` | alignment-structured classification and raw fallback |
+| `math-inline-hard-stop-negative.md` | mixed unsupported math prefixes remain conservative in inline contexts |
+| `math-checkpoint-vs-raw.md` | local checkpoint candidate vs structured raw fallback split |
+| `math-optional-arg-classification.md` | deferred `optional-arg-local` classification evidence only |
 
 ## North Star
 

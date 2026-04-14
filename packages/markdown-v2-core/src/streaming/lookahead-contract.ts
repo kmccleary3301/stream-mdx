@@ -193,7 +193,10 @@ export const LOOKAHEAD_FEATURE_REGISTRY: readonly LookaheadFeatureRegistryEntry[
     featureFamily: "math-left-right-local",
     status: "bounded",
     smoke: "eligible",
-    notes: ["narrow null-delimiter completion only via tail-local \\right. insertion"],
+    notes: [
+      "narrow null-delimiter completion only via tail-local \\right. insertion",
+      "live selection stays conservative until the candidate validates cleanly",
+    ],
   },
   {
     id: "math-left-right-local-block",
@@ -201,7 +204,10 @@ export const LOOKAHEAD_FEATURE_REGISTRY: readonly LookaheadFeatureRegistryEntry[
     featureFamily: "math-left-right-local",
     status: "bounded",
     smoke: "eligible",
-    notes: ["same narrow null-delimiter completion in display math when repair remains tail-local"],
+    notes: [
+      "same narrow null-delimiter completion in display math when repair remains tail-local",
+      "structured or nested left/right pressure degrades immediately",
+    ],
   },
   {
     id: "math-optional-arg-local",
@@ -209,7 +215,10 @@ export const LOOKAHEAD_FEATURE_REGISTRY: readonly LookaheadFeatureRegistryEntry[
     featureFamily: "math-optional-arg-local",
     status: "deferred",
     smoke: "never",
-    notes: ["optional-argument repair remains a post-V1 decision gate"],
+    notes: [
+      "classification is live for Math V2A traces and tests",
+      "repair remains deferred behind the optional-argument decision gate",
+    ],
   },
   {
     id: "math-environment-structured",
