@@ -105,11 +105,11 @@ function testMathBlockTrace() {
     context: baseContext,
   });
   assert.strictEqual(result.trace[0]?.surface, "math-block");
-  assert.strictEqual(result.trace[0]?.decision, "raw");
-  assert.strictEqual(result.trace[0]?.validation?.valid, false);
-  assert.strictEqual(result.trace[0]?.termination?.reason, "unsupported-syntax");
+  assert.strictEqual(result.trace[0]?.decision, "repair");
+  assert.strictEqual(result.trace[0]?.validation?.valid, true);
   assert.strictEqual(result.trace[0]?.analysis?.math?.family, "left-right-local");
   assert.strictEqual(result.trace[0]?.featureFamily, "math-left-right-local");
+  assert.ok(result.trace[0]?.analysis?.math?.candidates?.some((entry) => entry.id === "null-right-candidate"));
 }
 
 testInlineFormatTrace();

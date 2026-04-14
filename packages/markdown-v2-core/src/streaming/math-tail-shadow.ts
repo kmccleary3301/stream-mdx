@@ -96,17 +96,29 @@ function resolveUnsupportedReason(
   family: MathTraceAnalysis["family"],
 ): string | undefined {
   const noteSet = new Set(notes);
-  if (noteSet.has("unsupported math environment") || family === "environment-structured") {
+  if (noteSet.has("unsupported math environment")) {
     return downgradeReason ?? "math environments are deferred";
   }
-  if (family === "alignment-structured") {
+  if (noteSet.has("unsupported math alignment family")) {
     return downgradeReason ?? "alignment math is deferred";
   }
-  if (noteSet.has("unsupported \\left/\\right pair") || family === "left-right-local") {
+  if (noteSet.has("unsupported \\left/\\right pair")) {
     return downgradeReason ?? "left-right math repair is deferred";
   }
-  if (noteSet.has("unsupported optional-argument ambiguity") || family === "optional-arg-local") {
+  if (noteSet.has("unsupported optional-argument ambiguity")) {
     return downgradeReason ?? "optional argument math repair is deferred";
+  }
+  if (family === "environment-structured" && downgradeReason) {
+    return downgradeReason;
+  }
+  if (family === "alignment-structured" && downgradeReason) {
+    return downgradeReason;
+  }
+  if (family === "left-right-local" && downgradeReason) {
+    return downgradeReason;
+  }
+  if (family === "optional-arg-local" && downgradeReason) {
+    return downgradeReason;
   }
   return downgradeReason;
 }

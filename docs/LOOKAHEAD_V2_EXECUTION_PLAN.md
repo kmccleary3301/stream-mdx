@@ -17,10 +17,14 @@ The planner response is directionally right, but this plan only commits to the n
   - executable feature-registry groundwork is landed
   - focused trace controls are landed
   - math-specific trace sidecars are landed
-- Phase 1: started
+- Phase 1: complete
   - shadow-only `MathTailEngine` analysis/report scaffolding is landed
-  - live math behavior is still unchanged
   - first Math V2A trace fixtures and direct fixture-backed shadow tests are landed
+  - shadow traces now emit family, candidate, checkpoint, and live-vs-shadow comparison data
+- Phase 2: started
+  - the first live Math V2A selector seam is landed for current supported math paths
+  - narrow `left-right-local` null-delimiter completion is live under strict rules
+  - support matrix and trace contract reflect the new live family
 
 ## North Star
 

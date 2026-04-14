@@ -90,7 +90,7 @@ export const LOOKAHEAD_SUPPORT_MATRIX: readonly LookaheadSupportDescriptor[] = [
     smokeEligible: true,
     smokePromoted: true,
     notes: [
-      "supports trailing control-word trim, dangling script repair, bounded delimiter closure, and missing groups for \\frac/\\sqrt",
+      "supports trailing control-word trim, dangling script repair, bounded delimiter closure, missing groups for \\frac/\\sqrt, and narrow left-right null-delimiter completion",
       "unsupported families hard-stop / fallback",
     ],
   },
@@ -101,7 +101,7 @@ export const LOOKAHEAD_SUPPORT_MATRIX: readonly LookaheadSupportDescriptor[] = [
     smokePromoted: false,
     notes: [
       "same bounded subset as inline math when repair remains tail-local and validates cleanly",
-      "unsupported environments, optional arguments, and left/right families hard-stop / fallback",
+      "unsupported environments, optional arguments, and alignment families hard-stop / fallback",
     ],
   },
   {
@@ -191,17 +191,17 @@ export const LOOKAHEAD_FEATURE_REGISTRY: readonly LookaheadFeatureRegistryEntry[
     id: "math-left-right-local",
     surface: "math-inline",
     featureFamily: "math-left-right-local",
-    status: "deferred",
-    smoke: "never",
-    notes: ["post-V1 candidate for narrow null-delimiter completion only"],
+    status: "bounded",
+    smoke: "eligible",
+    notes: ["narrow null-delimiter completion only via tail-local \\right. insertion"],
   },
   {
     id: "math-left-right-local-block",
     surface: "math-block",
     featureFamily: "math-left-right-local",
-    status: "deferred",
-    smoke: "never",
-    notes: ["post-V1 candidate for narrow null-delimiter completion in display math"],
+    status: "bounded",
+    smoke: "eligible",
+    notes: ["same narrow null-delimiter completion in display math when repair remains tail-local"],
   },
   {
     id: "math-optional-arg-local",

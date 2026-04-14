@@ -136,11 +136,13 @@ function testMathDisplayAnticipation() {
 }
 
 function testUnsupportedMathRemainsRaw() {
-  const unsupportedLeftRight = prepareInlineStreamingContent("$\\left(x + y", {
+  const supportedLeftRight = prepareInlineStreamingContent("$\\left(x + y", {
     formatAnticipation: { mathInline: true },
     math: true,
   });
-  assert.deepStrictEqual(unsupportedLeftRight, { kind: "raw", status: "raw", reason: "incomplete-math" });
+  assert.strictEqual(supportedLeftRight.kind, "parse");
+  if (supportedLeftRight.kind !== "parse") throw new Error("expected parse result");
+  assert.strictEqual(supportedLeftRight.content, "$\\left(x + y)\\right.$");
 
   const unsupportedEnvironment = prepareInlineStreamingContent("$$\\begin{align}\nx", {
     formatAnticipation: { mathBlock: true },
@@ -148,11 +150,19 @@ function testUnsupportedMathRemainsRaw() {
   });
   assert.deepStrictEqual(unsupportedEnvironment, { kind: "raw", status: "raw", reason: "incomplete-math" });
 
-  const unsupportedDisplayLeftRight = prepareInlineStreamingContent("$$\\left(x + y", {
+  const supportedDisplayLeftRight = prepareInlineStreamingContent("$$\\left(x + y", {
     formatAnticipation: { mathBlock: true },
     math: true,
   });
-  assert.deepStrictEqual(unsupportedDisplayLeftRight, { kind: "raw", status: "raw", reason: "incomplete-math" });
+  assert.strictEqual(supportedDisplayLeftRight.kind, "parse");
+  if (supportedDisplayLeftRight.kind !== "parse") throw new Error("expected parse result");
+  assert.strictEqual(supportedDisplayLeftRight.content, "$$\\left(x + y)\\right.$$");
+
+  const nestedUnsupportedLeftRight = prepareInlineStreamingContent("$$\\left( \\frac{\\left[a+b}{c}", {
+    formatAnticipation: { mathBlock: true },
+    math: true,
+  });
+  assert.deepStrictEqual(nestedUnsupportedLeftRight, { kind: "raw", status: "raw", reason: "incomplete-math" });
 }
 
 function testMathValidationTrace() {
@@ -168,8 +178,9 @@ function testMathValidationTrace() {
     math: true,
   });
   assert.strictEqual(unsupported.trace[0]?.surface, "math-inline");
-  assert.strictEqual(unsupported.trace[0]?.validation?.valid, false);
-  assert.strictEqual(unsupported.trace[0]?.termination?.reason, "unsupported-syntax");
+  assert.strictEqual(unsupported.trace[0]?.validation?.valid, true);
+  assert.strictEqual(unsupported.trace[0]?.decision, "repair");
+  assert.strictEqual(unsupported.trace[0]?.featureFamily, "math-left-right-local");
 }
 
 function testMathConvergenceBehavior() {
@@ -191,11 +202,13 @@ function testMathConvergenceBehavior() {
   assert.strictEqual(completed.status, "complete");
   assert.strictEqual(completed.content, "$\\frac{a}{b}$");
 
-  const unsupportedPrefix = prepareInlineStreamingContent("$\\left(x + y", {
+  const leftRightPrefix = prepareInlineStreamingContent("$\\left(x + y", {
     formatAnticipation: { mathInline: true },
     math: true,
   });
-  assert.deepStrictEqual(unsupportedPrefix, { kind: "raw", status: "raw", reason: "incomplete-math" });
+  assert.strictEqual(leftRightPrefix.kind, "parse");
+  if (leftRightPrefix.kind !== "parse") throw new Error("expected parse result");
+  assert.strictEqual(leftRightPrefix.content, "$\\left(x + y)\\right.$");
 
   const supportedFinal = prepareInlineStreamingContent("$\\left(x + y\\right)$", {
     formatAnticipation: { mathInline: true },

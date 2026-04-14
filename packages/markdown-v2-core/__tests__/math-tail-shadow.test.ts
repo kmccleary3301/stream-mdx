@@ -38,6 +38,20 @@ function testLeftRightUnsupportedShadow() {
   assert.strictEqual(report.preferredCandidateId, "raw-fallback");
 }
 
+function testLeftRightSupportedShadow() {
+  const report = analyzeMathTailShadowReport({
+    raw: "$$\\left(x + y",
+    surface: "math-block",
+    decision: "repair",
+    ops: [{ kind: "append", text: "\\right." }, { kind: "close-delimiter", text: "$$" }],
+    validation: { valid: true },
+    notes: ["tail-local \\right. completion", "close display math delimiter"],
+  });
+  assert.strictEqual(report.analysis.family, "left-right-local");
+  assert.strictEqual(report.analysis.unsupportedReason, undefined);
+  assert.strictEqual(report.preferredCandidateId, "repair-candidate");
+}
+
 function testAlignmentStructuredShadow() {
   const analysis = analyzeMathTailShadow({
     raw: "$$\\begin{align}a&=b",
@@ -67,6 +81,7 @@ function testDisplayCheckpointCandidate() {
 
 testFixedArityRepairShadow();
 testLeftRightUnsupportedShadow();
+testLeftRightSupportedShadow();
 testAlignmentStructuredShadow();
 testDisplayCheckpointCandidate();
 console.log("math tail shadow tests passed");

@@ -31,14 +31,14 @@ function testLeftRightFixture() {
   const report = analyzeMathTailShadowReport({
     raw,
     surface: "math-block",
-    decision: "raw",
-    ops: [],
-    validation: { valid: false, errors: ["left-right math repair is deferred"] },
-    notes: ["unsupported \\left/\\right pair"],
-    downgradeReason: "left-right math repair is deferred",
+    decision: "repair",
+    ops: [{ kind: "append", text: "\\right." }, { kind: "close-delimiter", text: "$$" }],
+    validation: { valid: true },
+    notes: ["tail-local \\right. completion", "close display math delimiter"],
   });
   assert.strictEqual(report.analysis.family, "left-right-local");
   assert.ok(report.candidates.some((entry) => entry.id === "null-right-candidate"));
+  assert.strictEqual(report.preferredCandidateId, "repair-candidate");
 }
 
 function testDisplayLocalFixture() {

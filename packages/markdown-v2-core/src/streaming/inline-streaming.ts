@@ -91,6 +91,10 @@ type RegexPlan = {
   debugNotes: string[];
 };
 
+type MathRepairClassification =
+  | { kind: "repair"; ops: LookaheadRepairOp[]; notes: string[] }
+  | { kind: "unsupported"; reason: string; notes: string[] };
+
 export function normalizeFormatAnticipation(input?: FormatAnticipationConfig): NormalizedFormatAnticipation {
   if (input === true) {
     return { ...DEFAULT_FORMAT_ANTICIPATION, inline: true };
@@ -401,7 +405,9 @@ function resolveFeatureFamilyForFormatPlan(plan: InlineFormatPlan): LookaheadFea
       const notes = new Set(plan.debugNotes);
       if (notes.has("unsupported optional-argument ambiguity")) return "math-optional-arg-local";
       if (notes.has("unsupported math environment")) return "math-environment-structured";
+      if (notes.has("unsupported math alignment family")) return "math-alignment-structured";
       if (notes.has("unsupported \\left/\\right pair")) return "math-left-right-local";
+      if (notes.has("tail-local \\right. completion")) return "math-left-right-local";
       if (notes.has("fill missing \\frac groups") || notes.has("fill missing \\sqrt group")) return "math-fixed-arity-local";
       return "math-local-core";
     }
@@ -409,7 +415,9 @@ function resolveFeatureFamilyForFormatPlan(plan: InlineFormatPlan): LookaheadFea
       const notes = new Set(plan.debugNotes);
       if (notes.has("unsupported optional-argument ambiguity")) return "math-optional-arg-local";
       if (notes.has("unsupported math environment")) return "math-environment-structured";
+      if (notes.has("unsupported math alignment family")) return "math-alignment-structured";
       if (notes.has("unsupported \\left/\\right pair")) return "math-left-right-local";
+      if (notes.has("tail-local \\right. completion")) return "math-left-right-local";
       if (notes.has("fill missing \\frac groups") || notes.has("fill missing \\sqrt group")) return "math-fixed-arity-local";
       return "math-display-local";
     }
@@ -533,50 +541,14 @@ function planInlineFormat(
   }
 
   const mathMode = hasIncompleteMathDisplay ? "display" : "inline";
-  const mathRepair = hasIncompleteMath ? classifyMathRepair(request.raw, mathMode) : null;
-  if (mathRepair?.kind === "unsupported") {
-    return {
-      surface: hasIncompleteMathDisplay ? "math-block" : "math-inline",
-      decision: "raw",
-      safety: "safe",
-      ops: [],
-      validation: { valid: false, errors: [mathRepair.reason] },
-      terminationReason: "unsupported-syntax",
-      downgradeReason: mathRepair.reason,
-      debugNotes: mathRepair.notes,
-    };
-  }
-  const ops = hasIncompleteMath
-    ? mathRepair?.ops ?? []
-    : scan.stack
-        .slice()
-        .reverse()
-        .flatMap((token) => appendOpsForToken(token, request.raw, scan.mathDisplayCrossedNewline));
-
   if (hasIncompleteMath) {
-    const repaired = applyRepairOps(request.raw, ops);
-    const validation = validateMathRepairCandidate(repaired, mathMode);
-    if (!validation.valid) {
-      return {
-        surface: hasIncompleteMathDisplay ? "math-block" : "math-inline",
-        decision: "raw",
-        safety: "safe",
-        ops: [],
-        validation,
-        terminationReason: "validation-failed",
-        downgradeReason: validation.errors?.join("; ") ?? "math repair validation failed",
-        debugNotes: [...(mathRepair?.notes ?? []), "repair validation failed"],
-      };
-    }
-    return {
-      surface: hasIncompleteMathDisplay ? "math-block" : "math-inline",
-      decision: "repair",
-      safety: "safe",
-      ops,
-      validation,
-      debugNotes: mathRepair?.notes ?? [],
-    };
+    return planMathLookahead(request.raw, hasIncompleteMathDisplay ? "math-block" : "math-inline", mathMode);
   }
+
+  const ops = scan.stack
+    .slice()
+    .reverse()
+    .flatMap((token) => appendOpsForToken(token, request.raw, scan.mathDisplayCrossedNewline));
 
   return {
     surface: hasIncompleteMath ? (hasIncompleteMathDisplay ? "math-block" : "math-inline") : "inline-format",
@@ -911,17 +883,68 @@ function renderAppendedSuffix(ops: readonly LookaheadRepairOp[]): string {
 function classifyMathRepair(
   raw: string,
   mode: "inline" | "display",
-): { kind: "repair"; ops: LookaheadRepairOp[]; notes: string[] } | { kind: "unsupported"; reason: string; notes: string[] } {
-  if (/\\left\b|\\right\b/.test(raw)) {
-    return { kind: "unsupported", reason: "left-right math repair is deferred", notes: ["unsupported \\left/\\right pair"] };
-  }
+): MathRepairClassification {
   if (/\\begin\{/.test(raw)) {
     return { kind: "unsupported", reason: "math environments are deferred", notes: ["unsupported math environment"] };
+  }
+  if (/(?:\\begin\{(?:align|aligned|eqnarray|gather|multline)\}|\\(?:align|aligned|eqnarray|gather|multline)\b|&)/.test(raw)) {
+    return { kind: "unsupported", reason: "alignment math is deferred", notes: ["unsupported math alignment family"] };
   }
   if (/\\[A-Za-z]+\[[^\]]*$/.test(raw)) {
     return { kind: "unsupported", reason: "optional argument math repair is deferred", notes: ["unsupported optional-argument ambiguity"] };
   }
+  const leftRightRepair = buildLeftRightNullRepairOps(raw, mode);
+  if (leftRightRepair.kind === "unsupported") {
+    return leftRightRepair;
+  }
+  if (leftRightRepair.ops.length > 0) {
+    return { kind: "repair", ops: leftRightRepair.ops, notes: leftRightRepair.notes };
+  }
   return { kind: "repair", ops: buildMathRepairOps(raw, mode), notes: mathRepairDebugNotes(raw, mode) };
+}
+
+function planMathLookahead(
+  raw: string,
+  surface: Extract<LookaheadSurface, "math-inline" | "math-block">,
+  mode: "inline" | "display",
+): InlineFormatPlan {
+  const mathRepair = classifyMathRepair(raw, mode);
+  if (mathRepair.kind === "unsupported") {
+    return {
+      surface,
+      decision: "raw",
+      safety: "safe",
+      ops: [],
+      validation: { valid: false, errors: [mathRepair.reason] },
+      terminationReason: "unsupported-syntax",
+      downgradeReason: mathRepair.reason,
+      debugNotes: mathRepair.notes,
+    };
+  }
+
+  const repaired = applyRepairOps(raw, mathRepair.ops);
+  const validation = validateMathRepairCandidate(repaired, mode);
+  if (!validation.valid) {
+    return {
+      surface,
+      decision: "raw",
+      safety: "safe",
+      ops: [],
+      validation,
+      terminationReason: "validation-failed",
+      downgradeReason: validation.errors?.join("; ") ?? "math repair validation failed",
+      debugNotes: [...mathRepair.notes, "repair validation failed"],
+    };
+  }
+
+  return {
+    surface,
+    decision: "repair",
+    safety: "safe",
+    ops: mathRepair.ops,
+    validation,
+    debugNotes: mathRepair.notes,
+  };
 }
 
 function validateMathRepairCandidate(repaired: string, mode: "inline" | "display"): { valid: boolean; errors?: string[] } {
@@ -992,6 +1015,41 @@ function buildMathRepairOps(raw: string, mode: "inline" | "display"): LookaheadR
   return ops;
 }
 
+function buildLeftRightNullRepairOps(
+  raw: string,
+  mode: "inline" | "display",
+): MathRepairClassification {
+  const leftCount = countCommandOccurrences(raw, "\\left");
+  const rightCount = countCommandOccurrences(raw, "\\right");
+  if (leftCount === 0 && rightCount === 0) {
+    return { kind: "repair", ops: [], notes: [] };
+  }
+  if (rightCount > leftCount) {
+    return { kind: "unsupported", reason: "left-right math repair is deferred", notes: ["unsupported \\left/\\right pair"] };
+  }
+  if (leftCount - rightCount !== 1 || leftCount > 1) {
+    return { kind: "unsupported", reason: "left-right math repair is deferred", notes: ["unsupported \\left/\\right pair"] };
+  }
+  if (!/\\left\s*(?:[\(\[\{\|.]|\\[A-Za-z]+)/.test(raw)) {
+    return { kind: "unsupported", reason: "left-right math repair is deferred", notes: ["unsupported \\left/\\right pair"] };
+  }
+  const ops: LookaheadRepairOp[] = [];
+  const balance = scanDelimiterBalance(raw);
+  for (let i = 0; i < balance.openParens; i += 1) ops.push({ kind: "append", text: ")" });
+  for (let i = 0; i < balance.openBrackets; i += 1) ops.push({ kind: "append", text: "]" });
+  for (let i = 0; i < balance.openBraces; i += 1) ops.push({ kind: "append", text: "}" });
+  if (mode === "display" && /[\r\n]/.test(raw) && !(raw.endsWith("\n") || raw.endsWith("\r"))) {
+    ops.push({ kind: "append", text: "\n" });
+  }
+  ops.push({ kind: "append", text: "\\right." });
+  ops.push(mode === "display" ? { kind: "close-delimiter", text: "$$" } : { kind: "close-delimiter", text: "$" });
+  return {
+    kind: "repair",
+    ops,
+    notes: ["tail-local \\right. completion", "close unmatched tail delimiters", mode === "display" ? "close display math delimiter" : "close inline math delimiter"],
+  };
+}
+
 function mathRepairDebugNotes(raw: string, mode: "inline" | "display"): string[] {
   const notes: string[] = [];
   if (/\\[A-Za-z]+$/.test(raw)) notes.push("trim trailing control-word fragment");
@@ -1042,8 +1100,15 @@ function isAllowlistedCompleteControlWord(controlWord: string): boolean {
     controlWord === "\\sqrt" ||
     controlWord === "\\sum" ||
     controlWord === "\\prod" ||
-    controlWord === "\\int"
+    controlWord === "\\int" ||
+    controlWord === "\\left" ||
+    controlWord === "\\right"
   );
+}
+
+function countCommandOccurrences(raw: string, command: string): number {
+  const escaped = command.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return raw.match(new RegExp(escaped, "g"))?.length ?? 0;
 }
 
 type TagCandidate =

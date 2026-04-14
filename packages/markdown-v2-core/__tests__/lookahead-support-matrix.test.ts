@@ -48,8 +48,8 @@ function testFeatureRegistryCoversCurrentAndPostV1Families() {
   assert.ok(ids.has("mdx-expression-conservative"));
 
   const leftRight = LOOKAHEAD_FEATURE_REGISTRY.find((entry) => entry.id === "math-left-right-local");
-  assert.strictEqual(leftRight?.status, "deferred");
-  assert.strictEqual(leftRight?.smoke, "never");
+  assert.strictEqual(leftRight?.status, "bounded");
+  assert.strictEqual(leftRight?.smoke, "eligible");
 
   const env = LOOKAHEAD_FEATURE_REGISTRY.find((entry) => entry.id === "math-environment-structured");
   assert.strictEqual(env?.status, "hard-stop-only");
