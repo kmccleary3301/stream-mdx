@@ -1,5 +1,6 @@
 "use client";
 
+import type { PerformanceMetrics, WorkerOut } from "@stream-mdx/core";
 import type { RendererMetrics, StreamingMarkdownProps, StreamingSchedulerOptions } from "@stream-mdx/react";
 import React, { Profiler, useCallback, useEffect, useMemo, useRef } from "react";
 import { useSearchParams } from "next/navigation";
@@ -98,6 +99,7 @@ type PerfReport = {
   };
   samples: {
     flushes: RendererMetrics[];
+    workerPerformance: PerformanceMetrics[];
     longTasks: LongTaskEntry[];
     rafDeltas: number[];
     memory: MemorySample[];
@@ -208,6 +210,7 @@ export function PerfHarness(): JSX.Element {
   const doneResolveRef = useRef<(() => void) | null>(null);
 
   const flushesRef = useRef<RendererMetrics[]>([]);
+  const workerPerformanceRef = useRef<PerformanceMetrics[]>([]);
   const firstFlushAtRef = useRef<number | null>(null);
   const longTasksRef = useRef<LongTaskEntry[]>([]);
   const rafDeltasRef = useRef<number[]>([]);
@@ -219,6 +222,12 @@ export function PerfHarness(): JSX.Element {
 
   const tableElements = useMemo(() => createDemoTableElements(), []);
   const htmlElements = useMemo(() => createDemoHtmlElements(), []);
+  const perfWorker = useMemo(() => {
+    if (typeof window === "undefined" || typeof Worker === "undefined") {
+      return null;
+    }
+    return new Worker(`${BASE_PATH}/workers/markdown-worker.js`, { type: "module", name: "markdown-v2-perf" });
+  }, []);
 
   const registry = useMemo(() => {
     const next = new ComponentRegistry();
@@ -237,6 +246,24 @@ export function PerfHarness(): JSX.Element {
       firstFlushAtRef.current = metrics.committedAt;
     }
   }, []);
+
+  useEffect(() => {
+    if (!perfWorker) return;
+    const handleMessage = (event: MessageEvent<WorkerOut>) => {
+      if (event.data?.type !== "METRICS") return;
+      workerPerformanceRef.current.push(event.data.metrics);
+    };
+    perfWorker.addEventListener("message", handleMessage as EventListener);
+    return () => {
+      perfWorker.removeEventListener("message", handleMessage as EventListener);
+    };
+  }, [perfWorker]);
+
+  useEffect(() => {
+    return () => {
+      perfWorker?.terminate();
+    };
+  }, [perfWorker]);
 
   const onProfile = useCallback(
     (
@@ -354,6 +381,7 @@ export function PerfHarness(): JSX.Element {
         if (cancelled || token !== runTokenRef.current) return;
 
         flushesRef.current = [];
+        workerPerformanceRef.current = [];
         firstFlushAtRef.current = null;
         profilerSamplesRef.current = [];
 
@@ -422,6 +450,7 @@ export function PerfHarness(): JSX.Element {
           },
           samples: {
             flushes: flushesRef.current,
+            workerPerformance: workerPerformanceRef.current,
             longTasks: longTasksRef.current,
             rafDeltas: rafDeltasRef.current,
             memory: memorySamplesRef.current,
@@ -447,7 +476,7 @@ export function PerfHarness(): JSX.Element {
       stopRaf();
       stopMemory();
     };
-  }, [fixtureId, scenarioId, schedulingPreset, scheduling]);
+  }, [fixtureId, perfWorker, scenarioId, schedulingPreset, scheduling]);
 
   return (
     <div className="prose markdown">
@@ -456,7 +485,7 @@ export function PerfHarness(): JSX.Element {
           <Profiler id="StreamingMarkdown" onRender={onProfile}>
             <StreamingMarkdown
               ref={handleRef}
-              worker="/workers/markdown-worker.js"
+              worker={perfWorker ?? "/workers/markdown-worker.js"}
               className="markdown-v2-output"
               features={DEFAULT_FEATURES}
               scheduling={scheduling}
@@ -472,7 +501,7 @@ export function PerfHarness(): JSX.Element {
         ) : (
           <StreamingMarkdown
             ref={handleRef}
-            worker="/workers/markdown-worker.js"
+            worker={perfWorker ?? "/workers/markdown-worker.js"}
             className="markdown-v2-output"
             features={DEFAULT_FEATURES}
             scheduling={scheduling}

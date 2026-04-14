@@ -81,6 +81,38 @@ type PerfReport = {
       appliedPatches: number;
       totalPatches: number;
     }>;
+    workerPerformance: Array<{
+      tx?: number;
+      timestamp?: number;
+      parseMs?: number;
+      parseTime: number;
+      enrichMs?: number;
+      diffMs?: number;
+      serializeMs?: number;
+      highlightTime: number;
+      shikiMs?: number;
+      mdxDetectMs?: number;
+      patchBytes?: number;
+      patchCount?: number;
+      queueDepth?: number;
+      blocksProduced: number;
+      grammarEngine: "js" | "wasm";
+      blockCountByType?: Record<string, number>;
+      blockEnrichMsByType?: Record<string, number>;
+      blockSizeByType?: Record<string, number>;
+      highlightByLanguage?: Record<string, { count: number; totalMs?: number; avgMs?: number; timeMs?: number }>;
+      appendLineBatches?: number;
+      appendLineTotalLines?: number;
+      appendLineMaxLines?: number;
+      lazyTokenization?: {
+        requests: number;
+        avgRangeLines: number;
+        maxRangeLines: number;
+        avgLatencyMs: number;
+        maxLatencyMs: number;
+        maxQueue: number;
+      };
+    }>;
     longTasks: Array<{ startTime: number; duration: number }>;
     rafDeltas: number[];
     memory: Array<{ ts: number; usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number }>;
@@ -165,6 +197,13 @@ type Summary = {
     domDelta: DomCounters | null;
     profilerActual: Stats | null;
     profilerBase: Stats | null;
+    workerParseMs: Stats | null;
+    workerEnrichMs: Stats | null;
+    workerMdxDetectMs: Stats | null;
+    workerShikiMs: Stats | null;
+    workerPatchBytes: Stats | null;
+    workerQueueDepth: Stats | null;
+    workerTopBlockEnrichType: { type: string; totalMs: number } | null;
   }>;
   aggregate: {
     durationMs: Stats | null;
@@ -181,8 +220,16 @@ type Summary = {
     domListenersEnd: Stats | null;
     profilerActual: Stats | null;
     profilerBase: Stats | null;
+    workerParseMs: Stats | null;
+    workerEnrichMs: Stats | null;
+    workerMdxDetectMs: Stats | null;
+    workerShikiMs: Stats | null;
+    workerPatchBytes: Stats | null;
+    workerQueueDepth: Stats | null;
   };
 };
+
+type WorkerPerformanceSample = PerfReport["samples"]["workerPerformance"][number];
 
 function percentIndex(count: number, pct: number): number {
   if (count <= 0) return 0;
@@ -207,6 +254,65 @@ function stats(values: number[]): Stats | null {
 
 function statsFromRuns(values: Array<number | null>): Stats | null {
   return stats(values.filter((value): value is number => typeof value === "number"));
+}
+
+function sumDefined(values: Array<number | undefined>): number | null {
+  let total = 0;
+  let seen = false;
+  for (const value of values) {
+    if (typeof value !== "number") continue;
+    total += value;
+    seen = true;
+  }
+  return seen ? total : null;
+}
+
+function maxDefined(values: Array<number | undefined>): number | null {
+  let result: number | null = null;
+  for (const value of values) {
+    if (typeof value !== "number") continue;
+    result = result === null ? value : Math.max(result, value);
+  }
+  return result;
+}
+
+function aggregateRecordSum(samples: WorkerPerformanceSample[], key: keyof WorkerPerformanceSample): Record<string, number> {
+  const total: Record<string, number> = {};
+  for (const sample of samples) {
+    const record = sample[key];
+    if (!record || typeof record !== "object") continue;
+    for (const [entryKey, entryValue] of Object.entries(record as Record<string, number>)) {
+      if (typeof entryValue !== "number") continue;
+      total[entryKey] = (total[entryKey] ?? 0) + entryValue;
+    }
+  }
+  return total;
+}
+
+function summarizeWorkerPerformance(samples: WorkerPerformanceSample[]) {
+  const parse = samples.map((sample) => sample.parseMs ?? sample.parseTime);
+  const enrich = samples.map((sample) => sample.enrichMs);
+  const mdxDetect = samples.map((sample) => sample.mdxDetectMs);
+  const shiki = samples.map((sample) => sample.shikiMs ?? sample.highlightTime);
+  const patchBytes = samples.map((sample) => sample.patchBytes);
+  const queueDepth = samples.map((sample) => sample.queueDepth);
+  const blockEnrichTotals = aggregateRecordSum(samples, "blockEnrichMsByType");
+  const topBlockEnrichType = Object.entries(blockEnrichTotals).sort((a, b) => b[1] - a[1])[0] ?? null;
+
+  return {
+    parseMs: stats(parse.filter((value): value is number => typeof value === "number")),
+    enrichMs: stats(enrich.filter((value): value is number => typeof value === "number")),
+    mdxDetectMs: stats(mdxDetect.filter((value): value is number => typeof value === "number")),
+    shikiMs: stats(shiki.filter((value): value is number => typeof value === "number")),
+    patchBytes: stats(patchBytes.filter((value): value is number => typeof value === "number")),
+    queueDepth: stats(queueDepth.filter((value): value is number => typeof value === "number")),
+    totalParseMs: sumDefined(parse),
+    totalEnrichMs: sumDefined(enrich),
+    totalMdxDetectMs: sumDefined(mdxDetect),
+    totalShikiMs: sumDefined(shiki),
+    peakQueueDepth: maxDefined(queueDepth),
+    topBlockEnrichType: topBlockEnrichType ? { type: topBlockEnrichType[0], totalMs: topBlockEnrichType[1] } : null,
+  };
 }
 
 function metricMap(metrics: Array<{ name: string; value: number }>): CdpMetricMap {
@@ -329,6 +435,7 @@ function summarizeRun(entry: PerfRun) {
   const memory = report.samples.memory.map((sample) => sample.usedJSHeapSize / (1024 * 1024));
   const profilerActual = report.samples.profiler.map((entry) => entry.actualDuration);
   const profilerBase = report.samples.profiler.map((entry) => entry.baseDuration);
+  const workerSummary = summarizeWorkerPerformance(report.samples.workerPerformance ?? []);
   const cdpMetrics = entry.cdp.metrics;
   const domEnd = entry.cdp.domEnd;
   const domDelta = entry.cdp.domDelta;
@@ -360,6 +467,13 @@ function summarizeRun(entry: PerfRun) {
     domDelta,
     profilerActual: stats(profilerActual),
     profilerBase: stats(profilerBase),
+    workerParseMs: workerSummary.parseMs,
+    workerEnrichMs: workerSummary.enrichMs,
+    workerMdxDetectMs: workerSummary.mdxDetectMs,
+    workerShikiMs: workerSummary.shikiMs,
+    workerPatchBytes: workerSummary.patchBytes,
+    workerQueueDepth: workerSummary.queueDepth,
+    workerTopBlockEnrichType: workerSummary.topBlockEnrichType,
   };
 }
 
@@ -418,6 +532,46 @@ function formatSummaryText(summary: Summary): string {
     lines.push(
       `dom listeners p50/p95: ${summary.aggregate.domListenersEnd.p50.toFixed(0)} / ${summary.aggregate.domListenersEnd.p95.toFixed(0)}`,
     );
+  }
+  if (summary.aggregate.workerParseMs) {
+    lines.push(
+      `worker parse p50/p95: ${summary.aggregate.workerParseMs.p50.toFixed(2)} / ${summary.aggregate.workerParseMs.p95.toFixed(2)} ms`,
+    );
+  }
+  if (summary.aggregate.workerEnrichMs) {
+    lines.push(
+      `worker enrich p50/p95: ${summary.aggregate.workerEnrichMs.p50.toFixed(2)} / ${summary.aggregate.workerEnrichMs.p95.toFixed(2)} ms`,
+    );
+  }
+  if (summary.aggregate.workerMdxDetectMs) {
+    lines.push(
+      `worker mdxDetect p50/p95: ${summary.aggregate.workerMdxDetectMs.p50.toFixed(2)} / ${summary.aggregate.workerMdxDetectMs.p95.toFixed(2)} ms`,
+    );
+  }
+  if (summary.aggregate.workerShikiMs) {
+    lines.push(
+      `worker shiki p50/p95: ${summary.aggregate.workerShikiMs.p50.toFixed(2)} / ${summary.aggregate.workerShikiMs.p95.toFixed(2)} ms`,
+    );
+  }
+  lines.push("");
+  for (const run of summary.runs) {
+    lines.push(`run ${run.run}`);
+    lines.push(`  duration: ${run.durationMs.toFixed(2)} ms`);
+    if (run.workerParseMs) {
+      lines.push(`  worker parse p95: ${run.workerParseMs.p95.toFixed(2)} ms`);
+    }
+    if (run.workerEnrichMs) {
+      lines.push(`  worker enrich p95: ${run.workerEnrichMs.p95.toFixed(2)} ms`);
+    }
+    if (run.workerMdxDetectMs) {
+      lines.push(`  worker mdxDetect p95: ${run.workerMdxDetectMs.p95.toFixed(2)} ms`);
+    }
+    if (run.workerShikiMs) {
+      lines.push(`  worker shiki p95: ${run.workerShikiMs.p95.toFixed(2)} ms`);
+    }
+    if (run.workerTopBlockEnrichType) {
+      lines.push(`  worker top enrich block: ${run.workerTopBlockEnrichType.type} (${run.workerTopBlockEnrichType.totalMs.toFixed(2)} ms total)`);
+    }
   }
   return `${lines.join("\n")}\n`;
 }
@@ -483,6 +637,12 @@ async function run(): Promise<void> {
       domListenersEnd: statsFromRuns(runSummaries.map((run) => run.domEnd?.jsEventListeners ?? null)),
       profilerActual: statsFromRuns(runSummaries.map((run) => run.profilerActual?.p95 ?? null)),
       profilerBase: statsFromRuns(runSummaries.map((run) => run.profilerBase?.p95 ?? null)),
+      workerParseMs: statsFromRuns(runSummaries.map((run) => run.workerParseMs?.p95 ?? null)),
+      workerEnrichMs: statsFromRuns(runSummaries.map((run) => run.workerEnrichMs?.p95 ?? null)),
+      workerMdxDetectMs: statsFromRuns(runSummaries.map((run) => run.workerMdxDetectMs?.p95 ?? null)),
+      workerShikiMs: statsFromRuns(runSummaries.map((run) => run.workerShikiMs?.p95 ?? null)),
+      workerPatchBytes: statsFromRuns(runSummaries.map((run) => run.workerPatchBytes?.p95 ?? null)),
+      workerQueueDepth: statsFromRuns(runSummaries.map((run) => run.workerQueueDepth?.p95 ?? null)),
     },
   };
 
