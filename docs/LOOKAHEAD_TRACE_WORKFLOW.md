@@ -97,6 +97,20 @@ SNIPPET_TEST_URL=http://127.0.0.1:3002/regression/snippet-test/ \
   --trace-max-steps 8
 ```
 
+Focused math trace around a structural token:
+
+```bash
+SNIPPET_TEST_URL=http://127.0.0.1:3002/regression/snippet-test/ \
+  npx tsx scripts/analyze-test-snippets.ts \
+  --trace-lookahead \
+  --trace-snippet math-hard-stop-negative.md \
+  --trace-mode char \
+  --trace-from-pattern='\\left' \
+  --trace-window-before 8 \
+  --trace-window-after 80 \
+  --trace-max-steps 24
+```
+
 Math display hard-stop char-mode trace:
 
 ```bash
@@ -137,6 +151,11 @@ tmp/snippet_analysis/lookahead-traces/nested-formatting-ancestors-chunk/
 
 Each trace bundle currently includes:
 - `trace-summary.json`
+- `focus-summary.json`
+- `math-tail-analysis.json`
+- `math-candidates.json`
+- `math-validation.json`
+- `latch-rearm.json`
 - `trace.ndjson`
 - `steps/step-XXXX.json`
 - `steps/telemetry-XXXX.json`
@@ -154,11 +173,27 @@ Key fields in the step artifacts:
 
 Key fields in the summary artifact:
 - `totalSteps`
+- `focus`
 - `firstRenderableStep`
+- `firstProviderActivation`
+- `firstTermination`
+- `firstDowngrade`
 - `firstFinalizedStep`
 - aggregate provider counts
+- aggregate surface counts
+- aggregate feature-family counts
 - aggregate termination counts
 - aggregate downgrade counts
+
+Math-specific summary artifacts:
+- `math-tail-analysis.json`
+  - per-step math family classification, tokens, obligations, checkpoints
+- `math-candidates.json`
+  - selected candidate state per traced math decision
+- `math-validation.json`
+  - validation and downgrade results per traced math decision
+- `latch-rearm.json`
+  - termination and rearm metadata per traced math decision
 
 ## Current requirements and caveats
 
@@ -198,6 +233,19 @@ Use `chunk` mode when:
 - you want broader convergence sanity on a realistic stream cadence
 - you are checking container invalidation across larger increments
 - you want smaller, less noisy trace bundles
+
+Use focus controls when:
+- you already know the structural token or byte region you care about
+- a long fixture makes full-prefix traces noisy
+- you want first-divergence artifacts around one math family instead of the entire snippet
+
+Useful focus flags:
+- `--trace-from-pattern='\\left'`
+- `--trace-start-offset 81`
+- `--trace-window-before 8`
+- `--trace-window-after 80`
+- `--trace-surface math-block`
+- `--trace-feature-family math-left-right-local`
 
 ## Maintainer workflow
 

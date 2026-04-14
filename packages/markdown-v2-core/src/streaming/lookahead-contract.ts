@@ -35,11 +35,37 @@ export type LookaheadDowngradeMode = "raw" | "safe-prefix" | "surface-fallback";
 
 export type LookaheadSupportStatus = "implemented" | "bounded" | "hard-stop-only" | "deferred";
 
+export type LookaheadFeatureFamily =
+  | "inline-core"
+  | "regex-core"
+  | "math-local-core"
+  | "math-fixed-arity-local"
+  | "math-left-right-local"
+  | "math-display-local"
+  | "math-optional-arg-local"
+  | "math-environment-structured"
+  | "math-alignment-structured"
+  | "html-inline-allowlist"
+  | "html-block-conservative"
+  | "mdx-tag-shell"
+  | "mdx-expression-conservative";
+
+export type LookaheadSmokeStatus = "promoted" | "eligible" | "targeted-only" | "never";
+
 export interface LookaheadSupportDescriptor {
   surface: LookaheadSurface;
   status: LookaheadSupportStatus;
   smokeEligible: boolean;
   smokePromoted: boolean;
+  notes: readonly string[];
+}
+
+export interface LookaheadFeatureRegistryEntry {
+  id: string;
+  surface: LookaheadSurface;
+  featureFamily: LookaheadFeatureFamily;
+  status: LookaheadSupportStatus;
+  smoke: LookaheadSmokeStatus;
   notes: readonly string[];
 }
 
@@ -105,6 +131,133 @@ export const LOOKAHEAD_SUPPORT_MATRIX: readonly LookaheadSupportDescriptor[] = [
     smokeEligible: false,
     smokePromoted: false,
     notes: ["explicit hard-stop / fallback policy for V1", "no broad expression healing or child synthesis"],
+  },
+] as const;
+
+export const LOOKAHEAD_SUPPORT_MATRIX_BY_SURFACE: Readonly<Record<LookaheadSurface, LookaheadSupportDescriptor>> = Object.freeze(
+  Object.fromEntries(LOOKAHEAD_SUPPORT_MATRIX.map((entry) => [entry.surface, entry])) as Record<LookaheadSurface, LookaheadSupportDescriptor>,
+);
+
+export const LOOKAHEAD_FEATURE_REGISTRY: readonly LookaheadFeatureRegistryEntry[] = [
+  {
+    id: "inline-core",
+    surface: "inline-format",
+    featureFamily: "inline-core",
+    status: "implemented",
+    smoke: "eligible",
+    notes: ["delimiter closure for emphasis, strong, strike, and inline code"],
+  },
+  {
+    id: "regex-core",
+    surface: "regex",
+    featureFamily: "regex-core",
+    status: "implemented",
+    smoke: "targeted-only",
+    notes: ["adapter around bounded regex append logic"],
+  },
+  {
+    id: "math-local-core",
+    surface: "math-inline",
+    featureFamily: "math-local-core",
+    status: "bounded",
+    smoke: "promoted",
+    notes: ["tail control-word trim, scripts, delimiter closure, and bounded local math repair"],
+  },
+  {
+    id: "math-fixed-arity-local-inline",
+    surface: "math-inline",
+    featureFamily: "math-fixed-arity-local",
+    status: "bounded",
+    smoke: "promoted",
+    notes: ["allowlisted missing-group repair for \\frac and \\sqrt in inline math"],
+  },
+  {
+    id: "math-fixed-arity-local-block",
+    surface: "math-block",
+    featureFamily: "math-fixed-arity-local",
+    status: "bounded",
+    smoke: "eligible",
+    notes: ["same allowlisted missing-group repair when display math remains local and validates"],
+  },
+  {
+    id: "math-display-local",
+    surface: "math-block",
+    featureFamily: "math-display-local",
+    status: "bounded",
+    smoke: "eligible",
+    notes: ["bounded display math when repair remains tail-local and validation-safe"],
+  },
+  {
+    id: "math-left-right-local",
+    surface: "math-inline",
+    featureFamily: "math-left-right-local",
+    status: "deferred",
+    smoke: "never",
+    notes: ["post-V1 candidate for narrow null-delimiter completion only"],
+  },
+  {
+    id: "math-left-right-local-block",
+    surface: "math-block",
+    featureFamily: "math-left-right-local",
+    status: "deferred",
+    smoke: "never",
+    notes: ["post-V1 candidate for narrow null-delimiter completion in display math"],
+  },
+  {
+    id: "math-optional-arg-local",
+    surface: "math-inline",
+    featureFamily: "math-optional-arg-local",
+    status: "deferred",
+    smoke: "never",
+    notes: ["optional-argument repair remains a post-V1 decision gate"],
+  },
+  {
+    id: "math-environment-structured",
+    surface: "math-block",
+    featureFamily: "math-environment-structured",
+    status: "hard-stop-only",
+    smoke: "never",
+    notes: ["environments classify and terminate conservatively"],
+  },
+  {
+    id: "math-alignment-structured",
+    surface: "math-block",
+    featureFamily: "math-alignment-structured",
+    status: "hard-stop-only",
+    smoke: "never",
+    notes: ["alignment-like structures remain unsupported and targeted-only"],
+  },
+  {
+    id: "html-inline-allowlist",
+    surface: "html-inline",
+    featureFamily: "html-inline-allowlist",
+    status: "bounded",
+    smoke: "promoted",
+    notes: ["allowlisted inline tag auto-close only"],
+  },
+  {
+    id: "html-block-conservative",
+    surface: "html-block",
+    featureFamily: "html-block-conservative",
+    status: "hard-stop-only",
+    smoke: "targeted-only",
+    notes: ["block HTML remains conservative and non-optimistic"],
+  },
+  {
+    id: "mdx-tag-shell",
+    surface: "mdx-tag",
+    featureFamily: "mdx-tag-shell",
+    status: "bounded",
+    smoke: "promoted",
+    notes: ["bounded allowlisted inline shell preview only"],
+  },
+  {
+    id: "mdx-expression-conservative",
+    surface: "mdx-expression",
+    featureFamily: "mdx-expression-conservative",
+    status: "hard-stop-only",
+    smoke: "targeted-only",
+    notes: ["hard-stop / fallback only; no broad expression healing"],
   },
 ] as const;
 
@@ -186,6 +339,7 @@ export interface LookaheadDecisionTrace {
   surface: LookaheadSurface;
   decision: LookaheadDecision;
   safety: LookaheadSafety;
+  featureFamily?: LookaheadFeatureFamily;
   contextSignature?: string;
   ops?: readonly LookaheadRepairOp[];
   appended?: string;
@@ -193,9 +347,60 @@ export interface LookaheadDecisionTrace {
     valid: boolean;
     errors?: string[];
   };
+  analysis?: {
+    math?: {
+      mode: "inline" | "display";
+      family:
+        | "local-core"
+        | "fixed-arity-local"
+        | "left-right-local"
+        | "optional-arg-local"
+        | "display-local"
+        | "environment-structured"
+        | "alignment-structured"
+        | "unknown";
+      unsupportedReason?: string;
+      tokens?: Array<{
+        kind:
+          | "control-word"
+          | "brace-open"
+          | "brace-close"
+          | "bracket-open"
+          | "bracket-close"
+          | "paren-open"
+          | "paren-close"
+          | "script-op"
+          | "left"
+          | "right"
+          | "begin-env"
+          | "end-env"
+          | "align-sep"
+          | "text";
+        text: string;
+      }>;
+      obligations?: Array<{
+        kind: "close-group" | "fill-required-arg" | "fill-script" | "close-math-fence" | "unsupported-family";
+        detail: string;
+      }>;
+      checkpoints?: Array<{
+        label: string;
+        accepted: boolean;
+      }>;
+      selectedCandidate?: "full" | "checkpoint" | "raw";
+    };
+  };
   downgrade?: LookaheadPlan["downgrade"];
   termination?: LookaheadPlan["termination"];
   debug?: LookaheadPlan["debug"];
+}
+
+export interface LookaheadTraceFocus {
+  surface?: LookaheadSurface;
+  featureFamily?: LookaheadFeatureFamily;
+  pattern?: string;
+  startOffset?: number;
+  windowBefore?: number;
+  windowAfter?: number;
 }
 
 export interface LookaheadTraceStep {
@@ -203,11 +408,14 @@ export interface LookaheadTraceStep {
   mode: "chunk" | "char";
   prefixLength: number;
   rawInput: string;
+  focus?: LookaheadTraceFocus;
   htmlPath?: string;
   telemetryPath?: string;
   decisionSummary?: {
     totalDecisions: number;
     providerCounts: Record<string, number>;
+    surfaceCounts: Record<string, number>;
+    featureFamilyCounts: Record<string, number>;
     terminationCounts: Record<string, number>;
     downgradeCounts: Record<string, number>;
     blocksWithNoDecision: string[];

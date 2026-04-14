@@ -20,6 +20,7 @@ function testInlineFormatTrace() {
   assert.strictEqual(result.trace[0]?.providerId, "inline-format-provider");
   assert.strictEqual(result.trace[0]?.surface, "inline-format");
   assert.strictEqual(result.trace[0]?.decision, "repair");
+  assert.strictEqual(result.trace[0]?.featureFamily, "inline-core");
 }
 
 function testRegexTrace() {
@@ -32,6 +33,7 @@ function testRegexTrace() {
   assert.ok(trace);
   assert.strictEqual(trace?.surface, "regex");
   assert.strictEqual(trace?.decision, "repair");
+  assert.strictEqual(trace?.featureFamily, "regex-core");
 }
 
 function testHtmlInlineTrace() {
@@ -47,6 +49,7 @@ function testHtmlInlineTrace() {
   assert.strictEqual(result.trace[0]?.providerId, "html-inline-provider");
   assert.strictEqual(result.trace[0]?.surface, "html-inline");
   assert.strictEqual(result.trace[0]?.decision, "repair");
+  assert.strictEqual(result.trace[0]?.featureFamily, "html-inline-allowlist");
 }
 
 function testMdxTagTrace() {
@@ -62,6 +65,7 @@ function testMdxTagTrace() {
   assert.strictEqual(result.trace[0]?.providerId, "mdx-tag-provider");
   assert.strictEqual(result.trace[0]?.surface, "mdx-tag");
   assert.strictEqual(result.trace[0]?.decision, "repair");
+  assert.strictEqual(result.trace[0]?.featureFamily, "mdx-tag-shell");
 }
 
 function testMdxExpressionTrace() {
@@ -77,6 +81,7 @@ function testMdxExpressionTrace() {
   assert.strictEqual(result.trace[0]?.surface, "mdx-expression");
   assert.strictEqual(result.trace[0]?.decision, "terminate");
   assert.strictEqual(result.trace[0]?.termination?.reason, "unsupported-syntax");
+  assert.strictEqual(result.trace[0]?.featureFamily, "mdx-expression-conservative");
 }
 
 function testMathInlineTrace() {
@@ -88,6 +93,9 @@ function testMathInlineTrace() {
   assert.strictEqual(result.trace[0]?.surface, "math-inline");
   assert.strictEqual(result.trace[0]?.decision, "repair");
   assert.strictEqual(result.trace[0]?.validation?.valid, true);
+  assert.ok(result.trace[0]?.analysis?.math);
+  assert.strictEqual(result.trace[0]?.analysis?.math?.family, "fixed-arity-local");
+  assert.strictEqual(result.trace[0]?.featureFamily, "math-fixed-arity-local");
 }
 
 function testMathBlockTrace() {
@@ -100,6 +108,8 @@ function testMathBlockTrace() {
   assert.strictEqual(result.trace[0]?.decision, "raw");
   assert.strictEqual(result.trace[0]?.validation?.valid, false);
   assert.strictEqual(result.trace[0]?.termination?.reason, "unsupported-syntax");
+  assert.strictEqual(result.trace[0]?.analysis?.math?.family, "left-right-local");
+  assert.strictEqual(result.trace[0]?.featureFamily, "math-left-right-local");
 }
 
 testInlineFormatTrace();

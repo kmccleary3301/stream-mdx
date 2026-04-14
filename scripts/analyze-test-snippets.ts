@@ -4,7 +4,13 @@
  * Runs each snippet through V2 renderer, captures HTML, and performs detailed analysis
  */
 import type { Page } from "@playwright/test";
-import type { LookaheadTraceStep } from "../packages/markdown-v2-core/src/streaming/lookahead-contract";
+import type {
+  LookaheadDecisionTrace,
+  LookaheadFeatureFamily,
+  LookaheadSurface,
+  LookaheadTraceFocus,
+  LookaheadTraceStep,
+} from "../packages/markdown-v2-core/src/streaming/lookahead-contract";
 
 import { promises as fs } from "fs";
 import path from "path";
@@ -84,6 +90,12 @@ const TRACE_LOOKAHEAD = hasFlag("trace-lookahead");
 const TRACE_MODE = (readStringFlag("trace-mode") ?? "chunk").toLowerCase() === "char" ? "char" : "chunk";
 const TRACE_SNIPPET = readStringFlag("trace-snippet");
 const TRACE_MAX_STEPS = Math.max(1, getNumericFlag("trace-max-steps", TRACE_MODE === "char" ? 160 : 48));
+const TRACE_SURFACE = readStringFlag("trace-surface") as LookaheadSurface | null;
+const TRACE_FEATURE_FAMILY = readStringFlag("trace-feature-family") as LookaheadFeatureFamily | null;
+const TRACE_FROM_PATTERN = readStringFlag("trace-from-pattern");
+const TRACE_START_OFFSET = readNumericFlag("trace-start-offset");
+const TRACE_WINDOW_BEFORE = Math.max(0, getNumericFlag("trace-window-before", TRACE_MODE === "char" ? 24 : 160));
+const TRACE_WINDOW_AFTER = Math.max(0, getNumericFlag("trace-window-after", TRACE_MODE === "char" ? 96 : 800));
 type AnalyzerSuppressionEntry = {
   snippet: string;
   rule: string;
@@ -1146,8 +1158,52 @@ function buildTracePrefixLengths(content: string, mode: "chunk" | "char", maxSte
   return lengths;
 }
 
+function buildTraceFocus(content: string): LookaheadTraceFocus | null {
+  if (!TRACE_SURFACE && !TRACE_FEATURE_FAMILY && TRACE_START_OFFSET === null && !TRACE_FROM_PATTERN) {
+    return null;
+  }
+  const normalizedPattern = TRACE_FROM_PATTERN?.replace(/\\\\/g, "\\") ?? null;
+  let startOffset = TRACE_START_OFFSET;
+  if (startOffset === null && normalizedPattern) {
+    const idx = content.indexOf(normalizedPattern);
+    startOffset = idx >= 0 ? idx : null;
+  }
+  return {
+    surface: TRACE_SURFACE ?? undefined,
+    featureFamily: TRACE_FEATURE_FAMILY ?? undefined,
+    pattern: normalizedPattern ?? undefined,
+    startOffset: startOffset ?? undefined,
+    windowBefore: TRACE_WINDOW_BEFORE,
+    windowAfter: TRACE_WINDOW_AFTER,
+  };
+}
+
+function applyTraceFocus(prefixLengths: number[], contentLength: number, focus: LookaheadTraceFocus | null): number[] {
+  if (!focus || typeof focus.startOffset !== "number") {
+    return prefixLengths;
+  }
+  const min = Math.max(1, focus.startOffset - (focus.windowBefore ?? 0));
+  const max = Math.min(contentLength, focus.startOffset + (focus.windowAfter ?? 0));
+  const selected = prefixLengths.filter((length) => length >= min && length <= max);
+  if (!selected.includes(max)) selected.push(max);
+  if (!selected.includes(contentLength)) selected.push(contentLength);
+  return [...new Set(selected)].sort((a, b) => a - b);
+}
+
+function describeTraceFocus(focus: LookaheadTraceFocus | null): string | null {
+  if (!focus) return null;
+  const parts: string[] = [];
+  if (focus.surface) parts.push(`surface-${focus.surface}`);
+  if (focus.featureFamily) parts.push(`family-${focus.featureFamily}`);
+  if (typeof focus.startOffset === "number") parts.push(`offset-${focus.startOffset}`);
+  else if (focus.pattern) parts.push("pattern");
+  return parts.length > 0 ? parts.join("__").replace(/[^a-zA-Z0-9._-]+/g, "-") : "focused";
+}
+
 function summarizeLookaheadDecisions(steps: LookaheadTraceStep[]) {
   const providerCounts: Record<string, number> = {};
+  const surfaceCounts: Record<string, number> = {};
+  const featureFamilyCounts: Record<string, number> = {};
   const terminationCounts: Record<string, number> = {};
   const downgradeCounts: Record<string, number> = {};
 
@@ -1155,6 +1211,10 @@ function summarizeLookaheadDecisions(steps: LookaheadTraceStep[]) {
     for (const block of step.blocks ?? []) {
       for (const decision of [...(block.inlineLookahead ?? []), ...(block.mixedLookahead ?? [])]) {
         providerCounts[decision.providerId] = (providerCounts[decision.providerId] ?? 0) + 1;
+        surfaceCounts[decision.surface] = (surfaceCounts[decision.surface] ?? 0) + 1;
+        if (decision.featureFamily) {
+          featureFamilyCounts[decision.featureFamily] = (featureFamilyCounts[decision.featureFamily] ?? 0) + 1;
+        }
         if (decision.termination?.reason) {
           terminationCounts[decision.termination.reason] = (terminationCounts[decision.termination.reason] ?? 0) + 1;
         }
@@ -1165,11 +1225,53 @@ function summarizeLookaheadDecisions(steps: LookaheadTraceStep[]) {
     }
   }
 
-  return { providerCounts, terminationCounts, downgradeCounts };
+  return { providerCounts, surfaceCounts, featureFamilyCounts, terminationCounts, downgradeCounts };
+}
+
+function collectMathTraceEntries(steps: LookaheadTraceStep[]) {
+  const entries: Array<{
+    stepIndex: number;
+    prefixLength: number;
+    blockId: string;
+    providerId: string;
+    surface: string;
+    featureFamily?: string;
+    decision: string;
+    validation?: unknown;
+    termination?: unknown;
+    downgrade?: unknown;
+    analysis: NonNullable<NonNullable<LookaheadDecisionTrace["analysis"]>["math"]>;
+  }> = [];
+
+  for (const step of steps) {
+    for (const block of step.blocks ?? []) {
+      const decisions = [...(block.inlineLookahead ?? []), ...(block.mixedLookahead ?? [])];
+      for (const decision of decisions) {
+        if (!decision.analysis?.math) continue;
+        entries.push({
+          stepIndex: step.stepIndex,
+          prefixLength: step.prefixLength,
+          blockId: block.id,
+          providerId: decision.providerId,
+          surface: decision.surface,
+          featureFamily: decision.featureFamily,
+          decision: decision.decision,
+          validation: decision.validation,
+          termination: decision.termination,
+          downgrade: decision.downgrade,
+          analysis: decision.analysis.math,
+        });
+      }
+    }
+  }
+
+  return entries;
 }
 
 function buildStepDecisionSummary(step: LookaheadTraceStep): NonNullable<LookaheadTraceStep["decisionSummary"]> {
   const providerCounts: Record<string, number> = {};
+  const surfaceCounts: Record<string, number> = {};
+  const featureFamilyCounts: Record<string, number> = {};
   const terminationCounts: Record<string, number> = {};
   const downgradeCounts: Record<string, number> = {};
   const blocksWithNoDecision: string[] = [];
@@ -1184,6 +1286,10 @@ function buildStepDecisionSummary(step: LookaheadTraceStep): NonNullable<Lookahe
     totalDecisions += decisions.length;
     for (const decision of decisions) {
       providerCounts[decision.providerId] = (providerCounts[decision.providerId] ?? 0) + 1;
+      surfaceCounts[decision.surface] = (surfaceCounts[decision.surface] ?? 0) + 1;
+      if (decision.featureFamily) {
+        featureFamilyCounts[decision.featureFamily] = (featureFamilyCounts[decision.featureFamily] ?? 0) + 1;
+      }
       if (decision.termination?.reason) {
         terminationCounts[decision.termination.reason] = (terminationCounts[decision.termination.reason] ?? 0) + 1;
       }
@@ -1196,6 +1302,8 @@ function buildStepDecisionSummary(step: LookaheadTraceStep): NonNullable<Lookahe
   return {
     totalDecisions,
     providerCounts,
+    surfaceCounts,
+    featureFamilyCounts,
     terminationCounts,
     downgradeCounts,
     blocksWithNoDecision,
@@ -1233,9 +1341,11 @@ function buildStepDiff(previous: LookaheadTraceStep | null, current: LookaheadTr
 
 async function writeLookaheadTrace(browser: typeof chromium, snippetName: string): Promise<void> {
   const snippetContent = await readSnippet(snippetName);
-  const prefixLengths = buildTracePrefixLengths(snippetContent, TRACE_MODE, TRACE_MAX_STEPS);
+  const traceFocus = buildTraceFocus(snippetContent);
+  const prefixLengths = applyTraceFocus(buildTracePrefixLengths(snippetContent, TRACE_MODE, TRACE_MAX_STEPS), snippetContent.length, traceFocus);
   const slug = snippetName.replace(/\.[^.]+$/, "");
-  const traceRoot = path.join(LOOKAHEAD_TRACE_DIR, `${slug}-${TRACE_MODE}`);
+  const focusSlug = describeTraceFocus(traceFocus);
+  const traceRoot = path.join(LOOKAHEAD_TRACE_DIR, `${slug}-${TRACE_MODE}${focusSlug ? `-${focusSlug}` : ""}`);
   const htmlDir = path.join(traceRoot, "html");
   const stepsDir = path.join(traceRoot, "steps");
   const failuresDir = path.join(traceRoot, "failures");
@@ -1250,6 +1360,7 @@ async function writeLookaheadTrace(browser: typeof chromium, snippetName: string
     mode: TRACE_MODE,
     totalSteps: prefixLengths.length,
     lengths: prefixLengths,
+    focus: traceFocus,
   };
 
   const traceSteps: LookaheadTraceStep[] = [];
@@ -1271,6 +1382,7 @@ async function writeLookaheadTrace(browser: typeof chromium, snippetName: string
         mode: TRACE_MODE,
         prefixLength,
         rawInput,
+        focus: traceFocus ?? undefined,
         htmlPath: htmlRel,
         telemetryPath: telemetryRel,
         state: state.demoState,
@@ -1290,6 +1402,12 @@ async function writeLookaheadTrace(browser: typeof chromium, snippetName: string
 
   const aggregateSummary = summarizeLookaheadDecisions(traceSteps);
   const firstRenderableStep = traceSteps.find((step) => Array.isArray(step.blocks) && step.blocks.length > 0)?.stepIndex ?? null;
+  const firstProviderActivation =
+    traceSteps.find((step) => (step.decisionSummary?.totalDecisions ?? 0) > 0)?.stepIndex ?? null;
+  const firstTermination =
+    traceSteps.find((step) => Object.keys(step.decisionSummary?.terminationCounts ?? {}).length > 0)?.stepIndex ?? null;
+  const firstDowngrade =
+    traceSteps.find((step) => Object.keys(step.decisionSummary?.downgradeCounts ?? {}).length > 0)?.stepIndex ?? null;
   const firstFinalizedStep =
     traceSteps.find((step) => (step.blocks ?? []).some((block) => block.isFinalized))?.stepIndex ?? null;
 
@@ -1299,6 +1417,9 @@ async function writeLookaheadTrace(browser: typeof chromium, snippetName: string
       {
         ...summary,
         firstRenderableStep,
+        firstProviderActivation,
+        firstTermination,
+        firstDowngrade,
         firstFinalizedStep,
         aggregate: aggregateSummary,
       },
@@ -1308,6 +1429,99 @@ async function writeLookaheadTrace(browser: typeof chromium, snippetName: string
     "utf-8",
   );
   await fs.writeFile(path.join(traceRoot, "trace.ndjson"), `${traceSteps.map((step) => JSON.stringify(step)).join("\n")}\n`, "utf-8");
+  await fs.writeFile(
+    path.join(traceRoot, "focus-summary.json"),
+    JSON.stringify(
+      {
+        snippet: snippetName,
+        mode: TRACE_MODE,
+        focus: traceFocus,
+        capturedWindow: {
+          firstPrefixLength: prefixLengths[0] ?? 0,
+          lastPrefixLength: prefixLengths[prefixLengths.length - 1] ?? 0,
+          totalSteps: prefixLengths.length,
+        },
+        firstProviderActivation,
+        firstTermination,
+        firstDowngrade,
+        aggregate: aggregateSummary,
+      },
+      null,
+      2,
+    ),
+    "utf-8",
+  );
+  const mathEntries = collectMathTraceEntries(traceSteps);
+  await fs.writeFile(
+    path.join(traceRoot, "math-tail-analysis.json"),
+    JSON.stringify(
+      mathEntries.map((entry) => ({
+        stepIndex: entry.stepIndex,
+        prefixLength: entry.prefixLength,
+        blockId: entry.blockId,
+        providerId: entry.providerId,
+        surface: entry.surface,
+        featureFamily: entry.featureFamily,
+        mode: entry.analysis.mode,
+        family: entry.analysis.family,
+        unsupportedReason: entry.analysis.unsupportedReason ?? null,
+        tokens: entry.analysis.tokens ?? [],
+        obligations: entry.analysis.obligations ?? [],
+        checkpoints: entry.analysis.checkpoints ?? [],
+      })),
+      null,
+      2,
+    ),
+    "utf-8",
+  );
+  await fs.writeFile(
+    path.join(traceRoot, "math-candidates.json"),
+    JSON.stringify(
+      mathEntries.map((entry) => ({
+        stepIndex: entry.stepIndex,
+        prefixLength: entry.prefixLength,
+        blockId: entry.blockId,
+        decision: entry.decision,
+        featureFamily: entry.featureFamily,
+        selectedCandidate: entry.analysis.selectedCandidate ?? null,
+        checkpoints: entry.analysis.checkpoints ?? [],
+      })),
+      null,
+      2,
+    ),
+    "utf-8",
+  );
+  await fs.writeFile(
+    path.join(traceRoot, "math-validation.json"),
+    JSON.stringify(
+      mathEntries.map((entry) => ({
+        stepIndex: entry.stepIndex,
+        prefixLength: entry.prefixLength,
+        blockId: entry.blockId,
+        featureFamily: entry.featureFamily,
+        validation: entry.validation ?? null,
+        downgrade: entry.downgrade ?? null,
+      })),
+      null,
+      2,
+    ),
+    "utf-8",
+  );
+  await fs.writeFile(
+    path.join(traceRoot, "latch-rearm.json"),
+    JSON.stringify(
+      mathEntries.map((entry) => ({
+        stepIndex: entry.stepIndex,
+        prefixLength: entry.prefixLength,
+        blockId: entry.blockId,
+        featureFamily: entry.featureFamily,
+        termination: entry.termination ?? null,
+      })),
+      null,
+      2,
+    ),
+    "utf-8",
+  );
   const firstDivergence =
     traceSteps.find((step) => {
       const diff = step.diffFromPrevious;

@@ -1,6 +1,6 @@
 import assert from "node:assert";
 
-import { LOOKAHEAD_SUPPORT_MATRIX } from "../src/streaming/lookahead-contract";
+import { LOOKAHEAD_FEATURE_REGISTRY, LOOKAHEAD_SUPPORT_MATRIX, LOOKAHEAD_SUPPORT_MATRIX_BY_SURFACE } from "../src/streaming/lookahead-contract";
 
 function testSupportMatrixCoversEverySurfaceExactlyOnce() {
   const surfaces = LOOKAHEAD_SUPPORT_MATRIX.map((entry) => entry.surface);
@@ -34,6 +34,30 @@ function testSupportMatrixPoliciesMatchCurrentV1Contract() {
   assert.strictEqual(bySurface.get("html-inline")?.smokePromoted, true);
 }
 
+function testSupportMatrixLookupMatchesListEntries() {
+  for (const entry of LOOKAHEAD_SUPPORT_MATRIX) {
+    assert.deepStrictEqual(LOOKAHEAD_SUPPORT_MATRIX_BY_SURFACE[entry.surface], entry);
+  }
+}
+
+function testFeatureRegistryCoversCurrentAndPostV1Families() {
+  const ids = new Set(LOOKAHEAD_FEATURE_REGISTRY.map((entry) => entry.id));
+  assert.ok(ids.has("math-left-right-local"));
+  assert.ok(ids.has("math-environment-structured"));
+  assert.ok(ids.has("math-alignment-structured"));
+  assert.ok(ids.has("mdx-expression-conservative"));
+
+  const leftRight = LOOKAHEAD_FEATURE_REGISTRY.find((entry) => entry.id === "math-left-right-local");
+  assert.strictEqual(leftRight?.status, "deferred");
+  assert.strictEqual(leftRight?.smoke, "never");
+
+  const env = LOOKAHEAD_FEATURE_REGISTRY.find((entry) => entry.id === "math-environment-structured");
+  assert.strictEqual(env?.status, "hard-stop-only");
+  assert.strictEqual(env?.smoke, "never");
+}
+
 testSupportMatrixCoversEverySurfaceExactlyOnce();
 testSupportMatrixPoliciesMatchCurrentV1Contract();
+testSupportMatrixLookupMatchesListEntries();
+testFeatureRegistryCoversCurrentAndPostV1Families();
 console.log("lookahead support matrix tests passed");

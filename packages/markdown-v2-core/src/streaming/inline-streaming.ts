@@ -2,11 +2,13 @@ import type { FormatAnticipationConfig } from "../types";
 import type {
   LookaheadContainerContext,
   LookaheadDecisionTrace,
+  LookaheadFeatureFamily,
   LookaheadRepairOp,
   LookaheadRequest,
   LookaheadSurface,
   LookaheadTerminationReason,
 } from "./lookahead-contract";
+import { analyzeMathTailShadow } from "./math-tail-shadow";
 
 export type InlineStreamingInlineStatus = "complete" | "anticipated" | "raw";
 
@@ -212,7 +214,7 @@ export function prepareInlineStreamingLookahead(
 
   const traces: LookaheadDecisionTrace[] = [];
   const formatPlan = planInlineFormat(request, anticipation, enableMath);
-  traces.push(traceFromFormatPlan(formatPlan, context.containerSignature));
+  traces.push(traceFromFormatPlan(formatPlan, request.raw, context.containerSignature));
 
   if (formatPlan.decision === "raw") {
     return {
@@ -301,16 +303,19 @@ export function prepareSurfaceLookahead(
   };
 }
 
-function traceFromFormatPlan(plan: InlineFormatPlan, contextSignature: string): LookaheadDecisionTrace {
+function traceFromFormatPlan(plan: InlineFormatPlan, raw: string, contextSignature: string): LookaheadDecisionTrace {
+  const featureFamily = resolveFeatureFamilyForFormatPlan(plan);
   return {
     providerId: "inline-format-provider",
     surface: plan.surface,
     decision: plan.decision,
     safety: plan.safety,
+    featureFamily,
     contextSignature,
     ops: plan.ops,
     appended: renderAppendedSuffix(plan.ops),
     validation: plan.validation,
+    analysis: buildAnalysisForFormatPlan(plan, raw),
     downgrade: plan.decision === "raw" ? { mode: "raw", reason: plan.downgradeReason } : undefined,
     termination:
       plan.decision === "raw"
@@ -332,6 +337,7 @@ function traceFromRegexPlan(plan: RegexPlan, contextSignature: string): Lookahea
     surface: "regex",
     decision: plan.decision,
     safety: "safe",
+    featureFamily: "regex-core",
     contextSignature,
     ops: plan.ops,
     appended: renderAppendedSuffix(plan.ops),
@@ -355,12 +361,15 @@ type SurfacePlan = {
   rearmWhen?: "next-byte" | "new-delimiter" | "newline-change" | "container-change" | "finalization";
 };
 
+type MathTraceAnalysis = NonNullable<NonNullable<LookaheadDecisionTrace["analysis"]>["math"]>;
+
 function traceFromPlan(plan: SurfacePlan, contextSignature: string): LookaheadDecisionTrace {
   return {
     providerId: plan.providerId,
     surface: plan.surface,
     decision: plan.decision,
     safety: plan.safety,
+    featureFamily: resolveFeatureFamilyForSurfacePlan(plan),
     contextSignature,
     ops: plan.ops,
     appended: renderAppendedSuffix(plan.ops),
@@ -384,6 +393,70 @@ function traceFromPlan(plan: SurfacePlan, contextSignature: string): LookaheadDe
       notes: plan.debugNotes,
     },
   };
+}
+
+function resolveFeatureFamilyForFormatPlan(plan: InlineFormatPlan): LookaheadFeatureFamily {
+  switch (plan.surface) {
+    case "math-inline": {
+      const notes = new Set(plan.debugNotes);
+      if (notes.has("unsupported optional-argument ambiguity")) return "math-optional-arg-local";
+      if (notes.has("unsupported math environment")) return "math-environment-structured";
+      if (notes.has("unsupported \\left/\\right pair")) return "math-left-right-local";
+      if (notes.has("fill missing \\frac groups") || notes.has("fill missing \\sqrt group")) return "math-fixed-arity-local";
+      return "math-local-core";
+    }
+    case "math-block": {
+      const notes = new Set(plan.debugNotes);
+      if (notes.has("unsupported optional-argument ambiguity")) return "math-optional-arg-local";
+      if (notes.has("unsupported math environment")) return "math-environment-structured";
+      if (notes.has("unsupported \\left/\\right pair")) return "math-left-right-local";
+      if (notes.has("fill missing \\frac groups") || notes.has("fill missing \\sqrt group")) return "math-fixed-arity-local";
+      return "math-display-local";
+    }
+    default:
+      return "inline-core";
+  }
+}
+
+function resolveFeatureFamilyForSurfacePlan(plan: SurfacePlan): LookaheadFeatureFamily {
+  switch (plan.surface) {
+    case "html-inline":
+      return "html-inline-allowlist";
+    case "html-block":
+      return "html-block-conservative";
+    case "mdx-tag":
+      return "mdx-tag-shell";
+    case "mdx-expression":
+      return "mdx-expression-conservative";
+    default:
+      return "inline-core";
+  }
+}
+
+function buildAnalysisForFormatPlan(plan: InlineFormatPlan, raw: string): LookaheadDecisionTrace["analysis"] | undefined {
+  if (plan.surface !== "math-inline" && plan.surface !== "math-block") {
+    return undefined;
+  }
+  const surface = plan.surface;
+  return {
+    math: buildMathTraceAnalysis(plan, raw, surface),
+  };
+}
+
+function buildMathTraceAnalysis(
+  plan: InlineFormatPlan,
+  raw: string,
+  surface: Extract<LookaheadSurface, "math-inline" | "math-block">,
+): MathTraceAnalysis {
+  return analyzeMathTailShadow({
+    raw,
+    surface,
+    decision: plan.decision,
+    ops: plan.ops,
+    validation: plan.validation,
+    notes: plan.debugNotes,
+    downgradeReason: plan.downgradeReason,
+  });
 }
 
 function planRegexLookahead(regexAppend: string | null): RegexPlan {
