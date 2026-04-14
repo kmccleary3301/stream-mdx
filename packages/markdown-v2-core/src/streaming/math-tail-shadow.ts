@@ -7,6 +7,7 @@ export type MathShadowAnalysisInput = {
   surface: Extract<LookaheadSurface, "math-inline" | "math-block">;
   decision: LookaheadDecision;
   ops: readonly LookaheadRepairOp[];
+  candidateId?: "repair-candidate" | "checkpoint-candidate" | "raw-fallback" | "null-right-candidate";
   validation?: { valid: boolean; errors?: string[] };
   notes: readonly string[];
   downgradeReason?: string;
@@ -23,7 +24,8 @@ export function analyzeMathTailShadowReport(input: MathShadowAnalysisInput): Mat
   const mode = input.surface === "math-block" ? "display" : "inline";
   const family = classifyMathFamily(raw, input.surface, input.notes);
   const unsupportedReason = resolveUnsupportedReason(input.notes, input.downgradeReason, family);
-  const candidates = buildCandidates(raw, family, input);
+  const liveCandidateId = input.candidateId ?? (input.decision === "repair" ? "repair-candidate" : "raw-fallback");
+  const candidates = buildCandidates(raw, family, input, liveCandidateId);
   const preferredCandidate = candidates.find((entry) => entry.accepted) ?? candidates[candidates.length - 1]!;
 
   return {
@@ -38,10 +40,9 @@ export function analyzeMathTailShadowReport(input: MathShadowAnalysisInput): Mat
       comparison: {
         liveDecision: input.decision,
         preferredCandidate: preferredCandidate.id,
-        differsFromLive:
-          (input.decision === "repair" ? "repair-candidate" : "raw-fallback") !== preferredCandidate.id,
+        differsFromLive: liveCandidateId !== preferredCandidate.id,
       },
-      selectedCandidate: input.decision === "repair" ? "repaired" : "raw",
+      selectedCandidate: mapSelectedCandidate(liveCandidateId),
     },
     candidates,
     preferredCandidateId: preferredCandidate.id,
@@ -215,6 +216,7 @@ function buildCandidates(
   raw: string,
   family: MathTraceAnalysis["family"],
   input: MathShadowAnalysisInput,
+  liveCandidateId: string,
 ): NonNullable<MathTraceAnalysis["candidates"]> {
   const candidates: NonNullable<MathTraceAnalysis["candidates"]> = [];
 
@@ -224,7 +226,7 @@ function buildCandidates(
     family,
     decision: input.decision === "repair" ? "repair" : "raw",
     supported: input.decision === "repair",
-    accepted: true,
+    accepted: liveCandidateId === (input.decision === "repair" ? "repair-candidate" : "raw-fallback"),
     ops: liveOps,
     reason: input.downgradeReason,
   });
@@ -238,7 +240,7 @@ function buildCandidates(
       family,
       decision: "repair",
       supported: !nestedLeftPressure,
-      accepted: false,
+      accepted: liveCandidateId === "null-right-candidate",
       ops: !nestedLeftPressure ? ["append \\right.", "close display delimiter"] : [],
       reason: nestedLeftPressure ? "nested left/right pressure exceeds Math V2A scope" : "shadow-only candidate; live path still conservative",
     });
@@ -250,7 +252,7 @@ function buildCandidates(
       family,
       decision: "repair",
       supported: true,
-      accepted: false,
+      accepted: liveCandidateId === "checkpoint-candidate",
       ops: family === "display-local" ? ["checkpoint multiline display tail", "close display delimiter"] : ["checkpoint local fixed-arity tail"],
       reason: "shadow-only checkpoint candidate",
     });
@@ -269,6 +271,12 @@ function buildCandidates(
   }
 
   return dedupeCandidates(candidates);
+}
+
+function mapSelectedCandidate(candidateId: string): MathTraceAnalysis["selectedCandidate"] {
+  if (candidateId === "checkpoint-candidate") return "checkpoint";
+  if (candidateId === "raw-fallback") return "raw";
+  return "repaired";
 }
 
 function summarizeOps(ops: readonly LookaheadRepairOp[]): string[] {

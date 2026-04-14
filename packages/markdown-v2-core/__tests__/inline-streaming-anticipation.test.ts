@@ -220,6 +220,18 @@ function testMathConvergenceBehavior() {
   assert.strictEqual(supportedFinal.content, "$\\left(x + y\\right)$");
 }
 
+function testDisplayCheckpointSelection() {
+  const result = prepareInlineStreamingLookahead("$$\na_n = \\frac{1}{n}\n+ \\sqrt{x", {
+    formatAnticipation: { mathBlock: true },
+    math: true,
+  });
+  assert.strictEqual(result.prepared.kind, "parse");
+  if (result.prepared.kind !== "parse") throw new Error("expected parse result");
+  assert.strictEqual(result.prepared.status, "anticipated");
+  assert.strictEqual(result.trace[0]?.analysis?.math?.selectedCandidate, "checkpoint");
+  assert.strictEqual(result.prepared.content, "$$\na_n = \\frac{1}{n}\n$$");
+}
+
 testWithoutAnticipation();
 testWithAnticipation();
 testComplete();
@@ -231,4 +243,5 @@ testMathDisplayAnticipation();
 testUnsupportedMathRemainsRaw();
 testMathValidationTrace();
 testMathConvergenceBehavior();
+testDisplayCheckpointSelection();
 console.log("inline streaming anticipation tests passed");

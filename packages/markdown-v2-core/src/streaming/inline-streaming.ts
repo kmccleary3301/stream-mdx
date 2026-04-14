@@ -59,6 +59,7 @@ type InlineFormatPlan =
       decision: "accept-as-is";
       safety: "safe";
       ops: readonly LookaheadRepairOp[];
+      mathCandidateId?: "repair-candidate" | "checkpoint-candidate" | "raw-fallback" | "null-right-candidate";
       debugNotes: string[];
       validation?: { valid: boolean; errors?: string[] };
       terminationReason?: never;
@@ -69,6 +70,7 @@ type InlineFormatPlan =
       decision: "raw";
       safety: "safe";
       ops: readonly LookaheadRepairOp[];
+      mathCandidateId?: "repair-candidate" | "checkpoint-candidate" | "raw-fallback" | "null-right-candidate";
       debugNotes: string[];
       validation?: { valid: boolean; errors?: string[] };
       terminationReason: LookaheadTerminationReason;
@@ -79,6 +81,7 @@ type InlineFormatPlan =
       decision: "repair";
       safety: "safe";
       ops: readonly LookaheadRepairOp[];
+      mathCandidateId?: "repair-candidate" | "checkpoint-candidate" | "raw-fallback" | "null-right-candidate";
       debugNotes: string[];
       validation?: { valid: boolean; errors?: string[] };
       terminationReason?: never;
@@ -461,6 +464,7 @@ function buildMathTraceAnalysis(
     surface,
     decision: plan.decision,
     ops: plan.ops,
+    candidateId: plan.mathCandidateId,
     validation: plan.validation,
     notes: plan.debugNotes,
     downgradeReason: plan.downgradeReason,
@@ -915,6 +919,7 @@ function planMathLookahead(
       decision: "raw",
       safety: "safe",
       ops: [],
+      mathCandidateId: "raw-fallback",
       validation: { valid: false, errors: [mathRepair.reason] },
       terminationReason: "unsupported-syntax",
       downgradeReason: mathRepair.reason,
@@ -924,12 +929,29 @@ function planMathLookahead(
 
   const repaired = applyRepairOps(raw, mathRepair.ops);
   const validation = validateMathRepairCandidate(repaired, mode);
+  const checkpoint = mode === "display" ? buildDisplayCheckpointCandidate(raw, mathRepair.notes) : null;
+  const checkpointValidation =
+    checkpoint ? validateMathRepairCandidate(applyRepairOps(raw, checkpoint.ops), mode) : undefined;
+
+  if (checkpoint && checkpointValidation?.valid && (!validation.valid || checkpoint.preferOverFullRepair)) {
+    return {
+      surface,
+      decision: "repair",
+      safety: "safe",
+      ops: checkpoint.ops,
+      mathCandidateId: "checkpoint-candidate",
+      validation: checkpointValidation,
+      debugNotes: [...mathRepair.notes, ...checkpoint.notes],
+    };
+  }
+
   if (!validation.valid) {
     return {
       surface,
       decision: "raw",
       safety: "safe",
       ops: [],
+      mathCandidateId: "raw-fallback",
       validation,
       terminationReason: "validation-failed",
       downgradeReason: validation.errors?.join("; ") ?? "math repair validation failed",
@@ -942,6 +964,7 @@ function planMathLookahead(
     decision: "repair",
     safety: "safe",
     ops: mathRepair.ops,
+    mathCandidateId: "repair-candidate",
     validation,
     debugNotes: mathRepair.notes,
   };
@@ -1048,6 +1071,74 @@ function buildLeftRightNullRepairOps(
     ops,
     notes: ["tail-local \\right. completion", "close unmatched tail delimiters", mode === "display" ? "close display math delimiter" : "close inline math delimiter"],
   };
+}
+
+function buildDisplayCheckpointCandidate(
+  raw: string,
+  notes: readonly string[],
+): { ops: LookaheadRepairOp[]; notes: string[]; preferOverFullRepair: boolean } | null {
+  if (!raw.startsWith("$$") || !/[\r\n]/.test(raw)) {
+    return null;
+  }
+  if (notes.includes("tail-local \\right. completion")) {
+    return null;
+  }
+
+  const body = raw.slice(2);
+  const lastNewline = body.lastIndexOf("\n");
+  if (lastNewline <= 0) {
+    return null;
+  }
+
+  const checkpointBody = body.slice(0, lastNewline);
+  const trailingLine = body.slice(lastNewline + 1);
+  if (!checkpointBody.trim() || !trailingLine.trim()) {
+    return null;
+  }
+  if (!isUnstableDisplayTail(trailingLine)) {
+    return null;
+  }
+
+  const checkpointRaw = `$$${checkpointBody}`;
+  const trimCount = raw.length - checkpointRaw.length;
+  if (trimCount <= 0) {
+    return null;
+  }
+
+  const ops: LookaheadRepairOp[] = [{ kind: "trim-tail", count: trimCount }];
+  if (!(checkpointRaw.endsWith("\n") || checkpointRaw.endsWith("\r"))) {
+    ops.push({ kind: "append", text: "\n" });
+  }
+  ops.push({ kind: "close-delimiter", text: "$$" });
+
+  return {
+    ops,
+    notes: ["select display-local checkpoint candidate", "close display math delimiter"],
+    preferOverFullRepair: true,
+  };
+}
+
+function isUnstableDisplayTail(raw: string): boolean {
+  const trimmed = raw.trimEnd();
+  if (!trimmed) return false;
+  const balance = scanDelimiterBalance(trimmed);
+  if (balance.openParens > 0 || balance.openBrackets > 0 || balance.openBraces > 0) {
+    return true;
+  }
+  const trailingControlWord = trimmed.match(/\\[A-Za-z]+$/)?.[0];
+  if (trailingControlWord && !isAllowlistedCompleteControlWord(trailingControlWord)) {
+    return true;
+  }
+  if (/(?:^|[^\\])(?:\^|_)$/.test(trimmed)) {
+    return true;
+  }
+  if (countMissingRequiredGroups(trimmed, "\\frac", 2) > 0) {
+    return true;
+  }
+  if (countMissingRequiredGroups(trimmed, "\\sqrt", 1) > 0) {
+    return true;
+  }
+  return false;
 }
 
 function mathRepairDebugNotes(raw: string, mode: "inline" | "display"): string[] {

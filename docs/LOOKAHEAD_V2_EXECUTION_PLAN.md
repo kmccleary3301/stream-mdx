@@ -24,6 +24,7 @@ The planner response is directionally right, but this plan only commits to the n
 - Phase 2: started
   - the first live Math V2A selector seam is landed for current supported math paths
   - narrow `left-right-local` null-delimiter completion is live under strict rules
+  - bounded display-local multiline checkpoint selection is live for unstable trailing lines
   - support matrix and trace contract reflect the new live family
 
 ## North Star

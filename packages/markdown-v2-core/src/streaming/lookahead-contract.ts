@@ -100,7 +100,7 @@ export const LOOKAHEAD_SUPPORT_MATRIX: readonly LookaheadSupportDescriptor[] = [
     smokeEligible: true,
     smokePromoted: false,
     notes: [
-      "same bounded subset as inline math when repair remains tail-local and validates cleanly",
+      "same bounded subset as inline math when repair remains tail-local and validates cleanly, plus display-local multiline checkpoint selection",
       "unsupported environments, optional arguments, and alignment families hard-stop / fallback",
     ],
   },
@@ -185,7 +185,7 @@ export const LOOKAHEAD_FEATURE_REGISTRY: readonly LookaheadFeatureRegistryEntry[
     featureFamily: "math-display-local",
     status: "bounded",
     smoke: "eligible",
-    notes: ["bounded display math when repair remains tail-local and validation-safe"],
+    notes: ["bounded display math when repair remains tail-local and validation-safe, including multiline checkpoint selection"],
   },
   {
     id: "math-left-right-local",

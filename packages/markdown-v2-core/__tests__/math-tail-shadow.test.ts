@@ -71,12 +71,15 @@ function testDisplayCheckpointCandidate() {
     raw: "$$\na_n = \\frac{1}{n}\n+ \\sqrt{x\n$$",
     surface: "math-block",
     decision: "repair",
+    candidateId: "checkpoint-candidate",
     ops: [{ kind: "insert-empty-group" }, { kind: "append", text: "}" }, { kind: "append", text: "\n" }, { kind: "close-delimiter", text: "$$" }],
     validation: { valid: true },
     notes: ["fill missing \\sqrt group", "close unmatched tail delimiters", "close display math delimiter"],
   });
   assert.ok(report.candidates.some((entry) => entry.id === "checkpoint-candidate"));
   assert.ok(report.analysis.comparison);
+  assert.strictEqual(report.analysis.selectedCandidate, "checkpoint");
+  assert.strictEqual(report.analysis.comparison?.differsFromLive, false);
 }
 
 testFixedArityRepairShadow();

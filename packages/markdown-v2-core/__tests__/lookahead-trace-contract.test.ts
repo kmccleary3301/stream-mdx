@@ -1,6 +1,10 @@
 import assert from "node:assert";
+import fs from "node:fs";
+import path from "node:path";
 
 import { createContainerSignature, prepareInlineStreamingLookahead, prepareSurfaceLookahead } from "../src/streaming/inline-streaming";
+
+const FIXTURES_DIR = path.resolve(process.cwd(), "tests/regression/fixtures");
 
 const baseContext = {
   blockType: "paragraph",
@@ -112,6 +116,37 @@ function testMathBlockTrace() {
   assert.ok(result.trace[0]?.analysis?.math?.candidates?.some((entry) => entry.id === "null-right-candidate"));
 }
 
+function testMathBlockFixtureTrace() {
+  const source = fs.readFileSync(path.join(FIXTURES_DIR, "math-left-right-trace.md"), "utf8");
+  const raw = source.slice(source.indexOf("$$")).trimEnd();
+  const result = prepareInlineStreamingLookahead(raw, {
+    formatAnticipation: { mathBlock: true },
+    math: true,
+    context: baseContext,
+  });
+  assert.strictEqual(result.trace[0]?.decision, "repair");
+  assert.strictEqual(result.trace[0]?.featureFamily, "math-left-right-local");
+  assert.strictEqual(result.trace[0]?.analysis?.math?.selectedCandidate, "repaired");
+  assert.strictEqual(result.trace[0]?.analysis?.math?.comparison?.preferredCandidate, "repair-candidate");
+}
+
+function testMathDisplayCheckpointTrace() {
+  const raw = "$$\na_n = \\frac{1}{n}\n+ \\sqrt{x";
+  const result = prepareInlineStreamingLookahead(raw, {
+    formatAnticipation: { mathBlock: true },
+    math: true,
+    context: baseContext,
+  });
+  assert.strictEqual(result.trace[0]?.surface, "math-block");
+  assert.strictEqual(result.trace[0]?.decision, "repair");
+  assert.strictEqual(result.trace[0]?.analysis?.math?.selectedCandidate, "checkpoint");
+  assert.strictEqual(result.trace[0]?.analysis?.math?.comparison?.preferredCandidate, "checkpoint-candidate");
+  assert.strictEqual(result.prepared.kind, "parse");
+  if (result.prepared.kind === "parse") {
+    assert.strictEqual(result.prepared.content, "$$\na_n = \\frac{1}{n}\n$$");
+  }
+}
+
 testInlineFormatTrace();
 testRegexTrace();
 testHtmlInlineTrace();
@@ -119,4 +154,6 @@ testMdxTagTrace();
 testMdxExpressionTrace();
 testMathInlineTrace();
 testMathBlockTrace();
+testMathBlockFixtureTrace();
+testMathDisplayCheckpointTrace();
 console.log("lookahead trace contract tests passed");
