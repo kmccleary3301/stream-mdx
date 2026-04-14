@@ -255,6 +255,8 @@ Current reduced smoke promotions:
 - `block-html-no-swallow`
 - `math-inline-supported`
 - `math-display-supported`
+- `math-left-right-null-right-supported`
+- `math-display-checkpoint-supported`
 - `mdx-tag-allowlist-inline`
 
 Current targeted-only cases:
@@ -262,9 +264,24 @@ Current targeted-only cases:
 - `mdx-expression-no-swallow-negative`
 - `math-inline-hard-stop-negative`
 - `math-display-hard-stop-negative`
+- `math-left-right-nested-negative`
+- `math-environment-hard-stop-negative`
+- `math-alignment-hard-stop-negative`
+- `math-optional-arg-classification`
 - `math-hard-stop-negative`
 
 These boundaries are final for V1. Any broader smoke expansion is post-V1 work.
+
+For Math V2A specifically:
+- smoke-promoted:
+  - `math-left-right-null-right-supported`
+  - `math-display-checkpoint-supported`
+- targeted-only:
+  - `math-left-right-nested-negative`
+  - `math-environment-hard-stop-negative`
+  - `math-alignment-hard-stop-negative`
+  - `math-inline-hard-stop-negative`
+  - `math-optional-arg-classification`
 
 ## Char vs chunk guidance
 

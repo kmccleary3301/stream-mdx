@@ -27,7 +27,7 @@ function testSupportMatrixPoliciesMatchCurrentV1Contract() {
   assert.strictEqual(bySurface.get("math-inline")?.status, "bounded");
   assert.strictEqual(bySurface.get("math-block")?.status, "bounded");
   assert.strictEqual(bySurface.get("math-inline")?.smokePromoted, true);
-  assert.strictEqual(bySurface.get("math-block")?.smokePromoted, false);
+  assert.strictEqual(bySurface.get("math-block")?.smokePromoted, true);
 
   assert.strictEqual(bySurface.get("html-block")?.status, "hard-stop-only");
   assert.strictEqual(bySurface.get("mdx-tag")?.status, "bounded");
@@ -50,6 +50,14 @@ function testFeatureRegistryCoversCurrentAndPostV1Families() {
   const leftRight = LOOKAHEAD_FEATURE_REGISTRY.find((entry) => entry.id === "math-left-right-local");
   assert.strictEqual(leftRight?.status, "bounded");
   assert.strictEqual(leftRight?.smoke, "eligible");
+
+  const leftRightBlock = LOOKAHEAD_FEATURE_REGISTRY.find((entry) => entry.id === "math-left-right-local-block");
+  assert.strictEqual(leftRightBlock?.status, "bounded");
+  assert.strictEqual(leftRightBlock?.smoke, "promoted");
+
+  const displayLocal = LOOKAHEAD_FEATURE_REGISTRY.find((entry) => entry.id === "math-display-local");
+  assert.strictEqual(displayLocal?.status, "bounded");
+  assert.strictEqual(displayLocal?.smoke, "promoted");
 
   const env = LOOKAHEAD_FEATURE_REGISTRY.find((entry) => entry.id === "math-environment-structured");
   assert.strictEqual(env?.status, "hard-stop-only");

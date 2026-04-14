@@ -18,6 +18,8 @@ const CASES: SeededCase[] = [
   { fixture: "block-html-no-swallow", scenario: "S2_typical", seedCount: 2 },
   { fixture: "math-inline-supported", scenario: "S2_typical", seedCount: 2 },
   { fixture: "math-display-supported", scenario: "S2_typical", seedCount: 2 },
+  { fixture: "math-left-right-null-right-supported", scenario: "S2_typical", seedCount: 2 },
+  { fixture: "math-display-checkpoint-supported", scenario: "S2_typical", seedCount: 2 },
   { fixture: "mdx-tag-allowlist-inline", scenario: "S2_typical", seedCount: 2 },
   { fixture: "table-boundary", scenario: "S2_typical", seedCount: 2 },
   { fixture: "mdx-math-code-mixed", scenario: "S2_typical", seedCount: 3 },

@@ -41,6 +41,7 @@ The planner response is directionally right, but this plan only commits to the n
     - `math-environment-hard-stop-negative`
     - `math-alignment-hard-stop-negative`
     - `math-inline-hard-stop-negative`
+  - reduced smoke promotion criteria are now explicit and the safest Math V2A supported cases are promoted
 
 ## Reduced Math V2A hardening suite
 
@@ -57,6 +58,34 @@ This is the current reduced suite for the active tranche.
 | `math-inline-hard-stop-negative.md` | mixed unsupported math prefixes remain conservative in inline contexts |
 | `math-checkpoint-vs-raw.md` | local checkpoint candidate vs structured raw fallback split |
 | `math-optional-arg-classification.md` | deferred `optional-arg-local` classification evidence only |
+
+## Math V2A smoke promotion criteria
+
+A Math V2A fixture is smoke-promotable only if all of these are true:
+
+- deterministic browser output across repeated seeded runs
+- stable machine-checked trace expectations
+- useful first-divergence artifacts under the canonical trace workflow
+- no known flake in the reduced regression loop
+- the support matrix explicitly promises only the bounded behavior the fixture exercises
+
+## Current Math V2A smoke decisions
+
+Promoted:
+- `math-left-right-null-right-supported`
+- `math-display-checkpoint-supported`
+
+Targeted-only:
+- `math-left-right-nested-negative`
+- `math-environment-hard-stop-negative`
+- `math-alignment-hard-stop-negative`
+- `math-inline-hard-stop-negative`
+- `math-optional-arg-classification`
+
+Why these stay targeted-only:
+- they are unsupported-family or classification-only cases
+- they primarily prove conservative fallback and no-swallow behavior
+- they are useful for hardening, but they should not broaden the reduced smoke promise
 
 ## North Star
 
@@ -122,6 +151,13 @@ After Math V2A stabilizes, decide whether a narrow `\sqrt[...]` subset is worth 
 Current default:
 - deferred
 - no implementation work in the first live tranche
+- classification evidence is landed via `math-optional-arg-classification.md`
+
+Reopen only if:
+- there is real product-value evidence for a narrow subset
+- the subset can be defined without generic optional-argument support
+- no-swallow proof and deterministic trace acceptance are designed up front
+- there is a credible browser/regression fixture plan before runtime work starts
 
 ### Gate 2: MDX expression future subset
 After Math V2A stabilizes, decide whether `mdx-expression` remains permanently hard-stop / fallback or whether a tiny property-path-only subset deserves a later pilot.
@@ -129,6 +165,12 @@ After Math V2A stabilizes, decide whether `mdx-expression` remains permanently h
 Current default:
 - no behavior change in Math V2A
 - keep `mdx-expression` conservative
+
+Reopen only if:
+- a tiny bounded subset is defined in advance
+- no-swallow behavior is provable under traces and browser regressions
+- trace acceptance is deterministic
+- there is a strong argument that the subset belongs in smoke rather than targeted-only coverage
 
 ## Math V2A Thesis
 

@@ -98,9 +98,9 @@ export const LOOKAHEAD_SUPPORT_MATRIX: readonly LookaheadSupportDescriptor[] = [
     surface: "math-block",
     status: "bounded",
     smokeEligible: true,
-    smokePromoted: false,
+    smokePromoted: true,
     notes: [
-      "same bounded subset as inline math when repair remains tail-local and validates cleanly, plus display-local multiline checkpoint selection",
+      "same bounded subset as inline math when repair remains tail-local and validates cleanly, plus display-local multiline checkpoint selection and bounded left-right-local support",
       "unsupported environments, optional arguments, and alignment families hard-stop / fallback",
     ],
   },
@@ -184,7 +184,7 @@ export const LOOKAHEAD_FEATURE_REGISTRY: readonly LookaheadFeatureRegistryEntry[
     surface: "math-block",
     featureFamily: "math-display-local",
     status: "bounded",
-    smoke: "eligible",
+    smoke: "promoted",
     notes: ["bounded display math when repair remains tail-local and validation-safe, including multiline checkpoint selection"],
   },
   {
@@ -203,7 +203,7 @@ export const LOOKAHEAD_FEATURE_REGISTRY: readonly LookaheadFeatureRegistryEntry[
     surface: "math-block",
     featureFamily: "math-left-right-local",
     status: "bounded",
-    smoke: "eligible",
+    smoke: "promoted",
     notes: [
       "same narrow null-delimiter completion in display math when repair remains tail-local",
       "structured or nested left/right pressure degrades immediately",

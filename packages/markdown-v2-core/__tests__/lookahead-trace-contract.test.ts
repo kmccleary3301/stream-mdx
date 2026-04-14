@@ -130,6 +130,26 @@ function testMathBlockFixtureTrace() {
   assert.strictEqual(result.trace[0]?.analysis?.math?.comparison?.preferredCandidate, "raw-fallback");
 }
 
+function testMathLeftRightSupportedTrace() {
+  const source = fs.readFileSync(path.join(FIXTURES_DIR, "math-left-right-null-right-supported.md"), "utf8");
+  const splitMarker = "<!--split-->";
+  const splitIndex = source.indexOf(splitMarker);
+  if (splitIndex === -1) throw new Error("missing split marker");
+  const raw = source.slice(source.indexOf("$$"), splitIndex).trimEnd();
+  const result = prepareInlineStreamingLookahead(raw, {
+    formatAnticipation: { mathBlock: true },
+    math: true,
+    context: baseContext,
+  });
+  assert.strictEqual(result.trace[0]?.decision, "raw");
+  assert.strictEqual(result.trace[0]?.featureFamily, "math-left-right-local");
+  assert.strictEqual(result.trace[0]?.analysis?.math?.family, "left-right-local");
+  assert.strictEqual(result.trace[0]?.analysis?.math?.selectedCandidate, "raw");
+  assert.strictEqual(result.trace[0]?.analysis?.math?.comparison?.preferredCandidate, "raw-fallback");
+  assert.ok(result.trace[0]?.analysis?.math?.candidates?.some((entry) => entry.id === "null-right-candidate"));
+  assert.strictEqual(result.trace[0]?.termination?.reason, "validation-failed");
+}
+
 function testMathDisplayCheckpointTrace() {
   const raw = "$$\na_n = \\frac{1}{n}\n+ \\sqrt{x";
   const result = prepareInlineStreamingLookahead(raw, {
@@ -171,6 +191,18 @@ function testStructuredMathTraceFamilies() {
   assert.strictEqual(alignment.trace[0]?.analysis?.math?.family, "alignment-structured");
   assert.strictEqual(alignment.trace[0]?.analysis?.math?.selectedCandidate, "raw");
   assert.strictEqual(alignment.trace[0]?.termination?.reason, "unsupported-syntax");
+
+  const optionalArg = prepareInlineStreamingLookahead("$$\\sqrt[n", {
+    formatAnticipation: { mathBlock: true },
+    math: true,
+    context: baseContext,
+  });
+  assert.strictEqual(optionalArg.trace[0]?.surface, "math-block");
+  assert.strictEqual(optionalArg.trace[0]?.decision, "raw");
+  assert.strictEqual(optionalArg.trace[0]?.featureFamily, "math-optional-arg-local");
+  assert.strictEqual(optionalArg.trace[0]?.analysis?.math?.family, "optional-arg-local");
+  assert.strictEqual(optionalArg.trace[0]?.analysis?.math?.selectedCandidate, "raw");
+  assert.strictEqual(optionalArg.trace[0]?.termination?.reason, "unsupported-syntax");
 }
 
 testInlineFormatTrace();
@@ -181,6 +213,7 @@ testMdxExpressionTrace();
 testMathInlineTrace();
 testMathBlockTrace();
 testMathBlockFixtureTrace();
+testMathLeftRightSupportedTrace();
 testMathDisplayCheckpointTrace();
 testStructuredMathTraceFamilies();
 console.log("lookahead trace contract tests passed");
