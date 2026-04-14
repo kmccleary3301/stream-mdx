@@ -172,6 +172,7 @@ const MAX_LAZY_TOKENIZATION_THRESHOLD = 10000;
 let lazyTokenizationEnabled = true;
 let lazyTokenizationThresholdLines = DEFAULT_LAZY_TOKENIZATION_THRESHOLD;
 const CODE_HIGHLIGHT_THEMES = { dark: "github-dark", light: "github-light" } as const;
+const HIGHLIGHT_LANGUAGE_PREWARM = new Map<string, Promise<void>>();
 type WorkerMdxMode = "server" | "worker";
 let mdxCompileMode: WorkerMdxMode = "server";
 let formatAnticipationConfig = normalizeFormatAnticipation(false);
@@ -1052,6 +1053,7 @@ async function initialize(
   resetIncrementalHighlightState();
   lazyTokenizationStates.clear();
   lazyTokenizationQueue.clear();
+  HIGHLIGHT_LANGUAGE_PREWARM.clear();
   lazyTokenizationScheduled = false;
   lazyTokenizationProcessing = false;
 
@@ -2538,16 +2540,57 @@ function getIncrementalHighlightState(blockId: string, lang: string): Incrementa
 async function resolveHighlightLanguage(requestedLanguage: string): Promise<string> {
   if (!highlighter) return "text";
   const normalizedLanguage = normalizeLang(requestedLanguage);
+  if (normalizedLanguage === "text") {
+    return "text";
+  }
   const loadedLangs = highlighter.getLoadedLanguages();
   if (!loadedLangs.includes(normalizedLanguage)) {
-    try {
-      await highlighter.loadLanguage(normalizedLanguage);
-    } catch (loadError) {
-      console.warn(`Failed to load language ${normalizedLanguage}, falling back to text:`, loadError);
+    const inflight = HIGHLIGHT_LANGUAGE_PREWARM.get(normalizedLanguage);
+    if (inflight) {
+      await inflight;
+    } else {
+      const loadPromise = (async () => {
+        try {
+          await highlighter?.loadLanguage(normalizedLanguage);
+        } catch (loadError) {
+          console.warn(`Failed to load language ${normalizedLanguage}, falling back to text:`, loadError);
+        }
+      })();
+      HIGHLIGHT_LANGUAGE_PREWARM.set(normalizedLanguage, loadPromise);
+      try {
+        await loadPromise;
+      } finally {
+        if (HIGHLIGHT_LANGUAGE_PREWARM.get(normalizedLanguage) === loadPromise) {
+          HIGHLIGHT_LANGUAGE_PREWARM.delete(normalizedLanguage);
+        }
+      }
     }
   }
   const nextLangs = highlighter.getLoadedLanguages();
   return nextLangs.includes(normalizedLanguage) ? normalizedLanguage : "text";
+}
+
+function prewarmHighlightLanguage(requestedLanguage: string): void {
+  if (!highlighter) return;
+  const normalizedLanguage = normalizeLang(requestedLanguage);
+  if (normalizedLanguage === "text") return;
+  if (highlighter.getLoadedLanguages().includes(normalizedLanguage)) return;
+  if (HIGHLIGHT_LANGUAGE_PREWARM.has(normalizedLanguage)) return;
+
+  const loadPromise = (async () => {
+    try {
+      await highlighter?.loadLanguage(normalizedLanguage);
+    } catch {
+      // Ignore background prewarm failures; the awaited resolve path logs them.
+    }
+  })();
+
+  HIGHLIGHT_LANGUAGE_PREWARM.set(normalizedLanguage, loadPromise);
+  void loadPromise.finally(() => {
+    if (HIGHLIGHT_LANGUAGE_PREWARM.get(normalizedLanguage) === loadPromise) {
+      HIGHLIGHT_LANGUAGE_PREWARM.delete(normalizedLanguage);
+    }
+  });
 }
 
 function makeLazySignature(codeBody: string, lang: string, tokenLang: string, diffEnabled: boolean): string {
@@ -2870,6 +2913,13 @@ async function handleLazyTokenizationRequest(request: LazyTokenizationRequest): 
   const wantsHtml = highlightOutputMode === "html" || highlightOutputMode === "both";
   const wantsTokens = (highlightOutputMode === "tokens" || highlightOutputMode === "both") && emitHighlightTokens;
   const wantsTokensNow = wantsTokens && (block.isFinalized || liveTokenizationEnabled);
+
+  if (!block.isFinalized && hasHighlighter) {
+    prewarmHighlightLanguage(requestedLanguage);
+    if (tokenLanguage !== requestedLanguage) {
+      prewarmHighlightLanguage(tokenLanguage);
+    }
+  }
 
   if (!block.isFinalized) {
     if (codeHighlightingMode === "final" || !hasHighlighter || !hasHighlightableContent) {
