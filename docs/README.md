@@ -46,8 +46,9 @@ This directory is the canonical repository-side documentation surface for Stream
 | Patch classification ledger | [`PATCH_CLASSIFICATION_LEDGER.md`](./PATCH_CLASSIFICATION_LEDGER.md) | Audited semantic/enrichment map for the `Patch` union |
 | Execution plan | [`STREAMING_CORRECTNESS_EXECUTION_PLAN.md`](./STREAMING_CORRECTNESS_EXECUTION_PLAN.md) | Current correctness hardening backlog |
 | Lookahead V1 execution plan | [`LOOKAHEAD_V1_EXECUTION_PLAN.md`](./LOOKAHEAD_V1_EXECUTION_PLAN.md) | Final V1 execution record and support-boundary plan |
-| Lookahead post-V1 roadmap | [`LOOKAHEAD_POST_V1_ROADMAP.md`](./LOOKAHEAD_POST_V1_ROADMAP.md) | Explicitly deferred work outside completed V1 scope |
-| Lookahead V2 execution plan | [`LOOKAHEAD_V2_EXECUTION_PLAN.md`](./LOOKAHEAD_V2_EXECUTION_PLAN.md) | Narrow Math V2A implementation plan and decision gates |
+| Lookahead post-V1 roadmap | [`LOOKAHEAD_POST_V1_ROADMAP.md`](./LOOKAHEAD_POST_V1_ROADMAP.md) | Explicitly deferred work outside completed V1 and V2 scope |
+| Lookahead V2 execution plan | [`LOOKAHEAD_V2_EXECUTION_PLAN.md`](./LOOKAHEAD_V2_EXECUTION_PLAN.md) | Final Math V2A execution record, support matrix, and closed gate decisions |
+| Lookahead V2 closeout | [`LOOKAHEAD_V2_CLOSEOUT.md`](./LOOKAHEAD_V2_CLOSEOUT.md) | Final V2 guarantees, non-goals, and closure summary |
 | Post-finalize mutation ledger | [`POST_FINALIZE_MUTATION_LEDGER.md`](./POST_FINALIZE_MUTATION_LEDGER.md) | Explicit allowlist for visible mutations after `FINALIZED` |
 | Correctness gate residuals | [`CORRECTNESS_GATE_RESIDUALS_2026-04-03.md`](./CORRECTNESS_GATE_RESIDUALS_2026-04-03.md) | Current fast-gate residuals after the latest correctness tranche |
 | Static artifact contract | [`STATIC_SNAPSHOT_ARTIFACT_CONTRACT.md`](./STATIC_SNAPSHOT_ARTIFACT_CONTRACT.md) | Snapshot artifact structure and expectations |

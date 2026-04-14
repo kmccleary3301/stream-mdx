@@ -5,557 +5,174 @@ Repo anchor:
 - branch: `main`
 - source planner response: `docs_tmp/LOOKAHEAD/LOOKAHEAD_V2_PLANNER_RESPONSE.md`
 - V1 closeout anchor: [`LOOKAHEAD_V1_CLOSEOUT.md`](./LOOKAHEAD_V1_CLOSEOUT.md)
+- V2 closeout anchor: [`LOOKAHEAD_V2_CLOSEOUT.md`](./LOOKAHEAD_V2_CLOSEOUT.md)
 
-This document is the repo-local execution plan for the first post-V1 lookahead tranche.
-It is intentionally narrower than the V2 planner response.
+This document is the final execution record for **Math V2A**, the first post-V1 lookahead tranche.
 
-The planner response is directionally right, but this plan only commits to the next **buildable** tranche: **Math V2A**.
+Math V2A is complete for its bounded scope.
 
-## Current Status
+## Final Phase Status
 
-- Phase 0: complete
-  - executable feature-registry groundwork is landed
-  - focused trace controls are landed
-  - math-specific trace sidecars are landed
-- Phase 1: complete
-  - shadow-only `MathTailEngine` analysis/report scaffolding is landed
-  - first Math V2A trace fixtures and direct fixture-backed shadow tests are landed
-  - shadow traces now emit family, candidate, checkpoint, and live-vs-shadow comparison data
-- Phase 2: started
-  - the live Math V2A selector seam now owns the bounded math subset rather than leaving hidden legacy side paths
-  - `left-right-local` and `display-local` are now trace-backed and browser-backed with explicit negative coverage for nested/structured cases
-  - `environment-structured` and `alignment-structured` are classified consistently in live and shadow mode and degrade conservatively
-  - downgrade / termination / selected-candidate metadata is normalized across the live math traces
-  - live-vs-shadow parity coverage is landed for reduced representative families
-- Phase 3: lightly prepared
-  - `optional-arg-local` now has explicit classification evidence and remains a deferred decision gate
-- Phase 4: lightly prepared
-  - no runtime MDX behavior changed in the Math V2A tranche
-  - the `mdx-expression` gate remains deferred until Math V2A hardening settles
-- Phase 5: materially underway
-  - the reduced Math V2A hardening suite now includes supported, negative, and structured-family browser cases
-  - targeted browser regressions are green for:
-    - `math-left-right-null-right-supported`
-    - `math-left-right-nested-negative`
-    - `math-display-checkpoint-supported`
-    - `math-environment-hard-stop-negative`
-    - `math-alignment-hard-stop-negative`
-    - `math-inline-hard-stop-negative`
-  - reduced smoke promotion criteria are now explicit and the safest Math V2A supported cases are promoted
+| Phase | Status | Final note |
+| --- | --- | --- |
+| Phase 0: registry + trace groundwork | complete | executable registry support, focused trace controls, and math-specific sidecars are landed |
+| Phase 1: MathTailEngine shadow mode | complete | family/candidate/checkpoint/comparison shadow analysis is landed and test-backed |
+| Phase 2: Math V2A live path | complete | bounded live MathTailEngine selection owns the shipped Math V2A families |
+| Phase 3: optional-argument decision gate | complete | `optional-arg-local` remains classification-only and repair-deferred for V2 |
+| Phase 4: MDX decision gate | complete | Math V2A intentionally made no runtime MDX behavior changes |
+| Phase 5: selective smoke promotion + hardening | complete | reduced hardening suite, trace acceptance, and bounded smoke promotion are frozen |
 
-## Reduced Math V2A hardening suite
+## What Math V2A Added
 
-This is the current reduced suite for the active tranche.
+Math V2A kept the closed V1 narrow waist and improved the math internals only.
 
-| Fixture | Failure family it covers |
-| --- | --- |
-| `math-left-right-null-right-supported.md` | bounded `left-right-local` support with no visible KaTeX error |
-| `math-left-right-nested-negative.md` | nested left/right pressure degrades conservatively without swallow |
-| `math-display-checkpoint-supported.md` | display-local checkpoint selection under split boundaries |
-| `math-display-local-multiline.md` | display-local multiline family classification and checkpoint preference |
-| `math-environment-hard-stop-negative.md` | environment-structured classification and raw fallback |
-| `math-alignment-hard-stop-negative.md` | alignment-structured classification and raw fallback |
-| `math-inline-hard-stop-negative.md` | mixed unsupported math prefixes remain conservative in inline contexts |
-| `math-checkpoint-vs-raw.md` | local checkpoint candidate vs structured raw fallback split |
-| `math-optional-arg-classification.md` | deferred `optional-arg-local` classification evidence only |
+Landed behavior:
+- structured `MathTailEngine` shadow analysis and live candidate selection
+- migration of the bounded V1 math subset through the live engine
+- `display-local` multiline checkpoint selection
+- narrow `left-right-local` null-delimiter handling under strict validation-safe rules
+- explicit `environment-structured` and `alignment-structured` classification with conservative fallback
+- richer trace artifacts for family, candidates, validation, and first divergence
 
-## Math V2A smoke promotion criteria
+Math V2A did **not** broaden the support contract into full TeX repair.
 
-A Math V2A fixture is smoke-promotable only if all of these are true:
+## Final Math V2A Family Matrix
 
+| Family | Surface | V2 status | Smoke status | Trace-backed | Browser-backed | Final note |
+| --- | --- | --- | --- | --- | --- | --- |
+| `math-local-core` | `math-inline` | bounded | promoted | yes | yes | bounded local repair remains supported |
+| `math-fixed-arity-local` | `math-inline` | bounded | promoted | yes | yes | allowlisted `\\frac` / `\\sqrt` missing-group repair |
+| `math-fixed-arity-local` | `math-block` | bounded | promoted | yes | yes | covered through bounded display support |
+| `math-left-right-local` | `math-inline` | bounded | targeted-only | yes | targeted-only | live path stays conservative until validation-safe |
+| `math-left-right-local` | `math-block` | bounded | promoted | yes | yes | narrow null-right completion only |
+| `math-display-local` | `math-block` | bounded | promoted | yes | yes | multiline checkpoint selection is supported |
+| `math-optional-arg-local` | `math-inline` / `math-block` | deferred | never | yes | targeted-only | classification-only, no live repair |
+| `math-environment-structured` | `math-block` | hard-stop-only | never | yes | yes | explicit environment classification and raw fallback |
+| `math-alignment-structured` | `math-block` | hard-stop-only | never | yes | yes | explicit alignment classification and raw fallback |
+
+## Final Reduced Math V2A Hardening Suite
+
+This is the frozen reduced suite for V2.
+
+| Fixture | Purpose | Status |
+| --- | --- | --- |
+| `math-left-right-null-right-supported.md` | bounded `left-right-local` support without visible KaTeX error | smoke-promoted |
+| `math-left-right-nested-negative.md` | nested left/right pressure degrades conservatively without swallow | targeted-only |
+| `math-display-checkpoint-supported.md` | display-local checkpoint selection under split boundaries | smoke-promoted |
+| `math-display-local-multiline.md` | display-local multiline classification and checkpoint preference | targeted-only |
+| `math-environment-hard-stop-negative.md` | environment-structured classification and raw fallback | targeted-only |
+| `math-alignment-hard-stop-negative.md` | alignment-structured classification and raw fallback | targeted-only |
+| `math-inline-hard-stop-negative.md` | unsupported inline math remains conservative | targeted-only |
+| `math-checkpoint-vs-raw.md` | checkpoint candidate vs raw fallback boundary | targeted-only |
+| `math-optional-arg-classification.md` | deferred `optional-arg-local` classification evidence only | targeted-only |
+
+## Final Smoke Criteria
+
+A Math V2A case is smoke-worthy only when all of these are true:
 - deterministic browser output across repeated seeded runs
 - stable machine-checked trace expectations
 - useful first-divergence artifacts under the canonical trace workflow
 - no known flake in the reduced regression loop
 - the support matrix explicitly promises only the bounded behavior the fixture exercises
 
-## Current Math V2A smoke decisions
+## Final Smoke Decisions
 
-Promoted:
+Promoted Math V2A cases:
 - `math-left-right-null-right-supported`
 - `math-display-checkpoint-supported`
 
-Targeted-only:
+Targeted-only Math V2A cases:
 - `math-left-right-nested-negative`
 - `math-environment-hard-stop-negative`
 - `math-alignment-hard-stop-negative`
 - `math-inline-hard-stop-negative`
+- `math-display-local-multiline`
+- `math-checkpoint-vs-raw`
 - `math-optional-arg-classification`
 
-Why these stay targeted-only:
-- they are unsupported-family or classification-only cases
-- they primarily prove conservative fallback and no-swallow behavior
-- they are useful for hardening, but they should not broaden the reduced smoke promise
+These stay targeted-only because they prove fallback boundaries, classification, or sharper branch behavior rather than a smoke-worthy supported promise.
 
-## North Star
+## Closed Decision Gates
 
-Keep the closed V1 contract intact while replacing the shallow math repair path with a structured, traceable, family-aware MathTailEngine.
+### Optional-argument gate
 
-The key outcome is not "support richer TeX broadly." The key outcome is:
-- one authoritative math-tail analysis model for anticipation
-- richer trace/debug artifacts
-- one narrow new supported family beyond V1
-- better display-local math behavior without pretending environments are supported
+Final V2 decision:
+- `optional-arg-local` remains classification-only
+- live repair remains deferred for V2
+- smoke status remains `never`
 
-## What This Plan Is Trying To Fix
+Why it stayed deferred:
+- the bounded subset was not strong enough to justify widening the active support contract
+- the live Math V2A tranche achieved its goals without optional-arg repair
+- classification evidence is sufficient for post-V2 planning without creating a partial support promise now
 
-Lookahead V1 solved the contract problem.
-The main remaining weakness is that the math surface is still too shallow internally:
-- repair is still mostly local string surgery plus validation
-- obligations are implicit rather than modeled
-- candidate selection is too flat
-- display math is bounded but not yet structured enough
-- traces are good, but not math-rich enough to explain harder future work
+Reopen only in post-V2 work if all of these are true:
+- real user-value evidence for a narrow subset such as `\\sqrt[n]{...}`
+- a bounded subset definition with no generic optional-argument support
+- no-swallow proof and deterministic trace acceptance designed up front
+- a credible browser/regression fixture plan before runtime work starts
 
-The problem is no longer the orchestrator.
-The problem is the math provider internals and the trace/registry surfaces around them.
+### MDX gate
 
-## Non-Goals For Math V2A
+Final V2 decision:
+- Math V2A made no runtime MDX behavior changes
+- `mdx-expression` remains governed by the closed V1 conservative policy
 
-Do not build these in Math V2A:
-- LaTeX environments such as `\begin{align}` or `\begin{matrix}`
-- alignment-like structures (`&`, row/cell inference, `\\` semantics)
-- generic optional-argument repair
-- broad `mdx-expression` healing
-- block HTML anticipation expansion
-- public provider / plugin ABI
-- kitchen-sink smoke promotion
-- optimization-first work
+Why it stayed unchanged:
+- the Math V2A denominator was math-only
+- there was no need to reopen MDX runtime behavior to complete the V2 goals
+- the conservative V1 MDX policy remains coherent and testable without widening scope here
 
-These remain outside the active Math V2A denominator.
-
-## Scope Of Math V2A
-
-Math V2A includes:
-- executable feature registry groundwork for richer math families
-- math-specific trace schema extension
-- MathTailEngine shadow mode
-- migration of current V1 math families onto the MathTailEngine
-- checkpointed candidate selection
-- one new supported family:
-  - `left-right-local` null-delimiter completion (`\right.` / `\left.` under strict rules)
-- display-local multiline checkpointing for non-environmental display math
-- targeted hard-stop family classification for:
-  - environments
-  - alignment-like structures
-  - unsupported optional-argument families
-- replay/fixture/trace hardening for the new math path
-
-## Active Decision Gates
-
-These are explicit yes/no gates, not hidden future scope inside Math V2A.
-
-### Gate 1: Optional-argument pilot
-After Math V2A stabilizes, decide whether a narrow `\sqrt[...]` subset is worth a targeted pilot.
-
-Current default:
-- deferred
-- no implementation work in the first live tranche
-- classification evidence is landed via `math-optional-arg-classification.md`
-
-Reopen only if:
-- there is real product-value evidence for a narrow subset
-- the subset can be defined without generic optional-argument support
-- no-swallow proof and deterministic trace acceptance are designed up front
-- there is a credible browser/regression fixture plan before runtime work starts
-
-### Gate 2: MDX expression future subset
-After Math V2A stabilizes, decide whether `mdx-expression` remains permanently hard-stop / fallback or whether a tiny property-path-only subset deserves a later pilot.
-
-Current default:
-- no behavior change in Math V2A
-- keep `mdx-expression` conservative
-
-Reopen only if:
+Reopen only in post-V2 work if all of these are true:
 - a tiny bounded subset is defined in advance
 - no-swallow behavior is provable under traces and browser regressions
 - trace acceptance is deterministic
 - there is a strong argument that the subset belongs in smoke rather than targeted-only coverage
 
-## Math V2A Thesis
+## Final Invariants
 
-Math V2A keeps the V1 provider/orchestrator narrow waist but replaces the math surface internals with:
+Math V2A keeps the V1 invariants and adds these final math-specific ones:
 
-- structured tail tokenization
-- family classification
-- obligation tracking
-- checkpoint tracking
-- staged candidate generation
-- validator-backed candidate selection
-- math-specific trace artifacts
-
-The model is:
-
-`tail analysis -> obligations -> candidate staging -> validation -> selection -> downgrade / termination / rearm`
-
-That is intentionally not:
-- a full TeX parser
-- renderer-driven repair
-- semantic macro inference
-- environment completion
-
-## Internal Math Family Taxonomy
-
-Math V2A should classify math into internal families even when external provider surfaces remain `math-inline` and `math-block`.
-
-| Family | Meaning | V2A status |
-| --- | --- | --- |
-| `local-core` | local braces/parens/brackets, control words, scripts, simple local expressions | supported |
-| `fixed-arity-local` | allowlisted fixed-arity commands such as `\frac` and `\sqrt` without optional-arg repair | supported |
-| `left-right-local` | one unmatched local `\left` / `\right` family | supported in narrow null-delimiter subset |
-| `display-local` | multiline display math with no environment/alignment structure | supported |
-| `optional-arg-local` | allowlisted optional-arg family such as `\sqrt[n]{...}` | classified only, deferred as a gate |
-| `environment-structured` | `\begin{...}` / `\end{...}` families | classify and hard-stop |
-| `alignment-structured` | top-level `&`, row/cell structure, align-like families | classify and hard-stop |
-| `unknown` | anything outside the bounded local families | classify and hard-stop |
-
-## Math V2A Boundaries
-
-### Supported in Math V2A
-- current V1 bounded repairs:
-  - trailing control-word trim
-  - tail-local unmatched group closure
-  - dangling `^` / `_` repair
-  - allowlisted missing-group repair for `\frac` and `\sqrt`
-- checkpointed candidate selection
-- display-local multiline checkpointing
-- `left-right-local` null-delimiter completion only:
-  - `\left(` may close with `\right.`
-  - a dangling `\right` may close with `.`
-  - no guessed delimiter symmetry
-  - no nested left/right support
-
-### Explicitly unsupported in Math V2A
-- matrix-like environments
-- alignment-like environments
-- generic environment completion
-- guessed macro names
-- guessed right delimiters
-- generic optional arguments
-- nested left/right structures
-- interior repair that is not tail-local
-
-## Hard Invariants
-
-Math V2A keeps the V1 invariants and adds these math-specific ones:
-
-1. The math provider may operate only inside an already-identified math-local range.
+1. Live math anticipation operates only inside already-identified math-local ranges.
 2. Repairs may only add tail-local structure or choose a bounded validated checkpoint.
 3. Repairs may not consume following Markdown, HTML, or MDX bytes.
-4. Repaired candidates may not cross protected ranges.
-5. Display math may not expand ownership indefinitely.
-6. Checkpoint selection may not hide substantial already-typed semantic tail content.
-7. Unsupported families must degrade; they may not mutate into other families.
-8. Validation success alone is not enough if the candidate violates the honesty rules.
-
-## Planned Internal Data Shape
-
-This is the conceptual shape we should implement first. It is a guide, not a frozen ABI.
-
-### Tail analysis
-- mode: `inline` or `display`
-- family classification
-- token sequence
-- obligation list
-- unsupported-family classification when relevant
-- checkpoint table
-
-### Candidate staging
-Ordered candidate set only:
-1. full-tail repaired candidate
-2. family-specific candidate
-3. checkpoint candidate
-4. raw fallback
-
-Candidate search must stay tiny and ordered. No combinatorial search.
-
-### Validation classes
-- `already-valid`
-- `repair-valid`
-- `checkpoint-valid`
-- `unsupported-family`
-- `candidate-invalid`
-- `candidate-unsafe`
-
-## Exact Module Plan
-
-### Primary code targets
-- `packages/markdown-v2-core/src/streaming/lookahead-contract.ts`
-- `packages/markdown-v2-core/src/streaming/inline-streaming.ts`
-- `packages/markdown-v2-core/src/mixed-content.ts`
-- `packages/markdown-v2-core/src/block-snapshot.ts`
-- `packages/markdown-v2-worker/src/worker.ts`
-- `packages/markdown-v2-plugins/src/plugins/math/streaming-v2.ts`
-- `packages/markdown-v2-plugins/src/plugins/math/tokenizer.ts`
-
-### Primary tests and harness targets
-- `packages/markdown-v2-core/__tests__/lookahead-support-matrix.test.ts`
-- `packages/markdown-v2-core/__tests__/lookahead-trace-contract.test.ts`
-- `packages/markdown-v2-core/__tests__/lookahead-orchestrator.test.ts`
-- `packages/markdown-v2-core/__tests__/inline-streaming-anticipation.test.ts`
-- `packages/markdown-v2-worker/__tests__/mixed-lookahead-provider.test.ts`
-- `scripts/analyze-test-snippets.ts`
-- `scripts/regression/run-html-snapshots.ts`
-- `scripts/regression/run-seeded-smoke.ts`
-
-### Docs and support-surface targets
-- `docs/LOOKAHEAD_CONTRACT.md`
-- `docs/LOOKAHEAD_TRACE_WORKFLOW.md`
-- `docs/LOOKAHEAD_POST_V1_ROADMAP.md`
-- `docs/README.md`
-
-## Phase Plan
-
-## Phase 0. Registry and trace groundwork
-
-Goal:
-- prepare the system for richer math without changing visible behavior
-
-Build:
-- executable feature registry for richer math families
-- richer trace-schema slots for provider-specific math analysis
-- first-divergence categorization improvements
-- focused trace controls
-- artifact tiering
-
-Entry criteria:
-- V1 closed and stable
-- current reduced smoke green
-
-Exit criteria:
-- existing V1 traces still work
-- math-specific schema fields can be emitted in shadow mode
-- docs/tests can read the richer registry data
-
-Definition of done:
-- zero visible behavior changes
-- trace artifacts richer and easier to target
-
-## Phase 1. MathTailEngine shadow mode
-
-Goal:
-- introduce structured math-tail analysis without changing production decisions yet
-
-Build:
-- tokenization
-- obligation analysis
-- family classification
-- checkpoint tracking
-- candidate staging
-- dual-run comparison against current V1 math behavior
-
-Entry criteria:
-- Phase 0 complete
-
-Exit criteria:
-- shadow traces show family and obligations
-- current math outputs remain unchanged
-- the team can explain a failing math case using traces alone
-
-Definition of done:
-- the MathTailEngine exists in shadow mode and is usable for debugging
-
-## Phase 2. Math V2A live path
-
-Goal:
-- switch live math anticipation to the MathTailEngine for the currently supported V1 families plus one new family
-
-Build:
-- current V1 math families through the new engine
-- checkpointed candidate selection
-- `left-right-local` null-delimiter subset
-- display-local multiline checkpointing
-- richer downgrade, termination, and rearm metadata
-
-Entry criteria:
-- shadow mode stable
-- no unexplained family-classification drift
-
-Exit criteria:
-- V1 math fixtures still pass
-- new left/right fixtures pass
-- unsupported env/alignment families classify and degrade cleanly
-- traces are understandable without source spelunking
-
-Definition of done:
-- Math V2A is live
-- one new supported family is documented
-- support matrix updated
-- current smoke preserved except justified additions
-
-## Phase 3. Optional-argument decision gate
-
-Goal:
-- make a hard yes/no decision on whether a narrow `\sqrt[...]` subset deserves a later targeted pilot
-
-Build:
-- no live behavior required in the mainline tranche
-- only classification, evidence gathering, and targeted fixtures if the product case is real
-
-Entry criteria:
-- Math V2A stable
-- replay or fixture evidence shows real `\sqrt[n]{...}` pain
-
-Exit criteria:
-- either explicitly deferred
-- or approved for a later targeted pilot with a support-matrix entry
-
-Definition of done:
-- explicit decision, not hidden future scope
-
-## Phase 4. MDX decision gate
-
-Goal:
-- decide whether any future `mdx-expression` subset is worth pursuing after Math V2A
-
-Build:
-- no runtime change required
-- if needed, write down the future tiny subset candidate and the reasons it remains deferred
-
-Entry criteria:
-- Math V2A stable
-- traces and registry mature
-
-Exit criteria:
-- either `mdx-expression` remains hard-stop / fallback
-- or a tiny property-path subset is approved for a later targeted pilot
-
-Definition of done:
-- hard scope decision, not an open-ended maybe
-
-## Phase 5. Selective smoke promotion and hardening
-
-Goal:
-- promote only what deserves promotion and harden the new math families before any broader claims
-
-Build:
-- targeted fixture growth
-- fuzz or randomized boundary slicing for math
-- replay corpus growth for harder math families
-- trace bundle minimization and failure-artifact polish
-- smoke promotions only after probation
-
-Entry criteria:
-- Math V2A live and stable
-- support claims frozen
-
-Exit criteria:
-- smoke remains conservative
-- failure artifacts are useful
-- no support-matrix drift
-
-Definition of done:
-- release discipline improved, not loosened
-
-## First Fixture Set
-
-These should be the first new Math V2A fixtures.
-
-### 1. `math-left-right-null-right-supported.md`
-Provokes:
-- unmatched `\left(`
-- null-right repair with `\right.`
-- final convergence when the true `\right)` arrives
-- no guessed delimiter symmetry
-
-### 2. `math-left-right-nested-negative.md`
-Provokes:
-- nested `\left...\right`
-- explicit unsupported-family classification
-- clean downgrade / termination
-
-### 3. `math-display-local-multiline.md`
-Provokes:
-- multiline display math
-- no environment markers
-- checkpoint improvement over raw fallback
-- no red-flash regression
-
-### 4. `math-environment-hard-stop-negative.md`
-Provokes:
-- `\begin{matrix}` and/or `\begin{align}`
-- family classification to `environment-structured`
-- conservative downgrade
-
-### 5. `math-alignment-hard-stop-negative.md`
-Provokes:
-- top-level `&`
-- top-level row separators
-- family classification to `alignment-structured`
-
-### 6. `math-checkpoint-vs-raw.md`
-Provokes:
-- full-tail candidate invalid
-- checkpoint candidate valid
-- explicit selected-candidate behavior in traces
-
-## Trace Artifact Additions
-
-Math V2A should add these artifacts or equivalent structured payloads.
-
-### `math-tail-analysis.json`
-Contains:
-- mode
-- family
-- token list
-- obligation list
-- unsupported-family classification
-- checkpoint list
-
-### `math-candidates.json`
-Contains:
-- ordered candidate stages
-- candidate kind (`full`, `family`, `checkpoint`, `raw`)
-- rendered candidate source
-
-### `math-validation.json`
-Contains:
-- candidate-by-candidate validation result
-- rejection reasons
-- selected candidate
-- selected fidelity tier
-
-### `latch-rearm.json`
-Contains:
-- prior termination state
-- current latch state
-- rearm trigger
-- why the provider retried
-
-### `focus-summary.json`
-Contains:
-- first provider activation
-- first repair
-- first termination
-- first downgrade
-- first visible HTML divergence
-- first convergence recovery
-
-## Acceptance Criteria
-
-We should not call Math V2A done unless all of these are true:
-
-1. The current V1 math subset runs through the MathTailEngine.
-2. `left-right-local` null-delimiter completion is live and documented.
-3. Display-local multiline checkpointing is live for non-environmental display math.
-4. Unsupported environment and alignment families classify explicitly and degrade cleanly.
-5. Trace artifacts explain math behavior in terms of family, obligations, candidates, checkpoints, and latch/rearm state.
-6. Supported Math V2A cases do not flash KaTeX error UI in targeted browser regression.
-7. Docs, tests, support matrix, and smoke eligibility remain aligned.
-8. Reduced smoke is not broadened casually.
-
-## Maintainer Guidance
-
-When Math V2A work begins:
-- do Phase 0 before any live behavior change
-- do Phase 1 before touching left/right or multiline display behavior
-- use char-mode traces for token-boundary cases
-- use chunk-mode traces for convergence and display-local cases
-- keep MDX behavior unchanged unless a later decision gate explicitly reopens it
-
-## Relationship To Other Docs
-
-- [`LOOKAHEAD_CONTRACT.md`](./LOOKAHEAD_CONTRACT.md) remains the closed V1 contract.
-- [`LOOKAHEAD_POST_V1_ROADMAP.md`](./LOOKAHEAD_POST_V1_ROADMAP.md) lists all work that is broader than V1.
-- This document is the first narrowed execution plan inside that post-V1 space.
-- If Math V2A completes successfully, update the roadmap and decide whether optional args or MDX subset work deserve their own follow-on execution plans.
+4. Unsupported structured families must classify explicitly and degrade conservatively.
+5. The supported `left-right-local` subset may only use narrow null-delimiter completion; it may not guess symmetric delimiters.
+6. Display-local checkpoint selection may not hide substantial already-typed semantic tail content.
+7. Trace artifacts must explain math behavior in terms of family, selected candidate, validation, downgrade, and first divergence.
+
+## Final Maintainer Workflow
+
+Start here when debugging a Math V2A regression:
+
+1. Run the direct core tests:
+   - `npx tsx packages/markdown-v2-core/__tests__/lookahead-support-matrix.test.ts`
+   - `npx tsx packages/markdown-v2-core/__tests__/lookahead-trace-contract.test.ts`
+   - `npx tsx packages/markdown-v2-core/__tests__/math-live-shadow-parity.test.ts`
+   - `npx tsx packages/markdown-v2-core/__tests__/math-tail-shadow-fixtures.test.ts`
+2. Run the canonical trace commands from [`LOOKAHEAD_TRACE_WORKFLOW.md`](./LOOKAHEAD_TRACE_WORKFLOW.md).
+3. If the case is smoke-promoted, run reduced seeded smoke before changing the support claim.
+4. If the case is targeted-only, keep it targeted unless the smoke criteria are met explicitly.
+5. If the case would widen the contract beyond the matrices above, move it to post-V2 work instead of reopening V2 implicitly.
+
+## Final Verification Contract
+
+The closed V2 state is expected to satisfy:
+- support-matrix, trace-contract, and math parity tests green
+- targeted browser regressions green for the bounded and structured Math V2A families
+- reduced seeded smoke green on the frozen promoted set
+- docs build and docs link checks green
+- no active-scope ambiguity between docs, traces, support matrix, and smoke status
+
+## Out Of Scope For V2
+
+These items are explicitly outside completed V2 scope and do not count against V2 completion:
+- live optional-argument repair
+- richer `\\left ... \\right` families beyond the narrow null-delimiter subset
+- environment or alignment repair support
+- runtime MDX behavior changes
+- broader HTML work
+- provider/public ABI work
+- optimization work
+
+Those items are tracked in [`LOOKAHEAD_POST_V1_ROADMAP.md`](./LOOKAHEAD_POST_V1_ROADMAP.md).

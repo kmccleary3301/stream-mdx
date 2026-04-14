@@ -49,7 +49,7 @@ function testFeatureRegistryCoversCurrentAndPostV1Families() {
 
   const leftRight = LOOKAHEAD_FEATURE_REGISTRY.find((entry) => entry.id === "math-left-right-local");
   assert.strictEqual(leftRight?.status, "bounded");
-  assert.strictEqual(leftRight?.smoke, "eligible");
+  assert.strictEqual(leftRight?.smoke, "targeted-only");
 
   const leftRightBlock = LOOKAHEAD_FEATURE_REGISTRY.find((entry) => entry.id === "math-left-right-local-block");
   assert.strictEqual(leftRightBlock?.status, "bounded");
@@ -58,6 +58,10 @@ function testFeatureRegistryCoversCurrentAndPostV1Families() {
   const displayLocal = LOOKAHEAD_FEATURE_REGISTRY.find((entry) => entry.id === "math-display-local");
   assert.strictEqual(displayLocal?.status, "bounded");
   assert.strictEqual(displayLocal?.smoke, "promoted");
+
+  const fixedArityBlock = LOOKAHEAD_FEATURE_REGISTRY.find((entry) => entry.id === "math-fixed-arity-local-block");
+  assert.strictEqual(fixedArityBlock?.status, "bounded");
+  assert.strictEqual(fixedArityBlock?.smoke, "promoted");
 
   const env = LOOKAHEAD_FEATURE_REGISTRY.find((entry) => entry.id === "math-environment-structured");
   assert.strictEqual(env?.status, "hard-stop-only");

@@ -1,10 +1,12 @@
 # Lookahead Trace Workflow
 
-This document is the operator workflow for the settled Lookahead V1 tracing stack.
+This document is the operator workflow for the settled Lookahead V1 + Math V2A tracing stack.
 
 See also:
 - [`LOOKAHEAD_CONTRACT.md`](./LOOKAHEAD_CONTRACT.md)
 - [`LOOKAHEAD_V1_EXECUTION_PLAN.md`](./LOOKAHEAD_V1_EXECUTION_PLAN.md)
+- [`LOOKAHEAD_V2_EXECUTION_PLAN.md`](./LOOKAHEAD_V2_EXECUTION_PLAN.md)
+- [`LOOKAHEAD_V2_CLOSEOUT.md`](./LOOKAHEAD_V2_CLOSEOUT.md)
 - [`REGRESSION_TESTING.md`](./REGRESSION_TESTING.md)
 
 ## Why this exists
@@ -243,9 +245,9 @@ Math-specific summary artifacts:
 
 - The docs build must be produced with `NEXT_PUBLIC_STREAMING_DEMO_API=true`
 - The exported site must be served from `apps/docs/out`
-- `next dev` is not the canonical trace path for this tranche
-- HTML / MDX provider traces are now live and show up under `mixedLookahead`
-- Math V1 traces are live for the bounded subset and hard-stop cases, but the hard-stop negative fixture is currently trace/unit-backed rather than browser-regression-backed
+- `next dev` is not the canonical trace path for lookahead debugging
+- HTML / MDX provider traces are live and show up under `mixedLookahead`
+- Math V2A traces are live for the bounded supported subset, classification-only optional-arg evidence, and structured-family hard-stop cases
 
 ## Reduced smoke status
 
@@ -342,3 +344,21 @@ Do not count a fixture or trace run as substantive progress unless at least one 
 - there is a stable trace expectation that is useful for triage
 
 The point of the tracing workflow is to make the settled V1 provider set explainable, and to keep any future post-V1 work from regressing into unverified heuristics.
+
+
+## Final Math V2A support status
+
+Smoke-promoted Math V2A fixtures:
+- `math-left-right-null-right-supported`
+- `math-display-checkpoint-supported`
+
+Targeted-only Math V2A fixtures:
+- `math-left-right-nested-negative`
+- `math-display-local-multiline`
+- `math-environment-hard-stop-negative`
+- `math-alignment-hard-stop-negative`
+- `math-inline-hard-stop-negative`
+- `math-checkpoint-vs-raw`
+- `math-optional-arg-classification`
+
+These targeted-only fixtures remain part of the reduced hardening and trace workflow, but they do not broaden the frozen smoke promise.

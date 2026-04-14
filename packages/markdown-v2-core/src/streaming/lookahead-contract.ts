@@ -144,7 +144,7 @@ export const LOOKAHEAD_FEATURE_REGISTRY: readonly LookaheadFeatureRegistryEntry[
     surface: "inline-format",
     featureFamily: "inline-core",
     status: "implemented",
-    smoke: "eligible",
+    smoke: "promoted",
     notes: ["delimiter closure for emphasis, strong, strike, and inline code"],
   },
   {
@@ -176,7 +176,7 @@ export const LOOKAHEAD_FEATURE_REGISTRY: readonly LookaheadFeatureRegistryEntry[
     surface: "math-block",
     featureFamily: "math-fixed-arity-local",
     status: "bounded",
-    smoke: "eligible",
+    smoke: "promoted",
     notes: ["same allowlisted missing-group repair when display math remains local and validates"],
   },
   {
@@ -192,10 +192,10 @@ export const LOOKAHEAD_FEATURE_REGISTRY: readonly LookaheadFeatureRegistryEntry[
     surface: "math-inline",
     featureFamily: "math-left-right-local",
     status: "bounded",
-    smoke: "eligible",
+    smoke: "targeted-only",
     notes: [
       "narrow null-delimiter completion only via tail-local \\right. insertion",
-      "live selection stays conservative until the candidate validates cleanly",
+      "inline support stays targeted-only in V2 because the frozen smoke set covers the display-local bounded case instead",
     ],
   },
   {
