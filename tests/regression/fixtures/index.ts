@@ -261,6 +261,19 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
     requiredTextFragments: ["trailing prose must remain visible", "Final paragraph after supported display math content."],
   },
   {
+    id: "math-display-checkpoint-supported",
+    title: "Math Display Checkpoint Supported",
+    file: "math-display-checkpoint-supported.md",
+    tags: ["anticipation", "math", "display", "checkpoint", "split-markers"],
+    requiredSelectors: [".katex", ".katex-display"],
+    forbidSelectors: [".katex-error"],
+    forbidSelectorsDuringStreaming: [".katex-error"],
+    requiredTextFragments: [
+      "Trailing prose must remain visible after the checkpointed display math.",
+      "Final paragraph after the checkpoint-supported display math case.",
+    ],
+  },
+  {
     id: "math-inline-hard-stop-negative",
     title: "Math Inline Hard Stop Negative",
     file: "math-inline-hard-stop-negative.md",
