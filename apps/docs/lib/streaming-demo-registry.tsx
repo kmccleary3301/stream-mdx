@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import React, { createElement } from "react";
+import { createElement } from "react";
 
 import type { InlineNode } from "@stream-mdx/core";
 import {
@@ -30,11 +30,9 @@ export function createDemoTableElements(): TableElements {
 export function createDemoHtmlElements(): Partial<HtmlElements> {
   return {
     table: ({ className, children, ...props }: HTMLAttributes<HTMLTableElement>) => (
-      <div className="my-6 w-full overflow-hidden overflow-y-auto">
-        <Table className={className} {...props}>
-          {children}
-        </Table>
-      </div>
+      <Table className={cn("my-6 w-full overflow-hidden overflow-y-auto", className)} {...props}>
+        {children}
+      </Table>
     ),
     thead: ({ className, children, ...props }: HTMLAttributes<HTMLTableSectionElement>) => (
       <TableHeader className={className} {...props}>

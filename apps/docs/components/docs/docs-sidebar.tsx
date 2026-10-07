@@ -20,8 +20,8 @@ export function DocsSidebar({ sections }: { sections: DocsNavSection[] }) {
 
   return (
     <nav className="flex w-full flex-col gap-5">
-      {sections.map((section) => (
-        <div key={section.title} className="flex flex-col gap-2.5">
+      {sections.map((section, index) => (
+        <div key={`${section.title}:${section.items[0]?.href ?? index}`} className="flex flex-col gap-2.5">
           <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-old">
             {section.title}
           </div>

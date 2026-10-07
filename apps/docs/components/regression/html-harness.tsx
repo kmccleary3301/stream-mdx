@@ -547,7 +547,7 @@ export function HtmlRegressionHarness(): JSX.Element {
   }, []);
 
   return (
-    <div className="prose markdown">
+    <div className="prose">
       <div id="regression-root" ref={rootRef} data-fixture="" data-scenario="">
         <StreamingMarkdown
           key={instanceKey}

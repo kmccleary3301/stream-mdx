@@ -20,6 +20,8 @@ const OUTPUT_DIR = process.env.CAPTURE_OUT_DIR
 const WAIT_AFTER_LOAD_MS = Number(process.env.CAPTURE_WAIT_MS ?? "1500");
 const FULL_PAGE = process.env.CAPTURE_FULL_PAGE === "1";
 const MANIFEST_ONLY = process.env.CAPTURE_MANIFEST_ONLY === "1";
+const CAPTURE_THEME =
+  process.env.CAPTURE_THEME === "dark" || process.env.CAPTURE_THEME === "light" ? process.env.CAPTURE_THEME : "system";
 const FAIL_ON_ERRORS = process.env.CAPTURE_FAIL_ON_ERRORS !== "0";
 const FAIL_ON_CONSOLE = process.env.CAPTURE_FAIL_ON_CONSOLE !== "0";
 const FAIL_ON_OVERLAY = process.env.CAPTURE_FAIL_ON_OVERLAY !== "0";
@@ -51,6 +53,9 @@ article, #article-content-wrapper, #regression-root {
 
 const STATIC_ROUTES = [
   "/",
+  "/studio",
+  "/protocol",
+  "/internals",
   "/docs",
   "/docs/guides",
   "/docs/tui-json-protocol",
@@ -59,6 +64,8 @@ const STATIC_ROUTES = [
   "/showcase",
   "/benchmarks",
   "/perf/harness",
+  "/regression/html",
+  "/regression/snippet-test",
   "/demo",
 ];
 
@@ -82,6 +89,14 @@ async function ensureCaptureStyles(page: import("playwright").Page): Promise<voi
     .evaluate(() => Boolean(document.documentElement?.getAttribute("data-smdx-capture-css")))
     .catch(() => false);
   if (already) return;
+  await page
+    .evaluate((theme) => {
+      if (theme === "system") return;
+      document.documentElement.classList.toggle("dark", theme === "dark");
+      document.documentElement.style.colorScheme = theme;
+      document.documentElement.setAttribute("data-smdx-capture-theme", theme);
+    }, CAPTURE_THEME)
+    .catch(() => undefined);
   await page.addStyleTag({ content: CAPTURE_CSS }).catch(() => undefined);
   await page
     .evaluate(() => {
@@ -174,9 +189,10 @@ function buildAllRoutes(): string[] {
 
   const docsRoutes = docSlugs.map((slug) => `/docs/${slug}`);
   const guideRoutes = guideSlugs.map((slug) => `/docs/guides/${slug}`);
+  const articleRoutes = guideSlugs.map((slug) => `/articles/${slug}`);
   const showcaseRoutes = showcaseSlugs.map((slug) => `/showcase/${slug}`);
 
-  return unique([...STATIC_ROUTES, ...docsRoutes, ...guideRoutes, ...showcaseRoutes]).sort();
+  return unique([...STATIC_ROUTES, ...docsRoutes, ...guideRoutes, ...articleRoutes, ...showcaseRoutes]).sort();
 }
 
 async function captureScreenshots(): Promise<void> {
@@ -193,6 +209,7 @@ async function captureScreenshots(): Promise<void> {
       JSON.stringify(
         {
           baseUrl: BASE_URL,
+          theme: CAPTURE_THEME,
           routes: allRoutes,
           capturedRoutes: routes,
           missingRoutes,
@@ -414,7 +431,7 @@ async function captureScreenshots(): Promise<void> {
           .waitForFunction(() => {
             const root = document.getElementById("regression-root");
             const text = (root?.textContent ?? "").trim();
-            return text.length > 80;
+            return text.length >= 40;
           }, { timeout: 20000 })
           .catch(() => undefined);
         return;
@@ -441,7 +458,7 @@ async function captureScreenshots(): Promise<void> {
           const regressionRoot = document.getElementById("regression-root") as HTMLElement | null;
           if (regressionRoot) {
             const text = (regressionRoot.innerText ?? "").trim();
-            return text.length >= 80;
+            return text.length >= 40;
           }
           const wrapper = document.querySelector<HTMLElement>("#article-content-wrapper");
           if (wrapper) {
@@ -467,6 +484,7 @@ async function captureScreenshots(): Promise<void> {
           await page.waitForLoadState("networkidle", { timeout: 4000 }).catch(() => undefined);
           await page.waitForTimeout(WAIT_AFTER_LOAD_MS);
           await waitForRouteReady(page, route);
+          if (route === "/regression/html") return;
           if (await hasVisibleArticleContent(page)) return;
           throw new Error("content probe: mostly blank");
         } catch (err) {

@@ -14,28 +14,28 @@
       "selector": "#regression-root h1",
       "computed": {
         "font-family": "Inter, \"Inter Fallback\"",
-        "font-size": "28px",
+        "font-size": "35px",
         "font-weight": "700",
         "font-style": "normal",
-        "line-height": "36.4px",
-        "letter-spacing": "-0.28px",
+        "line-height": "38.5px",
+        "letter-spacing": "-0.35px",
         "color": "rgb(32, 32, 32)",
-        "margin-top": "42px",
-        "margin-bottom": "14px"
+        "margin-top": "52.5px",
+        "margin-bottom": "17.5px"
       }
     },
     "h2": {
       "selector": "#regression-root h2",
       "computed": {
         "font-family": "Inter, \"Inter Fallback\"",
-        "font-size": "21px",
+        "font-size": "24.5px",
         "font-weight": "700",
         "font-style": "normal",
-        "line-height": "27.993px",
-        "letter-spacing": "-0.21px",
+        "line-height": "29.4px",
+        "letter-spacing": "-0.245px",
         "color": "rgb(32, 32, 32)",
         "margin-top": "4px",
-        "margin-bottom": "15.75px"
+        "margin-bottom": "18.375px"
       }
     },
     "p": {
@@ -49,7 +49,7 @@
         "letter-spacing": "-0.09px",
         "color": "rgb(32, 32, 32)",
         "margin-top": "8px",
-        "margin-bottom": "0px"
+        "margin-bottom": "17.5px"
       }
     },
     "blockquote": {
@@ -91,7 +91,7 @@
         "padding-top": "0px",
         "padding-right": "0px",
         "padding-bottom": "0px",
-        "padding-left": "44px",
+        "padding-left": "28px",
         "margin-top": "17.5px",
         "margin-bottom": "17.5px",
         "border-top-width": "0px",
@@ -110,8 +110,18 @@
         "box-shadow": "none",
         "overflow": "visible",
         "overflow-x": "visible",
-        "overflow-y": "visible"
+        "overflow-y": "visible",
+        "--list-indent": "2rem",
+        "--list-marker-digits": "1"
       }
+    },
+    "list-nested-ol": {
+      "missing": true,
+      "selector": "#regression-root li ol"
+    },
+    "list-nested-ul": {
+      "missing": true,
+      "selector": "#regression-root li ul"
     },
     "list-ol-li": {
       "selector": "#regression-root ol > li",
@@ -126,10 +136,9 @@
         "::before": {
           "content": "\"1. \"",
           "position": "absolute",
-          "left": "-44px",
-          "right": "554px",
+          "left": "-28px",
           "top": "0px",
-          "width": "44px",
+          "width": "28px",
           "height": "21px",
           "margin-top": "0px",
           "padding-right": "7px",
@@ -140,13 +149,29 @@
         }
       }
     },
+    "list-nested-ol-li": {
+      "missing": true,
+      "selector": "#regression-root li ol > li"
+    },
     "list-ul-li": {
       "missing": true,
       "selector": "#regression-root ul > li"
     },
+    "list-nested-ul-li": {
+      "missing": true,
+      "selector": "#regression-root li ul > li"
+    },
     "footnotes": {
       "missing": true,
       "selector": "#regression-root .footnotes"
+    },
+    "footnotes-ol-li": {
+      "missing": true,
+      "selector": "#regression-root .footnotes ol li"
+    },
+    "footnote-backref": {
+      "missing": true,
+      "selector": "#regression-root .footnotes .footnote-backref"
     },
     "preview-pre-adjacent": {
       "missing": true,

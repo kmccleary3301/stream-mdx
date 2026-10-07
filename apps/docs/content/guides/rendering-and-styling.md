@@ -4,10 +4,24 @@
 
 StreamMDX exposes two major customization surfaces:
 
-- `components` (block-level rendering)
-- `inlineComponents` (inline rendering)
+- `components` for block-level rendering
+- `inlineComponents` for inline rendering
 
-You can override individual blocks without losing incremental rendering. This is how you wrap code blocks, tables, or math without breaking the stream.
+Override the semantic piece you need without taking over the stream scheduler. Code blocks, tables, math, links, callouts, and MDX islands can all be customized while preserving incremental rendering.
+
+## Default styling contract
+
+The renderer emits semantic markup and stable renderer classes such as `.markdown-v2-output`, `.markdown-list`, `.markdown-list-item`, `.markdown-code-block`, and `.markdown-link`. It does not inject CSS at runtime.
+
+In this docs app, rendered prose is governed by one styling boundary:
+
+```tsx
+<div className="prose">
+  <StreamingMarkdown text={content} worker="/workers/markdown-worker.js" />
+</div>
+```
+
+The `.prose` parent owns the typography context. The `.markdown-v2-output` class is the renderer output hook used by the app stylesheet, not a second app-shell/card styling layer. Do not stack a legacy `.markdown` wrapper in new docs-app code.
 
 ## Block-level overrides
 
@@ -17,7 +31,7 @@ import { ScrollAreaHorizontal } from "@/components/ui/scroll-area";
 
 const components = {
   code: ({ html }) => (
-    <pre className="not-prose rounded-lg border border-border">
+    <pre className="not-prose docs-code-block">
       <ScrollAreaHorizontal className="min-w-auto">
         <div className="min-w-max p-4" dangerouslySetInnerHTML={{ __html: html }} />
       </ScrollAreaHorizontal>
@@ -30,7 +44,7 @@ export function StyledCode({ text }: { text: string }) {
 }
 ```
 
-This wraps the existing optimized code rendering inside a scroll container while keeping the patch pipeline intact.
+This wraps the optimized code rendering inside a horizontal scroll container while keeping the patch pipeline intact. The wrapper class is intentionally app-owned; do not treat it as a default visual prescription for other projects.
 
 ## Inline overrides
 
@@ -38,20 +52,20 @@ Inline overrides let you swap tags for specific inline nodes:
 
 ```tsx
 const inlineComponents = {
-  code: ({ text }: { text: string }) => (
-    <code className="inline-code rounded bg-muted px-1">{text}</code>
-  ),
+  code: ({ text }: { text: string }) => <code className="inline-code">{text}</code>,
   link: ({ href, children }: { href?: string; children: React.ReactNode }) => (
-    <a className="markdown-link underline" href={href} target={href?.startsWith("http") ? "_blank" : undefined}>
+    <a className="markdown-link" href={href} target={href?.startsWith("http") ? "_blank" : undefined}>
       {children}
     </a>
   ),
 };
 
-<StreamingMarkdown text={content} inlineComponents={inlineComponents} />
+<StreamingMarkdown text={content} inlineComponents={inlineComponents} />;
 ```
 
-## Tables with ShadCN
+Use inline overrides to preserve the semantic role while delegating the final visual treatment to your prose stylesheet.
+
+## Tables
 
 Table rendering can use custom elements:
 
@@ -67,7 +81,7 @@ const tableElements = {
   Td: TableCell,
 };
 
-<StreamingMarkdown text={content} tableElements={tableElements} />
+<StreamingMarkdown text={content} tableElements={tableElements} />;
 ```
 
 This swaps table tags without changing how the renderer schedules updates.
@@ -78,43 +92,18 @@ When `features.html` is enabled, HTML blocks can be mapped onto custom component
 
 ```tsx
 const htmlElements = {
-  table: ({ children }: { children: React.ReactNode }) => (
-    <div className="rounded border border-border overflow-x-auto">{children}</div>
-  ),
+  table: ({ children }: { children: React.ReactNode }) => <div className="not-prose overflow-x-auto">{children}</div>,
+  blockquote: ({ children }: { children: React.ReactNode }) => <blockquote>{children}</blockquote>,
 };
 
-<StreamingMarkdown text={content} htmlElements={htmlElements} features={{ html: true }} />
+<StreamingMarkdown text={content} htmlElements={htmlElements} features={{ html: true }} />;
 ```
 
-## HTML overrides (ShadCN-style wrappers)
-
-If your content includes raw HTML, you can wrap it with ShadCN primitives while keeping streaming intact:
-
-```tsx
-const htmlElements = {
-  table: ({ children }: { children: React.ReactNode }) => (
-    <div className="rounded-lg border border-border overflow-x-auto">{children}</div>
-  ),
-  blockquote: ({ children }: { children: React.ReactNode }) => (
-    <blockquote className="border-l-2 border-border pl-4 text-muted-foreground">{children}</blockquote>
-  ),
-};
-
-<StreamingMarkdown text={content} htmlElements={htmlElements} features={{ html: true }} />
-```
-
-## Typography and spacing
-
-The docs site uses two layers of styles:
-
-- `.markdown-v2-output` for streaming-specific tweaks
-- `.markdown` and `.prose` for base typography
-
-You can disable or replace these styles in your own app. The component itself does not inject CSS, so you control the look completely.
+HTML overrides are a semantic integration point. Add borders, radius, shadows, or branded chrome only when they are part of your application design system, not as renderer defaults.
 
 ## Optional Tailwind theme package
 
-If you want the docs styling without copying CSS, install the optional theme package:
+If you want a packaged Tailwind-oriented baseline, install the optional theme package:
 
 ```bash
 npm install @stream-mdx/theme-tailwind
@@ -130,14 +119,12 @@ Then import the stylesheet after your Tailwind directives:
 @import "@stream-mdx/theme-tailwind/theme.css";
 ```
 
-The theme ships `.markdown-v2-output`, `.markdown`, and `.prose` helpers. Use `@tailwindcss/typography` if you want the `prose` base styles.
-
-## Recommended structure
+Recommended structure for new integrations:
 
 ```tsx
-<div className="prose markdown">
-  <StreamingMarkdown className="markdown-v2-output" text={content} />
+<div className="prose">
+  <StreamingMarkdown text={content} worker="/workers/markdown-worker.js" />
 </div>
 ```
 
-This pattern keeps markdown typography consistent while still using the streaming renderer.
+The package keeps some legacy compatibility selectors for consumers that already used `.markdown`, but new integrations should use a single prose owner and treat renderer classes as output hooks.

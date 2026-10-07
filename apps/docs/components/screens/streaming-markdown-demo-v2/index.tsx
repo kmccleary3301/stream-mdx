@@ -1,6 +1,6 @@
 "use client";
 
-import type { Block, CodeHighlightingMode, FormatAnticipationConfig, InlineNode, Patch, PerformanceMetrics, WorkerIn } from "@stream-mdx/core";
+import type { Block, CodeHighlightingMode, FormatAnticipationConfig, Patch, PerformanceMetrics, WorkerIn } from "@stream-mdx/core";
 import type { CoalescingMetrics } from "@stream-mdx/react/renderer/patch-coalescing";
 import type { PatchFlushResult } from "@stream-mdx/react/renderer/patch-commit-scheduler";
 import type { RendererStore } from "@stream-mdx/react/renderer/store";
@@ -2252,7 +2252,7 @@ export function StreamingMarkdownDemoV2({
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
                   <h2 className="text-xl font-semibold text-foreground">{demoTitle}</h2>
-                  <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide", statusTone)}>
+                  <span className={cn("studio-live-status rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide", statusTone)}>
                     {streamStatus}
                   </span>
                 </div>
@@ -2263,7 +2263,7 @@ export function StreamingMarkdownDemoV2({
             </div>
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {summaryCards.map((card) => (
-                <div key={card.label} className="rounded-lg border border-border/60 bg-background p-2">
+                <div key={card.label} className="studio-live-stat rounded-lg border border-border/60 bg-background p-2">
                   <div className="text-[11px] uppercase tracking-wide text-muted">{card.label}</div>
                   <div className="mt-1 text-sm font-semibold text-foreground">{card.value}</div>
                 </div>
@@ -2271,7 +2271,7 @@ export function StreamingMarkdownDemoV2({
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-background p-4 shadow-sm">
+          <div className="studio-live-output-frame rounded-xl border border-border bg-background p-4 shadow-sm">
             <div data-testid="markdown-output" className={cn("prose max-w-none", theme === "dark" ? "prose-invert" : "")}>
               <StreamingMarkdown
                 ref={streamingHandleRef}
@@ -2296,7 +2296,7 @@ export function StreamingMarkdownDemoV2({
             </div>
           </div>
 
-          <details className="rounded-xl border border-border bg-background/60 p-4">
+          <details className="studio-live-panel rounded-xl border border-border bg-background/60 p-4">
             <summary className="cursor-pointer text-sm font-semibold">Metrics</summary>
             <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
               <Button size="sm" variant={metricsTab === "coalescing" ? "default" : "ghost"} onClick={() => setMetricsTab("coalescing")}>
@@ -2309,7 +2309,7 @@ export function StreamingMarkdownDemoV2({
             </div>
 
             {metricsTab === "coalescing" ? (
-              <div className="mt-3 rounded-md border border-border bg-background/60 p-3">
+              <div className="studio-live-subpanel mt-3 rounded-md border border-border bg-background/60 p-3">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <div className="font-semibold text-muted text-xs uppercase tracking-wide">Coalescing</div>
@@ -2419,12 +2419,12 @@ export function StreamingMarkdownDemoV2({
                 </label>
 
                 {!debugTiming ? (
-                  <div className="rounded-md border border-border/60 bg-background/50 p-3 text-xs text-muted">
+                  <div className="studio-live-subpanel rounded-md border border-border/60 bg-background/50 p-3 text-xs text-muted">
                     Enable timing to view render timings and main-thread stats.
                   </div>
                 ) : (
                   <>
-                    <div className="rounded-md border border-border bg-background/50 p-2">
+                    <div className="studio-live-subpanel rounded-md border border-border bg-background/50 p-2">
                       <div className="mb-1 flex items-center justify-between text-muted text-xs">
                         <span>
                           V2 Render times (showing {renderTimes.length}
@@ -2455,7 +2455,7 @@ export function StreamingMarkdownDemoV2({
                       </div>
                     </div>
 
-                    <div className="rounded-md border border-border bg-background/50 p-2 font-mono text-[11px]">
+                    <div className="studio-live-subpanel rounded-md border border-border bg-background/50 p-2 font-mono text-[11px]">
                       <div className="mb-1 flex items-center justify-between text-muted text-xs">
                         <span>Main-thread timings</span>
                         <span>samples {timingSummary.patchApply?.count ?? 0}</span>
@@ -2541,10 +2541,10 @@ export function StreamingMarkdownDemoV2({
         </div>
 
         <aside className="flex flex-col gap-4">
-          <div className="rounded-xl border border-border bg-background p-4 shadow-sm">
+          <div className="studio-live-panel rounded-xl border border-border bg-background p-4 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="text-[11px] font-semibold uppercase tracking-wide text-muted">Streaming</div>
-              <div className="rounded-full border border-border/60 px-2 py-0.5 text-[11px] text-muted">{demoTitle}</div>
+              <div className="studio-live-status rounded-full border border-border/60 px-2 py-0.5 text-[11px] text-muted">{demoTitle}</div>
             </div>
 
             <div className="mt-3 flex items-center gap-2">
@@ -2662,7 +2662,7 @@ export function StreamingMarkdownDemoV2({
             </div>
           </div>
 
-          <details className="rounded-xl border border-border bg-background/60 p-4">
+          <details className="studio-live-panel rounded-xl border border-border bg-background/60 p-4">
             <summary className="cursor-pointer text-sm font-semibold">Advanced controls</summary>
             <div className="mt-3 flex flex-col gap-3 text-xs text-muted">
               <div className="flex items-center justify-between">
@@ -2891,7 +2891,7 @@ export function StreamingMarkdownDemoV2({
           </details>
 
           {showInspector && (
-            <div className="rounded-xl border border-border bg-background/60 p-3 font-mono text-xs">
+            <div className="studio-live-panel studio-live-inspector rounded-xl border border-border bg-background/60 p-3 font-mono text-xs">
               <div className="mb-1 flex items-center justify-between text-muted text-xs">
                 <span>V2 Block inspector (last 10 blocks)</span>
                 <span>total blocks {blocks.length}</span>

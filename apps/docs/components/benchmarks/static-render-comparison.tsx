@@ -371,7 +371,7 @@ export function StaticRenderComparison() {
 
   const measureContainer = useCallback(
     async (container: HTMLDivElement, trigger: () => Promise<void> | void): Promise<CaseResult> =>
-      await new Promise<CaseResult>(async (resolve, reject) => {
+      await new Promise<CaseResult>((resolve, reject) => {
         const startAt = performance.now();
         let firstMutationAt: number | null = null;
         let lastMutationAt: number | null = null;
@@ -418,20 +418,19 @@ export function StaticRenderComparison() {
 
         timeoutTimer = window.setTimeout(() => finish(true), CASE_TIMEOUT_MS);
 
-        try {
-          await trigger();
-        } catch (error) {
-          cleanup();
-          reject(error);
-          return;
-        }
-
-        if ((container.textContent ?? "").trim().length > 0) {
-          const now = performance.now();
-          if (firstMutationAt === null) firstMutationAt = now;
-          lastMutationAt = now;
-          scheduleSettle();
-        }
+        Promise.resolve(trigger())
+          .then(() => {
+            if ((container.textContent ?? "").trim().length > 0) {
+              const now = performance.now();
+              if (firstMutationAt === null) firstMutationAt = now;
+              lastMutationAt = now;
+              scheduleSettle();
+            }
+          })
+          .catch((error: unknown) => {
+            cleanup();
+            reject(error);
+          });
       }),
     [],
   );

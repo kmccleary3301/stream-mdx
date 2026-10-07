@@ -168,6 +168,7 @@ function getModuleUrl(): string {
 
 function getImportMetaUrl(): string | undefined {
   try {
+    // biome-ignore lint/security/noGlobalEval: this probes import.meta.url from a CJS-compatible node entrypoint.
     const candidate = (0, eval)("import.meta.url");
     return typeof candidate === "string" && candidate.length > 0 ? candidate : undefined;
   } catch {

@@ -938,9 +938,14 @@ export function mapHtmlToReact(html: string, elements: HtmlElements): React.Reac
   return React.createElement(React.Fragment, {}, ...children);
 }
 
-function toReact(node: Node, elements: HtmlElements, key: string): React.ReactElement | null {
+const TABLE_TEXT_FORBIDDEN_PARENTS = new Set(["table", "thead", "tbody", "tfoot", "tr", "colgroup"]);
+
+function toReact(node: Node, elements: HtmlElements, key: string, parentTag?: string): React.ReactElement | null {
   if (node.nodeType === Node.TEXT_NODE) {
     const text = node.textContent ?? "";
+    if (parentTag && TABLE_TEXT_FORBIDDEN_PARENTS.has(parentTag) && text.trim().length === 0) {
+      return null;
+    }
     return React.createElement(React.Fragment, { key }, text);
   }
   if (node.nodeType !== Node.ELEMENT_NODE) {
@@ -956,7 +961,7 @@ function toReact(node: Node, elements: HtmlElements, key: string): React.ReactEl
   }
   const children: React.ReactNode[] = [];
   el.childNodes.forEach((childNode, childIndex) => {
-    const child = toReact(childNode, elements, `${key}-${childIndex}`);
+    const child = toReact(childNode, elements, `${key}-${childIndex}`, tag);
     if (child) {
       children.push(child);
     }

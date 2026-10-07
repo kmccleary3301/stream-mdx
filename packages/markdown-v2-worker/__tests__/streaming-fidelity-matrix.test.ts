@@ -1,4 +1,5 @@
 import assert from "node:assert";
+import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -32,6 +33,22 @@ function ensureDom() {
   (globalThis as any).document = dom.window.document;
   (globalThis as any).HTMLElement = dom.window.HTMLElement;
   (globalThis as any).Node = dom.window.Node;
+}
+
+function resolveDemoFixturePath(): string {
+  const relativeFixturePath = path.join("apps", "docs", "app", "demo", "naive-bayes-classifier.mdx");
+  let cursor = process.cwd();
+
+  while (true) {
+    const candidate = path.join(cursor, relativeFixturePath);
+    if (existsSync(candidate)) return candidate;
+
+    const parent = path.dirname(cursor);
+    if (parent === cursor) break;
+    cursor = parent;
+  }
+
+  throw new Error(`Unable to locate ${relativeFixturePath} from ${process.cwd()}`);
 }
 
 function applyPatchMessages(store: ReturnType<typeof createRendererStore>, messages: WorkerOut[]): void {
@@ -543,7 +560,7 @@ async function runScenario(scenario: Scenario, baseline: Block[]): Promise<void>
 
 async function runStreamingFidelityMatrixTest(): Promise<void> {
   ensureDom();
-  const fixturePath = path.resolve(process.cwd(), "../../apps/docs/app/demo/naive-bayes-classifier.mdx");
+  const fixturePath = resolveDemoFixturePath();
   const fixtureRaw = await fs.readFile(fixturePath, "utf8");
   const fullDoc = fixtureRaw.replace(/^---[\s\S]*?---\s*/, "");
   const lowSpeedWindowChars = 3072;

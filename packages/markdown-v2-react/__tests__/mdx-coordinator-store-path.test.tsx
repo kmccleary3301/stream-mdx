@@ -310,12 +310,6 @@ async function runCoordinatorRejectsStaleSameIdResponseTest(): Promise<void> {
   }
 }
 
-runCoordinatorTest()
-  .then(() => runCoordinatorRejectsStaleSameIdResponseTest())
-  .then(() => {
-    console.log("mdx-coordinator-store-path test passed");
-  })
-  .catch((error) => {
-    console.error(error);
-    process.exitCode = 1;
-  });
+await runCoordinatorTest();
+await runCoordinatorRejectsStaleSameIdResponseTest();
+console.log("mdx-coordinator-store-path test passed");

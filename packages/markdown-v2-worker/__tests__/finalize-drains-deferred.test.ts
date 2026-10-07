@@ -1,4 +1,5 @@
 import assert from "node:assert";
+import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { JSDOM } from "jsdom";
@@ -39,10 +40,26 @@ function summarizePatchOps(messages: WorkerOut[]): string {
   return ops.slice(0, 10).join(", ");
 }
 
+function resolveDemoFixturePath(): string {
+  const relativeFixturePath = path.join("apps", "docs", "app", "demo", "naive-bayes-classifier.mdx");
+  let cursor = process.cwd();
+
+  while (true) {
+    const candidate = path.join(cursor, relativeFixturePath);
+    if (existsSync(candidate)) return candidate;
+
+    const parent = path.dirname(cursor);
+    if (parent === cursor) break;
+    cursor = parent;
+  }
+
+  throw new Error(`Unable to locate ${relativeFixturePath} from ${process.cwd()}`);
+}
+
 async function runFinalizeDrainTest(): Promise<void> {
   ensureDom();
 
-  const fixturePath = path.resolve(process.cwd(), "../../apps/docs/app/demo/naive-bayes-classifier.mdx");
+  const fixturePath = resolveDemoFixturePath();
   const doc = await fs.readFile(fixturePath, "utf8");
 
   const harness = await createWorkerHarness();

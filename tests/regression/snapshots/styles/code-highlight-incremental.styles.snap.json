@@ -31,9 +31,9 @@
       "computed": {
         "display": "flex",
         "padding-top": "3.5px",
-        "padding-right": "0px",
-        "padding-bottom": "0px",
-        "padding-left": "0px",
+        "padding-right": "14px",
+        "padding-bottom": "11.9px",
+        "padding-left": "14px",
         "margin-top": "10.5px",
         "margin-bottom": "10.5px",
         "border-top-width": "1px",
@@ -86,17 +86,41 @@
       "missing": true,
       "selector": "#regression-root ol"
     },
+    "list-nested-ol": {
+      "missing": true,
+      "selector": "#regression-root li ol"
+    },
+    "list-nested-ul": {
+      "missing": true,
+      "selector": "#regression-root li ul"
+    },
     "list-ol-li": {
       "missing": true,
       "selector": "#regression-root ol > li"
+    },
+    "list-nested-ol-li": {
+      "missing": true,
+      "selector": "#regression-root li ol > li"
     },
     "list-ul-li": {
       "missing": true,
       "selector": "#regression-root ul > li"
     },
+    "list-nested-ul-li": {
+      "missing": true,
+      "selector": "#regression-root li ul > li"
+    },
     "footnotes": {
       "missing": true,
       "selector": "#regression-root .footnotes"
+    },
+    "footnotes-ol-li": {
+      "missing": true,
+      "selector": "#regression-root .footnotes ol li"
+    },
+    "footnote-backref": {
+      "missing": true,
+      "selector": "#regression-root .footnotes .footnote-backref"
     },
     "preview-pre-adjacent": {
       "missing": true,

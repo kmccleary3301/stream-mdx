@@ -300,9 +300,7 @@ function StreamMdxPanel({
   const setHandleRef = useCallback(
     (handle: StreamingMarkdownHandle | null) => {
       streamHandleRef.current = handle;
-      if (process.env.NODE_ENV !== "production") {
-        (window as Window & { __streamMdxBenchHandle?: StreamingMarkdownHandle | null }).__streamMdxBenchHandle = handle;
-      }
+      (window as Window & { __streamMdxBenchHandle?: StreamingMarkdownHandle | null }).__streamMdxBenchHandle = handle;
     },
     [streamHandleRef],
   );
@@ -310,6 +308,7 @@ function StreamMdxPanel({
   useEffect(() => {
     return () => {
       streamHandleRef.current = null;
+      (window as Window & { __streamMdxBenchHandle?: StreamingMarkdownHandle | null }).__streamMdxBenchHandle = null;
     };
   }, [streamHandleRef]);
 

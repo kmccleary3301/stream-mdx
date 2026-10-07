@@ -450,7 +450,7 @@ export function PerfHarness(): JSX.Element {
   }, [fixtureId, scenarioId, schedulingPreset, scheduling]);
 
   return (
-    <div className="prose markdown">
+    <div className="prose">
       <div id="perf-root" ref={rootRef} data-fixture={fixtureId} data-scenario={scenarioId}>
         {profilerEnabled ? (
           <Profiler id="StreamingMarkdown" onRender={onProfile}>

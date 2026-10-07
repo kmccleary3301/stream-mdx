@@ -39,7 +39,7 @@
         "letter-spacing": "-0.09px",
         "color": "rgb(32, 32, 32)",
         "margin-top": "8px",
-        "margin-bottom": "0px"
+        "margin-bottom": "17.5px"
       }
     },
     "blockquote": {
@@ -122,24 +122,24 @@
       "selector": "#regression-root ol > li",
       "computed": {
         "margin-top": "0px",
-        "margin-bottom": "0px",
+        "margin-bottom": "6px",
         "padding-left": "6px",
         "position": "relative",
         "line-height": "21px"
       },
       "pseudo": {
         "::before": {
-          "content": "counter(list-number) \". \"",
+          "content": "counter(list)",
           "position": "absolute",
-          "left": "-35px",
+          "left": "-3.92188px",
           "top": "0px",
-          "width": "35px",
+          "width": "3.92188px",
           "height": "21px",
           "margin-top": "0px",
-          "padding-right": "7px",
+          "padding-right": "0px",
           "font-size": "8px",
           "color": "color(srgb 0.401569 0.401569 0.401569)",
-          "opacity": "0.5",
+          "opacity": "1",
           "display": "block"
         }
       }
@@ -191,7 +191,7 @@
     "footnotes-ol-li": {
       "selector": "#regression-root .footnotes ol li",
       "computed": {
-        "padding-top": "0px",
+        "padding-top": "4px",
         "padding-left": "6px",
         "font-size": "12px",
         "color": "color(srgb 0.401569 0.401569 0.401569)",
@@ -199,7 +199,7 @@
       },
       "pseudo": {
         "::before": {
-          "content": "counter(list-number) \". \"",
+          "content": "counter(list)",
           "position": "absolute",
           "top": "0px",
           "font-size": "8px"

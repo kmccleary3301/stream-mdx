@@ -55,7 +55,7 @@ export function getDocsShellSections(options?: {
 
   if (includeGuides) {
     sections.push({
-      title: "Guides",
+      title: "Deep dives",
       items: [
         { title: "Guides overview", href: "/docs/guides" },
         ...GUIDE_ITEMS.map((guide) => ({

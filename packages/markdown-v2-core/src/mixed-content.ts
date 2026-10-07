@@ -150,9 +150,9 @@ function splitByTagSegments(
             const segment: MixedContentSegment = {
               kind: "html",
               value: closedValue,
-              range: createSegmentRange(baseOffset, start, source.length),
               sanitized: sanitizeHtmlInWorker(closedValue),
             };
+            setSegmentRange(segment, createSegmentRange(baseOffset, start, source.length));
             segments.push(segment);
             cursor = source.length;
             break;
@@ -177,8 +177,8 @@ function splitByTagSegments(
     const segment: MixedContentSegment = {
       kind,
       value: rawSegment,
-      range: createSegmentRange(baseOffset, start, end),
     };
+    setSegmentRange(segment, createSegmentRange(baseOffset, start, end));
     if (kind === "html") {
       segment.sanitized = sanitizeHtmlInWorker(rawSegment);
     } else {
@@ -236,17 +236,18 @@ function splitTextSegmentByExpressions(segment: MixedContentSegment, parseInline
       results.push({
         kind: "text",
         value: textValue,
-        range: createSegmentRange(rangeStart, cursor, start),
         inline: parseInline(textValue),
       });
+      setSegmentRange(results[results.length - 1], createSegmentRange(rangeStart, cursor, start));
     }
     const expressionValue = match[0];
-    results.push({
+    const expressionSegment: MixedContentSegment = {
       kind: "mdx",
       value: expressionValue,
-      range: createSegmentRange(rangeStart, start, end),
       status: "pending",
-    });
+    };
+    setSegmentRange(expressionSegment, createSegmentRange(rangeStart, start, end));
+    results.push(expressionSegment);
     cursor = end;
     match = exprPattern.exec(value);
   }
@@ -256,9 +257,9 @@ function splitTextSegmentByExpressions(segment: MixedContentSegment, parseInline
     results.push({
       kind: "text",
       value: textValue,
-      range: createSegmentRange(rangeStart, cursor, value.length),
       inline: parseInline(textValue),
     });
+    setSegmentRange(results[results.length - 1], createSegmentRange(rangeStart, cursor, value.length));
   }
 
   return results.length > 0 ? results : [segment];
@@ -313,12 +314,19 @@ function pushTextSegment(
   parseInline: (content: string) => InlineNode[],
 ): void {
   if (value.length === 0) return;
-  target.push({
+  const segment: MixedContentSegment = {
     kind: "text",
     value,
-    range: createSegmentRange(from, 0, value.length, to),
     inline: parseInline(value),
-  });
+  };
+  setSegmentRange(segment, createSegmentRange(from, 0, value.length, to));
+  target.push(segment);
+}
+
+function setSegmentRange(segment: MixedContentSegment, range: { from: number; to: number } | undefined): void {
+  if (range) {
+    segment.range = range;
+  }
 }
 
 function createSegmentRange(base: number | undefined, relativeFrom: number, relativeTo: number, absoluteTo?: number): { from: number; to: number } | undefined {

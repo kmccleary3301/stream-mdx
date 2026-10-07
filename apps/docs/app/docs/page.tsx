@@ -233,32 +233,35 @@ export default function DocsIndexPage() {
           <div className="route-panel p-4">
             <div className="text-sm font-semibold text-foreground">Browse all sections</div>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              {navSections.map((section) => (
-                <div key={section.title}>
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-old">
-                    {section.title}
+              {navSections.map((section) => {
+                const isGuideSection = section.items.some((item) => item.href.startsWith("/docs/guides"));
+                return (
+                  <div key={`${section.title}:${section.items[0]?.href ?? "empty"}`}>
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-old">
+                      {section.title}
+                    </div>
+                    <ul className="mt-2 space-y-1.5 text-[12px] text-muted-foreground">
+                      {section.items.slice(0, isGuideSection ? 5 : section.items.length).map((item) => (
+                        <li key={item.href}>
+                          <Link href={item.href} className="transition hover:text-foreground">
+                            {item.title}
+                          </Link>
+                        </li>
+                      ))}
+                      {isGuideSection ? (
+                        <li>
+                          <Link
+                            href="/docs/guides"
+                            className="font-medium text-foreground/80 transition hover:text-foreground"
+                          >
+                            View all guides
+                          </Link>
+                        </li>
+                      ) : null}
+                    </ul>
                   </div>
-                  <ul className="mt-2 space-y-1.5 text-[12px] text-muted-foreground">
-                    {section.items.slice(0, section.title === "Guides" ? 5 : section.items.length).map((item) => (
-                      <li key={item.href}>
-                        <Link href={item.href} className="transition hover:text-foreground">
-                          {item.title}
-                        </Link>
-                      </li>
-                    ))}
-                    {section.title === "Guides" ? (
-                      <li>
-                        <Link
-                          href="/docs/guides"
-                          className="font-medium text-foreground/80 transition hover:text-foreground"
-                        >
-                          View all guides
-                        </Link>
-                      </li>
-                    ) : null}
-                  </ul>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

@@ -36,9 +36,6 @@ import type {
 import type { Tree } from "@lezer/common";
 import { parser as mdParser } from "@lezer/markdown";
 import { createJavaScriptRegexEngine } from "@shikijs/engine-javascript";
-import rehypeSlug from "rehype-slug";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
 import { createHighlighter } from "shiki";
 
 import {
@@ -144,6 +141,13 @@ type IncrementalHighlightState = {
   diffGrammar?: DiffGrammarState;
   grammarState?: unknown;
 };
+
+function resetDocumentPluginSession() {
+  globalDocumentPluginRegistry.clear();
+  for (const key of Object.keys(documentPluginState)) {
+    delete documentPluginState[key];
+  }
+}
 const incrementalHighlightStates = new Map<string, IncrementalHighlightState>();
 
 type LazyTokenizationState = {
@@ -713,9 +717,10 @@ function partitionPatchesForCredits(
   let heavyBudget = computeHeavyPatchBudget(workerCredits);
 
   for (const patch of combined) {
+    const kind = getPatchKind(patch);
     const heavy = isHeavyPatch(patch);
     const priorityImmediate = isPriorityImmediatePatch(patch);
-    if (heavy && !bypassCreditBudget && !priorityImmediate) {
+    if (heavy && kind !== "semantic" && !bypassCreditBudget && !priorityImmediate) {
       if (heavyBudget <= 0) {
         if (deferred.length < MAX_DEFERRED_PATCHES) {
           deferred.push(patch);
@@ -726,26 +731,23 @@ function partitionPatchesForCredits(
       }
     }
 
-    if (priorityImmediate || getPatchKind(patch) === "semantic") {
-      immediate.push(patch);
-      continue;
-    }
+    immediate.push(patch);
   }
 
   if (typeof maxImmediate === "number" && immediate.length > maxImmediate) {
-    const priorityCount = immediate.reduce((count, patch) => count + (isPriorityImmediatePatch(patch) ? 1 : 0), 0);
-    const maxNonPriority = Math.max(0, maxImmediate - priorityCount);
+    const requiredCount = immediate.reduce((count, patch) => count + (isPriorityImmediatePatch(patch) || getPatchKind(patch) === "semantic" ? 1 : 0), 0);
+    const maxDeferrable = Math.max(0, maxImmediate - requiredCount);
     const kept: Patch[] = [];
     const overflow: Patch[] = [];
-    let nonPriorityKept = 0;
+    let deferrableKept = 0;
     for (const patch of immediate) {
-      if (isPriorityImmediatePatch(patch)) {
+      if (isPriorityImmediatePatch(patch) || getPatchKind(patch) === "semantic") {
         kept.push(patch);
         continue;
       }
-      if (nonPriorityKept < maxNonPriority) {
+      if (deferrableKept < maxDeferrable) {
         kept.push(patch);
-        nonPriorityKept += 1;
+        deferrableKept += 1;
       } else {
         overflow.push(patch);
       }
@@ -1007,6 +1009,7 @@ async function initialize(
   patchStreamSeq = 0;
   tocHeadings = [];
   tocSignature = "";
+  resetDocumentPluginSession();
   resetIncrementalHighlightState();
   lazyTokenizationStates.clear();
   lazyTokenizationQueue.clear();
@@ -1393,7 +1396,7 @@ async function enrichBlock(block: Block) {
         block.payload.raw = normalizedHeading;
         block.payload.inline = inlineParser.parse(normalizedHeading);
         if (shouldTrackInlineStatus() && block.payload.meta) {
-          (block.payload.meta as Record<string, unknown>).inlineStatus = undefined;
+          delete (block.payload.meta as Record<string, unknown>).inlineStatus;
         }
       } else {
         const parsed = parseInlineStreaming(normalizedHeading);
@@ -1429,10 +1432,14 @@ async function enrichBlock(block: Block) {
       if (hasStructuredSegments) {
         nextMeta.mixedSegments = segments;
       } else {
-        nextMeta.mixedSegments = undefined;
+        delete nextMeta.mixedSegments;
       }
       if (shouldTrackInlineStatus()) {
-        nextMeta.inlineStatus = block.isFinalized ? undefined : streamingParsed?.status;
+        if (block.isFinalized) {
+          delete nextMeta.inlineStatus;
+        } else {
+          nextMeta.inlineStatus = streamingParsed?.status;
+        }
       }
       if (Object.keys(nextMeta).length > 0) {
         block.payload.meta = nextMeta;
@@ -1469,11 +1476,11 @@ async function enrichBlock(block: Block) {
             metaChanged = true;
           }
         } else if (Object.prototype.hasOwnProperty.call(nextMeta, "inlineStatus")) {
-          nextMeta.inlineStatus = undefined;
+          delete nextMeta.inlineStatus;
           metaChanged = true;
         }
       } else if (Object.prototype.hasOwnProperty.call(nextMeta, "inlineStatus")) {
-        nextMeta.inlineStatus = undefined;
+        delete nextMeta.inlineStatus;
         metaChanged = true;
       }
 
@@ -1526,22 +1533,22 @@ async function enrichBlock(block: Block) {
             nextMeta.allowMixedStreaming = true;
             metaChanged = true;
           } else if (Object.prototype.hasOwnProperty.call(nextMeta, "allowMixedStreaming")) {
-            nextMeta.allowMixedStreaming = undefined;
+            delete nextMeta.allowMixedStreaming;
             metaChanged = true;
           }
         } else if (Object.prototype.hasOwnProperty.call(nextMeta, "mixedSegments")) {
-          nextMeta.mixedSegments = undefined;
+          delete nextMeta.mixedSegments;
           metaChanged = true;
           if (Object.prototype.hasOwnProperty.call(nextMeta, "allowMixedStreaming")) {
-            nextMeta.allowMixedStreaming = undefined;
+            delete nextMeta.allowMixedStreaming;
             metaChanged = true;
           }
         }
       } else if (Object.prototype.hasOwnProperty.call(nextMeta, "mixedSegments")) {
-        nextMeta.mixedSegments = undefined;
+        delete nextMeta.mixedSegments;
         metaChanged = true;
         if (Object.prototype.hasOwnProperty.call(nextMeta, "allowMixedStreaming")) {
-          nextMeta.allowMixedStreaming = undefined;
+          delete nextMeta.allowMixedStreaming;
           metaChanged = true;
         }
       }
@@ -1550,7 +1557,7 @@ async function enrichBlock(block: Block) {
         nextMeta.protectedRanges = protectedRanges;
         metaChanged = true;
       } else if (Object.prototype.hasOwnProperty.call(nextMeta, "protectedRanges")) {
-        nextMeta.protectedRanges = undefined;
+        delete nextMeta.protectedRanges;
         metaChanged = true;
       }
 
@@ -3278,9 +3285,11 @@ function enrichListBlock(block: Block) {
   block.payload.meta = {
     ordered: isOrdered,
     items,
-    formatAnticipation: block.isFinalized ? undefined : formatAnticipationConfig,
     mathEnabled: enableMath,
   };
+  if (!block.isFinalized) {
+    (block.payload.meta as Record<string, unknown>).formatAnticipation = formatAnticipationConfig;
+  }
 }
 
 /**
@@ -3486,7 +3495,7 @@ async function emitBlockDiffPatches(
   const { patches: contentPatches, changedBlockCount } = await diffBlockContent(previousBlocks, nextBlocks, changedRanges, metrics);
   metrics?.markDiffEnd();
 
-  const combined = patches.concat(contentPatches, extraPatches);
+  const combined = patches.concat(extraPatches, contentPatches);
   if (tocPatch) {
     combined.push(tocPatch);
   }
@@ -3597,6 +3606,21 @@ function dispatchPatchBatch(patches: Patch[], metrics?: WorkerMetricsCollector |
   if (metrics && getActiveMetricsCollector() === metrics) {
     setActiveMetricsCollector(null);
   }
+}
+
+async function dispatchFinalCanonicalSnapshot(finalBlocks: Block[]) {
+  const patches: Patch[] = [];
+  for (let index = 0; index < finalBlocks.length; index++) {
+    const block = finalBlocks[index];
+    if (!block) continue;
+    patches.push({
+      op: "replaceChild",
+      at: { blockId: PATCH_ROOT_ID },
+      index,
+      node: await blockToNodeSnapshot(block),
+    });
+  }
+  dispatchPatchBatch(patches);
 }
 
 async function diffBlockContent(
@@ -3904,6 +3928,9 @@ function diffNodeSnapshot(blockId: string, prevNode: NodeSnapshot, nextNode: Nod
   const nextMid = nextChildren.slice(prefix, nextChildren.length - suffix);
 
   if (prevMid.length === 0 && nextMid.length === 0) {
+    if (prevNode.type === "code" && nextNode.type === "code") {
+      emitSetProps();
+    }
     return;
   }
 
@@ -4260,11 +4287,9 @@ async function finalizeAllBlocks() {
 
   const prevBlocks = blocks.map((block) => cloneBlock(block));
   const finalizePatches: Patch[] = [];
-  const finalizeTargets = new Set<string>();
   for (const block of blocks) {
     if (!block.isFinalized) {
       block.isFinalized = true;
-      finalizeTargets.add(block.id);
       finalizePatches.push({
         op: "finalize",
         at: { blockId: block.id },
@@ -4290,22 +4315,11 @@ async function finalizeAllBlocks() {
       toB: currentContent.length,
     },
   ];
-  const finalizeSetProps: Patch[] = [];
-  for (const block of blocks) {
-    if (!block.isFinalized || !finalizeTargets.has(block.id)) continue;
-    finalizeSetProps.push({
-      op: "setProps",
-      at: { blockId: block.id, nodeId: block.id },
-      props: {
-        block: cloneBlock(block),
-      },
-    });
-  }
   const finalParseEpoch = nextParseEpoch();
-  await emitBlockDiffPatches(prevBlocks, blocks, fullRange, metricsCollector, finalParseEpoch, [
-    ...finalizePatches,
-    ...finalizeSetProps,
-  ]);
+  await emitBlockDiffPatches(prevBlocks, blocks, fullRange, metricsCollector, finalParseEpoch, finalizePatches);
+  if (finalizePatches.length > 0) {
+    await dispatchFinalCanonicalSnapshot(blocks);
+  }
 
   if (deferredPatchQueue.length > 0) {
     const previousCredits = workerCredits;

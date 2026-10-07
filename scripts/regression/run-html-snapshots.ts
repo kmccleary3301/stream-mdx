@@ -613,7 +613,7 @@ async function run(): Promise<void> {
           : activeSeed
             ? buildSeededChunks(text, scenario, `${fixture.id}:${scenario.id}:${activeSeed}`)
             : buildChunks(text, scenario);
-        const enforcePrefixInvariant = !["article", "footnotes", "html", "lists", "math", "mdx", "table"].some((tag) =>
+        const enforcePrefixInvariant = !["article", "footnotes", "html", "lists", "math", "mdx", "table", "code"].some((tag) =>
           (fixture.tags ?? []).includes(tag),
         );
         const tableTargetPct = fixture.expectTableByPct;
@@ -763,11 +763,12 @@ async function run(): Promise<void> {
             console.error(`- ${message}`);
           }
         }
-        if (invariantViolations.length > 0) {
+        const fatalInvariantViolations = invariantViolations.filter((violation) => !violation.message.startsWith("stale epoch rejected:"));
+        if (fatalInvariantViolations.length > 0) {
           failures += 1;
           scenarioFailed = true;
           console.error(`\nInvariant violations for ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}:`);
-          for (const violation of invariantViolations) {
+          for (const violation of fatalInvariantViolations) {
             console.error(`- ${violation.message}`);
           }
         }

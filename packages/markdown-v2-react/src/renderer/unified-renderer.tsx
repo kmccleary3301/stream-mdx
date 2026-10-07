@@ -149,9 +149,9 @@ export class UnifiedMarkdownRenderer {
       case "Blockquote":
         return <blockquote key={key}>{this.renderInlineContent(content)}</blockquote>;
       case "BulletList":
-        return <ul key={key}>{this.renderListItems(content)}</ul>;
+        return <ul key={key}>{this.renderListItems(content, key)}</ul>;
       case "OrderedList":
-        return <ol key={key}>{this.renderListItems(content)}</ol>;
+        return <ol key={key}>{this.renderListItems(content, key)}</ol>;
       default:
         return (
           <div key={key} data-type={node.type.name}>
@@ -192,7 +192,7 @@ export class UnifiedMarkdownRenderer {
   /**
    * Render list items
    */
-  private renderListItems(content: string): React.ReactElement[] {
+  private renderListItems(content: string, baseKey: string): React.ReactElement[] {
     const items: React.ReactElement[] = [];
 
     // Simple list item splitting (would be improved with proper cursor traversal)
@@ -200,7 +200,7 @@ export class UnifiedMarkdownRenderer {
 
     lines.forEach((line, index) => {
       const itemContent = line.replace(/^[\s\-*+\d\.)\s]*/, "").trim();
-      const lineKey = `${key}-item-${index}-${itemContent.length}`;
+      const lineKey = `${baseKey}-item-${index}-${itemContent.length}`;
       items.push(<li key={lineKey}>{itemContent}</li>);
     });
 

@@ -9,12 +9,40 @@
     "charRateCps": 3000,
     "maxChunkChars": 512
   },
+  "runMeta": {
+    "seed": null,
+    "schedulerMode": null,
+    "usedSplitMarkers": false,
+    "fixtureTags": [
+      "footnotes"
+    ]
+  },
   "totalLength": 182,
   "checkpoints": [
     {
       "id": "after-first-chunk",
       "appendedChars": 24,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 4,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 1,
+        "lastPatchToDomMs": 0.3999999910593033,
+        "lastDurationMs": 0.3999999910593033,
+        "meta": {
+          "fixtureId": "footnotes",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -50,12 +78,37 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
       "id": "progress-9",
       "appendedChars": 24,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 4,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 1,
+        "lastPatchToDomMs": 0.3999999910593033,
+        "lastDurationMs": 0.3999999910593033,
+        "meta": {
+          "fixtureId": "footnotes",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -91,12 +144,37 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
       "id": "progress-18",
       "appendedChars": 24,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 4,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 1,
+        "lastPatchToDomMs": 0.3999999910593033,
+        "lastDurationMs": 0.3999999910593033,
+        "meta": {
+          "fixtureId": "footnotes",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -132,12 +210,37 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
       "id": "progress-46",
       "appendedChars": 48,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 5,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 2,
+        "lastPatchToDomMs": 0.29999999701976776,
+        "lastDurationMs": 0.20000000298023224,
+        "meta": {
+          "fixtureId": "footnotes",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -173,12 +276,37 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
       "id": "progress-91",
       "appendedChars": 96,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 7,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 4,
+        "lastPatchToDomMs": 11.900000005960464,
+        "lastDurationMs": 0.09999999403953552,
+        "meta": {
+          "fixtureId": "footnotes",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -198,7 +326,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"1\">1</a></sup></p><p class=\"markdown-paragraph streaming-partial\">Another sentence with a second reference</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"1\" style=\"color: var(--foreground); text-decoration: underline;\">1</a></sup></p><p class=\"markdown-paragraph streaming-partial\">Another sentence with a second reference</p></div>",
       "textSample": "FootnotesA sentence with a footnote reference.1Another sentence with a second reference",
       "structure": {
         "topLevelTags": [
@@ -214,12 +342,37 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
       "id": "event-hasFootnotes",
       "appendedChars": 120,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 8,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 5,
+        "lastPatchToDomMs": 3.7000000029802322,
+        "lastDurationMs": 0.10000000894069672,
+        "meta": {
+          "fixtureId": "footnotes",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -239,7 +392,7 @@
         "footnotes": 1,
         "hr": 1
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"1\">1</a></sup></p><p class=\"markdown-paragraph\">Another sentence with a second reference.<sup class=\"footnote-ref\"><a href=\"#fn:2\" id=\"fnref:2\" data-label=\"second\">2</a></sup></p><section class=\"footnotes\"><hr><ol><li id=\"fn:1\"> <a href=\"#fnref:1\" class=\"footnote-backref\" aria-label=\"Back to content\">↩</a></li><li id=\"fn:2\"> <a href=\"#fnref:2\" class=\"footnote-backref\" aria-label=\"Back to content\">↩</a></li></ol></section></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"1\" style=\"color: var(--foreground); text-decoration: underline;\">1</a></sup></p><p class=\"markdown-paragraph\">Another sentence with a second reference.<sup class=\"footnote-ref\"><a href=\"#fn:2\" id=\"fnref:2\" data-label=\"second\" style=\"color: var(--foreground); text-decoration: underline;\">2</a></sup></p><section class=\"footnotes\"><hr><ol><li id=\"fn:1\"> <a href=\"#fnref:1\" class=\"footnote-backref\" aria-label=\"Back to content\" style=\"color: var(--foreground); text-decoration: underline;\">↩</a></li><li id=\"fn:2\"> <a href=\"#fnref:2\" class=\"footnote-backref\" aria-label=\"Back to content\" style=\"color: var(--foreground); text-decoration: underline;\">↩</a></li></ol></section></div>",
       "textSample": "FootnotesA sentence with a footnote reference.1Another sentence with a second reference.2 ↩ ↩",
       "structure": {
         "topLevelTags": [
@@ -255,12 +408,37 @@
           "footnotes": 1,
           "hr": 1
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
       "id": "progress-137",
       "appendedChars": 144,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 9,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 6,
+        "lastPatchToDomMs": 4.799999997019768,
+        "lastDurationMs": 0.09999999403953552,
+        "meta": {
+          "fixtureId": "footnotes",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -280,7 +458,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"1\">1</a></sup></p><p class=\"markdown-paragraph\">Another sentence with a second reference.<sup class=\"footnote-ref\"><a href=\"#fn:2\" id=\"fnref:2\" data-label=\"second\">2</a></sup></p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"1\" style=\"color: var(--foreground); text-decoration: underline;\">1</a></sup></p><p class=\"markdown-paragraph\">Another sentence with a second reference.<sup class=\"footnote-ref\"><a href=\"#fn:2\" id=\"fnref:2\" data-label=\"second\" style=\"color: var(--foreground); text-decoration: underline;\">2</a></sup></p></div>",
       "textSample": "FootnotesA sentence with a footnote reference.1Another sentence with a second reference.2",
       "structure": {
         "topLevelTags": [
@@ -296,12 +474,37 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
       "id": "progress-164",
       "appendedChars": 168,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 10,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 7,
+        "lastPatchToDomMs": 1.0999999940395355,
+        "lastDurationMs": 0.20000000298023224,
+        "meta": {
+          "fixtureId": "footnotes",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -321,7 +524,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"1\">1</a></sup></p><p class=\"markdown-paragraph\">Another sentence with a second reference.<sup class=\"footnote-ref\"><a href=\"#fn:2\" id=\"fnref:2\" data-label=\"second\">2</a></sup></p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"1\" style=\"color: var(--foreground); text-decoration: underline;\">1</a></sup></p><p class=\"markdown-paragraph\">Another sentence with a second reference.<sup class=\"footnote-ref\"><a href=\"#fn:2\" id=\"fnref:2\" data-label=\"second\" style=\"color: var(--foreground); text-decoration: underline;\">2</a></sup></p></div>",
       "textSample": "FootnotesA sentence with a footnote reference.1Another sentence with a second reference.2",
       "structure": {
         "topLevelTags": [
@@ -337,12 +540,37 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
       "id": "progress-182",
       "appendedChars": 182,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 11,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 8,
+        "lastPatchToDomMs": 0.20000000298023224,
+        "lastDurationMs": 0.09999999403953552,
+        "meta": {
+          "fixtureId": "footnotes",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -362,7 +590,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"1\">1</a></sup></p><p class=\"markdown-paragraph\">Another sentence with a second reference.<sup class=\"footnote-ref\"><a href=\"#fn:2\" id=\"fnref:2\" data-label=\"second\">2</a></sup></p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"1\" style=\"color: var(--foreground); text-decoration: underline;\">1</a></sup></p><p class=\"markdown-paragraph\">Another sentence with a second reference.<sup class=\"footnote-ref\"><a href=\"#fn:2\" id=\"fnref:2\" data-label=\"second\" style=\"color: var(--foreground); text-decoration: underline;\">2</a></sup></p></div>",
       "textSample": "FootnotesA sentence with a footnote reference.1Another sentence with a second reference.2",
       "structure": {
         "topLevelTags": [
@@ -378,6 +606,11 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     }
   ],
@@ -394,7 +627,27 @@
       "hasBlockquote": false,
       "hasMath": false
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"1\">1</a></sup></p><p class=\"markdown-paragraph\">Another sentence with a second reference.<sup class=\"footnote-ref\"><a href=\"#fn:2\" id=\"fnref:2\" data-label=\"second\">2</a></sup></p><section class=\"footnotes\"><hr><ol><li id=\"fn:1\">First footnote text. <a href=\"#fnref:1\" class=\"footnote-backref\" aria-label=\"Back to content\">↩</a></li><li id=\"fn:2\"> <a href=\"#fnref:2\" class=\"footnote-backref\" aria-label=\"Back to content\">↩</a></li></ol></section></div>",
+    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"1\" style=\"color: var(--foreground); text-decoration: underline;\">1</a></sup></p><p class=\"markdown-paragraph\">Another sentence with a second reference.<sup class=\"footnote-ref\"><a href=\"#fn:2\" id=\"fnref:2\" data-label=\"second\" style=\"color: var(--foreground); text-decoration: underline;\">2</a></sup></p><section class=\"footnotes\"><hr><ol><li id=\"fn:1\">First footnote text. <a href=\"#fnref:1\" class=\"footnote-backref\" aria-label=\"Back to content\" style=\"color: var(--foreground); text-decoration: underline;\">↩</a></li><li id=\"fn:2\"> <a href=\"#fnref:2\" class=\"footnote-backref\" aria-label=\"Back to content\" style=\"color: var(--foreground); text-decoration: underline;\">↩</a></li></ol></section></div>",
+    "runtimeState": {
+      "rendererVersion": 13,
+      "queueDepth": 0,
+      "pendingBatches": 0,
+      "workerReady": true,
+      "lastTx": 10,
+      "lastPatchToDomMs": 1.2999999970197678,
+      "lastDurationMs": 0.4000000059604645,
+      "meta": {
+        "fixtureId": "footnotes",
+        "scenarioId": "S3_fast_reasonable",
+        "seed": null,
+        "schedulerMode": null
+      },
+      "storeCounters": {
+        "appendLineGuardRejected": 0,
+        "staleEpochRejected": 0,
+        "storeInvariantViolationCount": 0
+      }
+    },
     "structure": {
       "topLevelTags": [
         "div"
@@ -414,9 +667,14 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "5ba3fb36dfd86b575279db8bee820401427367227925041e1ae2862197bdeaf3",
+        "hash": "961a171a93d07dcc67980eb05ca74c7bbed7d160eaf2b97d7ba37bb1c3ff4995",
         "textSample": "FootnotesA sentence with a footnote reference.1Another sentence with a second reference.2First footnote text. ↩ ↩"
       }
-    ]
+    ],
+    "inspection": {
+      "tables": [],
+      "mdxBlocks": [],
+      "codeBlocks": []
+    }
   }
 }

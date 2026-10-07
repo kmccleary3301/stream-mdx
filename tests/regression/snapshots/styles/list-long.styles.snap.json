@@ -191,7 +191,7 @@
       "computed": {
         "margin-top": "1.4px",
         "margin-bottom": "1.4px",
-        "padding-left": "17.5px",
+        "padding-left": "0px",
         "position": "relative",
         "line-height": "21px"
       },

@@ -182,12 +182,21 @@ async function runDemoSurface(page: Page, url: string, iterations: number): Prom
         await api.waitForIdle();
       }
 
+      const startedAt = Date.now();
+      let finalTextLength = 0;
+      while (true) {
+        finalTextLength = (document.querySelector(".markdown-v2-output")?.textContent ?? "").length;
+        if (finalTextLength >= 80) break;
+        await api.flushPending?.();
+        await api.waitForIdle?.();
+        if (Date.now() - startedAt > 7_000) break;
+        await new Promise((resolve) => setTimeout(resolve, 40));
+      }
       const state = api.getState();
-      const textLength = (document.querySelector(".markdown-v2-output")?.textContent ?? "").length;
       return {
         mode: "automation",
         state,
-        textLength,
+        textLength: finalTextLength,
       };
     }, { runIterations: iterations });
 

@@ -13,7 +13,14 @@
 @import url("@radix-ui/colors/black-alpha.css");
 @import url("@radix-ui/colors/white-alpha.css");
 @import url("./prose.css");
-@import url("./markdown.css");
+
+/*
+  Frontend V1 integration ownership note:
+  - globals.css owns app shell, route chrome, navigation, layout primitives, and
+    non-markdown control surfaces.
+  - rendered markdown output is owned by prose.css; do not add .markdown-v2-output
+    rules here.
+*/
 
 @tailwind base;
 @tailwind components;
@@ -134,350 +141,343 @@
     opacity: 0.85;
   }
 
-  .markdown-v2-output h1,
-  .markdown-v2-output h2,
-  .markdown-v2-output h3,
-  .markdown-v2-output h4,
-  .markdown-v2-output h5,
-  .markdown-v2-output h6 {
-    font-weight: 700;
-    color: var(--tw-prose-headings, var(--foreground));
-    letter-spacing: -0.01em;
+  .studio-page {
+    --studio-line: color-mix(in srgb, var(--border) 82%, transparent);
+    --studio-ink-soft: color-mix(in srgb, var(--foreground) 64%, transparent);
+    --studio-ink-faint: color-mix(in srgb, var(--foreground) 42%, transparent);
+    --studio-field: color-mix(in srgb, var(--background) 94%, var(--gray-a2) 6%);
+    --studio-field-strong: color-mix(in srgb, var(--background) 88%, var(--gray-a3) 12%);
   }
 
-  .markdown-v2-output h1 {
-    margin-top: 1.5em;
-    margin-bottom: 0.5em;
-    font-size: 2.5rem;
-    line-height: 1.1;
-  }
-
-  .markdown-v2-output h2 {
-    margin-top: 1.5em;
-    margin-bottom: 0.75em;
-    font-size: 1.75rem;
-    line-height: 1.2;
-  }
-
-  .markdown-v2-output h3 {
-    margin-top: 1.5em;
-    margin-bottom: 0.75em;
-    font-size: 1.25rem;
-    line-height: 1.4;
-  }
-
-  .markdown-v2-output h4 {
-    margin-top: 1.5em;
-    margin-bottom: 0.5em;
-    font-size: 1.125rem;
-    line-height: 1.45;
-  }
-
-  .markdown-v2-output h5 {
-    margin-top: 1.5em;
-    margin-bottom: 0.5em;
-    font-size: 1rem;
-    line-height: 1.5;
-  }
-
-  .markdown-v2-output h6 {
-    margin-top: 1.5em;
-    margin-bottom: 0.5em;
-    font-size: 1em;
-    line-height: 1.5;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
-
-  .markdown-v2-output .markdown-link {
-    padding: 0;
-    font: inherit;
-    color: var(--tw-prose-links, var(--foreground));
-    text-decoration: underline;
-    text-decoration-thickness: 1px;
-    text-underline-offset: 2px;
-    cursor: pointer;
-    background: transparent;
-    border: none;
-  }
-
-  .markdown-v2-output h1 + h2,
-  .markdown-v2-output h2 + h3,
-  .markdown-v2-output h3 + h4 {
-    margin-top: 0.75em;
-  }
-
-  .markdown-v2-output p + h1,
-  .markdown-v2-output p + h2,
-  .markdown-v2-output p + h3,
-  .markdown-v2-output p + h4,
-  .markdown-v2-output p + h5,
-  .markdown-v2-output p + h6 {
-    margin-top: 1.5em;
-  }
-
-  .markdown-v2-output .markdown-list {
-    --list-indent: 2rem;
-
-    display: flex;
-    flex-direction: column;
-    padding-left: var(--list-indent, 2rem);
-    margin: 1.25em 0;
-    list-style: none;
-    list-style-type: none;
-  }
-
-  .markdown-v2-output .markdown-list[data-list-depth="1"] {
-    --list-indent: 1.75rem;
-  }
-
-  .markdown-v2-output .markdown-list[data-list-depth="2"],
-  .markdown-v2-output .markdown-list[data-list-depth="3"] {
-    --list-indent: 1.5rem;
-  }
-
-  .markdown-v2-output .markdown-list .markdown-list {
-    margin-top: 0.25rem;
-    margin-left: 1rem;
-  }
-
-  .markdown-v2-output .markdown-list-item {
-    position: relative;
-    display: block;
-    padding-left: 0;
-    margin: 0.1rem 0;
-  }
-
-  .markdown-v2-output .markdown-list-item::before {
-    --tw-numeric-spacing: tabular-nums;
-
-    position: absolute;
-    top: 0;
-    right: 100%;
-    width: var(--list-indent, 2rem);
-    padding-right: 0.5rem;
-    font-variant-numeric: var(--tw-ordinal) var(--tw-slashed-zero) var(--tw-numeric-figure) var(--tw-numeric-spacing) var(--tw-numeric-fraction);
-    text-align: right;
-    content: attr(data-counter-text) " ";
-    opacity: 0.5;
-  }
-
-  .markdown-v2-output .markdown-list-item::marker {
-    content: none;
-  }
-
-  .markdown-v2-output .markdown-list.ordered > .markdown-list-item::before {
-    content: attr(data-counter-text) " ";
-  }
-
-  .markdown-v2-output .markdown-list.unordered > .markdown-list-item::before {
-    --tw-numeric-spacing: tabular-nums;
-
-    display: block;
-    width: var(--list-indent, 2rem);
-    padding-right: 0.5rem;
-    margin-top: -0.05rem;
-    font-size: 1.25rem;
-    text-align: right;
-    content: "\2022";
-    opacity: 0.7;
-  }
-
-  .markdown-v2-output .markdown-list-item.markdown-list-item-task::before {
-    content: none;
-  }
-
-  .markdown-v2-output .markdown-list-item > * {
-    width: 100%;
-    max-width: 100%;
-  }
-
-  .markdown-v2-output {
-    --shiki-light-bg: transparent;
-    --shiki-dark-bg: transparent;
-  }
-
-  .markdown-v2-output .markdown-mdx:has(> figure[data-with-codeblock="true"]) + pre,
-  .markdown-v2-output .markdown-mdx:has(> figure[data-with-codeblock="true"]) + figure {
-    margin-top: 0 !important;
-    border-top-width: 0 !important;
-    border-top-left-radius: 0 !important;
-    border-top-right-radius: 0 !important;
-  }
-
-  .markdown-v2-output figure[data-with-codeblock="true"] {
-    margin-bottom: 0;
-  }
-
-  .markdown-v2-output pre {
-    margin-top: 0.75rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .markdown-v2-output .markdown-code-block,
-  .markdown-v2-output pre.markdown-code-block {
-    position: relative;
-    margin: 0.75rem 0;
+  .studio-hero {
+    display: grid;
+    gap: 1px;
     overflow: hidden;
-    border: 1px solid var(--code-border);
-    border-radius: 0.75rem;
-    background: var(--code-bg);
-  }
-
-  .markdown-v2-output .markdown-code-block pre,
-  .markdown-v2-output pre.markdown-code-block {
-    margin: 0;
-    padding: 0.85rem 1rem;
-    font-size: 0.875rem;
-    line-height: 1.6;
-    background: transparent;
-    border: 0;
-  }
-
-  .markdown-v2-output .markdown-code-block code,
-  .markdown-v2-output pre.markdown-code-block code {
-    font-family: var(--code-font, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace);
-    font-size: inherit;
-    background: transparent;
-  }
-
-  .markdown-v2-output .markdown-code-block pre[data-language]:not([data-language=\"text\"]):not([data-language=\"plaintext\"]),
-  .markdown-v2-output pre.markdown-code-block[data-language]:not([data-language=\"text\"]):not([data-language=\"plaintext\"]) {
-    padding-top: 2.25rem;
-  }
-
-  .markdown-v2-output .markdown-code-block pre[data-language]:not([data-language=\"text\"]):not([data-language=\"plaintext\"])::before,
-  .markdown-v2-output pre.markdown-code-block[data-language]:not([data-language=\"text\"]):not([data-language=\"plaintext\"])::before {
-    position: absolute;
-    top: 0.6rem;
-    left: 0.9rem;
-    padding: 0.2rem 0.45rem;
-    font-size: 0.6rem;
-    font-weight: 600;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--code-label);
-    border: 1px solid var(--code-border);
-    border-radius: 999px;
-    background: var(--gray-a2);
-    content: attr(data-language);
-  }
-
-  .markdown-v2-output .docs-code-block {
-    margin: 0.9rem 0;
+    border: 1px solid var(--studio-line);
     border-radius: 0.85rem;
-    background: var(--code-bg);
+    background: var(--studio-line);
   }
 
-  .markdown-v2-output .docs-code-block__header {
+  @media (min-width: 960px) {
+    .studio-hero {
+      grid-template-columns: minmax(0, 1.1fr) minmax(22rem, 0.9fr);
+    }
+  }
+
+  .studio-hero__copy,
+  .studio-schematic {
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--yellow-a2) 72%, transparent), transparent 34%),
+      linear-gradient(180deg, var(--studio-field-strong), var(--studio-field));
+  }
+
+  .studio-hero__copy {
+    padding: clamp(1.25rem, 4vw, 3rem);
+  }
+
+  .studio-hero__copy h1 {
+    max-width: 13ch;
+    margin-top: 0.75rem;
+    font-size: clamp(2.5rem, 8vw, 6.5rem);
+    font-weight: 720;
+    line-height: 0.9;
+    letter-spacing: -0.07em;
+    color: var(--foreground);
+  }
+
+  .studio-hero__copy p {
+    max-width: 43rem;
+    margin-top: 1.1rem;
+    font-size: clamp(0.98rem, 1.8vw, 1.18rem);
+    line-height: 1.65;
+    color: var(--studio-ink-soft);
+  }
+
+  .studio-hero__actions {
     display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    margin-top: 1.5rem;
+  }
+
+  .studio-action {
+    display: inline-flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    padding: 0.35rem 0.65rem;
-    border-bottom: 1px solid var(--code-border);
-    background: var(--gray-a2);
+    min-height: 2.45rem;
+    padding: 0 0.95rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
     color: var(--foreground);
-  }
-
-  .markdown-v2-output .docs-code-block__lang {
-    font-size: 0.65rem;
-    font-weight: 600;
-    letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: color-mix(in srgb, var(--foreground) 70%, transparent);
+    border: 1px solid var(--studio-line);
+    border-radius: 0.45rem;
+    background: color-mix(in srgb, var(--background) 88%, transparent);
+    transition:
+      background-color 160ms ease,
+      border-color 160ms ease,
+      transform 160ms ease;
   }
 
-  .markdown-v2-output .docs-code-block__copy {
-    height: 1.7rem;
-    width: 1.7rem;
-    border-radius: 0.55rem;
+  .studio-action:hover {
+    border-color: color-mix(in srgb, var(--foreground) 28%, var(--border));
+    transform: translateY(-1px);
   }
 
-  .markdown-v2-output .docs-code-block__body {
-    overflow-x: auto;
+  .studio-action--primary {
+    color: color-mix(in srgb, var(--background) 90%, black 10%);
+    border-color: color-mix(in srgb, var(--yellow-9) 70%, var(--border));
+    background: color-mix(in srgb, var(--yellow-9) 72%, white 28%);
   }
 
-  .markdown-v2-output .docs-code-block__body pre {
-    min-width: 100%;
+  .studio-schematic {
+    display: grid;
+    align-content: stretch;
+    min-height: 100%;
   }
 
-  .markdown-v2-output .docs-code-block__body pre code {
-    display: block;
-    min-width: max-content;
+  .studio-schematic__row {
+    display: grid;
+    grid-template-columns: 3.2rem minmax(5.5rem, 0.58fr) minmax(0, 1fr);
+    gap: 0.85rem;
+    align-items: center;
+    min-height: 4.6rem;
+    padding: 1rem clamp(1rem, 2vw, 1.4rem);
+    border-bottom: 1px solid var(--studio-line);
   }
 
-  .markdown-v2-output .docs-code-block pre[data-language]::before {
-    content: none;
-  }
-
-  .markdown-v2-output .docs-code-block pre[data-language]:not([data-language=\"text\"]):not([data-language=\"plaintext\"]) {
-    padding-top: 0.85rem;
-  }
-
-  .code-panel-block {
-    --code-bg: transparent;
-    --code-border: transparent;
-  }
-
-  .code-panel-block .markdown-code-block,
-  .code-panel-block pre.markdown-code-block {
-    border: 0;
-    background: transparent;
-  }
-
-  .code-panel-block .markdown-code-block pre,
-  .code-panel-block pre.markdown-code-block {
-    padding: 0.25rem 0;
-  }
-
-  .code-panel-block .markdown-code-block pre[data-language]::before,
-  .code-panel-block pre.markdown-code-block[data-language]::before {
-    content: none;
-  }
-
-  .code-panel-block .markdown-code-block pre[data-language],
-  .code-panel-block pre.markdown-code-block[data-language] {
-    padding-top: 0.25rem;
-  }
-
-  .code-panel-block .docs-code-block {
-    margin: 0;
-    border: 0;
-    background: transparent;
-  }
-
-  .code-panel-block .docs-code-block__header {
-    padding: 0.1rem 0.1rem 0.45rem;
+  .studio-schematic__row:last-child {
     border-bottom: 0;
-    background: transparent;
   }
 
-  .code-panel-block .docs-code-block__body {
-    border: 1px solid var(--code-border);
-    border-radius: 0.75rem;
-    background: var(--code-bg);
+  .studio-schematic__index,
+  .studio-schematic__label,
+  .studio-proof-cell__label {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
   }
 
-  .code-panel-block .docs-code-block__body pre,
-  .code-panel-block .docs-code-block__body pre code {
+  .studio-schematic__index {
+    color: var(--studio-ink-faint);
+  }
+
+  .studio-schematic__label {
     color: var(--foreground);
   }
 
-  .markdown-v2-output .markdown-hr {
-    margin: 2rem 0;
-    clear: both;
-    border: 0;
-    border-top: 1px solid var(--border);
+  .studio-schematic__detail {
+    font-size: 0.85rem;
+    line-height: 1.45;
+    color: var(--studio-ink-soft);
   }
 
-  .markdown-v2-output .markdown-list-virtualization-sentinel {
-    height: 1px;
-    padding: 0;
-    margin: 0;
-    list-style: none;
-    visibility: hidden;
+  .studio-proof-grid {
+    display: grid;
+    gap: 1px;
+    overflow: hidden;
+    border: 1px solid var(--studio-line);
+    border-radius: 0.75rem;
+    background: var(--studio-line);
   }
+
+  @media (min-width: 760px) {
+    .studio-proof-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  .studio-proof-cell {
+    min-height: 10rem;
+    padding: 1rem;
+    background: var(--studio-field);
+  }
+
+  .studio-proof-cell__label {
+    color: var(--studio-ink-faint);
+  }
+
+  .studio-proof-cell__value {
+    margin-top: 1.4rem;
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--foreground);
+  }
+
+  .studio-proof-cell p {
+    margin-top: 0.55rem;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: var(--studio-ink-soft);
+  }
+
+  .studio-instrument,
+  .studio-renderer-shell {
+    overflow: hidden;
+    border: 1px solid var(--studio-line);
+    border-radius: 0.85rem;
+    background: var(--studio-field);
+  }
+
+  .studio-instrument__header,
+  .studio-renderer-shell__header {
+    display: grid;
+    gap: 0.75rem;
+    padding: 1rem;
+    border-bottom: 1px solid var(--studio-line);
+    background: var(--studio-field-strong);
+  }
+
+  @media (min-width: 820px) {
+    .studio-instrument__header,
+    .studio-renderer-shell__header {
+      grid-template-columns: minmax(16rem, 0.62fr) minmax(0, 1fr);
+      align-items: end;
+      padding: 1.25rem;
+    }
+  }
+
+  .studio-instrument__header h2,
+  .studio-renderer-shell__header h2 {
+    margin-top: 0.25rem;
+    font-size: clamp(1.35rem, 3vw, 2.15rem);
+    font-weight: 680;
+    line-height: 1;
+    letter-spacing: -0.045em;
+    color: var(--foreground);
+  }
+
+  .studio-instrument__header p,
+  .studio-renderer-shell__header p {
+    max-width: 54rem;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: var(--studio-ink-soft);
+  }
+
+  .studio-sample-grid {
+    display: grid;
+    gap: 1px;
+    background: var(--studio-line);
+  }
+
+  @media (min-width: 760px) {
+    .studio-sample-grid {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+  }
+
+  .studio-sample-button {
+    display: flex;
+    min-height: 12.5rem;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1rem;
+    text-align: left;
+    color: var(--studio-ink-soft);
+    background: var(--studio-field);
+    border: 0;
+    transition:
+      background-color 160ms ease,
+      color 160ms ease,
+      box-shadow 160ms ease;
+  }
+
+  .studio-sample-button:hover,
+  .studio-sample-button:focus-visible,
+  .studio-sample-button.is-active {
+    color: var(--foreground);
+    background: color-mix(in srgb, var(--yellow-a3) 18%, var(--studio-field-strong));
+    outline: none;
+  }
+
+  .studio-sample-button:focus-visible {
+    box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--yellow-9) 58%, var(--foreground));
+  }
+
+  .studio-sample-button__label {
+    font-size: 0.98rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .studio-sample-button__summary {
+    margin-top: 0.7rem;
+    font-size: 0.79rem;
+    line-height: 1.5;
+    color: var(--studio-ink-soft);
+  }
+
+  .studio-sample-button__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: auto;
+    padding-top: 1rem;
+  }
+
+  .studio-sample-button__tags span {
+    padding: 0.28rem 0.45rem;
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace);
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: 1px solid var(--studio-line);
+    border-radius: 0.32rem;
+  }
+
+  .studio-renderer-shell > :last-child {
+    padding: 0.75rem;
+  }
+
+  .studio-live-renderer {
+    --studio-control-field: color-mix(in srgb, var(--background) 91%, var(--gray-a3) 9%);
+    --studio-control-field-strong: color-mix(in srgb, var(--background) 84%, var(--gray-a4) 16%);
+    --studio-control-line: color-mix(in srgb, var(--border) 86%, transparent);
+    --studio-control-ink: color-mix(in srgb, var(--foreground) 72%, transparent);
+  }
+
+  .studio-live-renderer > .grid {
+    gap: 1px;
+    overflow: hidden;
+    border: 1px solid var(--studio-control-line);
+    border-radius: 0.78rem;
+    background: var(--studio-control-line);
+  }
+
+  .studio-live-renderer > .grid > div,
+  .studio-live-renderer > .grid > aside {
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: var(--studio-control-field);
+  }
+
+  .studio-live-renderer :where(.studio-live-stat, .studio-live-panel, .studio-live-output-frame, .studio-live-subpanel) {
+    border-color: var(--studio-control-line);
+    border-radius: 0.42rem;
+    background: var(--studio-control-field);
+    box-shadow: none;
+  }
+
+  .studio-live-renderer :where(.studio-live-stat, .studio-live-subpanel) {
+    background: var(--studio-control-field-strong);
+  }
+
+  .studio-live-renderer .studio-live-output-frame {
+    background: var(--background);
+  }
+
+  .studio-live-renderer :where(.studio-live-panel summary, .studio-live-panel button, .studio-live-status) {
+    border-radius: 0.3rem;
+  }
+
+  .studio-live-renderer .studio-live-status {
+    border: 1px solid var(--studio-control-line);
+  }
+
 
   .stream-mdx-caret > *:last-child::after {
     display: inline-block;
@@ -743,20 +743,6 @@
       content: counter(list);
     }
 
-    .markdown .footnote-ref a,
-    .markdown .footnotes a,
-    .markdown .footnotes .footnote-backref {
-      color: var(--foreground) !important;
-      text-decoration: underline;
-      text-underline-offset: 2px;
-      text-decoration-thickness: 1px;
-    }
-
-    .markdown .footnote-ref a:visited,
-    .markdown .footnotes a:visited,
-    .markdown .footnotes .footnote-backref:visited {
-      color: var(--foreground) !important;
-    }
 
     .footnotes ol li p a {
       z-index: 2;
@@ -792,17 +778,6 @@
     }
   }
 
-  .markdown-v2-output .shiki,
-  .markdown-v2-output .shiki span {
-    background-color: transparent !important;
-  }
-
-  .markdown-v2-output pre,
-  .markdown-v2-output pre code,
-  .markdown-v2-output pre [data-line],
-  .markdown-v2-output pre span {
-    background: transparent !important;
-  }
 
   /* 
   * Here we are setting up the styles needed to enable line numbers in code blocks.

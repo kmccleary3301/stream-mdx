@@ -48,7 +48,7 @@ export function SnapshotArticle({ blocks }: { blocks: Block[] }) {
   return (
     <div
       id="article-content-wrapper"
-      className="prose markdown flex w-full max-w-3xl flex-col space-y-3 text-theme-primary"
+      className="prose flex w-full max-w-3xl flex-col space-y-3 text-theme-primary"
     >
       <MarkdownBlocksRenderer blocks={blocks} componentRegistry={registry} className="markdown-v2-output" />
     </div>

@@ -13,7 +13,7 @@ export function StreamingCodeBlock({
   className?: string;
 }) {
   return (
-    <div className={cn("max-w-none text-sm text-foreground", className)}>
+    <div className={cn("prose-stream max-w-none text-sm text-foreground", className)}>
       <div className="markdown-v2-output">
         <DocsCodeBlock
           html=""

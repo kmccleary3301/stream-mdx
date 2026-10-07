@@ -1637,7 +1637,8 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
             touched.add(parent.id);
             mutatedBlocks = true;
             advanceBlockEpoch(patch.at.blockId, touched, readPatchParseEpoch(patch), readPatchTx(patch));
-            if (isListRelated(parent.type)) {
+            if (isListRelated(parent.type) || isListRelated(patch.node.type)) {
+              markListDepthDirty(patch.node.id);
               markListDepthDirty(parent.id);
             }
             if (debugListPatches && isListRelated(parent.type)) {
