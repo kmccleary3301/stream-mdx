@@ -1,5 +1,7 @@
 import { getDefaultCodeWrapperAttributes, stripCodeFence, type Block, type InlineNode, type MixedContentSegment, type TokenLineV1 } from "@stream-mdx/core";
 import React from "react";
+import { DefaultDiffRenderer } from "../components/diff-renderer";
+import type { CodeFenceRendererProps } from "../types";
 import { renderInlineNodes, renderParagraphMixedSegments } from "../components";
 import type { ComponentRegistry } from "../components";
 import { DEFAULT_INLINE_HTML_RENDERERS, renderInlineHtmlSegment } from "../utils/inline-html";
@@ -1057,31 +1059,52 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
     </pre>
   );
 
-  const blockComponentMap = registry.getBlockComponentMap() as Record<string, unknown>;
-  const MermaidComponent = Object.prototype.hasOwnProperty.call(blockComponentMap, "mermaid") ? (blockComponentMap as any).mermaid : null;
-  if ((lang ?? "").toLowerCase() === "mermaid" && MermaidComponent) {
-    const raw = typeof node.block.payload.raw === "string" ? node.block.payload.raw : "";
-    const fenced = stripCodeFence(raw);
-    const code = fenced.hadFence ? fenced.code : raw;
-    if (deferredConfig) {
+  const normalizedLang = (lang ?? "").trim().toLowerCase();
+  const codeRenderer = registry.getCodeRenderer(normalizedLang);
+  const raw = typeof node.block.payload.raw === "string" ? node.block.payload.raw : "";
+  const metaCode = typeof blockMeta?.code === "string" ? (blockMeta.code as string) : null;
+  const sourceText = resolveCodeSourceText(raw, metaCode);
+  const infoText = typeof blockMeta?.info === "string" ? (blockMeta.info as string) : (lang ?? "");
+
+  if (codeRenderer) {
+    const CustomComponent = typeof codeRenderer === "function" ? codeRenderer : codeRenderer.component;
+    const shouldOptInDefer = Boolean(
+      (typeof codeRenderer === "object" && codeRenderer !== null && codeRenderer.defer) ||
+        (CustomComponent && typeof CustomComponent === "function" && "defer" in CustomComponent && Boolean(CustomComponent.defer)),
+    );
+    const rendererProps: CodeFenceRendererProps = {
+      code: sourceText,
+      language: lang ?? "",
+      meta: node.block.payload.meta,
+      info: infoText,
+      isFinalized: node.block.isFinalized,
+      blockId,
+      renderCode: codeView,
+    };
+
+    if (shouldOptInDefer && deferredConfig) {
       return (
         <div ref={deferredRef}>
           {shouldRenderDeferred
-            ? React.createElement(MermaidComponent as React.ComponentType<any>, {
-                code,
-                renderCode: codeView,
-                meta: node.block.payload.meta,
-                isFinalized: node.block.isFinalized,
-              })
+            ? React.createElement(CustomComponent, rendererProps)
             : codeView}
         </div>
       );
     }
-    return React.createElement(MermaidComponent as React.ComponentType<any>, {
-      code,
-      renderCode: codeView,
+
+    return React.createElement(CustomComponent, rendererProps);
+  }
+
+  // Structured diff fallback when meta.diffBlocks is present
+  if (Array.isArray(blockMeta?.diffBlocks) && blockMeta.diffBlocks.length > 0) {
+    return React.createElement(DefaultDiffRenderer, {
+      code: sourceText,
+      language: lang ?? "",
       meta: node.block.payload.meta,
+      info: infoText,
       isFinalized: node.block.isFinalized,
+      blockId,
+      renderCode: codeView,
     });
   }
 
