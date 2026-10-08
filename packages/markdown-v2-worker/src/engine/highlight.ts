@@ -381,11 +381,9 @@ export function toThemedLine(tokenLine: TokenLineV1 | null, theme: keyof typeof 
   if (!tokenLine) return null;
   return tokenLine.spans.map((span) => {
     const style = span.s ?? span.v?.[theme];
-    const token: ThemedToken = {
-      content: span.t,
-      color: style?.color,
-      fontStyle: style?.fontStyle,
-    };
+    const token: ThemedToken = { content: span.t };
+    if (style?.color !== undefined) token.color = style.color;
+    if (style?.fontStyle !== undefined) token.fontStyle = style.fontStyle;
     return token;
   });
 }
@@ -489,10 +487,17 @@ export function toTokenSpan(token: ShikiThemedToken): TokenSpan {
   const light = toTokenStyle(token.variants.light);
   const span: TokenSpan = { t: token.content };
   if (dark || light) {
-    span.v = {
-      dark: dark ? { color: dark.fg, fontStyle: dark.fs } : undefined,
-      light: light ? { color: light.fg, fontStyle: light.fs } : undefined,
-    };
+    span.v = {};
+    if (dark) {
+      span.v.dark = {};
+      if (dark.fg !== undefined) span.v.dark.color = dark.fg;
+      if (dark.fs !== undefined) span.v.dark.fontStyle = dark.fs;
+    }
+    if (light) {
+      span.v.light = {};
+      if (light.fg !== undefined) span.v.light.color = light.fg;
+      if (light.fs !== undefined) span.v.light.fontStyle = light.fs;
+    }
   }
   return span;
 }
