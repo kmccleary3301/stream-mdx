@@ -2,14 +2,13 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { JSDOM } from "jsdom";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { micromark } from "micromark";
 import { gfm, gfmHtml } from "micromark-extension-gfm";
 
-import type { DocumentSnapshot } from "@stream-mdx/core";
-import { applyPatchBatch, createInitialSnapshot } from "@stream-mdx/core";
-import { ComponentRegistry, MarkdownBlocksRenderer } from "@stream-mdx/react/server";
+import { ComponentRegistry, MarkdownBlocksRenderer, createRendererStore, type RendererStore } from "@stream-mdx/react/server";
 import { compileMarkdownSnapshotDirect } from "@stream-mdx/worker/direct";
 import { createWorkerThread } from "@stream-mdx/worker/node";
 
@@ -33,6 +32,7 @@ type ConformanceExample = {
 type SectionStats = {
   total: number;
   streamMdxStatic: number;
+  streamMdxSsr: number;
   streamMdxStreaming: number;
   micromark: number;
   streamdown: number;
@@ -47,8 +47,10 @@ type ExampleResult = {
   specHtml: string;
   oracleNormalized: string;
   streamMdxStaticNormalized: string;
+  streamMdxSsrNormalized: string;
   streamdownNormalized: string;
   streamMdxStaticPass: boolean;
+  streamMdxSsrPass: boolean;
   streamMdxStreamingPass: boolean;
   micromarkPass: boolean;
   streamdownPass: boolean;
@@ -62,6 +64,7 @@ type BaselineFile = {
   counts: {
     total: number;
     streamMdxStatic: number;
+    streamMdxSsr: number;
     streamMdxStreaming: number;
     micromark: number;
     streamdown: number;
@@ -147,6 +150,17 @@ async function main(): Promise<void> {
   const { Streamdown } = (await import("streamdown")) as {
     Streamdown: React.ComponentType<{ mode: string; children?: React.ReactNode }>;
   };
+  // The client path runs in a browser: DOMPurify sanitization and HTML-to-React mapping need DOM globals.
+  // Installed after the Streamdown import so its react-dom client entry is not selected at load.
+  const { window: domWindow } = new JSDOM("");
+  Object.assign(globalThis, {
+    window: domWindow,
+    document: domWindow.document,
+    DOMParser: domWindow.DOMParser,
+    Node: domWindow.Node,
+    Element: domWindow.Element,
+    HTMLElement: domWindow.HTMLElement,
+  });
   const examples = await loadExamples();
   const initConfig = {
     docPlugins: { html: true, tables: true, footnotes: true, math: true, callouts: true, mdx: false },
@@ -154,22 +168,29 @@ async function main(): Promise<void> {
     prewarmLangs: [],
   };
 
+  /** Production client path: StreamingMarkdown renders node views from a patch-driven RendererStore. */
+  function renderStore(store: RendererStore): string {
+    return normalizeHtmlSemantics(
+      renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: [], store, componentRegistry: new ComponentRegistry() })),
+    );
+  }
+
   const streamingWorker = createWorkerThread();
-  let workerSnapshot: DocumentSnapshot | null = null;
+  let streamingStore: RendererStore | null = null;
   let workerFinalizedResolver: (() => void) | null = null;
 
   streamingWorker.on("message", (msg) => {
     if (msg.type === "INITIALIZED") {
-      workerSnapshot = createInitialSnapshot(msg.blocks);
-    } else if (msg.type === "PATCH" && workerSnapshot) {
-      workerSnapshot.blocks = applyPatchBatch(workerSnapshot, msg.patches);
+      streamingStore = createRendererStore(msg.blocks);
+    } else if (msg.type === "PATCH" && streamingStore) {
+      streamingStore.applyPatches(msg.patches);
     } else if (msg.type === "FINALIZED") {
       if (workerFinalizedResolver) workerFinalizedResolver();
     }
   });
 
   async function runStreaming(text: string, chunkSize: number) {
-    workerSnapshot = null;
+    streamingStore = null;
     const finalizedPromise = new Promise<void>((r) => {
       workerFinalizedResolver = r;
     });
@@ -180,15 +201,7 @@ async function main(): Promise<void> {
     streamingWorker.postMessage({ type: "FINALIZE" });
     await finalizedPromise;
     workerFinalizedResolver = null;
-
-    const registry = new ComponentRegistry();
-    const markup = renderToStaticMarkup(
-      React.createElement(MarkdownBlocksRenderer, {
-        blocks: workerSnapshot ? workerSnapshot.blocks : [],
-        componentRegistry: registry,
-      }),
-    );
-    return normalizeHtmlSemantics(markup);
+    return streamingStore ? renderStore(streamingStore) : "";
   }
 
   const results: ExampleResult[] = [];
@@ -201,6 +214,7 @@ async function main(): Promise<void> {
       sectionStats[ex.section] = {
         total: 0,
         streamMdxStatic: 0,
+        streamMdxSsr: 0,
         streamMdxStreaming: 0,
         micromark: 0,
         streamdown: 0,
@@ -222,21 +236,22 @@ async function main(): Promise<void> {
     const micromarkPass = normalizeHtmlSemantics(oracleRaw) === specNormalized;
     if (micromarkPass) stats.micromark++;
 
-    // 2. StreamMDX Static
+    // 2. StreamMDX static compile, rendered through the client store path (what StreamingMarkdown shows)
+    //    and through the SSR blocks path (MarkdownBlocksRenderer without a store).
     const staticCompiled = await compileMarkdownSnapshotDirect({
       text: ex.markdown,
       init: initConfig,
     });
-    const staticRegistry = new ComponentRegistry();
-    const staticMarkup = renderToStaticMarkup(
-      React.createElement(MarkdownBlocksRenderer, {
-        blocks: staticCompiled.blocks,
-        componentRegistry: staticRegistry,
-      }),
-    );
-    const streamMdxStaticNormalized = normalizeHtmlSemantics(staticMarkup);
+    const streamMdxStaticNormalized = renderStore(createRendererStore(staticCompiled.blocks));
     const streamMdxStaticPass = streamMdxStaticNormalized === oracleNormalized;
     if (streamMdxStaticPass) stats.streamMdxStatic++;
+    const streamMdxSsrNormalized = normalizeHtmlSemantics(
+      renderToStaticMarkup(
+        React.createElement(MarkdownBlocksRenderer, { blocks: staticCompiled.blocks, componentRegistry: new ComponentRegistry() }),
+      ),
+    );
+    const streamMdxSsrPass = streamMdxSsrNormalized === oracleNormalized;
+    if (streamMdxSsrPass) stats.streamMdxSsr++;
 
     // 3. StreamMDX Streaming (chunks: 1, 7, 64)
     let streamingMatchesStatic = true;
@@ -278,8 +293,10 @@ async function main(): Promise<void> {
       specHtml: ex.expectedHtml,
       oracleNormalized,
       streamMdxStaticNormalized,
+      streamMdxSsrNormalized,
       streamdownNormalized,
       streamMdxStaticPass,
+      streamMdxSsrPass,
       streamMdxStreamingPass,
       micromarkPass,
       streamdownPass,
@@ -292,58 +309,46 @@ async function main(): Promise<void> {
   restoreConsole();
 
   // Print summary table
-  const colSecWidth = 34;
-  const colNumWidth = 8;
-  const pad = (str: string, len: number) => str.padEnd(len);
-  const padNum = (num: number, len: number) => String(num).padStart(len);
+  const columns: Array<{ label: string; key: Exclude<keyof SectionStats, "streamingDivergences"> }> = [
+    { label: "Total", key: "total" },
+    { label: "StreamMDX", key: "streamMdxStatic" },
+    { label: "Streaming", key: "streamMdxStreaming" },
+    { label: "SSR", key: "streamMdxSsr" },
+    { label: "micromark", key: "micromark" },
+    { label: "Streamdown", key: "streamdown" },
+  ];
+  const totals: SectionStats = {
+    total: 0,
+    streamMdxStatic: 0,
+    streamMdxSsr: 0,
+    streamMdxStreaming: 0,
+    micromark: 0,
+    streamdown: 0,
+    streamingDivergences: 0,
+  };
+  const row = (name: string, s: SectionStats) =>
+    [name.length > 34 ? `${name.slice(0, 33)}…` : name.padEnd(34), ...columns.map((c) => String(s[c.key]).padStart(10))].join(" | ");
+  const rule = "=".repeat(34 + columns.length * 13);
 
   console.log("\nCommonMark & GFM Extension Conformance Report");
-  console.log("=".repeat(88));
-  console.log(
-    `${pad("Section", colSecWidth)} | ${padNum("Total", colNumWidth)} | ${padNum("StreamMDX", colNumWidth)} | ${padNum("Streaming", colNumWidth)} | ${padNum("micromark", colNumWidth)} | ${padNum("Streamdown", colNumWidth)}`,
-  );
-  console.log("-".repeat(88));
-
-  let totCount = 0;
-  let totStatic = 0;
-  let totStreaming = 0;
-  let totMicromark = 0;
-  let totStreamdown = 0;
-  let totDivergences = 0;
-
+  console.log("StreamMDX/Streaming: client store path (StreamingMarkdown). SSR: MarkdownBlocksRenderer without a store.");
+  console.log(rule);
+  console.log(["Section".padEnd(34), ...columns.map((c) => c.label.padStart(10))].join(" | "));
+  console.log("-".repeat(rule.length));
   for (const sec of sectionOrder) {
     const s = sectionStats[sec];
-    totCount += s.total;
-    totStatic += s.streamMdxStatic;
-    totStreaming += s.streamMdxStreaming;
-    totMicromark += s.micromark;
-    totStreamdown += s.streamdown;
-    totDivergences += s.streamingDivergences;
-
-    const secName = sec.length > colSecWidth ? `${sec.slice(0, colSecWidth - 1)}…` : sec;
-    console.log(
-      `${pad(secName, colSecWidth)} | ${padNum(s.total, colNumWidth)} | ${padNum(s.streamMdxStatic, colNumWidth)} | ${padNum(s.streamMdxStreaming, colNumWidth)} | ${padNum(s.micromark, colNumWidth)} | ${padNum(s.streamdown, colNumWidth)}`,
-    );
+    for (const key of Object.keys(totals) as Array<keyof SectionStats>) totals[key] += s[key];
+    console.log(row(sec, s));
   }
-
-  console.log("=".repeat(88));
-  console.log(
-    `${pad("TOTAL", colSecWidth)} | ${padNum(totCount, colNumWidth)} | ${padNum(totStatic, colNumWidth)} | ${padNum(totStreaming, colNumWidth)} | ${padNum(totMicromark, colNumWidth)} | ${padNum(totStreamdown, colNumWidth)}`,
-  );
-  console.log(`Streaming divergences from static: ${totDivergences}`);
+  console.log(rule);
+  console.log(row("TOTAL", totals));
+  console.log(`Streaming divergences from static: ${totals.streamingDivergences}`);
 
   // Write full JSON report to tmp/conformance/report.json
   await fs.mkdir(path.dirname(REPORT_PATH), { recursive: true });
   const reportPayload = {
     generatedAt: new Date().toISOString(),
-    totals: {
-      total: totCount,
-      streamMdxStatic: totStatic,
-      streamMdxStreaming: totStreaming,
-      micromark: totMicromark,
-      streamdown: totStreamdown,
-      streamingDivergences: totDivergences,
-    },
+    totals,
     sectionStats,
     results,
   };
@@ -351,18 +356,20 @@ async function main(): Promise<void> {
   console.log(`Wrote full report to ${REPORT_PATH}`);
 
   // Handle baseline update or check
-  const passingIds = results.filter((r) => r.streamMdxStaticPass && r.streamMdxStreamingPass).map((r) => r.id);
+  // A ratchet ID passes on every StreamMDX path: client static, client streaming, and SSR.
+  const passingIds = results.filter((r) => r.streamMdxStreamingPass && r.streamMdxSsrPass).map((r) => r.id);
 
   if (updateBaseline) {
     const baselinePayload: BaselineFile = {
       version: 1,
       updatedAt: new Date().toISOString(),
       counts: {
-        total: totCount,
-        streamMdxStatic: totStatic,
-        streamMdxStreaming: totStreaming,
-        micromark: totMicromark,
-        streamdown: totStreamdown,
+        total: totals.total,
+        streamMdxStatic: totals.streamMdxStatic,
+        streamMdxSsr: totals.streamMdxSsr,
+        streamMdxStreaming: totals.streamMdxStreaming,
+        micromark: totals.micromark,
+        streamdown: totals.streamdown,
       },
       passingIds,
     };
