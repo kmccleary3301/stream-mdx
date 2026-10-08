@@ -15,7 +15,7 @@ import { DeferredRenderContext, type DeferredRenderConfig } from "./renderer/def
 import { useRendererBlocks } from "./renderer/hooks";
 import type { RendererStore } from "./renderer/store";
 import { createDefaultWorker, releaseDefaultWorker } from "@stream-mdx/worker";
-import type { BlockComponents, CodeFenceRenderer, HtmlElements, InlineComponents, MathRenderer, RendererConfig, TableElements } from "./types";
+import type { BlockComponents, BlockRendererOverride, CodeFenceRenderer, HtmlElements, InlineComponents, MathRenderer, RendererConfig, TableElements } from "./types";
 
 const EMPTY_BLOCKS: ReadonlyArray<Block> = [];
 
@@ -149,6 +149,7 @@ export interface StreamingMarkdownProps {
   mathRenderer?: MathRenderer;
   artifactHtml?: boolean;
   deferHeavyBlocks?: boolean | DeferredRenderConfig;
+  blockRenderer?: BlockRendererOverride;
 }
 
 const MdxCoordinatorBridge: React.FC<{ store: RendererStore; mode: "server" | "worker" }> = ({ store, mode }) => {
@@ -301,6 +302,7 @@ function StreamingMarkdownComponent(
     mathRenderer,
     artifactHtml,
     deferHeavyBlocks,
+    blockRenderer,
   }: StreamingMarkdownProps,
   ref: React.ForwardedRef<StreamingMarkdownHandle>,
 ) {
@@ -615,7 +617,10 @@ function StreamingMarkdownComponent(
     if (artifactHtml !== undefined) {
       renderer.getComponentRegistry().setArtifactHtml(artifactHtml);
     }
-  }, [renderer, components, mdxComponents, inlineComponents, resolvedInlineComponents, tableElements, htmlElements, codeRenderers, mathRenderer, artifactHtml]);
+    if (blockRenderer) {
+      renderer.getComponentRegistry().setBlockRenderer(blockRenderer);
+    }
+  }, [renderer, components, mdxComponents, inlineComponents, resolvedInlineComponents, tableElements, htmlElements, codeRenderers, mathRenderer, artifactHtml, blockRenderer]);
 
   useEffect(() => {
     const removeListener = renderer.addFlushListener((result) => {
@@ -924,6 +929,14 @@ function StreamingMarkdownComponent(
         onCopy: handleLinkCopy,
       })
     : null;
+  const documentContext = useMemo(() => {
+    if (typeof text !== "string") return undefined;
+    return {
+      documentText: text,
+    };
+  }, [text]);
+  renderer.getComponentRegistry().setDocumentContext(documentContext);
+
 
   return (
     <MdxHydrationContext.Provider value={mdxHydrationContextValue}>
@@ -935,6 +948,8 @@ function StreamingMarkdownComponent(
             blocks={EMPTY_BLOCKS}
             componentRegistry={renderer.getComponentRegistry()}
             codeRenderers={codeRenderers}
+            blockRenderer={blockRenderer}
+            documentContext={documentContext}
             className={resolvedClassName}
             style={resolvedStyle}
             store={store}
