@@ -1,3 +1,4 @@
+/// <reference lib="es2024.promise" />
 "use client";
 
 import type { RendererMetrics, StreamingMarkdownProps, StreamingSchedulerOptions } from "@stream-mdx/react";
