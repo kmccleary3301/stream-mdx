@@ -13,6 +13,7 @@ export default defineConfig({
     resolve("src/streaming/custom-matcher.ts"),
     resolve("src/node/index.ts"),
     resolve("src/node/worker-thread-entry.ts"),
+    resolve("src/engine/index.ts"),
   ],
   dts: true,
   splitting: false,

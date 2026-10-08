@@ -1,6 +1,6 @@
 import type { Block, InlineNode } from "@stream-mdx/core";
 import { generateBlockId } from "@stream-mdx/core";
-import { type DocumentPlugin, globalDocumentPluginRegistry } from "../document";
+import { type DocumentPlugin, DocumentPluginRegistry, globalDocumentPluginRegistry } from "../document";
 
 /**
  * Footnotes document plugin
@@ -254,6 +254,6 @@ function buildFootnoteItems(state: FootnoteState, blocks: Block[]) {
 }
 
 // Helper to register globally
-export function registerFootnotesPlugin() {
-  globalDocumentPluginRegistry.register(FootnotesPlugin);
+export function registerFootnotesPlugin(registry: DocumentPluginRegistry = globalDocumentPluginRegistry) {
+  registry.register(FootnotesPlugin);
 }
