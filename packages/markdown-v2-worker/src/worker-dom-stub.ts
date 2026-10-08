@@ -1,17 +1,16 @@
 import { decodeNamedCharacterReference } from "./entities/named-character-reference";
 
-declare global {
-  // eslint-disable-next-line no-var
-  var document:
-    | {
-        createElement: (tag: string) => { innerHTML: string; textContent: string };
-        compatMode?: "CSS1Compat" | "BackCompat";
-      }
-    | undefined;
-}
+type WorkerDocument = {
+  createElement: (tag: string) => { innerHTML: string; textContent: string };
+  compatMode?: "CSS1Compat" | "BackCompat";
+};
+
+type WorkerDOMStubScope = { document?: WorkerDocument };
 
 if (typeof document === "undefined") {
-  (globalThis as typeof globalThis & { document?: typeof document }).document = {
+  // Worker decoding needs only this DOM subset, not a browser Document.
+  const workerGlobal = globalThis as unknown as WorkerDOMStubScope;
+  workerGlobal.document = {
     compatMode: "CSS1Compat",
     createElement() {
       return {
@@ -19,10 +18,10 @@ if (typeof document === "undefined") {
         set innerHTML(value: string) {
           this._inner = value;
         },
-        get innerHTML() {
+        get innerHTML(): string {
           return this._inner;
         },
-        get textContent() {
+        get textContent(): string {
           const match = /^&([^;]+);$/.exec(this._inner);
           if (match) {
             const decoded = decodeNamedCharacterReference(match[1]);
@@ -32,7 +31,7 @@ if (typeof document === "undefined") {
           }
           return this._inner;
         },
-      } as { innerHTML: string; textContent: string; _inner?: string };
+      };
     },
   };
 }
