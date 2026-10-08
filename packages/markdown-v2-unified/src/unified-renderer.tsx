@@ -6,11 +6,86 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import remarkRehype from "remark-rehype";
 import { toJsxRuntime } from "hast-util-to-jsx-runtime";
-import type { Block, BlockResolvedLinkReference } from "@stream-mdx/core";
+import { defaultUrlTransform, isForbiddenAttribute, type Block, type BlockResolvedLinkReference, type UrlTransform } from "@stream-mdx/core";
 import type { FinalizedBlockRenderProps } from "@stream-mdx/react";
 import type { UnifiedRenderer, UnifiedRendererOptions } from "./types";
 
+function sanitizeHastUrls(node: unknown, transform: UrlTransform): void {
+  if (!node || typeof node !== "object") return;
+  const record = node as Record<string, unknown>;
+  if (record.type === "element" && record.properties && typeof record.properties === "object") {
+    const properties = record.properties as Record<string, unknown>;
+
+    for (const key of Object.keys(properties)) {
+      if (isForbiddenAttribute(key)) {
+        delete properties[key];
+      }
+    }
+
+    if (properties.href !== undefined && properties.href !== null) {
+      const safe = transform(String(properties.href), "href", { source: "markdown" });
+      if (safe != null) {
+        properties.href = safe;
+      } else {
+        delete properties.href;
+      }
+    }
+
+    if (properties.src !== undefined && properties.src !== null) {
+      const safe = transform(String(properties.src), "src", { source: "markdown" });
+      if (safe != null) {
+        properties.src = safe;
+      } else {
+        delete properties.src;
+      }
+    }
+
+    if (properties.action !== undefined && properties.action !== null) {
+      const safe = transform(String(properties.action), "href", { source: "html" });
+      if (safe != null) {
+        properties.action = safe;
+      } else {
+        delete properties.action;
+      }
+    }
+
+    if (properties.formAction !== undefined && properties.formAction !== null) {
+      const safe = transform(String(properties.formAction), "href", { source: "html" });
+      if (safe != null) {
+        properties.formAction = safe;
+      } else {
+        delete properties.formAction;
+      }
+    }
+
+    if (properties.xlinkHref !== undefined && properties.xlinkHref !== null) {
+      const safe = transform(String(properties.xlinkHref), "href", { source: "html" });
+      if (safe != null) {
+        properties.xlinkHref = safe;
+      } else {
+        delete properties.xlinkHref;
+      }
+    }
+
+    if (properties["xlink:href"] !== undefined && properties["xlink:href"] !== null) {
+      const safe = transform(String(properties["xlink:href"]), "href", { source: "html" });
+      if (safe != null) {
+        properties["xlink:href"] = safe;
+      } else {
+        delete properties["xlink:href"];
+      }
+    }
+  }
+
+  if (Array.isArray(record.children)) {
+    for (const child of record.children) {
+      sanitizeHastUrls(child, transform);
+    }
+  }
+}
+
 function buildProcessor(options: UnifiedRendererOptions) {
+  const transform = options.urlTransform ?? defaultUrlTransform;
   return unified()
     .use(remarkParse)
     .use(options.gfm === false ? [] : [remarkGfm])
@@ -18,6 +93,9 @@ function buildProcessor(options: UnifiedRendererOptions) {
     .use(options.remarkPlugins ?? [])
     .use(remarkRehype)
     .use(options.rehypePlugins ?? [])
+    .use(() => (tree) => {
+      sanitizeHastUrls(tree, transform);
+    })
     .freeze();
 }
 
