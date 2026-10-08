@@ -358,7 +358,8 @@ async function waitForStreamMdxCompletion(
         const tokenizedUntil = typeof meta.lazyTokenizedUntil === "number" ? meta.lazyTokenizedUntil : 0;
         return tokenizedUntil < expected;
       });
-      if (allFinalized && !pendingLazyCode && !hasMutations && state.rendererVersion === lastVersion) {
+      const pendingMath = Array.from(root.querySelectorAll(".math-inline[data-tex],.math-display[data-tex]")).some((element) => !element.querySelector(".katex"));
+      if (allFinalized && !pendingLazyCode && !pendingMath && !hasMutations && state.rendererVersion === lastVersion) {
         stableCount += 1;
       } else {
         stableCount = 0;
@@ -778,7 +779,15 @@ export function PerfHarness(): JSX.Element {
         const observeFirstContent = () => {
           const root = rootRef.current;
           if (!root || firstFlushAtRef.current !== null) return;
-          const hasContent = Array.from(root.querySelectorAll("h1,h2,h3,h4,h5,h6,p,li,pre,table,math,.katex")).some((element) => (element.textContent ?? "").trim().length > 0);
+          const textNodes = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+          let hasContent = false;
+          while (textNodes.nextNode()) {
+            const node = textNodes.currentNode;
+            if ((node.textContent ?? "").trim() && !node.parentElement?.closest("button,[data-control],script,style,[data-streamdown='code-block-header']")) {
+              hasContent = true;
+              break;
+            }
+          }
           if (hasContent) {
             firstFlushAtRef.current = performance.now();
             firstContentObserver?.disconnect();
