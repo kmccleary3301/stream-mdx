@@ -28,10 +28,22 @@ async function waitFor(predicate: () => boolean, message: string) {
   const deadline = Date.now() + 5000;
   while (!predicate()) {
     assert.ok(Date.now() < deadline, message);
-    const { promise, resolve } = Promise.withResolvers<void>();
-    setTimeout(resolve, 10);
-    await promise;
+    await new Promise<void>((resolve) => setTimeout(resolve, 10));
   }
+}
+
+/**
+ * File-local deferred (Node 20 has no `Promise.withResolvers`) with the same resolve/reject
+ * surface, so the iterator gates settle exactly as before.
+ */
+function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void; reject: (error: Error) => void } {
+  let resolve!: (value: T) => void;
+  let reject!: (error: Error) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
 }
 
 async function testPendingIteratorRestart(): Promise<void> {
@@ -39,8 +51,8 @@ async function testPendingIteratorRestart(): Promise<void> {
   document.body.append(container);
   const root = createRoot(container);
   const handle = React.createRef<StreamingMarkdownHandle>();
-  const gate = Promise.withResolvers<void>();
-  const finished = Promise.withResolvers<void>();
+  const gate = deferred<void>();
+  const finished = deferred<void>();
   const iterator = (async function* () {
     try {
       yield "# Before restart\n\n";
@@ -136,8 +148,8 @@ async function testOpenIteratorRemoval(imperativeActivity: boolean): Promise<voi
   const handle = React.createRef<StreamingMarkdownHandle>();
   const worker = createInlineEngineWorker();
   const workerFactory = () => worker;
-  const gate = Promise.withResolvers<void>();
-  const finished = Promise.withResolvers<void>();
+  const gate = deferred<void>();
+  const finished = deferred<void>();
   const iterator = (async function* () {
     try {
       yield `${markdown}\n\n---\n\n`;

@@ -48,13 +48,26 @@ for (const [key, value] of Object.entries(globals)) Object.defineProperty(global
 const features = { tables: true, html: true, mdx: false, math: false };
 const source = (count: number, name: string) => [`# ${name}`, "", "| ID | Metric | Status | Description | Latency | Memory |", "| --- | --- | --- | --- | --- | --- |",
   ...Array.from({ length: count }, (_, index) => `| PK-${String(index).padStart(4, "0")} | metric.${index} | Normal | Partition ${index}${index % 5 === 0 ? "<br>Second observation<br>Third observation" : ""} | 1ms | 48MB |`)].join("\n");
+
+/**
+ * File-local deferred (Node 20 has no `Promise.withResolvers`) with the same resolve/reject
+ * surface, so the posted worker message settles the barrier exactly as before.
+ */
+function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void; reject: (error: Error) => void } {
+  let resolve!: (value: T) => void;
+  let reject!: (error: Error) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+}
+
 async function waitFor(predicate: () => boolean, message: string) {
   const deadline = Date.now() + 20000;
   while (!predicate()) {
     assert.ok(Date.now() < deadline, message);
-    const { promise, resolve } = Promise.withResolvers<void>();
-    setTimeout(resolve, 10);
-    await promise;
+    await new Promise<void>((resolve) => setTimeout(resolve, 10));
   }
 }
 
@@ -152,7 +165,7 @@ try {
     await waitFor(() => hosted.input.slice(beforeUnmount).some((message) => message.type === "INIT" && message.initialContent === pendingSource),
       "unmount occurs with a real hosted static INIT pending");
     root.unmount();
-    const barrier = Promise.withResolvers<void>();
+    const barrier = deferred<void>();
     const barrierListener = (event: Event) => {
       if ((event as MessageEvent<WorkerOut>).data.type === "DEBUG_STATE") barrier.resolve();
     };

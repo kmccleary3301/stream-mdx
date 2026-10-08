@@ -137,11 +137,25 @@ async function testOwnedHtmlParser() {
   });
 }
 
+/**
+ * File-local deferred (Node 20 has no `Promise.withResolvers`) with the same resolve/reject
+ * surface, so the stream gate settles exactly as before.
+ */
+function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void; reject: (error: Error) => void } {
+  let resolve!: (value: T) => void;
+  let reject!: (error: Error) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+}
+
 async function testPartialCloser(open: string, close: string, pattern: string) {
   const { dom, container } = setupDom();
   const root = createRoot(container);
   const handle = React.createRef<StreamingMarkdownHandle>();
-  const nextChunk = Promise.withResolvers<void>();
+  const nextChunk = deferred<void>();
   async function* stream() {
     yield `prefix ${open}value${close.slice(0, -1)}`;
     await nextChunk.promise;

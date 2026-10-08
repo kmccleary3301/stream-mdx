@@ -20,10 +20,24 @@ function render(blocks: Block[], registry = new ComponentRegistry(), store?: Ren
   return renderToStaticMarkup(<MarkdownBlocksRenderer blocks={blocks} componentRegistry={registry} store={store} />);
 }
 
+/**
+ * File-local deferred (Node 20 has no `Promise.withResolvers`) with the same resolve/reject
+ * surface, so the worker messages settle this compile promise exactly as before.
+ */
+function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void; reject: (error: Error) => void } {
+  let resolve!: (value: T) => void;
+  let reject!: (error: Error) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+}
+
 async function streamed(text: string, config: { html?: HtmlOptions; syntax?: SyntaxRuleSpec[] } = {}): Promise<RendererStore> {
   const worker = createInlineEngineWorker();
   const store = createRendererStore();
-  const { promise, resolve, reject } = Promise.withResolvers<RendererStore>();
+  const { promise, resolve, reject } = deferred<RendererStore>();
   worker.onmessage = (event: MessageEvent<WorkerOut>) => {
     const message = event.data;
     if (message.type === "INITIALIZED") store.reset(message.blocks);

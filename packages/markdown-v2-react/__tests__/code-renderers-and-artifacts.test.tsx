@@ -14,9 +14,7 @@ import { compileMarkdownSnapshotDirect } from "@stream-mdx/worker/direct";
 import { createRendererStore } from "../src/renderer/store";
 
 function sleep(ms: number): Promise<void> {
-  const { promise, resolve } = Promise.withResolvers<void>();
-  setTimeout(resolve, ms);
-  return promise;
+  return new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
 
 async function waitFor(container: Element, predicate: () => boolean, message: string): Promise<void> {

@@ -80,13 +80,25 @@ for (const [key, value] of Object.entries(globals)) {
   Object.defineProperty(globalThis, key, { configurable: true, writable: true, value });
 }
 
+/**
+ * File-local deferred (Node 20 has no `Promise.withResolvers`) with the same resolve/reject
+ * surface, so the stream gates and the worker dump settle exactly as before.
+ */
+function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void; reject: (error: Error) => void } {
+  let resolve!: (value: T) => void;
+  let reject!: (error: Error) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+}
+
 async function waitFor(predicate: () => boolean, message: string) {
   const deadline = Date.now() + 5000;
   while (!predicate()) {
     assert.ok(Date.now() < deadline, message);
-    const { promise, resolve } = Promise.withResolvers<void>();
-    setTimeout(resolve, 10);
-    await promise;
+    await new Promise<void>((resolve) => setTimeout(resolve, 10));
   }
 }
 
@@ -229,7 +241,7 @@ try {
   assert.equal(container.querySelector(".markdown-table-spacer"), null);
   unfinishedRoot.unmount();
   const streamingRoot = createRoot(container);
-  const { promise: streamFinished, resolve: finishStream } = Promise.withResolvers<void>();
+  const { promise: streamFinished, resolve: finishStream } = deferred<void>();
   const stream = (async function* () {
     yield `${markdown}\n\nStill streaming paragraph`;
     await streamFinished;
@@ -254,9 +266,9 @@ try {
   handle.current?.finalize();
   await waitFor(() => Boolean(scrollContainer()), "finalize uses current iterator ownership, not a stale stream closure");
 
-  const { promise: oldGate, resolve: releaseOld } = Promise.withResolvers<void>();
-  const { promise: oldFinished, resolve: markOldFinished } = Promise.withResolvers<void>();
-  const { promise: newGate, resolve: releaseNew } = Promise.withResolvers<void>();
+  const { promise: oldGate, resolve: releaseOld } = deferred<void>();
+  const { promise: oldFinished, resolve: markOldFinished } = deferred<void>();
+  const { promise: newGate, resolve: releaseNew } = deferred<void>();
   const oldStream = (async function* () {
     try {
       yield `${markdown}\n\nOld iterator tail`;
@@ -327,7 +339,7 @@ try {
     assert.equal(suppliedStreamConsumed, false, "managed source remains caller-owned");
     handle.current?.restart();
     await waitFor(() => rows().length === 0, "managed restart clears only the renderer document");
-    const dump = Promise.withResolvers<ReadonlyArray<Block>>();
+    const dump = deferred<ReadonlyArray<Block>>();
     externalWorker.addEventListener("message", (event: MessageEvent<WorkerOut>) => {
       if (event.data.type === "DUMP_BLOCKS") dump.resolve(event.data.blocks);
     });

@@ -21,9 +21,23 @@ async function setupDom(): Promise<Window & typeof globalThis> {
   return window as unknown as Window & typeof globalThis;
 }
 
+/**
+ * File-local deferred (Node 20 has no `Promise.withResolvers`) with the same resolve/reject
+ * surface, so the observer and timeout settle the wait exactly as before.
+ */
+function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void; reject: (error: Error) => void } {
+  let resolve!: (value: T) => void;
+  let reject!: (error: Error) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+}
+
 function waitForMutation(container: HTMLElement, predicate: () => boolean, timeoutMs = 5000): Promise<void> {
   if (predicate()) return Promise.resolve();
-  const { promise, resolve, reject } = Promise.withResolvers<void>();
+  const { promise, resolve, reject } = deferred<void>();
   const defaultView = container.ownerDocument.defaultView;
   const ObserverClass = defaultView?.MutationObserver ?? MutationObserver;
   let timer: NodeJS.Timeout | undefined;
@@ -130,9 +144,7 @@ async function testSyntaxRuleStaticAndStreamedIdentical(): Promise<void> {
   const fullText = "See issue #ABC-123 for details.";
   async function* generateOneCharChunks() {
     for (const char of fullText) {
-      const { promise, resolve } = Promise.withResolvers<void>();
-      setTimeout(resolve, 2);
-      await promise;
+      await new Promise<void>((resolve) => setTimeout(resolve, 2));
       yield char;
     }
   }

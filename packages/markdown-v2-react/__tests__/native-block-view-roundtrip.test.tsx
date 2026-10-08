@@ -81,9 +81,7 @@ async function waitFor(predicate: () => boolean, message: string, timeoutMs = 15
   const startedAt = Date.now();
   while (Date.now() - startedAt < timeoutMs) {
     if (predicate()) return;
-    const { promise, resolve } = Promise.withResolvers<void>();
-    setTimeout(resolve, 25);
-    await promise;
+    await new Promise<void>((resolve) => setTimeout(resolve, 25));
   }
   assert.fail(`timed out waiting for ${message}`);
 }
