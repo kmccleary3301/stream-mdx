@@ -143,6 +143,45 @@ async function main() {
     1,
     "root insertChild should not increment stale epoch rejection count",
   );
+
+  // Streaming an HTML block: each setHTML expects the epoch the previous one established (worker sequence).
+  const htmlBlock = (raw: string, html: string): Block => ({
+    id: "html-block",
+    type: "html",
+    isFinalized: false,
+    payload: { raw, sanitizedHtml: html, meta: { sanitized: true } },
+  });
+  const htmlStore = createRendererStore([]);
+  htmlStore.applyPatches([
+    {
+      op: "insertChild",
+      at: { blockId: PATCH_ROOT_ID },
+      index: 0,
+      node: { id: "html-block", type: "html", props: { block: htmlBlock("<table>", "") } },
+      meta: { kind: "semantic", parseEpoch: 6, tx: 6 },
+    } satisfies Patch,
+  ]);
+  const steps: Array<[raw: string, html: string, expectedEpoch: number, parseEpoch: number]> = [
+    ["<table>", "<table></table>", 6, 7],
+    ["<table>\n  <tr>", "<table><tbody><tr></tr></tbody></table>", 7, 11],
+    ["<table>\n  <tr>\n  </tr>\n</table>", "<table><tbody><tr>\n  </tr></tbody></table>", 11, 12],
+  ];
+  for (const [raw, html, expectedEpoch, parseEpoch] of steps) {
+    htmlStore.applyPatches([
+      {
+        op: "setHTML",
+        at: { blockId: "html-block" },
+        html,
+        sanitized: true,
+        policy: "markdown-renderer-v2",
+        block: htmlBlock(raw, html),
+        patchMeta: { kind: "semantic", parseEpoch, tx: parseEpoch, blockEpoch: expectedEpoch },
+      } satisfies Patch,
+    ]);
+  }
+  const streamedHtml = htmlStore.getNode("html-block");
+  assert.strictEqual(streamedHtml?.block?.payload.raw, "<table>\n  <tr>\n  </tr>\n</table>", "every streamed setHTML must apply");
+  assert.strictEqual(htmlStore.getDebugCounters().staleEpochRejected, 0, "in-order setHTML patches are not stale");
 }
 
 await main();

@@ -1896,6 +1896,10 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
 
             target.version++;
             touched.add(target.id);
+            // Like semantic setProps: the next patch for this block expects the epoch this one establishes.
+            if (getPatchKind(patch) === "semantic") {
+              advanceBlockEpoch(patch.at.blockId, touched, readPatchParseEpoch(patch), readPatchTx(patch));
+            }
             break;
           }
           default:
