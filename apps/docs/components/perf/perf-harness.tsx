@@ -1,13 +1,21 @@
 "use client";
 
 import type { RendererMetrics, StreamingMarkdownProps, StreamingSchedulerOptions } from "@stream-mdx/react";
-import React, { Profiler, useCallback, useEffect, useMemo, useRef } from "react";
+import React, { Profiler, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { Streamdown, type PluginConfig } from "streamdown";
+import { code } from "@streamdown/code";
+import { createMathPlugin } from "@streamdown/math";
 
 import { ComponentRegistry, StreamingMarkdown, type StreamingMarkdownHandle } from "@stream-mdx/react";
 
 import { components as mdxComponents } from "@/mdx-components";
 import { configureDemoRegistry, createDemoHtmlElements, createDemoTableElements } from "@/lib/streaming-demo-registry";
+const streamdownPlugins = {
+  code,
+  math: createMathPlugin({ singleDollarTextMath: true }),
+};
+
 
 const DEFAULT_FORMAT_ANTICIPATION = {
   inline: true,
@@ -26,7 +34,7 @@ const DEFAULT_FEATURES: NonNullable<StreamingMarkdownProps["features"]> = {
   footnotes: true,
   callouts: true,
   formatAnticipation: DEFAULT_FORMAT_ANTICIPATION,
-  liveCodeHighlighting: false,
+  liveCodeHighlighting: true,
 };
 
 const DEFAULT_SCHEDULING: StreamingSchedulerOptions = {
@@ -82,6 +90,8 @@ type ProfilerSample = {
 
 type PerfReport = {
   meta: {
+    renderer: "streammdx" | "streamdown";
+    rendererVersion: string;
     fixtureId: string;
     scenarioId: string;
     schedulingPreset: string;
@@ -195,6 +205,7 @@ async function waitForWorker(handle: StreamingMarkdownHandle | null): Promise<vo
 
 export function PerfHarness(): JSX.Element {
   const searchParams = useSearchParams();
+  const renderer = (searchParams.get("renderer") ?? "streammdx") as "streammdx" | "streamdown";
   const fixtureId = searchParams.get("fixture") ?? "naive-bayes";
   const scenarioId = searchParams.get("scenario") ?? "S2_typical";
   const schedulingPreset = searchParams.get("scheduling") ?? "aggressive";
@@ -202,6 +213,9 @@ export function PerfHarness(): JSX.Element {
   const queryKey = searchParams.toString();
   const scheduling = useMemo(() => buildScheduling(schedulingPreset, new URLSearchParams(queryKey)), [schedulingPreset, queryKey]);
 
+  const [streamdownText, setStreamdownText] = useState("");
+  const [streamdownIsAnimating, setStreamdownIsAnimating] = useState(false);
+  const streamdownCommittedRef = useRef(0);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const handleRef = useRef<StreamingMarkdownHandle | null>(null);
   const runTokenRef = useRef(0);
@@ -235,6 +249,14 @@ export function PerfHarness(): JSX.Element {
     flushesRef.current.push(metrics);
     if (firstFlushAtRef.current === null) {
       firstFlushAtRef.current = metrics.committedAt;
+    }
+  }, []);
+
+  const onStreamdownCommit = useCallback((textLength: number) => {
+    const now = performance.now();
+    streamdownCommittedRef.current = textLength;
+    if (firstFlushAtRef.current === null && textLength > 0) {
+      firstFlushAtRef.current = now;
     }
   }, []);
 
@@ -357,11 +379,17 @@ export function PerfHarness(): JSX.Element {
         firstFlushAtRef.current = null;
         profilerSamplesRef.current = [];
 
-        const handle = await waitForHandle(handleRef);
-        await waitForWorker(handle);
-        handle.resume();
-        await nextFrame();
-
+        if (renderer === "streammdx") {
+          const handle = await waitForHandle(handleRef);
+          await waitForWorker(handle);
+          handle.resume();
+          await nextFrame();
+        } else {
+          setStreamdownText("");
+          setStreamdownIsAnimating(true);
+          streamdownCommittedRef.current = 0;
+          await nextFrame();
+        }
         startLongTasks();
         startRaf();
         startMemory();
@@ -373,7 +401,7 @@ export function PerfHarness(): JSX.Element {
         let lastTick = performance.now();
         const intervalMs = Math.max(1, scenario.updateIntervalMs);
         const chunkCeiling = Math.max(1, scenario.maxChunkChars);
-
+        let accumulated = "";
         while (idx < fixture.length) {
           if (cancelled || token !== runTokenRef.current) return;
           const now = performance.now();
@@ -386,19 +414,33 @@ export function PerfHarness(): JSX.Element {
             const size = Math.min(chunkCeiling, totalChars, fixture.length - idx);
             if (size > 0) {
               const chunk = fixture.slice(idx, idx + size);
-              handle.append(chunk);
               idx += size;
+              if (renderer === "streammdx") {
+                handleRef.current?.append(chunk);
+              } else {
+                accumulated += chunk;
+                setStreamdownText(accumulated);
+              }
             }
           }
           await sleep(intervalMs);
         }
 
-        handle.finalize();
-        handle.flushPending();
-        await handle.waitForIdle();
+        if (renderer === "streammdx") {
+          const handle = handleRef.current;
+          if (handle) {
+            handle.finalize();
+            handle.flushPending();
+            await handle.waitForIdle();
+          }
+        } else {
+          while (streamdownCommittedRef.current < fixture.length && !cancelled) {
+            await nextFrame();
+          }
+          setStreamdownIsAnimating(false);
+        }
         await nextFrame();
         await nextFrame();
-
         const runEnd = performance.now();
         stopLongTasks();
         stopRaf();
@@ -406,6 +448,8 @@ export function PerfHarness(): JSX.Element {
 
         const report: PerfReport = {
           meta: {
+            renderer,
+            rendererVersion: renderer === "streamdown" ? "2.7.0" : "engine-v2",
             fixtureId,
             scenarioId,
             schedulingPreset,
@@ -447,12 +491,30 @@ export function PerfHarness(): JSX.Element {
       stopRaf();
       stopMemory();
     };
-  }, [fixtureId, scenarioId, schedulingPreset, scheduling]);
+  }, [renderer, fixtureId, scenarioId, schedulingPreset, scheduling]);
 
   return (
     <div className="prose">
-      <div id="perf-root" ref={rootRef} data-fixture={fixtureId} data-scenario={scenarioId}>
-        {profilerEnabled ? (
+      <div id="perf-root" ref={rootRef} data-fixture={fixtureId} data-scenario={scenarioId} data-renderer={renderer}>
+        {renderer === "streamdown" ? (
+          profilerEnabled ? (
+            <Profiler id="Streamdown" onRender={onProfile}>
+              <StreamdownHost
+                text={streamdownText}
+                plugins={streamdownPlugins}
+                isAnimating={streamdownIsAnimating}
+                onCommit={onStreamdownCommit}
+              />
+            </Profiler>
+          ) : (
+            <StreamdownHost
+              text={streamdownText}
+              plugins={streamdownPlugins}
+              isAnimating={streamdownIsAnimating}
+              onCommit={onStreamdownCommit}
+            />
+          )
+        ) : profilerEnabled ? (
           <Profiler id="StreamingMarkdown" onRender={onProfile}>
             <StreamingMarkdown
               ref={handleRef}
@@ -460,6 +522,7 @@ export function PerfHarness(): JSX.Element {
               className="markdown-v2-output"
               features={DEFAULT_FEATURES}
               scheduling={scheduling}
+              caret={false}
               mdxCompileMode="worker"
               mdxComponents={mdxComponents as Record<string, React.ComponentType<unknown>>}
               components={registry.getBlockComponentMap()}
@@ -476,6 +539,7 @@ export function PerfHarness(): JSX.Element {
             className="markdown-v2-output"
             features={DEFAULT_FEATURES}
             scheduling={scheduling}
+            caret={false}
             mdxCompileMode="worker"
             mdxComponents={mdxComponents as Record<string, React.ComponentType<unknown>>}
             components={registry.getBlockComponentMap()}
@@ -487,5 +551,33 @@ export function PerfHarness(): JSX.Element {
         )}
       </div>
     </div>
+  );
+}
+
+function StreamdownHost({
+  text,
+  plugins,
+  isAnimating,
+  onCommit,
+}: {
+  text: string;
+  plugins: PluginConfig;
+  isAnimating: boolean;
+  onCommit: (textLength: number) => void;
+}) {
+  useLayoutEffect(() => {
+    onCommit(text.length);
+  }, [text, onCommit]);
+
+  return (
+    <Streamdown
+      mode="streaming"
+      plugins={plugins}
+      parseIncompleteMarkdown={true}
+      isAnimating={isAnimating}
+      animated={false}
+    >
+      {text}
+    </Streamdown>
   );
 }

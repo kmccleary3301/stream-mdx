@@ -1,9 +1,11 @@
 import path from "node:path";
 import fs from "node:fs/promises";
+import fsSync from "node:fs";
+import os from "node:os";
+import { execSync } from "node:child_process";
 
 import { chromium } from "@playwright/test";
 
-const BASE_URL = process.env.STREAM_MDX_PERF_BASE_URL ?? "http://localhost:3000";
 
 function getArg(flag: string): string | null {
   const index = process.argv.indexOf(flag);
@@ -26,7 +28,11 @@ function getNumArg(flag: string, envKey: string): number | null {
   const parsed = Number(envValue);
   return Number.isFinite(parsed) ? parsed : null;
 }
+const BASE_URL =
+  getArg("--baseUrl") ?? getArg("--url") ?? process.env.STREAM_MDX_PERF_BASE_URL ?? "http://localhost:3000";
 
+const RENDERER = getArg("--renderer") ?? process.env.STREAM_MDX_PERF_RENDERER ?? "streammdx";
+const WORKTREE = getArg("--worktree") ?? process.env.STREAM_MDX_PERF_WORKTREE ?? process.cwd();
 const FIXTURE = getArg("--fixture") ?? process.env.STREAM_MDX_PERF_FIXTURE ?? "naive-bayes";
 const SCENARIO = getArg("--scenario") ?? process.env.STREAM_MDX_PERF_SCENARIO ?? "S2_typical";
 const SCHEDULING = getArg("--scheduling") ?? process.env.STREAM_MDX_PERF_SCHEDULING ?? "aggressive";
@@ -37,7 +43,6 @@ const OUT_DIR = getArg("--out") ?? process.env.STREAM_MDX_PERF_OUT ?? "tmp/perf-
 const HEADLESS = !(hasFlag("--headed") || process.env.STREAM_MDX_PERF_HEADED === "1");
 const CPU_THROTTLE = getNumArg("--cpuThrottle", "STREAM_MDX_PERF_CPU_THROTTLE");
 const PROFILER_ENABLED = hasFlag("--profiler") || process.env.STREAM_MDX_PERF_PROFILER === "1";
-
 const SCHEDULING_OVERRIDES: Record<string, string> = {
   batch: getArg("--batch") ?? process.env.STREAM_MDX_PERF_BATCH ?? "",
   frameBudgetMs: getArg("--frameBudgetMs") ?? process.env.STREAM_MDX_PERF_FRAME_BUDGET_MS ?? "",
@@ -57,6 +62,8 @@ const SCHEDULING_OVERRIDES: Record<string, string> = {
 
 type PerfReport = {
   meta: {
+    renderer: string;
+    rendererVersion: string;
     fixtureId: string;
     scenarioId: string;
     schedulingPreset: string;
@@ -131,9 +138,41 @@ type Stats = {
   p95: number;
 };
 
+type RunMetadata = {
+  gitSha: string;
+  worktree: string;
+  renderer: string;
+  rendererVersion: string;
+  chromeVersion: string;
+  os: {
+    platform: string;
+    release: string;
+    type: string;
+    arch: string;
+  };
+  cpu: {
+    brand: string;
+    ncpu: number;
+  };
+  ram: {
+    totalBytes: number;
+    totalGB: number;
+  };
+  powerState: string;
+  nodeEnv: string;
+  scenarioParams: {
+    fixture: string;
+    scenario: string;
+    scheduling: string;
+    overrides: Record<string, string>;
+  };
+};
+
 type Summary = {
+  metadata?: RunMetadata;
   config: {
     baseUrl: string;
+    renderer: string;
     fixture: string;
     scenario: string;
     scheduling: string;
@@ -243,9 +282,37 @@ function diffDomCounters(start: DomCounters | null, end: DomCounters | null): Do
     jsEventListeners: end.jsEventListeners - start.jsEventListeners,
   };
 }
+function getSysctl(key: string): string {
+  try {
+    return execSync(`sysctl -n ${key} 2>/dev/null`, { encoding: "utf8" }).trim();
+  } catch {
+    return "";
+  }
+}
+
+function getRendererVersion(renderer: string, targetWorktree: string): string {
+  if (renderer === "streamdown") {
+    try {
+      const pkgPath = path.resolve(targetWorktree, "node_modules/streamdown/package.json");
+      const pkg = JSON.parse(fsSync.readFileSync(pkgPath, "utf8")) as { version?: string };
+      return pkg.version ?? "2.7.0";
+    } catch {
+      return "2.7.0";
+    }
+  }
+  try {
+    const pkgPath = path.resolve(targetWorktree, "packages/markdown-v2-react/package.json");
+    const pkg = JSON.parse(fsSync.readFileSync(pkgPath, "utf8")) as { version?: string };
+    return pkg.version ?? "engine-v2";
+  } catch {
+    return "engine-v2";
+  }
+}
+
 
 function buildUrl(): string {
-  const url = new URL("/perf/harness", BASE_URL);
+  const url = new URL("/perf/harness/", BASE_URL);
+  url.searchParams.set("renderer", RENDERER);
   url.searchParams.set("fixture", FIXTURE);
   url.searchParams.set("scenario", SCENARIO);
   url.searchParams.set("scheduling", SCHEDULING);
@@ -366,6 +433,16 @@ function summarizeRun(entry: PerfRun) {
 function formatSummaryText(summary: Summary): string {
   const lines: string[] = [];
   lines.push("stream-mdx perf harness summary");
+  lines.push(`renderer: ${summary.config.renderer} (${summary.metadata?.rendererVersion ?? "unknown"})`);
+  if (summary.metadata) {
+    lines.push(`git SHA: ${summary.metadata.gitSha}`);
+    lines.push(`worktree: ${summary.metadata.worktree}`);
+    lines.push(`CPU: ${summary.metadata.cpu.brand} (${summary.metadata.cpu.ncpu} cores)`);
+    lines.push(`RAM: ${summary.metadata.ram.totalGB} GB`);
+    lines.push(`OS: ${summary.metadata.os.platform} ${summary.metadata.os.release} (${summary.metadata.os.arch})`);
+    lines.push(`Chrome: ${summary.metadata.chromeVersion}`);
+    lines.push(`Power: ${summary.metadata.powerState}`);
+  }
   lines.push(`fixture: ${summary.config.fixture}`);
   lines.push(`scenario: ${summary.config.scenario}`);
   lines.push(`scheduling: ${summary.config.scheduling}`);
@@ -428,11 +505,19 @@ async function run(): Promise<void> {
 
   const outRoot = path.join(
     OUT_DIR,
-    `${FIXTURE}-${SCENARIO}-${new Date().toISOString().replace(/[:.]/g, "-")}`,
+    `${RENDERER}-${FIXTURE}-${SCENARIO}-${new Date().toISOString().replace(/[:.]/g, "-")}`,
   );
   await ensureDir(outRoot);
 
-  const browser = await chromium.launch({ headless: HEADLESS });
+  const executablePath =
+    process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ??
+    [
+      "/Users/kylemccleary/Library/Caches/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-mac-arm64/chrome-headless-shell",
+      "/Users/kylemccleary/Library/Caches/ms-playwright/chromium-1243/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing",
+      "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    ].find((p) => fsSync.existsSync(p));
+
+  const browser = await chromium.launch({ headless: HEADLESS, executablePath });
   const context = await browser.newContext();
 
   for (let i = 0; i < WARMUP; i += 1) {
@@ -453,9 +538,52 @@ async function run(): Promise<void> {
   await browser.close();
 
   const runSummaries = outputs.map(summarizeRun);
+  let gitSha = "unknown";
+  try {
+    gitSha = execSync("git rev-parse HEAD", { cwd: WORKTREE || process.cwd(), encoding: "utf8" }).trim();
+  } catch {}
+
+  let powerState = "unknown";
+  try {
+    const out = execSync("pmset -g batt 2>/dev/null", { encoding: "utf8" }).trim();
+    powerState = out.includes("AC Power") ? "AC Power" : out.includes("Battery Power") ? "Battery Power" : out.split("\n")[0] ?? "unknown";
+  } catch {}
+
+  const metadata: RunMetadata = {
+    gitSha,
+    worktree: path.resolve(WORKTREE),
+    renderer: RENDERER,
+    rendererVersion: getRendererVersion(RENDERER, WORKTREE),
+    chromeVersion: browser.version(),
+    os: {
+      platform: os.platform(),
+      release: os.release(),
+      type: os.type(),
+      arch: os.arch(),
+    },
+    cpu: {
+      brand: getSysctl("machdep.cpu.brand_string") || os.cpus()[0]?.model || "unknown",
+      ncpu: Number(getSysctl("hw.ncpu")) || os.cpus().length,
+    },
+    ram: {
+      totalBytes: Number(getSysctl("hw.memsize")) || os.totalmem(),
+      totalGB: Math.round(((Number(getSysctl("hw.memsize")) || os.totalmem()) / (1024 * 1024 * 1024)) * 100) / 100,
+    },
+    powerState,
+    nodeEnv: process.env.NODE_ENV ?? "production",
+    scenarioParams: {
+      fixture: FIXTURE,
+      scenario: SCENARIO,
+      scheduling: SCHEDULING,
+      overrides: SCHEDULING_OVERRIDES,
+    },
+  };
+
   const summary: Summary = {
+    metadata,
     config: {
       baseUrl: BASE_URL,
+      renderer: RENDERER,
       fixture: FIXTURE,
       scenario: SCENARIO,
       scheduling: SCHEDULING,
@@ -467,7 +595,6 @@ async function run(): Promise<void> {
       cpuThrottle: CPU_THROTTLE ?? null,
       profiler: PROFILER_ENABLED,
     },
-    runs: runSummaries,
     aggregate: {
       durationMs: stats(runSummaries.map((run) => run.durationMs)),
       timeToFirstFlushMs: statsFromRuns(runSummaries.map((run) => run.timeToFirstFlushMs)),
@@ -486,6 +613,7 @@ async function run(): Promise<void> {
     },
   };
 
+  await fs.writeFile(path.join(outRoot, "metadata.json"), JSON.stringify(metadata, null, 2));
   await fs.writeFile(path.join(outRoot, "run.json"), JSON.stringify(outputs, null, 2));
   await fs.writeFile(path.join(outRoot, "summary.json"), JSON.stringify(summary, null, 2));
   await fs.writeFile(path.join(outRoot, "summary.txt"), formatSummaryText(summary));
