@@ -4,10 +4,13 @@ import type {
   Block,
   CodeHighlightOutputMode,
   CompiledMdxModule,
+  DiffKind,
+  DiffLineKind,
   FormatAnticipationConfig,
   InlineNode,
   MixedContentSegment,
   NodeSnapshot,
+  NormalizedFormatAnticipation,
   Patch,
   PatchMetrics,
   PerformanceMetrics,
@@ -69,7 +72,7 @@ import {
   renderTokenLines,
   resolveHighlightLanguage,
   type SharedHighlighter,
-  type ShikiThemedToken,
+  toDiffLineKind,
 } from "./highlight";
 import {
   DEFAULT_LAZY_TOKENIZATION_THRESHOLD,
@@ -124,6 +127,7 @@ import type {
   MarkdownEngineOptions,
   MdxStatusUpdate,
   ParseOptions,
+  ShikiThemedToken,
   WorkerMdxMode,
 } from "./types";
 
@@ -203,7 +207,7 @@ export class MarkdownEngine {
   private mdxComponentAllowlist: Set<string> | null = null;
   private loggedMdxSkipCount = 0;
 
-  private formatAnticipationConfig: FormatAnticipationConfig = normalizeFormatAnticipation(false);
+  private formatAnticipationConfig: NormalizedFormatAnticipation = normalizeFormatAnticipation(false);
   private codeHighlightingMode: CodeHighlightingMode = "final";
   private highlightOutputMode: CodeHighlightOutputMode = "html";
   private emitHighlightTokens = true;
@@ -416,7 +420,7 @@ export class MarkdownEngine {
             hasCodeBlocksHeading: this.currentContent.includes("# Code Blocks"),
             hasMediaHeading: this.currentContent.includes("# Media"),
           },
-        });
+        } as WorkerOut);
         return;
       }
       case "DUMP_BLOCKS": {
@@ -662,7 +666,8 @@ export class MarkdownEngine {
     const newContent = this.currentContent + appendedText;
     const changeRanges = computeChangedRanges(this.currentContent, newContent);
 
-    let newTree = this.lastTree ? this.mdParser.parse(newContent, this.lastTree.fragments) : this.mdParser.parse(newContent);
+    const treeFragments = this.lastTree && "fragments" in this.lastTree ? (this.lastTree as unknown as { fragments?: unknown }).fragments as never : undefined;
+    let newTree = treeFragments ? this.mdParser.parse(newContent, treeFragments) : this.mdParser.parse(newContent);
 
     let changedBlocks = await this.extractBlocks(newTree, newContent);
     changedBlocks = this.runDocumentPlugins(changedBlocks, newContent);
@@ -1001,7 +1006,7 @@ export class MarkdownEngine {
         const rawHtml = typeof block.payload.raw === "string" ? block.payload.raw : "";
         const sanitized = sanitizeHtmlInWorker(rawHtml);
         block.payload.sanitizedHtml = sanitized;
-        const nextMeta = { ...(block.payload.meta || {}), sanitized: true };
+        const nextMeta: Record<string, unknown> = { ...(block.payload.meta || {}), sanitized: true };
         if (rawHtml) {
           nextMeta.protectedRanges = [{ from: 0, to: rawHtml.length, kind: "html-block" }];
         }
@@ -1156,10 +1161,10 @@ export class MarkdownEngine {
               try {
                 const sharedLanguage = wantsHtml ? resolvedLanguage : resolvedTokenLanguage;
                 const tokens = this.highlighter?.codeToTokensWithThemes(completeLines.join("\n"), {
-                  lang: sharedLanguage,
+                  lang: sharedLanguage as never,
                   themes: CODE_HIGHLIGHT_THEMES,
                   grammarState: state.grammarState as never,
-                }) as ShikiThemedToken[][];
+                } as never) as ShikiThemedToken[][];
                 if (wantsHtml) {
                   const htmlLines = renderShikiLines(tokens);
                   state.highlightedLines.push(...htmlLines);
@@ -1184,7 +1189,7 @@ export class MarkdownEngine {
               const cursor = state.diffCursor ?? { oldLine: null, newLine: null };
               const diffLines = completeLines.map((line) => parseUnifiedDiffLine(line, cursor));
               state.diffCursor = cursor;
-              state.diffKind.push(...diffLines.map((line) => line.kind));
+              state.diffKind.push(...diffLines.map((line) => toDiffLineKind(line.kind)));
               state.oldNo.push(...diffLines.map((line) => line.oldNo ?? null));
               state.newNo.push(...diffLines.map((line) => line.newNo ?? null));
 
@@ -1248,7 +1253,7 @@ export class MarkdownEngine {
       } else {
         try {
           const highlighted = this.highlighter!.codeToHtml(codeBody, {
-            lang: resolvedLanguage,
+            lang: resolvedLanguage as never,
             themes: CODE_HIGHLIGHT_THEMES,
           });
           const enhanced = enhanceHighlightedHtml(highlighted, resolvedLanguage);
@@ -1269,7 +1274,7 @@ export class MarkdownEngine {
     if (wantsTokens && hasHighlighter && hasHighlightableContent) {
       try {
         const tokens = this.highlighter!.codeToTokensWithThemes(codeBody, {
-          lang: resolvedTokenLanguage,
+          lang: resolvedTokenLanguage as never,
           themes: CODE_HIGHLIGHT_THEMES,
         }) as ShikiThemedToken[][];
         nextMeta.tokenLines = renderTokenLines(tokens);
@@ -1791,10 +1796,10 @@ export class MarkdownEngine {
         try {
           const sharedLanguage = wantsHtml ? resolvedLanguage : resolvedTokenLanguage;
           const tokens = this.highlighter.codeToTokensWithThemes(segmentLines.join("\n"), {
-            lang: sharedLanguage,
+            lang: sharedLanguage as never,
             themes: CODE_HIGHLIGHT_THEMES,
             grammarState: state.grammarState as never,
-          }) as ShikiThemedToken[][];
+          } as never) as ShikiThemedToken[][];
           if (wantsHtml) {
             const htmlLines = renderShikiLines(tokens);
             for (let i = 0; i < htmlLines.length; i += 1) {
@@ -1829,7 +1834,7 @@ export class MarkdownEngine {
 
         for (let i = 0; i < diffLines.length; i += 1) {
           const idx = state.processedLines + i;
-          state.diffKind[idx] = diffLines[i].kind;
+          state.diffKind[idx] = toDiffLineKind(diffLines[i].kind);
           state.oldNo[idx] = diffLines[i].oldNo ?? null;
           state.newNo[idx] = diffLines[i].newNo ?? null;
           state.tokenLines[idx] = tokenLines[i] ?? null;

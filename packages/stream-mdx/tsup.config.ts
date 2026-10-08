@@ -13,6 +13,7 @@ export default defineConfig({
     "src/worker/mdx-compile.ts",
     "src/worker/direct.ts",
     "src/worker/node.ts",
+    "src/worker/engine.ts",
     "src/plugins.ts",
     "src/plugins/base.ts",
     "src/plugins/callouts.ts",

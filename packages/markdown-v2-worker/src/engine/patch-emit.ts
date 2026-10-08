@@ -7,9 +7,8 @@ import type {
 import {
   cloneBlock,
   createBlockSnapshot,
-  isHeavyPatch,
 } from "@stream-mdx/core";
-import { getPatchKind } from "@stream-mdx/core/perf/patch-batching";
+import { getPatchKind, isHeavyPatch } from "@stream-mdx/core/perf/patch-batching";
 import type { SharedHighlighter } from "./highlight";
 import type { WorkerMetricsCollector } from "./metrics";
 

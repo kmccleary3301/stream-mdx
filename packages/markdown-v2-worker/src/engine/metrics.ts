@@ -20,15 +20,13 @@ export function mapToNumberRecord(map: Map<string, number>, roundValues = false)
 
 export function mapToHighlightRecord(
   map: Map<string, { time: number; count: number }>,
-): Record<string, { count: number; totalMs: number; avgMs: number }> {
-  const result: Record<string, { count: number; totalMs: number; avgMs: number }> = {};
+): Record<string, { timeMs: number; count: number }> {
+  const result: Record<string, { timeMs: number; count: number }> = {};
   for (const [key, value] of map.entries()) {
     if (!value || value.count <= 0 || !Number.isFinite(value.time)) continue;
-    const avg = value.time / value.count;
     result[key] = {
       count: value.count,
-      totalMs: roundMetric(value.time),
-      avgMs: roundMetric(avg),
+      timeMs: roundMetric(value.time),
     };
   }
   return result;
@@ -211,13 +209,13 @@ export class WorkerMetricsCollector {
       enrichMs: this.enrichMs ? roundMetric(this.enrichMs) : undefined,
       diffMs: this.diffMs ? roundMetric(this.diffMs) : undefined,
       serializeMs: this.serializeMs ? roundMetric(this.serializeMs) : undefined,
-      highlightTime: this.shikiMs ? roundMetric(this.shikiMs) : undefined,
+      highlightTime: roundMetric(this.shikiMs),
       shikiMs: this.shikiMs ? roundMetric(this.shikiMs) : undefined,
       mdxDetectMs: this.mdxDetectMs ? roundMetric(this.mdxDetectMs) : undefined,
       patchBytes: this.patchBytes || undefined,
       patchCount: this.patchCount || undefined,
       queueDepth: this.queueDepth || undefined,
-      blocksProduced: this.blocksProduced || undefined,
+      blocksProduced: this.blocksProduced,
       grammarEngine: this.grammarEngine,
       blockCountByType: mapToNumberRecord(this.blockTypeCounts),
       blockEnrichMsByType: mapToNumberRecord(this.blockTypeDurations, true),
