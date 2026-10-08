@@ -41,7 +41,11 @@ class BenchmarkHighlighting {
     return Array.from(root.querySelectorAll<HTMLElement>('[data-streamdown="code-block"]')).every((block) => {
       const body = block.querySelector("code");
       if (!body) return false;
-      const source = (body.textContent ?? "").replace(/\n+$/, "");
+      // Streamdown renders each source line as a block span, using "\n" for an empty line.
+      const source = Array.from(body.children, (line) => {
+        const text = line.textContent ?? "";
+        return text === "\n" ? "" : text;
+      }).join("\n").replace(/\n+$/, "");
       return this.completed.has(JSON.stringify([block.dataset.language, source]));
     });
   }
