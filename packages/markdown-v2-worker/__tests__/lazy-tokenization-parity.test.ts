@@ -156,12 +156,16 @@ async function runNestedLazyConsumers(): Promise<void> {
     const block = getCode(store.getBlocks());
     return store.getNode(block.id) ? store : createRendererStore([block]);
   };
-  for (const ownership of ["prepared", "html", "root-html"] as const) {
+  for (const [ownership, outputMode] of [
+    ["prepared", "tokens"], ["prepared", "both"],
+    ["html", "tokens"], ["html", "both"],
+    ["root-html", "tokens"], ["root-html", "both"],
+  ] as const) {
     const codeLines = ["```js", ...lines, "```"];
-    const quoteLines = ownership === "prepared" ? codeLines : ["<div>", "", ...codeLines, "", "</div>"];
-    const snippet = ownership === "root-html" ? ["<div>", "", ...codeLines, "", "</div>"].join("\n")
-      : ["- outer", "", ...quoteLines.map((line) => `  > ${line}`)].join("\n");
-  for (const outputMode of ["tokens", "both"] as const) {
+    const ownedLines = ["<div>", "", ...codeLines, "", "</div>"];
+    const snippet = ownership === "root-html" ? ownedLines.join("\n")
+      : ownership === "prepared" ? ["- outer", "", ...codeLines.map((line) => `  > ${line}`)].join("\n")
+      : ["- outer", "", ...ownedLines.map((line) => `  ${line}`)].join("\n");
     const full = await renderWithWorker(snippet, false, outputMode);
     const fullCode = getCode(full.store.getBlocks());
     const lazy = await renderWithWorker(snippet, true, outputMode);
@@ -230,7 +234,6 @@ async function runNestedLazyConsumers(): Promise<void> {
     assert.notStrictEqual(JSON.stringify(serialized), published, "the appended paragraph remains visible beside the highlighted owning root");
     assert.deepStrictEqual(reset.getInvariantViolations(), []);
     unsubscribe();
-  }
   }
 }
 
