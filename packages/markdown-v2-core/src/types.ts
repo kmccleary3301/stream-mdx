@@ -122,7 +122,7 @@ export type InlineNode =
   | { kind: "citation"; id: string }
   | { kind: "math-inline"; tex: string }
   | { kind: "math-display"; tex: string }
-  | { kind: "footnote-ref"; label: string; number?: number }
+  | { kind: "footnote-ref"; label: string; number?: number; occurrence?: number; defined?: boolean }
   | {
       kind: "plugin";
       name: string;
@@ -130,6 +130,13 @@ export type InlineNode =
       children?: InlineNode[];
       raw: string;
     };
+
+export interface FootnoteItem {
+  number: number;
+  label: string;
+  inlines: InlineNode[];
+  refCount?: number;
+}
 
 export interface SyntaxRuleSpec {
   name: string;

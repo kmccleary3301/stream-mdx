@@ -11,6 +11,7 @@ import { loadMdxRuntime } from "../mdx-runtime";
 import { useDeferredRender } from "../renderer/use-deferred-render";
 import type {
   Block,
+  FootnoteItem,
   HtmlTreeNode,
   InlineNode,
   MixedContentSegment,
@@ -225,10 +226,11 @@ export const defaultInlineComponents: InlineComponents = {
     React.createElement(KaTeXBlockMath, { tex }),
 
   // Footnote inline reference (superscript anchor)
-  "footnote-ref": ({ label, number }: { label: string; number?: number }) => {
-    const n = number ?? "?";
-    const href = number ? `#fn:${n}` : undefined;
-    const id = number ? `fnref:${n}` : undefined;
+  "footnote-ref": ({ label, number, occurrence, defined }: { label: string; number?: number; occurrence?: number; defined?: boolean }) => {
+    if (!number || defined === false) return React.createElement(React.Fragment, null, `[^${label}]`);
+    const n = number;
+    const href = `#fn:${n}`;
+    const id = `fnref:${n}${occurrence && occurrence > 1 ? `:${occurrence}` : ""}`;
     return React.createElement(
       "sup",
       { className: "footnote-ref" },
@@ -602,7 +604,7 @@ export const defaultBlockComponents: BlockComponents = {
   },
 
   // Footnotes block rendered at page end
-  footnotes: ({ items }: { items: Array<{ number: number; inlines: InlineNode[]; label: string }> }) => {
+  footnotes: ({ items }: { items: FootnoteItem[] }) => {
     if (!items || items.length === 0) return React.createElement(React.Fragment, null);
 
     const listItems = items.map((item) =>
@@ -610,17 +612,22 @@ export const defaultBlockComponents: BlockComponents = {
         "li",
         { key: item.number, id: `fn:${item.number}` },
         renderInlineNodes(item.inlines, defaultInlineComponents),
-        " ",
-        React.createElement(
-          "a",
-          {
-            href: `#fnref:${item.number}`,
-            className: "footnote-backref",
-            "aria-label": "Back to content",
-            style: { color: "var(--foreground)", textDecoration: "underline" },
-          },
-          "↩",
-        ),
+        ...Array.from({ length: item.refCount ?? 1 }, (_, index) => React.createElement(
+          React.Fragment,
+          { key: index },
+          " ",
+          React.createElement(
+            "a",
+            {
+              href: `#fnref:${item.number}${index > 0 ? `:${index + 1}` : ""}`,
+              className: "footnote-backref",
+              "aria-label": index > 0 ? `Back to content (reference ${index + 1})` : "Back to content",
+              style: { color: "var(--foreground)", textDecoration: "underline" },
+            },
+            "↩",
+            index > 0 ? React.createElement("sup", null, String(index + 1)) : null,
+          ),
+        )),
       ),
     );
 
