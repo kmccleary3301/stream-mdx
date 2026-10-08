@@ -72,13 +72,12 @@ Comparing Streamdown with default chat sanitization against StreamMDX with `docP
 | Evaluation Mode | StreamMDX (Static/Stream/SSR) | micromark (GFM) | Streamdown (Default) | Streamdown (Raw HTML) |
 | --- | --- | --- | --- | --- |
 | **Normalized Semantics** | **675 / 675** (0 divergences) | 669 / 675 | 540 / 675 | 586 / 675 |
-| **Strict Semantics** (titles + language) | **599 / 675** (0 divergences) | 669 / 675 | 540 / 675 | 586 / 675 |
+| **Strict Semantics** (titles + language) | **675 / 675** (0 divergences) | 669 / 675 | 540 / 675 | 586 / 675 |
 
 ### Key takeaways on conformance
 - **HTML Sanitization Fairness**: Enabling raw HTML on Streamdown raises its score from 540 to 586 (+46 examples), closing the gap on HTML blocks and raw HTML inlines.
-- **Strict vs Normalized**: StreamMDX's 76 strict failures (599 vs 675) are all unlabeled code blocks (indented code blocks and bare fences without an info string) where its syntax highlighter emits `<code class="language-text">` instead of bare `<pre><code>`. StreamMDX achieves 100% parity on link titles (90/90), image titles (22/22), and code blocks with explicit languages.
+- **Strict Parity**: StreamMDX achieves 100% strict conformance (675/675) across static, streaming, and SSR paths with zero divergences. Unlabeled code blocks and indented code blocks emit bare `<pre><code>` without `language-*` classes, preserving 100% parity on link titles (90/90), image titles (22/22), and code blocks.
 - **micromark 669**: The 6 micromark failures are standard GFM tagfilter escaping on 5 HTML blocks (`cm_170`, `cm_171`, `cm_172`, `cm_176`, `cm_178`) and a dropped FTP autolink in modern micromark (`gfm_628`).
-
 ## Where Streamdown is the better fit
 
 - You already use `react-markdown` and want the smallest possible change.

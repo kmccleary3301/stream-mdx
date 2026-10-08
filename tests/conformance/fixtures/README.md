@@ -83,13 +83,12 @@ Streaming divergences from static: 0. Ratchet check (`--check`) validates 675 ba
 #### Strict Semantics (Link/Image Titles + Code info-strings)
 | Section | Total | StreamMDX Static | Streaming | SSR | micromark | Streamdown | SD (raw) |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| TOTAL | 675 | 599 | 599 | 599 | 669 | 540 | 586 |
+| TOTAL | 675 | 675 | 675 | 675 | 669 | 540 | 586 |
 
 Streaming divergences from static: 0.
 
-**StreamMDX Strict Mode Root Cause Analysis**:
-All 76 failures in strict mode (599/675) share a single root cause: unlabeled code blocks where StreamMDX's syntax highlighter emits `<code class="language-text">`, whereas the CommonMark specification expects bare `<pre><code>` with no class attribute. Replacing `<pre><code>` with `<pre><code class="language-text">` resolves 76 of 76 strict failures. StreamMDX achieves 100% parity on link titles (90/90), image titles (22/22), and code blocks with explicit info-strings.
-
+**StreamMDX Strict Mode Parity**:
+StreamMDX achieves 100% parity (675/675) across static, streaming, and SSR paths under strict semantics. Info-less code blocks and indented code blocks emit bare `<pre><code>` with no `language-*` class attribute in full compliance with CommonMark §4.4/§4.5, while blocks with explicit info strings preserve their `language-*` class. Parity on link titles is 90/90, image titles is 22/22, and all code blocks match.
 ## Residual standards boundaries
 
 `packages/markdown-v2-worker/__tests__/residual-standards-boundaries.test.ts` exercises direct compilation through the client store, SSR, and the hosted worker through `FINALIZED`, with chunk sizes 1, 7, and 64. It covers root and nested indented-code whitespace, invisible list definitions, FTP punctuation, balanced parentheses, entities, and native code/heading/list contexts.
