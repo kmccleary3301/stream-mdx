@@ -201,9 +201,14 @@ export const UnifiedBlockItem: React.FC<UnifiedBlockItemProps> = ({
   inflightJobs,
 }) => {
   const raw = typeof block.payload.raw === "string" ? block.payload.raw : "";
+  // Finalized engine headings contain inline markdown, not their original markers.
+  const headingLevel = block.type === "heading" ? block.payload.meta?.headingLevel : undefined;
+  const source = typeof headingLevel === "number" && Number.isFinite(headingLevel)
+    ? `${"#".repeat(Math.min(6, Math.max(1, Math.floor(headingLevel))))} ${raw}`
+    : raw;
   const metaRefs = block.payload.meta?.linkReferences;
   const serializedRefs = metaRefs && metaRefs.length > 0 ? JSON.stringify(metaRefs) : "";
-  const cacheKey = `${block.id}::${raw}::${serializedRefs}`;
+  const cacheKey = `${block.id}::${block.type}::${source}::${serializedRefs}`;
 
   const cached = cache.get(cacheKey);
 
@@ -213,9 +218,9 @@ export const UnifiedBlockItem: React.FC<UnifiedBlockItemProps> = ({
       return undefined;
     }
     const linkDefs = metaRefs && metaRefs.length > 0 ? formatLinkDefinitions(metaRefs) : "";
-    const input = linkDefs ? `${linkDefs}\n\n${raw}` : raw;
+    const input = linkDefs ? `${linkDefs}\n\n${source}` : source;
     return getOrCreateJob(cacheKey, input, block, processor, options, cache, inflightJobs);
-  }, [cacheKey, cached, block, processor, options, cache, inflightJobs, metaRefs, raw]);
+  }, [cacheKey, cached, block, processor, options, cache, inflightJobs, metaRefs, source]);
 
   // Keyed async state: if cacheKey changes while an async job is pending,
   // asyncState.key !== cacheKey, so it immediately displays the new default element!
