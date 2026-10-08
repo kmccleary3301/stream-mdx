@@ -48,7 +48,6 @@ export default defineConfig(async () => {
         resolve("src/direct.ts"),
         resolve("src/worker-client.ts"),
         resolve("src/mdx-compile.ts"),
-        resolve("src/streaming/custom-matcher.ts"),
       ],
       // These public entries are also imported by browser clients. Resolve the
       // MDX pipeline's actual browser variants, not vfile's Node builtins.

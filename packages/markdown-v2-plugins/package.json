@@ -1,7 +1,7 @@
 {
   "name": "@stream-mdx/plugins",
   "version": "0.4.0",
-  "description": "Streaming Markdown V2 plugin suite (math, MDX, tables, callouts, footnotes, HTML helpers)",
+  "description": "Streaming Markdown V2 plugin suite (MDX, tables, callouts, footnotes, HTML helpers)",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -20,16 +20,6 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
-    },
-    "./registry": {
-      "types": "./dist/plugins/registry.d.ts",
-      "import": "./dist/plugins/registry.mjs",
-      "require": "./dist/plugins/registry.cjs"
-    },
-    "./base": {
-      "types": "./dist/plugins/base.d.ts",
-      "import": "./dist/plugins/base.mjs",
-      "require": "./dist/plugins/base.cjs"
     },
     "./callouts": {
       "types": "./dist/plugins/callouts/index.d.ts",
@@ -50,11 +40,6 @@
       "types": "./dist/plugins/html/index.d.ts",
       "import": "./dist/plugins/html/index.mjs",
       "require": "./dist/plugins/html/index.cjs"
-    },
-    "./math": {
-      "types": "./dist/plugins/math/index.d.ts",
-      "import": "./dist/plugins/math/index.mjs",
-      "require": "./dist/plugins/math/index.cjs"
     },
     "./mdx": {
       "types": "./dist/plugins/mdx/index.d.ts",
