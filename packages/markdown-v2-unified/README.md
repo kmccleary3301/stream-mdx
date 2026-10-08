@@ -6,13 +6,15 @@ Enables `react-markdown` and `Streamdown` users to bring their existing `remarkP
 
 ## How It Works
 
-- **Finalized-only execution**: Unified plugins run **only** on finalized blocks. While a block is streaming, the high-performance Lezer-native StreamMDX renderer displays it with zero lag.
-- **Sync & Async pipeline support**: Synchronous plugins execute immediately, providing synchronous SSR (`renderToStaticMarkup`, `renderToString`) with zero duplicated execution. Asynchronous plugins process off the streaming critical path, retaining the default rendered element while pending and committing the result once complete.
-- **Async SSR behavior**: When async plugins are configured, server rendering yields the default StreamMDX element. On the client, the async pipeline resolves and updates the block without blocking user interaction or hydration.
-- **Deduplication & cancellation**: Concurrent jobs for the same block and cache key are deduplicated. When metadata or content updates, stale in-flight jobs are cancelled and cannot overwrite newer content.
-- **Bounded LRU cache**: Finalized transformations are cached in a bounded LRU cache (default 500 entries) keyed by `block.id` + raw source content + resolved link references.
-- **Link reference resolution**: Resolved link reference definitions attached to block metadata (`block.payload.meta.linkReferences`) are prepended before parsing, so reference links resolve inside routed blocks.
-- **Error handling**: Plugin exceptions (synchronous or asynchronous) are reported via the explicit `onError` hook while safely falling back to the default rendered element with zero unhandled rejections.
+- **Finalized-only execution**: Unified plugins run only on finalized blocks. Provisional blocks continue to use the native StreamMDX renderer.
+- **Sync and async pipelines**: Synchronous plugins execute once per cache key and support `renderToStaticMarkup` and `renderToString`. Asynchronous plugins retain the default rendered element while pending and commit their result on the client.
+- **Async SSR behavior**: Server rendering with async plugins returns the default StreamMDX element. It does not wait for plugin completion.
+- **Deduplication and stale results**: Concurrent jobs for the same cache key share one transformation. Older jobs may finish after content or metadata changes, but their results cannot replace the newer block.
+- **Bounded cache**: Finalized transformations use a bounded LRU cache, with 500 entries by default. Keys include `block.id`, block type, reconstructed markdown source, and resolved link references.
+- **Heading semantics**: The engine stores finalized heading inline markdown in `payload.raw` without heading markers. The adapter restores the heading level from `payload.meta.headingLevel` before parsing. Multiline level-1 and level-2 headings use Setext syntax to preserve their inline content and soft breaks in one heading node. Remark heading transforms and rehype plugins such as `rehype-slug` receive the complete heading.
+- **Link reference resolution**: Definitions from `block.payload.meta.linkReferences` are prepended before parsing, so routed blocks retain resolved reference links and titles.
+- **Container replacement**: Routed lists and blockquotes run their canonical raw markdown through unified and replace native child rendering, including prepared child snapshots. Set `blockTypes` to exclude those containers when you need native code, math, or custom syntax renderers inside them. Unrouted containers retain their native element.
+- **Error handling**: Plugin errors reach `onError` and retain the default rendered element. Promise rejections and callback-style transformer errors use the same fallback.
 - **Zero bundle weight in `@stream-mdx/react`**: Heavy unified and AST parser dependencies remain isolated within `@stream-mdx/unified`.
 
 ## Installation
