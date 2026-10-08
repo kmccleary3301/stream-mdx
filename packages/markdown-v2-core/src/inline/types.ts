@@ -1,5 +1,5 @@
 import type { MarkdownConfig } from "@lezer/markdown";
-import type { InlineNode, InlinePlugin } from "../types";
+import type { InlineNode } from "../types";
 
 export interface MarkdownElement {
   readonly type: number;
