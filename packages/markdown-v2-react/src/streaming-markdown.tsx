@@ -408,6 +408,8 @@ function StreamingMarkdownComponent(
   const [workerReady, setWorkerReady] = useState(false);
   const workerReadyRef = useRef(false);
   const [streamStatus, setStreamStatus] = useState<"idle" | "streaming" | "done">("idle");
+  const iteratorSequenceRef = useRef(0);
+  const activeIteratorRef = useRef<number | null>(null);
   const lastMetricsRef = useRef<RendererMetrics | null>(null);
   const patchHistoryRef = useRef<RendererMetrics[]>([]);
 
@@ -797,12 +799,14 @@ function StreamingMarkdownComponent(
       };
     }
 
+    const iteratorOwner = ++iteratorSequenceRef.current;
+    activeIteratorRef.current = iteratorOwner;
     (async () => {
       try {
         setStreamStatus("streaming");
         renderer.restart();
         for await (const chunk of stream) {
-          if (cancelled) {
+          if (cancelled || activeIteratorRef.current !== iteratorOwner) {
             break;
           }
           renderer.append(chunk);
@@ -811,19 +815,23 @@ function StreamingMarkdownComponent(
             console.info("[debug] streaming chunk", chunk.length);
           }
         }
-        if (!cancelled) {
+        if (!cancelled && activeIteratorRef.current === iteratorOwner) {
+          renderer.finalize();
           setStreamStatus("done");
         }
       } catch (error) {
-        if (!cancelled) {
+        if (!cancelled && activeIteratorRef.current === iteratorOwner) {
           setStreamStatus("done");
           onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
         }
+      } finally {
+        if (activeIteratorRef.current === iteratorOwner) activeIteratorRef.current = null;
       }
     })();
 
     return () => {
       cancelled = true;
+      if (activeIteratorRef.current === iteratorOwner) activeIteratorRef.current = null;
     };
   }, [renderer, text, stream, workerReady, session, managedWorker]);
 
@@ -837,12 +845,13 @@ function StreamingMarkdownComponent(
         renderer.resume();
       },
       restart() {
+        activeIteratorRef.current = null;
         setStreamStatus("idle");
         setSession((prev) => prev + 1);
       },
       finalize() {
         renderer.finalize();
-        if (!stream) setStreamStatus("done");
+        if (activeIteratorRef.current === null) setStreamStatus("done");
       },
       append(text: string) {
         if (!text || !workerReadyRef.current) return;
