@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- End Type 6/7 HTML blocks on native container-relative blank lines. Preserve fenced code, plugin parsing, source offsets, and typed HTML-owned children inside quoted/listed wrappers; Type 1 HTML remains literal through blank lines.
 - Preserve whitespace beyond the required four columns on internal indented-code blank lines, including nested containers. Include invisible reference definitions when determining loose lists.
 - Recognize bare FTP links with native GFM URL punctuation and parenthesis handling. Keep the existing Markdown URI and raw-HTML sanitizer policies unchanged.
 - Convert Lezer HTML tags, comments, and processing instructions to typed inline nodes. Keep parsed markdown children inside allowed inline tags and apply the configured attribute policy.

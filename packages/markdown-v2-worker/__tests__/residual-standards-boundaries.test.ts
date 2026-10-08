@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { micromark } from "micromark";
 import { JSDOM } from "jsdom";
 import type { WorkerOut } from "@stream-mdx/core";
 import { ComponentRegistry, MarkdownBlocksRenderer, createRendererStore, type RendererStore } from "@stream-mdx/react/server";
@@ -17,6 +18,16 @@ const init = {
 };
 const code = "<pre><code>chunk1\n  \n  chunk2\n</code></pre>";
 const cases = [
+  ...[
+    { name: "quoted Type6 HTML blank lines expose native fenced code", markdown: "- outer\n\n  > <div>\n  >\n  > ```js\n  > const x=1;\n  > ```\n  >\n  > </div>" },
+    { name: "root quote Type6 retains HTML continuation marks", markdown: "> <div>\n> literal\n>\n> ```js\n> const x=1;\n> ```\n>\n> </div>\n" },
+    { name: "nested quotes Type6 contextual whitespace", markdown: ">> <div>\n>> \t\n>> ```js\n>> const x=1;\n>> ```\n>>\n>> </div>\n" },
+    { name: "quoted Type7 HTML blank lines expose native fenced code", markdown: "> <span>\n>\n> ```js\n> const x=1;\n> ```\n>\n> </span>\n" },
+    { name: "quoted Type1 pre remains literal through blank lines", markdown: "> <pre>\n>\n> ```js\n> const x=1;\n> ```\n>\n> </pre>\n" },
+    { name: "quoted Type6 exits before a sibling list item", markdown: "- outer\n\n  > <div>\n  > literal\n- sibling\n" },
+    { name: "list-only Type6 keeps native code boundary", markdown: "- outer\n\n  <div>\n  \n  ```js\n  const x=1;\n  ```\n  \n  </div>\n" },
+    { name: "root Type6 keeps native code boundary", markdown: "<div>\n\n```js\nconst x=1;\n```\n\n</div>\n" },
+  ].map((fixture) => ({ ...fixture, html: micromark(fixture.markdown, { allowDangerousHtml: true }) })),
   { name: "cm112 internal blank spaces", markdown: "    chunk1\n      \n      chunk2\n", html: code },
   { name: "quoted internal blank spaces", markdown: ">     chunk1\n>       \n>       chunk2\n", html: `<blockquote>${code}</blockquote>` },
   { name: "listed internal blank spaces", markdown: "- a\n\n      chunk1\n        \n        chunk2\n", html: `<ul><li><p>a</p>${code}</li></ul>` },
