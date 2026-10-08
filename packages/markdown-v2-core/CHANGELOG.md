@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Sanitize finalized code-row HTML without a DOM: `sanitizeCodeHTML`'s Node/SSR path now reuses the shared DOM-free rehype pipeline (same `pre`/`code`/`span`/`div`/`br` + `class`/`data-*`/`style` allowlist and the same allowlisted-property/ASCII-charset style policy as DOMPurify, rejecting CSS backslash escapes, comment-splitting, and `url(...)`/`expression(...)` values) instead of throwing when `window` is unavailable.
 - End Type 6/7 HTML blocks on native container-relative blank lines. Preserve fenced code, plugin parsing, source offsets, and typed HTML-owned children inside quoted/listed wrappers; Type 1 HTML remains literal through blank lines.
 - Preserve whitespace beyond the required four columns on internal indented-code blank lines, including nested containers. Include invisible reference definitions when determining loose lists.
 - Recognize bare FTP links with native GFM URL punctuation and parenthesis handling. Keep the existing Markdown URI and raw-HTML sanitizer policies unchanged.

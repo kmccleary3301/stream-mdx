@@ -13,3 +13,5 @@ Claim actual async iterator identities once per mounted component, including acr
 Initialize owned static text with the complete document rather than repeatedly parsing growing append chunks. Share all existing initialization options, match FIFO acknowledgements, reject pending static renders on worker detach, and leave incremental streams and caller-managed workers unchanged.
 
 Preserve pending initialization acknowledgement ownership when a borrowed worker outlives its renderer. Detached calls reject without allowing late responses to resolve or repopulate a new attachment.
+
+Disable showcase table navigation while its source is pending or its virtualized viewport is not ready, so an early click cannot silently target a missing or transient full-table view.

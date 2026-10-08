@@ -693,7 +693,6 @@ export const defaultBlockComponents: BlockComponents = {
  */
 export class ComponentRegistry {
   private blockComponents: BlockComponents;
-  private customBlockComponents = new Set<string>();
   private inlineComponents: InlineComponents;
   private htmlElements: HtmlElements;
   private tableElements: TableElements;
@@ -714,11 +713,6 @@ export class ComponentRegistry {
     options?: { artifactHtml?: boolean; mathRenderer?: MathRenderer; blockRenderer?: BlockRendererOverride; tableVirtualization?: TableVirtualizationOptions },
   ) {
     this.blockComponents = { ...defaultBlockComponents, ...blockComponents } as BlockComponents;
-    for (const key of Object.keys(blockComponents)) {
-      if (blockComponents[key as keyof BlockComponents]) {
-        this.customBlockComponents.add(key);
-      }
-    }
     this.inlineComponents = { ...defaultInlineComponents, ...inlineComponents } as InlineComponents;
     this.htmlElements = getDefaultHtmlElements();
     if (!inlineComponents.html) {
@@ -818,16 +812,20 @@ export class ComponentRegistry {
    */
   setBlockComponents(components: Partial<BlockComponents>): void {
     this.blockComponents = { ...this.blockComponents, ...components } as BlockComponents;
-    for (const key of Object.keys(components)) {
-      if (components[key as keyof BlockComponents]) {
-        this.customBlockComponents.add(key);
-      }
-    }
     this.blockComponentMapCache = null;
   }
 
+  /**
+   * A block type is "custom" only when the registered component differs from the
+   * built-in default. Re-passing the built-in map (for example `components={registry.getBlockComponentMap()}`)
+   * must keep native block views (nested lists, mixed segments, tables) enabled.
+   */
   hasCustomBlockComponent(type: string): boolean {
-    return this.customBlockComponents.has(type);
+    const current = (this.blockComponents as Record<string, unknown>)[type];
+    if (current === undefined) {
+      return false;
+    }
+    return current !== (defaultBlockComponents as Record<string, unknown>)[type];
   }
 
   /**

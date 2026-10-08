@@ -35,6 +35,133 @@ const sanitizeProcessor = unified()
   .use(rehypeStringifyPlugin)
   .freeze();
 
+/**
+ * Code-row sanitation declaration shared by the DOM path (`sanitizeCodeHTML`
+ * in ./security, DOMPurify) and the DOM-free path below. This is the single
+ * source of truth so Node/SSR and browser sanitize code rows identically:
+ * only `pre`/`code`/`span`/`div`/`br` with `class`, `data-*`, and `style`.
+ */
+export const CODE_ROW_ALLOWED_TAGS = ["pre", "code", "span", "div", "br"] as const;
+export const CODE_ROW_ALLOWED_ATTRS = ["class", "data-*", "style"] as const;
+
+// hast-util-sanitize matches property names (`className`, `dataLine`) and only
+// supports the special `data*` entry for the whole data-attribute family.
+const CODE_ROW_HAST_ATTRS = ["className", "style", "data*"] as const;
+
+/**
+ * Tags whose entire subtree is removed on both paths instead of being
+ * unwrapped. Mirrors DOMPurify's `DEFAULT_FORBID_CONTENTS` (dompurify 3.4.16,
+ * the version this repo pins) so the DOM-free rehype pipeline and DOMPurify
+ * agree on `svg`/`template`/`iframe`/`thead`-style subtrees: `<svg><text>B</text></svg>`
+ * must become empty on Node exactly as it does in the browser. Tags outside
+ * this set keep their content on both paths (KEEP_CONTENT semantics).
+ */
+const CODE_ROW_STRIP_TAGS = [
+  "annotation-xml",
+  "audio",
+  "colgroup",
+  "desc",
+  "foreignobject",
+  "head",
+  "iframe",
+  "math",
+  "mi",
+  "mn",
+  "mo",
+  "ms",
+  "mtext",
+  "noembed",
+  "noframes",
+  "noscript",
+  "plaintext",
+  "script",
+  "selectedcontent",
+  "style",
+  "svg",
+  "template",
+  "thead",
+  "title",
+  "video",
+  "xmp",
+];
+
+/**
+ * Code-row style policy: only theme wiring survives. Properties must be
+ * `--custom-properties` or a small presentational allowlist, and values must
+ * stay inside a conservative charset. This rejects CSS backslash escapes
+ * (for example a `\75` escape spelling `u`), comment-splitting tricks, and
+ * function values such as `url(`/`expression(` by construction instead of
+ * pattern-matching raw text. Applied to both paths (rehype tree walk on the
+ * DOM-free path, template scrub after DOMPurify in the browser) so browser
+ * and Node keep and drop the same styles.
+ */
+const CODE_ROW_STYLE_PROPS =
+  /^(?:--[a-z0-9_-]+|color|background-color|font-synthesis|font-style|font-weight|text-decoration|text-decoration-color|text-decoration-line|text-decoration-style|text-decoration-thickness|display|white-space)$/i;
+const CODE_ROW_STYLE_VALUE = /^[a-z0-9#%.,\s_+-]+$/i;
+
+export function isSafeCodeRowStyle(style: string): boolean {
+  for (const declaration of style.split(";")) {
+    const trimmed = declaration.trim();
+    if (trimmed.length === 0) continue;
+    const separator = trimmed.indexOf(":");
+    if (separator <= 0) return false;
+    const property = trimmed.slice(0, separator).trim();
+    const value = trimmed.slice(separator + 1).trim();
+    if (!CODE_ROW_STYLE_PROPS.test(property) || !CODE_ROW_STYLE_VALUE.test(value)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function createCodeRowSchema(): Schema {
+  const base = JSON.parse(JSON.stringify(defaultSchema)) as Schema;
+  base.tagNames = [...CODE_ROW_ALLOWED_TAGS];
+  base.attributes = { "*": [...CODE_ROW_HAST_ATTRS] } as Schema["attributes"];
+  base.protocols = {};
+  base.strip = [...CODE_ROW_STRIP_TAGS];
+  return base;
+}
+
+const codeRowProcessor = unified()
+  .use(rehypeParsePlugin, { fragment: true })
+  .use(rehypeSanitizePlugin, createCodeRowSchema())
+  .use(rehypeStringifyPlugin)
+  .freeze();
+
+function stripUnsafeCodeRowStyles(node: unknown): void {
+  if (!node || typeof node !== "object") return;
+  const record = node as Record<string, unknown>;
+  if (record.type === "element" && record.properties && typeof record.properties === "object") {
+    const properties = record.properties as Record<string, unknown>;
+    const style = properties.style;
+    if (typeof style === "string" && !isSafeCodeRowStyle(style)) {
+      delete properties.style;
+    }
+  }
+  if (Array.isArray(record.children)) {
+    for (const child of record.children) stripUnsafeCodeRowStyles(child);
+  }
+}
+
+/**
+ * DOM-free code-row sanitizer used by Node/SSR consumers (`sanitizeCodeHTML`).
+ * Reuses the worker/server rehype pipeline with the shared code-row allowlist;
+ * it never widens tags/attributes and returns "" on failure so callers fall
+ * back to their escaped-source path.
+ */
+export function sanitizeCodeHtmlInWorker(html: string): string {
+  if (!html) return "";
+  try {
+    const tree = codeRowProcessor.runSync(codeRowProcessor.parse(html));
+    stripUnsafeCodeRowStyles(tree);
+    return String(codeRowProcessor.stringify(tree));
+  } catch (error) {
+    console.warn("[markdown-v2] Failed to sanitize code HTML without a DOM:", error);
+    return "";
+  }
+}
+
 export function sanitizeHtmlInWorker(html: string, options?: { allowedTags?: Record<string, string[]> }): string {
   if (!html) return "";
   if (options?.allowedTags && Object.keys(options.allowedTags).length > 0) {

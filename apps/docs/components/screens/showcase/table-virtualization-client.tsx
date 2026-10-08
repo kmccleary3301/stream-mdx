@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { StreamingMarkdown } from "@stream-mdx/react";
-import type { TableVirtualizationOptions } from "@stream-mdx/react";
+import type { StreamingMarkdownHandle, TableVirtualizationOptions } from "@stream-mdx/react";
 import { createDemoTableElements } from "@/lib/streaming-demo-registry";
 
 function generateTableMarkdown(rowCount: number): string {
@@ -38,9 +38,30 @@ export function TableVirtualizationClient() {
   const [maxHeight, setMaxHeight] = useState("500px");
   const [overscan, setOverscan] = useState(8);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const markdownRef = useRef<StreamingMarkdownHandle | null>(null);
+  const [finalizedSource, setFinalizedSource] = useState<string | null>(null);
+  const [readyViewport, setReadyViewport] = useState<{ source: string; enabled: boolean } | null>(null);
 
   const markdown = useMemo(() => generateTableMarkdown(rowCount), [rowCount]);
   const tableElements = useMemo(() => createDemoTableElements(), []);
+  const tableSource = markdown.slice(markdown.indexOf("| ID |")).trim();
+  const navigationReady = virtualizationEnabled && finalizedSource === markdown && readyViewport?.source === markdown &&
+    readyViewport.enabled === virtualizationEnabled;
+
+  useEffect(() => {
+    if (!virtualizationEnabled || finalizedSource !== markdown) return;
+    let frame = 0;
+    const waitForViewport = () => {
+      const viewport = containerRef.current?.querySelector<HTMLDivElement>(".markdown-table-container");
+      if (viewport?.dataset.tableVirtualized === "true") {
+        setReadyViewport({ source: markdown, enabled: virtualizationEnabled });
+      } else {
+        frame = requestAnimationFrame(waitForViewport);
+      }
+    };
+    frame = requestAnimationFrame(waitForViewport);
+    return () => cancelAnimationFrame(frame);
+  }, [finalizedSource, markdown, virtualizationEnabled]);
 
   const virtualizationConfig: TableVirtualizationOptions = useMemo(() => {
     return {
@@ -53,15 +74,17 @@ export function TableVirtualizationClient() {
   }, [virtualizationEnabled, overscan, maxHeight]);
 
   const handleScrollToBottom = () => {
+    if (!navigationReady) return;
     const tableContainer = containerRef.current?.querySelector<HTMLDivElement>(".markdown-table-container");
-    if (tableContainer) {
+    if (tableContainer?.dataset.tableVirtualized === "true") {
       tableContainer.scrollTop = tableContainer.scrollHeight;
     }
   };
 
   const handleScrollToTop = () => {
+    if (!navigationReady) return;
     const tableContainer = containerRef.current?.querySelector<HTMLDivElement>(".markdown-table-container");
-    if (tableContainer) {
+    if (tableContainer?.dataset.tableVirtualized === "true") {
       tableContainer.scrollTop = 0;
     }
   };
@@ -89,7 +112,10 @@ export function TableVirtualizationClient() {
             <input
               type="checkbox"
               checked={virtualizationEnabled}
-              onChange={(e) => setVirtualizationEnabled(e.target.checked)}
+              onChange={(e) => {
+                setReadyViewport(null);
+                setVirtualizationEnabled(e.target.checked);
+              }}
               className="rounded border-border text-primary focus:ring-primary"
             />
             <span>Virtualization Enabled</span>
@@ -99,7 +125,13 @@ export function TableVirtualizationClient() {
             <span className="text-muted">Row Count:</span>
             <select
               value={rowCount}
-              onChange={(e) => setRowCount(Number(e.target.value))}
+              onChange={(e) => {
+                const next = Number(e.target.value);
+                if (next === rowCount) return;
+                setFinalizedSource(null);
+                setReadyViewport(null);
+                setRowCount(next);
+              }}
               className="rounded border border-border bg-background px-2 py-1 text-xs"
             >
               <option value="50">50 rows</option>
@@ -139,7 +171,8 @@ export function TableVirtualizationClient() {
           <button
             type="button"
             onClick={handleScrollToTop}
-            className="rounded border border-border bg-background/60 px-3 py-1 text-xs font-medium hover:bg-background"
+            disabled={!navigationReady}
+            className="rounded border border-border bg-background/60 px-3 py-1 text-xs font-medium hover:bg-background disabled:cursor-wait disabled:opacity-50"
           >
             Scroll to Top
           </button>
@@ -147,7 +180,8 @@ export function TableVirtualizationClient() {
             type="button"
             id="scroll-to-bottom-button"
             onClick={handleScrollToBottom}
-            className="rounded border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-medium text-primary hover:bg-primary/20"
+            disabled={!navigationReady}
+            className="rounded border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-medium text-primary hover:bg-primary/20 disabled:cursor-wait disabled:opacity-50"
           >
             Scroll to Last Row
           </button>
@@ -157,7 +191,12 @@ export function TableVirtualizationClient() {
       {/* Render Area */}
       <main ref={containerRef} className="route-panel overflow-hidden p-6" id="table-showcase-render-container">
         <StreamingMarkdown
+          ref={markdownRef}
           text={markdown}
+          onMetrics={() => {
+            const table = markdownRef.current?.getState().blocks.find((block) => block.type === "table");
+            if (table?.isFinalized && table.payload.raw.trim() === tableSource) setFinalizedSource(markdown);
+          }}
           features={{ tables: true, html: true }}
           tableVirtualization={virtualizationConfig}
           tableElements={tableElements}

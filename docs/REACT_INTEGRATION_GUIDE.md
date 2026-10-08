@@ -124,6 +124,8 @@ export async function ArticlePage() {
 }
 ```
 
+Code-row HTML produced by the highlighter is sanitized on this path without a DOM: the server renderer reuses the DOM-free rehype pipeline (`packages/markdown-v2-core/src/worker-html-sanitizer.ts`) with the same `pre`/`code`/`span`/`div`/`br` + `class`/`data-*`/`style` allowlist the browser path applies through DOMPurify. Prerender therefore needs no `window`/jsdom shim, script/event/`javascript:`/`url(...)` style content is dropped on both paths, and theme CSS variables (`--shiki-*`) survive.
+
 ### Edge / No-worker Threads
 
 If your runtime cannot spawn `worker_threads`, use the direct compile surface and render
@@ -176,7 +178,7 @@ Cache note:
 | `features` | `object` | Feature flags: `{ math?, mdx?, tables?, html?, callouts?, footnotes?, formatAnticipation?, codeHighlighting? }` |
 | `mdxCompileMode` | `"server" \| "worker"` | Enables MDX compilation/hydration and selects strategy. |
 | `mdxComponents` | `object` | Component map passed to hydrated MDX blocks. |
-| `components` | `object` | Override block components (headings, code, tables, etc.). |
+| `components` | `object` | Override block components (headings, code, tables, etc.). Only entries that differ from the built-in defaults replace native block views, so re-passing `registry.getBlockComponentMap()` keeps native list/table/HTML rendering (nested list children, tables, HTML ownership) enabled. |
 | `inlineComponents` | `object` | Override inline components (bold, links, code, etc.). |
 | `tableElements` | `object` | Override table tags (Shadcn table wrappers, etc.). |
 | `htmlElements` | `object` | Override HTML tag renders (when HTML is enabled). |
