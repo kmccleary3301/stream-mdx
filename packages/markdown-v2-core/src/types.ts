@@ -425,7 +425,7 @@ export type Patch =
       lines: string[];
       highlight?: Array<string | null>;
       tokens?: Array<TokenLineV1 | null>;
-      diffKind?: Array<DiffKind | null>;
+      diffKind?: Array<DiffLineKind | null>;
       oldNo?: Array<number | null>;
       newNo?: Array<number | null>;
       meta?: PatchMeta;

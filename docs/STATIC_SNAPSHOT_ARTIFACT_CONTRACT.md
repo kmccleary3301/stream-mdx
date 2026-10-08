@@ -74,10 +74,17 @@ Public token spans use `fg` and `fs` in their compact style records. Theme varia
 remain in `v.dark` and `v.light`; the legacy themed-line bridge converts these
 fields to `color` and `fontStyle` rather than exposing those legacy keys in token IR.
 
-Footnote numbering runs over the actual prepared inline children in document
-order. It updates serialized child views and existing HTML ownership descriptors
-without changing unrelated code/HTML artifacts. Blockquote compatibility inline
-is derived from those numbered children, not reparsed from container source.
+Serialized code rows and `appendLines.diffKind` use the public `DiffLineKind`
+discriminants (`add`, `del`, `context`, `hunk`, `meta`). Parser-only `DiffKind`
+uses `remove` internally; full and lazy highlighting normalize it before publication.
+
+Footnote numbering uses the current canonical rendered document: root references
+first, then reachable definition bodies in footer order. Late root references may
+renumber earlier body-only references; final IR is independent of append chunking
+and prior finalization. Reference links and footer items update together.
+Serialized aliases do not create extra occurrences. Blockquote compatibility
+inline follows the same HTML, prepared child, table-cell, and mixed-segment
+ownership paths, without reparsing container source or copying unrelated artifacts.
 
 Defined footnote occurrences carry `occurrence` and `defined` metadata. The first
 anchor is `fnref:n`, subsequent anchors are `fnref:n:2`, `fnref:n:3`, and so on.
@@ -98,13 +105,30 @@ the existing baseline on examples 155, 239, and 240; example 155 remained the
 streaming divergence. Empty-quote 239/240 and empty-table-body GFM205 corrections
 were applied after that report and require the parent integration gate.
 
-Package builds and all 20 core test files passed. The worker suite stopped on
-mixed-segment canonicalization and the React suite stopped on HTML consumer
-conformance. The final source canonicalizes prepared nested metadata for JSON
-parity. The owning-engine regression checks native callbacks, declarative syntax,
-forward references, child finalization, serialized reset, code-line counts, and
-core/React consumer invariants. Full worker/React approval still requires the
-integration gate; the conformance counts above are not a parity claim.
+Earlier worker/React suites stopped on mixed-segment and HTML conformance.
+Subsequent block-source checks passed all 20 core files and all 46 worker files
+at the earlier `1db243c` snapshot. Those results do not approve later integration.
+
+At the canonical-footnote/code-row repair, core/plugins/worker package builds and
+the hosted-worker build passed. Targeted tests passed:
+
+- Six nested lazy-highlight cases: token/both output across list/quote, list-owned
+  HTML, and root HTML; 220 producer rows, head/tail requests, callback metadata,
+  JSON reset, append/finalize retention, and exact core/React consumer invariants.
+- Public compact-token dark/light and native diff consumers against independent
+  Shiki foreground/font-style results.
+- The 51-line multi-await diff lifecycle fixture: replacement `INIT` with reused
+  IDs, disposal, fresh copy-on-write owner metadata, inside-owner reconstruction,
+  and continuation rows/cursors matching full compilation.
+- Incremental code/HTML/math/MDX artifacts mounted through the real consumer.
+- Three canonical footnote fixtures across all-at-once, interleaved finalization,
+  and one-character appends: exact final IR/SSR, mounted DOM target identity,
+  unique anchors/backlinks, and paragraph/table HTML-owned quote compatibility.
+
+The earlier 401-line alternating-run lifecycle fixture exhausted the Node heap;
+the bounded replacement retains the lifecycle boundary but is not a memory
+performance proof. Integrated full worker/React and hosted conformance gates
+remain the parent integration evidence, not implied by targeted passes above.
 
 
 
