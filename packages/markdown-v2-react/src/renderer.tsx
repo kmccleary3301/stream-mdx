@@ -197,6 +197,7 @@ export class MarkdownRenderer implements Renderer {
         prewarmLangs: this.config.highlight?.langs || [],
         docPlugins,
         mdx: { compileMode: this.config.mdx?.compileStrategy ?? "server" },
+        ...(this.config.themes ? { themes: this.config.themes } : {}),
         ...(this.config.syntax ? { syntax: this.config.syntax } : {}),
         ...(this.config.html ? { html: this.config.html } : {}),
       } as WorkerIn);

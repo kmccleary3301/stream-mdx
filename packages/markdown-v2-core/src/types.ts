@@ -75,6 +75,11 @@ export type FormatAnticipationConfig =
 export type CodeHighlightingMode = "final" | "incremental" | "live";
 export type CodeHighlightOutputMode = "html" | "tokens" | "both";
 
+export interface CodeHighlightThemes {
+  light: string;
+  dark: string;
+}
+
 export interface InlineHtmlDescriptor {
   tagName: string;
   attributes: Record<string, string>;
@@ -208,6 +213,7 @@ export type WorkerIn =
       type: "INIT";
       initialContent?: string;
       prewarmLangs?: string[];
+      themes?: CodeHighlightThemes;
       docPlugins?: {
         footnotes?: boolean;
         html?: boolean;
@@ -227,6 +233,7 @@ export type WorkerIn =
           enabled?: boolean;
           thresholdLines?: number;
         };
+        themes?: CodeHighlightThemes;
       };
       mdx?: { compileMode?: "server" | "worker" };
       syntax?: SyntaxRuleSpec[];

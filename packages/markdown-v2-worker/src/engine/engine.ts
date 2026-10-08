@@ -4,6 +4,7 @@ import type {
   Block,
   BlockResolvedLinkReference,
   CodeHighlightOutputMode,
+  CodeHighlightThemes,
   CompiledMdxModule,
   DiffLineKind,
   FormatAnticipationConfig,
@@ -70,11 +71,14 @@ import {
 } from "../lazy-tokenization";
 import {
   CODE_HIGHLIGHT_THEMES,
+  DEFAULT_CODE_HIGHLIGHT_THEMES,
   buildDiffBlocksFromLines,
   buildDiffTokenLines,
+  clearSharedHighlightCache,
   dedentFencedCodeByClosingIndent,
   detectDiffLanguage,
   enhanceHighlightedHtml,
+  getCachedHighlight,
   getSharedHighlighter,
   guessLanguageFromDiffLines,
   looksLikeUnifiedDiff,
@@ -82,6 +86,8 @@ import {
   renderShikiLines,
   renderTokenLines,
   resolveHighlightLanguage,
+  resolveHighlightThemes,
+  setCachedHighlight,
   type SharedHighlighter,
   toDiffLineKind,
 } from "./highlight";
@@ -207,8 +213,10 @@ export class MarkdownEngine {
   private readonly workerGrammarEngine: "js" | "wasm" = "js";
   private workerCredits = 1;
   private deferredPatchQueue: Patch[] = [];
-
-  private readonly codeHighlightCache = new Map<string, { html: string; lang: string }>();
+  private codeThemes: { light: string; dark: string } = {
+    light: DEFAULT_CODE_HIGHLIGHT_THEMES.light,
+    dark: DEFAULT_CODE_HIGHLIGHT_THEMES.dark,
+  };
   private readonly incrementalHighlightStates = new Map<string, IncrementalHighlightState>();
 
   private readonly lazyTokenizationStates = new Map<string, LazyTokenizationState>();
@@ -297,7 +305,7 @@ export class MarkdownEngine {
     this.lazyTokenizationQueue.clear();
     this.lazyTokenizationStates.clear();
     this.deferredPatchQueue = [];
-    this.codeHighlightCache.clear();
+    this.deferredPatchQueue = [];
     this.incrementalHighlightStates.clear();
     this.workerMdxCache.clear();
     this.workerMdxInflight.clear();
@@ -352,7 +360,15 @@ export class MarkdownEngine {
   private async processMessage(msg: WorkerIn): Promise<void> {
     switch (msg.type) {
       case "INIT":
-        await this.initialize(msg.initialContent, msg.prewarmLangs ?? [], msg.docPlugins, msg.mdx, msg.syntax, msg.html);
+        await this.initialize(
+          msg.initialContent,
+          msg.prewarmLangs ?? [],
+          msg.docPlugins,
+          msg.mdx,
+          msg.syntax,
+          msg.html,
+          msg.themes ?? msg.docPlugins?.themes,
+        );
         return;
       case "APPEND":
         await this.handleAppend(msg.text);
@@ -523,10 +539,12 @@ export class MarkdownEngine {
       emitDiffBlocks?: boolean;
       mdxComponentNames?: string[];
       lazyTokenization?: { enabled?: boolean; thresholdLines?: number };
+      themes?: CodeHighlightThemes;
     },
     mdxOptions?: { compileMode?: WorkerMdxMode },
     syntax?: SyntaxRuleSpec[],
     html?: HtmlOptions,
+    themes?: CodeHighlightThemes,
   ): Promise<void> {
     this.documentGeneration += 1;
     this.performanceTimer = new PerformanceTimer();
@@ -564,7 +582,7 @@ export class MarkdownEngine {
     for (const key of Object.keys(this.documentPluginState)) {
       delete this.documentPluginState[key];
     }
-    this.codeHighlightCache.clear();
+    this.incrementalHighlightStates.clear();
     this.incrementalHighlightStates.clear();
     this.lazyTokenizationStates.clear();
     this.lazyTokenizationQueue.clear();
@@ -638,6 +656,15 @@ export class MarkdownEngine {
     this.highlighter = await getSharedHighlighter(prewarmLangs);
     this.performanceTimer.measure("highlighter-init");
 
+    const requestedThemes = themes ?? docPlugins?.themes;
+    const { themes: resolvedThemes, errors: themeErrors } = await resolveHighlightThemes(
+      this.highlighter,
+      requestedThemes,
+    );
+    for (const error of themeErrors) {
+      this.reportError(error, "INIT", { theme: requestedThemes });
+    }
+    this.codeThemes = resolvedThemes;
     if (initialContent) {
       this.currentContent = initialContent;
       const result = await this.parseAll(initialContent);
@@ -1532,7 +1559,7 @@ export class MarkdownEngine {
                 const sharedLanguage = wantsHtml ? resolvedLanguage : resolvedTokenLanguage;
                 const tokens = this.highlighter?.codeToTokensWithThemes(completeLines.join("\n"), {
                   lang: sharedLanguage as never,
-                  themes: CODE_HIGHLIGHT_THEMES,
+                  themes: this.codeThemes,
                   grammarState: state.grammarState as never,
                 } as never) as ShikiThemedToken[][];
                 if (wantsHtml) {
@@ -1570,6 +1597,7 @@ export class MarkdownEngine {
                   resolvedTokenLanguage,
                   grammarObj,
                   this.highlighter,
+                  this.codeThemes,
                 );
                 state.grammarState = nextState.context;
                 state.tokenLines.push(...tokenLines);
@@ -1713,26 +1741,23 @@ export class MarkdownEngine {
     };
 
     if (wantsHtml && hasHighlighter && hasHighlightableContent) {
-      const cacheKey = `${resolvedLanguage}::${codeBody}`;
-      const cached = this.codeHighlightCache.get(cacheKey);
-      if (cached) {
+      const cached = getCachedHighlight(resolvedLanguage, this.codeThemes, codeBody);
+      if (cached?.html) {
         block.payload.highlightedHtml = cached.html;
       } else {
         try {
           const highlighted = this.highlighter!.codeToHtml(codeBody, {
             lang: resolvedLanguage as never,
-            themes: CODE_HIGHLIGHT_THEMES,
+            themes: this.codeThemes as never,
             defaultColor: false,
           });
           const enhanced = enhanceHighlightedHtml(highlighted, resolvedLanguage);
           block.payload.highlightedHtml = enhanced;
-          if (this.codeHighlightCache.size >= MAX_CODE_HIGHLIGHT_CACHE_ENTRIES) {
-            const first = this.codeHighlightCache.keys().next().value;
-            if (typeof first === "string") {
-              this.codeHighlightCache.delete(first);
-            }
-          }
-          this.codeHighlightCache.set(cacheKey, { html: enhanced, lang: resolvedLanguage });
+          setCachedHighlight(resolvedLanguage, this.codeThemes, codeBody, {
+            ...cached,
+            html: enhanced,
+            lang: resolvedLanguage,
+          });
         } catch (error) {
           console.warn("Shiki codeToHtml failed:", error);
         }
@@ -1764,6 +1789,7 @@ export class MarkdownEngine {
               resolvedTokenLanguage,
               {},
               this.highlighter!,
+              this.codeThemes,
             );
             tokenLines = diffTokens;
           } catch (error) {
@@ -1774,15 +1800,25 @@ export class MarkdownEngine {
       } else if (!hasHighlighter || !hasHighlightableContent) {
         tokenLines = codeLines.map((line) => (line.length > 0 ? { spans: [{ t: line }] } : { spans: [] }));
       } else {
-        try {
-          const tokens = this.highlighter!.codeToTokensWithThemes(codeBody, {
-            lang: resolvedTokenLanguage as never,
-            themes: CODE_HIGHLIGHT_THEMES,
-          }) as ShikiThemedToken[][];
-          tokenLines = renderTokenLines(tokens);
-        } catch (error) {
-          console.warn("Shiki codeToTokens failed:", error);
-          tokenLines = new Array(codeLines.length).fill(null);
+        const cached = getCachedHighlight(resolvedTokenLanguage, this.codeThemes, codeBody);
+        if (cached?.tokenLines) {
+          tokenLines = cached.tokenLines;
+        } else {
+          try {
+            const tokens = this.highlighter!.codeToTokensWithThemes(codeBody, {
+              lang: resolvedTokenLanguage as never,
+              themes: this.codeThemes as never,
+            }) as ShikiThemedToken[][];
+            tokenLines = renderTokenLines(tokens);
+            setCachedHighlight(resolvedTokenLanguage, this.codeThemes, codeBody, {
+              ...cached,
+              tokenLines,
+              lang: resolvedTokenLanguage,
+            });
+          } catch (error) {
+            console.warn("Shiki codeToTokens failed:", error);
+            tokenLines = new Array(codeLines.length).fill(null);
+          }
         }
       }
     }
@@ -2441,8 +2477,8 @@ export class MarkdownEngine {
     const sourceInfo = block.payload.meta?.info;
     const sourceLanguage = block.payload.meta?.lang;
     const sourceHighlightLanguage = block.payload.meta?.highlightLang;
-    const themeDark = CODE_HIGHLIGHT_THEMES.dark;
-    const themeLight = CODE_HIGHLIGHT_THEMES.light;
+    const themeDark = this.codeThemes.dark;
+    const themeLight = this.codeThemes.light;
     const currentTarget = () => {
       if (this.disposed || generation !== this.documentGeneration) return undefined;
       const current = this.findPreparedCode(block.id);
@@ -2450,7 +2486,7 @@ export class MarkdownEngine {
       return leaf?.type === "code" && leaf.isFinalized && leaf.payload.raw === sourceRaw
         && leaf.payload.meta?.code === sourceCode && leaf.payload.meta?.info === sourceInfo
         && leaf.payload.meta?.lang === sourceLanguage && leaf.payload.meta?.highlightLang === sourceHighlightLanguage
-        && CODE_HIGHLIGHT_THEMES.dark === themeDark && CODE_HIGHLIGHT_THEMES.light === themeLight ? current : undefined;
+        && this.codeThemes.dark === themeDark && this.codeThemes.light === themeLight ? current : undefined;
     };
 
     const raw = block.payload.raw ?? "";
@@ -2523,7 +2559,7 @@ export class MarkdownEngine {
           const sharedLanguage = wantsHtml ? resolvedLanguage : resolvedTokenLanguage;
           const tokens = this.highlighter.codeToTokensWithThemes(segmentLines.join("\n"), {
             lang: sharedLanguage as never,
-            themes: CODE_HIGHLIGHT_THEMES,
+            themes: this.codeThemes,
             grammarState: nextGrammarState as never,
           } as never) as ShikiThemedToken[][];
           if (wantsHtml) highlightedSegment = renderShikiLines(tokens);
@@ -2543,6 +2579,7 @@ export class MarkdownEngine {
           resolvedTokenLanguage,
           grammarObj,
           this.highlighter,
+          this.codeThemes,
         );
         if (!currentTarget()) {
           if (this.activeMetricsCollector === metricsCollector) this.activeMetricsCollector = null;
