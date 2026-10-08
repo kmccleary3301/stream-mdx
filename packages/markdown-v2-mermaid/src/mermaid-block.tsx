@@ -40,7 +40,7 @@ export type MermaidBlockProps = {
   renderCode: React.ReactNode;
   meta?: Record<string, unknown>;
   isFinalized?: boolean;
-  language?: string;
+  language: string;
   info?: string;
   blockId?: string;
   defaultView?: "diagram" | "code";
