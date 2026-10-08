@@ -15,7 +15,7 @@ import { DeferredRenderContext, type DeferredRenderConfig } from "./renderer/def
 import { useRendererBlocks } from "./renderer/hooks";
 import type { RendererStore } from "./renderer/store";
 import { createDefaultWorker, releaseDefaultWorker } from "@stream-mdx/worker";
-import type { BlockComponents, CodeFenceRenderer, HtmlElements, InlineComponents, MathRenderer, RendererConfig, TableElements } from "./types";
+import type { BlockComponents, CodeFenceRenderer, HtmlElements, HtmlOptions, InlineComponents, MathRenderer, RendererConfig, SyntaxRuleSpec, TableElements } from "./types";
 
 const EMPTY_BLOCKS: ReadonlyArray<Block> = [];
 
@@ -149,6 +149,8 @@ export interface StreamingMarkdownProps {
   mathRenderer?: MathRenderer;
   artifactHtml?: boolean;
   deferHeavyBlocks?: boolean | DeferredRenderConfig;
+  syntax?: SyntaxRuleSpec[];
+  html?: HtmlOptions;
 }
 
 const MdxCoordinatorBridge: React.FC<{ store: RendererStore; mode: "server" | "worker" }> = ({ store, mode }) => {
@@ -301,6 +303,8 @@ function StreamingMarkdownComponent(
     mathRenderer,
     artifactHtml,
     deferHeavyBlocks,
+    syntax,
+    html,
   }: StreamingMarkdownProps,
   ref: React.ForwardedRef<StreamingMarkdownHandle>,
 ) {
@@ -372,6 +376,8 @@ function StreamingMarkdownComponent(
         adaptiveBudgeting: effectiveScheduling.adaptiveBudgeting,
       },
       mdx: mdxConfig,
+      syntax,
+      html,
     };
     const nextRenderer = new MarkdownRenderer(rendererConfig);
     nextRenderer.getComponentRegistry().setLinkHandler((url) => {

@@ -3,17 +3,19 @@ import type {
   DiffKind,
   DiffLineKind,
   InlineExtension,
+  SyntaxRuleSpec,
   TokenLineV1,
   WorkerOut,
 } from "@stream-mdx/core";
 import type { DocumentPlugin } from "@stream-mdx/plugins";
 
-export type { InlineExtension } from "@stream-mdx/core";
+export type { InlineExtension, SyntaxRuleSpec, HtmlOptions } from "@stream-mdx/core";
 
 export interface EngineExtensions {
   markdown?: MarkdownConfig[];
   inline?: InlineExtension[];
   documentPlugins?: DocumentPlugin[];
+  syntax?: SyntaxRuleSpec[];
 }
 
 export interface MarkdownEngineOptions {

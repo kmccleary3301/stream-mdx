@@ -149,6 +149,8 @@ export class MarkdownRenderer implements Renderer {
         mdx: {
           compileMode: this.config.mdx?.compileStrategy ?? "server",
         },
+        ...(this.config.syntax ? { syntax: this.config.syntax } : {}),
+        ...(this.config.html ? { html: this.config.html } : {}),
       } as WorkerIn);
     }
   }
@@ -229,6 +231,8 @@ export class MarkdownRenderer implements Renderer {
         mdx: {
           compileMode: this.config.mdx?.compileStrategy ?? "server",
         },
+        ...(this.config.syntax ? { syntax: this.config.syntax } : {}),
+        ...(this.config.html ? { html: this.config.html } : {}),
       } as WorkerIn);
     });
   }

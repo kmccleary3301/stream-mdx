@@ -116,6 +116,20 @@ export function renderInlineNodes(nodes: InlineNode[], components: InlineCompone
           React.createElement(components.br, {} as Record<string, never>),
           "\n",
         );
+      case "plugin": {
+        const pluginComponent = components[node.name] ?? components.plugin;
+        if (pluginComponent) {
+          return React.createElement(pluginComponent, {
+            key,
+            ...node.attrs,
+            name: node.name,
+            attrs: node.attrs,
+            children: node.children ? renderInlineNodes(node.children, components) : undefined,
+            raw: node.raw,
+          });
+        }
+        return React.createElement(React.Fragment, { key }, node.raw);
+      }
 
       default: {
         // Handle custom/extensible nodes

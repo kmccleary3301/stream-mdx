@@ -6,12 +6,16 @@ import type {
   CodeHighlightingMode,
   CompiledMdxModule,
   FormatAnticipationConfig,
+  HtmlOptions,
   InlineHtmlDescriptor,
   InlineNode,
   LazyTokenizationPriority,
+  SyntaxRuleSpec,
   TokenLineV1,
 } from "@stream-mdx/core";
 import type { ComponentRegistry } from "./components";
+
+export type { HtmlOptions, SyntaxRuleSpec } from "@stream-mdx/core";
 
 export interface CodeFenceRendererProps {
   code: string;
@@ -141,6 +145,8 @@ export interface RendererConfig {
   codeRenderers?: Record<string, CodeFenceRenderer>;
   mathRenderer?: MathRenderer;
   artifactHtml?: boolean;
+  syntax?: SyntaxRuleSpec[];
+  html?: HtmlOptions;
   performance?: {
     frameBudgetMs?: number;
     flushTimeoutMs?: number;

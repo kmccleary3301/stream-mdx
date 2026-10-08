@@ -1,7 +1,7 @@
 import { GFM, type MarkdownConfig, type MarkdownExtension, type MarkdownParser, parser as baseParser } from "@lezer/markdown";
 import { LezerInlineConverter } from "./inline/lezer-converter";
 import { createMathExtension } from "./inline/math-extension";
-import { compileRegexPluginToExtension, createDefaultRegexPlugins } from "./inline/plugin-adapter";
+import { compileRegexPluginToExtension, compileSyntaxRuleToExtension, createDefaultRegexPlugins } from "./inline/plugin-adapter";
 import type { InlineExtension, InlineParseOptions, InlineParserOptions, LinkReferenceMap, MarkdownElement } from "./inline/types";
 import { normalizeLinkLabel } from "./inline/reference-collector";
 import {
@@ -9,7 +9,7 @@ import {
   referenceGuardExtension,
   setActiveReferencePredicate,
 } from "./inline/reference-guard";
-import type { ASTInlinePlugin, InlineNode, InlinePlugin, RegexInlinePlugin } from "./types";
+import type { ASTInlinePlugin, InlineNode, InlinePlugin, RegexInlinePlugin, SyntaxRuleSpec } from "./types";
 
 export type { InlineParserOptions, InlineParseOptions, InlineExtension, LinkReferenceDefinition, LinkReferenceMap } from "./inline/types";
 
@@ -56,6 +56,7 @@ export class InlineParser {
   private regexPlugins: RegexInlinePlugin[] = [];
   private astPlugins: ASTInlinePlugin[] = [];
   private extensions: InlineExtension[] = [];
+  private syntaxRules: SyntaxRuleSpec[] = [];
   private cache = new Map<string, InlineNode[]>();
   private maxCacheEntries: number;
   private enableMath: boolean;
@@ -72,6 +73,12 @@ export class InlineParser {
 
     if (options.extensions) {
       this.extensions.push(...options.extensions);
+    }
+    if (options.syntax) {
+      for (const rule of options.syntax) {
+        this.syntaxRules.push(rule);
+        this.extensions.push(compileSyntaxRuleToExtension(rule));
+      }
     }
 
     // Register default mention and citation plugins
@@ -118,6 +125,14 @@ export class InlineParser {
    */
   registerExtension(extension: InlineExtension): void {
     this.extensions.push(extension);
+    this.rebuildParser();
+  }
+  /**
+   * Register a declarative SyntaxRuleSpec.
+   */
+  registerSyntaxRule(rule: SyntaxRuleSpec): void {
+    this.syntaxRules.push(rule);
+    this.extensions.push(compileSyntaxRuleToExtension(rule));
     this.rebuildParser();
   }
 
@@ -224,7 +239,7 @@ export class InlineParser {
    * declares an incomplete match at the end of the buffer.
    */
   getRegexAnticipationAppend(content: string): string | null {
-    if (!content || this.regexPlugins.length === 0) {
+    if (!content || (this.regexPlugins.length === 0 && this.syntaxRules.length === 0)) {
       return null;
     }
 
@@ -260,7 +275,28 @@ export class InlineParser {
 
       return appendValue;
     }
-
+    for (const rule of this.syntaxRules) {
+      if (!rule.anticipation) continue;
+      const { open, close } = rule.anticipation;
+      const lastOpen = content.lastIndexOf(open);
+      if (lastOpen === -1) continue;
+      const afterOpen = content.slice(lastOpen + open.length);
+      if (open === close) {
+        let count = 0;
+        let idx = content.indexOf(open);
+        while (idx !== -1) {
+          count++;
+          idx = content.indexOf(open, idx + open.length);
+        }
+        if (count % 2 !== 0) {
+          return close;
+        }
+      } else {
+        if (!afterOpen.includes(close)) {
+          return close;
+        }
+      }
+    }
     return null;
   }
 

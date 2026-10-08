@@ -6,7 +6,9 @@ import type {
   CompiledMdxModule,
   DiffKind,
   FormatAnticipationConfig,
+  HtmlOptions,
   InlineNode,
+  SyntaxRuleSpec,
   NormalizedFormatAnticipation,
   Patch,
   PatchMetrics,
@@ -172,8 +174,9 @@ export class MarkdownEngine {
 
   public readonly documentPluginRegistry: DocumentPluginRegistry;
   private readonly documentPluginState: DocumentState = {};
-
   private inlineParser!: InlineParser;
+  private syntaxRules: SyntaxRuleSpec[] = [];
+  private htmlConfig?: HtmlOptions;
   private performanceTimer = new PerformanceTimer();
   private highlighter: SharedHighlighter | null = null;
 
@@ -247,6 +250,9 @@ export class MarkdownEngine {
         this.documentPluginRegistry.register(plugin);
       }
     }
+    if (this.extensions?.syntax) {
+      this.syntaxRules.push(...this.extensions.syntax);
+    }
 
     this.buildInlineParser();
   }
@@ -256,6 +262,7 @@ export class MarkdownEngine {
     this.inlineParser = new InlineParser({
       enableMath: this.enableMath,
       ...(inlineExt ? { extensions: inlineExt } : {}),
+      ...(this.syntaxRules.length > 0 ? { syntax: this.syntaxRules } : {}),
     });
     this.documentPluginState.inlineParser = this.inlineParser;
   }
@@ -316,7 +323,7 @@ export class MarkdownEngine {
   private async processMessage(msg: WorkerIn): Promise<void> {
     switch (msg.type) {
       case "INIT":
-        await this.initialize(msg.initialContent, msg.prewarmLangs ?? [], msg.docPlugins, msg.mdx);
+        await this.initialize(msg.initialContent, msg.prewarmLangs ?? [], msg.docPlugins, msg.mdx, msg.syntax, msg.html);
         return;
       case "APPEND":
         await this.handleAppend(msg.text);
@@ -489,6 +496,8 @@ export class MarkdownEngine {
       lazyTokenization?: { enabled?: boolean; thresholdLines?: number };
     },
     mdxOptions?: { compileMode?: WorkerMdxMode },
+    syntax?: SyntaxRuleSpec[],
+    html?: HtmlOptions,
   ): Promise<void> {
     this.performanceTimer = new PerformanceTimer();
     this.blocks = [];
@@ -500,6 +509,23 @@ export class MarkdownEngine {
     this.patchStreamSeq = 0;
     this.tocHeadings = [];
     this.tocSignature = "";
+
+    this.syntaxRules = [];
+    if (this.extensions?.syntax) {
+      this.syntaxRules.push(...this.extensions.syntax);
+    }
+    if (syntax && Array.isArray(syntax)) {
+      for (const rule of syntax) {
+        try {
+          const cleanedFlags = (rule.pattern?.flags || "").replace(/[gy]/g, "");
+          new RegExp(rule.pattern?.source ?? "", `${cleanedFlags}y`);
+          this.syntaxRules.push(rule);
+        } catch (err) {
+          this.reportError(err, "INIT", { rule: rule.name });
+        }
+      }
+    }
+    this.htmlConfig = html;
 
     this.documentPluginRegistry.clear();
     for (const key of Object.keys(this.documentPluginState)) {
@@ -816,7 +842,7 @@ export class MarkdownEngine {
     }
     let preparedContent = prepared.content;
     let appended = prepared.appended;
-    if (this.formatAnticipationConfig.regex) {
+    if (this.formatAnticipationConfig.regex || this.syntaxRules.some((r) => r.anticipation)) {
       const regexAppend = this.inlineParser.getRegexAnticipationAppend(content);
       if (regexAppend) {
         preparedContent += regexAppend;
@@ -1004,7 +1030,7 @@ export class MarkdownEngine {
 
       case "html": {
         const rawHtml = typeof block.payload.raw === "string" ? block.payload.raw : "";
-        const sanitized = sanitizeHtmlInWorker(rawHtml);
+        const sanitized = sanitizeHtmlInWorker(rawHtml, this.htmlConfig);
         block.payload.sanitizedHtml = sanitized;
         const nextMeta: Record<string, unknown> = { ...(block.payload.meta || {}), sanitized: true };
         if (rawHtml) {
@@ -1698,7 +1724,7 @@ export class MarkdownEngine {
       if (changedBlockIds.size === 0 && blocksStructurallyEqual(prevBlock, nextBlock)) continue;
 
       if (nextBlock.type === "html") {
-        const nextSanitized = nextBlock.payload.sanitizedHtml ?? sanitizeHtmlInWorker(nextBlock.payload.raw ?? "");
+        const nextSanitized = nextBlock.payload.sanitizedHtml ?? sanitizeHtmlInWorker(nextBlock.payload.raw ?? "", this.htmlConfig);
         const prevSanitized = prevBlock.payload.sanitizedHtml ?? "";
         if (prevSanitized !== nextSanitized || prevBlock.payload.raw !== nextBlock.payload.raw) {
           const cloned = cloneBlock(nextBlock);

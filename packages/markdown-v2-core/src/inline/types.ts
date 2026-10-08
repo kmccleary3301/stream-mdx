@@ -1,5 +1,5 @@
 import type { MarkdownConfig } from "@lezer/markdown";
-import type { InlineNode } from "../types";
+import type { InlineNode, SyntaxRuleSpec } from "../types";
 
 export interface MarkdownElement {
   readonly type: number;
@@ -46,7 +46,12 @@ export interface InlineParserOptions {
   /**
    * Additional inline extensions.
    */
-  extensions?: InlineExtension[];
+    extensions?: InlineExtension[];
+
+  /**
+   * Declarative syntax rules.
+   */
+  syntax?: SyntaxRuleSpec[];
 }
 
 export interface InlineParseOptions {

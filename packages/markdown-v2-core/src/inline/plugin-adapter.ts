@@ -1,4 +1,4 @@
-import type { RegexInlinePlugin } from "../types";
+import type { InlineNode, RegexInlinePlugin, SyntaxRuleSpec } from "../types";
 import type { InlineExtension } from "./types";
 
 function ensureSticky(re: RegExp): RegExp {
@@ -91,4 +91,91 @@ export function createDefaultRegexPlugins(): RegexInlinePlugin[] {
       fastCheck: (text) => text.indexOf("@") !== -1,
     },
   ];
+}
+
+/**
+ * Compiles a declarative SyntaxRuleSpec into a Lezer InlineExtension.
+ */
+export function compileSyntaxRuleToExtension(rule: SyntaxRuleSpec): InlineExtension {
+  const nodeName = `Custom_Rule_${rule.name.replace(/[^A-Za-z0-9_]/g, "_")}`;
+  const rawFlags = rule.pattern.flags || "";
+  const cleanedFlags = rawFlags.replace(/[gy]/g, "");
+  let stickyRe: RegExp;
+  try {
+    stickyRe = new RegExp(rule.pattern.source, `${cleanedFlags}yd`);
+  } catch {
+    stickyRe = new RegExp(rule.pattern.source, `${cleanedFlags}y`);
+  }
+
+  const trigger = rule.trigger;
+  const before = rule.before;
+
+  return {
+    name: rule.name,
+    lezer: {
+      defineNodes: [nodeName],
+      parseInline: [
+        {
+          name: nodeName,
+          before,
+          parse(cx, _next, pos) {
+            if (trigger && !cx.text.startsWith(trigger, pos)) {
+              return -1;
+            }
+            stickyRe.lastIndex = pos;
+            const match = stickyRe.exec(cx.text);
+            if (!match || match.index !== pos || match[0].length === 0) {
+              return -1;
+            }
+            const end = pos + match[0].length;
+            if (rule.content !== undefined && match[rule.content] !== undefined) {
+              const contentText = match[rule.content];
+              let cStart: number;
+              let cEnd: number;
+              const indices = (match as RegExpExecArray & { indices?: Array<[number, number] | undefined> }).indices;
+              const range = indices?.[rule.content];
+              if (range) {
+                [cStart, cEnd] = range;
+              } else {
+                const offset = match[0].indexOf(contentText);
+                cStart = pos + (offset >= 0 ? offset : 0);
+                cEnd = cStart + contentText.length;
+              }
+              const innerElts = cx.parser.parseInline(contentText, cStart);
+              return cx.addElement(cx.elt(nodeName, pos, end, innerElts));
+            }
+            return cx.addElement(cx.elt(nodeName, pos, end));
+          },
+        },
+      ],
+    },
+    toInline(element, text, convertChildren) {
+      stickyRe.lastIndex = element.from;
+      const match = stickyRe.exec(text);
+      if (!match || match.index !== element.from) {
+        return null;
+      }
+      const attrs: Record<string, string> = {};
+      if (rule.attrs) {
+        for (const [key, val] of Object.entries(rule.attrs)) {
+          if (typeof val === "number") {
+            attrs[key] = match[val] ?? "";
+          } else {
+            attrs[key] = String(val);
+          }
+        }
+      }
+      let children: InlineNode[] | undefined;
+      if (rule.content !== undefined && typeof convertChildren === "function") {
+        children = convertChildren(element.children);
+      }
+      return {
+        kind: "plugin",
+        name: rule.name,
+        attrs,
+        children,
+        raw: match[0],
+      };
+    },
+  };
 }
