@@ -171,4 +171,11 @@ The final records preserve concrete differences rather than stripping content to
 
 The final semantic hashes are native `6dd860b219e756343a467a57ffad92427963a9e2de1041286b467235f26c220c` and Streamdown `83a899c4eeb0a7cd1bfe04ff816d87eed45c1c51cb2a38c4bf04beaca23df592`. Both preserve 19 code elements, 7 inline code elements, 2 tables, 14 rows, 36 list items and 27 math expressions. The stale inherited server and both replacement smoke services were stopped. Parent-owned integration, baseline rebuilding and quiet warmup-plus-three-run measurement remain separate gates.
 
+### Absolute URL normalization follow-up
+
+After the paired source proof above, the canonical collector now uses standard `new URL(url).href` for explicit absolute HTTP(S) link destinations, in both link records and ordered href attributes. `https://www.example.com` and `https://www.example.com/` have the same browser destination and no longer create a false mismatch. Relative targets stay relative; distinct path, query, fragment and footnote-reference targets remain distinct. Raw DOM HTML remains unchanged evidence. Real DOM counterexample checks cover equivalent URL forms and materially different destinations.
+`npm exec -- tsx scripts/perf/check-completion-guards.ts` passed after this change, including all earlier semantic/readiness/gate checks and the new URL equivalence counterexamples.
+
+No new production build or performance sample is claimed for this collector-only follow-up. The parent owns the final integrated production build and comparison; the missing source footnote anchor remains a real preserved difference.
+
 

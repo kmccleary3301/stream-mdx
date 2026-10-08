@@ -20,6 +20,13 @@ assert.notDeepEqual(native, collect('<h2>Title</h2><pre><code class="language-js
 assert.notDeepEqual(collect('<ol start="2"><li><input type="checkbox" checked>task</li></ol>'), collect('<ol start="3"><li><input type="checkbox">task</li></ol>'));
 assert.notDeepEqual(collect('<table><tr><td>ab</td><td>c</td></tr></table>'), collect('<table><tr><td>a</td><td>bc</td></tr></table>'));
 assert.notDeepEqual(collect('<a href="/one">same</a>'), collect('<a href="/two">same</a>'));
+assert.deepEqual(collect('<a href="https://www.example.com">same</a>'), collect('<a href="https://www.example.com/">same</a>'), "absolute URL forms with the same browser destination are equivalent");
+assert.deepEqual(collect('<pre><a href="https://EXAMPLE.com:443">same</a></pre>'), collect('<pre><a href="https://example.com/">same</a></pre>'), "ordered authored PRE href attributes use the same URL normalization");
+assert.notDeepEqual(collect('<a href="https://example.com/one?q=1#first">same</a>'), collect('<a href="https://example.com/two?q=1#first">same</a>'), "different paths cannot normalize together");
+assert.notDeepEqual(collect('<a href="https://example.com/one?q=1#first">same</a>'), collect('<a href="https://example.com/one?q=2#first">same</a>'), "different queries cannot normalize together");
+assert.notDeepEqual(collect('<a href="https://example.com/one?q=1#first">same</a>'), collect('<a href="https://example.com/one?q=1#second">same</a>'), "different fragments cannot normalize together");
+assert.equal(collect('<a href="../one?q=1#first">same</a>').links[0].url, "../one?q=1#first", "relative URL records cannot depend on the current page");
+assert.notDeepEqual(collect('<a href="#fnref:1">same</a>'), collect('<a href="#user-content-fnref-1">same</a>'), "distinct footnote targets remain distinct");
 assert.notDeepEqual(collect('<details open><summary>same</summary></details>'), collect('<details><summary>same</summary></details>'));
 assert.equal(collect('<div>Hello</div><section>Done</section>').text, 'Hello\n\nDone');
 assert.notDeepEqual(collect('<p><code>a  b</code></p>'), collect('<p><code>a b</code></p>'));

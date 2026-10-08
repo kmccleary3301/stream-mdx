@@ -17,6 +17,17 @@ const BLOCK_TAGS: Record<string, true> = { P: true, DIV: true, SECTION: true, AR
 
 export type GeneratedFootnoteLabel = { level: number; text: string; html: string };
 
+function canonicalLinkUrl(url: string): string {
+  // Do not resolve relative targets against the benchmark page's port/query.
+  if (!/^\s*https?:\/\//i.test(url)) return url;
+  try {
+    return new URL(url).href;
+  } catch {
+    // Invalid authored destinations retain their original DOM evidence.
+    return url;
+  }
+}
+
 function isGeneratedFootnoteLabel(element: Element): boolean {
   return element.matches("h2.sr-only#footnote-label") &&
     element.parentElement?.matches("section[data-footnotes]") === true;
@@ -90,7 +101,7 @@ export function collectSemanticDom(root: HTMLElement): SemanticDomRecords {
   const semanticTag = (element: Element): string => element.matches('[data-streamdown="strong"]') ? "strong" : element.tagName.toLowerCase();
   const semanticAttributes = (element: Element): Array<[string, string]> => Array.from(element.attributes)
     .filter((attribute) => /^(href|src|alt|title|open|datetime|cite|lang|dir|role|aria-)/.test(attribute.name))
-    .map((attribute): [string, string] => [attribute.name, attribute.value])
+    .map((attribute): [string, string] => [attribute.name, attribute.name === "href" ? canonicalLinkUrl(attribute.value) : attribute.value])
     .sort(([left], [right]) => left.localeCompare(right));
   const semanticHtml = (element: Element): boolean => element.matches("details,summary,abbr,mark,time,img,video,audio,iframe,blockquote,hr,strong,em,b,u,s,button,del,ins,kbd,sup,sub,[data-streamdown='strong']") ||
     semanticAttributes(element).some(([name]) => /^(alt|title|open|datetime|cite|lang|dir|role|aria-)/.test(name));
@@ -173,7 +184,7 @@ export function collectSemanticDom(root: HTMLElement): SemanticDomRecords {
         }),
       };
     }),
-    links: Array.from(root.querySelectorAll("a[href]")).filter(outsideCode).map((link) => ({ url: link.getAttribute("href") ?? "", title: link.getAttribute("title") ?? "", text: contentOf(link) })),
+    links: Array.from(root.querySelectorAll("a[href]")).filter(outsideCode).map((link) => ({ url: canonicalLinkUrl(link.getAttribute("href") ?? ""), title: link.getAttribute("title") ?? "", text: contentOf(link) })),
     html: Array.from(root.querySelectorAll("*")).filter((element) => outsideCode(element) && !element.closest(".katex") && !element.matches(".math-inline,.math-display") && semanticHtml(element)).map((element) => ({
       tag: semanticTag(element),
       attributes: semanticAttributes(element),
