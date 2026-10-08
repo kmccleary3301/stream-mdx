@@ -1965,7 +1965,7 @@ export class MarkdownEngine {
       if (nextBlock.type === "html") {
         const nextSanitized = nextBlock.payload.sanitizedHtml ?? sanitizeHtmlInWorker(nextBlock.payload.raw ?? "", this.htmlConfig);
         const prevSanitized = prevBlock.payload.sanitizedHtml ?? "";
-        if (prevSanitized !== nextSanitized || prevBlock.payload.raw !== nextBlock.payload.raw) {
+        if (prevSanitized !== nextSanitized || !blocksStructurallyEqual(prevBlock, nextBlock)) {
           const cloned = cloneBlock(nextBlock);
           cloned.payload.sanitizedHtml = nextSanitized;
           patches.push({

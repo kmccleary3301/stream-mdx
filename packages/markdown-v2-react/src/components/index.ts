@@ -1209,6 +1209,9 @@ function toReact(
     const name = attr.name === "class" ? "className" : attr.name;
     props[name] = attr.value;
   }
+  if (tag === "textarea") {
+    return React.createElement(elements[tag] ?? tag, { ...props, key, defaultValue: el.textContent ?? "" });
+  }
   const children: React.ReactNode[] = [];
   el.childNodes.forEach((childNode, childIndex) => {
     const child = toReact(childNode, elements, `${key}-${childIndex}`, tag, literalTags, isLiteral, parseMarkdown);

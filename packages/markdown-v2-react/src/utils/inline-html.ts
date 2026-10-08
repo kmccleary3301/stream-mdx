@@ -39,6 +39,10 @@ export function renderHtmlOwnershipTree(
     if (node.kind === "block") return renderBlock(node.block);
     const props = mapAttributesToProps(node.attributes);
     props.key = index;
+    if (node.tagName === "textarea") {
+      props.defaultValue = node.children.map((child) => child.kind === "text" ? child.text : "").join("");
+      return React.createElement(elements[node.tagName] ?? node.tagName, props);
+    }
     return React.createElement(
       elements[node.tagName] ?? node.tagName,
       props,

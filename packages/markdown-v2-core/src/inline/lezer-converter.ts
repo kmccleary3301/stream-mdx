@@ -318,8 +318,12 @@ export class LezerInlineConverter {
         // Lezer has already validated this exact range, including quoted '>' and newlines.
         const raw = text.slice(el.from, el.to);
         const tagName = /^<\/?([^\s/>]+)/.exec(raw)?.[1]?.toLowerCase();
-        if (!tagName || raw.startsWith("<!") || raw.startsWith("<?")) {
-          return { kind: "html", raw, sanitized: "", isSelfClosing: true };
+        if (raw.startsWith("<!") || raw.startsWith("<?")) {
+          const safe = sanitizeHtmlTreeInWorker(raw, this.html);
+          return safe.flatMap((node): InlineNode[] => node.kind === "text" ? [{ kind: "text", text: node.text }] : []);
+        }
+        if (!tagName || /^<\/\s/.test(raw) || /\/\s+>$/.test(raw)) {
+          return { kind: "text", text: raw };
         }
         if (raw.startsWith("</")) {
           return { kind: "html", raw, tagName, isClose: true, sanitized: "" };
