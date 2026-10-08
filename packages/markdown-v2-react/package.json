@@ -57,9 +57,9 @@
       "require": "./dist/components/katex-math.cjs"
     },
     "./renderer": {
-      "types": "./dist/renderer/index.d.ts",
-      "import": "./dist/renderer/index.mjs",
-      "require": "./dist/renderer/index.cjs"
+      "types": "./dist/renderer.d.ts",
+      "import": "./dist/renderer.mjs",
+      "require": "./dist/renderer.cjs"
     },
     "./renderer/patch-commit-scheduler": {
       "types": "./dist/renderer/patch-commit-scheduler.d.ts",

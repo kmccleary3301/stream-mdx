@@ -3,6 +3,21 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
+const smokePlugins = {
+  "remark-gfm": "4.0.1",
+  "rehype-slug": "6.0.0",
+};
+const smokeMarkdown = [
+  "# Pack Smoke",
+  "",
+  "~~Plugin text~~",
+  "",
+  "```mermaid",
+  "graph TD;",
+  "  A[Start] --> B[Done];",
+  "```",
+].join("\n");
+
 function run(command: string, args: string[], options: { cwd: string }) {
   execFileSync(command, args, {
     cwd: options.cwd,
@@ -20,10 +35,10 @@ function getArg(flag: string): string | null {
   return process.argv[index + 1] ?? null;
 }
 
-function resolveOnlyTarget(): "next" | "vite" | "all" {
+function resolveOnlyTarget(): "next" | "vite" | "node" | "all" {
   const raw = (getArg("--only") ?? process.env.PACK_SMOKE_ONLY ?? "all").toLowerCase();
-  if (raw === "next" || raw === "vite" || raw === "all") return raw;
-  throw new Error(`Invalid --only value "${raw}". Expected next, vite, or all.`);
+  if (raw === "next" || raw === "vite" || raw === "node" || raw === "all") return raw;
+  throw new Error(`Invalid --only value "${raw}". Expected next, vite, node, or all.`);
 }
 
 function findSinglePack(packsDir: string, predicate: (name: string) => boolean): string {
@@ -47,46 +62,129 @@ function copyDir(src: string, dest: string) {
   });
 }
 
+function writeJson(filePath: string, value: unknown) {
+  fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`);
+}
+
 function rewriteNextPackageJson(options: {
   pkgPath: string;
   streamMdxTarball: string;
   scopedTarballs: Record<string, string>;
+  optionalTarballs: Record<string, string>;
 }) {
   const raw = fs.readFileSync(options.pkgPath, "utf8");
   const parsed = JSON.parse(raw) as {
     dependencies?: Record<string, string>;
+    optionalDependencies?: Record<string, string>;
     overrides?: Record<string, string>;
   };
 
   parsed.dependencies = parsed.dependencies ?? {};
   parsed.dependencies["stream-mdx"] = `file:${options.streamMdxTarball}`;
-  delete parsed.dependencies["@stream-mdx/core"];
-  delete parsed.dependencies["@stream-mdx/plugins"];
-  delete parsed.dependencies["@stream-mdx/worker"];
-  delete parsed.dependencies["@stream-mdx/react"];
+  Object.assign(parsed.dependencies, smokePlugins);
+  for (const [name, tarball] of Object.entries(options.scopedTarballs)) {
+    parsed.dependencies[name] = `file:${tarball}`;
+  }
+
+  parsed.optionalDependencies = parsed.optionalDependencies ?? {};
+  for (const [name, tarball] of Object.entries(options.optionalTarballs)) {
+    parsed.optionalDependencies[name] = `file:${tarball}`;
+  }
 
   parsed.overrides = parsed.overrides ?? {};
   for (const [name, tarball] of Object.entries(options.scopedTarballs)) {
     parsed.overrides[name] = `file:${tarball}`;
   }
+  for (const [name, tarball] of Object.entries(options.optionalTarballs)) {
+    parsed.overrides[name] = `file:${tarball}`;
+  }
 
-  fs.writeFileSync(options.pkgPath, `${JSON.stringify(parsed, null, 2)}\n`);
+  writeJson(options.pkgPath, parsed);
 }
 
-function writeJson(filePath: string, value: unknown) {
-  fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`);
+function rewriteNextDemoComponent(demoPath: string) {
+  const content = `"use client";
+
+import { useMemo, useRef, useState } from "react";
+import { StreamingMarkdown, type RendererMetrics, type StreamingMarkdownHandle } from "stream-mdx";
+import { MermaidBlock } from "@stream-mdx/mermaid";
+import { createUnifiedRenderer } from "@stream-mdx/unified";
+import remarkGfm from "remark-gfm";
+import rehypeSlug from "rehype-slug";
+
+const ARTICLE = ${JSON.stringify(smokeMarkdown)};
+const unifiedRenderer = createUnifiedRenderer({
+  gfm: false,
+  remarkPlugins: [remarkGfm],
+  rehypePlugins: [rehypeSlug],
+  blockTypes: ["heading", "paragraph", "table"],
+});
+
+export default function StreamingDemo() {
+  const streamingRef = useRef<StreamingMarkdownHandle>(null);
+  const [text, setText] = useState(ARTICLE);
+  const [lastMetrics, setLastMetrics] = useState<RendererMetrics | null>(null);
+
+  const codeRenderers = useMemo(
+    () => ({
+      mermaid: MermaidBlock,
+    }),
+    [],
+  );
+
+  return (
+    <section className="space-y-4">
+      <textarea
+        className="h-48 w-full rounded border border-gray-300 p-3 font-mono text-sm"
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+      />
+
+      <div className="rounded border border-gray-200 bg-white p-4 shadow-sm">
+        <StreamingMarkdown
+          ref={streamingRef}
+          text={text}
+          engine="main-thread"
+          codeRenderers={codeRenderers}
+          blockRenderer={unifiedRenderer}
+          features={{ math: true, mdx: true, tables: true, html: true }}
+          prewarmLangs={["tsx", "python"]}
+          onMetrics={(metric) => {
+            setLastMetrics(metric);
+          }}
+        />
+      </div>
+
+      <pre className="rounded border border-gray-200 bg-gray-50 p-3 text-gray-600 text-xs">
+        {JSON.stringify({ lastMetrics }, null, 2)}
+      </pre>
+    </section>
+  );
+}
+`;
+
+  fs.writeFileSync(demoPath, content, "utf8");
 }
 
 function writeViteSmokeApp(options: {
   viteDir: string;
   streamMdxTarball: string;
   scopedTarballs: Record<string, string>;
+  optionalTarballs: Record<string, string>;
   themeTarball?: string;
 }) {
   fs.mkdirSync(options.viteDir, { recursive: true });
   fs.mkdirSync(path.join(options.viteDir, "src"), { recursive: true });
 
-  const overrides = Object.fromEntries(Object.entries(options.scopedTarballs).map(([name, tarball]) => [name, `file:${tarball}`]));
+  const overrides: Record<string, string> = {
+    "stream-mdx": `file:${options.streamMdxTarball}`,
+    ...Object.fromEntries(
+      Object.entries(options.scopedTarballs).map(([name, tarball]) => [name, `file:${tarball}`]),
+    ),
+    ...Object.fromEntries(
+      Object.entries(options.optionalTarballs).map(([name, tarball]) => [name, `file:${tarball}`]),
+    ),
+  };
   if (options.themeTarball) {
     overrides["@stream-mdx/theme-tailwind"] = `file:${options.themeTarball}`;
   }
@@ -102,7 +200,16 @@ function writeViteSmokeApp(options: {
       react: "18.3.1",
       "react-dom": "18.3.1",
       "stream-mdx": `file:${options.streamMdxTarball}`,
+      ...smokePlugins,
+      ...Object.fromEntries(
+        Object.entries(options.scopedTarballs).map(([name, tarball]) => [name, `file:${tarball}`]),
+      ),
       ...(options.themeTarball ? { "@stream-mdx/theme-tailwind": `file:${options.themeTarball}` } : {}),
+    },
+    optionalDependencies: {
+      ...Object.fromEntries(
+        Object.entries(options.optionalTarballs).map(([name, tarball]) => [name, `file:${tarball}`]),
+      ),
     },
     devDependencies: {
       "@types/node": "^22.10.2",
@@ -164,11 +271,27 @@ export default defineConfig({
 import ReactDOM from "react-dom/client";
 import "@stream-mdx/theme-tailwind/theme.css";
 import { StreamingMarkdown } from "stream-mdx";
+import { MermaidBlock } from "@stream-mdx/mermaid";
+import { createUnifiedRenderer } from "@stream-mdx/unified";
+import remarkGfm from "remark-gfm";
+import rehypeSlug from "rehype-slug";
+
+const blockRenderer = createUnifiedRenderer({
+  gfm: false,
+  remarkPlugins: [remarkGfm],
+  rehypePlugins: [rehypeSlug],
+  blockTypes: ["heading", "paragraph", "table"],
+});
 
 function App() {
   return (
     <div style={{ padding: 24 }}>
-      <StreamingMarkdown text={"# Hello\\n\\nStreaming **markdown**"} />
+      <StreamingMarkdown
+        engine="main-thread"
+        codeRenderers={{ mermaid: MermaidBlock }}
+        blockRenderer={blockRenderer}
+        text={${JSON.stringify(smokeMarkdown)}}
+      />
     </div>
   );
 }
@@ -182,13 +305,216 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   );
 }
 
+function verifyInstalledNodeSandbox(options: {
+  sandboxDir: string;
+  streamMdxTarball: string;
+  scopedTarballs: Record<string, string>;
+  optionalTarballs: Record<string, string>;
+  themeTarball: string;
+}) {
+  fs.mkdirSync(options.sandboxDir, { recursive: true });
+
+  const overrides: Record<string, string> = {
+    "stream-mdx": `file:${options.streamMdxTarball}`,
+    ...Object.fromEntries(
+      Object.entries(options.scopedTarballs).map(([name, tarball]) => [name, `file:${tarball}`]),
+    ),
+    ...Object.fromEntries(
+      Object.entries(options.optionalTarballs).map(([name, tarball]) => [name, `file:${tarball}`]),
+    ),
+    "@stream-mdx/theme-tailwind": `file:${options.themeTarball}`,
+  };
+
+  writeJson(path.join(options.sandboxDir, "package.json"), {
+    name: "stream-mdx-node-sandbox",
+    private: true,
+    type: "module",
+    dependencies: {
+      react: "18.3.1",
+      "react-dom": "18.3.1",
+      "stream-mdx": `file:${options.streamMdxTarball}`,
+      ...smokePlugins,
+      ...Object.fromEntries(
+        Object.entries(options.scopedTarballs).map(([name, tarball]) => [name, `file:${tarball}`]),
+      ),
+    },
+    optionalDependencies: {
+      ...Object.fromEntries(
+        Object.entries(options.optionalTarballs).map(([name, tarball]) => [name, `file:${tarball}`]),
+      ),
+    },
+    overrides,
+  });
+
+  console.log("[pack-smoke:node-sandbox] Running npm install in sandbox...");
+  run("npm", ["install", "--no-fund", "--no-audit"], { cwd: options.sandboxDir });
+
+  // Both loaders run the same behavior checks against installed public exports.
+  const runtimeVerifier = `const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+
+module.exports = async function verify(load, format) {
+  const major = Number(process.versions.node.split(".")[0]);
+  assert(major >= 20, "Pack smoke requires the declared supported Node >=20");
+  console.log("[pack-smoke:" + format + "] Runtime " + process.version);
+
+  const packages = [
+    "stream-mdx", "@stream-mdx/core", "@stream-mdx/plugins",
+    "@stream-mdx/worker", "@stream-mdx/react",
+    "@stream-mdx/mermaid", "@stream-mdx/unified",
+  ];
+  for (const name of packages) {
+    const packageDir = path.resolve("node_modules", name);
+    assert(!fs.lstatSync(packageDir).isSymbolicLink(), name + " must be installed from a tarball");
+    const manifest = JSON.parse(fs.readFileSync(path.join(packageDir, "package.json"), "utf8"));
+    for (const [peer, range] of Object.entries(manifest.peerDependencies ?? {})) {
+      if (!manifest.peerDependenciesMeta?.[peer]?.optional) {
+        assert(fs.existsSync(path.resolve("node_modules", peer, "package.json")),
+          name + " requires installed peer " + peer + "@" + range);
+      }
+    }
+    for (const [subpath, target] of Object.entries(manifest.exports ?? {})) {
+      if (typeof target !== "object" || target === null || !(format in target)) continue;
+      const specifier = subpath === "." ? name : name + "/" + subpath.slice(2);
+      const mod = await load(specifier);
+      assert(mod && (typeof mod === "object" || typeof mod === "function"),
+        specifier + " must load its advertised " + format + " entry");
+      console.log("[pack-smoke:" + format + "] Loaded " + specifier);
+    }
+  }
+
+  const React = await load("react");
+  const { renderToStaticMarkup } = await load("react-dom/server");
+  const { StreamingMarkdown } = await load("stream-mdx");
+  // StreamingMarkdown is a React.forwardRef component, not a bare function.
+  assert(StreamingMarkdown && typeof StreamingMarkdown.render === "function",
+    "stream-mdx must export its forwardRef StreamingMarkdown component");
+
+  const { MermaidBlock } = await load("@stream-mdx/mermaid");
+  assert.equal(typeof MermaidBlock, "function");
+  const mermaidHtml = renderToStaticMarkup(React.createElement(MermaidBlock, {
+    code: "graph TD; A-->B;", language: "mermaid", isFinalized: true,
+    defaultView: "code", renderCode: React.createElement("pre", null, "graph TD; A-->B;"),
+  }));
+  assert.match(mermaidHtml, /stream-mdx-mermaid-block/);
+  assert.match(mermaidHtml, /graph TD; A--&gt;B;/);
+  console.log("[pack-smoke:" + format + "] MermaidBlock SSR code fallback executed; SVG requires a browser");
+
+  // This loader-boundary test accepts ESM plugins in both ESM and CJS consumers.
+  const { default: remarkGfm } = await import("remark-gfm");
+  const { default: rehypeSlug } = await import("rehype-slug");
+  const { createUnifiedRenderer } = await load("@stream-mdx/unified");
+  const renderer = createUnifiedRenderer({
+    gfm: false, remarkPlugins: [remarkGfm], rehypePlugins: [rehypeSlug],
+  });
+  const renderBlock = (id, type, raw) => renderToStaticMarkup(renderer({
+    block: { id, type, isFinalized: true, payload: { raw } },
+    element: React.createElement("p", null, "default fallback"),
+  }));
+  assert.equal(renderBlock("heading", "heading", "# Pack Smoke"),
+    '<h1 id="pack-smoke">Pack Smoke</h1>');
+  assert.equal(renderBlock("paragraph", "paragraph", "~~Plugin text~~"),
+    "<p><del>Plugin text</del></p>");
+  renderer.clearCache();
+  console.log("[pack-smoke:" + format + "] Unified remark-gfm and rehype-slug transformed rendered HTML");
+
+  const { createRendererStore } = await load("@stream-mdx/react/renderer/store");
+  const init = { type: "INIT", initialContent: "", prewarmLangs: [], docPlugins: {} };
+  const append = { type: "APPEND", text: "# Installed engine\\n\\nEngine body.\\n" };
+  const apply = (store, message) => {
+    if (message.type === "ERROR") throw new Error(message.error.message);
+    if (message.type === "INITIALIZED") store.reset(message.blocks);
+    if (message.type === "PATCH") store.applyPatches(message.patches, { captureMetrics: false });
+  };
+  const assertBlocks = (store) => {
+    const blocks = store.getBlocks();
+    assert.equal(blocks.length, 2, "Engine must parse heading and paragraph");
+    assert.equal(blocks[0].type, "heading");
+    assert.equal(blocks[0].payload.raw.trim(), "Installed engine");
+    assert.equal(blocks[1].type, "paragraph");
+    assert.match(blocks[1].payload.raw, /Engine body/);
+    assert(blocks.every((block) => block.isFinalized), "Engine must finalize every block");
+  };
+
+  for (const specifier of ["@stream-mdx/worker/engine", "stream-mdx/worker/engine"]) {
+    const { MarkdownEngine, createInlineEngineWorker, serveMarkdownWorker } = await load(specifier);
+    assert.equal(typeof serveMarkdownWorker, "function");
+    const store = createRendererStore();
+    const engine = new MarkdownEngine({ post: (message) => apply(store, message) });
+    try {
+      await engine.handle(init);
+      await engine.handle(append);
+      await engine.handle({ type: "FINALIZE" });
+      assertBlocks(store);
+    } finally {
+      engine.dispose();
+    }
+
+    const inlineStore = createRendererStore();
+    const worker = createInlineEngineWorker();
+    try {
+      // Node 20 is supported and does not provide Promise.withResolvers.
+      await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error(specifier + " inline engine timed out")), 15000);
+        worker.onerror = (event) => { clearTimeout(timeout); reject(event.error ?? new Error(event.message)); };
+        worker.onmessage = ({ data }) => {
+          try {
+            apply(inlineStore, data);
+            const blocks = inlineStore.getBlocks();
+            if (blocks.length === 2 && blocks.every((block) => block.isFinalized)) {
+              assertBlocks(inlineStore);
+              clearTimeout(timeout);
+              resolve();
+            }
+          } catch (error) {
+            clearTimeout(timeout);
+            reject(error);
+          }
+        };
+        worker.postMessage(init);
+        worker.postMessage(append);
+        worker.postMessage({ type: "FINALIZE" });
+      });
+    } finally {
+      worker.terminate();
+    }
+    console.log("[pack-smoke:" + format + "] " + specifier + " direct and inline engines parsed/finalized");
+  }
+};
+`;
+
+  fs.writeFileSync(path.join(options.sandboxDir, "verify-runtime.cjs"), runtimeVerifier, "utf8");
+  fs.writeFileSync(
+    path.join(options.sandboxDir, "verify-esm.mjs"),
+    'import verify from "./verify-runtime.cjs";\nawait verify((specifier) => import(specifier), "import");\n',
+    "utf8",
+  );
+  fs.writeFileSync(
+    path.join(options.sandboxDir, "verify-cjs.cjs"),
+    'require("./verify-runtime.cjs")(require, "require").catch((error) => { console.error(error); process.exitCode = 1; });\n',
+    "utf8",
+  );
+  const failures: string[] = [];
+  for (const file of ["verify-esm.mjs", "verify-cjs.cjs"]) {
+    try {
+      run(process.execPath, [file], { cwd: options.sandboxDir });
+    } catch {
+      failures.push(file);
+    }
+  }
+  if (failures.length) throw new Error(`Installed runtime verification failed: ${failures.join(", ")}`);
+}
+
 function main() {
   const onlyTarget = resolveOnlyTarget();
+  const runNode = onlyTarget === "all" || onlyTarget === "node";
   const runNext = onlyTarget === "all" || onlyTarget === "next";
   const runVite = onlyTarget === "all" || onlyTarget === "vite";
   const repoRoot = path.resolve(__dirname, "..");
   const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "stream-mdx-pack-smoke-"));
   const packsDir = path.join(tmpRoot, "packs");
+  const nodeSandboxDir = path.join(tmpRoot, "node-sandbox");
   const nextDir = path.join(tmpRoot, "next");
   const viteDir = path.join(tmpRoot, "vite");
   fs.mkdirSync(packsDir, { recursive: true });
@@ -199,6 +525,8 @@ function main() {
   run("npm", ["-w", "@stream-mdx/plugins", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
   run("npm", ["-w", "@stream-mdx/worker", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
   run("npm", ["-w", "@stream-mdx/react", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
+  run("npm", ["-w", "@stream-mdx/mermaid", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
+  run("npm", ["-w", "@stream-mdx/unified", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
   run("npm", ["-w", "@stream-mdx/theme-tailwind", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
   run("npm", ["-w", "stream-mdx", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
 
@@ -207,41 +535,82 @@ function main() {
   const tarPlugins = findSinglePack(packsDir, (name) => name.startsWith("stream-mdx-plugins-"));
   const tarWorker = findSinglePack(packsDir, (name) => name.startsWith("stream-mdx-worker-"));
   const tarReact = findSinglePack(packsDir, (name) => name.startsWith("stream-mdx-react-"));
+  const tarMermaid = findSinglePack(packsDir, (name) => name.startsWith("stream-mdx-mermaid-"));
+  const tarUnified = findSinglePack(packsDir, (name) => name.startsWith("stream-mdx-unified-"));
   const tarTheme = findSinglePack(packsDir, (name) => name.startsWith("stream-mdx-theme-tailwind-"));
 
+  const scopedTarballs: Record<string, string> = {
+    "@stream-mdx/core": tarCore,
+    "@stream-mdx/plugins": tarPlugins,
+    "@stream-mdx/worker": tarWorker,
+    "@stream-mdx/react": tarReact,
+  };
+
+  const optionalTarballs: Record<string, string> = {
+    "@stream-mdx/mermaid": tarMermaid,
+    "@stream-mdx/unified": tarUnified,
+  };
+
+  const failures: string[] = [];
+  if (runNode) {
+    try {
+      verifyInstalledNodeSandbox({
+        sandboxDir: nodeSandboxDir,
+        streamMdxTarball: tarStream,
+        scopedTarballs,
+        optionalTarballs,
+        themeTarball: tarTheme,
+      });
+    } catch (error) {
+      console.error("[pack-smoke:node] Failed", error);
+      failures.push("node");
+    }
+  }
+
   if (runNext) {
-    copyDir(path.join(repoRoot, "examples", "streaming-markdown-starter"), nextDir);
+    try {
+      copyDir(path.join(repoRoot, "examples", "streaming-markdown-starter"), nextDir);
 
-    rewriteNextPackageJson({
-      pkgPath: path.join(nextDir, "package.json"),
-      streamMdxTarball: tarStream,
-      scopedTarballs: {
-        "@stream-mdx/core": tarCore,
-        "@stream-mdx/plugins": tarPlugins,
-        "@stream-mdx/worker": tarWorker,
-        "@stream-mdx/react": tarReact,
-      },
-    });
+      rewriteNextPackageJson({
+        pkgPath: path.join(nextDir, "package.json"),
+        streamMdxTarball: tarStream,
+        scopedTarballs,
+        optionalTarballs,
+      });
 
-    run("npm", ["install", "--no-fund", "--no-audit"], { cwd: nextDir });
-    run("npm", ["run", "build"], { cwd: nextDir });
+      rewriteNextDemoComponent(path.join(nextDir, "components", "StreamingDemo.tsx"));
+
+      run("npm", ["install", "--no-fund", "--no-audit"], { cwd: nextDir });
+      run("npm", ["run", "build"], { cwd: nextDir });
+      console.log("[pack-smoke:next] Production bundling passed; browser execution is not tested");
+    } catch (error) {
+      console.error("[pack-smoke:next] Failed", error);
+      failures.push("next");
+    }
   }
 
   if (runVite) {
-    writeViteSmokeApp({
-      viteDir,
-      streamMdxTarball: tarStream,
-      scopedTarballs: {
-        "@stream-mdx/core": tarCore,
-        "@stream-mdx/plugins": tarPlugins,
-        "@stream-mdx/worker": tarWorker,
-        "@stream-mdx/react": tarReact,
-      },
-      themeTarball: tarTheme,
-    });
+    try {
+      writeViteSmokeApp({
+        viteDir,
+        streamMdxTarball: tarStream,
+        scopedTarballs,
+        optionalTarballs,
+        themeTarball: tarTheme,
+      });
 
-    run("npm", ["install", "--no-fund", "--no-audit"], { cwd: viteDir });
-    run("npm", ["run", "build"], { cwd: viteDir });
+      run("npm", ["install", "--no-fund", "--no-audit"], { cwd: viteDir });
+      run("npm", ["run", "build"], { cwd: viteDir });
+      console.log("[pack-smoke:vite] Production bundling passed; browser execution is not tested");
+    } catch (error) {
+      console.error("[pack-smoke:vite] Failed", error);
+      failures.push("vite");
+    }
+  }
+
+  if (failures.length) {
+    console.error(`[pack-smoke] Keeping failed sandboxes at ${tmpRoot}`);
+    throw new Error(`Pack smoke failed: ${failures.join(", ")}`);
   }
 
   if (process.env.KEEP_PACK_SMOKE_TMP !== "1") {
