@@ -1,4 +1,4 @@
-import { getDefaultCodeWrapperAttributes, stripCodeFence, type Block, type InlineNode, type MixedContentSegment, type TokenLineV1 } from "@stream-mdx/core";
+import { dedentIndentedCode, getDefaultCodeWrapperAttributes, normalizeBlockquoteText, stripCodeFence, type Block, type InlineNode, type MixedContentSegment, type TokenLineV1 } from "@stream-mdx/core";
 import React from "react";
 import { DefaultDiffRenderer } from "../components/diff-renderer";
 import type { CodeFenceRendererProps } from "../types";
@@ -16,6 +16,10 @@ export const BlockNodeRenderer: React.FC<{ store: RendererStore; blockId: string
   const node = useRendererNode(store, blockId);
   const block = node?.block;
   if (!node || !block) return null;
+
+  if (registry.hasCustomBlockComponent(block.type)) {
+    return registry.renderBlock(block);
+  }
 
   switch (block.type) {
     case "paragraph":
@@ -176,12 +180,9 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
   };
   const mixedSegments = Array.isArray(meta.mixedSegments) ? meta.mixedSegments : [];
   const normalizedText =
-    typeof meta.normalizedText === "string" && meta.normalizedText.length > 0
+    typeof meta.normalizedText === "string"
       ? meta.normalizedText
-      : typeof block.payload.raw === "string"
-        ? block.payload.raw
-        : "";
-
+    : normalizeBlockquoteText(typeof block.payload.raw === "string" ? block.payload.raw : "");
   const inlineComponents = registry.getInlineComponents();
 
   const renderTextWithBreaks = (text: string, keyPrefix: string) => {
@@ -265,24 +266,42 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
   const inlineNodes = block.payload.inline ?? [];
   const inlineElements = inlineNodes.length > 0 ? renderInlineNodes(inlineNodes, inlineComponents) : null;
 
+  const childContent = childIds.map((childId) => {
+    const childNode = store.getNode(childId);
+    if (!childNode) return null;
+    if (childNode.type?.startsWith("blockquote-")) {
+      return <MixedSegmentView key={childId} store={store} nodeId={childId} inlineComponents={inlineComponents} />;
+    }
+    if (childNode.type === "list") {
+      return <ListBlockView key={childId} store={store} blockId={childId} registry={registry} depth={0} />;
+    }
+    return <BlockNodeRenderer key={childId} store={store} blockId={childId} registry={registry} />;
+  });
+
   if (!block.isFinalized) {
-    const streamingContent = mixedSegmentElements.length ? mixedSegmentElements : inlineElements ? inlineElements : fallbackElements;
+    const streamingContent = childIds.length
+      ? childContent.filter((c) => c !== null)
+      : mixedSegmentElements.length
+        ? mixedSegmentElements
+        : inlineElements
+          ? inlineElements
+          : fallbackElements;
     const shouldShowStreaming = !block.isFinalized && (!streamingContent || (Array.isArray(streamingContent) && streamingContent.length === 0));
     const className = shouldShowStreaming ? "markdown-blockquote streaming-partial" : "markdown-blockquote";
     return <blockquote className={className}>{streamingContent}</blockquote>;
   }
-
-  const childContent = childIds.map((childId) => <MixedSegmentView key={childId} store={store} nodeId={childId} inlineComponents={inlineComponents} />);
-
   const renderedContent = (() => {
-    if (mixedSegmentElements.length > 0) {
-      return mixedSegmentElements;
-    }
     if (childIds.length > 0) {
       const resolved = childContent.filter((child) => child !== null);
       if (resolved.length > 0) {
         return resolved;
       }
+    }
+    if (mixedSegmentElements.length > 0) {
+      return mixedSegmentElements;
+    }
+    if (normalizedText.trim().length === 0) {
+      return null;
     }
     if (inlineElements) {
       return inlineElements;
@@ -456,6 +475,7 @@ const ListBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
       };
     }, [ordered, listItemIds, store, depth]);
     if (listItemIds.length === 0) return null;
+    const start = typeof node?.props?.start === "number" ? node.props.start : undefined;
     return (
       <Tag
         className={`markdown-list ${ordered ? "ordered" : "unordered"}`}
@@ -463,6 +483,7 @@ const ListBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
         data-marker-digits={ordered ? markerDigits : undefined}
         data-list-id={listDebugEnabled ? blockId : undefined}
         style={listStyle}
+        start={ordered && start !== undefined && start !== 1 ? start : undefined}
       >
         {listItemIds.map((childId, index) => (
           <ListItemView
@@ -503,7 +524,9 @@ const ListItemView: React.FC<{
   const marker = markerMatch?.[1]?.trim();
   const inferredIndex = typeof node?.props?.index === "number" ? Number(node?.props?.index) : index;
   const isOrdered = Boolean(node?.props?.ordered ?? ordered);
-  const counterText = !isTask ? (isOrdered ? (marker ? marker : `${inferredIndex + 1}.`) : "\u2022") : undefined;
+  const start = typeof node?.props?.start === "number" ? node.props.start : 1;
+  const itemNumber = start + inferredIndex;
+  const counterText = !isTask ? (isOrdered ? `${itemNumber}.` : "\u2022") : undefined;
   const listDebugEnabled = isListPatchDebugEnabled();
   const inlineLength = inline.length;
 
@@ -593,6 +616,26 @@ const ListItemView: React.FC<{
     block?.isFinalized,
   ]);
 
+  const isLoose = Boolean(node?.props?.loose);
+  const hasPrimaryContent = isTask || segmentChildIds.length > 0 || inline.length > 0;
+  const renderedPrimary = !hasPrimaryContent ? null : isLoose ? (
+    <p className="markdown-paragraph">
+      {isTask ? (
+        <input type="checkbox" className="markdown-task-checkbox" checked={isChecked} readOnly disabled tabIndex={-1} aria-checked={isChecked} />
+      ) : null}
+      {isTask ? " " : null}
+      {primaryContent}
+    </p>
+  ) : (
+    <>
+      {isTask ? (
+        <input type="checkbox" className="markdown-task-checkbox" checked={isChecked} readOnly disabled tabIndex={-1} aria-checked={isChecked} />
+      ) : null}
+      {isTask ? " " : null}
+      {primaryContent}
+    </>
+  );
+
   return (
     <li
       className={`markdown-list-item${isTask ? " markdown-list-item-task" : ""}`}
@@ -600,11 +643,7 @@ const ListItemView: React.FC<{
       data-list-depth={depth}
       data-list-item-id={listDebugEnabled ? nodeId : undefined}
     >
-      {isTask ? (
-        <input type="checkbox" className="markdown-task-checkbox" checked={isChecked} readOnly disabled tabIndex={-1} aria-checked={isChecked} />
-      ) : null}
-      {isTask ? " " : null}
-      {primaryContent}
+      {renderedPrimary}
       {hasChildren ? <div className="markdown-list-item-children">{filteredChildren}</div> : null}
     </li>
   );
@@ -1166,11 +1205,9 @@ function buildCodeFallbackLines(raw: string): Array<{ index: number; text: strin
 
 function normalizeCodeFallbackRaw(raw: string): string {
   if (!raw) return "";
-  let normalized = raw.replace(/\r\n?/g, "\n");
-  normalized = normalized.replace(/^```[^\n]*\n?/, "");
-  normalized = normalized.replace(/\n?```[\t ]*$/, "");
-  normalized = normalized.replace(/\n+$/, "");
-  return normalized;
+  const { code, hadFence } = stripCodeFence(raw);
+  if (hadFence) return code;
+  return dedentIndentedCode(raw);
 }
 
 function escapeHtml(value: string): string {

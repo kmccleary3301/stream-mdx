@@ -10,6 +10,10 @@ import type {
 } from "@stream-mdx/core";
 import { PATCH_ROOT_ID } from "@stream-mdx/core";
 import type { ContentChangeRange } from "./types";
+import { parser as baseMdParser, GFM } from "@lezer/markdown";
+import type { SyntaxNode } from "@lezer/common";
+
+const listWorkerParser = baseMdParser.configure([GFM]);
 
 export function slugifyHeading(text: string): string {
   const normalized = text
@@ -154,42 +158,99 @@ export function enrichListBlock(
   enableMath = true,
   formatAnticipationConfig?: FormatAnticipationConfig,
 ): void {
-  const lines = (block.payload.raw ?? "").split("\n");
-  const itemsRaw: string[] = [];
-  let current: string[] | null = null;
+  const raw = block.payload.raw ?? "";
+  const tree = listWorkerParser.parse(raw);
+  const items: InlineNode[][] = [];
+  let isOrdered = false;
+  let startNumber: number | undefined;
 
-  const bulletRe = /^[-*+]\s+(.*)$/;
-  const orderedRe = /^\d+\.\s+(.*)$/;
-
-  for (const line of lines) {
-    const trimmed = line.trimEnd();
-    const bare = trimmed.trimStart();
-    const bulletMatch = bare.match(bulletRe);
-    const orderedMatch = bare.match(orderedRe);
-
-    if (bulletMatch || orderedMatch) {
-      if (current) {
-        itemsRaw.push(current.join("\n"));
+  let listNode: SyntaxNode | null = null;
+  const cursor = tree.topNode.cursor();
+  if (cursor.firstChild()) {
+    do {
+      if (cursor.type.name === "BulletList" || cursor.type.name === "OrderedList") {
+        listNode = cursor.node;
+        isOrdered = cursor.type.name === "OrderedList";
+        break;
       }
-      const content = (bulletMatch ? bulletMatch[1] : orderedMatch?.[1]) ?? "";
-      current = [content];
-    } else if (current) {
-      current.push(bare);
+    } while (cursor.nextSibling());
+  }
+
+  if (listNode) {
+    const itemCursor = listNode.cursor();
+    if (itemCursor.firstChild()) {
+      do {
+        if (itemCursor.type.name === "ListItem") {
+          let itemText = "";
+          const childCursor = itemCursor.node.cursor();
+          if (childCursor.firstChild()) {
+            do {
+              const name = childCursor.type.name;
+              if (name === "ListMark") {
+                if (isOrdered && startNumber === undefined) {
+                  const markText = raw.slice(childCursor.from, childCursor.to);
+                  const numMatch = markText.match(/^(\d+)/);
+                  if (numMatch) {
+                    startNumber = parseInt(numMatch[1], 10);
+                  }
+                }
+                continue;
+              }
+              if (name === "Task") {
+                const taskRaw = raw.slice(childCursor.from, childCursor.to);
+                const taskMatch = taskRaw.match(/^(\[[ xX]\])\s*(.*)/s);
+                itemText = taskMatch ? (taskMatch[2] ?? "") : taskRaw;
+                break;
+              }
+              if (name === "Paragraph") {
+                itemText = raw.slice(childCursor.from, childCursor.to);
+                break;
+              }
+            } while (childCursor.nextSibling());
+          }
+          items.push(inlineParser.parse(itemText));
+        }
+      } while (itemCursor.nextSibling());
     }
+  } else {
+    const lines = raw.split("\n");
+    const itemsRaw: string[] = [];
+    let current: string[] | null = null;
+    const bulletRe = /^[-*+]\s+(.*)$/;
+    const orderedRe = /^\d+[.)]\s+(.*)$/;
+
+    for (const line of lines) {
+      const trimmed = line.trimEnd();
+      const bare = trimmed.trimStart();
+      const bulletMatch = bare.match(bulletRe);
+      const orderedMatch = bare.match(orderedRe);
+
+      if (bulletMatch || orderedMatch) {
+        if (current) {
+          itemsRaw.push(current.join("\n"));
+        }
+        const content = (bulletMatch ? bulletMatch[1] : orderedMatch?.[1]) ?? "";
+        current = [content];
+      } else if (current) {
+        current.push(bare);
+      }
+    }
+
+    if (current) {
+      itemsRaw.push(current.join("\n"));
+    }
+
+    items.push(...itemsRaw.map((r) => inlineParser.parse(r)));
+    isOrdered = /^\d+[.)]/.test(lines[0]?.trimStart() || "");
   }
 
-  if (current) {
-    itemsRaw.push(current.join("\n"));
-  }
-
-  const items: InlineNode[][] = itemsRaw.map((raw) => inlineParser.parse(raw));
-  const isOrdered = /^\d+\./.test(lines[0]?.trimStart() || "");
   const existingMeta = (block.payload.meta ?? {}) as Record<string, unknown>;
   block.payload.meta = {
     ...existingMeta,
     ordered: isOrdered,
     items,
     mathEnabled: enableMath,
+    ...(startNumber !== undefined && startNumber !== 1 ? { start: startNumber } : {}),
   };
   if (!block.isFinalized && formatAnticipationConfig) {
     (block.payload.meta as Record<string, unknown>).formatAnticipation = formatAnticipationConfig;

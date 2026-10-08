@@ -1,12 +1,12 @@
 import type { Block } from "@stream-mdx/core";
 import React, { useMemo } from "react";
 
-import { getBlockKey, PATCH_ROOT_ID } from "@stream-mdx/core";
+import { PATCH_ROOT_ID } from "@stream-mdx/core";
 import { ComponentRegistry } from "../components";
 import type { CodeFenceRenderer } from "../types";
 import { useRendererChildren } from "./hooks";
 import { BlockNodeRenderer } from "./node-views";
-import type { RendererStore } from "./store";
+import { createRendererStore, type RendererStore } from "./store";
 
 /**
  * React component for rendering markdown blocks
@@ -29,38 +29,21 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
       }
       return reg;
     }, [componentRegistry, codeRenderers]);
-  if (store) {
+    const effectiveStore = useMemo(() => {
+      if (store) return store;
+      return createRendererStore(blocks as Block[]);
+    }, [store, blocks]);
+
     return React.createElement(
       "div",
       {
         className,
         style: { contain: "content", ...(style ?? {}) }, // CSS containment for performance
       },
-      React.createElement(StoreBackedBlocks, { store, componentRegistry: resolvedRegistry }),
+      React.createElement(StoreBackedBlocks, { store: effectiveStore, componentRegistry: resolvedRegistry }),
     );
-  }
-
-  const renderedBlocks = useMemo(() => {
-    return blocks.map((block) => {
-      const key = getBlockKey(block);
-      return React.createElement(BlockRenderer, {
-        key,
-        block,
-        componentRegistry: resolvedRegistry,
-        isFinalized: block.isFinalized,
-      });
-    });
-  }, [blocks, resolvedRegistry]);
-
-  return React.createElement(
-    "div",
-    {
-      className,
-      style: { contain: "content", ...(style ?? {}) }, // CSS containment for performance
-    },
-    renderedBlocks,
-  );
-});
+  },
+);
 
 const StoreBackedBlocks = React.memo<{ store: RendererStore; componentRegistry: ComponentRegistry }>(
   ({ store, componentRegistry }) => {
@@ -75,24 +58,3 @@ const StoreBackedBlocks = React.memo<{ store: RendererStore; componentRegistry: 
 
 StoreBackedBlocks.displayName = "StoreBackedBlocks";
 
-/**
- * Individual block renderer with memoization
- */
-const BlockRenderer = React.memo<{
-  block: Block;
-  componentRegistry: ComponentRegistry;
-  isFinalized: boolean;
-}>(({ block, componentRegistry, isFinalized }) => {
-  const element = useMemo(() => {
-    return componentRegistry.renderBlock(block);
-  }, [block, componentRegistry]);
-
-  // Add finalization indicator for debugging
-  const className = `markdown-block markdown-block-${block.type} ${isFinalized ? "finalized" : "dirty"}`;
-
-  return React.cloneElement(element, {
-    className: `${element.props.className || ""} ${className}`.trim(),
-    "data-block-id": block.id,
-    "data-finalized": isFinalized,
-  });
-});

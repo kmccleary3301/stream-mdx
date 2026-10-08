@@ -655,6 +655,7 @@ export const defaultBlockComponents: BlockComponents = {
  */
 export class ComponentRegistry {
   private blockComponents: BlockComponents;
+  private customBlockComponents = new Set<string>();
   private inlineComponents: InlineComponents;
   private htmlElements: HtmlElements;
   private tableElements: TableElements;
@@ -671,10 +672,14 @@ export class ComponentRegistry {
     options?: { artifactHtml?: boolean; mathRenderer?: MathRenderer },
   ) {
     this.blockComponents = { ...defaultBlockComponents, ...blockComponents } as BlockComponents;
+    for (const key of Object.keys(blockComponents)) {
+      if (blockComponents[key as keyof BlockComponents]) {
+        this.customBlockComponents.add(key);
+      }
+    }
     this.inlineComponents = { ...defaultInlineComponents, ...inlineComponents } as InlineComponents;
     this.htmlElements = getDefaultHtmlElements();
     this.tableElements = getDefaultTableElements();
-    this.artifactHtml = Boolean(options?.artifactHtml);
     if (codeRenderers) {
       this.setCodeRenderers(codeRenderers);
     }
@@ -746,7 +751,16 @@ export class ComponentRegistry {
    */
   setBlockComponents(components: Partial<BlockComponents>): void {
     this.blockComponents = { ...this.blockComponents, ...components } as BlockComponents;
+    for (const key of Object.keys(components)) {
+      if (components[key as keyof BlockComponents]) {
+        this.customBlockComponents.add(key);
+      }
+    }
     this.blockComponentMapCache = null;
+  }
+
+  hasCustomBlockComponent(type: string): boolean {
+    return this.customBlockComponents.has(type);
   }
 
   /**

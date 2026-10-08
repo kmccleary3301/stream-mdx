@@ -237,9 +237,10 @@ export class PerformanceTimer {
  */
 export function removeHeadingMarkers(input: string): string {
   return input
-    .replace(/^(#{1,6})\s+/, "")
+    .replace(/^(#{1,6})(?:\s+|$)/, "")
     .replace(/(?:\r?\n|\s+)(?:=+|-+)\s*$/m, "")
     .replace(/\s+#+\s*$/, "")
+    .replace(/^\s*#+\s*$/, "")
     .trim();
 }
 

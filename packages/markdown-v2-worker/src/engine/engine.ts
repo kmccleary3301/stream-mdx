@@ -915,7 +915,6 @@ export class MarkdownEngine {
 
       case "blockquote": {
         const normalized = normalizeBlockquoteText(block.payload.raw ?? "");
-        block.payload.raw = normalized;
         const streamingParsed = !block.isFinalized ? this.parseInlineStreaming(normalized) : null;
         if (block.isFinalized) {
           block.payload.inline = this.inlineParser.parse(normalized);
