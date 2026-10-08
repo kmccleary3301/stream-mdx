@@ -1329,6 +1329,19 @@ export class MarkdownEngine {
     };
     for (const child of prepared.children) await enrich(child);
     prepared.children = groupChildren(prepared.children);
+    const canonicalize = (value: unknown): void => {
+      if (!value || typeof value !== "object") return;
+      if (Array.isArray(value)) {
+        for (const child of value) canonicalize(child);
+      } else {
+        const record = value as Record<string, unknown>;
+        for (const key of Object.keys(record)) {
+          if (record[key] === undefined) delete record[key];
+          else canonicalize(record[key]);
+        }
+      }
+    };
+    canonicalize(prepared);
     block.payload.meta = {
       ...block.payload.meta,
       ...prepared.props,

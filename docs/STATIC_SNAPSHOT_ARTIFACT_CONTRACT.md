@@ -54,6 +54,29 @@ Nested code contains normalized `meta.code`, normal highlight metadata, and
 `code-line` children before patch emission. Renderers do not need to reparse code
 or repair a line-count mismatch to reconstruct a static snapshot.
 
+### Block packet verification, October 2026
+
+The saved pre-packet report counted 622/675 client-static and SSR passes,
+620 streaming passes, and three streaming divergences. The hosted-worker run
+after the nested cutover counted 652/675 static and SSR passes, 651 streaming
+passes, and one divergence. These counts include the merged HTML and link work,
+not just the block changes.
+
+All three consumers passed assigned CommonMark examples 5, 6, 7, 10, 61, 131,
+134, 137, 218, 251, 259, 264, 273, 274, 278, 280, 300, and 324. The run failed
+the existing baseline on examples 155, 239, and 240; example 155 remained the
+streaming divergence. Empty-quote 239/240 and empty-table-body GFM205 corrections
+were applied after that report and require the parent integration gate.
+
+Package builds and all 20 core test files passed. The worker suite stopped on
+mixed-segment canonicalization and the React suite stopped on HTML consumer
+conformance. The final source canonicalizes prepared nested metadata for JSON
+parity. The owning-engine regression checks native callbacks, declarative syntax,
+forward references, child finalization, serialized reset, code-line counts, and
+core/React consumer invariants. Full worker/React approval still requires the
+integration gate; the conformance counts above are not a parity claim.
+
+
 
 ## Heading ID policy (normative)
 
