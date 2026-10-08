@@ -1,4 +1,6 @@
+import { rm } from "node:fs/promises";
 import { join } from "node:path";
+import type { Options } from "tsup";
 import { defineConfig } from "tsup";
 
 import { applyWorkerRealmAliases, assertWorkerRealmBoundary, workerMdxBundlePackages } from "./tsup.worker-realm";
@@ -6,33 +8,15 @@ import { applyWorkerRealmAliases, assertWorkerRealmBoundary, workerMdxBundlePack
 const resolve = (p: string) => join(__dirname, p);
 const sourcemap = process.env.SOURCEMAP === "1" || process.env.SOURCEMAP === "true";
 
-export default defineConfig({
-  entry: [
-    resolve("src/index.ts"),
-    resolve("src/direct.ts"),
-    resolve("src/worker-client.ts"),
-    resolve("src/mdx-compile.ts"),
-    resolve("src/streaming/custom-matcher.ts"),
-    resolve("src/node/index.ts"),
-    resolve("src/node/worker-thread-entry.ts"),
-    // `src/engine/index.ts` (the public worker entry) is built by
-    // `tsup.worker-engine.config.ts`, which bundles the MDX pipeline with the
-    // DOM-free decoder for the worker realm.
-  ],
+const sharedConfig: Options = {
   dts: true,
   splitting: false,
   sourcemap,
-  clean: true,
+  clean: false,
   format: ["esm", "cjs"],
-  outDir: join(__dirname, "dist"),
+  outDir: resolve("dist"),
   target: "es2020",
-  tsconfig: join(__dirname, "tsconfig.build.json"),
-  // Direct and MDX helper entries need the same DOM-free, ESM-only pipeline
-  // as the public engine, including when consumers load their CJS builds.
-  noExternal: workerMdxBundlePackages,
-  esbuildOptions(options) {
-    applyWorkerRealmAliases(options);
-  },
+  tsconfig: resolve("tsconfig.build.json"),
   external: [
     "@lezer/markdown",
     "@lezer/lr",
@@ -49,9 +33,42 @@ export default defineConfig({
       js: format === "cjs" ? ".cjs" : ".mjs",
     };
   },
-  async onSuccess() {
-    await assertWorkerRealmBoundary(
-      ["index", "direct", "mdx-compile"].flatMap((entry) => ["mjs", "cjs"].map((extension) => resolve(`dist/${entry}.${extension}`))),
-    );
-  },
+};
+
+export default defineConfig(async () => {
+  // Configurations and their DTS tasks run concurrently. Clean once before any
+  // build starts so neither platform can remove the other platform's outputs.
+  await rm(resolve("dist"), { recursive: true, force: true });
+
+  return [
+    {
+      ...sharedConfig,
+      entry: [
+        resolve("src/index.ts"),
+        resolve("src/direct.ts"),
+        resolve("src/worker-client.ts"),
+        resolve("src/mdx-compile.ts"),
+        resolve("src/streaming/custom-matcher.ts"),
+      ],
+      // These public entries are also imported by browser clients. Resolve the
+      // MDX pipeline's actual browser variants, not vfile's Node builtins.
+      platform: "browser",
+      noExternal: workerMdxBundlePackages,
+      esbuildOptions(options) {
+        applyWorkerRealmAliases(options);
+      },
+      async onSuccess() {
+        await assertWorkerRealmBoundary(
+          ["index", "direct", "mdx-compile"].flatMap((entry) => ["mjs", "cjs"].map((extension) => resolve(`dist/${entry}.${extension}`))),
+        );
+      },
+    },
+    {
+      ...sharedConfig,
+      entry: [resolve("src/node/index.ts"), resolve("src/node/worker-thread-entry.ts")],
+      platform: "node",
+    },
+    // The public engine entry is built afterward by tsup.worker-engine.config.ts
+    // with the same browser-safe MDX pipeline and without cleaning this output.
+  ];
 });
