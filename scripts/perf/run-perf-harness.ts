@@ -5,6 +5,7 @@ import os from "node:os";
 import { execSync } from "node:child_process";
 
 import { chromium } from "@playwright/test";
+import type { GeneratedFootnoteLabel, SemanticDomRecords } from "./semantic-dom";
 
 
 function getArg(flag: string): string | null {
@@ -74,6 +75,9 @@ type PerfReport = {
     updateIntervalMs: number;
     charRateCps: number;
     maxChunkChars: number;
+    fixtureHash: string;
+    chunkTraceHash: string;
+    chunkCount: number;
     runStart: number;
     runEnd: number;
     runDurationMs: number;
@@ -96,6 +100,9 @@ type PerfReport = {
         normalizedLength: number;
         normalizedTextHash: string;
         preview: string;
+        records: SemanticDomRecords;
+        generatedFootnoteLabels: GeneratedFootnoteLabel[];
+        rawHtml: string;
       };
     };
   };
@@ -166,6 +173,9 @@ type RunMetadata = {
   rendererVersion: string;
   profile: string;
   policy: Record<string, unknown>;
+  fixtureHash: string;
+  chunkTraceHash: string;
+  chunkCount: number;
   rendererVersions: {
     streammdx: string;
     streamdown: string;
@@ -364,9 +374,9 @@ function getRendererVersion(renderer: string, targetWorktree: string): string {
   try {
     const pkgPath = path.resolve(targetWorktree, "packages/markdown-v2-react/package.json");
     const pkg = JSON.parse(fsSync.readFileSync(pkgPath, "utf8")) as { version?: string };
-    return pkg.version ?? "engine-v2";
+    return pkg.version ?? "streammdx (package version unavailable)";
   } catch {
-    return "engine-v2";
+    return "streammdx (package version unavailable)";
   }
 }
 
@@ -374,6 +384,8 @@ function getRendererVersion(renderer: string, targetWorktree: string): string {
 function buildUrl(): string {
   const url = new URL("/perf/harness/", BASE_URL);
   url.searchParams.set("renderer", RENDERER);
+  url.searchParams.set("rendererVersion", getRendererVersion(RENDERER, WORKTREE));
+  url.searchParams.set("cdp", "1");
   url.searchParams.set("profile", PROFILE);
   url.searchParams.set("fixture", FIXTURE);
   url.searchParams.set("scenario", SCENARIO);
@@ -407,28 +419,43 @@ async function runOnce(pageId: number, page: Awaited<ReturnType<ReturnType<typeo
   }
   const target = buildUrl();
   await page.goto(target, { waitUntil: "domcontentloaded", timeout: TIMEOUT_MS });
-  try {
-    await page.waitForFunction(() => typeof window.__streammdxPerfRunStart === "number", { timeout: TIMEOUT_MS });
-  } catch {
-    // Ignore if the run start signal is missing.
-  }
+  await page.waitForFunction(
+    () => Boolean(window.__streammdxPerfStart || window.__streammdxPerfError),
+    null,
+    { timeout: TIMEOUT_MS },
+  );
   const startMetrics = await client
     .send("Performance.getMetrics")
     .then((response) => metricMap(response.metrics))
     .catch(() => null);
   const startDom = await client.send("Memory.getDOMCounters").catch(() => null);
-  await page.waitForFunction(() => Boolean(window.__streammdxPerfDone), { timeout: TIMEOUT_MS });
-  await page.evaluate(() => window.__streammdxPerfDone);
-  const report = await page.evaluate(() => window.__streammdxPerfReport ?? null);
-  if (!report) {
-    const errorMessage = await page.evaluate(() => window.__streammdxPerfError ?? null);
-    throw new Error(errorMessage ? `Perf report missing: ${errorMessage}` : "Perf report missing.");
-  }
+  await page.evaluate(() => {
+    if (!window.__streammdxPerfStart) throw new Error(window.__streammdxPerfError ?? "Incomplete measurement: CDP start handshake missing.");
+    window.__streammdxPerfStart();
+  });
+  await page.waitForFunction(
+    () => typeof window.__streammdxPerfRunEnd === "number" || Boolean(window.__streammdxPerfError),
+    null,
+    { timeout: TIMEOUT_MS },
+  );
   const endMetrics = await client
     .send("Performance.getMetrics")
     .then((response) => metricMap(response.metrics))
     .catch(() => null);
   const endDom = await client.send("Memory.getDOMCounters").catch(() => null);
+  await page.evaluate(() => {
+    if (!window.__streammdxPerfCollect) throw new Error(window.__streammdxPerfError ?? "Incomplete measurement: CDP end handshake missing.");
+    window.__streammdxPerfCollect();
+  });
+  await page.waitForFunction(() => Boolean(window.__streammdxPerfReport || window.__streammdxPerfError), null, { timeout: TIMEOUT_MS });
+  const report = await page.evaluate(() => window.__streammdxPerfReport ?? null);
+  if (!report) {
+    const errorMessage = await page.evaluate(() => window.__streammdxPerfError ?? null);
+    throw new Error(errorMessage ? `Perf report missing: ${errorMessage}` : "Perf report missing.");
+  }
+  if (!Number.isFinite(report.meta.runStart) || !Number.isFinite(report.meta.runEnd) || report.meta.runEnd < report.meta.runStart) {
+    throw new Error("Incomplete measurement: valid browser run boundaries are missing.");
+  }
   const cdpMetrics = buildCdpMetrics(startMetrics, endMetrics);
   const domStart = startDom ?? null;
   const domEnd = endDom ?? null;
@@ -577,7 +604,7 @@ function formatSummaryText(summary: Summary): string {
     lines.push(`visible semantic text length p50: ${summary.aggregate.semanticTextLength.p50.toFixed(0)} chars`);
   }
   if (summary.aggregate.semanticTextHash) {
-    lines.push(`visible semantic text SHA-256: ${summary.aggregate.semanticTextHash}`);
+    lines.push(`canonical semantic records SHA-256: ${summary.aggregate.semanticTextHash}`);
   }
   lines.push("--- Browser Heap / CDP DOM Counters (Includes Detached Nodes) ---");
   if (summary.aggregate.cdpHeapTotalNodesEnd && summary.aggregate.cdpHeapListenersEnd) {
@@ -616,25 +643,38 @@ async function run(): Promise<void> {
 
   const browser = await chromium.launch({ headless: HEADLESS, executablePath });
   const context = await browser.newContext();
-
-  for (let i = 0; i < WARMUP; i += 1) {
-    const page = await context.newPage();
-    await runOnce(i + 1, page);
-    await page.close();
-  }
-
   const outputs: PerfRun[] = [];
-  for (let i = 0; i < RUNS; i += 1) {
-    const page = await context.newPage();
-    const result = await runOnce(i + 1, page);
-    outputs.push(result);
-    await page.close();
-  }
+  try {
+    for (let i = 0; i < WARMUP; i += 1) {
+      const page = await context.newPage();
+      await runOnce(i + 1, page);
+      await page.close();
+    }
 
-  await context.close();
-  await browser.close();
+    for (let i = 0; i < RUNS; i += 1) {
+      const page = await context.newPage();
+      const result = await runOnce(i + 1, page);
+      outputs.push(result);
+      await page.close();
+    }
+
+  } finally {
+    await context.close();
+    await browser.close();
+  }
 
   const runSummaries = outputs.map(summarizeRun);
+  // Preserve individual evidence even when cross-run correctness rejects the aggregate.
+  await fs.writeFile(path.join(outRoot, "run.json"), JSON.stringify(outputs, null, 2));
+  const canonicalHashes = outputs.map((entry) => entry.report.meta.liveDom.semanticContent.normalizedTextHash);
+  if (canonicalHashes.some((hash) => !/^[a-f0-9]{64}$/.test(hash)) || new Set(canonicalHashes).size !== 1) {
+    throw new Error("Incomplete comparison: measured canonical semantic hashes are invalid or divergent; inspect run.json.");
+  }
+  if (outputs.some((entry) => !/^[a-f0-9]{64}$/.test(entry.report.meta.fixtureHash) || !/^[a-f0-9]{64}$/.test(entry.report.meta.chunkTraceHash) || !Number.isInteger(entry.report.meta.chunkCount) || entry.report.meta.chunkCount < 1) ||
+    new Set(outputs.map((entry) => entry.report.meta.chunkTraceHash)).size !== 1 || new Set(outputs.map((entry) => entry.report.meta.fixtureHash)).size !== 1 ||
+    new Set(outputs.map((entry) => entry.report.meta.chunkCount)).size !== 1) {
+    throw new Error("Incomplete comparison: fixture or chunk trace is invalid or differs across runs; inspect run.json.");
+  }
   let gitSha = "unknown";
   try {
     gitSha = execSync("git rev-parse HEAD", { cwd: WORKTREE || process.cwd(), encoding: "utf8" }).trim();
@@ -653,6 +693,9 @@ async function run(): Promise<void> {
     rendererVersion: getRendererVersion(RENDERER, WORKTREE),
     profile: PROFILE,
     policy: outputs[0]?.report.meta.policy ?? {},
+    fixtureHash: outputs[0].report.meta.fixtureHash,
+    chunkTraceHash: outputs[0].report.meta.chunkTraceHash,
+    chunkCount: outputs[0].report.meta.chunkCount,
     rendererVersions: {
       streammdx: getRendererVersion("streammdx", WORKTREE),
       streamdown: getRendererVersion("streamdown", WORKTREE),
@@ -689,6 +732,7 @@ async function run(): Promise<void> {
       renderer: RENDERER,
       profile: PROFILE,
       fixture: FIXTURE,
+      scenario: SCENARIO,
       scheduling: SCHEDULING,
       overrides: SCHEDULING_OVERRIDES,
       runs: RUNS,
@@ -698,6 +742,7 @@ async function run(): Promise<void> {
       cpuThrottle: CPU_THROTTLE ?? null,
       profiler: PROFILER_ENABLED,
     },
+    runs: runSummaries,
     aggregate: {
       durationMs: stats(runSummaries.map((run) => run.durationMs)),
       timeToFirstFlushMs: statsFromRuns(runSummaries.map((run) => run.timeToFirstFlushMs)),
