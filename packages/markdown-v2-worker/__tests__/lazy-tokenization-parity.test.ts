@@ -1,5 +1,5 @@
 import assert from "node:assert";
-import { applyPatchBatch, createInitialSnapshot, extractHighlightedLines, sanitizeCodeHTML, type Block, type CodeHighlightOutputMode, type HtmlTreeNode, type Patch, type WorkerOut } from "@stream-mdx/core";
+import { applyPatchBatch, createInitialSnapshot, extractHighlightedLines, sanitizeCodeHTML, type Block, type CodeHighlightOutputMode, type DiffBlock, type HtmlTreeNode, type Patch, type TokenLineV1, type WorkerOut } from "@stream-mdx/core";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ComponentRegistry, MarkdownBlocksRenderer, type BlockComponents, type CodeFenceRendererProps } from "@stream-mdx/react/server";
@@ -37,7 +37,7 @@ function sanitizeLineInnerHtml(innerHtml: string | null, fallbackText: string): 
   return fallbackText;
 }
 
-async function renderWithWorker(snippet: string, lazyEnabled: boolean, outputMode: CodeHighlightOutputMode = "html") {
+async function renderWithWorker(snippet: string, lazyEnabled: boolean, outputMode: CodeHighlightOutputMode = "html", emitDiffBlocks = false) {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
   const initMessages = await harness.send({
@@ -52,6 +52,7 @@ async function renderWithWorker(snippet: string, lazyEnabled: boolean, outputMod
       callouts: false,
       outputMode,
       emitHighlightTokens: true,
+      emitDiffBlocks,
       footnotes: false,
       lazyTokenization: { enabled: lazyEnabled, thresholdLines: 10 },
     },
@@ -252,9 +253,9 @@ async function runPublicTokenThemeConsumers(): Promise<void> {
   assert.ok(expected.flat().some((token) => (token.variants.dark?.fontStyle ?? 0) & 2), "fixture must exercise real bold syntax");
   assert.ok(expected.flat().some((token) => token.variants.dark?.color !== token.variants.light?.color), "fixture must exercise distinct theme foregrounds");
   for (const theme of ["dark", "light"] as const) {
-    const Code: BlockComponents["code"] = ({ lines: rows }) => React.createElement("pre", {}, React.createElement("code", {},
-      rows?.map((line) => React.createElement("span", { key: line.id, "data-token-line": line.index },
-        line.tokens?.spans.map((span, index) => {
+    const Code: BlockComponents["code"] = ({ meta }) => React.createElement("pre", {}, React.createElement("code", {},
+      (meta?.tokenLines as ReadonlyArray<TokenLineV1 | null> | undefined)?.map((line, lineIndex) => React.createElement("span", { key: lineIndex, "data-token-line": lineIndex },
+        line?.spans.map((span, index) => {
           const style = span.s ?? span.v?.[theme];
           assert.ok(!style || (!Object.hasOwn(style, "color") && !Object.hasOwn(style, "fontStyle")), "public IR must use compact style fields only");
           const flags = style?.fs ?? 0;
@@ -284,6 +285,32 @@ async function runPublicTokenThemeConsumers(): Promise<void> {
     }
     dom.window.close();
   }
+  const diff = await renderWithWorker(["```diff-markdown", "@@ -0,0 +1,60 @@", ...lines.map((line) => `+${line}`), "```"].join("\n"), true, "tokens", true);
+  const diffCode = diff.store.getBlocks().find((candidate) => candidate.type === "code");
+  assert.ok(diffCode);
+  diff.consume(await diff.harness.send({ type: "TOKENIZE_RANGE", blockId: diffCode.id, startLine: 0, endLine: lines.length + 1, priority: "visible" }));
+  const Diff: BlockComponents["code"] = ({ meta }) => React.createElement("pre", {}, React.createElement("code", {},
+    (meta?.diffBlocks as DiffBlock[] | undefined)?.flatMap((block) => block.lines.filter((line) => line.kind === "add")).map((line, index) =>
+      React.createElement("span", { key: index, "data-diff-row": index }, line.tokens?.map((token, index) => React.createElement("span", { key: index,
+        style: { color: token.color, fontStyle: (token.fontStyle ?? 0) & 1 ? "italic" : undefined, fontWeight: (token.fontStyle ?? 0) & 2 ? "bold" : undefined } }, token.content))))));
+  const diffHtml = renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: diff.store.getBlocks(), store: diff.store, componentRegistry: new ComponentRegistry({ code: Diff }) }));
+  const diffDom = new JSDOM(diffHtml);
+  const diffRows = diffDom.window.document.querySelectorAll<HTMLElement>("[data-diff-row]");
+  assert.strictEqual(diffRows.length, lines.length);
+  expected.forEach((line, row) => {
+    const tokens = diffRows[row].querySelectorAll<HTMLElement>("span");
+    assert.strictEqual(tokens.length, line.length);
+    line.forEach((token, index) => {
+      const color = diffDom.window.document.createElement("span");
+      color.style.color = token.variants.dark?.color ?? "";
+      const flags = token.variants.dark?.fontStyle ?? 0;
+      assert.strictEqual(tokens[index].textContent, token.content);
+      assert.strictEqual(tokens[index].style.color, color.style.color, "actual diff metadata must preserve compact foreground conversion");
+      assert.strictEqual(tokens[index].style.fontStyle, flags & 1 ? "italic" : "");
+      assert.strictEqual(tokens[index].style.fontWeight, flags & 2 ? "bold" : "");
+    });
+  });
+  diffDom.window.close();
 }
 
 await main();

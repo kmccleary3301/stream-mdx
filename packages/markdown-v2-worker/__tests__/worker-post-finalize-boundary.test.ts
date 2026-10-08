@@ -214,7 +214,7 @@ async function runInflightLazyLifecycleTest(): Promise<void> {
   const oldMarkdown = ["- owner", "", "  ```diff-js", ...lines.map((line) => `  ${line}`), "  ```"].join("\n");
   const replacement = "- owner\n\n  ```js\n  const replacementOnly = 1;\n  ```";
   const docPlugins = { html: false, mdx: false, math: false, tables: false, footnotes: false, callouts: false, outputMode: "tokens" as const, emitHighlightTokens: true, emitDiffBlocks: true, lazyTokenization: { enabled: true, thresholdLines: 10 } };
-  for (const action of ["replace", "owner-update", "dispose"] as const) {
+  for (const action of ["replace", "owner-update", "inside-owner", "dispose"] as const) {
     const messages: WorkerOut[] = [];
     const store = createRendererStore();
     let document = createInitialSnapshot();
@@ -252,7 +252,8 @@ async function runInflightLazyLifecycleTest(): Promise<void> {
     const oldCode = findNestedCode(store.getBlocks());
     assert.strictEqual(oldCode.payload.meta?.lazyTokenizedUntil, 0);
     const beforeRequest = messages.length;
-    await engine.handle({ type: "TOKENIZE_RANGE", blockId: oldCode.id, startLine: 0, endLine: lines.length, priority: "visible" });
+    const requestedEnd = action === "inside-owner" ? 101 : lines.length;
+    await engine.handle({ type: "TOKENIZE_RANGE", blockId: oldCode.id, startLine: 0, endLine: requestedEnd, priority: "visible" });
     await Promise.resolve();
     await Promise.resolve();
     assert.strictEqual(getPatchMessages(messages.slice(beforeRequest)).length, 0, "real multi-run diff tokenization must still be in flight at the lifecycle transition");
@@ -262,6 +263,8 @@ async function runInflightLazyLifecycleTest(): Promise<void> {
       await engine.handle({ type: "FINALIZE" });
     } else if (action === "owner-update") {
       await engine.handle({ type: "APPEND", text: "\n\nNEW_SIBLING" });
+    } else if (action === "inside-owner") {
+      await engine.handle({ type: "APPEND", text: "\n\n  Inside owner\n\nNEW_SIBLING" });
     } else {
       engine.dispose();
     }
@@ -281,9 +284,28 @@ async function runInflightLazyLifecycleTest(): Promise<void> {
         assert.ok(messages.slice(beforeRequest).some((message) => message.type === "FINALIZED"));
         assert.ok(!JSON.stringify(dumped).includes("oldOnlySentinel"));
       } else {
-        assert.strictEqual(code.payload.meta?.lazyTokenizedUntil, lines.length, "unchanged leaves must complete against the fresh COW owner");
+        assert.strictEqual(code.payload.meta?.lazyTokenizedUntil, requestedEnd, "unchanged source leaves must complete against the fresh COW owner");
         assert.strictEqual(dumped.find((block) => block.type === "list")?.payload.meta?.nativeOwnerRevision, "updated", "lazy completion must preserve new ancestor metadata");
         assert.ok(dumped.some((block) => block.payload.raw?.includes("NEW_SIBLING")), "lazy completion must preserve new siblings");
+        if (action === "inside-owner") {
+          assert.ok(dumped.find((block) => block.type === "list")?.payload.raw?.includes("Inside owner"));
+          const tailStart = messages.length;
+          await engine.handle({ type: "TOKENIZE_RANGE", blockId: code.id, startLine: requestedEnd, endLine: lines.length, priority: "visible" });
+          await new Promise<void>((resolve) => setImmediate(resolve));
+          await engine.handle({ type: "DUMP_BLOCKS" });
+          const completed = findNestedCode(findDumpBlocks(messages.slice(tailStart)).blocks);
+          const fullMessages: WorkerOut[] = [];
+          const full = new MarkdownEngine({ post: (message) => fullMessages.push(structuredClone(message)) });
+          await full.handle({ type: "INIT", initialContent: oldMarkdown, prewarmLangs: [], docPlugins: { ...docPlugins, lazyTokenization: { enabled: false } } });
+          await full.handle({ type: "FINALIZE" });
+          await full.handle({ type: "DUMP_BLOCKS" });
+          const expected = findNestedCode(findDumpBlocks(fullMessages).blocks);
+          assert.strictEqual(completed.payload.meta?.lazyTokenizedUntil, lines.length);
+          for (const key of ["tokenLines", "diffKind", "diffOldNo", "diffNewNo", "diffBlocks"]) {
+            assert.deepStrictEqual(completed.payload.meta?.[key], expected.payload.meta?.[key], `continued ${key} must match a full native compile after inside-owner reconstruction`);
+          }
+          full.dispose();
+        }
       }
       engine.dispose();
     }

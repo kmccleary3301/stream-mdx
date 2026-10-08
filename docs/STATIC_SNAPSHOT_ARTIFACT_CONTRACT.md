@@ -65,8 +65,10 @@ in the document.
 
 `INIT` and disposal invalidate in-flight lazy work, even when a replacement
 document reuses descendant IDs. Before committing, the engine checks the original
-leaf identity and resolves its current owning root and index. Copy-on-write
-ancestor updates and newly appended siblings remain intact.
+leaf's immutable code source and language/theme policy, and resolves its current
+owning root and index. Reconstructed equivalent leaves can complete; changed code
+is discarded. Grammar state, diff cursors, and line rows are committed only after
+these checks. Copy-on-write ancestor updates and newly appended siblings remain intact.
 
 Public token spans use `fg` and `fs` in their compact style records. Theme variants
 remain in `v.dark` and `v.light`; the legacy themed-line bridge converts these

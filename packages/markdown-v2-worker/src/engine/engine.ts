@@ -133,6 +133,7 @@ import type {
   CodeHighlightingMode,
   ContentChangeRange,
   DiffCursorState,
+  DiffLineInfo,
   EngineExtensions,
   IncrementalHighlightState,
   LazyTokenizationState,
@@ -2358,10 +2359,21 @@ export class MarkdownEngine {
     if (!target) return;
     const { block } = target;
     if (block.type !== "code" || !block.isFinalized) return;
+    const sourceRaw = block.payload.raw;
+    const sourceCode = block.payload.meta?.code;
+    const sourceInfo = block.payload.meta?.info;
+    const sourceLanguage = block.payload.meta?.lang;
+    const sourceHighlightLanguage = block.payload.meta?.highlightLang;
+    const themeDark = CODE_HIGHLIGHT_THEMES.dark;
+    const themeLight = CODE_HIGHLIGHT_THEMES.light;
     const currentTarget = () => {
       if (this.disposed || generation !== this.documentGeneration) return undefined;
       const current = this.findPreparedCode(block.id);
-      return current?.block === block ? current : undefined;
+      const leaf = current?.block;
+      return leaf?.type === "code" && leaf.isFinalized && leaf.payload.raw === sourceRaw
+        && leaf.payload.meta?.code === sourceCode && leaf.payload.meta?.info === sourceInfo
+        && leaf.payload.meta?.lang === sourceLanguage && leaf.payload.meta?.highlightLang === sourceHighlightLanguage
+        && CODE_HIGHLIGHT_THEMES.dark === themeDark && CODE_HIGHLIGHT_THEMES.light === themeLight ? current : undefined;
     };
 
     const raw = block.payload.raw ?? "";
@@ -2419,11 +2431,14 @@ export class MarkdownEngine {
     const metricsCollector = new WorkerMetricsCollector(this.workerGrammarEngine);
     this.activeMetricsCollector = metricsCollector;
     metricsCollector.setBlocksProduced(this.blocks.length);
-    
-    const previousCode = cloneBlock(block);
 
     const tokenizationStart = now();
     const segmentLines = codeLines.slice(state.processedLines, targetEnd);
+    let nextGrammarState = state.grammarState;
+    let highlightedSegment: Array<string | null> | undefined;
+    let tokenizedSegment: Array<TokenLineV1 | null> | undefined;
+    let nextDiffCursor: DiffCursorState | undefined;
+    let diffSegment: DiffLineInfo[] | undefined;
 
     if (segmentLines.length > 0) {
       if (wantsHtml || (wantsTokens && !diffEnabled)) {
@@ -2432,32 +2447,20 @@ export class MarkdownEngine {
           const tokens = this.highlighter.codeToTokensWithThemes(segmentLines.join("\n"), {
             lang: sharedLanguage as never,
             themes: CODE_HIGHLIGHT_THEMES,
-            grammarState: state.grammarState as never,
+            grammarState: nextGrammarState as never,
           } as never) as ShikiThemedToken[][];
-          if (wantsHtml) {
-            const htmlLines = renderShikiLines(tokens);
-            for (let i = 0; i < htmlLines.length; i += 1) {
-              state.highlightedLines[state.processedLines + i] = htmlLines[i] ?? null;
-            }
-          }
-          if (wantsTokens && !diffEnabled) {
-            const tokenLines = renderTokenLines(tokens);
-            for (let i = 0; i < tokenLines.length; i += 1) {
-              state.tokenLines[state.processedLines + i] = tokenLines[i] ?? null;
-            }
-          }
-          state.grammarState = this.highlighter.getLastGrammarState(tokens as never);
+          if (wantsHtml) highlightedSegment = renderShikiLines(tokens);
+          if (wantsTokens && !diffEnabled) tokenizedSegment = renderTokenLines(tokens);
+          nextGrammarState = this.highlighter.getLastGrammarState(tokens as never);
         } catch (error) {
           console.warn("Lazy tokenization failed for", requestedLanguage, error);
         }
       }
 
       if (wantsTokens && diffEnabled) {
-        const cursor = state.diffCursor ?? { oldLine: null, newLine: null };
+        const cursor = { oldLine: state.diffCursor?.oldLine ?? null, newLine: state.diffCursor?.newLine ?? null };
         const diffLines = segmentLines.map((line) => parseUnifiedDiffLine(line, cursor));
-        state.diffCursor = cursor;
-
-        const grammarObj = { context: state.grammarState };
+        const grammarObj = { context: nextGrammarState };
         const { tokenLines, grammarState: nextState } = await buildDiffTokenLines(
           diffLines,
           resolvedTokenLanguage,
@@ -2468,17 +2471,11 @@ export class MarkdownEngine {
           if (this.activeMetricsCollector === metricsCollector) this.activeMetricsCollector = null;
           return;
         }
-        state.grammarState = nextState.context;
-
-        for (let i = 0; i < diffLines.length; i += 1) {
-          const idx = state.processedLines + i;
-          state.diffKind[idx] = toDiffLineKind(diffLines[i].kind);
-          state.oldNo[idx] = diffLines[i].oldNo ?? null;
-          state.newNo[idx] = diffLines[i].newNo ?? null;
-          state.tokenLines[idx] = tokenLines[i] ?? null;
-        }
+        nextGrammarState = nextState.context;
+        nextDiffCursor = cursor;
+        diffSegment = diffLines;
+        tokenizedSegment = tokenLines;
       }
-      state.processedLines = targetEnd;
     }
 
     const commitTarget = currentTarget();
@@ -2487,11 +2484,24 @@ export class MarkdownEngine {
       return;
     }
     const root = this.blocks[commitTarget.rootIndex];
-    const prevSnapshot = createBlockSnapshot(this.replacePreparedCode(root, previousCode));
+    const prevSnapshot = createBlockSnapshot(root);
+    for (let i = 0; i < segmentLines.length; i++) {
+      const index = state.processedLines + i;
+      if (highlightedSegment) state.highlightedLines[index] = highlightedSegment[i] ?? null;
+      if (tokenizedSegment) state.tokenLines[index] = tokenizedSegment[i] ?? null;
+      if (diffSegment) {
+        state.diffKind[index] = toDiffLineKind(diffSegment[i].kind);
+        state.oldNo[index] = diffSegment[i].oldNo ?? null;
+        state.newNo[index] = diffSegment[i].newNo ?? null;
+      }
+    }
+    state.grammarState = nextGrammarState;
+    if (nextDiffCursor) state.diffCursor = nextDiffCursor;
+    state.processedLines = targetEnd;
     const tokenizationDuration = now() - tokenizationStart;
     metricsCollector.recordLazyTokenization(targetEnd - startLine, tokenizationDuration, this.lazyTokenizationQueue.size);
 
-    const updated = cloneBlock(block);
+    const updated = cloneBlock(commitTarget.block);
     delete updated.payload.highlightedHtml;
     const effectiveLang = wantsHtml ? resolvedLanguage : resolvedTokenLanguage;
     const nextMeta = { ...(updated.payload.meta ?? {}), ...meta, lang: requestedLanguage, highlightLang: effectiveLang } as Record<string, unknown>;
