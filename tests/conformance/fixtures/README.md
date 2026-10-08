@@ -54,6 +54,42 @@ Whitespace normalization follows the official CommonMark test normalization spec
 - HTML entities are decoded to standard Unicode characters (e.g. `&amp;` -> `&`, `&quot;` -> `"`, `&lt;` -> `<`, `&gt;` -> `>`).
 - Inside `<pre>` blocks, literal code text and newlines are preserved verbatim.
 
+### 5. Strict Normalization Mode
+In addition to standard normalized semantics, a strict comparison mode (`{ strict: true }`) is evaluated identically across all engines:
+- Link titles: preserved on `<a>` (`title="..."`)
+- Image titles: preserved on `<img>` (`title="..."`)
+- Code block language info strings: preserved on `<code>` (`class="language-*"`)
+
+### 6. Evaluated Streamdown Configurations
+- **Streamdown (default)**: Chat sanitization and hardening enabled (default rehype plugins: `raw`, `sanitize`, `harden`), `linkSafety: { enabled: false }`.
+- **Streamdown (raw HTML)**: Raw HTML enabled with sanitization and hardening disabled via `rehypePlugins: [defaultRehypePlugins.raw]`, `linkSafety: { enabled: false }`.
+
+### 7. micromark 669/675 Conformance Classification
+Micromark GFM reference implementation passes 669 of 675 examples. The 6 failures are classified as follows:
+1. **GFM Tagfilter vs Pruned Tags (5 failures in HTML blocks: `cm_170`, `cm_171`, `cm_172`, `cm_176`, `cm_178`)**:
+   Micromark includes the GFM tagfilter extension (GFM spec §6.11), which filters `<script>`, `<style>`, and `<textarea>` by replacing `<` with `&lt;`. Because these become text nodes in HAST rather than element nodes, the normalizer's `PRUNED_TAGS` does not strip them, whereas the CommonMark spec expected raw HTML block elements that get pruned. This is standard GFM tagfilter behavior, not a normalizer bug.
+2. **Dropped FTP Autolink (1 failure in Autolinks (extension): `gfm_628`)**:
+   `gfm_628` tests autolinking `ftp://foo.bar.baz`, from pinned `github/cmark-gfm@0.29.0.gfm.13`. The current published GFM specification and modern micromark dropped FTP autolinking support, so micromark leaves the FTP URI as literal text instead of wrapping it in `<a href="...">`.
+
+### 8. Measured Conformance Results
+
+#### Normalized Semantics
+| Section | Total | StreamMDX Static | Streaming | SSR | micromark | Streamdown | SD (raw) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TOTAL | 675 | 675 | 675 | 675 | 669 | 540 | 586 |
+
+Streaming divergences from static: 0. Ratchet check (`--check`) validates 675 baseline IDs.
+
+#### Strict Semantics (Link/Image Titles + Code info-strings)
+| Section | Total | StreamMDX Static | Streaming | SSR | micromark | Streamdown | SD (raw) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TOTAL | 675 | 599 | 599 | 599 | 669 | 540 | 586 |
+
+Streaming divergences from static: 0.
+
+**StreamMDX Strict Mode Root Cause Analysis**:
+All 76 failures in strict mode (599/675) share a single root cause: unlabeled code blocks where StreamMDX's syntax highlighter emits `<code class="language-text">`, whereas the CommonMark specification expects bare `<pre><code>` with no class attribute. Replacing `<pre><code>` with `<pre><code class="language-text">` resolves 76 of 76 strict failures. StreamMDX achieves 100% parity on link titles (90/90), image titles (22/22), and code blocks with explicit info-strings.
+
 ## Residual standards boundaries
 
 `packages/markdown-v2-worker/__tests__/residual-standards-boundaries.test.ts` exercises direct compilation through the client store, SSR, and the hosted worker through `FINALIZED`, with chunk sizes 1, 7, and 64. It covers root and nested indented-code whitespace, invisible list definitions, FTP punctuation, balanced parentheses, entities, and native code/heading/list contexts.
