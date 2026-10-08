@@ -2,7 +2,14 @@ import path from "node:path";
 import fs from "node:fs/promises";
 
 type Summary = {
+  metadata?: {
+    rendererVersion?: string;
+    profile?: string;
+    policy?: Record<string, unknown>;
+  };
   config: {
+    renderer?: string;
+    profile?: string;
     fixture: string;
     scenario: string;
     scheduling: string;
@@ -16,6 +23,18 @@ type Summary = {
     longTaskP95: Stats | null;
     rafP95: Stats | null;
     memoryPeakMB: Stats | null;
+    liveElements?: Stats | null;
+    livePre?: Stats | null;
+    liveCode?: Stats | null;
+    liveTable?: Stats | null;
+    liveTr?: Stats | null;
+    liveLi?: Stats | null;
+    liveMath?: Stats | null;
+    semanticTextLength?: Stats | null;
+    semanticTextHash?: string | null;
+    cdpHeapTotalNodesEnd?: Stats | null;
+    cdpHeapTotalNodesDelta?: Stats | null;
+    domNodesEnd?: Stats | null;
   };
 };
 
@@ -136,6 +155,68 @@ async function run(): Promise<void> {
     );
   }
 
+  lines.push("");
+  lines.push("--- Semantic Equivalence Check ---");
+  const baseHash = base.aggregate.semanticTextHash;
+  const candHash = cand.aggregate.semanticTextHash;
+  const baseLen = base.aggregate.semanticTextLength?.p50 ?? null;
+  const candLen = cand.aggregate.semanticTextLength?.p50 ?? null;
+  const baseMath = base.aggregate.liveMath?.p50 ?? null;
+  const candMath = cand.aggregate.liveMath?.p50 ?? null;
+  const baseCode = base.aggregate.liveCode?.p50 ?? null;
+  const candCode = cand.aggregate.liveCode?.p50 ?? null;
+  const baseTable = base.aggregate.liveTable?.p50 ?? null;
+  const candTable = cand.aggregate.liveTable?.p50 ?? null;
+
+  let semanticPass = true;
+  const semanticNotes: string[] = [];
+  if (baseHash && candHash) {
+    if (baseHash === candHash) {
+      semanticNotes.push(`text hash: MATCH (${baseHash.slice(0, 16)}...)`);
+    } else {
+      semanticPass = false;
+      semanticNotes.push(`text hash: DIVERGENCE (base ${baseHash.slice(0, 12)} vs cand ${candHash.slice(0, 12)})`);
+    }
+  }
+  if (baseLen !== null && candLen !== null) {
+    const diff = Math.abs(candLen - baseLen);
+    semanticNotes.push(`text length: base ${baseLen.toFixed(0)} vs cand ${candLen.toFixed(0)} (diff ${diff.toFixed(0)})`);
+    if (diff > 50 && (!baseHash || baseHash !== candHash)) {
+      semanticPass = false;
+    }
+  }
+  if (baseCode !== null && candCode !== null) {
+    const codeMatch = baseCode === candCode;
+    semanticNotes.push(`code blocks: ${candCode} vs ${baseCode} [${codeMatch ? "MATCH" : "DIFF"}]`);
+    if (!codeMatch) semanticPass = false;
+  }
+  if (baseMath !== null && candMath !== null) {
+    const mathMatch = baseMath === candMath;
+    semanticNotes.push(`math expressions: ${candMath} vs ${baseMath} [${mathMatch ? "MATCH" : "DIFF"}]`);
+    if (!mathMatch) semanticPass = false;
+  }
+  if (baseTable !== null && candTable !== null) {
+    const tableMatch = baseTable === candTable;
+    semanticNotes.push(`tables: ${candTable} vs ${baseTable} [${tableMatch ? "MATCH" : "DIFF"}]`);
+    if (!tableMatch) semanticPass = false;
+  }
+  lines.push(`semantic verdict: ${semanticPass ? "EQUIVALENT" : "DIVERGENT"}`);
+  for (const note of semanticNotes) {
+    lines.push(`  - ${note}`);
+  }
+
+  lines.push("");
+  lines.push("--- Attached Live DOM vs CDP Heap Total (Detached Included) ---");
+  const baseLive = base.aggregate.liveElements?.p50 ?? null;
+  const candLive = cand.aggregate.liveElements?.p50 ?? null;
+  if (baseLive !== null || candLive !== null) {
+    lines.push(`live attached DOM elements (p50): ${baseLive ?? "n/a"} -> ${candLive ?? "n/a"}`);
+  }
+  const baseCdp = (base.aggregate.cdpHeapTotalNodesEnd ?? base.aggregate.domNodesEnd)?.p50 ?? null;
+  const candCdp = (cand.aggregate.cdpHeapTotalNodesEnd ?? cand.aggregate.domNodesEnd)?.p50 ?? null;
+  if (baseCdp !== null || candCdp !== null) {
+    lines.push(`CDP heap total nodes (includes detached/retained) (p50): ${baseCdp ?? "n/a"} -> ${candCdp ?? "n/a"}`);
+  }
   const output = `${lines.join("\n")}\n`;
   const outPath = getArg("--out");
   if (outPath) {

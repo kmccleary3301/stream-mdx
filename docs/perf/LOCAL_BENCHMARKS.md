@@ -37,3 +37,73 @@ npx tsx scripts/perf/run-perf-harness.ts --fixture naive-bayes --scenario S4_chu
 npx tsx scripts/perf/run-perf-harness.ts --fixture table-large --scenario S2_typical --runs 3 --warmup 1 --out tmp/perf-baselines
 npx tsx scripts/perf/run-perf-harness.ts --fixture table-large --scenario S6_extreme --runs 3 --warmup 1 --out tmp/perf-baselines
 ```
+
+## Benchmark Profiles & Parity Policy Contract
+
+The perf harness supports two configuration profiles:
+- `--profile parity` (**Default**): Fair production baseline comparison.
+- `--profile rich` (Legacy feature-rich configuration).
+
+### Parity Contract Specification (RFC 2119)
+1. **MDX & Callouts**: MUST be disabled on both StreamMDX (`features.mdx = false`, `features.callouts = false`) and Streamdown (no MDX plugin, no callouts).
+2. **Math Rendering**: MUST use identical syntax parsing (`$...$` inline math with `singleDollarTextMath: true` and `$$...$$` display math) and identical KaTeX rendering outputting `htmlAndMathml` mode.
+3. **Syntax Code & Diff Highlighting**: MUST be enabled by default on both renderers (Shiki syntax highlighter with `diff` language support enabled).
+4. **Streamdown Controls & Animation**: Streamdown MUST run with `controls={false}`, `isAnimating={false}`, and `animated={false}` to avoid mounting copy/download control dropdowns or running animation tickers.
+5. **HTML, GFM & Footnotes**: MUST be enabled equally across both renderers.
+6. **No Custom Markup Overrides**: StreamMDX in parity mode MUST NOT pass custom component wrappers (`ScrollAreaHorizontal`, custom `Table`, `TableCell`) that swallow built-in features. It renders using native built-in element nodes (`defaultBlockComponents`, `defaultInlineComponents`, `defaultTableElements`, `defaultHtmlElements`).
+
+### Metric Classification: Live Attached DOM vs CDP Heap Retained Nodes
+
+The harness and reports clearly distinguish between two fundamentally different node measurements:
+1. **Live Document Subtree (Attached DOM Nodes)**:
+   - Measured directly on the finalized live `#perf-root` container.
+   - Subtree node counts: total element nodes (`liveElements`), `<pre>` (`livePre`), `<code>` (`liveCode`), `<table>` (`liveTable`), `<tr>` (`liveTr`), `<li>` (`liveLi`), `<math>`/KaTeX (`liveMath`).
+   - Visible semantic content text: normalized text length (`semanticTextLength`) and cryptographic SHA-256 hash (`semanticTextHash`).
+2. **CDP Process Heap DOM Counters (`Memory.getDOMCounters`)**:
+   - Measures total DOM nodes across the entire browser renderer process heap (`cdpHeapTotalNodesEnd` and `cdpHeapTotalNodesDelta`).
+   - **CRITICAL**: This metric includes detached uncollected DOM nodes and retained trees churned by repeated full-document re-renders (e.g. Streamdown's ~1,180 renders vs StreamMDX's fine-grained worker patch store). It must not be confused with the live attached DOM tree size.
+
+### Semantic Equivalence Verification
+
+Comparisons between candidate and baseline (or candidate and Streamdown) evaluate semantic equivalence across:
+- Visible semantic text length delta and SHA-256 hash match.
+- Count of rendered code blocks (`liveCode`, `livePre`).
+- Count of rendered math expressions (`liveMath`).
+- Count of rendered tables and list items (`liveTable`, `liveLi`).
+
+## Baseline `4350a2a` Run Plan
+
+To measure engine-v2 baseline commit `4350a2a` under the exact same fair harness byte/config snapshot on a quiet machine without altering baseline runtime code:
+
+```bash
+# 1. Target existing baseline worktree (.worktrees/ev2-baseline at 4350a2a, npm ci already completed)
+cd /Users/kylemccleary/projects/ql_homepage/stream-mdx/.worktrees/ev2-baseline
+
+# 2. Copy ONLY benchmark-only harness files and scripts (no runtime package code)
+rsync -av ../ev2-perf-parity/apps/docs/components/perf/ apps/docs/components/perf/
+rsync -av ../ev2-perf-parity/scripts/perf/ scripts/perf/
+
+# 3. Add comparator dependencies to apps/docs/package.json (Streamdown 2.7.0 + code/math plugins):
+#    "dependencies": {
+#      "@streamdown/code": "2.0.0",
+#      "@streamdown/math": "1.0.3",
+#      "@streamdown/mermaid": "1.0.3",
+#      "streamdown": "2.7.0"
+#    }
+npm install --workspace=stream-mdx-docs streamdown@2.7.0 @streamdown/code@2.0.0 @streamdown/math@1.0.3 @streamdown/mermaid@1.0.3
+
+# 4. Build packages and docs app in baseline worktree
+npm run build:packages
+npm run docs:build
+
+# 5. Execute parity benchmark on quiet machine (port 3010)
+PORT=3010 npm -w stream-mdx-docs run start &
+STREAM_MDX_PERF_BASE_URL=http://localhost:3010 npx tsx scripts/perf/run-perf-harness.ts \
+  --renderer streammdx \
+  --profile parity \
+  --fixture naive-bayes \
+  --scenario S2_typical \
+  --runs 5 \
+  --warmup 2 \
+  --out tmp/perf-baselines/baseline-4350a2a
+```
