@@ -159,8 +159,12 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
       const data = event.data;
       if (!data || typeof data !== "object") return;
 
-      if (data.type === "stream-mdx:artifact-size" && typeof data.height === "number") {
-        setFrameHeight(Math.max(50, data.height));
+      if (
+        data.type === "stream-mdx:artifact-size" &&
+        typeof data.height === "number" &&
+        Number.isFinite(data.height)
+      ) {
+        setFrameHeight(Math.max(50, Math.min(10000, data.height)));
       } else if (data.type === "stream-mdx:artifact-link" && typeof data.href === "string") {
         const href = toSafeArtifactHref(data.href);
         if (!href) return;
