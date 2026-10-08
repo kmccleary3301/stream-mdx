@@ -96,7 +96,7 @@ async function main() {
     assert.deepStrictEqual(nodes, [
       {
         kind: "link",
-        href: "b c",
+        href: "b%20c",
         children: [{ kind: "text", text: "a" }],
       },
     ]);

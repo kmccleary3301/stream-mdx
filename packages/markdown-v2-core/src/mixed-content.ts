@@ -83,6 +83,15 @@ function splitByTagSegments(
 
   while (match !== null) {
     const start = match.index;
+    let backslashes = 0;
+    for (let i = start - 1; i >= 0 && source[i] === "\\"; i--) {
+      backslashes++;
+    }
+    if (backslashes % 2 !== 0) {
+      tagPattern.lastIndex = start + 1;
+      match = tagPattern.exec(source);
+      continue;
+    }
     const tagName = match[1];
     const matchText = match[0];
     const tagNameLower = tagName.toLowerCase();

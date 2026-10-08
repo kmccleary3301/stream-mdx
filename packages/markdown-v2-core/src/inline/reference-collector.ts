@@ -1,8 +1,9 @@
 import type { Tree } from "@lezer/common";
+import { cleanTitle, cleanUrl } from "./lezer-converter";
 import type { LinkReferenceDefinition } from "./types";
 
 export function normalizeLinkLabel(raw: string): string {
-  return raw.trim().toLowerCase().replace(/\s+/g, " ");
+  return raw.trim().toLowerCase().replace(/ß|ẞ/g, "ss").replace(/\s+/g, " ");
 }
 
 /**
@@ -35,21 +36,9 @@ export function collectLinkReferences(tree: Tree, content: string): Map<string, 
               label = normalizeLinkLabel(slice);
             }
           } else if (type === "URL") {
-            if (slice.startsWith("<") && slice.endsWith(">")) {
-              href = slice.slice(1, -1);
-            } else {
-              href = slice;
-            }
+            href = cleanUrl(slice);
           } else if (type === "LinkTitle") {
-            if (
-              (slice.startsWith('"') && slice.endsWith('"')) ||
-              (slice.startsWith("'") && slice.endsWith("'")) ||
-              (slice.startsWith("(") && slice.endsWith(")"))
-            ) {
-              title = slice.slice(1, -1);
-            } else {
-              title = slice;
-            }
+            title = cleanTitle(slice);
           }
         } while (cursor.nextSibling());
         cursor.parent();

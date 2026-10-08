@@ -3,6 +3,12 @@ import { LezerInlineConverter } from "./inline/lezer-converter";
 import { createMathExtension } from "./inline/math-extension";
 import { compileRegexPluginToExtension, createDefaultRegexPlugins } from "./inline/plugin-adapter";
 import type { InlineExtension, InlineParseOptions, InlineParserOptions, LinkReferenceMap, MarkdownElement } from "./inline/types";
+import { normalizeLinkLabel } from "./inline/reference-collector";
+import {
+  getActiveReferencePredicate,
+  referenceGuardExtension,
+  setActiveReferencePredicate,
+} from "./inline/reference-guard";
 import type { ASTInlinePlugin, InlineNode, InlinePlugin, RegexInlinePlugin } from "./types";
 
 export type { InlineParserOptions, InlineParseOptions, InlineExtension, LinkReferenceDefinition, LinkReferenceMap } from "./inline/types";
@@ -116,12 +122,14 @@ export class InlineParser {
   }
 
   private rebuildParser(): void {
-    const lezerConfigs: (MarkdownConfig | readonly MarkdownExtension[])[] = [GFM];
+    const lezerConfigs: (MarkdownConfig | readonly MarkdownExtension[])[] = [
+      GFM,
+      referenceGuardExtension,
+    ];
 
     if (this.enableMath) {
       lezerConfigs.push(createMathExtension());
     }
-
     const extensionsByName: Record<string, InlineExtension> = {};
     for (const ext of this.extensions) {
       lezerConfigs.push(ext.lezer);
@@ -161,18 +169,35 @@ export class InlineParser {
     }
 
     // If call-specific references provided, update converter temporarily
-    if (hasCustomRefs) {
-      this.converter.setReferences(options.references);
+    const effectiveRefs = hasCustomRefs ? options.references : this.references;
+    const prevPredicate = getActiveReferencePredicate();
+    if (effectiveRefs) {
+      setActiveReferencePredicate((rawLabel: string) => {
+        const key = normalizeLinkLabel(rawLabel);
+        if (effectiveRefs instanceof Map) return effectiveRefs.has(key);
+        return Object.prototype.hasOwnProperty.call(effectiveRefs, key);
+      });
+    } else {
+      setActiveReferencePredicate(null);
     }
 
-    const elements = this.lezerParser.parseInline(content, 0) as unknown as MarkdownElement[];
-    let result = this.converter.convert(elements, content);
+    let elements: MarkdownElement[];
+    let result: InlineNode[];
 
-    // Restore instance references if temporary references were used
-    if (hasCustomRefs) {
-      this.converter.setReferences(this.references);
+    try {
+      if (hasCustomRefs) {
+        this.converter.setReferences(options.references);
+      }
+
+      elements = this.lezerParser.parseInline(content, 0) as unknown as MarkdownElement[];
+      result = this.converter.convert(elements, content);
+
+      if (hasCustomRefs) {
+        this.converter.setReferences(this.references);
+      }
+    } finally {
+      setActiveReferencePredicate(prevPredicate);
     }
-
     // Apply any AST plugins in registered priority order
     for (const plugin of this.astPlugins) {
       if (typeof plugin.apply === "function") {
