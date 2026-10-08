@@ -29,8 +29,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 0.7000000029802322,
-        "lastDurationMs": 0.5,
+        "lastPatchToDomMs": 0.30000000074505806,
+        "lastDurationMs": 0.30000000074505806,
         "meta": {
           "fixtureId": "inline-html",
           "scenarioId": "S4_chunky_network",
@@ -62,8 +62,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p><p class=\"markdown-paragraph\">A span with styles: <span style=\"color: rgb(136, 136, 136);\">muted text</span>.</p><p class=\"markdown-paragraph\">Subscript H<sub>2</sub>O and superscript x<sup>2</sup>.</p><p class=\"markdown-paragraph\">Inline code with language hint: ``<span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">{:js}</span><span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">{:js}</span><code class=\"inline-code\">.</code></p></div>",
-      "textSample": "Inline HTMLHere is Cmd + Shift + P.A span with styles: muted text.Subscript H2O and superscript x2.Inline code with language hint: ``{:js}{:js}.",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p>\n<p class=\"markdown-paragraph\">A span with styles: <span style=\"color: rgb(136, 136, 136);\">muted text</span>.</p>\n<p class=\"markdown-paragraph\">Subscript H<sub>2</sub>O and superscript x<sup>2</sup>.</p>\n<p class=\"markdown-paragraph\">Inline code with language hint: <code class=\"inline-code\">{:js}{:js}</code>.</p></div>",
+      "textSample": "Inline HTMLHere is Cmd + Shift + P.\nA span with styles: muted text.\nSubscript H2O and superscript x2.\nInline code with language hint: {:js}{:js}.",
       "structure": {
         "topLevelTags": [
           "div"
@@ -95,8 +95,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 0.7000000029802322,
-        "lastDurationMs": 0.5,
+        "lastPatchToDomMs": 0.30000000074505806,
+        "lastDurationMs": 0.30000000074505806,
         "meta": {
           "fixtureId": "inline-html",
           "scenarioId": "S4_chunky_network",
@@ -128,8 +128,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p><p class=\"markdown-paragraph\">A span with styles: <span style=\"color: rgb(136, 136, 136);\">muted text</span>.</p><p class=\"markdown-paragraph\">Subscript H<sub>2</sub>O and superscript x<sup>2</sup>.</p><p class=\"markdown-paragraph\">Inline code with language hint: ``<span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">{:js}</span><span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">{:js}</span><code class=\"inline-code\">.</code></p></div>",
-      "textSample": "Inline HTMLHere is Cmd + Shift + P.A span with styles: muted text.Subscript H2O and superscript x2.Inline code with language hint: ``{:js}{:js}.",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p>\n<p class=\"markdown-paragraph\">A span with styles: <span style=\"color: rgb(136, 136, 136);\">muted text</span>.</p>\n<p class=\"markdown-paragraph\">Subscript H<sub>2</sub>O and superscript x<sup>2</sup>.</p>\n<p class=\"markdown-paragraph\">Inline code with language hint: <code class=\"inline-code\">{:js}{:js}</code>.</p></div>",
+      "textSample": "Inline HTMLHere is Cmd + Shift + P.\nA span with styles: muted text.\nSubscript H2O and superscript x2.\nInline code with language hint: {:js}{:js}.",
       "structure": {
         "topLevelTags": [
           "div"
@@ -161,8 +161,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 0.7000000029802322,
-        "lastDurationMs": 0.5,
+        "lastPatchToDomMs": 0.30000000074505806,
+        "lastDurationMs": 0.30000000074505806,
         "meta": {
           "fixtureId": "inline-html",
           "scenarioId": "S4_chunky_network",
@@ -194,8 +194,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p><p class=\"markdown-paragraph\">A span with styles: <span style=\"color: rgb(136, 136, 136);\">muted text</span>.</p><p class=\"markdown-paragraph\">Subscript H<sub>2</sub>O and superscript x<sup>2</sup>.</p><p class=\"markdown-paragraph\">Inline code with language hint: ``<span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">{:js}</span><span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">{:js}</span><code class=\"inline-code\">.</code></p></div>",
-      "textSample": "Inline HTMLHere is Cmd + Shift + P.A span with styles: muted text.Subscript H2O and superscript x2.Inline code with language hint: ``{:js}{:js}.",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p>\n<p class=\"markdown-paragraph\">A span with styles: <span style=\"color: rgb(136, 136, 136);\">muted text</span>.</p>\n<p class=\"markdown-paragraph\">Subscript H<sub>2</sub>O and superscript x<sup>2</sup>.</p>\n<p class=\"markdown-paragraph\">Inline code with language hint: <code class=\"inline-code\">{:js}{:js}</code>.</p></div>",
+      "textSample": "Inline HTMLHere is Cmd + Shift + P.\nA span with styles: muted text.\nSubscript H2O and superscript x2.\nInline code with language hint: {:js}{:js}.",
       "structure": {
         "topLevelTags": [
           "div"
@@ -227,8 +227,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 0.7000000029802322,
-        "lastDurationMs": 0.5,
+        "lastPatchToDomMs": 0.30000000074505806,
+        "lastDurationMs": 0.30000000074505806,
         "meta": {
           "fixtureId": "inline-html",
           "scenarioId": "S4_chunky_network",
@@ -260,8 +260,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p><p class=\"markdown-paragraph\">A span with styles: <span style=\"color: rgb(136, 136, 136);\">muted text</span>.</p><p class=\"markdown-paragraph\">Subscript H<sub>2</sub>O and superscript x<sup>2</sup>.</p><p class=\"markdown-paragraph\">Inline code with language hint: ``<span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">{:js}</span><span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">{:js}</span><code class=\"inline-code\">.</code></p></div>",
-      "textSample": "Inline HTMLHere is Cmd + Shift + P.A span with styles: muted text.Subscript H2O and superscript x2.Inline code with language hint: ``{:js}{:js}.",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p>\n<p class=\"markdown-paragraph\">A span with styles: <span style=\"color: rgb(136, 136, 136);\">muted text</span>.</p>\n<p class=\"markdown-paragraph\">Subscript H<sub>2</sub>O and superscript x<sup>2</sup>.</p>\n<p class=\"markdown-paragraph\">Inline code with language hint: <code class=\"inline-code\">{:js}{:js}</code>.</p></div>",
+      "textSample": "Inline HTMLHere is Cmd + Shift + P.\nA span with styles: muted text.\nSubscript H2O and superscript x2.\nInline code with language hint: {:js}{:js}.",
       "structure": {
         "topLevelTags": [
           "div"
@@ -293,8 +293,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 0.7000000029802322,
-        "lastDurationMs": 0.5,
+        "lastPatchToDomMs": 0.30000000074505806,
+        "lastDurationMs": 0.30000000074505806,
         "meta": {
           "fixtureId": "inline-html",
           "scenarioId": "S4_chunky_network",
@@ -326,8 +326,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p><p class=\"markdown-paragraph\">A span with styles: <span style=\"color: rgb(136, 136, 136);\">muted text</span>.</p><p class=\"markdown-paragraph\">Subscript H<sub>2</sub>O and superscript x<sup>2</sup>.</p><p class=\"markdown-paragraph\">Inline code with language hint: ``<span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">{:js}</span><span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">{:js}</span><code class=\"inline-code\">.</code></p></div>",
-      "textSample": "Inline HTMLHere is Cmd + Shift + P.A span with styles: muted text.Subscript H2O and superscript x2.Inline code with language hint: ``{:js}{:js}.",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p>\n<p class=\"markdown-paragraph\">A span with styles: <span style=\"color: rgb(136, 136, 136);\">muted text</span>.</p>\n<p class=\"markdown-paragraph\">Subscript H<sub>2</sub>O and superscript x<sup>2</sup>.</p>\n<p class=\"markdown-paragraph\">Inline code with language hint: <code class=\"inline-code\">{:js}{:js}</code>.</p></div>",
+      "textSample": "Inline HTMLHere is Cmd + Shift + P.\nA span with styles: muted text.\nSubscript H2O and superscript x2.\nInline code with language hint: {:js}{:js}.",
       "structure": {
         "topLevelTags": [
           "div"
@@ -359,8 +359,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 0.7000000029802322,
-        "lastDurationMs": 0.5,
+        "lastPatchToDomMs": 0.30000000074505806,
+        "lastDurationMs": 0.30000000074505806,
         "meta": {
           "fixtureId": "inline-html",
           "scenarioId": "S4_chunky_network",
@@ -392,8 +392,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p><p class=\"markdown-paragraph\">A span with styles: <span style=\"color: rgb(136, 136, 136);\">muted text</span>.</p><p class=\"markdown-paragraph\">Subscript H<sub>2</sub>O and superscript x<sup>2</sup>.</p><p class=\"markdown-paragraph\">Inline code with language hint: ``<span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">{:js}</span><span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">{:js}</span><code class=\"inline-code\">.</code></p></div>",
-      "textSample": "Inline HTMLHere is Cmd + Shift + P.A span with styles: muted text.Subscript H2O and superscript x2.Inline code with language hint: ``{:js}{:js}.",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p>\n<p class=\"markdown-paragraph\">A span with styles: <span style=\"color: rgb(136, 136, 136);\">muted text</span>.</p>\n<p class=\"markdown-paragraph\">Subscript H<sub>2</sub>O and superscript x<sup>2</sup>.</p>\n<p class=\"markdown-paragraph\">Inline code with language hint: <code class=\"inline-code\">{:js}{:js}</code>.</p></div>",
+      "textSample": "Inline HTMLHere is Cmd + Shift + P.\nA span with styles: muted text.\nSubscript H2O and superscript x2.\nInline code with language hint: {:js}{:js}.",
       "structure": {
         "topLevelTags": [
           "div"
@@ -425,8 +425,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 0.7000000029802322,
-        "lastDurationMs": 0.5,
+        "lastPatchToDomMs": 0.30000000074505806,
+        "lastDurationMs": 0.30000000074505806,
         "meta": {
           "fixtureId": "inline-html",
           "scenarioId": "S4_chunky_network",
@@ -458,8 +458,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p><p class=\"markdown-paragraph\">A span with styles: <span style=\"color: rgb(136, 136, 136);\">muted text</span>.</p><p class=\"markdown-paragraph\">Subscript H<sub>2</sub>O and superscript x<sup>2</sup>.</p><p class=\"markdown-paragraph\">Inline code with language hint: ``<span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">{:js}</span><span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">{:js}</span><code class=\"inline-code\">.</code></p></div>",
-      "textSample": "Inline HTMLHere is Cmd + Shift + P.A span with styles: muted text.Subscript H2O and superscript x2.Inline code with language hint: ``{:js}{:js}.",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p>\n<p class=\"markdown-paragraph\">A span with styles: <span style=\"color: rgb(136, 136, 136);\">muted text</span>.</p>\n<p class=\"markdown-paragraph\">Subscript H<sub>2</sub>O and superscript x<sup>2</sup>.</p>\n<p class=\"markdown-paragraph\">Inline code with language hint: <code class=\"inline-code\">{:js}{:js}</code>.</p></div>",
+      "textSample": "Inline HTMLHere is Cmd + Shift + P.\nA span with styles: muted text.\nSubscript H2O and superscript x2.\nInline code with language hint: {:js}{:js}.",
       "structure": {
         "topLevelTags": [
           "div"
@@ -491,8 +491,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 0.7000000029802322,
-        "lastDurationMs": 0.5,
+        "lastPatchToDomMs": 0.30000000074505806,
+        "lastDurationMs": 0.30000000074505806,
         "meta": {
           "fixtureId": "inline-html",
           "scenarioId": "S4_chunky_network",
@@ -524,8 +524,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p><p class=\"markdown-paragraph\">A span with styles: <span style=\"color: rgb(136, 136, 136);\">muted text</span>.</p><p class=\"markdown-paragraph\">Subscript H<sub>2</sub>O and superscript x<sup>2</sup>.</p><p class=\"markdown-paragraph\">Inline code with language hint: ``<span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">{:js}</span><span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">{:js}</span><code class=\"inline-code\">.</code></p></div>",
-      "textSample": "Inline HTMLHere is Cmd + Shift + P.A span with styles: muted text.Subscript H2O and superscript x2.Inline code with language hint: ``{:js}{:js}.",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p>\n<p class=\"markdown-paragraph\">A span with styles: <span style=\"color: rgb(136, 136, 136);\">muted text</span>.</p>\n<p class=\"markdown-paragraph\">Subscript H<sub>2</sub>O and superscript x<sup>2</sup>.</p>\n<p class=\"markdown-paragraph\">Inline code with language hint: <code class=\"inline-code\">{:js}{:js}</code>.</p></div>",
+      "textSample": "Inline HTMLHere is Cmd + Shift + P.\nA span with styles: muted text.\nSubscript H2O and superscript x2.\nInline code with language hint: {:js}{:js}.",
       "structure": {
         "topLevelTags": [
           "div"
@@ -561,15 +561,15 @@
       "hasBlockquote": false,
       "hasMath": false
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p><p class=\"markdown-paragraph\">A span with styles: <span style=\"color: rgb(136, 136, 136);\">muted text</span>.</p><p class=\"markdown-paragraph\">Subscript H<sub>2</sub>O and superscript x<sup>2</sup>.</p><p class=\"markdown-paragraph\">Inline code with language hint: `<span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">{:js}</span><span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">{:js}</span>`.</p></div>",
+    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML\">Inline HTML</h1><p class=\"markdown-paragraph\">Here is <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>.</p>\n<p class=\"markdown-paragraph\">A span with styles: <span style=\"color: rgb(136, 136, 136);\">muted text</span>.</p>\n<p class=\"markdown-paragraph\">Subscript H<sub>2</sub>O and superscript x<sup>2</sup>.</p>\n<p class=\"markdown-paragraph\">Inline code with language hint: <code class=\"inline-code\">{:js}{:js}</code>.</p></div>",
     "runtimeState": {
       "rendererVersion": 6,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
       "lastTx": 3,
-      "lastPatchToDomMs": 1.7999999970197678,
-      "lastDurationMs": 0.3999999910593033,
+      "lastPatchToDomMs": 0.5,
+      "lastDurationMs": 0.19999999925494194,
       "meta": {
         "fixtureId": "inline-html",
         "scenarioId": "S4_chunky_network",
@@ -601,8 +601,8 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "db235d48de75b91cc5139c4bdd5ede41658196111502febcf1f63b1f2d3e601b",
-        "textSample": "Inline HTMLHere is Cmd + Shift + P.A span with styles: muted text.Subscript H2O and superscript x2.Inline code with lang"
+        "hash": "fe11494c354a1a925f4818f397969dbd8098e8494bd194d980785014003d5151",
+        "textSample": "Inline HTMLHere is Cmd + Shift + P.\nA span with styles: muted text.\nSubscript H2O and superscript x2.\nInline code with l"
       }
     ],
     "inspection": {
