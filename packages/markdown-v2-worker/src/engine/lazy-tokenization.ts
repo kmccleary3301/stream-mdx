@@ -1,4 +1,4 @@
-import type { Block, NodeSnapshot, PreparedNestedSnapshot } from "@stream-mdx/core";
+import type { Block, HtmlTreeNode, NodeSnapshot, PreparedNestedSnapshot } from "@stream-mdx/core";
 import {
   compareLazyPriority,
   mergeLazyRequests,
@@ -60,16 +60,35 @@ export function shouldLazyTokenizeBlock(
 export function pruneLazyTokenizationStates(states: Map<string, LazyTokenizationState>, nextBlocks: Block[]): void {
   if (states.size === 0) return;
   const ids = new Set(nextBlocks.map((block) => block.id));
-  const visit = (children: NodeSnapshot[]) => {
-    for (const child of children) {
-      if (child.type === "code") ids.add(child.id);
-      else visit(child.children ?? []);
+  const seen = new WeakSet<object>();
+  const visitTree = (tree: HtmlTreeNode[]) => {
+    for (const node of tree) {
+      if (node.kind === "block") visitBlock(node.block);
+      else if (node.kind === "element") visitTree(node.children);
     }
   };
-  for (const block of nextBlocks) {
+  const visitSnapshots = (children: NodeSnapshot[]) => {
+    for (const child of children) {
+      if (seen.has(child)) continue;
+      seen.add(child);
+      const block = child.props?.block as Block | undefined;
+      if (block) visitBlock(block);
+      if (child.type === "code") ids.add(child.id);
+      else visitSnapshots(child.children ?? []);
+    }
+  };
+  const visitBlock = (block: Block) => {
+    if (seen.has(block)) return;
+    seen.add(block);
+    if (block.type === "code") ids.add(block.id);
     const prepared = block.payload.meta?.preparedNested as PreparedNestedSnapshot | undefined;
-    if (prepared) visit(prepared.children);
-  }
+    if (prepared) visitSnapshots(prepared.children);
+    for (const key of ["htmlTree", "htmlParagraphTree"]) {
+      const tree = block.payload.meta?.[key] as HtmlTreeNode[] | undefined;
+      if (tree) visitTree(tree);
+    }
+  };
+  for (const block of nextBlocks) visitBlock(block);
   for (const key of states.keys()) {
     if (!ids.has(key)) {
       states.delete(key);

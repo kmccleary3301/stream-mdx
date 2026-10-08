@@ -8,6 +8,7 @@ import type {
   DiffKind,
   FormatAnticipationConfig,
   HtmlOptions,
+  HtmlTreeNode,
   InlineNode,
   SyntaxRuleSpec,
   NormalizedFormatAnticipation,
@@ -2218,21 +2219,45 @@ export class MarkdownEngine {
   }
 
   private findPreparedCode(blockId: string): { rootIndex: number; block: Block } | undefined {
-    const find = (children: NodeSnapshot[]): Block | undefined => {
+    const seen = new WeakSet<object>();
+    const findTree = (tree: HtmlTreeNode[]): Block | undefined => {
+      for (const node of tree) {
+        const block = node.kind === "block" ? findBlock(node.block)
+          : node.kind === "element" ? findTree(node.children) : undefined;
+        if (block) return block;
+      }
+      return undefined;
+    };
+    const findSnapshots = (children: NodeSnapshot[]): Block | undefined => {
       for (const snapshot of children) {
+        if (seen.has(snapshot)) continue;
+        seen.add(snapshot);
         const block = snapshot.props?.block as Block | undefined;
-        if (block?.id === blockId && block.type === "code") return block;
+        const found = block ? findBlock(block) : undefined;
+        if (found) return found;
         if (snapshot.type === "code") continue;
-        const nested = find(snapshot.children ?? []);
+        const nested = findSnapshots(snapshot.children ?? []);
         if (nested) return nested;
       }
       return undefined;
     };
+    const findBlock = (block: Block): Block | undefined => {
+      if (block.id === blockId && block.type === "code") return block;
+      if (seen.has(block)) return undefined;
+      seen.add(block);
+      const meta = block.payload.meta;
+      const prepared = meta?.preparedNested as PreparedNestedSnapshot | undefined;
+      const nested = prepared ? findSnapshots(prepared.children) : undefined;
+      if (nested) return nested;
+      for (const key of ["htmlTree", "htmlParagraphTree"]) {
+        const tree = meta?.[key] as HtmlTreeNode[] | undefined;
+        const owned = tree ? findTree(tree) : undefined;
+        if (owned) return owned;
+      }
+      return undefined;
+    };
     for (let rootIndex = 0; rootIndex < this.blocks.length; rootIndex++) {
-      const root = this.blocks[rootIndex];
-      if (root.id === blockId && root.type === "code") return { rootIndex, block: root };
-      const prepared = root.payload.meta?.preparedNested as PreparedNestedSnapshot | undefined;
-      const block = prepared ? find(prepared.children) : undefined;
+      const block = findBlock(this.blocks[rootIndex]);
       if (block) return { rootIndex, block };
     }
     return undefined;
@@ -2240,38 +2265,83 @@ export class MarkdownEngine {
 
   private replacePreparedCode(root: Block, updated: Block): Block {
     if (root.id === updated.id) return updated;
-    const replace = (snapshot: NodeSnapshot): NodeSnapshot => {
-      if (snapshot.id === updated.id) {
-        const next = createBlockSnapshot(updated);
-        next.props = { ...snapshot.props, ...next.props };
-        this.canonicalizePreparedSnapshot(next);
-        return next;
+    const codeSnapshot = createBlockSnapshot(updated);
+    this.canonicalizePreparedSnapshot(codeSnapshot);
+    const codeBlock = codeSnapshot.props?.block as Block;
+    const replaced = new WeakMap<object, object>();
+    const mapChanged = <T>(values: T[], map: (value: T) => T): T[] => {
+      let result: T[] | undefined;
+      for (let index = 0; index < values.length; index++) {
+        const value = map(values[index]);
+        if (value === values[index]) continue;
+        if (!result) result = values.slice();
+        result[index] = value;
       }
-      if (snapshot.type === "code") return snapshot;
-      const previousChildren = snapshot.children ?? [];
-      let children: NodeSnapshot[] | undefined;
-      for (let index = 0; index < previousChildren.length; index++) {
-        const child = replace(previousChildren[index]);
-        if (child === previousChildren[index]) continue;
-        if (!children) children = previousChildren.slice();
-        children[index] = child;
-      }
-      if (!children) return snapshot;
-      const block = snapshot.props?.block as Block | undefined;
-      const prepared = block?.payload.meta?.preparedNested as PreparedNestedSnapshot | undefined;
-      if (!block || !prepared) return { ...snapshot, children };
-      const nextPrepared = { ...prepared, children };
-      const nextBlock = { ...block, payload: { ...block.payload, meta: { ...block.payload.meta, preparedNested: nextPrepared } } };
-      return {
-        ...snapshot,
-        props: { ...snapshot.props, block: nextBlock },
-        ...(snapshot.meta?.preparedNested ? { meta: { ...snapshot.meta, preparedNested: nextPrepared } } : {}),
-        children,
-      };
+      return result ?? values;
     };
-    const prepared = root.payload.meta?.preparedNested as PreparedNestedSnapshot;
-    const children = prepared.children.map(replace);
-    return { ...root, payload: { ...root.payload, meta: { ...root.payload.meta, preparedNested: { ...prepared, children } } } };
+    const replaceTreeNode = (node: HtmlTreeNode): HtmlTreeNode => {
+      const cached = replaced.get(node) as HtmlTreeNode | undefined;
+      if (cached) return cached;
+      let result = node;
+      if (node.kind === "block") {
+        const block = replaceBlock(node.block);
+        if (block !== node.block) result = { ...node, block };
+      } else if (node.kind === "element") {
+        const children = mapChanged(node.children, replaceTreeNode);
+        if (children !== node.children) result = { ...node, children };
+      }
+      replaced.set(node, result);
+      return result;
+    };
+    const replaceMeta = (meta: Record<string, unknown>): Record<string, unknown> => {
+      const cached = replaced.get(meta) as Record<string, unknown> | undefined;
+      if (cached) return cached;
+      let result = meta;
+      const set = (key: string, value: unknown) => {
+        if (value === meta[key]) return;
+        if (result === meta) result = { ...meta };
+        result[key] = value;
+      };
+      const prepared = meta.preparedNested as PreparedNestedSnapshot | undefined;
+      if (prepared) {
+        const children = mapChanged(prepared.children, replaceSnapshot);
+        set("preparedNested", children === prepared.children ? prepared : { ...prepared, children });
+      }
+      for (const key of ["htmlTree", "htmlParagraphTree"]) {
+        const tree = meta[key] as HtmlTreeNode[] | undefined;
+        if (tree) set(key, mapChanged(tree, replaceTreeNode));
+      }
+      replaced.set(meta, result);
+      return result;
+    };
+    const replaceBlock = (block: Block): Block => {
+      if (block.id === updated.id) return codeBlock;
+      const cached = replaced.get(block) as Block | undefined;
+      if (cached) return cached;
+      const meta = block.payload.meta ? replaceMeta(block.payload.meta) : block.payload.meta;
+      const result = meta === block.payload.meta ? block : { ...block, payload: { ...block.payload, meta } };
+      replaced.set(block, result);
+      return result;
+    };
+    const replaceSnapshot = (snapshot: NodeSnapshot): NodeSnapshot => {
+      if (snapshot.id === updated.id) return { ...codeSnapshot, props: { ...snapshot.props, ...codeSnapshot.props } };
+      if (snapshot.type === "code") return snapshot;
+      const cached = replaced.get(snapshot) as NodeSnapshot | undefined;
+      if (cached) return cached;
+      const block = snapshot.props?.block as Block | undefined;
+      const nextBlock = block ? replaceBlock(block) : undefined;
+      const meta = snapshot.meta ? replaceMeta(snapshot.meta) : snapshot.meta;
+      const children = snapshot.children ? mapChanged(snapshot.children, replaceSnapshot) : snapshot.children;
+      const result = nextBlock === block && meta === snapshot.meta && children === snapshot.children ? snapshot : {
+        ...snapshot,
+        ...(nextBlock !== block ? { props: { ...snapshot.props, block: nextBlock } } : {}),
+        ...(meta !== snapshot.meta ? { meta } : {}),
+        ...(children !== snapshot.children ? { children } : {}),
+      };
+      replaced.set(snapshot, result);
+      return result;
+    };
+    return replaceBlock(root);
   }
 
   private async handleLazyTokenizationRequest(request: LazyTokenizationRequest): Promise<void> {

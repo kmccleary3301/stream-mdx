@@ -55,8 +55,9 @@ Nested code contains normalized `meta.code`, normal highlight metadata, and
 or repair a line-count mismatch to reconstruct a static snapshot.
 
 Nested lazy highlight requests use the code descendant ID on the existing
-`TOKENIZE_RANGE` transport. The owning engine resolves that prepared leaf and
-updates its owning root plus serialized ancestor snapshots. Incremental core and
+`TOKENIZE_RANGE` transport. The owning engine resolves that prepared leaf,
+including markdown block slots in `htmlTree`, and updates its owning root plus
+serialized ancestor snapshots. Incremental core and
 React consumers receive updated code-line colors, highlight metadata, and custom
 code-renderer props without a separate parser or renderer line-count repair.
 Appending content retains lazy state for prepared code descendants still present

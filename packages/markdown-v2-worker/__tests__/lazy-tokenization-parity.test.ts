@@ -1,9 +1,9 @@
 import assert from "node:assert";
-import { applyPatchBatch, createInitialSnapshot, extractHighlightedLines, sanitizeCodeHTML, type Block, type CodeHighlightOutputMode, type Patch, type WorkerOut } from "@stream-mdx/core";
+import { applyPatchBatch, createInitialSnapshot, extractHighlightedLines, sanitizeCodeHTML, type Block, type CodeHighlightOutputMode, type HtmlTreeNode, type Patch, type WorkerOut } from "@stream-mdx/core";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ComponentRegistry, MarkdownBlocksRenderer, type CodeFenceRendererProps } from "@stream-mdx/react/server";
-import { createRendererStore } from "../../markdown-v2-react/src/renderer/store";
+import { createRendererStore, type RendererStore } from "../../markdown-v2-react/src/renderer/store";
 import { createWorkerHarness } from "./worker-test-harness";
 import { JSDOM } from "jsdom";
 
@@ -126,15 +126,41 @@ async function main() {
 
 async function runNestedLazyConsumers(): Promise<void> {
   const lines = ["/* open", ...Array.from({ length: 217 }, (_, index) => `  carried_${index}`), "*/", "const tail = 219;"];
-  const snippet = ["- outer", "", "  > ```js", ...lines.map((line) => `  > ${line}`), "  > ```"].join("\n");
-  const getCode = (blocks: readonly Block[]): Block => {
+  const findCode = (blocks: readonly Block[]): Block | undefined => {
     const document = createInitialSnapshot(blocks as Block[]);
-    const node = [...document.nodes.values()].find((node) => node.type === "code");
-    assert.ok(node, "prepared code must be addressable below the root container");
-    const block = node.block;
-    assert.ok(block);
+    const code = [...document.nodes.values()].find((node) => node.type === "code")?.block;
+    if (code) return code;
+    const findTree = (tree: HtmlTreeNode[]): Block | undefined => {
+      for (const node of tree) {
+        const block = node.kind === "block" ? findCode([node.block])
+          : node.kind === "element" ? findTree(node.children) : undefined;
+        if (block) return block;
+      }
+      return undefined;
+    };
+    for (const node of document.nodes.values()) {
+      for (const key of ["htmlTree", "htmlParagraphTree"]) {
+        const tree = node.block?.payload.meta?.[key] as HtmlTreeNode[] | undefined;
+        const owned = tree ? findTree(tree) : undefined;
+        if (owned) return owned;
+      }
+    }
+    return undefined;
+  };
+  const getCode = (blocks: readonly Block[]): Block => {
+    const block = findCode(blocks);
+    assert.ok(block, "serialized prepared or HTML-owned code must remain available to its real consumer");
     return block;
   };
+  const codeStore = (store: RendererStore) => {
+    const block = getCode(store.getBlocks());
+    return store.getNode(block.id) ? store : createRendererStore([block]);
+  };
+  for (const ownership of ["prepared", "html", "root-html"] as const) {
+    const codeLines = ["```js", ...lines, "```"];
+    const quoteLines = ownership === "prepared" ? codeLines : ["<div>", "", ...codeLines, "", "</div>"];
+    const snippet = ownership === "root-html" ? ["<div>", "", ...codeLines, "", "</div>"].join("\n")
+      : ["- outer", "", ...quoteLines.map((line) => `  > ${line}`)].join("\n");
   for (const outputMode of ["tokens", "both"] as const) {
     const full = await renderWithWorker(snippet, false, outputMode);
     const fullCode = getCode(full.store.getBlocks());
@@ -145,11 +171,12 @@ async function runNestedLazyConsumers(): Promise<void> {
     assert.strictEqual(code.payload.meta?.code, lines.join("\n"), "nested container indentation must not leak into highlight input");
     assert.strictEqual(code.payload.meta?.lazyTokenization, true);
     assert.strictEqual(code.payload.meta?.lazyTokenizedUntil, 0);
-    assert.strictEqual(lazy.store.getChildren(code.id).length, lines.length, "producer must emit every code-line before lazy highlighting");
+    assert.strictEqual(codeStore(lazy.store).getChildren(code.id).length, lines.length, "producer must emit every code-line before lazy highlighting");
+    if (ownership !== "prepared") assert.ok(!lazy.store.getNode(code.id), "this case must cross HTML ownership slots, not a normal prepared child lookup");
     let notifications = 0;
     const unsubscribe = lazy.store.subscribe(() => notifications++);
     const captured: CodeFenceRendererProps[] = [];
-    const registry = new ComponentRegistry({}, {}, { js: (props: CodeFenceRendererProps) => {
+    const registry = new ComponentRegistry({}, {}, { javascript: (props: CodeFenceRendererProps) => {
       captured.push(props);
       return React.createElement("section", { "data-owned-code": props.blockId }, props.renderCode);
     } });
@@ -158,6 +185,8 @@ async function runNestedLazyConsumers(): Promise<void> {
     const before = captured.at(-1);
     assert.ok(before);
     assert.strictEqual(before.code, lines.join("\n"));
+    assert.strictEqual(before.language, "javascript", "callbacks use the canonical native language alias");
+    assert.strictEqual(before.blockId, code.id);
     assert.strictEqual(before.isFinalized, true);
     assert.strictEqual(before.meta?.lazyTokenizedUntil, 0);
     const request = async (startLine: number, endLine: number) => {
@@ -167,14 +196,14 @@ async function runNestedLazyConsumers(): Promise<void> {
     };
     await request(0, 20);
     assert.strictEqual(getCode(lazy.store.getBlocks()).payload.meta?.lazyTokenizedUntil, 20);
-    assert.strictEqual(lazy.store.getNode(`${code.id}::line:219`)?.props?.tokens, null, "tail remains uncolored until requested");
+    assert.strictEqual(codeStore(lazy.store).getNode(`${code.id}::line:219`)?.props?.tokens, null, "tail remains uncolored until requested");
     await request(200, lines.length);
     const completed = getCode(lazy.store.getBlocks());
     assert.strictEqual(completed.payload.meta?.lazyTokenizedUntil, lines.length);
     assert.deepStrictEqual(completed.payload.meta?.tokenLines, fullCode.payload.meta?.tokenLines, "continued grammar state and final tail colors must match a full compile");
     for (const index of [0, 19, 20, 217, 218, 219]) {
-      const actual = lazy.store.getNode(`${code.id}::line:${index}`);
-      const expected = full.store.getNode(`${fullCode.id}::line:${index}`);
+      const actual = codeStore(lazy.store).getNode(`${code.id}::line:${index}`);
+      const expected = codeStore(full.store).getNode(`${fullCode.id}::line:${index}`);
       assert.deepStrictEqual(actual?.props?.tokens, expected?.props?.tokens);
       assert.strictEqual(actual?.props?.html, expected?.props?.html, "canonical line HTML must match full compile in each mode");
     }
@@ -196,11 +225,12 @@ async function runNestedLazyConsumers(): Promise<void> {
     assert.deepStrictEqual(getCode(lazy.store.getBlocks()).payload.meta?.tokenLines, fullCode.payload.meta?.tokenLines);
     const serialized = JSON.parse(JSON.stringify(lazy.store.getBlocks())) as Block[];
     const reset = createRendererStore(serialized);
-    assert.strictEqual(reset.getChildren(code.id).length, lines.length);
+    assert.strictEqual(codeStore(reset).getChildren(code.id).length, lines.length);
     assert.deepStrictEqual(getCode(reset.getBlocks()).payload.meta?.tokenLines, fullCode.payload.meta?.tokenLines, "serialized nested snapshots must retain fully highlighted child metadata");
     assert.notStrictEqual(JSON.stringify(serialized), published, "the appended paragraph remains visible beside the highlighted owning root");
     assert.deepStrictEqual(reset.getInvariantViolations(), []);
     unsubscribe();
+  }
   }
 }
 
