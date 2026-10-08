@@ -618,6 +618,69 @@ async function runTests() {
     console.log("✓ Test 12 passed: Stale older async jobs do not overwrite newer reference metadata");
   }
 
+  // Test 13: urlTransform default security policy
+  {
+    console.log("Test 13: urlTransform default security policy on links and images...");
+    const renderer = createUnifiedRenderer();
+    const block: Block = {
+      id: "p-sec-1",
+      type: "paragraph",
+      isFinalized: true,
+      payload: {
+        raw: "[js](javascript:alert(1)) [vbs](vbscript:msgbox(1)) [data-html](data:text/html,<script>alert(1)</script>) [custom](custom-scheme:target) ![safe-img](data:image/png;base64,iVBORw==) ![bad-img](javascript:alert(2))",
+      },
+    };
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    root.render(renderer({ block, element: React.createElement("p", null, "default") }));
+    await delay(35);
+
+    assert.ok(!container.innerHTML.includes('href="javascript:'), "javascript: link href must be stripped");
+    assert.ok(!container.innerHTML.includes('href="vbscript:'), "vbscript: link href must be stripped");
+    assert.ok(!container.innerHTML.includes('href="data:text/html'), "data:text/html link href must be stripped");
+    assert.ok(container.innerHTML.includes('href="custom-scheme:target"'), "custom scheme href must be preserved");
+    assert.ok(container.innerHTML.includes('src="data:image/png;base64,iVBORw=="'), "data:image/png src must be preserved");
+    assert.ok(!container.innerHTML.includes('src="javascript:'), "javascript: image src must be stripped");
+
+    root.unmount();
+    container.remove();
+    console.log("✓ Test 13 passed: Default urlTransform blocks dangerous schemes and allows safe schemes");
+  }
+
+  // Test 14: Custom urlTransform
+  {
+    console.log("Test 14: Custom urlTransform rewrites and drops URLs...");
+    const renderer = createUnifiedRenderer({
+      urlTransform: (url) => {
+        if (url.startsWith("https://allowed.com")) {
+          return url.replace("https://allowed.com", "https://rewritten.com");
+        }
+        return null;
+      },
+    });
+    const block: Block = {
+      id: "p-sec-2",
+      type: "paragraph",
+      isFinalized: true,
+      payload: {
+        raw: "[allowed](https://allowed.com/path) [other](https://other.com/path)",
+      },
+    };
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    root.render(renderer({ block, element: React.createElement("p", null, "default") }));
+    await delay(35);
+
+    assert.ok(container.innerHTML.includes('href="https://rewritten.com/path"'), "custom urlTransform rewrote allowed url");
+    assert.ok(!container.innerHTML.includes('href="https://other.com'), "custom urlTransform dropped non-allowed url");
+
+    root.unmount();
+    container.remove();
+    console.log("✓ Test 14 passed: Custom urlTransform rewrites and drops correctly");
+  }
+
   console.log("All @stream-mdx/unified tests passed successfully!");
 }
 

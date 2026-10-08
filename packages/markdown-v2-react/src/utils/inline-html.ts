@@ -1,6 +1,6 @@
 import React from "react";
 
-import type { HtmlTreeNode, InlineHtmlDescriptor, InlineNode } from "@stream-mdx/core";
+import { defaultUrlTransform, isForbiddenAttribute, isSafeStyleDeclaration, type HtmlTreeNode, type InlineHtmlDescriptor, type InlineNode, type UrlTransform } from "@stream-mdx/core";
 import type { HtmlElements, InlineHtmlRendererMap } from "../types";
 
 export interface RenderInlineHtmlOptions {
@@ -10,6 +10,7 @@ export interface RenderInlineHtmlOptions {
   htmlElements?: HtmlElements;
   literalTagContent?: string[];
   parseMarkdown?: (text: string) => React.ReactNode;
+  urlTransform?: UrlTransform;
 }
 
 /** Render only the sanitized attributes supplied by the engine, with parsed children intact. */
@@ -19,12 +20,13 @@ export function renderHtmlInlineNode(
   elements?: HtmlElements,
   key?: React.Key,
   textValue?: string,
+  urlTransform?: UrlTransform,
 ): React.ReactElement | null {
   if (node.isClose || node.tagName === "script" || node.tagName === "style") return null;
   if (!node.tagName || node.sanitized === "") {
     return React.createElement(React.Fragment, { key }, children);
   }
-  const props = mapAttributesToProps(node.attributes ?? {});
+  const props = mapAttributesToProps(node.attributes ?? {}, urlTransform);
   props.key = key;
   if (node.tagName === "textarea") {
     props.defaultValue = textValue ?? "";
@@ -40,17 +42,18 @@ export function renderHtmlOwnershipTree(
   renderInline?: (nodes: InlineNode[]) => React.ReactNode,
   renderInlineElement?: (node: InlineNode, children: React.ReactNode) => React.ReactNode,
   renderParagraph?: (children: React.ReactNode) => React.ReactNode,
+  urlTransform?: UrlTransform,
 ): React.ReactNode {
   return nodes.map((node, index) => {
     if (node.kind === "text") return node.inline && renderInline ? renderInline(node.inline) : node.text;
     if (node.kind === "block") return renderBlock(node.block);
-    const props = mapAttributesToProps(node.attributes);
+    const props = mapAttributesToProps(node.attributes, urlTransform);
     props.key = index;
     if (node.tagName === "textarea") {
       props.defaultValue = node.children.map((child) => child.kind === "text" ? child.text : "").join("");
       return React.createElement(elements[node.tagName] ?? node.tagName, props);
     }
-    const children = renderHtmlOwnershipTree(node.children, elements, renderBlock, renderInline, renderInlineElement, renderParagraph);
+    const children = renderHtmlOwnershipTree(node.children, elements, renderBlock, renderInline, renderInlineElement, renderParagraph, urlTransform);
     if (node.paragraphRoot && renderParagraph) {
       return React.createElement(React.Fragment, { key: index }, renderParagraph(children));
     }
@@ -124,7 +127,7 @@ export function renderInlineHtmlSegment(
 
     const customElementComp = options.htmlElements?.[descriptor.tagName];
     if (customElementComp) {
-      const props = mapAttributesToProps(descriptor.attributes);
+      const props = mapAttributesToProps(descriptor.attributes, options.urlTransform);
       if (options.key !== undefined && options.key !== null) {
         props.key = options.key;
       }
@@ -232,9 +235,17 @@ const BOOLEAN_HTML_PROPS: Record<string, true> = {
   reversed: true, selected: true, itemScope: true,
 };
 
-function mapAttributesToProps(attrs: Record<string, string>): HtmlAttributeProps & { key?: React.Key } {
+function mapAttributesToProps(
+  attrs: Record<string, string>,
+  urlTransform?: UrlTransform,
+): HtmlAttributeProps & { key?: React.Key } {
   const props: HtmlAttributeProps = {};
+  const transform = urlTransform ?? defaultUrlTransform;
   for (const [key, value] of Object.entries(attrs)) {
+    const lower = key.toLowerCase();
+    if (isForbiddenAttribute(lower)) {
+      continue;
+    }
     if (key === "class") {
       props.className = value;
     } else if (key === "style") {
@@ -243,6 +254,31 @@ function mapAttributesToProps(attrs: Record<string, string>): HtmlAttributeProps
       const normalized = normalizeTabIndex(value);
       if (normalized !== undefined) {
         props.tabIndex = normalized;
+      }
+    } else if (lower === "href") {
+      const safe = transform(value, "href", { source: "html" });
+      if (safe != null) {
+        props.href = safe;
+      }
+    } else if (lower === "src") {
+      const safe = transform(value, "src", { source: "html" });
+      if (safe != null) {
+        props.src = safe;
+      }
+    } else if (lower === "action") {
+      const safe = transform(value, "href", { source: "html" });
+      if (safe != null) {
+        props.action = safe;
+      }
+    } else if (lower === "formaction") {
+      const safe = transform(value, "href", { source: "html" });
+      if (safe != null) {
+        props.formAction = safe;
+      }
+    } else if (lower === "xlink:href" || lower === "xlinkhref") {
+      const safe = transform(value, "href", { source: "html" });
+      if (safe != null) {
+        props.xlinkHref = safe;
       }
     } else if (/^(?:data|aria)[A-Z]/.test(key)) {
       props[key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)] = value;
@@ -261,10 +297,13 @@ function parseStyleAttribute(value: string): React.CSSProperties {
   const pairs = value.split(";");
   for (const pair of pairs) {
     if (!pair.trim()) continue;
-    const [property, rawVal] = pair.split(":");
-    if (!property || rawVal === undefined) continue;
-    const camelProp = property.trim().replace(/-([a-z])/g, (_, char: string) => char.toUpperCase());
-    (style as Record<string, string>)[camelProp] = rawVal.trim();
+    const separator = pair.indexOf(":");
+    if (separator <= 0) continue;
+    const property = pair.slice(0, separator).trim();
+    const rawVal = pair.slice(separator + 1).trim();
+    if (!isSafeStyleDeclaration(property, rawVal)) continue;
+    const camelProp = property.replace(/-([a-z])/g, (_, char: string) => char.toUpperCase());
+    (style as Record<string, string>)[camelProp] = rawVal;
   }
   return style;
 }

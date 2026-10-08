@@ -2,6 +2,7 @@
 // Handles HTML sanitization for safe rendering
 
 import createDOMPurify, { type Config as DOMPurifyConfig } from "dompurify";
+import { decodeHTML5Strict } from "entities";
 
 import { CODE_ROW_ALLOWED_ATTRS, CODE_ROW_ALLOWED_TAGS, isSafeCodeRowStyle, sanitizeCodeHtmlInWorker } from "./worker-html-sanitizer";
 
@@ -464,27 +465,49 @@ export function sanitizeMathHTML(html: string): string {
   return typeof out === "string" ? out : String(out);
 }
 
+export type UrlTransformContext = {
+  source: "markdown" | "html";
+};
+
+export type UrlTransform = (
+  url: string,
+  attribute: "href" | "src",
+  context: UrlTransformContext,
+) => string | null | undefined;
+
+const DATA_IMAGE_PATTERN = /^data:image\/(?:png|gif|jpeg|webp|avif)(?:;[^,]*)?,/i;
+
 /**
- * Validate and sanitize URLs
+ * Validate and transform URLs for rendering and navigation.
+ * Strips ASCII control/whitespace for scheme detection, case-insensitive.
+ * Rejects javascript:, vbscript:, file:, and data: (except data:image/(png|gif|jpeg|webp|avif) for src).
+ * Relative URLs, fragments, and arbitrary other schemes pass.
  */
-export function sanitizeURL(url: string): string | null {
-  // Basic URL validation and sanitization
-  try {
-    const parsed = new URL(url, window.location.origin);
+export function defaultUrlTransform(
+  url: string,
+  attribute: "href" | "src" = "href",
+  _context?: UrlTransformContext,
+): string | null {
+  if (typeof url !== "string") return null;
+  const decoded = url.includes("&") ? decodeHTML5Strict(url) : url;
+  const normalized = decoded.replace(/[\x00-\x20\x7f]/g, "").toLowerCase();
 
-    // Allow http, https, mailto, and relative URLs
-    if (!["http:", "https:", "mailto:", "tel:"].includes(parsed.protocol)) {
-      return null;
-    }
+  if (
+    normalized.startsWith("javascript:") ||
+    normalized.startsWith("vbscript:") ||
+    normalized.startsWith("file:")
+  ) {
+    return null;
+  }
 
-    return parsed.toString();
-  } catch {
-    // If URL parsing fails, treat as relative
-    if (url.startsWith("/") || url.startsWith("./") || url.startsWith("../")) {
+  if (normalized.startsWith("data:")) {
+    if (attribute === "src" && DATA_IMAGE_PATTERN.test(normalized)) {
       return url;
     }
     return null;
   }
+
+  return url;
 }
 
 /**

@@ -3,8 +3,9 @@ export * from "./bottom-stick-scroll-area";
 export * from "./artifact-frame";
 export * from "./diff-renderer";
 export * from "./katex-math";
-
-import { InlineParser, createTrustedHTML, sanitizeHTML, stripCodeFence } from "@stream-mdx/core";
+export { defaultUrlTransform, type UrlTransform, type UrlTransformContext } from "@stream-mdx/core";
+import { InlineParser, createTrustedHTML, defaultUrlTransform, isForbiddenAttribute, isSafeStyleDeclaration, sanitizeHTML, stripCodeFence } from "@stream-mdx/core";
+import type { UrlTransform } from "@stream-mdx/core";
 import { markMdxHydrated, markMdxHydrationError, markMdxHydrationStart } from "../mdx-hydration-metrics";
 import { MdxHydrationContext } from "../mdx-hydration-context";
 import { loadMdxRuntime } from "../mdx-runtime";
@@ -57,7 +58,7 @@ class MdxRuntimeBoundary extends React.Component<
 /**
  * Render inline nodes to React elements
  */
-export function renderInlineNodes(nodes: InlineNode[], components: InlineComponents): React.ReactNode {
+export function renderInlineNodes(nodes: InlineNode[], components: InlineComponents, urlTransform?: UrlTransform): React.ReactNode {
   return nodes.map((node, index) => {
     const key = `${node.kind}-${index}`;
 
@@ -73,44 +74,50 @@ export function renderInlineNodes(nodes: InlineNode[], components: InlineCompone
       case "strong":
         return React.createElement(components.strong, {
           key,
-          children: renderInlineNodes(node.children, components),
+          children: renderInlineNodes(node.children, components, urlTransform),
         });
 
       case "em":
         return React.createElement(components.em, {
           key,
-          children: renderInlineNodes(node.children, components),
+          children: renderInlineNodes(node.children, components, urlTransform),
         });
 
       case "strike": {
         const StrikeComponent = components.strike ?? ((props: { children: React.ReactNode }) => React.createElement("del", {}, props.children));
         return React.createElement(StrikeComponent, {
           key,
-          children: renderInlineNodes(node.children, components),
+          children: renderInlineNodes(node.children, components, urlTransform),
         });
       }
 
       case "code":
         return React.createElement(components.code, { key, text: node.text });
 
-      case "link":
+      case "link": {
+        const transform = urlTransform ?? defaultUrlTransform;
+        const safeHref = transform(node.href ?? "", "href", { source: "markdown" });
         return React.createElement(
           components.link,
           {
             key,
-            href: node.href,
+            ...(safeHref != null ? { href: safeHref } : {}),
             title: node.title,
-            children: renderInlineNodes(node.children, components),
+            children: renderInlineNodes(node.children, components, urlTransform),
           },
         );
+      }
 
-      case "image":
+      case "image": {
+        const transform = urlTransform ?? defaultUrlTransform;
+        const safeSrc = transform(node.src ?? "", "src", { source: "markdown" });
         return React.createElement(components.image, {
           key,
-          src: node.src,
+          ...(safeSrc != null ? { src: safeSrc } : {}),
           alt: node.alt ?? "",
           title: node.title,
         });
+      }
 
       case "br":
         return React.createElement(
@@ -127,7 +134,7 @@ export function renderInlineNodes(nodes: InlineNode[], components: InlineCompone
             ...node.attrs,
             name: node.name,
             attrs: node.attrs,
-            children: node.children ? renderInlineNodes(node.children, components) : undefined,
+            children: node.children ? renderInlineNodes(node.children, components, urlTransform) : undefined,
             raw: node.raw,
           });
         }
@@ -135,12 +142,12 @@ export function renderInlineNodes(nodes: InlineNode[], components: InlineCompone
       }
 
       case "html": {
-        const children = node.children ? renderInlineNodes(node.children, components) : undefined;
+        const children = node.children ? renderInlineNodes(node.children, components, urlTransform) : undefined;
         const textValue = node.children?.map((child) => child.kind === "text" ? child.text : "").join("");
         if (components.html) {
           return React.createElement(components.html, { key, ...node, children, textValue });
         }
-        return renderHtmlInlineNode(node, children, undefined, key, textValue);
+        return renderHtmlInlineNode(node, children, undefined, key, textValue, urlTransform);
       }
       default: {
         // Handle custom/extensible nodes
@@ -175,26 +182,30 @@ export const defaultInlineComponents: InlineComponents = {
       text,
     ),
 
-  link: ({ href, title, children }) =>
-    React.createElement(
+  link: ({ href, title, children }) => {
+    const safeHref = defaultUrlTransform(href ?? "", "href", { source: "markdown" });
+    return React.createElement(
       "a",
       {
-        href,
+        ...(safeHref != null ? { href: safeHref } : {}),
         title,
         className: "markdown-link",
-        target: href?.startsWith("http") ? "_blank" : undefined,
-        rel: href?.startsWith("http") ? "noopener noreferrer" : undefined,
+        target: safeHref?.startsWith("http") ? "_blank" : undefined,
+        rel: safeHref?.startsWith("http") ? "noopener noreferrer" : undefined,
       },
       children,
-    ),
+    );
+  },
 
-  image: ({ src, alt, title }) =>
-    React.createElement("img", {
-      src,
+  image: ({ src, alt, title }) => {
+    const safeSrc = defaultUrlTransform(src ?? "", "src", { source: "markdown" });
+    return React.createElement("img", {
+      ...(safeSrc != null ? { src: safeSrc } : {}),
       alt,
       title,
       className: "markdown-image",
-    }),
+    });
+  },
 
   br: () => React.createElement("br"),
 
@@ -710,19 +721,23 @@ export class ComponentRegistry {
   private tableVirtualization: TableVirtualizationConfig = DEFAULT_TABLE_VIRTUALIZATION_CONFIG;
   private tableVirtualizationListeners = new Set<() => void>();
   private inlineComponentMapCache: InlineComponents | null = null;
+  private urlTransform?: UrlTransform;
 
   constructor(
     blockComponents: Partial<BlockComponents> = {},
     inlineComponents: Partial<InlineComponents> = {},
     codeRenderers: Record<string, CodeFenceRenderer> = {},
-    options?: { artifactHtml?: boolean; mathRenderer?: MathRenderer; blockRenderer?: BlockRendererOverride; tableVirtualization?: TableVirtualizationOptions },
+    options?: { artifactHtml?: boolean; mathRenderer?: MathRenderer; blockRenderer?: BlockRendererOverride; tableVirtualization?: TableVirtualizationOptions; urlTransform?: UrlTransform },
   ) {
     this.blockComponents = { ...defaultBlockComponents, ...blockComponents } as BlockComponents;
     this.inlineComponents = { ...defaultInlineComponents, ...inlineComponents } as InlineComponents;
     this.htmlElements = getDefaultHtmlElements();
+    if (options?.urlTransform) {
+      this.urlTransform = options.urlTransform;
+    }
     if (!inlineComponents.html) {
       this.inlineComponents.html = (node: Omit<Extract<InlineNode, { kind: "html" }>, "children"> & { children?: React.ReactNode; textValue?: string }) =>
-        renderHtmlInlineNode(node, node.children, this.htmlElements, undefined, node.textValue);
+        renderHtmlInlineNode(node, node.children, this.htmlElements, undefined, node.textValue, this.urlTransform);
     }
     this.tableElements = getDefaultTableElements();
     if (codeRenderers) {
@@ -754,6 +769,13 @@ export class ComponentRegistry {
   /** Link handler handed to code fence renderers as `openLink` (StreamingMarkdown installs its `linkSafety`-aware handler). */
   setLinkHandler(handler: ((url: string) => void) | undefined): void {
     this.linkHandler = handler;
+  }
+  setUrlTransform(transform?: UrlTransform): void {
+    this.urlTransform = transform;
+  }
+
+  getUrlTransform(): UrlTransform | undefined {
+    return this.urlTransform;
   }
 
   getLinkHandler(): ((url: string) => void) | undefined {
@@ -891,20 +913,30 @@ export class ComponentRegistry {
 
   renderHtmlTree(tree: HtmlTreeNode[], renderBlock: (block: Block) => React.ReactNode = (block) => this.renderBlock(block), paragraph?: Block): React.ReactNode {
     return renderHtmlOwnershipTree(tree, this.htmlElements, renderBlock,
-      (nodes) => renderInlineNodes(nodes, this.inlineComponents),
+      (nodes) => renderInlineNodes(nodes, this.inlineComponents, this.urlTransform),
       (node, children) => {
         if (node.kind === "strong" || node.kind === "em" || node.kind === "strike" || node.kind === "link") {
           const component = this.inlineComponents[node.kind];
+          if (node.kind === "link") {
+            const transform = this.urlTransform ?? defaultUrlTransform;
+            const safeHref = transform(node.href ?? "", "href", { source: "markdown" });
+            return component ? React.createElement(component, {
+              ...node,
+              ...(safeHref != null ? { href: safeHref } : {}),
+              children,
+            }) : React.createElement("a", { ...(safeHref != null ? { href: safeHref } : {}) }, children);
+          }
           return component ? React.createElement(component, { ...node, children }) : React.createElement("del", {}, children);
         }
         if (node.kind === "plugin") {
           const component = this.inlineComponents[node.name] ?? this.inlineComponents.plugin;
           return component ? React.createElement(component, { ...node.attrs, name: node.name, attrs: node.attrs, raw: node.raw, children }) : node.raw;
         }
-        return renderInlineNodes([node], this.inlineComponents);
+        return renderInlineNodes([node], this.inlineComponents, this.urlTransform);
       }, paragraph ? (children) => React.createElement(this.getBlockComponent("paragraph"), {
         ...this.getBlockProps(paragraph), children,
-      }) : undefined);
+      }) : undefined,
+      this.urlTransform);
   }
 
   getBlockComponentMap(): BlockComponents {
@@ -1015,7 +1047,7 @@ export class ComponentRegistry {
         const headingText =
           typeof meta.headingText === "string" && meta.headingText.trim().length > 0 ? (meta.headingText as string) : removeHeadingMarkers(rawHeading).trim();
         const level = (normalizedLevel ?? this.extractHeadingLevel(rawHeading)) as 1 | 2 | 3 | 4 | 5 | 6;
-        const renderedChildren = renderInlineNodes(inlineNodes, this.inlineComponents);
+        const renderedChildren = renderInlineNodes(inlineNodes, this.inlineComponents, this.urlTransform);
         return {
           level,
           inlines: inlineNodes,
@@ -1029,12 +1061,12 @@ export class ComponentRegistry {
           inlines: block.payload.inline || [],
           raw: block.payload.raw,
           meta: block.payload.meta,
-          children: renderInlineNodes(block.payload.inline ?? [], this.inlineComponents),
+          children: renderInlineNodes(block.payload.inline ?? [], this.inlineComponents, this.urlTransform),
         };
       case "blockquote":
         return {
           inlines: block.payload.inline || [],
-          renderedContent: renderInlineNodes(block.payload.inline || [], this.inlineComponents),
+          renderedContent: renderInlineNodes(block.payload.inline || [], this.inlineComponents, this.urlTransform),
         };
 
       case "hr": {
@@ -1273,6 +1305,10 @@ function attrsToProps(attrs?: Record<string, string>): React.HTMLAttributes<HTML
   type HtmlAttributeRecord = React.HTMLAttributes<HTMLElement> & Record<string, unknown>;
   const result: HtmlAttributeRecord = {};
   for (const [key, value] of Object.entries(attrs)) {
+    const lower = key.toLowerCase();
+    if (isForbiddenAttribute(lower)) {
+      continue;
+    }
     if (key === "class") {
       result.className = value;
     } else if (key === "style") {
@@ -1282,6 +1318,21 @@ function attrsToProps(attrs?: Record<string, string>): React.HTMLAttributes<HTML
       if (!Number.isNaN(numericValue)) {
         result.tabIndex = numericValue;
       }
+    } else if (lower === "href") {
+      const safe = defaultUrlTransform(value, "href", { source: "html" });
+      if (safe != null) result.href = safe;
+    } else if (lower === "src") {
+      const safe = defaultUrlTransform(value, "src", { source: "html" });
+      if (safe != null) result.src = safe;
+    } else if (lower === "action") {
+      const safe = defaultUrlTransform(value, "href", { source: "html" });
+      if (safe != null) result.action = safe;
+    } else if (lower === "formaction") {
+      const safe = defaultUrlTransform(value, "href", { source: "html" });
+      if (safe != null) (result as Record<string, unknown>).formAction = safe;
+    } else if (lower === "xlink:href" || lower === "xlinkhref") {
+      const safe = defaultUrlTransform(value, "href", { source: "html" });
+      if (safe != null) (result as Record<string, unknown>).xlinkHref = safe;
     } else {
       result[key] = value;
     }
@@ -1299,10 +1350,13 @@ function parseStyleAttribute(value: string): React.CSSProperties {
   const parts = value.split(";");
   for (const part of parts) {
     if (!part.trim()) continue;
-    const [prop, val] = part.split(":");
-    if (!prop || !val) continue;
-    const camelProp = prop.trim().replace(/-([a-z])/g, (_, char: string) => char.toUpperCase());
-    (style as Record<string, string>)[camelProp] = val.trim();
+    const separator = part.indexOf(":");
+    if (separator <= 0) continue;
+    const prop = part.slice(0, separator).trim();
+    const val = part.slice(separator + 1).trim();
+    if (!isSafeStyleDeclaration(prop, val)) continue;
+    const camelProp = prop.replace(/-([a-z])/g, (_, char: string) => char.toUpperCase());
+    (style as Record<string, string>)[camelProp] = val;
   }
   return style;
 }
@@ -1313,6 +1367,7 @@ export function renderParagraphMixedSegments(
   inlineHtmlRenderers: InlineHtmlRendererMap,
   htmlElements?: HtmlElements,
   literalTagContent?: string[],
+  urlTransform?: UrlTransform,
 ): React.ReactNode[] {
   const result: React.ReactNode[] = [];
   let inlineBuffer: React.ReactNode[] = [];
@@ -1372,7 +1427,7 @@ export function renderParagraphMixedSegments(
         let chunk: InlineNode[] = [];
         const pushChunk = (chunkNodes: InlineNode[], chunkKey: string) => {
           if (chunkNodes.length === 0) return;
-          const rendered = renderInlineNodes(chunkNodes, inlineComponents);
+          const rendered = renderInlineNodes(chunkNodes, inlineComponents, urlTransform);
           pushRenderedNodes(ensureArray(rendered), inlineBuffer, chunkKey);
         };
 
@@ -1381,7 +1436,7 @@ export function renderParagraphMixedSegments(
             pushChunk(chunk, `${key}-chunk-${inlineIdx}`);
             chunk = [];
             flushInline();
-            const rendered = renderInlineNodes([inlineNode], inlineComponents);
+            const rendered = renderInlineNodes([inlineNode], inlineComponents, urlTransform);
             pushRenderedNodes(ensureArray(rendered), result, `${key}-math-${inlineIdx}`);
           } else {
             chunk.push(inlineNode);
@@ -1412,13 +1467,14 @@ export function renderParagraphMixedSegments(
           if (!text || (!text.includes("*") && !text.includes("_") && !text.includes("[") && !text.includes("`") && !text.includes("#"))) {
             return text;
           }
-          return renderInlineNodes(new InlineParser().parse(text), inlineComponents);
+          return renderInlineNodes(new InlineParser().parse(text), inlineComponents, urlTransform);
         };
         const element = renderInlineHtmlSegment(segment.value, segment.sanitized, {
           key,
           renderers: inlineHtmlRenderers,
           htmlElements,
           literalTagContent,
+          urlTransform,
           parseMarkdown,
         });
         if (isBlockLevel) {

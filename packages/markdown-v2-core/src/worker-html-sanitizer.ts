@@ -27,11 +27,24 @@ const rehypeSanitizePlugin = resolvePlugin(rehypeSanitizeModule) as SanitizePlug
 const rehypeStringifyPlugin = resolvePlugin(rehypeStringify) as Plugin<[]>;
 type AttributeDefinition = string | [string, ...(string | number | boolean | RegExp | null | undefined)[]];
 
+const FORBIDDEN_ATTRS: Record<string, true> = {
+  srcdoc: true,
+  script: true,
+};
+
+export function isForbiddenAttribute(attr: string): boolean {
+  const lower = attr.toLowerCase();
+  return lower.startsWith("on") || FORBIDDEN_ATTRS[lower] === true;
+}
+
 const SANITIZED_SCHEMA: Schema = createSchema();
 
 const sanitizeProcessor = unified()
   .use(rehypeParsePlugin, { fragment: true })
   .use(rehypeSanitizePlugin, SANITIZED_SCHEMA)
+  .use(() => (tree) => {
+    sanitizeHastStyles(tree);
+  })
   .use(rehypeStringifyPlugin)
   .freeze();
 
@@ -99,6 +112,47 @@ const CODE_ROW_STYLE_PROPS =
   /^(?:--[a-z0-9_-]+|color|background-color|font-synthesis|font-style|font-weight|text-decoration|text-decoration-color|text-decoration-line|text-decoration-style|text-decoration-thickness|display|white-space)$/i;
 const CODE_ROW_STYLE_VALUE = /^[a-z0-9#%.,\s_+-]+$/i;
 
+
+export function isSafeStyleDeclaration(property: string, value: string): boolean {
+  return CODE_ROW_STYLE_PROPS.test(property.trim()) && CODE_ROW_STYLE_VALUE.test(value.trim());
+}
+
+export function sanitizeStyle(style: string): string {
+  const kept: string[] = [];
+  for (const declaration of style.split(";")) {
+    const trimmed = declaration.trim();
+    if (trimmed.length === 0) continue;
+    const separator = trimmed.indexOf(":");
+    if (separator <= 0) continue;
+    const property = trimmed.slice(0, separator).trim();
+    const value = trimmed.slice(separator + 1).trim();
+    if (isSafeStyleDeclaration(property, value)) {
+      kept.push(`${property}: ${value}`);
+    }
+  }
+  return kept.join("; ");
+}
+
+export function sanitizeHastStyles(node: unknown): void {
+  if (!node || typeof node !== "object") return;
+  const record = node as Record<string, unknown>;
+  if (record.type === "element" && record.properties && typeof record.properties === "object") {
+    const properties = record.properties as Record<string, unknown>;
+    const style = properties.style;
+    if (typeof style === "string") {
+      const sanitized = sanitizeStyle(style);
+      if (sanitized.length > 0) {
+        properties.style = sanitized;
+      } else {
+        delete properties.style;
+      }
+    }
+  }
+  if (Array.isArray(record.children)) {
+    for (const child of record.children) sanitizeHastStyles(child);
+  }
+}
+
 export function isSafeCodeRowStyle(style: string): boolean {
   for (const declaration of style.split(";")) {
     const trimmed = declaration.trim();
@@ -107,7 +161,7 @@ export function isSafeCodeRowStyle(style: string): boolean {
     if (separator <= 0) return false;
     const property = trimmed.slice(0, separator).trim();
     const value = trimmed.slice(separator + 1).trim();
-    if (!CODE_ROW_STYLE_PROPS.test(property) || !CODE_ROW_STYLE_VALUE.test(value)) {
+    if (!isSafeStyleDeclaration(property, value)) {
       return false;
     }
   }
@@ -169,6 +223,9 @@ export function sanitizeHtmlInWorker(html: string, options?: { allowedTags?: Rec
     const customProcessor = unified()
       .use(rehypeParsePlugin, { fragment: true })
       .use(rehypeSanitizePlugin, schema)
+      .use(() => (tree) => {
+        sanitizeHastStyles(tree);
+      })
       .use(rehypeStringifyPlugin)
       .freeze();
     try {
@@ -205,6 +262,7 @@ export function sanitizeHtmlTreeInWorker(
   }
   const processor = unified().use(rehypeParsePlugin, { fragment: true }).use(rehypeSanitizePlugin, schema);
   const tree = processor.runSync(processor.parse(html));
+  sanitizeHastStyles(tree);
   type HtmlAst = {
     type: string;
     value?: string;
@@ -236,6 +294,7 @@ export function sanitizeHtmlTreeInWorker(
         inlineNode = marker.inline?.[Number(value)];
         continue;
       }
+      if (isForbiddenAttribute(name)) continue;
       if (value !== null && value !== undefined && value !== false) {
         attributes[name] = Array.isArray(value) ? value.join(" ") : value === true ? "" : String(value);
       }
@@ -336,18 +395,19 @@ function createSchema(customAllowedTags?: Record<string, string[]>): Schema {
   if (customAllowedTags) {
     for (const [tag, attrs] of Object.entries(customAllowedTags)) {
       const lowerTag = tag.toLowerCase();
+      if (lowerTag === "script") continue;
       const attrDefs: string[] = [];
       for (const a of attrs) {
+        if (isForbiddenAttribute(a)) continue;
         attrDefs.push(a);
         const camel = a.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
-        if (camel !== a) {
+        if (camel !== a && !isForbiddenAttribute(camel)) {
           attrDefs.push(camel);
         }
       }
       customAttrs[lowerTag] = attrDefs;
     }
   }
-
   base.attributes = {
     ...(base.attributes || {}),
     "*": customAllowedTags && Object.keys(customAllowedTags).length > 0
@@ -361,6 +421,9 @@ function createSchema(customAllowedTags?: Record<string, string[]>): Schema {
     tr: mergeAttributes(base.attributes?.tr as AttributeDefinition[] | undefined, ["align"]),
     ...customAttrs,
   } as Schema["attributes"];
+  if (base.attributes) {
+    delete (base.attributes as Record<string, unknown>)["script"];
+  }
   base.protocols = {
     ...(base.protocols || {}),
     href: ["http", "https", "mailto", "tel", "callto"],
@@ -373,7 +436,9 @@ function createSchema(customAllowedTags?: Record<string, string[]>): Schema {
 }
 
 function mergeAttributes(existing: AttributeDefinition[] | undefined, additions: string[]): AttributeDefinition[] {
-  const next: AttributeDefinition[] = Array.isArray(existing) ? [...existing] : [];
+  const next: AttributeDefinition[] = Array.isArray(existing)
+    ? existing.filter((e) => typeof e !== "string" || !isForbiddenAttribute(e))
+    : [];
   const existingStrings = new Set<string>();
   for (const entry of next) {
     if (typeof entry === "string") {
@@ -381,7 +446,7 @@ function mergeAttributes(existing: AttributeDefinition[] | undefined, additions:
     }
   }
   for (const attr of additions) {
-    if (!existingStrings.has(attr)) {
+    if (!existingStrings.has(attr) && !isForbiddenAttribute(attr)) {
       next.push(attr);
       existingStrings.add(attr);
     }

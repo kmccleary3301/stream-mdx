@@ -1,6 +1,6 @@
 import type React from "react";
 import type { PluggableList } from "unified";
-import type { Block } from "@stream-mdx/core";
+import type { Block, UrlTransform } from "@stream-mdx/core";
 import type { FinalizedBlockRenderProps } from "@stream-mdx/react";
 
 export interface UnifiedRendererOptions {
@@ -29,6 +29,7 @@ export interface UnifiedRendererOptions {
    * When provided, errors are forwarded here instead of only being logged.
    */
   onError?: (error: Error, block: Block) => void;
+  urlTransform?: UrlTransform;
 }
 
 export interface UnifiedRenderer {

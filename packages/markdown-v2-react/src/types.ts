@@ -15,7 +15,8 @@ import type {
 } from "@stream-mdx/core";
 import type { ComponentRegistry } from "./components";
 
-export type { HtmlOptions, SyntaxRuleSpec } from "@stream-mdx/core";
+export type { HtmlOptions, SyntaxRuleSpec, UrlTransform, UrlTransformContext } from "@stream-mdx/core";
+export { defaultUrlTransform } from "@stream-mdx/core";
 import type {
   TableVirtualizationConfig,
   TableVirtualizationOptions,
@@ -112,7 +113,7 @@ export type InlineComponents = Record<string, GenericComponent> & {
   strike?: React.FC<{ children: React.ReactNode }>;
   code: React.FC<{ text: string }>;
   link: React.FC<{ href?: string; title?: string; children: React.ReactNode }>;
-  image: React.FC<{ src: string; alt?: string; title?: string }>;
+  image: React.FC<{ src?: string; alt?: string; title?: string }>;
   br: React.FC<Record<string, never>>;
 };
 
@@ -160,6 +161,7 @@ export interface RendererConfig {
   blockRenderer?: BlockRendererOverride;
   syntax?: SyntaxRuleSpec[];
   html?: HtmlOptions;
+  urlTransform?: (url: string, attribute: "href" | "src", context: { source: "markdown" | "html" }) => string | null | undefined;
   tableVirtualization?: TableVirtualizationOptions;
   performance?: {
     frameBudgetMs?: number;
