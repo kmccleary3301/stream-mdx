@@ -1,6 +1,6 @@
 import React from "react";
 
-import type { InlineHtmlDescriptor } from "@stream-mdx/core";
+import type { HtmlTreeNode, InlineHtmlDescriptor, InlineNode } from "@stream-mdx/core";
 import type { HtmlElements, InlineHtmlRendererMap } from "../types";
 
 export interface RenderInlineHtmlOptions {
@@ -10,6 +10,41 @@ export interface RenderInlineHtmlOptions {
   htmlElements?: HtmlElements;
   literalTagContent?: string[];
   parseMarkdown?: (text: string) => React.ReactNode;
+}
+
+/** Render only the sanitized attributes supplied by the engine, with parsed children intact. */
+export function renderHtmlInlineNode(
+  node: Omit<Extract<InlineNode, { kind: "html" }>, "children">,
+  children: React.ReactNode,
+  elements?: HtmlElements,
+  key?: React.Key,
+): React.ReactElement | null {
+  if (node.isClose || node.tagName === "script" || node.tagName === "style") return null;
+  if (!node.tagName || node.sanitized === "") {
+    return React.createElement(React.Fragment, { key }, children);
+  }
+  const props = mapAttributesToProps(node.attributes ?? {});
+  props.key = key;
+  return React.createElement(elements?.[node.tagName] ?? node.tagName, props, node.isSelfClosing ? undefined : children);
+}
+
+export function renderHtmlOwnershipTree(
+  nodes: HtmlTreeNode[],
+  elements: HtmlElements,
+  renderBlock: (block: Extract<HtmlTreeNode, { kind: "block" }>["block"]) => React.ReactNode,
+  renderInline?: (nodes: InlineNode[]) => React.ReactNode,
+): React.ReactNode {
+  return nodes.map((node, index) => {
+    if (node.kind === "text") return node.inline && renderInline ? renderInline(node.inline) : node.text;
+    if (node.kind === "block") return renderBlock(node.block);
+    const props = mapAttributesToProps(node.attributes);
+    props.key = index;
+    return React.createElement(
+      elements[node.tagName] ?? node.tagName,
+      props,
+      node.children.length ? renderHtmlOwnershipTree(node.children, elements, renderBlock, renderInline) : undefined,
+    );
+  });
 }
 
 const BACKTICK_CONTENT = /^`([\s\S]+)`$/;

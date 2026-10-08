@@ -16,7 +16,7 @@ import type {
 } from "@stream-mdx/core";
 import { removeHeadingMarkers } from "@stream-mdx/core";
 import React from "react";
-import { DEFAULT_INLINE_HTML_RENDERERS, renderInlineHtmlSegment } from "../utils/inline-html";
+import { DEFAULT_INLINE_HTML_RENDERERS, renderHtmlInlineNode, renderInlineHtmlSegment } from "../utils/inline-html";
 import type { BlockComponents, BlockRendererOverride, CodeFenceRenderer, HtmlElements, InlineComponents, InlineHtmlRendererMap, MathRenderer, TableElements } from "../types";
 import { ArtifactFrame } from "./artifact-frame";
 import { DefaultDiffRenderer } from "./diff-renderer";
@@ -132,18 +132,11 @@ export function renderInlineNodes(nodes: InlineNode[], components: InlineCompone
       }
 
       case "html": {
-        const component = components.html;
-        if (component) {
-          return React.createElement(component, { key, ...node });
+        const children = node.children ? renderInlineNodes(node.children, components) : undefined;
+        if (components.html) {
+          return React.createElement(components.html, { key, ...node, children });
         }
-        if (node.sanitized) {
-          return React.createElement("span", {
-            key,
-            className: "markdown-inline-html",
-            dangerouslySetInnerHTML: { __html: node.sanitized },
-          });
-        }
-        return null;
+        return renderHtmlInlineNode(node, children, undefined, key);
       }
       default: {
         // Handle custom/extensible nodes
@@ -711,6 +704,10 @@ export class ComponentRegistry {
     }
     this.inlineComponents = { ...defaultInlineComponents, ...inlineComponents } as InlineComponents;
     this.htmlElements = getDefaultHtmlElements();
+    if (!inlineComponents.html) {
+      this.inlineComponents.html = (node: Omit<Extract<InlineNode, { kind: "html" }>, "children"> & { children?: React.ReactNode }) =>
+        renderHtmlInlineNode(node, node.children, this.htmlElements);
+    }
     this.tableElements = getDefaultTableElements();
     if (codeRenderers) {
       this.setCodeRenderers(codeRenderers);
@@ -961,6 +958,7 @@ export class ComponentRegistry {
           inlines: block.payload.inline || [],
           raw: block.payload.raw,
           meta: block.payload.meta,
+          children: renderInlineNodes(block.payload.inline ?? [], this.inlineComponents),
         };
       case "blockquote":
         return {

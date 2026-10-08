@@ -9,7 +9,7 @@ import {
   referenceGuardExtension,
   setActiveReferencePredicate,
 } from "./inline/reference-guard";
-import type { ASTInlinePlugin, InlineNode, InlinePlugin, RegexInlinePlugin, SyntaxRuleSpec } from "./types";
+import type { ASTInlinePlugin, HtmlOptions, InlineNode, InlinePlugin, RegexInlinePlugin, SyntaxRuleSpec } from "./types";
 
 export type { InlineParserOptions, InlineParseOptions, InlineExtension, LinkReferenceDefinition, LinkReferenceMap } from "./inline/types";
 
@@ -63,6 +63,7 @@ export class InlineParser {
   private maxCacheEntries: number;
   private enableMath: boolean;
   private references?: LinkReferenceMap;
+  private html?: HtmlOptions;
   private lezerParser!: MarkdownParser;
   private converter!: LezerInlineConverter;
 
@@ -72,6 +73,7 @@ export class InlineParser {
       : 2000;
     this.enableMath = options.enableMath !== false;
     this.references = options.references;
+    this.html = options.html;
 
     if (options.extensions) {
       this.extensions.push(...options.extensions);
@@ -196,6 +198,7 @@ export class InlineParser {
       nodeSet: this.lezerParser.nodeSet,
       references: this.references,
       extensionsByName,
+      html: this.html,
     });
     this.cache.clear();
   }

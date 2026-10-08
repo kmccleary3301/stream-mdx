@@ -2,6 +2,7 @@ import * as rehypeParse from "rehype-parse";
 import * as rehypeSanitize from "rehype-sanitize";
 import * as rehypeStringify from "rehype-stringify";
 import { type Plugin, unified } from "unified";
+import type { Block, HtmlOptions, HtmlTreeNode, InlineNode } from "./types";
 
 type RehypeSanitizeModule = typeof import("rehype-sanitize");
 const rehypeSanitizeModule = rehypeSanitize as RehypeSanitizeModule;
@@ -56,6 +57,64 @@ export function sanitizeHtmlInWorker(html: string, options?: { allowedTags?: Rec
     console.warn("[markdown-v2] Failed to sanitize HTML in worker:", error);
     return "";
   }
+}
+
+/**
+ * Parse and sanitize a complete ownership region, never independent opening fragments.
+ * Internal block markers are chosen outside user source and removed before rendering.
+ */
+export function sanitizeHtmlTreeInWorker(
+  html: string,
+  options?: HtmlOptions,
+  marker?: { attribute: string; blocks: Block[] },
+  parseInline?: (text: string) => InlineNode[],
+): HtmlTreeNode[] {
+  const schema = createSchema(options?.allowedTags);
+  if (marker) {
+    schema.attributes = {
+      ...schema.attributes,
+      "*": [...(schema.attributes?.["*"] ?? []), marker.attribute],
+    };
+  }
+  const processor = unified().use(rehypeParsePlugin, { fragment: true }).use(rehypeSanitizePlugin, schema);
+  const tree = processor.runSync(processor.parse(html));
+  type HtmlAst = {
+    type: string;
+    value?: string;
+    tagName?: string;
+    properties?: Record<string, unknown>;
+    children?: HtmlAst[];
+  };
+  const convert = (node: HtmlAst, literal = false): HtmlTreeNode[] => {
+    if (node.type === "text") {
+      const text = node.value ?? "";
+      return [{
+        kind: "text", text,
+        ...(parseInline && options?.literalTagContent !== undefined && !literal ? { inline: parseInline(text) } : {}),
+      }];
+    }
+    if (node.type !== "element") return (node.children ?? []).flatMap((child) => convert(child, literal));
+    const tag = node.tagName ?? "span";
+    const isLiteral = literal || ["pre", "code", "textarea", ...(options?.literalTagContent ?? [])]
+      .some((name) => name.toLowerCase() === tag);
+    const attributes: Record<string, string> = {};
+    for (const [name, value] of Object.entries(node.properties ?? {})) {
+      if (marker && name === marker.attribute) {
+        const block = marker.blocks[Number(value)];
+        if (block) return [{ kind: "block", block }];
+      }
+      if (value !== null && value !== undefined && value !== false) {
+        attributes[name] = Array.isArray(value) ? value.join(" ") : value === true ? "" : String(value);
+      }
+    }
+    return [{
+      kind: "element",
+      tagName: node.tagName ?? "span",
+      attributes,
+      children: (node.children ?? []).flatMap((child) => convert(child, isLiteral)),
+    }];
+  };
+  return convert(tree as HtmlAst);
 }
 
 function createSchema(customAllowedTags?: Record<string, string[]>): Schema {
@@ -124,6 +183,7 @@ function createSchema(customAllowedTags?: Record<string, string[]>): Schema {
     "sub",
     "sup",
     "kbd",
+    "textarea",
   ];
   for (const tag of allowedTags) {
     tagSet.add(tag);
@@ -133,6 +193,8 @@ function createSchema(customAllowedTags?: Record<string, string[]>): Schema {
       tagSet.add(tag.toLowerCase());
     }
   }
+  tagSet.delete("script");
+  tagSet.delete("style");
   base.tagNames = Array.from(tagSet);
 
   const customAttrs: Record<string, AttributeDefinition[]> = {};

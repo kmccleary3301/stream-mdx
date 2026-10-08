@@ -42,6 +42,7 @@ import {
   prepareInlineStreamingContent,
   removeHeadingMarkers,
   sanitizeHtmlInWorker,
+  sanitizeHtmlTreeInWorker,
   stripCodeFence,
 } from "@stream-mdx/core";
 import {
@@ -54,6 +55,8 @@ import {
   registerFootnotesPlugin,
 } from "@stream-mdx/plugins";
 import { isBlockLevelNode, mapLezerNodeToBlockType } from "../parser/block-types";
+import { HtmlContinuationExtension } from "../parser/html-extension";
+import { groupHtmlOwnership } from "./html-ownership";
 import { computeParagraphPatchLimit } from "../perf/patch-heuristics";
 import {
   clampLazyRange,
@@ -245,7 +248,7 @@ export class MarkdownEngine {
     this.postFn = options.post;
     this.extensions = options.extensions;
 
-    const markdownExtensions = [GFM, ...(this.extensions?.markdown ?? [])];
+    const markdownExtensions = [GFM, HtmlContinuationExtension, ...(this.extensions?.markdown ?? [])];
     this.mdParser = mdParser.configure(markdownExtensions);
 
     this.documentPluginRegistry = new DocumentPluginRegistry();
@@ -265,6 +268,7 @@ export class MarkdownEngine {
     const inlineExt = this.extensions?.inline;
     this.inlineParser = new InlineParser({
       enableMath: this.enableMath,
+      html: this.htmlConfig,
       ...(inlineExt ? { extensions: inlineExt } : {}),
       ...(this.syntaxRules.length > 0 ? { syntax: this.syntaxRules } : {}),
     });
@@ -834,7 +838,7 @@ export class MarkdownEngine {
         return await this.extractBlocksSimple(content, options);
       }
 
-      return extracted;
+      return groupHtmlOwnership(extracted, this.mdParser, content, this.htmlConfig, 0, (text) => this.inlineParser.parse(text));
     } catch (error) {
       console.warn("Lezer parsing failed, falling back to simple parsing:", error);
       return await this.extractBlocksSimple(content, options);
@@ -907,6 +911,7 @@ export class MarkdownEngine {
     const id = generateBlockId(`${from}:${blockType}`, blockType);
 
     const initialMeta: Record<string, unknown> = {};
+    if (nodeType) initialMeta.lezerNodeType = nodeType;
     if (nodeType === "SetextHeading1") {
       initialMeta.headingLevel = 1;
     } else if (nodeType === "SetextHeading2") {
@@ -1127,7 +1132,7 @@ export class MarkdownEngine {
           };
           const inlineFn = block.isFinalized ? (v: string) => this.inlineParser.parse(v) : (v: string) => this.parseInlineStreaming(v).inline;
           const segments = extractMixedContentSegments(rawParagraph, baseOffset, inlineFn, mixedSegmentOptions);
-          const hasStructuredSegments = segments.some((segment) => segment.kind !== "text");
+          const hasStructuredSegments = segments.some((segment) => segment.kind === "mdx");
           const htmlRanges = collectHtmlProtectedRangesFromSegments(segments, baseOffset);
           if (htmlRanges.length > 0) {
             protectedRanges.push(...htmlRanges);
@@ -1188,6 +1193,9 @@ export class MarkdownEngine {
         const sanitized = sanitizeHtmlInWorker(rawHtml, this.htmlConfig);
         block.payload.sanitizedHtml = sanitized;
         const nextMeta: Record<string, unknown> = { ...(block.payload.meta || {}), sanitized: true };
+        if (this.htmlConfig?.literalTagContent !== undefined && !nextMeta.htmlOwnership) {
+          nextMeta.htmlTree = sanitizeHtmlTreeInWorker(rawHtml, this.htmlConfig, undefined, (text) => this.inlineParser.parse(text));
+        }
         if (rawHtml) {
           nextMeta.protectedRanges = [{ from: 0, to: rawHtml.length, kind: "html-block" }];
         }

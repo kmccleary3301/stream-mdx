@@ -1,7 +1,7 @@
 import type { NodeSet } from "@lezer/common";
-import type { InlineNode } from "../types";
+import type { HtmlOptions, InlineNode } from "../types";
 import { decodeEntity } from "./entities";
-import { sanitizeHtmlInWorker } from "../worker-html-sanitizer";
+import { sanitizeHtmlTreeInWorker } from "../worker-html-sanitizer";
 import { normalizeLinkLabel } from "./reference-collector";
 import type { InlineExtension, LinkReferenceDefinition, LinkReferenceMap, MarkdownElement } from "./types";
 
@@ -9,6 +9,7 @@ export interface LezerConverterOptions {
   nodeSet: NodeSet;
   references?: LinkReferenceMap;
   extensionsByName?: Record<string, InlineExtension>;
+  html?: HtmlOptions;
 }
 
 function resolveReference(map: LinkReferenceMap | undefined, rawLabel: string): LinkReferenceDefinition | undefined {
@@ -121,19 +122,6 @@ export function mergeAdjacentTextNodes(nodes: InlineNode[]): InlineNode[] {
   return result;
 }
 
-const attrName = "[a-zA-Z_:][a-zA-Z0-9_.:-]*";
-const unquotedVal = "[^\\s\"'=<>`]+";
-const singleQuotedVal = "'[^']*'";
-const doubleQuotedVal = '"[^"]*"';
-const attrVal = `(?:${unquotedVal}|${singleQuotedVal}|${doubleQuotedVal})`;
-const attr = `(?:\\s+${attrName}(?:\\s*=\\s*${attrVal})?)`;
-const openTagRe = new RegExp(`^<([a-zA-Z][a-zA-Z0-9-]*)(?:${attr})*\\s*(?:/)?>(?![\\s\\S])`);
-const closeTagRe = /^<\/([a-zA-Z][a-zA-Z0-9-]*)\s*>$/;
-const commentRe = /^<!--[\s\S]*?-->$/;
-const procInstRe = /^<\?[\s\S]*?\?>$/;
-const declRe = /^<![a-zA-Z][\s\S]*?>$/;
-const cdataRe = /^<!\[CDATA\[[\s\S]*?\]\]>$/;
-
 const VOID_TAGS: Record<string, true> = {
   br: true,
   hr: true,
@@ -149,29 +137,18 @@ const VOID_TAGS: Record<string, true> = {
   embed: true,
 };
 
-function parseAttributes(raw: string): Record<string, string> {
-  const attrs: Record<string, string> = {};
-  const attrPattern = /([a-zA-Z_:][a-zA-Z0-9_.:-]*)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g;
-  let match: RegExpExecArray | null = attrPattern.exec(raw);
-  while (match !== null) {
-    const name = match[1];
-    if (name && !name.startsWith("<")) {
-      attrs[name] = match[2] ?? match[3] ?? match[4] ?? "";
-    }
-    match = attrPattern.exec(raw);
-  }
-  return attrs;
-}
 
 export class LezerInlineConverter {
   private nodeSet: NodeSet;
   private references?: LinkReferenceMap;
   private extensionsByName: Record<string, InlineExtension>;
+  private html?: HtmlOptions;
 
   constructor(options: LezerConverterOptions) {
     this.nodeSet = options.nodeSet;
     this.references = options.references;
     this.extensionsByName = options.extensionsByName ?? {};
+    this.html = options.html;
   }
 
   setReferences(references: LinkReferenceMap | undefined): void {
@@ -187,7 +164,8 @@ export class LezerInlineConverter {
     const nodes: InlineNode[] = [];
     let cursor = from;
 
-    for (const el of elements) {
+    for (let index = 0; index < elements.length; index++) {
+      const el = elements[index];
       if (el.to <= from || el.from >= to) {
         continue;
       }
@@ -202,6 +180,39 @@ export class LezerInlineConverter {
 
       const nodeName = this.nodeSet.types[el.type]?.name ?? "";
       const converted = this.convertElement(el, nodeName, text);
+      if (converted && !Array.isArray(converted) && converted.kind === "html" &&
+          !converted.isClose && !converted.isSelfClosing && converted.tagName) {
+        let depth = 1;
+        let closeIndex = elements.length;
+        for (let next = index + 1; next < elements.length; next++) {
+          const candidate = elements[next];
+          if (candidate.from >= to) break;
+          if (this.nodeSet.types[candidate.type]?.name !== "HTMLTag") continue;
+          const raw = text.slice(candidate.from, candidate.to);
+          const name = /^<\/?([^\s/>]+)/.exec(raw)?.[1]?.toLowerCase();
+          if (name !== converted.tagName) continue;
+          if (raw.startsWith("</")) depth--;
+          else if (!raw.endsWith("/>")) depth++;
+          if (depth === 0) {
+            closeIndex = next;
+            break;
+          }
+        }
+        const close = elements[closeIndex];
+        const innerTo = close?.from ?? to;
+        const end = close?.to ?? to;
+        const inner = text.slice(el.to, innerTo);
+        converted.raw = text.slice(el.from, end);
+        const literal = ["code", "pre", "textarea", ...(this.html?.literalTagContent ?? [])]
+          .some((tag) => tag.toLowerCase() === converted.tagName);
+        converted.children = converted.tagName === "script" || converted.tagName === "style"
+          ? []
+          : literal
+            ? [{ kind: "text", text: decodeEntity(inner) }]
+            : this.convertRange(elements.slice(index + 1, closeIndex), text, el.to, innerTo);
+        index = close ? closeIndex : elements.length;
+        cursor = end;
+      }
       if (Array.isArray(converted)) {
         nodes.push(...converted);
       } else if (converted !== null && converted !== undefined) {
@@ -296,50 +307,30 @@ export class LezerInlineConverter {
 
       case "Entity":
         return { kind: "text", text: decodeEntity(text.slice(el.from, el.to)) };
-      case "Comment": {
-        const raw = text.slice(el.from, el.to);
-        return { kind: "html", raw, tagName: "!--", sanitized: "" };
-      }
-
-      case "ProcessingInstruction": {
-        const raw = text.slice(el.from, el.to);
-        return { kind: "html", raw, tagName: "?", sanitized: "" };
-      }
+      case "Comment":
+      case "ProcessingInstruction":
+        return { kind: "html", raw: text.slice(el.from, el.to), sanitized: "", isSelfClosing: true };
 
       case "HTMLTag": {
+        // Lezer has already validated this exact range, including quoted '>' and newlines.
         const raw = text.slice(el.from, el.to);
-        if (commentRe.test(raw)) {
-          return { kind: "html", raw, tagName: "!--", sanitized: "" };
+        const tagName = /^<\/?([^\s/>]+)/.exec(raw)?.[1]?.toLowerCase();
+        if (!tagName || raw.startsWith("<!") || raw.startsWith("<?")) {
+          return { kind: "html", raw, sanitized: "", isSelfClosing: true };
         }
-        if (procInstRe.test(raw)) {
-          return { kind: "html", raw, tagName: "?", sanitized: "" };
+        if (raw.startsWith("</")) {
+          return { kind: "html", raw, tagName, isClose: true, sanitized: "" };
         }
-        if (declRe.test(raw)) {
-          return { kind: "html", raw, tagName: "!", sanitized: "" };
-        }
-        if (cdataRe.test(raw)) {
-          return { kind: "html", raw, tagName: "![cdata[", sanitized: sanitizeHtmlInWorker(raw) };
-        }
-        if (closeTagRe.test(raw)) {
-          const match = closeTagRe.exec(raw);
-          return { kind: "html", raw, tagName: match![1].toLowerCase(), isClose: true, sanitized: "" };
-        }
-        if (openTagRe.test(raw)) {
-          const match = openTagRe.exec(raw);
-          const tagName = match![1].toLowerCase();
-          const isSelfClosing = raw.endsWith("/>") || Boolean(VOID_TAGS[tagName]);
-          const attributes = parseAttributes(raw);
-          return {
-            kind: "html",
-            raw,
-            tagName,
-            isSelfClosing,
-            attributes,
-            sanitized: sanitizeHtmlInWorker(raw),
-          };
-        }
-        // Malformed HTML tag snippet - MUST remain literal text
-        return { kind: "text", text: raw };
+        const safe = sanitizeHtmlTreeInWorker(raw, this.html).find((node) => node.kind === "element");
+        return {
+          kind: "html",
+          raw,
+          tagName,
+          isSelfClosing: raw.endsWith("/>") || Boolean(VOID_TAGS[tagName]),
+          attributes: safe?.kind === "element" ? safe.attributes : undefined,
+          sanitized: safe ? undefined : "",
+          children: [],
+        };
       }
       case "InlineMath": {
         const tex = text.slice(el.from + 1, el.to - 1).trim();
