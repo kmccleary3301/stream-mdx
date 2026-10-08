@@ -134,7 +134,9 @@ export function prepareNestedBlockSnapshot(block: Block, inlineParser: InlinePar
       const fence = parseCodeFenceInfo(info);
       baseMeta.code = code;
       baseMeta.info = info;
-      baseMeta.lang = fence.lang || "text";
+      if (fence.lang) {
+        baseMeta.lang = fence.lang;
+      }
       Object.assign(baseMeta, fence.meta);
       raw = source.slice(node.from, node.to);
     } else if (name.startsWith("ATXHeading") || name.startsWith("SetextHeading")) {

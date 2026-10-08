@@ -597,7 +597,7 @@ export async function buildDiffTokenLines(
   return { tokenLines, grammarState };
 }
 
-export function enhanceHighlightedHtml(html: string, language: string): string {
+export function enhanceHighlightedHtml(html: string, language?: string): string {
   if (!html) return html;
 
   const lineRegex = /<span class="line">([\s\S]*?)<\/span>/g;
@@ -608,7 +608,12 @@ export function enhanceHighlightedHtml(html: string, language: string): string {
     return `<span class="line"${lineAttr}>${lineContent}</span>`;
   });
 
-  const langClass = `language-${language}`;
+  const trimmedLang = typeof language === "string" ? language.trim() : "";
+  if (!trimmedLang) {
+    return processed;
+  }
+
+  const langClass = `language-${trimmedLang}`;
   return processed.replace(/<code([^>]*)>/, (_match, attrs) => {
     const existingAttrs = parseAttributeString(attrs);
     const existingClass = existingAttrs.class || "";
@@ -619,7 +624,7 @@ export function enhanceHighlightedHtml(html: string, language: string): string {
     }
     existingAttrs.class = classes.join(" ");
 
-    existingAttrs["data-language"] = language;
+    existingAttrs["data-language"] = trimmedLang;
     return `<code${serializeAttributes(existingAttrs)}>`;
   });
 }

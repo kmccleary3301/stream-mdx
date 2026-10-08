@@ -1464,10 +1464,11 @@ export class MarkdownEngine {
         baseLang: guessLanguageFromDiffLines(codeLines),
       };
     }
-    const requestedLanguage = diffInfo.isDiff ? diffInfo.diffLang : lang || "text";
-    const tokenLanguage = diffInfo.isDiff ? diffInfo.baseLang ?? "text" : requestedLanguage;
+    const requestedLanguage = diffInfo.isDiff ? diffInfo.diffLang : (lang || undefined);
+    const highlightLanguage = diffInfo.isDiff ? diffInfo.diffLang : (lang || "text");
+    const tokenLanguage = diffInfo.isDiff ? diffInfo.baseLang ?? "text" : highlightLanguage;
     const baseMeta = (block.payload.meta ?? {}) as Record<string, unknown>;
-    let resolvedLanguage = requestedLanguage;
+    let resolvedLanguage = highlightLanguage;
     let resolvedTokenLanguage = tokenLanguage;
     const hasHighlighter = Boolean(this.highlighter);
     const hasHighlightableContent = codeBody.trim().length > 0;
@@ -1480,6 +1481,7 @@ export class MarkdownEngine {
         this.incrementalHighlightStates.delete(block.id);
         block.payload.highlightedHtml = undefined;
         const nextMeta = { ...baseMeta, ...meta, lang: requestedLanguage, highlightLang: resolvedLanguage } as Record<string, unknown>;
+        if (requestedLanguage === undefined) delete nextMeta.lang;
         nextMeta.code = codeBody;
         delete nextMeta.highlightedLines;
         delete nextMeta.tokenLines;
@@ -1494,7 +1496,7 @@ export class MarkdownEngine {
       if (this.codeHighlightingMode === "incremental") {
         if (hasHighlighter) {
           if (wantsHtml) {
-            resolvedLanguage = await resolveHighlightLanguage(this.highlighter, requestedLanguage);
+            resolvedLanguage = await resolveHighlightLanguage(this.highlighter, highlightLanguage);
           }
           if (wantsTokens) {
             resolvedTokenLanguage = await resolveHighlightLanguage(this.highlighter, tokenLanguage);
@@ -1589,6 +1591,7 @@ export class MarkdownEngine {
           highlightLang: resolvedLanguage,
           code: codeBody,
         };
+        if (requestedLanguage === undefined) delete nextMeta.lang;
         if (wantsHtml) {
           nextMeta.highlightedLines = [...state.highlightedLines];
         }
@@ -1639,7 +1642,7 @@ export class MarkdownEngine {
     ) {
       if (hasHighlighter) {
         if (wantsHtml) {
-          resolvedLanguage = await resolveHighlightLanguage(this.highlighter, requestedLanguage);
+          resolvedLanguage = await resolveHighlightLanguage(this.highlighter, highlightLanguage);
         }
         if (wantsTokens) {
           resolvedTokenLanguage = await resolveHighlightLanguage(this.highlighter, tokenLanguage);
@@ -1658,6 +1661,7 @@ export class MarkdownEngine {
       );
       const effectiveLang = wantsHtml ? resolvedLanguage : resolvedTokenLanguage;
       const nextMeta = { ...baseMeta, ...meta, lang: requestedLanguage, highlightLang: effectiveLang } as Record<string, unknown>;
+      if (requestedLanguage === undefined) delete nextMeta.lang;
       nextMeta.code = codeBody;
       nextMeta.lazyTokenization = true;
       nextMeta.lazyTokenizedUntil = state.processedLines;
@@ -1697,7 +1701,7 @@ export class MarkdownEngine {
 
     if (hasHighlighter) {
       if (wantsHtml) {
-        resolvedLanguage = await resolveHighlightLanguage(this.highlighter, requestedLanguage);
+        resolvedLanguage = await resolveHighlightLanguage(this.highlighter, highlightLanguage);
       }
       if (wantsTokens) {
         resolvedTokenLanguage = await resolveHighlightLanguage(this.highlighter, tokenLanguage);
@@ -1711,9 +1715,10 @@ export class MarkdownEngine {
       highlightLang: resolvedLanguage,
       code: codeBody,
     };
+    if (requestedLanguage === undefined) delete nextMeta.lang;
 
     if (wantsHtml && hasHighlighter && hasHighlightableContent) {
-      const cacheKey = `${resolvedLanguage}::${codeBody}`;
+      const cacheKey = `${resolvedLanguage}::${requestedLanguage ?? ""}::${codeBody}`;
       const cached = this.codeHighlightCache.get(cacheKey);
       if (cached) {
         block.payload.highlightedHtml = cached.html;
@@ -1724,7 +1729,7 @@ export class MarkdownEngine {
             themes: CODE_HIGHLIGHT_THEMES,
             defaultColor: false,
           });
-          const enhanced = enhanceHighlightedHtml(highlighted, resolvedLanguage);
+          const enhanced = enhanceHighlightedHtml(highlighted, requestedLanguage);
           block.payload.highlightedHtml = enhanced;
           if (this.codeHighlightCache.size >= MAX_CODE_HIGHLIGHT_CACHE_ENTRIES) {
             const first = this.codeHighlightCache.keys().next().value;
@@ -2468,8 +2473,9 @@ export class MarkdownEngine {
         baseLang: guessLanguageFromDiffLines(codeLines),
       };
     }
-    const requestedLanguage = diffInfo.isDiff ? diffInfo.diffLang : lang || "text";
-    const tokenLanguage = diffInfo.isDiff ? diffInfo.baseLang ?? "text" : requestedLanguage;
+    const requestedLanguage = diffInfo.isDiff ? diffInfo.diffLang : (lang || undefined);
+    const highlightLanguage = diffInfo.isDiff ? diffInfo.diffLang : (lang || "text");
+    const tokenLanguage = diffInfo.isDiff ? diffInfo.baseLang ?? "text" : highlightLanguage;
     const hasHighlightableContent = codeBody.trim().length > 0;
     if (!shouldLazyTokenizeBlock(this.lazyTokenizationEnabled, codeLines.length, this.lazyTokenizationThresholdLines, Boolean(this.highlighter), hasHighlightableContent)) {
       return;
@@ -2483,10 +2489,10 @@ export class MarkdownEngine {
     const { startLine, endLine } = clampLazyRange(request.startLine, request.endLine, codeLines.length);
     if (endLine <= startLine) return;
 
-    let resolvedLanguage = requestedLanguage;
+    let resolvedLanguage = highlightLanguage;
     let resolvedTokenLanguage = tokenLanguage;
     if (wantsHtml) {
-      resolvedLanguage = await resolveHighlightLanguage(this.highlighter, requestedLanguage);
+      resolvedLanguage = await resolveHighlightLanguage(this.highlighter, highlightLanguage);
       if (!currentTarget()) return;
     }
     if (wantsTokens) {

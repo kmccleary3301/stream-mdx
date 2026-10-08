@@ -33,7 +33,8 @@ export function generateBlockId(content: string, type: string): string {
  */
 export function normalizeLang(raw?: string): string {
   const k = (raw || "").trim().toLowerCase();
-  return LANGUAGE_ALIASES[k] ?? (k || "text");
+  if (!k) return "";
+  return LANGUAGE_ALIASES[k] ?? k;
 }
 
 /**
@@ -165,11 +166,15 @@ function isWithinRanges(start: number, end: number, ranges: Array<{ from: number
  * Parse code fence info (language and metadata)
  */
 export function parseCodeFenceInfo(info: string): { lang: string; meta: Record<string, unknown> } {
-  const decoded = (info || "").replace(
+  const trimmed = (info || "").trim();
+  if (!trimmed) {
+    return { lang: "", meta: {} };
+  }
+  const decoded = trimmed.replace(
     /\\([!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~])|&(?:#[xX][0-9a-fA-F]{1,6}|#[0-9]{1,7}|[a-zA-Z][a-zA-Z0-9]{1,31});/g,
     (match, escaped: string | undefined) => escaped ?? decodeHTML5Strict(match),
   );
-  const parts = decoded.trim().split(/\s+/);
+  const parts = decoded.split(/\s+/);
   const lang = normalizeLang(parts[0]);
   const meta: Record<string, unknown> = {};
   for (let i = 1; i < parts.length; i++) {

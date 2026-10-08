@@ -61,6 +61,23 @@ The harnesses are **not** yet a definitive public source for:
 | Security operational model | Simpler runtime surface | Stronger isolation story when the worker is hosted deliberately |
 | CSP implications | Simpler by default | Requires intentional worker policy (`blob:` vs hosted worker asset) |
 
+## Conformance and Spec Parity (CommonMark 0.31.2 + GFM Extensions)
+
+Harness: `scripts/conformance/run-commonmark.mts` evaluating 675 examples (652 CommonMark 0.31.2 + 23 GFM extension fixtures).
+
+Comparing Streamdown with default chat sanitization against StreamMDX with `docPlugins.html: true` is unfair on HTML sections. Streamdown is evaluated under two configurations:
+1. **Default**: chat sanitization and hardening enabled (`linkSafety: { enabled: false }`).
+2. **Raw HTML**: raw HTML enabled and sanitization/hardening disabled via `rehypePlugins: [defaultRehypePlugins.raw]` (`linkSafety: { enabled: false }`).
+
+| Evaluation Mode | StreamMDX (Static/Stream/SSR) | micromark (GFM) | Streamdown (Default) | Streamdown (Raw HTML) |
+| --- | --- | --- | --- | --- |
+| **Normalized Semantics** | **675 / 675** (0 divergences) | 669 / 675 | 540 / 675 | 586 / 675 |
+| **Strict Semantics** (titles + language) | **675 / 675** (0 divergences) | 669 / 675 | 540 / 675 | 586 / 675 |
+
+### Key takeaways on conformance
+- **HTML Sanitization Fairness**: Enabling raw HTML on Streamdown raises its score from 540 to 586 (+46 examples), closing the gap on HTML blocks and raw HTML inlines.
+- **Strict Parity**: StreamMDX achieves 100% strict conformance (675/675) across static, streaming, and SSR paths with zero divergences. Unlabeled code blocks and indented code blocks emit bare `<pre><code>` without `language-*` classes, preserving 100% parity on link titles (90/90), image titles (22/22), and code blocks.
+- **micromark 669**: The 6 micromark failures are standard GFM tagfilter escaping on 5 HTML blocks (`cm_170`, `cm_171`, `cm_172`, `cm_176`, `cm_178`) and a dropped FTP autolink in modern micromark (`gfm_628`).
 ## Where Streamdown is the better fit
 
 - You already use `react-markdown` and want the smallest possible change.
