@@ -2,9 +2,7 @@ import type { Block, PatchMetrics, WorkerIn, WorkerOut } from "@stream-mdx/core"
 // Main V2 Markdown Renderer
 // Client-side renderer with component registry and worker integration
 import type { PatchCommitSchedulerOptions, PatchFlushResult } from "./renderer/patch-commit-scheduler";
-import type { BlockComponents, CodeFenceRenderer, CodeHighlightRangeRequest, ControlsComponentProps, ControlsConfig, InlineComponents, MathRenderer, Renderer, RendererConfig } from "./types";
-import type { TableVirtualizationOptions } from "./renderer/virtualized-table";
-
+import type { BlockComponents, CodeFenceRenderer, CodeHighlightRangeRequest, ControlsComponentProps, ControlsConfig, InlineComponents, MathRenderer, Renderer, RendererConfig, TableVirtualizationOptions } from "./types";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import { createDefaultWorker, releaseDefaultWorker } from "@stream-mdx/worker";
@@ -140,6 +138,11 @@ export class MarkdownRenderer implements Renderer {
         blockRenderer: this.config.blockRenderer,
         controls: this.config.controls,
         controlsComponent: this.config.controlsComponent,
+        allowedElements: this.config.allowedElements,
+        disallowedElements: this.config.disallowedElements,
+        allowElement: this.config.allowElement,
+        unwrapDisallowed: this.config.unwrapDisallowed,
+        disableAutolinkProtocols: this.config.disableAutolinkProtocols,
       },
     );
     if (this.config.html?.literalTagContent) {

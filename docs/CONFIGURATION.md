@@ -41,11 +41,14 @@ To render MDX blocks:
 - `inlineComponents`: override inline renders (strong/em/link/code/etc).
 - `tableElements`: override table tags (Shadcn table wrappers).
 - `htmlElements`: override HTML tag renders (when HTML is enabled).
-- `codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `artifact`, `diff`, custom languages).
+- `codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `artifact`, `diff`, custom languages) keyed by language; `{ component, aliases }` entries add alias languages, resolved case-insensitively.
+- `allowedElements`: whitelist of permitted HTML tag names (mutually exclusive with `disallowedElements`).
+- `disallowedElements`: blacklist of HTML tag names to drop (mutually exclusive with `allowedElements`).
+- `unwrapDisallowed`: when `true`, render children of disallowed tags instead of dropping the subtree.
+- `allowElement`: callback predicate `(element, context) => boolean` for dynamic tag filtering.
+- `disableAutolinkProtocols`: protocols (e.g. `["mailto"]`) whose autolinks render as plain text while explicit markdown links remain active.
 - `mathRenderer`: provide custom inline and display math renderers (KaTeX is built-in default; MathJax supported).
 - `artifactHtml`: opt-in flag (`true` to render standard ````html ```` code fences via `ArtifactFrame`).
-
-## Mermaid diagrams (optional)
 
 Mermaid is an **opt-in add-on** that renders fenced ` ```mermaid ` code blocks as diagrams (with a Diagram/Code toggle).
 

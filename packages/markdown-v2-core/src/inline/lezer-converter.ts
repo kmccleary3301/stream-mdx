@@ -368,6 +368,7 @@ export class LezerInlineConverter {
           kind: "link",
           href,
           children: [{ kind: "text", text: urlText }],
+          autolink: true,
         };
       }
 
@@ -383,6 +384,7 @@ export class LezerInlineConverter {
           kind: "link",
           href,
           children: [{ kind: "text", text: url }],
+          autolink: true,
         };
       }
 

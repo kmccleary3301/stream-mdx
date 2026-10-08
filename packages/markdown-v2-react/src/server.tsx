@@ -1,33 +1,31 @@
 import React from "react";
 import { MarkdownBlocksRenderer as BaseMarkdownBlocksRenderer, type MarkdownBlocksRendererProps } from "./renderer/blocks-renderer";
 
-export const MarkdownBlocksRenderer: React.FC<MarkdownBlocksRendererProps> = (props) => {
-  if (props.componentRegistry) {
-    props.componentRegistry.setAnimated(false);
-  }
-  return React.createElement(BaseMarkdownBlocksRenderer, {
-    ...props,
-    animated: false,
-  });
-};
+/** Static/SSR output is never animated. */
+export const MarkdownBlocksRenderer: React.FC<MarkdownBlocksRendererProps> = (props) =>
+  React.createElement(BaseMarkdownBlocksRenderer, { ...props, animated: false });
 export type { MarkdownBlocksRendererProps };
 export { ComponentRegistry } from "./components";
 export { createRendererStore } from "./renderer/store";
 export { defaultUrlTransform } from "@stream-mdx/core";
 export { STREAM_MDX_ANIMATION_CSS, DEFAULT_ANIMATED_OPTIONS } from "./animation";
 export type {
+  AllowElementFn,
   BlockComponents,
+  CodeFenceRenderer,
+  CodeFenceRendererConfig,
+  CodeFenceRendererProps,
+  ElementFilterContext,
+  ElementFilterDescriptor,
+  ElementFilterOptions,
   HtmlElements,
   InlineComponents,
   InlineHtmlRenderer,
   InlineHtmlRendererMap,
-  RendererConfig,
-  TableElements,
-  CodeFenceRenderer,
-  CodeFenceRendererConfig,
-  CodeFenceRendererProps,
   MathRenderer,
   MathRendererProps,
+  RendererConfig,
+  TableElements,
   UrlTransform,
   UrlTransformContext,
   ControlsConfig,

@@ -30,9 +30,27 @@ import type {
 import { removeHeadingMarkers } from "@stream-mdx/core";
 import React from "react";
 import { DEFAULT_INLINE_HTML_RENDERERS, renderHtmlInlineNode, renderHtmlOwnershipTree, renderInlineHtmlSegment } from "../utils/inline-html";
-import type { BlockComponents, BlockRendererOverride, CodeFenceRenderer, ControlsComponentProps, ControlsConfig, HtmlElements, InlineComponents, InlineHtmlRendererMap, MathRenderer, TableElements } from "../types";
+import type {
+  AllowElementFn,
+  AnimatedProp,
+  BlockComponents,
+  BlockRendererOverride,
+  CodeFenceRenderer,
+  CodeFenceRendererConfig,
+  CodeFenceRendererProps,
+  ControlsComponentProps,
+  ControlsConfig,
+  ElementFilterOptions,
+  ElementFilterContext,
+  ElementFilterDescriptor,
+  HtmlElements,
+  InlineComponents,
+  InlineHtmlRendererMap,
+  MathRenderer,
+  TableElements,
+} from "../types";
+export type { CodeFenceRendererConfig, CodeFenceRendererProps };
 import { AnimationTimeline, resolveAnimatedOptions, splitTextSegments, type RenderInlineAnimationContext, type ResolvedAnimatedOptions } from "../animation";
-import type { AnimatedProp } from "../types";
 import { ArtifactFrame } from "./artifact-frame";
 import { DefaultDiffRenderer } from "./diff-renderer";
 import { KaTeXBlockMath, KaTeXInlineMath } from "./katex-math";
@@ -51,7 +69,6 @@ import {
   tableToTsv,
 } from "./controls";
 export { DefaultLinkSafetyModal, type LinkSafetyModalProps } from "./link-safety-modal";
-
 class MdxRuntimeBoundary extends React.Component<
   { resetKey: number; onError: (error: Error) => void; children?: React.ReactNode },
   { hasError: boolean }
@@ -87,6 +104,8 @@ export function renderInlineNodes(
   nodes: InlineNode[],
   components: InlineComponents,
   urlTransform?: UrlTransform,
+  registry?: ComponentRegistry,
+  parentTagName?: string,
   animationContext?: RenderInlineAnimationContext,
 ): React.ReactNode {
   return nodes.map((node, index) => {
@@ -146,61 +165,169 @@ export function renderInlineNodes(
         return React.createElement(React.Fragment, { key, children: node.text });
       }
 
-      case "strong":
-        return React.createElement(components.strong, {
-          key,
-          children: renderInlineNodes(node.children, components, urlTransform, itemChildContext),
-        });
+      case "strong": {
+        if (!registry?.hasElementFilters()) {
+          return React.createElement(components.strong, {
+            key,
+            children: renderInlineNodes(node.children, components, urlTransform, registry, "strong", itemChildContext),
+          });
+        }
+        const renderChildren = () => renderInlineNodes(node.children, components, urlTransform, registry, "strong", itemChildContext);
+        const renderElement = () =>
+          React.createElement(components.strong, {
+            key,
+            children: renderChildren(),
+          });
+        return registry.filterElement(
+          { tagName: "strong", properties: { key }, blockType: undefined },
+          { source: "markdown", parentTagName },
+          renderElement,
+          renderChildren,
+        );
+      }
 
-      case "em":
-        return React.createElement(components.em, {
-          key,
-          children: renderInlineNodes(node.children, components, urlTransform, itemChildContext),
-        });
+      case "em": {
+        if (!registry?.hasElementFilters()) {
+          return React.createElement(components.em, {
+            key,
+            children: renderInlineNodes(node.children, components, urlTransform, registry, "em", itemChildContext),
+          });
+        }
+        const renderChildren = () => renderInlineNodes(node.children, components, urlTransform, registry, "em", itemChildContext);
+        const renderElement = () =>
+          React.createElement(components.em, {
+            key,
+            children: renderChildren(),
+          });
+        return registry.filterElement(
+          { tagName: "em", properties: { key }, blockType: undefined },
+          { source: "markdown", parentTagName },
+          renderElement,
+          renderChildren,
+        );
+      }
 
       case "strike": {
         const StrikeComponent = components.strike ?? ((props: { children: React.ReactNode }) => React.createElement("del", {}, props.children));
-        return React.createElement(StrikeComponent, {
-          key,
-          children: renderInlineNodes(node.children, components, urlTransform, itemChildContext),
-        });
+        if (!registry?.hasElementFilters()) {
+          return React.createElement(StrikeComponent, {
+            key,
+            children: renderInlineNodes(node.children, components, urlTransform, registry, "del", itemChildContext),
+          });
+        }
+        const renderChildren = () => renderInlineNodes(node.children, components, urlTransform, registry, "del", itemChildContext);
+        const renderElement = () =>
+          React.createElement(StrikeComponent, {
+            key,
+            children: renderChildren(),
+          });
+        return registry.filterElement(
+          { tagName: "del", properties: { key }, blockType: undefined },
+          { source: "markdown", parentTagName },
+          renderElement,
+          renderChildren,
+        );
       }
 
-      case "code":
-        return React.createElement(components.code, { key, text: node.text });
+      case "code": {
+        if (!registry?.hasElementFilters()) {
+          return React.createElement(components.code, { key, text: node.text });
+        }
+        const renderChildren = () => node.text;
+        const renderElement = () => React.createElement(components.code, { key, text: node.text });
+        return registry.filterElement(
+          { tagName: "code", properties: { key, text: node.text }, blockType: undefined },
+          { source: "markdown", parentTagName },
+          renderElement,
+          renderChildren,
+        );
+      }
 
       case "link": {
+        if (node.autolink && registry?.isAutolinkProtocolDisabled(node.href)) {
+          return renderInlineNodes(node.children, components, urlTransform, registry, parentTagName, itemChildContext);
+        }
         const transform = urlTransform ?? defaultUrlTransform;
         const safeHref = transform(node.href ?? "", "href", { source: "markdown" });
-        return React.createElement(
-          components.link,
-          {
-            key,
-            ...(safeHref != null ? { href: safeHref } : {}),
-            title: node.title,
-            children: renderInlineNodes(node.children, components, urlTransform, itemChildContext),
-          },
+        if (!registry?.hasElementFilters()) {
+          return React.createElement(
+            components.link,
+            {
+              key,
+              ...(safeHref != null ? { href: safeHref } : {}),
+              title: node.title,
+              children: renderInlineNodes(node.children, components, urlTransform, registry, "a", itemChildContext),
+            },
+          );
+        }
+        const renderChildren = () => renderInlineNodes(node.children, components, urlTransform, registry, "a", itemChildContext);
+        const renderElement = () =>
+          React.createElement(
+            components.link,
+            {
+              key,
+              ...(safeHref != null ? { href: safeHref } : {}),
+              title: node.title,
+              children: renderChildren(),
+            },
+          );
+        return registry.filterElement(
+          { tagName: "a", properties: { key, href: safeHref, title: node.title }, blockType: undefined },
+          { source: "markdown", parentTagName },
+          renderElement,
+          renderChildren,
         );
       }
 
       case "image": {
         const transform = urlTransform ?? defaultUrlTransform;
         const safeSrc = transform(node.src ?? "", "src", { source: "markdown" });
-        return React.createElement(components.image, {
-          key,
-          ...(safeSrc != null ? { src: safeSrc } : {}),
-          alt: node.alt ?? "",
-          title: node.title,
-        });
+        if (!registry?.hasElementFilters()) {
+          return React.createElement(components.image, {
+            key,
+            ...(safeSrc != null ? { src: safeSrc } : {}),
+            alt: node.alt ?? "",
+            title: node.title,
+          });
+        }
+        const renderElement = () =>
+          React.createElement(components.image, {
+            key,
+            ...(safeSrc != null ? { src: safeSrc } : {}),
+            alt: node.alt ?? "",
+            title: node.title,
+          });
+        return registry.filterElement(
+          { tagName: "img", properties: { key, src: safeSrc, alt: node.alt ?? "", title: node.title }, blockType: undefined },
+          { source: "markdown", parentTagName },
+          renderElement,
+          undefined,
+        );
       }
 
-      case "br":
-        return React.createElement(
-          React.Fragment,
-          { key },
-          React.createElement(components.br, {} as Record<string, never>),
-          "\n",
+      case "br": {
+        if (!registry?.hasElementFilters()) {
+          return React.createElement(
+            React.Fragment,
+            { key },
+            React.createElement(components.br, {} as Record<string, never>),
+            "\n",
+          );
+        }
+        const renderElement = () =>
+          React.createElement(
+            React.Fragment,
+            { key },
+            React.createElement(components.br, {} as Record<string, never>),
+            "\n",
+          );
+        return registry.filterElement(
+          { tagName: "br", properties: { key }, blockType: undefined },
+          { source: "markdown", parentTagName },
+          renderElement,
+          undefined,
         );
+      }
       case "plugin": {
         const pluginComponent = components[node.name] ?? components.plugin;
         if (pluginComponent) {
@@ -209,7 +336,7 @@ export function renderInlineNodes(
             ...node.attrs,
             name: node.name,
             attrs: node.attrs,
-            children: node.children ? renderInlineNodes(node.children, components, urlTransform, itemChildContext) : undefined,
+            children: node.children ? renderInlineNodes(node.children, components, urlTransform, registry, parentTagName, itemChildContext) : undefined,
             raw: node.raw,
           });
         }
@@ -217,12 +344,21 @@ export function renderInlineNodes(
       }
 
       case "html": {
-        const children = node.children ? renderInlineNodes(node.children, components, urlTransform, itemChildContext) : undefined;
+        const children = node.children ? renderInlineNodes(node.children, components, urlTransform, registry, node.tagName?.toLowerCase(), itemChildContext) : undefined;
         const textValue = node.children?.map((child) => child.kind === "text" ? child.text : "").join("");
         if (components.html) {
           return React.createElement(components.html, { key, ...node, children, textValue });
         }
-        return renderHtmlInlineNode(node, children, undefined, key, textValue, urlTransform);
+        return renderHtmlInlineNode(
+          node,
+          children,
+          undefined,
+          key,
+          textValue,
+          urlTransform,
+          registry?.hasElementFilters() ? (el, ctx, rEl, rCh) => registry.filterElement(el, ctx, rEl, rCh) : undefined,
+          parentTagName,
+        );
       }
       default: {
         // Handle custom/extensible nodes
@@ -802,6 +938,12 @@ export class ComponentRegistry {
   private animated?: AnimatedProp;
   private animatedOptions: ResolvedAnimatedOptions | null = null;
   private animationTimeline: AnimationTimeline | null = null;
+  private allowedElements?: ReadonlySet<string>;
+  private disallowedElements?: ReadonlySet<string>;
+  private allowElement?: AllowElementFn;
+  private unwrapDisallowed?: boolean;
+  private disableAutolinkProtocols?: ReadonlySet<string>;
+  private hasFilterConfig = false;
 
   constructor(
     blockComponents: Partial<BlockComponents> = {},
@@ -816,7 +958,7 @@ export class ComponentRegistry {
       controls?: ControlsConfig;
       controlsComponent?: React.ComponentType<ControlsComponentProps>;
       animated?: AnimatedProp;
-    },
+    } & ElementFilterOptions,
   ) {
     this.blockComponents = { ...defaultBlockComponents, ...blockComponents } as BlockComponents;
     this.inlineComponents = { ...defaultInlineComponents, ...inlineComponents } as InlineComponents;
@@ -850,12 +992,92 @@ export class ComponentRegistry {
     if (options?.animated !== undefined) {
       this.setAnimated(options.animated);
     }
+    if (options) {
+      this.setElementFilters(options);
+    }
+  }
+
+  hasElementFilters(): boolean {
+    return this.hasFilterConfig;
+  }
+
+  /** Replaces the whole filter configuration at once so prop swaps (allowed -> disallowed) never trip the exclusivity check. */
+  setElementFilters(options: ElementFilterOptions): void {
+    const { allowedElements, disallowedElements, allowElement, unwrapDisallowed, disableAutolinkProtocols } = options;
+    if (allowedElements && disallowedElements) {
+      throw new Error("Cannot specify both allowedElements and disallowedElements; expected one or the other");
+    }
+    const toTagSet = (tags?: string[]) => (tags ? new Set(tags.map((tag) => tag.trim().toLowerCase())) : undefined);
+    this.allowedElements = toTagSet(allowedElements);
+    this.disallowedElements = toTagSet(disallowedElements);
+    this.allowElement = allowElement;
+    this.unwrapDisallowed = unwrapDisallowed;
+    this.disableAutolinkProtocols = disableAutolinkProtocols
+      ? new Set(disableAutolinkProtocols.map((protocol) => protocol.trim().toLowerCase().replace(/:$/, "")))
+      : undefined;
+    this.hasFilterConfig = Boolean(this.allowedElements || this.disallowedElements || this.allowElement);
+  }
+
+  isAutolinkProtocolDisabled(href?: string): boolean {
+    if (!this.disableAutolinkProtocols || !href) return false;
+    const match = /^[a-zA-Z][a-zA-Z0-9+.-]*(?=:)/.exec(href.trim());
+    if (!match) return false;
+    return this.disableAutolinkProtocols.has(match[0].toLowerCase());
+  }
+
+  isElementAllowed(
+    element: ElementFilterDescriptor,
+    context: ElementFilterContext,
+  ): boolean {
+    const tag = element.tagName.toLowerCase();
+    if (this.allowedElements && !this.allowedElements.has(tag)) {
+      return false;
+    }
+    if (this.disallowedElements && this.disallowedElements.has(tag)) {
+      return false;
+    }
+    if (this.allowElement) {
+      const allowed = this.allowElement(
+        { tagName: tag, properties: element.properties ?? {}, blockType: element.blockType },
+        context,
+      );
+      if (!allowed) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  filterElement(
+    element: ElementFilterDescriptor,
+    context: ElementFilterContext,
+    renderElement: () => React.ReactNode,
+    renderChildren?: () => React.ReactNode,
+  ): React.ReactNode {
+    if (!this.hasFilterConfig) {
+      return renderElement();
+    }
+    if (this.isElementAllowed(element, context)) {
+      return renderElement();
+    }
+    if (this.unwrapDisallowed && renderChildren) {
+      const children = renderChildren();
+      if (children === undefined || children === null) return null;
+      const key = element.properties?.key as string | number | undefined;
+      return React.createElement(React.Fragment, key !== undefined ? { key } : null, children);
+    }
+    return null;
   }
 
   setCodeRenderers(renderers: Record<string, CodeFenceRenderer>): void {
     const next: Record<string, CodeFenceRenderer> = { ...this.codeRenderers };
     for (const [lang, renderer] of Object.entries(renderers)) {
       next[lang.trim().toLowerCase()] = renderer;
+      if (typeof renderer === "object" && renderer.aliases) {
+        for (const alias of renderer.aliases) {
+          next[alias.trim().toLowerCase()] = renderer;
+        }
+      }
     }
     this.codeRenderers = next;
   }
@@ -1094,30 +1316,46 @@ export class ComponentRegistry {
 
   renderHtmlTree(tree: HtmlTreeNode[], renderBlock: (block: Block) => React.ReactNode = (block) => this.renderBlock(block), paragraph?: Block): React.ReactNode {
     return renderHtmlOwnershipTree(tree, this.htmlElements, renderBlock,
-      (nodes) => renderInlineNodes(nodes, this.inlineComponents, this.urlTransform),
+      (nodes, parentTagName) => renderInlineNodes(nodes, this.inlineComponents, this.urlTransform, this, parentTagName),
       (node, children) => {
         if (node.kind === "strong" || node.kind === "em" || node.kind === "strike" || node.kind === "link") {
           const component = this.inlineComponents[node.kind];
           if (node.kind === "link") {
             const transform = this.urlTransform ?? defaultUrlTransform;
             const safeHref = transform(node.href ?? "", "href", { source: "markdown" });
-            return component ? React.createElement(component, {
+            const direct = component ? React.createElement(component, {
               ...node,
               ...(safeHref != null ? { href: safeHref } : {}),
               children,
             }) : React.createElement("a", { ...(safeHref != null ? { href: safeHref } : {}) }, children);
+            if (!this.hasElementFilters()) return direct;
+            return this.filterElement(
+              { tagName: "a", properties: { href: safeHref, title: node.title } },
+              { source: "markdown" },
+              () => direct,
+              () => children,
+            );
           }
-          return component ? React.createElement(component, { ...node, children }) : React.createElement("del", {}, children);
+          const tag = node.kind === "strike" ? "del" : node.kind;
+          const direct = component ? React.createElement(component, { ...node, children }) : React.createElement(tag, {}, children);
+          if (!this.hasElementFilters()) return direct;
+          return this.filterElement(
+            { tagName: tag, properties: {} },
+            { source: "markdown" },
+            () => direct,
+            () => children,
+          );
         }
         if (node.kind === "plugin") {
           const component = this.inlineComponents[node.name] ?? this.inlineComponents.plugin;
           return component ? React.createElement(component, { ...node.attrs, name: node.name, attrs: node.attrs, raw: node.raw, children }) : node.raw;
         }
-        return renderInlineNodes([node], this.inlineComponents, this.urlTransform);
+        return renderInlineNodes([node], this.inlineComponents, this.urlTransform, this);
       }, paragraph ? (children) => React.createElement(this.getBlockComponent("paragraph"), {
         ...this.getBlockProps(paragraph), children,
       }) : undefined,
-      this.urlTransform);
+      this.urlTransform,
+      this.hasElementFilters() ? (el, ctx, rEl, rCh) => this.filterElement(el, ctx, rEl, rCh) : undefined);
   }
 
   getBlockComponentMap(): BlockComponents {
@@ -1170,126 +1408,189 @@ export class ComponentRegistry {
       ...props,
     });
 
-    if (block.type === "code") {
-      const meta = (block.payload.meta ?? {}) as Record<string, unknown>;
-      const lang = typeof meta.lang === "string" ? String(meta.lang) : "";
-      const normalizedLang = lang.trim().toLowerCase();
-      const codeRenderer = this.getCodeRenderer(normalizedLang);
-      const raw = typeof block.payload.raw === "string" ? block.payload.raw : "";
-      const metaCode = typeof meta.code === "string" ? (meta.code as string) : null;
-      const normalizedRaw = raw.replace(/\r\n?/g, "\n");
-      const fenced = stripCodeFence(normalizedRaw);
-      const codeText = metaCode !== null ? metaCode.replace(/\r\n?/g, "\n") : (fenced.hadFence ? fenced.code : normalizedRaw);
-      const infoText = typeof meta.info === "string" ? (meta.info as string) : lang;
-
-      const codeControls = resolveCodeControls(this.getControls());
-      if (codeRenderer) {
-        const RendererComponent = typeof codeRenderer === "function" ? codeRenderer : codeRenderer.component;
-        return React.createElement(RendererComponent, {
-          key: block.id,
-          code: codeText,
-          language: lang,
-          meta,
-          info: infoText,
-          isFinalized: block.isFinalized,
-          blockId: block.id,
-          renderCode: element,
-          openLink: this.linkHandler,
-          controls: {
-            copy: codeControls.copy,
-            download: codeControls.download,
-          },
-          copy: () => copyToClipboard(codeText),
-          download: () => downloadFile(codeText, getCodeSnippetFilename(lang)),
-        });
-      }
-
-      if (Array.isArray(meta.diffBlocks) && meta.diffBlocks.length > 0) {
-        return React.createElement(DefaultDiffRenderer, {
-          key: block.id,
-          code: codeText,
-          language: lang,
-          meta,
-          info: infoText,
-          isFinalized: block.isFinalized,
-          blockId: block.id,
-          renderCode: element,
-          controls: {
-            copy: codeControls.copy,
-            download: codeControls.download,
-          },
-          copy: () => copyToClipboard(codeText),
-          download: () => downloadFile(codeText, getCodeSnippetFilename(lang)),
-        });
-      }
-
-      if (codeControls.enabled) {
-        const ControlsComponent = this.getControlsComponent();
-        const controlsElement = ControlsComponent ? (
-          React.createElement(ControlsComponent, {
-            type: "code",
-            blockId: block.id,
-            code: codeText,
-            language: lang,
-            isFinalized: block.isFinalized,
-            onCopy: () => copyToClipboard(codeText),
-            onDownload: () => downloadFile(codeText, getCodeSnippetFilename(lang)),
-            labels: codeControls.labels,
-          })
-        ) : (
-          React.createElement(CodeControlsBar, {
-            code: codeText,
-            language: lang,
-            config: codeControls,
-          })
-        );
-        return React.createElement("div", { className: "stream-mdx-code-wrapper relative", key: block.id }, controlsElement, element);
-      }
-    }
-
-    if (block.type === "table") {
-      const tableControls = resolveTableControls(this.getControls());
-      if (tableControls.enabled) {
+    const finalElement = (() => {
+      if (block.type === "code") {
         const meta = (block.payload.meta ?? {}) as Record<string, unknown>;
-        const header = Array.isArray(meta.header) ? (meta.header as InlineNode[][]).map((cell) => inlineToPlainText(cell)) : [];
-        const rows = Array.isArray(meta.rows) ? (meta.rows as InlineNode[][][]).map((r) => r.map((cell) => inlineToPlainText(cell))) : [];
-        const align = Array.isArray(meta.align) ? (meta.align as Array<"left" | "center" | "right" | null>) : undefined;
-        const isFinalized = Boolean(block.isFinalized);
-        const ControlsComponent = this.getControlsComponent();
-        const controlsElement = ControlsComponent ? (
-          React.createElement(ControlsComponent, {
-            type: "table",
+        const lang = typeof meta.lang === "string" ? String(meta.lang) : "";
+        const normalizedLang = lang.trim().toLowerCase();
+        const codeRenderer = this.getCodeRenderer(normalizedLang);
+        const raw = typeof block.payload.raw === "string" ? block.payload.raw : "";
+        const metaCode = typeof meta.code === "string" ? (meta.code as string) : null;
+        const normalizedRaw = raw.replace(/\r\n?/g, "\n");
+        const fenced = stripCodeFence(normalizedRaw);
+        const codeText = metaCode !== null ? metaCode.replace(/\r\n?/g, "\n") : (fenced.hadFence ? fenced.code : normalizedRaw);
+        const infoText = typeof meta.info === "string" ? (meta.info as string) : lang;
+
+        const codeControls = resolveCodeControls(this.getControls());
+        if (codeRenderer) {
+          const RendererComponent = typeof codeRenderer === "function" ? codeRenderer : codeRenderer.component;
+          return React.createElement(RendererComponent, {
+            key: block.id,
+            code: codeText,
+            language: lang,
+            meta,
+            info: infoText,
+            isFinalized: block.isFinalized,
             blockId: block.id,
-            headers: header,
-            rows,
-            align,
-            isFinalized,
-            onCopy: (format) => {
-              if (!isFinalized) return;
-              const text = format === "markdown" ? tableToMarkdown(header, rows, align) : tableToTsv(header, rows);
-              return copyToClipboard(text);
+            renderCode: element,
+            openLink: this.linkHandler,
+            controls: {
+              copy: codeControls.copy,
+              download: codeControls.download,
             },
-            onDownload: (format) => {
-              if (!isFinalized) return;
-              if (format === "tsv") downloadFile(tableToTsv(header, rows), "table.tsv", "text/tab-separated-values;charset=utf-8");
-              else if (format === "markdown") downloadFile(tableToMarkdown(header, rows, align), "table.md", "text/markdown;charset=utf-8");
-              else downloadFile(tableToCsv(header, rows), "table.csv", "text/csv;charset=utf-8");
+            copy: () => copyToClipboard(codeText),
+            download: () => downloadFile(codeText, getCodeSnippetFilename(lang)),
+          });
+        }
+
+        if (Array.isArray(meta.diffBlocks) && meta.diffBlocks.length > 0) {
+          return React.createElement(DefaultDiffRenderer, {
+            key: block.id,
+            code: codeText,
+            language: lang,
+            meta,
+            info: infoText,
+            isFinalized: block.isFinalized,
+            blockId: block.id,
+            renderCode: element,
+            controls: {
+              copy: codeControls.copy,
+              download: codeControls.download,
             },
-            labels: tableControls.labels,
-          })
-        ) : (
-          React.createElement(TableControlsBar, {
-            headers: header,
-            rows,
-            align,
-            isFinalized,
-            config: tableControls,
-          })
+            copy: () => copyToClipboard(codeText),
+            download: () => downloadFile(codeText, getCodeSnippetFilename(lang)),
+          });
+        }
+
+        if (codeControls.enabled) {
+          const ControlsComponent = this.getControlsComponent();
+          const controlsElement = ControlsComponent ? (
+            React.createElement(ControlsComponent, {
+              type: "code",
+              blockId: block.id,
+              code: codeText,
+              language: lang,
+              isFinalized: block.isFinalized,
+              onCopy: () => copyToClipboard(codeText),
+              onDownload: () => downloadFile(codeText, getCodeSnippetFilename(lang)),
+              labels: codeControls.labels,
+            })
+          ) : (
+            React.createElement(CodeControlsBar, {
+              code: codeText,
+              language: lang,
+              config: codeControls,
+            })
+          );
+          return React.createElement("div", { className: "stream-mdx-code-wrapper relative", key: block.id }, controlsElement, element);
+        }
+      }
+
+      if (block.type === "table") {
+        const tableControls = resolveTableControls(this.getControls());
+        if (tableControls.enabled) {
+          const meta = (block.payload.meta ?? {}) as Record<string, unknown>;
+          const header = Array.isArray(meta.header) ? (meta.header as InlineNode[][]).map((cell) => inlineToPlainText(cell)) : [];
+          const rows = Array.isArray(meta.rows) ? (meta.rows as InlineNode[][][]).map((r) => r.map((cell) => inlineToPlainText(cell))) : [];
+          const align = Array.isArray(meta.align) ? (meta.align as Array<"left" | "center" | "right" | null>) : undefined;
+          const isFinalized = Boolean(block.isFinalized);
+          const ControlsComponent = this.getControlsComponent();
+          const controlsElement = ControlsComponent ? (
+            React.createElement(ControlsComponent, {
+              type: "table",
+              blockId: block.id,
+              headers: header,
+              rows,
+              align,
+              isFinalized,
+              onCopy: (format) => {
+                if (!isFinalized) return;
+                const text = format === "markdown" ? tableToMarkdown(header, rows, align) : tableToTsv(header, rows);
+                return copyToClipboard(text);
+              },
+              onDownload: (format) => {
+                if (!isFinalized) return;
+                if (format === "tsv") downloadFile(tableToTsv(header, rows), "table.tsv", "text/tab-separated-values;charset=utf-8");
+                else if (format === "markdown") downloadFile(tableToMarkdown(header, rows, align), "table.md", "text/markdown;charset=utf-8");
+                else downloadFile(tableToCsv(header, rows), "table.csv", "text/csv;charset=utf-8");
+              },
+              labels: tableControls.labels,
+            })
+          ) : (
+            React.createElement(TableControlsBar, {
+              headers: header,
+              rows,
+              align,
+              isFinalized,
+              config: tableControls,
+            })
+          );
+          return React.createElement("div", { className: "stream-mdx-table-wrapper relative", key: block.id }, controlsElement, element);
+        }
+      }
+      return element;
+    })();
+
+    if (this.hasFilterConfig) {
+      let blockTagName = "";
+      switch (block.type) {
+        case "paragraph":
+          blockTagName = "p";
+          break;
+        case "heading": {
+          const meta = (block.payload.meta ?? {}) as Record<string, unknown>;
+          const levelFromMeta = typeof meta.headingLevel === "number" ? meta.headingLevel : undefined;
+          const normalizedLevel = Number.isFinite(levelFromMeta) ? Math.min(Math.max(levelFromMeta as number, 1), 6) : undefined;
+          const rawHeading = typeof block.payload.raw === "string" ? block.payload.raw : "";
+          const level = normalizedLevel ?? this.extractHeadingLevel(rawHeading);
+          blockTagName = `h${level}`;
+          break;
+        }
+        case "code":
+          blockTagName = "pre";
+          break;
+        case "blockquote":
+          blockTagName = "blockquote";
+          break;
+        case "hr":
+          blockTagName = "hr";
+          break;
+        case "list":
+          blockTagName = block.payload.meta?.ordered ? "ol" : "ul";
+          break;
+        case "table":
+          blockTagName = "table";
+          break;
+      }
+      if (blockTagName) {
+        const renderChildren = () => {
+          if (block.type === "paragraph" || block.type === "heading") {
+            return "children" in props ? (props.children as React.ReactNode) : undefined;
+          }
+          if (block.type === "blockquote") {
+            return "renderedContent" in props ? (props.renderedContent as React.ReactNode) : undefined;
+          }
+          if (block.type === "code") {
+            const meta = block.payload.meta;
+            const metaCode = meta && typeof meta === "object" && "code" in meta && typeof meta.code === "string" ? meta.code : undefined;
+            return metaCode || block.payload.raw || "";
+          }
+          return undefined;
+        };
+        const filtered = this.filterElement(
+          { tagName: blockTagName, properties: props, blockType: block.type },
+          { source: "markdown" },
+          () => finalElement,
+          renderChildren,
         );
-        return React.createElement("div", { className: "stream-mdx-table-wrapper relative", key: block.id }, controlsElement, element);
+        if (filtered === null || filtered === undefined) {
+          return React.createElement(React.Fragment, { key: block.id });
+        }
+        return React.isValidElement(filtered) ? filtered : React.createElement(React.Fragment, { key: block.id }, filtered);
       }
     }
-    return element;
+
+    return finalElement;
   }
 
   /**
@@ -1307,7 +1608,7 @@ export class ComponentRegistry {
         const headingText =
           typeof meta.headingText === "string" && meta.headingText.trim().length > 0 ? (meta.headingText as string) : removeHeadingMarkers(rawHeading).trim();
         const level = (normalizedLevel ?? this.extractHeadingLevel(rawHeading)) as 1 | 2 | 3 | 4 | 5 | 6;
-        const renderedChildren = renderInlineNodes(inlineNodes, this.inlineComponents, this.urlTransform, animCtx);
+        const renderedChildren = renderInlineNodes(inlineNodes, this.inlineComponents, this.urlTransform, this, `h${level}`, animCtx);
         return {
           level,
           inlines: inlineNodes,
@@ -1321,14 +1622,13 @@ export class ComponentRegistry {
           inlines: block.payload.inline || [],
           raw: block.payload.raw,
           meta: block.payload.meta,
-          children: renderInlineNodes(block.payload.inline ?? [], this.inlineComponents, this.urlTransform, animCtx),
+          children: renderInlineNodes(block.payload.inline ?? [], this.inlineComponents, this.urlTransform, this, "p", animCtx),
         };
       case "blockquote":
         return {
           inlines: block.payload.inline || [],
-          renderedContent: renderInlineNodes(block.payload.inline || [], this.inlineComponents, this.urlTransform, animCtx),
+          renderedContent: renderInlineNodes(block.payload.inline || [], this.inlineComponents, this.urlTransform, this, "blockquote", animCtx),
         };
-
       case "hr": {
         const range = block.payload.range;
         return {

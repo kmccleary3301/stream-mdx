@@ -106,11 +106,43 @@ export interface CodeFenceRendererProps {
 export interface CodeFenceRendererConfig {
   component: React.ComponentType<CodeFenceRendererProps>;
   defer?: boolean;
+  /** Extra fence languages (case-insensitive) that resolve to this renderer. */
+  aliases?: string[];
 }
 
 export type CodeFenceRenderer =
   | React.ComponentType<CodeFenceRendererProps>
   | CodeFenceRendererConfig;
+
+export interface ElementFilterDescriptor {
+  tagName: string;
+  properties: Record<string, unknown>;
+  blockType?: string;
+}
+
+export interface ElementFilterContext {
+  source: "markdown" | "html";
+  parentTagName?: string;
+}
+
+export type AllowElementFn = (
+  element: ElementFilterDescriptor,
+  context: ElementFilterContext,
+) => boolean;
+
+/** Render-time element filtering, matching react-markdown / Streamdown semantics. */
+export interface ElementFilterOptions {
+  /** Only these tag names render. Mutually exclusive with `disallowedElements`. */
+  allowedElements?: string[];
+  /** These tag names never render. Mutually exclusive with `allowedElements`. */
+  disallowedElements?: string[];
+  /** Final per-element predicate; runs after the allow/deny lists. */
+  allowElement?: AllowElementFn;
+  /** Render the children of removed elements in place instead of dropping the subtree. */
+  unwrapDisallowed?: boolean;
+  /** Autolink protocols (e.g. `["mailto"]`) whose bare/angle autolinks render as plain text. Explicit links are unaffected. */
+  disableAutolinkProtocols?: string[];
+}
 
 export interface MathRendererProps {
   tex: string;
@@ -192,7 +224,7 @@ export interface FinalizedBlockRenderProps {
 
 export type BlockRendererOverride = (props: FinalizedBlockRenderProps) => React.ReactNode;
 
-export interface RendererConfig {
+export interface RendererConfig extends ElementFilterOptions {
   themes?: { light: string; dark: string };
   highlight?: {
     browserEngine?: "js" | "wasm";

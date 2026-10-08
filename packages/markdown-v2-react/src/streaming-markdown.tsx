@@ -16,8 +16,7 @@ import { useRendererBlocks } from "./renderer/hooks";
 import { StreamingActivityContext } from "./renderer/streaming-activity-context";
 import type { RendererStore } from "./renderer/store";
 import { createDefaultWorker, releaseDefaultWorker } from "@stream-mdx/worker";
-import { defaultUrlTransform, type AnimatedProp, type BlockComponents, type BlockRendererOverride, type CodeFenceRenderer, type ControlsComponentProps, type ControlsConfig, type HtmlElements, type HtmlOptions, type InlineComponents, type MathRenderer, type RendererConfig, type SyntaxRuleSpec, type TableElements, type TableVirtualizationOptions, type UrlTransform } from "./types";
-
+import { defaultUrlTransform, type AnimatedProp, type BlockComponents, type BlockRendererOverride, type CodeFenceRenderer, type ControlsComponentProps, type ControlsConfig, type ElementFilterOptions, type HtmlElements, type HtmlOptions, type InlineComponents, type MathRenderer, type RendererConfig, type SyntaxRuleSpec, type TableElements, type TableVirtualizationOptions, type UrlTransform } from "./types";
 const EMPTY_BLOCKS: ReadonlyArray<Block> = [];
 
 function createConfigSignature(input: StreamingMarkdownConfigSignature): string {
@@ -128,7 +127,7 @@ export type LinkSafetyConfig = {
 
 export type MarkdownEngineMode = "worker" | "main-thread" | "auto";
 
-export interface StreamingMarkdownProps {
+export interface StreamingMarkdownProps extends ElementFilterOptions {
   text?: string;
   stream?: AsyncIterable<string>;
   worker?: Worker | URL | (() => Worker) | string;
@@ -313,6 +312,11 @@ function StreamingMarkdownComponent(
     caret,
     linkSafety,
     codeRenderers,
+    allowedElements,
+    disallowedElements,
+    allowElement,
+    unwrapDisallowed,
+    disableAutolinkProtocols,
     mathRenderer,
     artifactHtml,
     deferHeavyBlocks,
@@ -387,6 +391,11 @@ function StreamingMarkdownComponent(
     const rendererConfig: RendererConfig = {
       themes: effectiveThemes,
       codeRenderers,
+      allowedElements,
+      disallowedElements,
+      allowElement,
+      unwrapDisallowed,
+      disableAutolinkProtocols,
       mathRenderer,
       artifactHtml,
       tableVirtualization,
@@ -643,20 +652,15 @@ function StreamingMarkdownComponent(
     if (codeRenderers) {
       renderer.setCodeRenderers(codeRenderers);
     }
+    const reg = renderer.getComponentRegistry();
     if (mathRenderer) {
       renderer.setMathRenderer(mathRenderer);
     }
     if (artifactHtml !== undefined) {
-      renderer.getComponentRegistry().setArtifactHtml(artifactHtml);
+      reg.setArtifactHtml(artifactHtml);
     }
-    renderer.getComponentRegistry().setTableVirtualization(tableVirtualization);
-    if (controls !== undefined) {
-      renderer.setControls(controls);
-    }
-    if (controlsComponent !== undefined) {
-      renderer.setControlsComponent(controlsComponent);
-    }
-  }, [renderer, components, mdxComponents, inlineComponents, resolvedInlineComponents, tableElements, htmlElements, codeRenderers, mathRenderer, artifactHtml, tableVirtualization, controls, controlsComponent]);
+    reg.setTableVirtualization(tableVirtualization);
+  }, [renderer, components, mdxComponents, inlineComponents, resolvedInlineComponents, tableElements, htmlElements, codeRenderers, mathRenderer, artifactHtml, tableVirtualization]);
 
   useEffect(() => {
     const removeListener = renderer.addFlushListener((result) => {
@@ -1040,6 +1044,11 @@ function StreamingMarkdownComponent(
             controls={controls}
             controlsComponent={controlsComponent}
             animated={animated}
+            allowedElements={allowedElements}
+            disallowedElements={disallowedElements}
+            allowElement={allowElement}
+            unwrapDisallowed={unwrapDisallowed}
+            disableAutolinkProtocols={disableAutolinkProtocols}
             className={resolvedClassName}
             style={resolvedStyle}
             store={store}
