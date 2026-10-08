@@ -2,7 +2,21 @@ import { dedentIndentedCode, getDefaultCodeWrapperAttributes, normalizeBlockquot
 import React from "react";
 import { DefaultDiffRenderer } from "../components/diff-renderer";
 import type { CodeFenceRendererProps, InlineComponents, TableElements } from "../types";
-import { renderInlineNodes, renderParagraphMixedSegments } from "../components";
+import {
+  CodeControlsBar,
+  TableControlsBar,
+  copyToClipboard,
+  downloadFile,
+  getCodeSnippetFilename,
+  inlineToPlainText,
+  renderInlineNodes,
+  renderParagraphMixedSegments,
+  resolveCodeControls,
+  resolveTableControls,
+  tableToCsv,
+  tableToMarkdown,
+  tableToTsv,
+} from "../components";
 import type { ComponentRegistry } from "../components";
 import { DEFAULT_INLINE_HTML_RENDERERS, renderInlineHtmlSegment } from "../utils/inline-html";
 import { useRendererChildren, useRendererNode } from "./hooks";
@@ -799,30 +813,129 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
     </tableElements.Table>
   );
 
-  if (isEligible) {
-    const maxHeight = typeof config.maxHeight === "number" ? `${config.maxHeight}px` : config.maxHeight;
-    return (
-      <div
-        ref={containerRef}
-        className="markdown-table-container relative w-full"
-        style={{
-          overflowY: "auto",
-          overflowX: "auto",
-          maxHeight,
-          overflowAnchor: "none",
+  const tableData = React.useMemo(() => {
+    const rawMeta = node?.block?.payload?.meta;
+    const meta = (rawMeta && typeof rawMeta === "object" ? rawMeta : {}) as {
+      header?: InlineNode[][];
+      rows?: InlineNode[][][];
+      align?: Array<"left" | "center" | "right" | null>;
+    };
+
+    let headers: string[] = [];
+    if (Array.isArray(meta.header) && meta.header.length > 0) {
+      headers = meta.header.map((cell) => inlineToPlainText(cell));
+    } else if (theadCellIds.length > 0) {
+      headers = theadCellIds.map((cellId) => {
+        const cell = store.getNode(cellId);
+        const cellProps = cell?.props;
+        if (cellProps && typeof cellProps === "object") {
+          if ("inline" in cellProps && Array.isArray(cellProps.inline)) {
+            return inlineToPlainText(cellProps.inline as InlineNode[]);
+          }
+          if ("text" in cellProps && typeof cellProps.text === "string") {
+            return cellProps.text;
+          }
+        }
+        return "";
+      });
+    }
+
+    let rows: string[][] = [];
+    if (Array.isArray(meta.rows) && meta.rows.length > 0) {
+      rows = meta.rows.map((row) => row.map((cell) => inlineToPlainText(cell)));
+    } else if (rowIds.length > 0) {
+      rows = rowIds.map((rowId) => {
+        const cellIds = store.getChildren(rowId);
+        return cellIds.map((cellId) => {
+          const cell = store.getNode(cellId);
+          const cellProps = cell?.props;
+          if (cellProps && typeof cellProps === "object") {
+            if ("inline" in cellProps && Array.isArray(cellProps.inline)) {
+              return inlineToPlainText(cellProps.inline as InlineNode[]);
+            }
+            if ("text" in cellProps && typeof cellProps.text === "string") {
+              return cellProps.text;
+            }
+          }
+          return "";
+        });
+      });
+    }
+
+    const align = Array.isArray(meta.align) ? meta.align : undefined;
+    return { headers, rows, align };
+  }, [node?.block?.payload?.meta, theadCellIds, rowIds, store]);
+
+  const resolvedTableControls = resolveTableControls(registry.getControls());
+  const ControlsComponent = registry.getControlsComponent();
+
+  const renderedContent = isEligible ? (
+    <div
+      ref={containerRef}
+      className="markdown-table-container relative w-full"
+      style={{
+        overflowY: "auto",
+        overflowX: "auto",
+        maxHeight: typeof config.maxHeight === "number" ? `${config.maxHeight}px` : config.maxHeight,
+        overflowAnchor: "none",
+      }}
+      onScroll={handleScroll}
+      tabIndex={0}
+      role="region"
+      aria-label="Scrollable table"
+      {...tableAttrs}
+    >
+      {tableElement}
+    </div>
+  ) : (
+    tableElement
+  );
+
+  if (resolvedTableControls.enabled) {
+    const tableControlsElement = ControlsComponent ? (
+      <ControlsComponent
+        type="table"
+        blockId={blockId}
+        headers={tableData.headers}
+        rows={tableData.rows}
+        align={tableData.align}
+        isFinalized={isFinalized}
+        onCopy={(format) => {
+          if (!isFinalized) return;
+          const text = format === "markdown" ? tableToMarkdown(tableData.headers, tableData.rows, tableData.align) : tableToTsv(tableData.headers, tableData.rows);
+          return copyToClipboard(text);
         }}
-        onScroll={handleScroll}
-        tabIndex={0}
-        role="region"
-        aria-label="Scrollable table"
-        {...tableAttrs}
-      >
-        {tableElement}
+        onDownload={(format) => {
+          if (!isFinalized) return;
+          if (format === "tsv") {
+            downloadFile(tableToTsv(tableData.headers, tableData.rows), "table.tsv", "text/tab-separated-values;charset=utf-8");
+          } else if (format === "markdown") {
+            downloadFile(tableToMarkdown(tableData.headers, tableData.rows, tableData.align), "table.md", "text/markdown;charset=utf-8");
+          } else {
+            downloadFile(tableToCsv(tableData.headers, tableData.rows), "table.csv", "text/csv;charset=utf-8");
+          }
+        }}
+        labels={resolvedTableControls.labels}
+      />
+    ) : (
+      <TableControlsBar
+        headers={tableData.headers}
+        rows={tableData.rows}
+        align={tableData.align}
+        isFinalized={isFinalized}
+        config={resolvedTableControls}
+      />
+    );
+
+    return (
+      <div className="stream-mdx-table-wrapper relative">
+        {tableControlsElement}
+        {renderedContent}
       </div>
     );
   }
 
-  return tableElement;
+  return renderedContent;
 });
 
 TableBlockView.displayName = "TableBlockView";
@@ -1295,6 +1408,37 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
     "data-code-window-size": String(virtualization.config.windowSize),
   };
 
+  const normalizedLang = (lang ?? "").trim().toLowerCase();
+  const codeRenderer = registry.getCodeRenderer(normalizedLang);
+  const raw = typeof node.block.payload.raw === "string" ? node.block.payload.raw : "";
+  const metaCode = typeof blockMeta?.code === "string" ? (blockMeta.code as string) : null;
+  const sourceText = resolveCodeSourceText(raw, metaCode);
+  const infoText = typeof blockMeta?.info === "string" ? (blockMeta.info as string) : (lang ?? "");
+
+  const resolvedCodeControls = resolveCodeControls(registry.getControls());
+  const ControlsComponent = registry.getControlsComponent();
+
+  const codeControlsElement = resolvedCodeControls.enabled ? (
+    ControlsComponent ? (
+      <ControlsComponent
+        type="code"
+        blockId={blockId}
+        code={sourceText}
+        language={lang}
+        isFinalized={blockIsFinalized}
+        onCopy={() => copyToClipboard(sourceText)}
+        onDownload={() => downloadFile(sourceText, getCodeSnippetFilename(lang))}
+        labels={resolvedCodeControls.labels}
+      />
+    ) : (
+      <CodeControlsBar
+        code={sourceText}
+        language={lang}
+        config={resolvedCodeControls}
+      />
+    )
+  ) : null;
+
   const codeView = shouldVirtualize ? (
     (() => {
       const { containerRef, window, handleScroll, lineHeight } = virtualization;
@@ -1302,6 +1446,7 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
       const spacerBottom = (window.totalLines - window.endIndex) * lineHeight;
       return (
         <pre className={codeFrameClass} {...codeMetricsAttrs}>
+          {codeControlsElement}
           <div
             ref={containerRef}
             className="markdown-code-block-container relative"
@@ -1317,16 +1462,10 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
     })()
   ) : (
     <pre className={codeFrameClass} {...codeMetricsAttrs}>
+      {codeControlsElement}
       {rendered}
     </pre>
   );
-
-  const normalizedLang = (lang ?? "").trim().toLowerCase();
-  const codeRenderer = registry.getCodeRenderer(normalizedLang);
-  const raw = typeof node.block.payload.raw === "string" ? node.block.payload.raw : "";
-  const metaCode = typeof blockMeta?.code === "string" ? (blockMeta.code as string) : null;
-  const sourceText = resolveCodeSourceText(raw, metaCode);
-  const infoText = typeof blockMeta?.info === "string" ? (blockMeta.info as string) : (lang ?? "");
 
   if (codeRenderer) {
     const CustomComponent = typeof codeRenderer === "function" ? codeRenderer : codeRenderer.component;
@@ -1343,6 +1482,12 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
       blockId,
       renderCode: codeView,
       openLink: registry.getLinkHandler(),
+      controls: {
+        copy: resolvedCodeControls.copy,
+        download: resolvedCodeControls.download,
+      },
+      copy: () => copyToClipboard(sourceText),
+      download: () => downloadFile(sourceText, getCodeSnippetFilename(lang)),
     };
 
     if (shouldOptInDefer && deferredConfig) {
@@ -1368,6 +1513,12 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
       isFinalized: node.block.isFinalized,
       blockId,
       renderCode: codeView,
+      controls: {
+        copy: resolvedCodeControls.copy,
+        download: resolvedCodeControls.download,
+      },
+      copy: () => copyToClipboard(sourceText),
+      download: () => downloadFile(sourceText, getCodeSnippetFilename(lang)),
     });
   }
 

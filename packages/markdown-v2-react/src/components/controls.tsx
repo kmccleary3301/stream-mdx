@@ -1,11 +1,8 @@
 import React, { useCallback, useState } from "react";
 import type { InlineNode } from "@stream-mdx/core";
 import type {
-  CodeControlsConfig,
-  ControlsComponentProps,
   ControlsConfig,
   ControlsLabels,
-  TableControlsConfig,
   TableCopyFormat,
   TableDownloadFormat,
 } from "../types";
