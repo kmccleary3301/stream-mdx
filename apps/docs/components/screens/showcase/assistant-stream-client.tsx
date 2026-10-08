@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CodeFenceRenderer, MarkdownEngineMode, StreamingMarkdownProps } from "@stream-mdx/react";
 import { ArtifactFrame, StreamingMarkdown } from "@stream-mdx/react";
 import { MermaidBlock } from "@stream-mdx/mermaid";
@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { Cpu, Play, RotateCcw, ShieldCheck, Terminal } from "lucide-react";
 
 const USER_PROMPT =
-  "Can you provide a complete architectural analysis and performance report for the StreamMDX engine-v2 pipeline? Include the mathematical convergence model, the engine flow diagram, key performance metrics, and a self-contained interactive visualization artifact.";
+  "Can you provide an architectural walkthrough of the StreamMDX engine-v2 pipeline? Include Bayes' Theorem with concrete mathematical notation, the engine flow diagram, a custom code fence renderer example, and an interactive self-contained HTML visualization artifact.";
 
 /**
  * Custom code fence renderer example for language "metric".
@@ -38,6 +38,7 @@ const CustomMetricRenderer: CodeFenceRenderer = ({ code, language, isFinalized, 
             {isFinalized ? "Finalized AST" : "Streaming..."}
           </span>
         </div>
+        <div className="text-[10px] text-muted-foreground italic mb-2">Example data, not a benchmark</div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {Object.entries(data).map(([key, val]) => (
             <div key={key} className="rounded-lg border border-border/50 bg-background/60 p-3">
@@ -67,8 +68,6 @@ export function AssistantStreamClient({ fullContent }: AssistantStreamClientProp
   const [sessionKey, setSessionKey] = useState(0);
 
   const totalLength = fullContent.length;
-  const isFinalized = streamIndex >= totalLength;
-
   useEffect(() => {
     if (!isStreaming) return;
     if (streamIndex >= totalLength) {
