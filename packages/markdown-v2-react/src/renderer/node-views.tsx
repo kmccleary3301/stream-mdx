@@ -465,14 +465,17 @@ const ListBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
         return { listStyle: undefined, markerDigits: 1 };
       }
       let maxDigits = 1;
+      const startNum = typeof node?.props?.start === "number" ? node.props.start : 1;
       listItemIds.forEach((childId, index) => {
         const childNode = store.getNode(childId);
         const raw = typeof childNode?.block?.payload?.raw === "string" ? childNode.block.payload.raw : undefined;
-        const markerMatch = raw ? raw.match(/^([^\s]+)\s+/) : null;
-        const marker = markerMatch?.[1]?.trim();
-        const text = marker ?? `${index + 1}.`;
-        const digitMatch = text.match(/\d/g);
-        const digits = digitMatch ? digitMatch.length : text.length;
+        const markerMatch = raw ? raw.match(/^(\d+)[.)]\s+/) : null;
+        let digits: number;
+        if (markerMatch) {
+          digits = markerMatch[1].length;
+        } else {
+          digits = String(startNum + index).length;
+        }
         if (digits > maxDigits) maxDigits = digits;
       });
       const baseIndent = depth === 0 ? "2rem" : depth === 1 ? "1.75rem" : "1.5rem";

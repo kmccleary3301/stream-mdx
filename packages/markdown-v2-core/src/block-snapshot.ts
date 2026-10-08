@@ -386,8 +386,8 @@ function buildListItemSnapshot(
       checked: isTask ? Boolean(taskChecked) : undefined,
       inline: inlineNodes,
       text: plainText,
+      raw: raw.slice(listItemNode.from, listItemNode.to),
     },
-    range: createRange(baseOffset + listItemNode.from, baseOffset + listItemNode.to),
     children: [...segmentSnapshots, ...childSnapshots],
   };
 

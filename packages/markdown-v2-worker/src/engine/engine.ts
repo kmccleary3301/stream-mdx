@@ -1271,7 +1271,7 @@ export class MarkdownEngine {
       if (this.codeHighlightingMode === "final" || !hasHighlighter || !hasHighlightableContent) {
         this.incrementalHighlightStates.delete(block.id);
         block.payload.highlightedHtml = undefined;
-        const nextMeta = { ...baseMeta, ...meta, lang: resolvedLanguage } as Record<string, unknown>;
+        const nextMeta = { ...baseMeta, ...meta, lang: requestedLanguage, highlightLang: resolvedLanguage } as Record<string, unknown>;
         nextMeta.code = codeBody;
         delete nextMeta.highlightedLines;
         delete nextMeta.tokenLines;
@@ -1377,7 +1377,8 @@ export class MarkdownEngine {
         const nextMeta: Record<string, unknown> = {
           ...baseMeta,
           ...meta,
-          lang: resolvedLanguage,
+          lang: requestedLanguage,
+          highlightLang: resolvedLanguage,
           code: codeBody,
         };
         if (wantsHtml) {
@@ -1448,7 +1449,7 @@ export class MarkdownEngine {
         diffEnabled,
       );
       const effectiveLang = wantsHtml ? resolvedLanguage : resolvedTokenLanguage;
-      const nextMeta = { ...baseMeta, ...meta, lang: effectiveLang } as Record<string, unknown>;
+      const nextMeta = { ...baseMeta, ...meta, lang: requestedLanguage, highlightLang: effectiveLang } as Record<string, unknown>;
       nextMeta.code = codeBody;
       nextMeta.lazyTokenization = true;
       nextMeta.lazyTokenizedUntil = state.processedLines;
@@ -1498,7 +1499,8 @@ export class MarkdownEngine {
     const nextMeta: Record<string, unknown> = {
       ...baseMeta,
       ...meta,
-      lang: resolvedLanguage,
+      lang: requestedLanguage,
+      highlightLang: resolvedLanguage,
       code: codeBody,
     };
 
@@ -2212,7 +2214,7 @@ export class MarkdownEngine {
     const updated = cloneBlock(block);
     updated.payload.highlightedHtml = undefined;
     const effectiveLang = wantsHtml ? resolvedLanguage : resolvedTokenLanguage;
-    const nextMeta = { ...(updated.payload.meta ?? {}), ...meta, lang: effectiveLang } as Record<string, unknown>;
+    const nextMeta = { ...(updated.payload.meta ?? {}), ...meta, lang: requestedLanguage, highlightLang: effectiveLang } as Record<string, unknown>;
     nextMeta.lazyTokenization = true;
     nextMeta.lazyTokenizedUntil = state.processedLines;
     if (wantsHtml) {
