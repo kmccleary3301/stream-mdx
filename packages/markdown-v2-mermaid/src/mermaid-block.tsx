@@ -24,7 +24,8 @@ async function loadMermaid(): Promise<MermaidModule> {
   }
   const mermaid = await mermaidPromise;
   if (!mermaidInitialized && typeof mermaid.initialize === "function") {
-    mermaid.initialize({ startOnLoad: false });
+    // This component owns parse errors; Mermaid's default error SVG would leak into document.body.
+    mermaid.initialize({ startOnLoad: false, suppressErrorRendering: true });
     mermaidInitialized = true;
   }
   return mermaid;

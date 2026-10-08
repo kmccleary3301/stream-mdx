@@ -14,4 +14,6 @@
 
 ## Unreleased
 
+- Keep Mermaid parse errors inside the owning block instead of leaving error SVGs in the page body after a streamed diagram becomes valid.
+
 - Initial release.

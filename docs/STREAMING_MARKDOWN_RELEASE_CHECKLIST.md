@@ -1,6 +1,6 @@
 # StreamMDX — Release Checklist
 
-_Last updated: 2025-12-17_
+_Last updated: 2026-10-07_
 
 Use this checklist when cutting releases from the `stream-mdx/` repo. It assumes the current workspace scripts in `package.json`.
 
@@ -70,11 +70,24 @@ This is the most reliable “will npm users succeed?” gate.
 
 ### 2.1 CI-equivalent smoke test (recommended)
 
-Runs a fully automated pack+install+`next build` using the included starter (no workspace links):
+Runs a fully automated pack+install smoke test across Node sandbox, Next.js starter, and Vite:
+- Packs `stream-mdx`, core, plugins, worker, React, theme, and the optional `@stream-mdx/mermaid` and `@stream-mdx/unified` packages.
+- Installs the optional packages explicitly alongside the worker engine, with the local package graph resolved through tarball dependencies and overrides. The temporary apps use no workspace links, source imports, or compatibility shims.
+- Loads every advertised ESM and CJS JavaScript export on the running supported Node version, which must be >=20. This checks that runtime, not every version in the supported range.
+- Executes `MermaidBlock` through React SSR in code view. Executes `createUnifiedRenderer` with `remark-gfm` and `rehype-slug`, asserting transformed HTML. Direct and inline engines parse and finalize a heading and paragraph through both public engine entries.
+- Builds Next.js and Vite apps using Mermaid `codeRenderers`, the unified `blockRenderer` with those plugins, and `engine="main-thread"`. These are production bundling checks, not browser runtime proof. Mermaid SVG generation and hydrated main-thread rendering need a separate real-browser smoke.
 
 ```bash
 npm run ci:pack-smoke
+# Select one target:
+# npm run ci:pack-smoke -- --only node
+# npm run ci:pack-smoke -- --only next
+# npm run ci:pack-smoke -- --only vite
+# Keep successful sandboxes for browser inspection:
+# KEEP_PACK_SMOKE_TMP=1 npm run ci:pack-smoke
 ```
+
+If a declared export fails, compare its manifest target with the packed `dist` files. Preserve the public subpath when correcting the target. The unified adapter bundles its ESM-only pipeline dependencies so its advertised CJS entry can execute plugins, not just load a module object. Failed runs retain the sandboxes and generated verifiers for diagnosis.
 
 ### 2.2 Manual pack (optional)
 
@@ -87,6 +100,7 @@ npm run ci:pack-smoke
      (cd packages/markdown-v2-worker && npm pack --pack-destination ../../tmp/release-packs)
      (cd packages/markdown-v2-react && npm pack --pack-destination ../../tmp/release-packs)
      (cd packages/markdown-v2-mermaid && npm pack --pack-destination ../../tmp/release-packs)
+     (cd packages/markdown-v2-unified && npm pack --pack-destination ../../tmp/release-packs)
      (cd packages/markdown-v2-tui && npm pack --pack-destination ../../tmp/release-packs)
      (cd packages/theme-tailwind && npm pack --pack-destination ../../tmp/release-packs)
      (cd packages/stream-mdx && npm pack --pack-destination ../../tmp/release-packs)
@@ -136,6 +150,7 @@ This repo is set up for Changesets.
      - `@stream-mdx/worker`
      - `@stream-mdx/react`
      - `@stream-mdx/mermaid`
+     - `@stream-mdx/unified`
      - `@stream-mdx/tui`
      - `@stream-mdx/theme-tailwind`
      - `stream-mdx`
@@ -162,6 +177,7 @@ This repo is set up for Changesets.
    - `@stream-mdx/worker`
    - `@stream-mdx/react`
    - `@stream-mdx/mermaid`
+   - `@stream-mdx/unified`
    - `@stream-mdx/tui`
    - `@stream-mdx/theme-tailwind`
    - `stream-mdx`
@@ -176,8 +192,7 @@ This repo’s CI (`.github/workflows/ci.yml`) enforces:
 - `npm run build`
 - `npm test`
 - `npm -ws --if-present pack --dry-run`
-- `npm run ci:pack-smoke` (pack+install+`next build`)
-
+- `npm run ci:pack-smoke` (pack + install sandbox + ESM/CJS verification + Next/Vite builds)
 Before publishing, run the same commands locally (plus the external install gate in §2).
 
 ---
