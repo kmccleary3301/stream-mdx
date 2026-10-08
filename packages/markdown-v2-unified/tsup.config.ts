@@ -18,6 +18,15 @@ export default defineConfig({
   target: "es2020",
   tsconfig: join(__dirname, "tsconfig.build.json"),
   external: ["react", "react-dom", "react/jsx-runtime", "@stream-mdx/core", "@stream-mdx/react"],
+  // Bundle the ESM-only pipeline and its transitive imports for the advertised CJS entry.
+  noExternal: [
+    "unified",
+    "remark-parse",
+    "remark-gfm",
+    "remark-math",
+    "remark-rehype",
+    "hast-util-to-jsx-runtime",
+  ],
   outExtension({ format }) {
     return {
       js: format === "cjs" ? ".cjs" : ".mjs",

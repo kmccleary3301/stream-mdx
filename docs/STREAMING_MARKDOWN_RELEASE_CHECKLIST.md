@@ -87,6 +87,8 @@ npm run ci:pack-smoke
 # KEEP_PACK_SMOKE_TMP=1 npm run ci:pack-smoke
 ```
 
+If a declared export fails, compare its manifest target with the packed `dist` files. Preserve the public subpath when correcting the target. The unified adapter bundles its ESM-only pipeline dependencies so its advertised CJS entry can execute plugins, not just load a module object. Failed runs retain the sandboxes and generated verifiers for diagnosis.
+
 ### 2.2 Manual pack (optional)
 
 1. **Pack tarballs locally**
