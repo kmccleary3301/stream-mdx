@@ -109,6 +109,25 @@ function buildProcessor(options: UnifiedRendererOptions): UnifiedProcessor {
 
   return p.freeze() as unknown as UnifiedProcessor;
 }
+interface PromiseWithResolvers<T> {
+  promise: Promise<T>;
+  resolve: (value: T | PromiseLike<T>) => void;
+  reject: (reason?: unknown) => void;
+}
+
+function createResolvers<T>(): PromiseWithResolvers<T> {
+  const p = Promise as unknown as { withResolvers?: <R>() => PromiseWithResolvers<R> };
+  if (typeof p.withResolvers === "function") {
+    return p.withResolvers<T>();
+  }
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
 
 export function getOrCreateJob(
   cacheKey: string,
@@ -124,7 +143,7 @@ export function getOrCreateJob(
     return existing;
   }
 
-  const { promise, resolve } = Promise.withResolvers<JobOutcome>();
+  const { promise, resolve } = createResolvers<JobOutcome>();
   promise.catch(() => {});
 
   const job: UnifiedJob = { promise };
