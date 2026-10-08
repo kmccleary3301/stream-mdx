@@ -161,7 +161,7 @@ type CodeLineProps = {
   text: string;
   html?: string;
   tokens?: TokenLineV1;
-  diffKind?: "add" | "remove" | "context" | "hunk" | "meta";
+  diffKind?: "add" | "del" | "context" | "hunk" | "meta";
   oldNo?: number | null;
   newNo?: number | null;
 };
@@ -225,7 +225,7 @@ styles for simplicity.
 ### 9.1 Diff Line Semantics
 `diffKind` values:
 - `add`: "+" lines
-- `remove`: "-" lines
+- `del`: "-" lines
 - `context`: " " lines
 - `hunk`: "@@" lines
 - `meta`: "diff --git", "index", "+++ / ---" lines
@@ -256,7 +256,7 @@ type AppendLinesPatchV1 = {
   lines: string[];
   highlight?: (string | null)[];
   tokens?: (TokenLineV1 | null)[];
-  diffKind?: (string | null)[];
+  diffKind?: ("add" | "del" | "context" | "hunk" | "meta" | null)[];
   oldNo?: (number | null)[];
   newNo?: (number | null)[];
 };
