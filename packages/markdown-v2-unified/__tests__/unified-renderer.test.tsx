@@ -34,9 +34,9 @@ function delay(ms: number): Promise<void> {
 async function runTests() {
   console.log("Starting @stream-mdx/unified acceptance tests...");
 
-  // Test 1: rehype-slug plugin adds id to finalized heading
+  // Test 1: rehype-slug plugin adds id to finalized heading (sync SSR)
   {
-    console.log("Test 1: rehype-slug on finalized heading...");
+    console.log("Test 1: rehype-slug on finalized heading (sync SSR)...");
     const unifiedRenderer = createUnifiedRenderer({
       rehypePlugins: [rehypeSlug],
     });
@@ -59,7 +59,7 @@ async function runTests() {
     const html = ReactDOMServer.renderToStaticMarkup(rendered as React.ReactElement);
     assert.match(html, /id="quick-start-guide"/, "Finalized heading should have slugified id");
     assert.match(html, />Quick Start Guide<\/h2>/, "Heading text should match");
-    console.log("✓ Test 1 passed: Finalized heading received id attribute from rehype-slug");
+    console.log("✓ Test 1 passed: Finalized heading received id attribute from rehype-slug synchronously");
   }
 
   // Test 2: remark uppercase plugin changes output only after finalize
@@ -173,8 +173,6 @@ async function runTests() {
   // Test 4: 1-char chunk streaming yields identical final DOM to static
   {
     console.log("Test 4: 1-char chunk streaming yields identical final DOM to static...");
-    const markdownSource = "# Title\n\nThis is a paragraph with **bold** text and [link](https://example.com).\n\n> Blockquote text";
-
     const unifiedRenderer = createUnifiedRenderer({
       rehypePlugins: [rehypeSlug],
       components: {
@@ -369,69 +367,313 @@ async function runTests() {
     console.log("✓ Test 6 passed: LRU cache is bounded and cache key incorporates linkReferences");
   }
 
-  // Test 7: async remark plugin modifies final DOM after async completion
+  // Test 7: Normal non-async function returning Promise
   {
-    console.log("Test 7: async remark plugin modifies final DOM after async completion...");
-    function asyncSuffixPlugin() {
-      return async (tree: unknown) => {
-        await delay(20);
-        visit(tree as Node, "text", (node: { value: string }) => {
-          node.value = node.value + " [ASYNC APPLIED]";
-        });
+    console.log("Test 7: Normal non-async function returning Promise...");
+    let promiseCalls = 0;
+    function promiseReturningPlugin() {
+      // Regular non-async function returning Promise
+      return (tree: unknown) => {
+        promiseCalls += 1;
+        const { promise, resolve } = Promise.withResolvers<void>();
+        setTimeout(() => {
+          visit(tree as Node, "text", (node: { value: string }) => {
+            node.value = node.value + " [PROMISE TRANSFORMED]";
+          });
+          resolve();
+        }, 20);
+        return promise;
       };
     }
 
     const unifiedRenderer = createUnifiedRenderer({
-      remarkPlugins: [asyncSuffixPlugin],
+      remarkPlugins: [promiseReturningPlugin],
     });
 
     const block: Block = {
-      id: "p-async-1",
+      id: "p-promise-test",
       type: "paragraph",
       isFinalized: true,
-      payload: { raw: "Finalized paragraph text" },
+      payload: { raw: "Standard promise paragraph" },
     };
 
     const container = document.createElement("div");
     document.body.appendChild(container);
     const root = createRoot(container);
 
-    const defaultElement = React.createElement("p", null, "Finalized paragraph text");
+    const defaultElement = React.createElement("p", null, "Standard promise paragraph");
     root.render(unifiedRenderer({ block, element: defaultElement }));
 
-    // Pending state retains default element
+    // While pending, default element is shown
     await delay(5);
-    assert.strictEqual(container.textContent, "Finalized paragraph text", "While pending, default element is retained");
+    assert.strictEqual(container.textContent, "Standard promise paragraph");
 
-    // After async completion, modified DOM is committed
-    await delay(45);
+    // After promise resolves, transformed content is committed
+    await delay(35);
     assert.strictEqual(
       container.textContent,
-      "Finalized paragraph text [ASYNC APPLIED]",
-      "After async completion, plugin transforms DOM",
+      "Standard promise paragraph [PROMISE TRANSFORMED]",
     );
+    assert.strictEqual(promiseCalls, 1, "Promise plugin must be called exactly once");
+
     root.unmount();
     container.remove();
-    console.log("✓ Test 7 passed: Async remark plugin modifies DOM after async completion and retains default element while pending");
+    console.log("✓ Test 7 passed: Non-async function returning Promise operates cleanly");
   }
 
-  // Test 8: newer reference metadata doesn't get overwritten by older async job
+  // Test 8: Callback-style transformer ((tree, file, next) => ...)
   {
-    console.log("Test 8: newer reference metadata doesn't get overwritten by older async job...");
+    console.log("Test 8: Callback-style transformer...");
+    let callbackCalls = 0;
+    function callbackStylePlugin() {
+      // Arity 3 callback-style transformer
+      return (tree: unknown, _file: unknown, next: (err?: Error | null) => void) => {
+        callbackCalls += 1;
+        setTimeout(() => {
+          visit(tree as Node, "text", (node: { value: string }) => {
+            node.value = node.value + " [CALLBACK TRANSFORMED]";
+          });
+          next();
+        }, 20);
+      };
+    }
+
+    const unifiedRenderer = createUnifiedRenderer({
+      remarkPlugins: [callbackStylePlugin],
+    });
+
+    const block: Block = {
+      id: "p-callback-test",
+      type: "paragraph",
+      isFinalized: true,
+      payload: { raw: "Callback transformer text" },
+    };
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    const defaultElement = React.createElement("p", null, "Callback transformer text");
+    root.render(unifiedRenderer({ block, element: defaultElement }));
+
+    // Pending state shows default element
+    await delay(5);
+    assert.strictEqual(container.textContent, "Callback transformer text");
+
+    // After next() callback fires, transformed content is committed
+    await delay(35);
+    assert.strictEqual(
+      container.textContent,
+      "Callback transformer text [CALLBACK TRANSFORMED]",
+    );
+    assert.strictEqual(callbackCalls, 1, "Callback transformer must be called exactly once");
+
+    root.unmount();
+    container.remove();
+    console.log("✓ Test 8 passed: Callback-style transformer operates cleanly");
+  }
+
+  // Test 9: Exact plugin invocation count is 1 per cache key (no duplicated execution, no pipeline restart)
+  {
+    console.log("Test 9: Exact plugin invocation count is 1 per cache key...");
+    let pluginRuns = 0;
+    function singleInvocationPlugin() {
+      return (tree: unknown) => {
+        pluginRuns += 1;
+        const { promise, resolve } = Promise.withResolvers<void>();
+        setTimeout(() => {
+          visit(tree as Node, "text", (node: { value: string }) => {
+            node.value = node.value + " [ONE SHOT]";
+          });
+          resolve();
+        }, 25);
+        return promise;
+      };
+    }
+
+    const unifiedRenderer = createUnifiedRenderer({
+      remarkPlugins: [singleInvocationPlugin],
+    });
+
+    const block: Block = {
+      id: "p-single-invoc",
+      type: "paragraph",
+      isFinalized: true,
+      payload: { raw: "Exact count test" },
+    };
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    const defaultElement = React.createElement("p", null, "Exact count test");
+
+    // Initial render initiates job
+    root.render(unifiedRenderer({ block, element: defaultElement }));
+
+    // Re-render the same block at 10ms while in-flight
+    await delay(10);
+    root.render(unifiedRenderer({ block, element: defaultElement }));
+
+    // Wait until completed
+    await delay(35);
+    assert.strictEqual(container.textContent, "Exact count test [ONE SHOT]");
+
+    // Re-render again after completion (hits cache)
+    root.render(unifiedRenderer({ block, element: defaultElement }));
+    await delay(10);
+    assert.strictEqual(container.textContent, "Exact count test [ONE SHOT]");
+
+    assert.strictEqual(
+      pluginRuns,
+      1,
+      "Plugin must be invoked exactly once across initial render, in-flight rerenders, and cache hits",
+    );
+
+    root.unmount();
+    container.remove();
+    console.log("✓ Test 9 passed: Exactly 1 plugin invocation per cache key with no duplicate execution");
+  }
+
+  // Test 10: Real Error('async failed') goes to onError without retry, and renders safe default fallback
+  {
+    console.log("Test 10: Real Error('async failed') goes to onError without retry...");
+    let failureInvocations = 0;
+    let capturedError: Error | null = null;
+    let capturedBlock: Block | null = null;
+
+    function failingAsyncPlugin() {
+      return () => {
+        failureInvocations += 1;
+        const { promise, reject } = Promise.withResolvers<void>();
+        setTimeout(() => {
+          reject(new Error("async failed"));
+        }, 20);
+        return promise;
+      };
+    }
+
+    const unifiedRenderer = createUnifiedRenderer({
+      remarkPlugins: [failingAsyncPlugin],
+      onError: (err, b) => {
+        capturedError = err;
+        capturedBlock = b;
+      },
+    });
+
+    const block: Block = {
+      id: "p-fail-test",
+      type: "paragraph",
+      isFinalized: true,
+      payload: { raw: "Error trigger content" },
+    };
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    const defaultElement = React.createElement("p", null, "Safe fallback default");
+    root.render(unifiedRenderer({ block, element: defaultElement }));
+
+    // Wait for failure
+    await delay(45);
+    assert.ok(capturedError, "onError must be called on plugin failure");
+    assert.strictEqual(capturedError?.message, "async failed", "Exact error message must be passed to onError");
+    assert.strictEqual(capturedBlock?.id, "p-fail-test", "Exact block must be passed to onError");
+    assert.strictEqual(failureInvocations, 1, "Failing plugin must be invoked exactly once (no retry)");
+    assert.strictEqual(container.textContent, "Safe fallback default", "Safe default element is retained");
+
+    root.unmount();
+    container.remove();
+    console.log("✓ Test 10 passed: Real Error('async failed') dispatches to onError without retry");
+  }
+
+  // Test 11: Key change while pending immediately shows new default, NOT stale previous async result
+  {
+    console.log("Test 11: Key change while pending immediately shows new default...");
+    function slowKeyPlugin() {
+      return (tree: unknown) => {
+        const { promise, resolve } = Promise.withResolvers<void>();
+        setTimeout(() => {
+          visit(tree as Node, "text", (node: { value: string }) => {
+            node.value = node.value + " [TRANSFORMED]";
+          });
+          resolve();
+        }, 50);
+        return promise;
+      };
+    }
+
+    const unifiedRenderer = createUnifiedRenderer({
+      remarkPlugins: [slowKeyPlugin],
+    });
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    const blockK1: Block = {
+      id: "p-key-switch",
+      type: "paragraph",
+      isFinalized: true,
+      payload: { raw: "Content Alpha" },
+    };
+    const defaultK1 = React.createElement("p", null, "Default Alpha");
+
+    // Render K1 (triggers 50ms slow async job)
+    root.render(unifiedRenderer({ block: blockK1, element: defaultK1 }));
+    await delay(5);
+    assert.strictEqual(container.textContent, "Default Alpha");
+
+    // At 15ms, while K1 is still pending, key changes to K2
+    await delay(10);
+    const blockK2: Block = {
+      id: "p-key-switch",
+      type: "paragraph",
+      isFinalized: true,
+      payload: { raw: "Content Beta" },
+    };
+    const defaultK2 = React.createElement("p", null, "Default Beta");
+
+    // Rerender with K2
+    root.render(unifiedRenderer({ block: blockK2, element: defaultK2 }));
+    await delay(5);
+
+    // Container MUST immediately show Default Beta, not stale previous pending or async result
+    assert.strictEqual(
+      container.textContent,
+      "Default Beta",
+      "Key change while pending must immediately display new default element",
+    );
+
+    // After K2 completes (at 15ms + 50ms = 65ms total), it displays K2 transformed output
+    await delay(60);
+    assert.strictEqual(
+      container.textContent,
+      "Content Beta [TRANSFORMED]",
+      "Completed K2 must display transformed output",
+    );
+
+    root.unmount();
+    container.remove();
+    console.log("✓ Test 11 passed: Key change while pending immediately shows new default, not stale result");
+  }
+
+  // Test 12: Newer reference metadata does not get overwritten by older slow async job
+  {
+    console.log("Test 12: Newer reference metadata doesn't get overwritten by older async job...");
     function asyncDelayPlugin() {
-      return async (tree: unknown) => {
+      return (tree: unknown) => {
         let isSlow = false;
         visit(tree as Node, "link", (node: { url?: string }) => {
           if (node.url && node.url.includes("slow-v1")) {
             isSlow = true;
           }
         });
-        if (isSlow) {
-          // Slow job takes 60ms
-          await delay(60);
-        } else {
-          await delay(10);
-        }
+        const { promise, resolve } = Promise.withResolvers<void>();
+        const waitMs = isSlow ? 60 : 10;
+        setTimeout(resolve, waitMs);
+        return promise;
       };
     }
 
@@ -484,15 +726,15 @@ async function runTests() {
 
     root.unmount();
     container.remove();
-    console.log("✓ Test 8 passed: Stale older async jobs do not overwrite newer reference metadata");
+    console.log("✓ Test 12 passed: Stale older async jobs do not overwrite newer reference metadata");
   }
 
-  // Test 9: streaming blocks stay normal
+  // Test 13: Streaming blocks stay completely normal and bypass unified
   {
-    console.log("Test 9: streaming blocks stay normal...");
+    console.log("Test 13: streaming blocks stay normal...");
     let pluginCalls = 0;
     function countPlugin() {
-      return async () => {
+      return () => {
         pluginCalls += 1;
       };
     }
@@ -514,53 +756,7 @@ async function runTests() {
     // Returns default element directly
     assert.strictEqual(rendered, defaultElement, "Unfinalized block returns default element directly");
     assert.strictEqual(pluginCalls, 0, "Plugin is never called for unfinalized streaming blocks");
-    console.log("✓ Test 9 passed: Streaming blocks stay completely normal and bypass unified");
-  }
-
-  // Test 10: onError hook receives plugin error and retains default element
-  {
-    console.log("Test 10: onError hook receives plugin error and retains default element...");
-    function failingAsyncPlugin() {
-      return async () => {
-        await delay(10);
-        throw new Error("Deliberate plugin failure");
-      };
-    }
-
-    let capturedError: Error | null = null;
-    let capturedBlock: Block | null = null;
-
-    const unifiedRenderer = createUnifiedRenderer({
-      remarkPlugins: [failingAsyncPlugin],
-      onError: (err, b) => {
-        capturedError = err;
-        capturedBlock = b;
-      },
-    });
-
-    const block: Block = {
-      id: "p-fail",
-      type: "paragraph",
-      isFinalized: true,
-      payload: { raw: "Error testing" },
-    };
-
-    const container = document.createElement("div");
-    document.body.appendChild(container);
-    const root = createRoot(container);
-
-    const defaultElement = React.createElement("p", null, "Safe fallback text");
-    root.render(unifiedRenderer({ block, element: defaultElement }));
-
-    await delay(40);
-    assert.ok(capturedError, "onError must be called on plugin failure");
-    assert.strictEqual(capturedError?.message, "Deliberate plugin failure");
-    assert.strictEqual(capturedBlock?.id, "p-fail");
-    assert.strictEqual(container.textContent, "Safe fallback text", "Default element retained on error");
-
-    root.unmount();
-    container.remove();
-    console.log("✓ Test 10 passed: Explicit onError hook handles plugin errors safely");
+    console.log("✓ Test 13 passed: Streaming blocks stay completely normal and bypass unified");
   }
 
   console.log("All @stream-mdx/unified tests passed successfully!");
