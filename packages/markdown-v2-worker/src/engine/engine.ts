@@ -5,7 +5,7 @@ import type {
   BlockResolvedLinkReference,
   CodeHighlightOutputMode,
   CompiledMdxModule,
-  DiffKind,
+  DiffLineKind,
   FormatAnticipationConfig,
   HtmlOptions,
   HtmlTreeNode,
@@ -1722,7 +1722,7 @@ export class MarkdownEngine {
     }
 
     let tokenLines: Array<TokenLineV1 | null> | undefined;
-    let diffKind: Array<DiffKind | null> | undefined;
+    let diffKind: Array<DiffLineKind | null> | undefined;
     let diffOldNo: Array<number | null> | undefined;
     let diffNewNo: Array<number | null> | undefined;
 
@@ -1732,7 +1732,7 @@ export class MarkdownEngine {
         diffLines = codeBody.length > 0 ? codeBody.split("\n") : [];
         const cursor: DiffCursorState = { oldLine: null, newLine: null };
         const diffInfoLines = diffLines.map((line) => parseUnifiedDiffLine(line, cursor));
-        diffKind = diffInfoLines.map((line) => line.kind);
+        diffKind = diffInfoLines.map((line) => toDiffLineKind(line.kind));
         diffOldNo = diffInfoLines.map((line) => line.oldNo ?? null);
         diffNewNo = diffInfoLines.map((line) => line.newNo ?? null);
         if (!hasHighlighter || !hasHighlightableContent) {

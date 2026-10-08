@@ -1,5 +1,5 @@
 import type {
-  DiffKind,
+  DiffLineKind,
   NodeSnapshot,
   Patch,
   PatchKind,
@@ -589,7 +589,7 @@ export function diffNodeSnapshot(
         ...(hasDiffKind
           ? {
               diffKind: appended.map((child) =>
-                Object.prototype.hasOwnProperty.call(child.props ?? {}, "diffKind") ? (child.props?.diffKind as DiffKind | null) : null,
+                Object.prototype.hasOwnProperty.call(child.props ?? {}, "diffKind") ? (child.props?.diffKind as DiffLineKind | null) : null,
               ),
             }
           : {}),

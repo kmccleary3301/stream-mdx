@@ -140,13 +140,15 @@ async function assertArtifactDom(store: RendererStore): Promise<string> {
   const container = document.createElement("div");
   document.body.append(container);
   const root = createRoot(container);
+  const ownerWindow = container.ownerDocument.defaultView;
+  assert.ok(ownerWindow, "mounted artifact consumer requires its actual DOM window");
   const registry = new ComponentRegistry();
   // This is only a failure deadline. Success waits for real consumer DOM mutations
   // from the KaTeX and MDX dynamic imports, not a guessed rendering delay.
   const signal = AbortSignal.timeout(10_000);
   try {
     await new Promise<void>((resolve, reject) => {
-      const observer = new MutationObserver(check);
+      const observer = new ownerWindow.MutationObserver(check);
       function cleanup() {
         observer.disconnect();
         signal.removeEventListener("abort", fail);
@@ -181,7 +183,7 @@ async function assertArtifactDom(store: RendererStore): Promise<string> {
     assert.strictEqual(container.querySelector("pre code")?.textContent?.trim(), "const answer = 42;");
     assert.ok(
       container.querySelector('pre code .line span[style*="--shiki-dark:"][style*="--shiki-light:"]'),
-      "DOM must use highlighted code for both themes",
+      `DOM must use highlighted code for both themes: ${container.querySelector("pre")?.outerHTML}`,
     );
     assert.strictEqual(container.querySelector(".math-inline .katex annotation")?.textContent, "E = mc^2");
     assert.strictEqual(container.querySelector(".math-display .katex annotation")?.textContent, "x^2");

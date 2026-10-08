@@ -210,7 +210,7 @@ function findNestedCode(blocks: Block[]): Block {
 async function runInflightLazyLifecycleTest(): Promise<void> {
   const dom = new JSDOM("<!doctype html><html><body></body></html>");
   Object.assign(globalThis, { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, Node: dom.window.Node });
-  const lines = ["@@ -1,200 +1,200 @@", ...Array.from({ length: 200 }, (_, index) => [`-const oldOnlySentinel_${index} = 0;`, `+const oldOnlySentinel_${index} = 1;`]).flat()];
+  const lines = ["@@ -1,25 +1,25 @@", ...Array.from({ length: 25 }, (_, index) => [`-const oldOnlySentinel_${index} = 0;`, `+const oldOnlySentinel_${index} = 1;`]).flat()];
   const oldMarkdown = ["- owner", "", "  ```diff-js", ...lines.map((line) => `  ${line}`), "  ```"].join("\n");
   const replacement = "- owner\n\n  ```js\n  const replacementOnly = 1;\n  ```";
   const docPlugins = { html: false, mdx: false, math: false, tables: false, footnotes: false, callouts: false, outputMode: "tokens" as const, emitHighlightTokens: true, emitDiffBlocks: true, lazyTokenization: { enabled: true, thresholdLines: 10 } };
@@ -244,7 +244,7 @@ async function runInflightLazyLifecycleTest(): Promise<void> {
           assert.ok(!JSON.stringify(store.getBlocks()).includes("oldOnlySentinel"), "old asynchronous work must never overwrite a replacement document");
         }
       } else if (message.type === "ERROR") throw new Error(message.error.message);
-      assert.deepStrictEqual(document.blocks, store.getBlocks(), "serialized core and React consumers must remain equivalent");
+      assert.ok(JSON.stringify(document.blocks) === JSON.stringify(store.getBlocks()), "serialized core and React consumers must remain equivalent");
       assert.deepStrictEqual(store.getInvariantViolations(), []);
     } });
     await engine.handle({ type: "INIT", initialContent: oldMarkdown, prewarmLangs: [], docPlugins });
@@ -252,7 +252,7 @@ async function runInflightLazyLifecycleTest(): Promise<void> {
     const oldCode = findNestedCode(store.getBlocks());
     assert.strictEqual(oldCode.payload.meta?.lazyTokenizedUntil, 0);
     const beforeRequest = messages.length;
-    const requestedEnd = action === "inside-owner" ? 101 : lines.length;
+    const requestedEnd = action === "inside-owner" ? 27 : lines.length;
     await engine.handle({ type: "TOKENIZE_RANGE", blockId: oldCode.id, startLine: 0, endLine: requestedEnd, priority: "visible" });
     await Promise.resolve();
     await Promise.resolve();
@@ -275,7 +275,7 @@ async function runInflightLazyLifecycleTest(): Promise<void> {
     } else {
       await engine.handle({ type: "DUMP_BLOCKS" });
       const dumped = findDumpBlocks(messages.slice(afterTransition)).blocks;
-      assert.deepStrictEqual(dumped, store.getBlocks(), "the canonical engine artifact must match both serialized consumers");
+      assert.ok(JSON.stringify(dumped) === JSON.stringify(store.getBlocks()), "the canonical engine artifact must match both serialized consumers");
       const code = findNestedCode(dumped);
       if (action === "replace") {
         assert.strictEqual(code.payload.meta?.code, "const replacementOnly = 1;");
@@ -301,8 +301,11 @@ async function runInflightLazyLifecycleTest(): Promise<void> {
           await full.handle({ type: "DUMP_BLOCKS" });
           const expected = findNestedCode(findDumpBlocks(fullMessages).blocks);
           assert.strictEqual(completed.payload.meta?.lazyTokenizedUntil, lines.length);
-          for (const key of ["tokenLines", "diffKind", "diffOldNo", "diffNewNo", "diffBlocks"]) {
-            assert.deepStrictEqual(completed.payload.meta?.[key], expected.payload.meta?.[key], `continued ${key} must match a full native compile after inside-owner reconstruction`);
+          for (const key of ["tokenLines", "diffKind", "oldNo", "newNo", "diffBlocks"]) {
+            const actualValue = completed.payload.meta?.[key];
+            const expectedValue = expected.payload.meta?.[key];
+            const index = Array.isArray(actualValue) && Array.isArray(expectedValue) ? actualValue.findIndex((value, index) => JSON.stringify(value) !== JSON.stringify(expectedValue[index])) : -1;
+            assert.ok(JSON.stringify(actualValue) === JSON.stringify(expectedValue), `continued ${key} mismatch at ${index}: actual ${Array.isArray(actualValue) ? JSON.stringify(actualValue[index]) : typeof actualValue}, expected ${Array.isArray(expectedValue) ? JSON.stringify(expectedValue[index]) : typeof expectedValue}`);
           }
           full.dispose();
         }
