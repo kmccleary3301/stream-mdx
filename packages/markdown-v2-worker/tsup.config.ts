@@ -65,7 +65,10 @@ export default defineConfig(async () => {
     },
     {
       ...sharedConfig,
-      entry: [resolve("src/node/index.ts"), resolve("src/node/worker-thread-entry.ts")],
+      entry: {
+        "node/index": resolve("src/node/index.ts"),
+        "node/worker-thread-entry": resolve("src/node/worker-thread-entry.ts"),
+      },
       platform: "node",
     },
     // The public engine entry is built afterward by tsup.worker-engine.config.ts
