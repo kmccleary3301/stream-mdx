@@ -259,7 +259,7 @@ function extractPlainText(value: string): string {
   return decodeHtmlEntities(withoutTags);
 }
 
-const DEFAULT_LITERAL_TAGS = new Set(["code", "pre", "kbd", "script", "style", "textarea"]);
+const DEFAULT_LITERAL_TAGS = new Set(["code", "pre", "script", "style", "textarea"]);
 
 function renderSanitizedHtmlTree(
   html: string,
