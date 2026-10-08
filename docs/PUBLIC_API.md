@@ -401,7 +401,7 @@ Opt in to render a viewport-sized subset of a large finalized table. Server rend
 - Changing or removing `tableVirtualization` updates the existing view without restarting the parser. `maxHeight` limits the outer scroll container and `overscan` is clamped to 1–50 rows on each side.
 - Sticky headers have an opaque background taken from the nearest opaque ancestor, or the CSS system color `Canvas`. Theme class/style changes update that fallback. Set `--stream-mdx-table-header-background` to a valid opaque CSS color to override it, not an HSL channel-only token.
 
-Try `/showcase/table-virtualization` in the docs app. It contains up to 500 rows with two- and three-line descriptions, live configuration controls, and a "Scroll to Last Row" button. The page names the expected final record.
+Try `/showcase/table-virtualization` in the docs app. It contains up to 500 rows with two- and three-line descriptions, live configuration controls, and a "Scroll to Last Row" button. Viewport navigation controls are disabled when virtualization is off, and wait for the current source to finalize and its virtualized viewport to finish the natural-layout pass. The page names the expected final record.
 
 ### Configuration Options (`TableVirtualizationConfig`)
 
