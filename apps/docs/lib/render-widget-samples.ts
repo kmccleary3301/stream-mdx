@@ -92,10 +92,14 @@ Plugins extend parser behavior without forking the renderer:
 - custom regex plugins
 
 \`\`\`ts
-import { createPluginRegistry, registerFootnotesPlugin } from "@stream-mdx/plugins";
+import { FootnotesPlugin } from "@stream-mdx/plugins/footnotes";
+import { serveMarkdownWorker } from "@stream-mdx/worker/engine";
 
-const registry = createPluginRegistry();
-registerFootnotesPlugin(registry);
+serveMarkdownWorker({
+  extensions: {
+    documentPlugins: [FootnotesPlugin],
+  },
+});
 \`\`\`
 `,
   "release-checklist": `# Release checklist
