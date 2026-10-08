@@ -5,5 +5,5 @@
     "tsBuildInfoFile": "./dist/tsconfig.build.tsbuildinfo"
   },
   "include": ["src/**/*"],
-  "exclude": ["src/debug-wrapper.ts", "src/renderer/unified-renderer.tsx"]
+  "exclude": ["src/debug-wrapper.ts"]
 }

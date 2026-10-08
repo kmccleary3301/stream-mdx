@@ -107,6 +107,14 @@ export type InlineComponents = Record<string, GenericComponent> & {
   br: React.FC<Record<string, never>>;
 };
 
+export interface FinalizedBlockRenderProps {
+  block: Block;
+  element: React.ReactElement;
+  context?: Record<string, unknown>;
+}
+
+export type BlockRendererOverride = (props: FinalizedBlockRenderProps) => React.ReactNode;
+
 export interface RendererConfig {
   themes?: { light: string; dark: string };
   highlight?: {
@@ -141,6 +149,7 @@ export interface RendererConfig {
   codeRenderers?: Record<string, CodeFenceRenderer>;
   mathRenderer?: MathRenderer;
   artifactHtml?: boolean;
+  blockRenderer?: BlockRendererOverride;
   performance?: {
     frameBudgetMs?: number;
     flushTimeoutMs?: number;

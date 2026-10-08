@@ -17,7 +17,7 @@ import type {
 import { removeHeadingMarkers } from "@stream-mdx/core";
 import React from "react";
 import { DEFAULT_INLINE_HTML_RENDERERS, renderInlineHtmlSegment } from "../utils/inline-html";
-import type { BlockComponents, CodeFenceRenderer, HtmlElements, InlineComponents, InlineHtmlRendererMap, MathRenderer, TableElements } from "../types";
+import type { BlockComponents, BlockRendererOverride, CodeFenceRenderer, HtmlElements, InlineComponents, InlineHtmlRendererMap, MathRenderer, TableElements } from "../types";
 import { ArtifactFrame } from "./artifact-frame";
 import { DefaultDiffRenderer } from "./diff-renderer";
 import { KaTeXBlockMath, KaTeXInlineMath } from "./katex-math";
@@ -661,6 +661,8 @@ export class ComponentRegistry {
   private codeRenderers: Record<string, CodeFenceRenderer> = {};
   private artifactHtml = false;
   private linkHandler: ((url: string) => void) | undefined;
+  private blockRenderer?: BlockRendererOverride;
+  private documentContext?: Record<string, unknown>;
   private blockComponentMapCache: BlockComponents | null = null;
   private inlineComponentMapCache: InlineComponents | null = null;
 
@@ -668,7 +670,7 @@ export class ComponentRegistry {
     blockComponents: Partial<BlockComponents> = {},
     inlineComponents: Partial<InlineComponents> = {},
     codeRenderers: Record<string, CodeFenceRenderer> = {},
-    options?: { artifactHtml?: boolean; mathRenderer?: MathRenderer },
+    options?: { artifactHtml?: boolean; mathRenderer?: MathRenderer; blockRenderer?: BlockRendererOverride },
   ) {
     this.blockComponents = { ...defaultBlockComponents, ...blockComponents } as BlockComponents;
     this.inlineComponents = { ...defaultInlineComponents, ...inlineComponents } as InlineComponents;
@@ -680,6 +682,9 @@ export class ComponentRegistry {
     }
     if (options?.mathRenderer) {
       this.setMathRenderer(options.mathRenderer);
+    }
+    if (options?.blockRenderer) {
+      this.setBlockRenderer(options.blockRenderer);
     }
   }
 
@@ -703,6 +708,33 @@ export class ComponentRegistry {
   getLinkHandler(): ((url: string) => void) | undefined {
     return this.linkHandler;
   }
+  setBlockRenderer(renderer?: BlockRendererOverride): void {
+    this.blockRenderer = renderer;
+  }
+
+  getBlockRenderer(): BlockRendererOverride | undefined {
+    return this.blockRenderer;
+  }
+
+  setDocumentContext(ctx?: Record<string, unknown>): void {
+    this.documentContext = ctx;
+  }
+
+  getDocumentContext(): Record<string, unknown> | undefined {
+    return this.documentContext;
+  }
+
+  renderFinalizedBlock(block: Block, defaultElement: React.ReactElement): React.ReactNode {
+    if (this.blockRenderer && block.isFinalized) {
+      return this.blockRenderer({
+        block,
+        element: defaultElement,
+        context: this.documentContext,
+      });
+    }
+    return defaultElement;
+  }
+
 
   setMathRenderer(mathRenderer: MathRenderer): void {
     if (typeof mathRenderer === "function") {
