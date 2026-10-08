@@ -16,12 +16,6 @@ import { configureDemoRegistry, createDemoHtmlElements, createDemoTableElements 
 import { collectSemanticDom, renderedCodeSource, type SemanticDomRecords } from "../../../../scripts/perf/semantic-dom";
 import { createChunkTrace, semanticSha256 } from "../../../../scripts/perf/chunk-trace";
 
-// Baseline ignores this optional config and already renders diff as ordinary code.
-const PARITY_RENDERER_OPTIONS = {
-  codeRenderers: {
-    diff: ({ renderCode }: { renderCode: React.ReactNode }) => <>{renderCode}</>,
-  },
-};
 const streamdownMath = createMathPlugin({ singleDollarTextMath: true });
 
 class BenchmarkHighlighting {
@@ -160,6 +154,7 @@ const PARITY_FEATURES: NonNullable<StreamingMarkdownProps["features"]> = {
   footnotes: true,
   formatAnticipation: PARITY_FORMAT_ANTICIPATION,
   liveCodeHighlighting: true,
+  emitDiffBlocks: false,
 };
 export type LiveSubtreeCounts = {
   elements: number;
@@ -927,7 +922,6 @@ export function PerfHarness(): JSX.Element {
                 onError={benchmarkWorker.onError}
                 className="markdown-v2-output"
                 features={PARITY_FEATURES}
-                {...PARITY_RENDERER_OPTIONS}
                 scheduling={scheduling}
                 caret={false}
                 onMetrics={onMetrics}
@@ -941,7 +935,6 @@ export function PerfHarness(): JSX.Element {
               onError={benchmarkWorker.onError}
               className="markdown-v2-output"
               features={PARITY_FEATURES}
-              {...PARITY_RENDERER_OPTIONS}
               scheduling={scheduling}
               caret={false}
               onMetrics={onMetrics}

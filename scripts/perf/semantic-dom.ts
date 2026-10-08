@@ -35,7 +35,7 @@ export function collectSemanticDom(root: HTMLElement): SemanticDomRecords {
   }
 
   const mathRoots = Array.from(root.querySelectorAll(".katex"));
-  const inlineCode = Array.from(root.querySelectorAll("code")).filter((element) => !element.closest("pre"));
+  const inlineCode = Array.from(root.querySelectorAll<Element>("code")).filter((element) => !element.closest("pre"));
   const mathSource = (element: Element): string => element.querySelector("annotation[encoding='application/x-tex']")?.textContent ?? element.closest("[data-tex]")?.getAttribute("data-tex") ?? "";
   const textOf = (node: Node): string => {
     if (node.nodeType === 3) return (node.textContent ?? "").replace(/\s+/g, " ");
