@@ -212,8 +212,18 @@ All three targeted scripts passed: `worker-dom-free-public-imports`,
 `direct-compile-parity`, and `mdx-component-region-ownership`. The first also
 renders the public React component in Node SSR without installing DOM globals;
 that check establishes import/SSR safety, not rendered MDX-content parity.
-Node 20 public-package and real-browser application gates remain integration
-checks rather than evidence from this owner run.
+Node 20 public-package and real-browser application gates were not evidence from
+that run.
+
+The subsequent `342b378` packaging correction resolves public MDX dependencies
+with browser conditions and builds the native Node exports separately, retaining
+their existing names. The same three owner regressions passed after this change.
+On Node 20.20.2, the preserved Vite production consumer also passed after
+installing only a newly packed worker tarball; its Vite config and application
+source were unchanged. Fresh ESM and CJS subprocesses against that installed
+package passed the public import, direct/physical-worker MDX parity, and SSR
+global-descriptor checks. Full fresh-pack and real-browser application gates
+remain the integration owner's checks.
 
 ## Runtime fallback
 
