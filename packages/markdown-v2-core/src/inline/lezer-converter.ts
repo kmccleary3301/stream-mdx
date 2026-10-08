@@ -243,7 +243,12 @@ export class LezerInlineConverter {
 
       case "URL": {
         const url = text.slice(el.from, el.to);
-        const href = url.startsWith("www.") ? `http://${url}` : url;
+        const isEmail = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(url);
+        const href = url.startsWith("www.")
+          ? `http://${url}`
+          : isEmail && !url.startsWith("mailto:")
+            ? `mailto:${url}`
+            : url;
         return {
           kind: "link",
           href,
@@ -380,8 +385,7 @@ export class LezerInlineConverter {
     if (urlEl) {
       const src = cleanUrl(text.slice(urlEl.from, urlEl.to));
       const title = titleEl ? cleanTitle(text.slice(titleEl.from, titleEl.to)) : undefined;
-      const imgNode: InlineNode = { kind: "image", src };
-      if (altText) imgNode.alt = altText;
+      const imgNode: InlineNode = { kind: "image", src, alt: altText ?? "" };
       if (title !== undefined) imgNode.title = title;
       return imgNode;
     }
@@ -392,8 +396,7 @@ export class LezerInlineConverter {
       const refKey = innerLabel.length > 0 ? innerLabel : altText;
       const resolved = resolveReference(this.references, refKey);
       if (resolved) {
-        const imgNode: InlineNode = { kind: "image", src: resolved.href };
-        if (altText) imgNode.alt = altText;
+        const imgNode: InlineNode = { kind: "image", src: resolved.href, alt: altText ?? "" };
         if (resolved.title !== undefined) imgNode.title = resolved.title;
         return imgNode;
       }
@@ -403,8 +406,7 @@ export class LezerInlineConverter {
     // Shortcut image: ![alt]
     const resolved = resolveReference(this.references, altText);
     if (resolved) {
-      const imgNode: InlineNode = { kind: "image", src: resolved.href };
-      if (altText) imgNode.alt = altText;
+      const imgNode: InlineNode = { kind: "image", src: resolved.href, alt: altText ?? "" };
       if (resolved.title !== undefined) imgNode.title = resolved.title;
       return imgNode;
     }

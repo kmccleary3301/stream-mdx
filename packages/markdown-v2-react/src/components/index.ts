@@ -99,7 +99,7 @@ export function renderInlineNodes(nodes: InlineNode[], components: InlineCompone
         return React.createElement(components.image, {
           key,
           src: node.src,
-          alt: node.alt,
+          alt: node.alt ?? "",
           title: node.title,
         });
 
