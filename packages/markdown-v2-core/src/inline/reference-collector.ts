@@ -1,4 +1,4 @@
-import type { Tree } from "@lezer/common";
+import type { SyntaxNode, Tree } from "@lezer/common";
 import { cleanTitle, cleanUrl } from "./lezer-converter";
 import type { LinkReferenceDefinition } from "./types";
 
@@ -7,51 +7,91 @@ export function normalizeLinkLabel(raw: string): string {
 }
 
 /**
- * Collects all link reference definitions ([label]: url "title") from a Lezer parse tree.
+ * Extracts raw source text for a node, removing blockquote quote markers and prefixes
+ * per source positions when the node spans across blockquote continuations.
+ */
+function extractNodeText(node: SyntaxNode, content: string): string {
+  const quoteMarks: { from: number; to: number }[] = [];
+  const cur = node.cursor();
+  function findQuotes(cursor: typeof cur) {
+    if (cursor.name === "QuoteMark") {
+      quoteMarks.push({ from: cursor.from, to: cursor.to });
+    }
+    if (cursor.firstChild()) {
+      do {
+        findQuotes(cursor);
+      } while (cursor.nextSibling());
+      cursor.parent();
+    }
+  }
+  findQuotes(cur);
+
+  if (quoteMarks.length === 0) {
+    return content.slice(node.from, node.to);
+  }
+
+  let result = "";
+  let lastPos = node.from;
+
+  for (const qm of quoteMarks) {
+    let prefixStart = qm.from;
+    while (prefixStart > lastPos && (content[prefixStart - 1] === " " || content[prefixStart - 1] === "\t")) {
+      prefixStart--;
+    }
+    let prefixEnd = qm.to;
+    if (prefixEnd < node.to && content[prefixEnd] === " ") {
+      prefixEnd++;
+    }
+    result += content.slice(lastPos, prefixStart);
+    lastPos = prefixEnd;
+  }
+  result += content.slice(lastPos, node.to);
+  return result;
+}
+
+/**
+ * Collects all link reference definitions ([label]: url "title") recursively from a Lezer parse tree.
  */
 export function collectLinkReferences(tree: Tree, content: string): Map<string, LinkReferenceDefinition> {
   const references = new Map<string, LinkReferenceDefinition>();
-  const cursor = tree.cursor();
 
-  if (!cursor.firstChild()) {
-    return references;
-  }
+  tree.iterate({
+    enter(node) {
+      if (node.name === "LinkReference") {
+        let label = "";
+        let rawLabel = "";
+        let href: string | undefined;
+        let title: string | undefined;
 
-  do {
-    if (cursor.type.name === "LinkReference") {
-      let label = "";
-      let rawLabel = "";
-      let href: string | undefined;
-      let title: string | undefined;
-
-      if (cursor.firstChild()) {
-        do {
-          const type: string = cursor.type.name;
-          const slice = content.slice(cursor.from, cursor.to);
-
+        let child = node.node.firstChild;
+        while (child) {
+          const type = child.name;
           if (type === "LinkLabel") {
-            // Strip outer [ and ]
-            if (slice.startsWith("[") && slice.endsWith("]")) {
-              rawLabel = slice.slice(1, -1);
+            const rawSlice = extractNodeText(child, content);
+            if (rawSlice.startsWith("[") && rawSlice.endsWith("]")) {
+              rawLabel = rawSlice.slice(1, -1);
               label = normalizeLinkLabel(rawLabel);
             } else {
-              rawLabel = slice;
-              label = normalizeLinkLabel(slice);
+              rawLabel = rawSlice;
+              label = normalizeLinkLabel(rawSlice);
             }
           } else if (type === "URL") {
-            href = cleanUrl(slice);
+            const rawSlice = extractNodeText(child, content);
+            href = cleanUrl(rawSlice);
           } else if (type === "LinkTitle") {
-            title = cleanTitle(slice);
+            const rawSlice = extractNodeText(child, content);
+            title = cleanTitle(rawSlice);
           }
-        } while (cursor.nextSibling());
-        cursor.parent();
-      }
+          child = child.nextSibling;
+        }
 
-      if (label && href !== undefined && !references.has(label)) {
-        references.set(label, { href, title, label: rawLabel });
+        if (label && href !== undefined && !references.has(label)) {
+          references.set(label, { href, title, label: rawLabel });
+        }
+        return false;
       }
-    }
-  } while (cursor.nextSibling());
+    },
+  });
 
   return references;
 }
