@@ -1,6 +1,7 @@
 import type { NodeSet } from "@lezer/common";
 import type { InlineNode } from "../types";
 import { decodeEntity } from "./entities";
+import { decodeHTML5Strict } from "entities";
 import { normalizeLinkLabel } from "./reference-collector";
 import type { InlineExtension, LinkReferenceDefinition, LinkReferenceMap, MarkdownElement } from "./types";
 
@@ -19,25 +20,52 @@ function resolveReference(map: LinkReferenceMap | undefined, rawLabel: string): 
   return map[key];
 }
 
-function cleanUrl(raw: string): string {
+export function cleanUrl(raw: string): string {
   let url = raw.trim();
   if (url.startsWith("<") && url.endsWith(">")) {
     url = url.slice(1, -1);
   }
-  // CommonMark: unescape backslash escapes in destination
-  return url.replace(/\\([\\`*_{}\[\]()#+\-.!>~])/g, "$1");
+  // 1. Resolve backslash escapes
+  url = url.replace(/\\([!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~])/g, "$1");
+  // 2. Decode HTML entities
+  url = decodeHTML5Strict(url);
+  // 3. Percent-encode URI
+  try {
+    return encodeURI(url);
+  } catch {
+    return url;
+  }
 }
 
-function cleanTitle(raw: string): string {
+export function cleanTitle(raw: string): string {
   const trimmed = raw.trim();
+  let title = trimmed;
   if (
     (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
     (trimmed.startsWith("'") && trimmed.endsWith("'")) ||
     (trimmed.startsWith("(") && trimmed.endsWith(")"))
   ) {
-    return trimmed.slice(1, -1).replace(/\\([\\`*_{}\[\]()#+\-.!>~"'])/g, "$1");
+    title = trimmed.slice(1, -1);
   }
-  return trimmed;
+  // 1. Resolve backslash escapes
+  title = title.replace(/\\([!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~])/g, "$1");
+  // 2. Decode HTML entities
+  title = decodeHTML5Strict(title);
+  return title;
+}
+
+export function extractPlainText(nodes: InlineNode[]): string {
+  let result = "";
+  for (const n of nodes) {
+    if (n.kind === "text" || n.kind === "code") {
+      result += n.text;
+    } else if (n.kind === "image") {
+      result += n.alt ?? "";
+    } else if ("children" in n && Array.isArray(n.children)) {
+      result += extractPlainText(n.children);
+    }
+  }
+  return result;
 }
 
 function normalizeInlineCodeText(raw: string): string {
@@ -243,7 +271,7 @@ export class LezerInlineConverter {
 
       case "URL": {
         const url = text.slice(el.from, el.to);
-        const isEmail = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(url);
+        const isEmail = url.includes("@") && !url.includes(":");
         const href = url.startsWith("www.")
           ? `http://${url}`
           : isEmail && !url.startsWith("mailto:")
@@ -317,9 +345,12 @@ export class LezerInlineConverter {
 
     const children = this.convertRange(textChildren, text, textFrom, textTo);
 
-    // Inline link: [text](url "title")
-    if (urlEl) {
-      const href = cleanUrl(text.slice(urlEl.from, urlEl.to));
+    // Inline link: [text](url "title") or [text]()
+    const hasParen = el.children.some(
+      (c) => this.nodeSet.types[c.type]?.name === "LinkMark" && text.slice(c.from, c.to) === "(",
+    );
+    if (urlEl || hasParen) {
+      const href = urlEl ? cleanUrl(text.slice(urlEl.from, urlEl.to)) : "";
       const title = titleEl ? cleanTitle(text.slice(titleEl.from, titleEl.to)) : undefined;
       const linkNode: InlineNode = { kind: "link", href, children };
       if (title !== undefined) linkNode.title = title;
@@ -359,6 +390,7 @@ export class LezerInlineConverter {
     let urlEl: MarkdownElement | null = null;
     let titleEl: MarkdownElement | null = null;
     let labelEl: MarkdownElement | null = null;
+    const textChildren: MarkdownElement[] = [];
 
     for (const child of el.children) {
       const name = this.nodeSet.types[child.type]?.name;
@@ -375,17 +407,24 @@ export class LezerInlineConverter {
         titleEl = child;
       } else if (name === "LinkLabel") {
         labelEl = child;
+      } else if (!closeMark) {
+        textChildren.push(child);
       }
     }
 
     const altFrom = openMark ? openMark.to : el.from + 2;
     const altTo = closeMark ? closeMark.from : el.to;
-    const altText = text.slice(altFrom, altTo);
+    const rawAltText = text.slice(altFrom, altTo);
+    const innerChildren = this.convertRange(textChildren, text, altFrom, altTo);
+    const alt = extractPlainText(innerChildren);
 
-    if (urlEl) {
-      const src = cleanUrl(text.slice(urlEl.from, urlEl.to));
+    const hasParen = el.children.some(
+      (c) => this.nodeSet.types[c.type]?.name === "LinkMark" && text.slice(c.from, c.to) === "(",
+    );
+    if (urlEl || hasParen) {
+      const src = urlEl ? cleanUrl(text.slice(urlEl.from, urlEl.to)) : "";
       const title = titleEl ? cleanTitle(text.slice(titleEl.from, titleEl.to)) : undefined;
-      const imgNode: InlineNode = { kind: "image", src, alt: altText ?? "" };
+      const imgNode: InlineNode = { kind: "image", src, alt };
       if (title !== undefined) imgNode.title = title;
       return imgNode;
     }
@@ -393,10 +432,10 @@ export class LezerInlineConverter {
     if (labelEl) {
       const labelSlice = text.slice(labelEl.from, labelEl.to);
       const innerLabel = labelSlice.startsWith("[") && labelSlice.endsWith("]") ? labelSlice.slice(1, -1) : labelSlice;
-      const refKey = innerLabel.length > 0 ? innerLabel : altText;
+      const refKey = innerLabel.length > 0 ? innerLabel : rawAltText;
       const resolved = resolveReference(this.references, refKey);
       if (resolved) {
-        const imgNode: InlineNode = { kind: "image", src: resolved.href, alt: altText ?? "" };
+        const imgNode: InlineNode = { kind: "image", src: resolved.href, alt };
         if (resolved.title !== undefined) imgNode.title = resolved.title;
         return imgNode;
       }
@@ -404,9 +443,9 @@ export class LezerInlineConverter {
     }
 
     // Shortcut image: ![alt]
-    const resolved = resolveReference(this.references, altText);
+    const resolved = resolveReference(this.references, rawAltText);
     if (resolved) {
-      const imgNode: InlineNode = { kind: "image", src: resolved.href, alt: altText ?? "" };
+      const imgNode: InlineNode = { kind: "image", src: resolved.href, alt };
       if (resolved.title !== undefined) imgNode.title = resolved.title;
       return imgNode;
     }

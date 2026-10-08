@@ -104,7 +104,12 @@ export function renderInlineNodes(nodes: InlineNode[], components: InlineCompone
         });
 
       case "br":
-        return React.createElement(React.Fragment, { key }, React.createElement(components.br, {} as Record<string, never>));
+        return React.createElement(
+          React.Fragment,
+          { key },
+          React.createElement(components.br, {} as Record<string, never>),
+          "\n",
+        );
 
       default: {
         // Handle custom/extensible nodes
