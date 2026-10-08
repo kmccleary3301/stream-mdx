@@ -12,6 +12,7 @@ import { isListPatchDebugEnabled, type RendererStore } from "./store";
 import { useDeferredRender } from "./use-deferred-render";
 import { DEFAULT_VIRTUALIZED_CODE_CONFIG, type VirtualizedLine, useVirtualizedCode } from "./virtualized-code";
 import { useVirtualizedTable, type TableVirtualizationProps } from "./virtualized-table";
+import { StreamingActivityContext } from "./streaming-activity-context";
 
 export const BlockNodeRenderer: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = ({ store, blockId, registry }) => {
   const node = useRendererNode(store, blockId);
@@ -718,8 +719,9 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
     return 1;
   }, [theadCellIds.length, rowIds, store]);
 
+  const sessionActive = React.useContext(StreamingActivityContext);
   const isFinalized = Boolean(node?.block?.isFinalized);
-  const canVirtualize = mounted && typeof window !== "undefined" && isFinalized && !virtualizationDisabled;
+  const canVirtualize = mounted && typeof window !== "undefined" && isFinalized && !sessionActive && !virtualizationDisabled;
 
   const virtualization = useVirtualizedTable(rowIds, virtualizationConfig, canVirtualize);
   const { isVirtualized, containerRef, handleScroll, window: virtualWindow, config } = virtualization;
@@ -806,7 +808,12 @@ const TableSectionView: React.FC<{
     return (
       <tableElements.Thead
         className={virtualization?.isVirtualized ? "sticky top-0 z-10" : undefined}
-        style={virtualization?.isVirtualized ? { position: "sticky", top: 0, zIndex: 10 } : undefined}
+        style={virtualization?.isVirtualized ? {
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+          backgroundColor: "var(--stream-mdx-table-header-background, Canvas)",
+        } : undefined}
       >
         <tableElements.Tr>
           {childIds.map((cellId) => (
