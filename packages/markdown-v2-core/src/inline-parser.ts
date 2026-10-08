@@ -2,7 +2,7 @@ import { GFM, type MarkdownConfig, type MarkdownExtension, type MarkdownParser, 
 import { LezerInlineConverter } from "./inline/lezer-converter";
 import { createMathExtension } from "./inline/math-extension";
 import { compileRegexPluginToExtension, createDefaultRegexPlugins } from "./inline/plugin-adapter";
-import type { InlineExtension, InlineParseOptions, InlineParserOptions, LinkReferenceMap } from "./inline/types";
+import type { InlineExtension, InlineParseOptions, InlineParserOptions, LinkReferenceMap, MarkdownElement } from "./inline/types";
 import type { ASTInlinePlugin, InlineNode, InlinePlugin, RegexInlinePlugin } from "./types";
 
 export type { InlineParserOptions, InlineParseOptions, InlineExtension, LinkReferenceDefinition, LinkReferenceMap } from "./inline/types";
@@ -165,7 +165,7 @@ export class InlineParser {
       this.converter.setReferences(options.references);
     }
 
-    const elements = this.lezerParser.parseInline(content, 0);
+    const elements = this.lezerParser.parseInline(content, 0) as unknown as MarkdownElement[];
     let result = this.converter.convert(elements, content);
 
     // Restore instance references if temporary references were used

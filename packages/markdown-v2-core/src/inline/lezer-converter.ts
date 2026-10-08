@@ -1,9 +1,8 @@
 import type { NodeSet } from "@lezer/common";
-import type { Element } from "@lezer/markdown";
 import type { InlineNode } from "../types";
 import { decodeEntity } from "./entities";
 import { normalizeLinkLabel } from "./reference-collector";
-import type { InlineExtension, LinkReferenceDefinition, LinkReferenceMap } from "./types";
+import type { InlineExtension, LinkReferenceDefinition, LinkReferenceMap, MarkdownElement } from "./types";
 
 export interface LezerConverterOptions {
   nodeSet: NodeSet;
@@ -89,12 +88,12 @@ export class LezerInlineConverter {
     this.references = references;
   }
 
-  convert(elements: readonly Element[], text: string, from = 0, to: number = text.length): InlineNode[] {
+  convert(elements: readonly MarkdownElement[], text: string, from = 0, to: number = text.length): InlineNode[] {
     const rawNodes = this.convertRange(elements, text, from, to);
     return mergeAdjacentTextNodes(rawNodes);
   }
 
-  private convertRange(elements: readonly Element[], text: string, from: number, to: number): InlineNode[] {
+  private convertRange(elements: readonly MarkdownElement[], text: string, from: number, to: number): InlineNode[] {
     const nodes: InlineNode[] = [];
     let cursor = from;
 
@@ -134,7 +133,7 @@ export class LezerInlineConverter {
   }
 
   private convertChildrenExcludingMarks(
-    children: readonly Element[],
+    children: readonly MarkdownElement[],
     text: string,
     from: number,
     to: number,
@@ -164,7 +163,7 @@ export class LezerInlineConverter {
     return this.convertRange(filtered, text, contentFrom, contentTo);
   }
 
-  private convertElement(el: Element, nodeName: string, text: string): InlineNode | InlineNode[] | null {
+  private convertElement(el: MarkdownElement, nodeName: string, text: string): InlineNode | InlineNode[] | null {
     switch (nodeName) {
       case "Emphasis": {
         const children = this.convertChildrenExcludingMarks(el.children, text, el.from, el.to, "EmphasisMark");
@@ -271,13 +270,13 @@ export class LezerInlineConverter {
     }
   }
 
-  private convertLink(el: Element, text: string): InlineNode | InlineNode[] {
-    let openMark: Element | null = null;
-    let closeMark: Element | null = null;
-    let urlEl: Element | null = null;
-    let titleEl: Element | null = null;
-    let labelEl: Element | null = null;
-    const textChildren: Element[] = [];
+  private convertLink(el: MarkdownElement, text: string): InlineNode | InlineNode[] {
+    let openMark: MarkdownElement | null = null;
+    let closeMark: MarkdownElement | null = null;
+    let urlEl: MarkdownElement | null = null;
+    let titleEl: MarkdownElement | null = null;
+    let labelEl: MarkdownElement | null = null;
+    const textChildren: MarkdownElement[] = [];
 
     for (const child of el.children) {
       const name = this.nodeSet.types[child.type]?.name;
@@ -343,12 +342,12 @@ export class LezerInlineConverter {
     return [{ kind: "text", text: `[${rawLinkText}]` }];
   }
 
-  private convertImage(el: Element, text: string): InlineNode | InlineNode[] {
-    let openMark: Element | null = null;
-    let closeMark: Element | null = null;
-    let urlEl: Element | null = null;
-    let titleEl: Element | null = null;
-    let labelEl: Element | null = null;
+  private convertImage(el: MarkdownElement, text: string): InlineNode | InlineNode[] {
+    let openMark: MarkdownElement | null = null;
+    let closeMark: MarkdownElement | null = null;
+    let urlEl: MarkdownElement | null = null;
+    let titleEl: MarkdownElement | null = null;
+    let labelEl: MarkdownElement | null = null;
 
     for (const child of el.children) {
       const name = this.nodeSet.types[child.type]?.name;
