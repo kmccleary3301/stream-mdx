@@ -37,6 +37,14 @@ export function createBlockCompatibilityExtension(): MarkdownConfig {
         return null;
       },
     }, {
+      name: "EmptyListItemOpeningLine",
+      before: "IndentedCode",
+      parse(cx, line) {
+        if (cx.parentType().name !== "EmptyListItem" || line.next !== -1) return false;
+        cx.nextLine();
+        return true;
+      },
+    }, {
       name: "TabATXHeading",
       before: "ATXHeading",
       parse(cx, line) {
