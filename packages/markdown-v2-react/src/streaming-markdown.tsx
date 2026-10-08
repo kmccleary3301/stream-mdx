@@ -352,6 +352,10 @@ function StreamingMarkdownComponent(
   const rendererRef = useRef<{ renderer: MarkdownRenderer; signature: string }>();
   const [session, setSession] = useState(0);
   const rendererKey = `${configSignature}:${session}`;
+  const onErrorRef = useRef(onError);
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
 
   const historyLimit = effectiveScheduling.historyLimit ?? DEFAULT_HISTORY_LIMIT;
 
@@ -683,9 +687,7 @@ function StreamingMarkdownComponent(
       activeRelease = inst.release;
 
       if (!activeWorker) {
-        if (onError) {
-          onError(new Error("Failed to create markdown worker instance"));
-        }
+        onErrorRef.current?.(new Error("Failed to create markdown worker instance"));
         return;
       }
 
@@ -703,18 +705,14 @@ function StreamingMarkdownComponent(
           const inlineWorker = createInlineEngineWorker();
           setupWorker({ worker: inlineWorker as unknown as Worker, owned: true });
         } catch (error) {
-          if (onError) {
-            onError(error instanceof Error ? error : new Error(String(error)));
-          }
+          onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
         }
         return;
       }
 
       if (engine === "worker") {
         if (typeof window === "undefined" || typeof Worker === "undefined") {
-          if (onError) {
-            onError(new Error("Worker is not supported in this environment"));
-          }
+          onErrorRef.current?.(new Error("Worker is not supported in this environment"));
           return;
         }
         const inst = instantiateWorker(workerSource);
@@ -745,9 +743,7 @@ function StreamingMarkdownComponent(
         const inlineWorker = createInlineEngineWorker();
         setupWorker({ worker: inlineWorker as unknown as Worker, owned: true });
       } catch (error) {
-        if (onError) {
-          onError(error instanceof Error ? error : new Error(String(error)));
-        }
+        onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
       }
     };
 
@@ -767,7 +763,7 @@ function StreamingMarkdownComponent(
         activeRelease?.();
       }
     };
-  }, [renderer, workerSource, engine, session, onError, managedWorker]);
+  }, [renderer, workerSource, engine, session, managedWorker]);
   useEffect(() => {
     const restartToken = session;
     void restartToken;
@@ -793,9 +789,7 @@ function StreamingMarkdownComponent(
         setStreamStatus("done");
       } catch (error) {
         setStreamStatus("done");
-        if (onError) {
-          onError(error instanceof Error ? error : new Error(String(error)));
-        }
+        onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
       }
       return () => {
         cancelled = true;
@@ -827,9 +821,9 @@ function StreamingMarkdownComponent(
           setStreamStatus("done");
         }
       } catch (error) {
-        if (onError && !cancelled) {
+        if (!cancelled) {
           setStreamStatus("done");
-          onError(error instanceof Error ? error : new Error(String(error)));
+          onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
         }
       }
     })();
@@ -837,7 +831,7 @@ function StreamingMarkdownComponent(
     return () => {
       cancelled = true;
     };
-  }, [renderer, text, stream, workerReady, session, onError, managedWorker]);
+  }, [renderer, text, stream, workerReady, session, managedWorker]);
 
   useImperativeHandle(
     ref,
