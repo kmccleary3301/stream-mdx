@@ -74,10 +74,13 @@ Public token spans use `fg` and `fs` in their compact style records. Theme varia
 remain in `v.dark` and `v.light`; the legacy themed-line bridge converts these
 fields to `color` and `fontStyle` rather than exposing those legacy keys in token IR.
 
-Footnote numbering runs over the actual prepared inline children in document
-order. It updates serialized child views and existing HTML ownership descriptors
-without changing unrelated code/HTML artifacts. Blockquote compatibility inline
-is derived from those numbered children, not reparsed from container source.
+Footnote numbering uses the current canonical rendered document: root references
+first, then reachable definition bodies in footer order. Late root references may
+renumber earlier body-only references; final IR is independent of append chunking
+and prior finalization. Reference links and footer items update together.
+Serialized aliases do not create extra occurrences. Blockquote compatibility
+inline follows the same HTML, prepared child, table-cell, and mixed-segment
+ownership paths, without reparsing container source or copying unrelated artifacts.
 
 Defined footnote occurrences carry `occurrence` and `defined` metadata. The first
 anchor is `fnref:n`, subsequent anchors are `fnref:n:2`, `fnref:n:3`, and so on.

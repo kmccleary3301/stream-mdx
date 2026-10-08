@@ -241,9 +241,7 @@ function enrichCodeSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot 
       }
     | undefined;
   const highlightedHtml = block.payload.highlightedHtml ?? "";
-  const hasBlockHighlight = typeof block.payload.highlightedHtml === "string" && block.payload.highlightedHtml.length > 0;
   const metaLines = Array.isArray(meta?.highlightedLines) ? (meta?.highlightedLines as HighlightedLine[]) : null;
-  const includeLineHtml = metaLines ? true : !hasBlockHighlight || lines.length >= 200;
   const highlightedLines = metaLines
     ? normalizeHighlightedLines(metaLines, lines.length)
     : extractHighlightedLines(highlightedHtml, lines.length);
@@ -272,7 +270,7 @@ function enrichCodeSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot 
     const props: Record<string, unknown> = {
       index,
       text: line,
-      html: includeLineHtml ? (highlightedLines[index] ?? null) : null,
+      html: highlightedLines[index] ?? null,
     };
     if (tokenLines) {
       props.tokens = tokenLines[index] ?? null;
