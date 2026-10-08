@@ -140,13 +140,15 @@ async function assertArtifactDom(store: RendererStore): Promise<string> {
   const container = document.createElement("div");
   document.body.append(container);
   const root = createRoot(container);
+  const ownerWindow = container.ownerDocument.defaultView;
+  assert.ok(ownerWindow, "mounted artifact consumer requires its actual DOM window");
   const registry = new ComponentRegistry();
   // This is only a failure deadline. Success waits for real consumer DOM mutations
   // from the KaTeX and MDX dynamic imports, not a guessed rendering delay.
   const signal = AbortSignal.timeout(10_000);
   try {
     await new Promise<void>((resolve, reject) => {
-      const observer = new MutationObserver(check);
+      const observer = new ownerWindow.MutationObserver(check);
       function cleanup() {
         observer.disconnect();
         signal.removeEventListener("abort", fail);
