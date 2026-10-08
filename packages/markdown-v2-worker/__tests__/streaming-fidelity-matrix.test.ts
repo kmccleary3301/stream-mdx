@@ -3,6 +3,9 @@ import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { MarkdownBlocksRenderer } from "@stream-mdx/react/server";
 import type { Block, InlineNode, Patch, WorkerOut } from "@stream-mdx/core";
 import { blocksStructurallyEqual, cloneBlock, stripCodeFence } from "@stream-mdx/core";
 import { PATCH_ROOT_ID } from "@stream-mdx/core";
@@ -62,6 +65,56 @@ function countPatchOps(messages: WorkerOut[]): number {
   return messages
     .filter((msg): msg is Extract<WorkerOut, { type: "PATCH" }> => msg.type === "PATCH")
     .reduce((sum, msg) => sum + msg.patches.length, 0);
+}
+
+function publishedFootnoteLabels(blocks: ReadonlyArray<Block>): Set<string> {
+  const footer = blocks.find((block) => block.type === "footnotes");
+  const items = footer?.payload.meta?.items as Array<{ label: string }> | undefined;
+  return new Set((items ?? []).map((item) => item.label));
+}
+
+function projectFootnotePublication(block: Block, published: Set<string>): Block {
+  // Only this footer-dependent flag is transient. Source, numbers, occurrence
+  // IDs and every other serialized child field remain part of the strict oracle.
+  const project = (value: unknown): unknown => {
+    if (Array.isArray(value)) return value.map(project);
+    if (value === null || typeof value !== "object") return value;
+    const record = value as Record<string, unknown>;
+    const result = Object.fromEntries(Object.entries(record).map(([key, child]) => [key, project(child)]));
+    if (record.kind === "footnote-ref" && typeof record.defined === "boolean" && typeof record.label === "string") result.defined = published.has(record.label);
+    return result;
+  };
+  return project(block) as Block;
+}
+
+function assertFootnotePublication(blocks: ReadonlyArray<Block>, label: string): void {
+  const published = publishedFootnoteLabels(blocks);
+  const footerItems = blocks.find((block) => block.type === "footnotes")?.payload.meta?.items as Array<{ label: string; number: number }> | undefined;
+  const footerNumbers = new Map((footerItems ?? []).map((item) => [item.label, item.number]));
+  JSON.stringify(blocks, (_key, value) => {
+    if (value?.kind === "footnote-ref" && typeof value.defined === "boolean") {
+      assert.strictEqual(value.defined, published.has(value.label), `[${label}] footnote publication flag must match its actual footer label`);
+    }
+    return value;
+  });
+  const visible = blocks.filter((block) => block.type === "footnotes" || JSON.stringify(block).includes('"kind":"footnote-ref"'));
+  if (visible.length === 0) return;
+  const dom = new JSDOM(renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: [...visible] })));
+  try {
+    const ids = [...dom.window.document.querySelectorAll<HTMLElement>("[id]")].map((node) => node.id);
+    assert.strictEqual(new Set(ids).size, ids.length, `[${label}] rendered footnote IDs must be unique`);
+    for (const anchor of dom.window.document.querySelectorAll<HTMLAnchorElement>("sup.footnote-ref a, a.footnote-backref")) {
+      assert.ok(dom.window.document.getElementById(anchor.hash.slice(1)), `[${label}] rendered footnote link must target an actual published occurrence or definition`);
+    }
+    for (const anchor of dom.window.document.querySelectorAll<HTMLAnchorElement>("sup.footnote-ref a")) {
+      assert.ok(published.has(anchor.dataset.footnoteLabel ?? anchor.dataset.label ?? ""), `[${label}] unresolved references must not render premature links`);
+      const number = footerNumbers.get(anchor.dataset.label ?? "");
+      assert.strictEqual(anchor.hash, `#fn:${number}`, `[${label}] rendered reference must target its own label, not merely an existing definition`);
+      assert.strictEqual(anchor.textContent, String(number), `[${label}] visible reference number must match its actual definition`);
+    }
+  } finally {
+    dom.window.close();
+  }
 }
 
 function blockSignature(block: Block): string {
@@ -192,6 +245,8 @@ function assertFinalizedPrefixMatchesBaseline(
     `[${label}] finalized prefix length (${finalizedCount}) exceeds baseline length (${baseline.length})`,
   );
 
+  const published = publishedFootnoteLabels(current);
+  assertFootnotePublication(current, label);
   for (let i = 0; i < finalizedCount; i++) {
     const curr = current[i];
     const base = baseline[i];
@@ -201,7 +256,7 @@ function assertFinalizedPrefixMatchesBaseline(
     assert.ok(base, `[${label}] missing baseline block at index ${i}`);
     assert.strictEqual(curr.id, base.id, `[${label}] finalized block id drift at index ${i}: ${curr.id} != ${base.id}`);
     assert.ok(
-      blocksStructurallyEqual(curr, base),
+      blocksStructurallyEqual(curr, projectFootnotePublication(base, published)),
       `[${label}] finalized block diverged at index ${i} (${curr.id})\n` +
         `current: type=${curr.type} finalized=${curr.isFinalized} raw=${JSON.stringify((curr.payload.raw ?? "").slice(0, 120))}\n` +
         `baseline: type=${base.type} finalized=${base.isFinalized} raw=${JSON.stringify((base.payload.raw ?? "").slice(0, 120))}\n` +
@@ -213,20 +268,26 @@ function assertFinalizedPrefixMatchesBaseline(
 
 function assertFinalizedBlocksImmutable(
   current: ReadonlyArray<Block>,
-  seenSignatures: Map<string, string>,
+  seenSignatures: Map<string, { block: Block; signature: string }>,
   consumedChars: number,
   label: string,
 ): void {
+  const published = publishedFootnoteLabels(current);
   for (const block of current) {
     if (!block.isFinalized) continue;
     if (!isStableAgainstTail(block, consumedChars)) continue;
-    const signature = blockSignature(block);
+    const signature = JSON.stringify(block);
     const previous = seenSignatures.get(block.id);
     if (previous === undefined) {
-      seenSignatures.set(block.id, signature);
+      seenSignatures.set(block.id, { block, signature });
       continue;
     }
-    assert.strictEqual(previous, signature, `[${label}] finalized block mutated after finalization (${block.id})`);
+    assert.strictEqual(JSON.stringify(previous.block), previous.signature, `[${label}] earlier consumer block was mutated instead of copy-on-write (${block.id})`);
+    assert.strictEqual(
+      blockSignature(projectFootnotePublication(previous.block, published)),
+      blockSignature(projectFootnotePublication(block, published)),
+      `[${label}] finalized block mutated outside the footer publication flag (${block.id})`,
+    );
   }
 }
 
@@ -497,7 +558,7 @@ async function computeBaseline(doc: string): Promise<Block[]> {
 async function runScenario(scenario: Scenario, baseline: Block[]): Promise<void> {
   const { harness, store } = await createInitializedHarnessStore();
   const baselineStore = createRendererStore(baseline.map((block) => cloneBlock(block)));
-  const seenFinalized = new Map<string, string>();
+  const seenFinalized = new Map<string, { block: Block; signature: string }>();
 
   for (let idx = 0, chunkIndex = 0; idx < scenario.doc.length; idx += scenario.chunkSize, chunkIndex++) {
     const preCredit = scenario.preAppendCredit(chunkIndex);
@@ -537,6 +598,7 @@ async function runScenario(scenario: Scenario, baseline: Block[]): Promise<void>
   );
 
   const finalBlocks = store.getBlocks();
+  assertFootnotePublication(finalBlocks, `${scenario.name}:final`);
   assert.strictEqual(finalBlocks.length, baseline.length, `[${scenario.name}] block count mismatch`);
   for (let i = 0; i < baseline.length; i++) {
     const expected = baseline[i];
@@ -545,6 +607,12 @@ async function runScenario(scenario: Scenario, baseline: Block[]): Promise<void>
     assert.strictEqual(actual.id, expected.id, `[${scenario.name}] final id mismatch at index ${i}`);
     assert.ok(blocksStructurallyEqual(actual, expected), `[${scenario.name}] final block diverged at index ${i} (${actual.id})`);
   }
+  const footnoteVisible = (blocks: ReadonlyArray<Block>) => blocks.filter((block) => block.type === "footnotes" || JSON.stringify(block).includes('"kind":"footnote-ref"'));
+  assert.strictEqual(
+    renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: footnoteVisible(finalBlocks) })),
+    renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: footnoteVisible(baseline) })),
+    `[${scenario.name}] finalized footnote SSR must exactly match complete compilation`,
+  );
   assertFinalizedTableContentMatchesBaseline(finalBlocks, baseline, `${scenario.name}:final`);
   assertFinalizedMdxSignaturesMatchBaseline(finalBlocks, baseline, `${scenario.name}:final`);
   assertFinalizedCodeTextMatchesBaseline(store, baseline, `${scenario.name}:final`);
