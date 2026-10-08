@@ -16,6 +16,7 @@ import type {
   PerformanceMetrics,
   ProtectedRange,
   TocHeading,
+  TokenLineV1,
   WorkerErrorPayload,
   WorkerIn,
   WorkerOut,
@@ -116,6 +117,7 @@ import {
   partitionPatchesForCredits,
   syncEmittedBlockEpochsFromPatches,
   withPatchKind,
+  withPatchKindBatch,
 } from "./patch-emit";
 import type {
   CodeHighlightingMode,
@@ -1222,11 +1224,106 @@ export class MarkdownEngine {
           nextMeta.highlightedLines = [...state.highlightedLines];
         }
         if (wantsTokensNow) {
-          nextMeta.tokenLines = [...state.tokenLines];
+          nextMeta.tokenLines = state.tokenLines;
+          if (diffEnabled) {
+            nextMeta.diffKind = state.diffKind;
+            nextMeta.oldNo = state.oldNo;
+            nextMeta.newNo = state.newNo;
+          } else {
+            if ("diffKind" in nextMeta) delete nextMeta.diffKind;
+            if ("oldNo" in nextMeta) delete nextMeta.oldNo;
+            if ("newNo" in nextMeta) delete nextMeta.newNo;
+          }
+        } else if ("tokenLines" in nextMeta) {
+          delete nextMeta.tokenLines;
+          if ("diffKind" in nextMeta) delete nextMeta.diffKind;
+          if ("oldNo" in nextMeta) delete nextMeta.oldNo;
+          if ("newNo" in nextMeta) delete nextMeta.newNo;
+        }
+        if (this.emitDiffBlocks && diffInfo.isDiff && this.liveTokenizationEnabled) {
+          const cursor: DiffCursorState = { oldLine: null, newLine: null };
+          const diffLines = codeLines.map((line) => parseUnifiedDiffLine(line, cursor));
+          nextMeta.diffBlocks = buildDiffBlocksFromLines(
+            diffLines,
+            codeLines,
+            wantsTokensNow ? state.tokenLines : null,
+            diffInfo.baseLang ?? null,
+          );
+        } else if ("diffBlocks" in nextMeta) {
+          delete nextMeta.diffBlocks;
         }
         block.payload.meta = nextMeta;
         return;
       }
+    }
+
+    if (
+      block.isFinalized &&
+      shouldLazyTokenizeBlock(
+        this.lazyTokenizationEnabled,
+        codeLines.length,
+        this.lazyTokenizationThresholdLines,
+        hasHighlighter,
+        hasHighlightableContent,
+      ) &&
+      (wantsHtml || wantsTokens)
+    ) {
+      if (hasHighlighter) {
+        if (wantsHtml) {
+          resolvedLanguage = await resolveHighlightLanguage(this.highlighter, requestedLanguage);
+        }
+        if (wantsTokens) {
+          resolvedTokenLanguage = await resolveHighlightLanguage(this.highlighter, tokenLanguage);
+        }
+      }
+      const diffEnabled = diffInfo.isDiff && wantsTokens;
+      const signature = makeLazySignature(codeBody, resolvedLanguage, resolvedTokenLanguage, diffEnabled);
+      const state = getOrInitLazyState(
+        this.lazyTokenizationStates,
+        block.id,
+        signature,
+        codeLines.length,
+        resolvedLanguage,
+        resolvedTokenLanguage,
+        diffEnabled,
+      );
+      const effectiveLang = wantsHtml ? resolvedLanguage : resolvedTokenLanguage;
+      const nextMeta = { ...baseMeta, ...meta, lang: effectiveLang } as Record<string, unknown>;
+      nextMeta.code = codeBody;
+      nextMeta.lazyTokenization = true;
+      nextMeta.lazyTokenizedUntil = state.processedLines;
+      if (wantsHtml) {
+        nextMeta.highlightedLines = state.highlightedLines;
+      } else if ("highlightedLines" in nextMeta) {
+        delete nextMeta.highlightedLines;
+      }
+      if (wantsTokens) {
+        nextMeta.tokenLines = state.tokenLines;
+        if (diffEnabled) {
+          nextMeta.diffKind = state.diffKind;
+          nextMeta.oldNo = state.oldNo;
+          nextMeta.newNo = state.newNo;
+        } else {
+          if ("diffKind" in nextMeta) delete nextMeta.diffKind;
+          if ("oldNo" in nextMeta) delete nextMeta.oldNo;
+          if ("newNo" in nextMeta) delete nextMeta.newNo;
+        }
+      } else if ("tokenLines" in nextMeta) {
+        delete nextMeta.tokenLines;
+        if ("diffKind" in nextMeta) delete nextMeta.diffKind;
+        if ("oldNo" in nextMeta) delete nextMeta.oldNo;
+        if ("newNo" in nextMeta) delete nextMeta.newNo;
+      }
+      if (this.emitDiffBlocks && diffInfo.isDiff) {
+        const cursor: DiffCursorState = { oldLine: null, newLine: null };
+        const diffLines = codeLines.map((line) => parseUnifiedDiffLine(line, cursor));
+        nextMeta.diffBlocks = buildDiffBlocksFromLines(diffLines, codeLines, wantsTokens ? state.tokenLines : null, diffInfo.baseLang ?? null);
+      } else if ("diffBlocks" in nextMeta) {
+        delete nextMeta.diffBlocks;
+      }
+      block.payload.highlightedHtml = undefined;
+      block.payload.meta = nextMeta;
+      return;
     }
 
     if (hasHighlighter) {
@@ -1255,6 +1352,7 @@ export class MarkdownEngine {
           const highlighted = this.highlighter!.codeToHtml(codeBody, {
             lang: resolvedLanguage as never,
             themes: CODE_HIGHLIGHT_THEMES,
+            defaultColor: false,
           });
           const enhanced = enhanceHighlightedHtml(highlighted, resolvedLanguage);
           block.payload.highlightedHtml = enhanced;
@@ -1271,33 +1369,123 @@ export class MarkdownEngine {
       }
     }
 
-    if (wantsTokens && hasHighlighter && hasHighlightableContent) {
-      try {
-        const tokens = this.highlighter!.codeToTokensWithThemes(codeBody, {
-          lang: resolvedTokenLanguage as never,
-          themes: CODE_HIGHLIGHT_THEMES,
-        }) as ShikiThemedToken[][];
-        nextMeta.tokenLines = renderTokenLines(tokens);
-      } catch (error) {
-        console.warn("Shiki codeToTokens failed:", error);
+    let tokenLines: Array<TokenLineV1 | null> | undefined;
+    let diffKind: Array<DiffKind | null> | undefined;
+    let diffOldNo: Array<number | null> | undefined;
+    let diffNewNo: Array<number | null> | undefined;
+
+    if (wantsTokens) {
+      let diffLines: string[] = [];
+      if (diffInfo.isDiff) {
+        diffLines = codeBody.length > 0 ? codeBody.split("\n") : [];
+        const cursor: DiffCursorState = { oldLine: null, newLine: null };
+        const diffInfoLines = diffLines.map((line) => parseUnifiedDiffLine(line, cursor));
+        diffKind = diffInfoLines.map((line) => line.kind);
+        diffOldNo = diffInfoLines.map((line) => line.oldNo ?? null);
+        diffNewNo = diffInfoLines.map((line) => line.newNo ?? null);
+        if (!hasHighlighter || !hasHighlightableContent) {
+          tokenLines = diffInfoLines.map((line) =>
+            (line.text ?? line.raw).length > 0 ? { spans: [{ t: line.text ?? line.raw }] } : { spans: [] },
+          );
+        } else {
+          try {
+            const { tokenLines: diffTokens } = await buildDiffTokenLines(
+              diffInfoLines,
+              resolvedTokenLanguage,
+              {},
+              this.highlighter!,
+            );
+            tokenLines = diffTokens;
+          } catch (error) {
+            console.warn("Diff tokenization failed for", requestedLanguage, error);
+            tokenLines = new Array(codeLines.length).fill(null);
+          }
+        }
+      } else if (!hasHighlighter || !hasHighlightableContent) {
+        tokenLines = codeLines.map((line) => (line.length > 0 ? { spans: [{ t: line }] } : { spans: [] }));
+      } else {
+        try {
+          const tokens = this.highlighter!.codeToTokensWithThemes(codeBody, {
+            lang: resolvedTokenLanguage as never,
+            themes: CODE_HIGHLIGHT_THEMES,
+          }) as ShikiThemedToken[][];
+          tokenLines = renderTokenLines(tokens);
+        } catch (error) {
+          console.warn("Shiki codeToTokens failed:", error);
+          tokenLines = new Array(codeLines.length).fill(null);
+        }
       }
     }
 
+    if (wantsTokens) {
+      nextMeta.tokenLines = tokenLines ?? [];
+      if (diffKind) {
+        nextMeta.diffKind = diffKind;
+        nextMeta.oldNo = diffOldNo ?? [];
+        nextMeta.newNo = diffNewNo ?? [];
+      } else {
+        if ("diffKind" in nextMeta) delete nextMeta.diffKind;
+        if ("oldNo" in nextMeta) delete nextMeta.oldNo;
+        if ("newNo" in nextMeta) delete nextMeta.newNo;
+      }
+    } else if ("tokenLines" in nextMeta) {
+      delete nextMeta.tokenLines;
+      if ("diffKind" in nextMeta) delete nextMeta.diffKind;
+      if ("oldNo" in nextMeta) delete nextMeta.oldNo;
+      if ("newNo" in nextMeta) delete nextMeta.newNo;
+    }
+    if (this.emitDiffBlocks && diffInfo.isDiff) {
+      const cursor: DiffCursorState = { oldLine: null, newLine: null };
+      const diffLines = codeLines.map((line) => parseUnifiedDiffLine(line, cursor));
+      nextMeta.diffBlocks = buildDiffBlocksFromLines(
+        diffLines,
+        codeLines,
+        wantsTokens ? ((nextMeta.tokenLines as Array<TokenLineV1 | null>) ?? null) : null,
+        diffInfo.baseLang ?? null,
+      );
+    } else if ("diffBlocks" in nextMeta) {
+      delete nextMeta.diffBlocks;
+    }
+
     block.payload.meta = nextMeta;
-    this.incrementalHighlightStates.delete(block.id);
   }
 
   private runDocumentPlugins(inputBlocks: Block[], content: string): Block[] {
     const blocks = inputBlocks.slice();
+    const aggregatedProtected: ProtectedRange[] = [];
+    for (const block of blocks) {
+      const meta = block.payload.meta as Record<string, unknown> | undefined;
+      const rawRanges = Array.isArray(meta?.protectedRanges) ? (meta.protectedRanges as ProtectedRange[]) : undefined;
+      if (!rawRanges || rawRanges.length === 0) continue;
+      const base = typeof block.payload.range?.from === "number" ? block.payload.range.from : null;
+      if (base === null) continue;
+      for (const range of rawRanges) {
+        if (typeof range.from !== "number" || typeof range.to !== "number") continue;
+        aggregatedProtected.push({
+          ...range,
+          from: base + range.from,
+          to: base + range.to,
+        });
+      }
+    }
+
     const { syntheticBlocks } = this.documentPluginRegistry.run({
       content,
       blocks,
       state: this.documentPluginState,
+      protectedRanges: aggregatedProtected,
     });
+
+    const filtered = blocks.filter((b) => b.type !== "footnotes");
     if (syntheticBlocks && syntheticBlocks.length > 0) {
-      blocks.push(...syntheticBlocks);
+      const tail = filtered[filtered.length - 1];
+      const hasDirtyTail = tail ? !tail.isFinalized : false;
+      if (hasDirtyTail) {
+        return filtered;
+      }
+      filtered.push(...syntheticBlocks);
     }
-    return blocks;
+    return filtered;
   }
 
   private async emitDocumentPatch(currentBlocks: Block[]): Promise<void> {
@@ -1329,6 +1517,8 @@ export class MarkdownEngine {
         tx,
         parseEpochCounterRef,
         streamSeqCounterRef,
+        undefined,
+        this.emittedBlockEpochs,
       );
       this.parseEpochCounter = parseEpochCounterRef.value;
       this.patchStreamSeq = streamSeqCounterRef.value;
@@ -1431,6 +1621,7 @@ export class MarkdownEngine {
       parseEpochCounterRef,
       streamSeqCounterRef,
       parseEpoch,
+      this.emittedBlockEpochs,
     ).patches;
     this.parseEpochCounter = parseEpochCounterRef.value;
     this.patchStreamSeq = streamSeqCounterRef.value;
@@ -1548,6 +1739,8 @@ export class MarkdownEngine {
       tx,
       parseEpochCounterRef,
       streamSeqCounterRef,
+      undefined,
+      this.emittedBlockEpochs,
     );
     this.parseEpochCounter = parseEpochCounterRef.value;
     this.patchStreamSeq = streamSeqCounterRef.value;
@@ -1675,12 +1868,21 @@ export class MarkdownEngine {
     if (this.workerCredits <= 0 || this.deferredPatchQueue.length === 0) {
       return;
     }
-    const maxFlush = options?.ignoreCredits ? MAX_DEFERRED_FLUSH_PATCHES : computeHeavyPatchBudget(this.workerCredits);
-    const patchesToSend = this.deferredPatchQueue.splice(0, maxFlush);
-    if (patchesToSend.length === 0) return;
-    this.dispatchPatchBatch(patchesToSend);
-  }
+    const immediate = partitionPatchesForCredits(
+      [],
+      this.workerCredits,
+      this.deferredPatchQueue,
+      MAX_DEFERRED_FLUSH_PATCHES,
+      options,
+    );
+    if (immediate.length === 0) {
+      return;
+    }
 
+    const metricsCollector = new WorkerMetricsCollector(this.workerGrammarEngine);
+    metricsCollector.setBlocksProduced(this.blocks.length);
+    this.dispatchPatchBatch(immediate, metricsCollector);
+  }
   private handleMdxStatus(blockId: string, update: MdxStatusUpdate): void {
     if (this.mdxCompileMode === "worker") {
       return;
@@ -1846,45 +2048,60 @@ export class MarkdownEngine {
     const tokenizationDuration = now() - tokenizationStart;
     metricsCollector.recordLazyTokenization(targetEnd - startLine, tokenizationDuration, this.lazyTokenizationQueue.size);
 
-    const nextMeta: Record<string, unknown> = {
-      ...(block.payload.meta ?? {}),
-      lang: resolvedLanguage,
-      code: codeBody,
-    };
+    const updated = cloneBlock(block);
+    updated.payload.highlightedHtml = undefined;
+    const effectiveLang = wantsHtml ? resolvedLanguage : resolvedTokenLanguage;
+    const nextMeta = { ...(updated.payload.meta ?? {}), ...meta, lang: effectiveLang } as Record<string, unknown>;
+    nextMeta.lazyTokenization = true;
+    nextMeta.lazyTokenizedUntil = state.processedLines;
     if (wantsHtml) {
-      nextMeta.highlightedLines = [...state.highlightedLines];
+      nextMeta.highlightedLines = state.highlightedLines;
+    } else if ("highlightedLines" in nextMeta) {
+      delete nextMeta.highlightedLines;
     }
     if (wantsTokens) {
-      nextMeta.tokenLines = [...state.tokenLines];
+      nextMeta.tokenLines = state.tokenLines;
       if (diffEnabled) {
-        nextMeta.diffKind = [...state.diffKind];
-        nextMeta.oldNo = [...state.oldNo];
-        nextMeta.newNo = [...state.newNo];
-        const rawLines = codeLines.slice(0, state.processedLines);
-        const diffLines: { kind: DiffKind; raw: string; oldNo?: number | null; newNo?: number | null }[] = [];
-        for (let i = 0; i < state.processedLines; i += 1) {
-          diffLines.push({
-            kind: (state.diffKind[i] === "del" ? "remove" : state.diffKind[i] ?? "context") as DiffKind,
-            raw: rawLines[i] ?? "",
-            oldNo: state.oldNo[i],
-            newNo: state.newNo[i],
-          });
-        }
-        nextMeta.diffBlocks = buildDiffBlocksFromLines(
-          diffLines,
-          rawLines,
-          state.tokenLines.slice(0, state.processedLines),
-        );
+        nextMeta.diffKind = state.diffKind;
+        nextMeta.oldNo = state.oldNo;
+        nextMeta.newNo = state.newNo;
+      } else {
+        if ("diffKind" in nextMeta) delete nextMeta.diffKind;
+        if ("oldNo" in nextMeta) delete nextMeta.oldNo;
+        if ("newNo" in nextMeta) delete nextMeta.newNo;
       }
+    } else if ("tokenLines" in nextMeta) {
+      delete nextMeta.tokenLines;
+      if ("diffKind" in nextMeta) delete nextMeta.diffKind;
+      if ("oldNo" in nextMeta) delete nextMeta.oldNo;
+      if ("newNo" in nextMeta) delete nextMeta.newNo;
     }
+    if (this.emitDiffBlocks && diffInfo.isDiff) {
+      const cursor: DiffCursorState = { oldLine: null, newLine: null };
+      const diffLines = codeLines.map((line) => parseUnifiedDiffLine(line, cursor));
+      nextMeta.diffBlocks = buildDiffBlocksFromLines(diffLines, codeLines, wantsTokens ? state.tokenLines : null, diffInfo.baseLang ?? null);
+    } else if ("diffBlocks" in nextMeta) {
+      delete nextMeta.diffBlocks;
+    }
+    updated.payload.meta = nextMeta;
+    this.blocks[index] = updated;
 
-    block.payload.meta = nextMeta;
-    const nextSnapshot = await blockToNodeSnapshot(block, this.highlighter, enrichCodeFn);
+    const nextSnapshot = await blockToNodeSnapshot(updated, this.highlighter, enrichCodeFn);
 
     const patches: Patch[] = [];
-    diffNodeSnapshot(block.id, prevSnapshot, nextSnapshot, patches, metricsCollector);
+    diffNodeSnapshot(updated.id, prevSnapshot, nextSnapshot, patches, metricsCollector);
     if (patches.length > 0) {
-      this.dispatchPatchBatch(patches, metricsCollector);
+      this.dispatchPatchBatch(withPatchKindBatch(patches, "enrichment"), metricsCollector);
+    } else {
+      if (metricsCollector) {
+        const metrics = metricsCollector.toPerformanceMetrics();
+        if (metrics) {
+          this.post({ type: "METRICS", metrics });
+        }
+      }
+      if (this.activeMetricsCollector === metricsCollector) {
+        this.activeMetricsCollector = null;
+      }
     }
   }
 }

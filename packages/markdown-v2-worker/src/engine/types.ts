@@ -71,11 +71,13 @@ export interface DiffCursorState {
 export interface DiffLineInfo {
   kind: DiffKind;
   raw: string;
+  text?: string;
+  prefix?: string;
+  content?: string;
   oldNo?: number | null;
   newNo?: number | null;
   hunkHeader?: boolean;
 }
-
 export interface IncrementalHighlightState {
   lang: string;
   tokenLang?: string;

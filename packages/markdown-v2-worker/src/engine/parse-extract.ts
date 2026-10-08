@@ -12,10 +12,11 @@ export function slugifyHeading(text: string): string {
   const normalized = text
     .trim()
     .toLowerCase()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
-  return normalized.replace(/^-+|-+$/g, "");
+    .replace(/[\u0000-\u001f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-");
+  return normalized;
 }
 
 export function buildTocHeadings(blocksInput: Block[]): TocHeading[] {
@@ -66,50 +67,45 @@ export function collectMathProtectedRanges(content: string): ProtectedRange[] {
   if (!content) return [];
   const ranges: ProtectedRange[] = [];
   const inlineStack: number[] = [];
-  let displayStart: number | null = null;
-  let inCodeSpan = false;
-  let codeDelimiterLength = 0;
+  const displayStack: number[] = [];
+  const length = content.length;
 
-  for (let i = 0; i < content.length; i += 1) {
-    const ch = content[i];
-    if (ch === "`") {
-      let run = 1;
-      while (i + 1 < content.length && content[i + 1] === "`") {
-        run += 1;
-        i += 1;
-      }
-      if (!inCodeSpan) {
-        inCodeSpan = true;
-        codeDelimiterLength = run;
-      } else if (run === codeDelimiterLength) {
-        inCodeSpan = false;
-        codeDelimiterLength = 0;
-      }
+  let i = 0;
+  while (i < length) {
+    const char = content[i];
+    if (char === "\\") {
+      i += 2;
       continue;
     }
-    if (inCodeSpan) continue;
-
-    if (ch === "$" && (i === 0 || content[i - 1] !== "\\")) {
-      const isDouble = i + 1 < content.length && content[i + 1] === "$";
-      if (isDouble) {
-        i += 1;
-        if (displayStart === null) {
-          displayStart = i - 1;
-        } else {
-          ranges.push({ from: displayStart, to: i + 1, kind: "math-display" });
-          displayStart = null;
-        }
-      } else if (displayStart === null) {
-        if (inlineStack.length > 0) {
-          const from = inlineStack.pop();
-          if (typeof from === "number") {
-            ranges.push({ from, to: i + 1, kind: "math-inline" });
-          }
-        } else {
-          inlineStack.push(i);
-        }
-      }
+    if (char === "\n" || char === "\r") {
+      inlineStack.length = 0;
+      i += 1;
+      continue;
     }
+    if (char !== "$") {
+      i++;
+      continue;
+    }
+
+    const isDouble = i + 1 < length && content[i + 1] === "$";
+    if (isDouble) {
+      if (displayStack.length > 0) {
+        const start = displayStack.pop() as number;
+        ranges.push({ from: start, to: i + 2, kind: "math-display" });
+      } else {
+        displayStack.push(i);
+      }
+      i += 2;
+      continue;
+    }
+
+    if (inlineStack.length > 0) {
+      const start = inlineStack.pop() as number;
+      ranges.push({ from: start, to: i + 1, kind: "math-inline" });
+    } else {
+      inlineStack.push(i);
+    }
+    i++;
   }
 
   return ranges;
@@ -195,32 +191,45 @@ export function collectWorkerStructuralInvariantViolations(nextBlocks: ReadonlyA
   const violations: string[] = [];
 
   for (const block of nextBlocks) {
-    const raw = typeof block.payload?.raw === "string" ? block.payload.raw : "";
-    if (block.type === "code") {
-      const match = raw.match(/^[ \t]*(`{3,}|~{3,})([^\n]*)/);
-      if (match) {
-        const info = (match[2] ?? "").trim();
-        const expectedLang = (info.split(/\s+/)[0] ?? "").toLowerCase();
-        const actualLang = typeof block.payload.meta?.lang === "string" ? block.payload.meta.lang.toLowerCase() : "";
-        if (expectedLang && actualLang && expectedLang !== actualLang && expectedLang !== "diff" && actualLang !== "diff") {
-          violations.push(
-            `Block ${block.id}: parsed fence language '${expectedLang}' diverges from meta.lang '${actualLang}'.`,
-          );
-        }
+    if (block.type === "table" && block.isFinalized) {
+      const tableMeta = (block.payload.meta ?? {}) as { header?: unknown[]; rows?: unknown[][] };
+      const headerColumns = Array.isArray(tableMeta.header) ? tableMeta.header.length : 0;
+      const rows = Array.isArray(tableMeta.rows) ? tableMeta.rows : [];
+      if (headerColumns > 0) {
+        rows.forEach((row, rowIndex) => {
+          if (row.length !== headerColumns) {
+            violations.push(`finalized table row width mismatch:${block.id}:${rowIndex}:${row.length}:${headerColumns}`);
+          }
+        });
       }
     }
 
-    if (block.type === "heading") {
-      const match = raw.match(/^[ \t]*(#{1,6})\s+(.+)$/);
-      if (match) {
-        const expectedLevel = match[1].length;
-        const actualLevel = typeof block.payload.meta?.headingLevel === "number" ? block.payload.meta.headingLevel : 0;
-        if (actualLevel && actualLevel !== expectedLevel) {
-          violations.push(
-            `Block ${block.id}: parsed heading level ${expectedLevel} diverges from meta.headingLevel ${actualLevel}.`,
-          );
-        }
+    if (block.type !== "mdx") {
+      if (block.payload.compiledMdxRef || block.payload.compiledMdxModule) {
+        violations.push(`non-mdx block carries mdx artifact:${block.id}:${block.type}`);
       }
+      continue;
+    }
+
+    const meta = (block.payload.meta ?? {}) as { mdxStatus?: unknown };
+    const status = typeof meta.mdxStatus === "string" ? meta.mdxStatus : undefined;
+    const hasCompiledArtifact = Boolean(block.payload.compiledMdxRef || block.payload.compiledMdxModule);
+
+    if (block.isFinalized && status === "pending") {
+      violations.push(`finalized mdx block remained pending:${block.id}`);
+    }
+    if (status === "compiled" && !hasCompiledArtifact) {
+      violations.push(`compiled mdx block missing artifact:${block.id}`);
+    }
+    if (status === "error" && hasCompiledArtifact) {
+      violations.push(`errored mdx block retained compiled artifact:${block.id}`);
+    }
+    if (
+      block.payload.compiledMdxRef &&
+      block.payload.compiledMdxModule &&
+      block.payload.compiledMdxRef.id !== block.payload.compiledMdxModule.id
+    ) {
+      violations.push(`mdx artifact id mismatch:${block.id}:${block.payload.compiledMdxRef.id}:${block.payload.compiledMdxModule.id}`);
     }
   }
 

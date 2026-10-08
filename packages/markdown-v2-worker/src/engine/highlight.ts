@@ -133,42 +133,45 @@ export function mergeWhitespaceTokens(tokens: ShikiThemedToken[][]): ShikiThemed
   return tokens.map((lineTokens) => {
     if (lineTokens.length <= 1) return lineTokens;
 
-    const merged: ShikiThemedToken[] = [];
-    for (const token of lineTokens) {
-      if (!token.content) continue;
+    const redistributed: ShikiThemedToken[] = [];
+    let pendingWhitespace = "";
 
-      const previous = merged[merged.length - 1];
-      if (!previous) {
-        merged.push({ ...token });
-        continue;
-      }
-
+    for (let i = 0; i < lineTokens.length; i += 1) {
+      const token = lineTokens[i];
       if (hasOnlyWhitespace(token.content)) {
-        previous.content += token.content;
+        pendingWhitespace += token.content;
         continue;
       }
 
-      if (hasOnlyWhitespace(previous.content)) {
-        const grandParent = merged[merged.length - 2];
-        if (grandParent && sameShikiTokenStyle(grandParent, token)) {
-          grandParent.content += previous.content + token.content;
-          merged.pop();
-          continue;
-        }
-        previous.variants = { ...token.variants };
-        previous.content += token.content;
-        continue;
-      }
+      const normalizedToken: ShikiThemedToken = pendingWhitespace
+        ? {
+            content: `${pendingWhitespace}${token.content}`,
+            variants: token.variants,
+          }
+        : token;
+      pendingWhitespace = "";
 
-      if (sameShikiTokenStyle(previous, token)) {
-        previous.content += token.content;
-        continue;
+      const previous = redistributed[redistributed.length - 1];
+      if (previous && sameShikiTokenStyle(previous, normalizedToken)) {
+        previous.content += normalizedToken.content;
+      } else {
+        redistributed.push({
+          content: normalizedToken.content,
+          variants: normalizedToken.variants,
+        });
       }
-
-      merged.push({ ...token });
     }
 
-    return merged;
+    if (pendingWhitespace) {
+      const previous = redistributed[redistributed.length - 1];
+      if (previous) {
+        previous.content += pendingWhitespace;
+      } else {
+        redistributed.push({ content: pendingWhitespace, variants: {} });
+      }
+    }
+
+    return redistributed;
   });
 }
 
@@ -231,33 +234,35 @@ export function parseUnifiedDiffLine(line: string, cursor: DiffCursorState): Dif
       cursor.oldLine = header.oldStart;
       cursor.newLine = header.newStart;
     }
-    return { kind: "hunk", raw: line, hunkHeader: true };
+    return { text: line, kind: "hunk", prefix: "", content: line, oldNo: null, newNo: null, raw: line, hunkHeader: true };
   }
-  if (isDiffMetaLine(line)) {
-    return { kind: "meta", raw: line };
+  if (line.startsWith("--- ") || line.startsWith("+++ ") || isDiffMetaLine(line)) {
+    return { text: line, kind: "meta", prefix: "", content: line, oldNo: null, newNo: null, raw: line };
   }
   if (line.startsWith("+")) {
-    const lineNo = cursor.newLine;
-    if (cursor.newLine !== null) {
-      cursor.newLine += 1;
+    if (line.startsWith("+++")) {
+      return { text: line, kind: "meta", prefix: "", content: line, oldNo: null, newNo: null, raw: line };
     }
-    return { kind: "add", raw: line, newNo: lineNo };
+    const newNo = cursor.newLine;
+    if (cursor.newLine !== null) cursor.newLine += 1;
+    return { text: line, kind: "add", prefix: "+", content: line.slice(1), oldNo: null, newNo, raw: line };
   }
   if (line.startsWith("-")) {
-    const lineNo = cursor.oldLine;
-    if (cursor.oldLine !== null) {
-      cursor.oldLine += 1;
+    if (line.startsWith("---")) {
+      return { text: line, kind: "meta", prefix: "", content: line, oldNo: null, newNo: null, raw: line };
     }
-    return { kind: "remove", raw: line, oldNo: lineNo };
+    const oldNo = cursor.oldLine;
+    if (cursor.oldLine !== null) cursor.oldLine += 1;
+    return { text: line, kind: "remove", prefix: "-", content: line.slice(1), oldNo, newNo: null, raw: line };
   }
-  if (line.startsWith(" ") || line === "") {
+  if (line.startsWith(" ")) {
     const oldNo = cursor.oldLine;
     const newNo = cursor.newLine;
     if (cursor.oldLine !== null) cursor.oldLine += 1;
     if (cursor.newLine !== null) cursor.newLine += 1;
-    return { kind: "context", raw: line, oldNo, newNo };
+    return { text: line, kind: "context", prefix: " ", content: line.slice(1), oldNo, newNo, raw: line };
   }
-  return { kind: "context", raw: line };
+  return { text: line, kind: "meta", prefix: "", content: line, oldNo: null, newNo: null, raw: line };
 }
 
 export function normalizeDiffPath(value: string | null): string | null {
@@ -402,74 +407,73 @@ export function buildDiffBlocksFromLines(
   lines: DiffLineInfo[],
   rawLines: string[],
   tokenLines: Array<TokenLineV1 | null> | null,
+  defaultLanguage: string | null = null,
 ): DiffBlock[] {
   const blocks: DiffBlock[] = [];
-  let currentKind: DiffBlock["kind"] | null = null;
-  let currentLines: DiffLine[] = [];
+  let current: DiffBlock | null = null;
+  let currentRaw: string[] = [];
+  let additions = 0;
+  let deletions = 0;
 
-  const flush = () => {
-    if (!currentKind || currentLines.length === 0) return;
-    blocks.push({
-      kind: currentKind,
-      lines: currentLines,
-    });
-    currentLines = [];
-    currentKind = null;
+  const finalize = () => {
+    if (!current) return;
+    current.additions = additions;
+    current.deletions = deletions;
+    if (currentRaw.length > 0) {
+      current.unified = currentRaw.join("\n");
+    }
+    blocks.push(current);
+    current = null;
+    currentRaw = [];
+    additions = 0;
+    deletions = 0;
   };
 
-  for (let i = 0; i < lines.length; i += 1) {
-    const info = lines[i];
-    const raw = rawLines[i] ?? info.raw;
-    const tokens = tokenLines ? tokenLines[i] ?? null : null;
-    const kind = toDiffLineKind(info.kind);
-    const prefix = info.kind === "add" ? "+" : info.kind === "remove" ? "-" : info.kind === "context" && raw.startsWith(" ") ? " " : "";
-    const darkTokens = tokens ? toThemedLine(tokens, "dark") : null;
-    const lightTokens = tokens ? toThemedLine(tokens, "light") : null;
-    const darkTokensStripped = darkTokens && prefix ? stripPrefixFromThemedLine(darkTokens, prefix) : darkTokens;
-    const lightTokensStripped = lightTokens && prefix ? stripPrefixFromThemedLine(lightTokens, prefix) : lightTokens;
-    const tokensMap =
-      darkTokensStripped || lightTokensStripped
-        ? {
-            dark: darkTokensStripped ?? undefined,
-            light: lightTokensStripped ?? undefined,
-          }
-        : undefined;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const raw = rawLines[i] ?? line.text ?? line.raw;
+    const filePath = extractDiffFilePath(raw);
 
-    const line: DiffLine = {
-      kind,
-      text: raw,
-      oldLineNumber: typeof info.oldNo === "number" ? info.oldNo : undefined,
-      newLineNumber: typeof info.newNo === "number" ? info.newNo : undefined,
-      tokens: tokensMap,
+    if (raw.startsWith("diff --git")) {
+      finalize();
+    }
+    if (!current) {
+      current = {
+        kind: "diff",
+        filePath: filePath ?? null,
+        language: filePath ? guessLanguageFromPath(filePath) ?? defaultLanguage : defaultLanguage,
+        lines: [],
+        additions: null,
+        deletions: null,
+        unified: null,
+      };
+    } else if (filePath && !current.filePath) {
+      current.filePath = filePath;
+      if (!current.language) {
+        current.language = guessLanguageFromPath(filePath) ?? defaultLanguage;
+      }
+    }
+
+    if (line.kind === "add") additions += 1;
+    if (line.kind === "remove") deletions += 1;
+
+    let themed = tokenLines ? toThemedLine(tokenLines[i] ?? null, "dark") : null;
+    if (line.kind === "add" || line.kind === "remove" || line.kind === "context") {
+      themed = stripPrefixFromThemedLine(themed, line.prefix ?? "");
+    }
+
+    const entry: DiffLine = {
+      kind: toDiffLineKind(line.kind),
+      oldNo: line.oldNo ?? null,
+      newNo: line.newNo ?? null,
+      raw,
+      tokens: themed ?? null,
     };
-
-    if (info.hunkHeader) {
-      flush();
-      blocks.push({
-        kind: "hunk",
-        lines: [line],
-      });
-      continue;
-    }
-
-    if (info.kind === "meta") {
-      flush();
-      blocks.push({
-        kind: "meta",
-        lines: [line],
-      });
-      continue;
-    }
-
-    const blockKind: DiffBlock["kind"] = kind === "add" ? "add" : kind === "del" ? "del" : "context";
-    if (currentKind !== blockKind) {
-      flush();
-      currentKind = blockKind;
-    }
-    currentLines.push(line);
+    current.lines.push(entry);
+    currentRaw.push(raw);
   }
 
-  flush();
+  finalize();
   return blocks;
 }
 

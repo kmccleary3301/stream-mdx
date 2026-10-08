@@ -1,11 +1,15 @@
 import type {
   Block,
+  DiffKind,
   NodeSnapshot,
   Patch,
   PatchKind,
+  TokenLineV1,
 } from "@stream-mdx/core";
 import {
+  PATCH_ROOT_ID,
   cloneBlock,
+  computeHeavyPatchBudget,
   createBlockSnapshot,
 } from "@stream-mdx/core";
 import { getPatchKind, isHeavyPatch } from "@stream-mdx/core/perf/patch-batching";
@@ -45,16 +49,21 @@ export function targetBlockIdsForPatch(patch: Patch): string[] {
   if (patch.op === "setPropsBatch") {
     const ids = new Set<string>();
     for (const entry of patch.entries ?? []) {
-      if (entry?.at?.blockId) {
+      if (entry?.at?.blockId && entry.at.blockId !== PATCH_ROOT_ID) {
         ids.add(entry.at.blockId);
       }
     }
     return Array.from(ids);
   }
-  if (patch.at?.blockId) {
-    return [patch.at.blockId];
+
+  const ids = new Set<string>();
+  if (patch.at?.blockId && patch.at.blockId !== PATCH_ROOT_ID) {
+    ids.add(patch.at.blockId);
   }
-  return [];
+  if ((patch.op === "insertChild" || patch.op === "replaceChild") && patch.at?.blockId === PATCH_ROOT_ID && patch.node?.id) {
+    ids.add(patch.node.id);
+  }
+  return Array.from(ids);
 }
 
 export function withPatchControlMeta(
@@ -63,16 +72,25 @@ export function withPatchControlMeta(
     kind: PatchKind;
     streamSeq?: number;
     parseEpoch?: number;
+    tx?: number;
+    blockEpoch?: number;
   },
 ): Patch {
-  const existing = (patch as { meta?: unknown }).meta;
-  const merged =
-    existing && typeof existing === "object"
-      ? { ...(existing as Record<string, unknown>), ...meta }
-      : { ...meta };
+  if (patch.op === "setHTML") {
+    return {
+      ...patch,
+      patchMeta: {
+        ...(patch.patchMeta ?? {}),
+        ...meta,
+      },
+    };
+  }
   return {
     ...patch,
-    meta: merged,
+    meta: {
+      ...(patch.meta ?? {}),
+      ...meta,
+    },
   };
 }
 
@@ -104,15 +122,20 @@ export function annotatePatchBatch(
   tx: number,
   parseEpoch: number,
   streamSeqCounter: { value: number },
+  emittedBlockEpochs?: Map<string, number>,
 ): Patch[] {
+  streamSeqCounter.value += 1;
+  const streamSeq = streamSeqCounter.value;
   return patches.map((patch) => {
-    streamSeqCounter.value += 1;
-    const streamSeq = streamSeqCounter.value;
     const kind = getPatchKind(patch);
+    const blockIds = targetBlockIdsForPatch(patch);
+    const expectedBlockEpoch = blockIds.length === 1 && emittedBlockEpochs ? emittedBlockEpochs.get(blockIds[0]) : undefined;
     return withPatchControlMeta(patch, {
       kind,
       streamSeq,
       parseEpoch,
+      tx,
+      ...(expectedBlockEpoch !== undefined ? { blockEpoch: expectedBlockEpoch } : {}),
     });
   });
 }
@@ -139,10 +162,11 @@ export function ensureAnnotatedPatchBatch(
   parseEpochCounter: { value: number },
   streamSeqCounter: { value: number },
   parseEpoch?: number,
+  emittedBlockEpochs?: Map<string, number>,
 ): { patches: Patch[]; parseEpoch: number } {
   const effectiveEpoch = parseEpoch ?? (parseEpochCounter.value += 1);
   return {
-    patches: annotatePatchBatch(patches, tx, effectiveEpoch, streamSeqCounter),
+    patches: annotatePatchBatch(patches, tx, effectiveEpoch, streamSeqCounter, emittedBlockEpochs),
     parseEpoch: effectiveEpoch,
   };
 }
@@ -179,87 +203,106 @@ export function dedupeSetPropsByTargetKeepingLatest(patches: Patch[]): Patch[] {
   if (patches.length < 2) {
     return patches;
   }
-  const lastIndexByBlockId = new Map<string, number>();
-  for (let i = 0; i < patches.length; i += 1) {
+  const seen = new Set<string>();
+  const dedupedReversed: Patch[] = [];
+  for (let i = patches.length - 1; i >= 0; i--) {
     const patch = patches[i];
-    if (patch.op === "setProps" && patch.at?.blockId) {
-      lastIndexByBlockId.set(patch.at.blockId, i);
-    }
-  }
-  if (lastIndexByBlockId.size === 0) {
-    return patches;
-  }
-  const result: Patch[] = [];
-  for (let i = 0; i < patches.length; i += 1) {
-    const patch = patches[i];
-    if (patch.op === "setProps" && patch.at?.blockId) {
-      const targetId = patch.at.blockId;
-      const latest = lastIndexByBlockId.get(targetId);
-      if (latest !== undefined && latest !== i) {
+    if (patch.op === "setProps") {
+      const target = patch.at.nodeId ?? patch.at.blockId;
+      const key = `${patch.at.blockId}::${target}`;
+      if (seen.has(key)) {
         continue;
       }
+      seen.add(key);
     }
-    result.push(patch);
+    dedupedReversed.push(patch);
   }
-  return result;
+  dedupedReversed.reverse();
+  return dedupedReversed;
 }
-
 export function partitionPatchesForCredits(
   patches: Patch[],
-  credits: number,
-  deferredQueue: Patch[],
+  workerCredits: number,
+  deferredPatchQueue: Patch[],
   maxImmediate?: number,
-  options?: { maxDeferred?: number },
+  options?: {
+    ignoreCredits?: boolean;
+    maxDeferred?: number;
+  },
 ): Patch[] {
   const maxDeferred = options?.maxDeferred ?? 400;
-  if (credits >= 1 && (maxImmediate === undefined || maxImmediate <= 0)) {
-    return patches;
+  let combined: Patch[] = patches;
+  if (deferredPatchQueue.length > 0) {
+    combined = deferredPatchQueue.concat(patches);
+    deferredPatchQueue.length = 0;
+  }
+  combined = dedupeSetPropsByTargetKeepingLatest(combined);
+  if (combined.length === 0) {
+    return [];
   }
 
-  const immediate: Patch[] = [];
+  let immediate: Patch[] = [];
   const deferred: Patch[] = [];
 
-  for (const patch of patches) {
-    const isPriority = isPriorityImmediatePatch(patch);
-    if (isPriority) {
-      immediate.push(patch);
-      continue;
-    }
+  const bypassCreditBudget = options?.ignoreCredits || workerCredits >= 0.999;
+  let heavyBudget = computeHeavyPatchBudget(workerCredits);
 
-    if (maxImmediate !== undefined && maxImmediate > 0 && immediate.length >= maxImmediate) {
-      deferred.push(patch);
-      continue;
-    }
-
-    if (credits < 1 && isHeavyPatch(patch)) {
-      deferred.push(patch);
-    } else {
-      immediate.push(patch);
-    }
-  }
-
-  if (deferred.length > 0) {
-    deferredQueue.push(...deferred);
-    if (deferredQueue.length > maxDeferred) {
-      const deduped = dedupeSetPropsByTargetKeepingLatest(deferredQueue);
-      deferredQueue.length = 0;
-      deferredQueue.push(...deduped);
-      if (deferredQueue.length > maxDeferred) {
-        const excess = deferredQueue.length - maxDeferred;
-        deferredQueue.splice(0, excess);
+  for (const patch of combined) {
+    const kind = getPatchKind(patch);
+    const heavy = isHeavyPatch(patch);
+    const priorityImmediate = isPriorityImmediatePatch(patch);
+    if (heavy && kind !== "semantic" && !bypassCreditBudget && !priorityImmediate) {
+      if (heavyBudget <= 0) {
+        if (deferred.length < maxDeferred) {
+          deferred.push(patch);
+          continue;
+        }
+      } else {
+        heavyBudget -= 1;
       }
     }
+
+    immediate.push(patch);
   }
 
+  if (typeof maxImmediate === "number" && immediate.length > maxImmediate) {
+    const requiredCount = immediate.reduce(
+      (count, patch) => count + (isPriorityImmediatePatch(patch) || getPatchKind(patch) === "semantic" ? 1 : 0),
+      0,
+    );
+    const maxDeferrable = Math.max(0, maxImmediate - requiredCount);
+    const kept: Patch[] = [];
+    const overflow: Patch[] = [];
+    let deferrableKept = 0;
+    for (const patch of immediate) {
+      if (isPriorityImmediatePatch(patch) || getPatchKind(patch) === "semantic") {
+        kept.push(patch);
+        continue;
+      }
+      if (deferrableKept < maxDeferrable) {
+        kept.push(patch);
+        deferrableKept += 1;
+      } else {
+        overflow.push(patch);
+      }
+    }
+    immediate = kept;
+    deferredPatchQueue.push(...overflow.concat(deferred));
+  } else {
+    deferredPatchQueue.push(...deferred);
+  }
   return immediate;
 }
-
 export function shallowEqual(a: Record<string, unknown>, b: Record<string, unknown>): boolean {
   const keysA = Object.keys(a);
   const keysB = Object.keys(b);
   if (keysA.length !== keysB.length) return false;
   for (const key of keysA) {
-    if (a[key] !== b[key]) {
+    const valA = a[key];
+    const valB = b[key];
+    if (typeof valA === "object" || typeof valB === "object") {
+      if (JSON.stringify(valA) !== JSON.stringify(valB)) return false;
+    } else if (valA !== valB) {
       return false;
     }
   }
@@ -323,83 +366,159 @@ export function diffListChildren(
   patches: Patch[],
   metrics?: WorkerMetricsCollector | null,
 ): void {
-  const prevIds = prevChildren.map((c) => c.id);
-  const nextIds = nextChildren.map((c) => c.id);
+  const prevLength = prevChildren.length;
+  const nextLength = nextChildren.length;
 
-  if (prevIds.length === nextIds.length && haveSameMultiset(prevIds, nextIds)) {
-    const isDifferentOrder = prevIds.some((id, index) => id !== nextIds[index]);
-    if (isDifferentOrder) {
-      patches.push({
-        op: "reorder",
-        at: { blockId },
-        order: nextIds,
-      });
-      for (let i = 0; i < nextChildren.length; i += 1) {
-        const nextChild = nextChildren[i];
-        const prevChild = prevChildren.find((c) => c.id === nextChild.id);
-        if (prevChild) {
-          diffNodeSnapshot(nextChild.id, prevChild, nextChild, patches, metrics);
-        }
-      }
-      return;
-    }
+  if (prevLength === 0 && nextLength === 0) {
+    return;
   }
 
+  const commonLength = Math.min(prevLength, nextLength);
+
+  // Diff shared prefix first to propagate nested updates.
   let prefix = 0;
-  const maxPrefix = Math.min(prevChildren.length, nextChildren.length);
-  while (prefix < maxPrefix && prevChildren[prefix].id === nextChildren[prefix].id) {
-    prefix += 1;
+  while (prefix < commonLength && prevChildren[prefix].id === nextChildren[prefix].id) {
+    diffNodeSnapshot(blockId, prevChildren[prefix], nextChildren[prefix], patches, metrics);
+    prefix++;
   }
 
-  let prevTail = prevChildren.length - 1;
-  let nextTail = nextChildren.length - 1;
-  while (prevTail >= prefix && nextTail >= prefix && prevChildren[prevTail].id === nextChildren[nextTail].id) {
-    prevTail -= 1;
-    nextTail -= 1;
+  if (prefix === prevLength && prefix === nextLength) {
+    return;
   }
 
-  const removeCount = prevTail >= prefix ? prevTail - prefix + 1 : 0;
-  const addCount = nextTail >= prefix ? nextTail - prefix + 1 : 0;
-
-  if (removeCount === addCount) {
-    for (let offset = 0; offset < addCount; offset += 1) {
-      const targetIndex = prefix + offset;
-      patches.push({
-        op: "replaceChild",
-        at: { blockId },
-        index: targetIndex,
-        node: nextChildren[targetIndex],
-      });
-    }
-  } else {
-    for (let i = removeCount - 1; i >= 0; i -= 1) {
-      patches.push({
-        op: "deleteChild",
-        at: { blockId },
-        index: prefix + i,
-      });
-    }
-    for (let offset = 0; offset < addCount; offset += 1) {
-      const insertIndex = prefix + offset;
+  // Pure append: existing prefix matches and prev length exhausted.
+  if (prefix === prevLength && nextLength > prevLength) {
+    for (let i = prefix; i < nextLength; i++) {
       patches.push({
         op: "insertChild",
-        at: { blockId },
-        index: insertIndex,
-        node: nextChildren[insertIndex],
+        at: { blockId, nodeId: listNode.id },
+        index: i,
+        node: nextChildren[i],
       });
     }
+    return;
   }
 
-  for (let i = 0; i < prefix; i += 1) {
-    diffNodeSnapshot(prevChildren[i].id, prevChildren[i], nextChildren[i], patches, metrics);
+  // Pure truncate from tail.
+  if (prefix === nextLength && prevLength > nextLength) {
+    for (let i = prevLength - 1; i >= nextLength; i--) {
+      patches.push({
+        op: "deleteChild",
+        at: { blockId, nodeId: listNode.id },
+        index: i,
+      });
+    }
+    return;
   }
-  const prevTailStart = prevTail + 1;
-  const nextTailStart = nextTail + 1;
-  const tailCount = prevChildren.length - prevTailStart;
-  for (let offset = 0; offset < tailCount; offset += 1) {
-    const prevChild = prevChildren[prevTailStart + offset];
-    const nextChild = nextChildren[nextTailStart + offset];
-    diffNodeSnapshot(nextChild.id, prevChild, nextChild, patches, metrics);
+
+  // Compute suffix after trimming already handled prefix.
+  let suffix = 0;
+  while (suffix < commonLength - prefix && prevChildren[prevLength - 1 - suffix].id === nextChildren[nextLength - 1 - suffix].id) {
+    const prevIdx = prevLength - 1 - suffix;
+    const nextIdx = nextLength - 1 - suffix;
+    diffNodeSnapshot(blockId, prevChildren[prevIdx], nextChildren[nextIdx], patches, metrics);
+    suffix++;
+  }
+
+  const prevMidStart = prefix;
+  const prevMidEnd = prevLength - suffix;
+  const nextMidStart = prefix;
+  const nextMidEnd = nextLength - suffix;
+
+  const prevMidLen = Math.max(0, prevMidEnd - prevMidStart);
+  const nextMidLen = Math.max(0, nextMidEnd - nextMidStart);
+
+  if (prevMidLen === 0 && nextMidLen === 0) {
+    return;
+  }
+
+  if (prevMidLen === 0 && nextMidLen > 0) {
+    for (let i = nextMidStart; i < nextMidEnd; i++) {
+      patches.push({
+        op: "insertChild",
+        at: { blockId, nodeId: listNode.id },
+        index: i,
+        node: nextChildren[i],
+      });
+    }
+    return;
+  }
+
+  if (prevMidLen > 0 && nextMidLen === 0) {
+    for (let i = prevMidEnd - 1; i >= prevMidStart; i--) {
+      patches.push({
+        op: "deleteChild",
+        at: { blockId, nodeId: listNode.id },
+        index: i,
+      });
+    }
+    return;
+  }
+
+  // When both sides have mid-ranges, fall back to generic handling to account for true reorders/edits.
+  const prevMid = prevChildren.slice(prevMidStart, prevMidEnd);
+  const nextMid = nextChildren.slice(nextMidStart, nextMidEnd);
+
+  const sharedMid = Math.min(prevMid.length, nextMid.length);
+  let midPrefix = 0;
+  while (midPrefix < sharedMid && prevMid[midPrefix].id === nextMid[midPrefix].id) {
+    diffNodeSnapshot(blockId, prevMid[midPrefix], nextMid[midPrefix], patches, metrics);
+    midPrefix++;
+  }
+
+  if (midPrefix === prevMid.length && midPrefix === nextMid.length) {
+    return;
+  }
+
+  if (midPrefix === prevMid.length && nextMid.length > prevMid.length) {
+    for (let i = nextMidStart + midPrefix; i < nextMidEnd; i++) {
+      patches.push({
+        op: "insertChild",
+        at: { blockId, nodeId: listNode.id },
+        index: i,
+        node: nextChildren[i],
+      });
+    }
+    return;
+  }
+
+  if (midPrefix === nextMid.length && prevMid.length > nextMid.length) {
+    for (let i = prevMidEnd - 1; i >= prevMidStart + midPrefix; i--) {
+      patches.push({
+        op: "deleteChild",
+        at: { blockId, nodeId: listNode.id },
+        index: i,
+      });
+    }
+    return;
+  }
+
+  const remainingPrevMid = prevMid.slice(midPrefix);
+  const remainingNextMid = nextMid.slice(midPrefix);
+
+  if (remainingPrevMid.length === remainingNextMid.length && remainingPrevMid.every((child, idx) => child.id === remainingNextMid[idx].id)) {
+    for (let idx = 0; idx < remainingPrevMid.length; idx++) {
+      diffNodeSnapshot(blockId, remainingPrevMid[idx], remainingNextMid[idx], patches, metrics);
+    }
+    return;
+  }
+
+  // Otherwise leverage delete/insert to reflect structural moves without reorder.
+  for (let i = prevMidEnd - 1; i >= prevMidStart + midPrefix; i--) {
+    patches.push({
+      op: "deleteChild",
+      at: { blockId, nodeId: listNode.id },
+      index: i,
+    });
+  }
+
+  for (let i = nextMidStart + midPrefix; i < nextMidEnd; i++) {
+    patches.push({
+      op: "insertChild",
+      at: { blockId, nodeId: listNode.id },
+      index: i,
+      node: nextChildren[i],
+    });
   }
 }
 
@@ -414,77 +533,181 @@ export function diffNodeSnapshot(
   const nextProps = nextNode.props ?? {};
   const propsChanged = !shallowEqual(prevProps, nextProps);
 
-  if (propsChanged) {
-    const isTrans =
-      Boolean(nextProps.allowMixedStreaming) ||
-      Boolean(prevProps.allowMixedStreaming) ||
-      Boolean(nextProps.inlineStatus) ||
-      Boolean(prevProps.inlineStatus);
-    const kind: PatchKind = isTrans ? "transient" : "semantic";
-    patches.push(
-      withPatchKind(
-        {
-          op: "setProps",
-          at: { blockId },
-          props: nextProps,
-        },
-        kind,
-      ),
-    );
-  }
+  const emitSetProps = () => {
+    if (!propsChanged) return;
+    patches.push({
+      op: "setProps",
+      at: { blockId, nodeId: prevNode.id },
+      props: nextProps ?? {},
+    });
+  };
 
   const prevChildren = prevNode.children ?? [];
   const nextChildren = nextNode.children ?? [];
 
-  if (prevChildren.length === 0 && nextChildren.length === 0) {
-    return;
-  }
-
   if (prevNode.type === "list" && nextNode.type === "list") {
-    diffListChildren(blockId, nextNode, prevChildren, nextChildren, patches, metrics);
+    emitSetProps();
+    diffListChildren(blockId, prevNode, prevChildren, nextChildren, patches, metrics);
     return;
   }
 
-  let divergeIndex = 0;
-  const minLength = Math.min(prevChildren.length, nextChildren.length);
-  while (divergeIndex < minLength && prevChildren[divergeIndex].id === nextChildren[divergeIndex].id) {
-    divergeIndex += 1;
-  }
+  // Special handling for code blocks: detect pure append and emit appendLines.
+  // Defer the code-block setProps until after child mutations so the renderer
+  // store does not normalize the code subtree before an appendLines patch lands.
+  if (prevNode.type === "code" && nextNode.type === "code") {
+    const commonLength = Math.min(prevChildren.length, nextChildren.length);
+    let divergeIndex = 0;
+    while (divergeIndex < commonLength && prevChildren[divergeIndex].id === nextChildren[divergeIndex].id) {
+      diffNodeSnapshot(blockId, prevChildren[divergeIndex], nextChildren[divergeIndex], patches, metrics);
+      divergeIndex++;
+    }
 
-  if (canEmitAppendLinesPatch(prevNode, nextNode, divergeIndex)) {
-    const appendLines = nextChildren.slice(divergeIndex);
-    if (appendLines.length > 0) {
-      metrics?.recordAppendLines(appendLines.length);
+    const onlyAppend =
+      divergeIndex === prevChildren.length &&
+      nextChildren.length >= prevChildren.length &&
+      prevChildren.every((child, idx) => child.id === nextChildren[idx].id);
+
+    if (onlyAppend && nextChildren.length > prevChildren.length && canEmitAppendLinesPatch(prevNode, nextNode, divergeIndex)) {
+      const startIndex = prevChildren.length;
+      const appended = nextChildren.slice(startIndex);
+      const hasTokenLines = appended.some((child) => Object.prototype.hasOwnProperty.call(child.props ?? {}, "tokens"));
+      const hasDiffKind = appended.some((child) => Object.prototype.hasOwnProperty.call(child.props ?? {}, "diffKind"));
+      const hasOldNo = appended.some((child) => Object.prototype.hasOwnProperty.call(child.props ?? {}, "oldNo"));
+      const hasNewNo = appended.some((child) => Object.prototype.hasOwnProperty.call(child.props ?? {}, "newNo"));
       patches.push({
         op: "appendLines",
-        at: { blockId },
-        lines: appendLines,
-        startIndex: divergeIndex,
+        at: { blockId, nodeId: prevNode.id },
+        startIndex,
+        lines: appended.map((child) => {
+          const text = typeof child.props?.text === "string" ? (child.props?.text as string) : "";
+          return text;
+        }),
+        highlight: appended.map((child) => (typeof child.props?.html === "string" ? (child.props?.html as string) : null)),
+        ...(hasTokenLines
+          ? {
+              tokens: appended.map((child) =>
+                Object.prototype.hasOwnProperty.call(child.props ?? {}, "tokens") ? (child.props?.tokens as TokenLineV1 | null) : null,
+              ),
+            }
+          : {}),
+        ...(hasDiffKind
+          ? {
+              diffKind: appended.map((child) =>
+                Object.prototype.hasOwnProperty.call(child.props ?? {}, "diffKind") ? (child.props?.diffKind as DiffKind | null) : null,
+              ),
+            }
+          : {}),
+        ...(hasOldNo
+          ? {
+              oldNo: appended.map((child) =>
+                Object.prototype.hasOwnProperty.call(child.props ?? {}, "oldNo") ? (child.props?.oldNo as number | null) : null,
+              ),
+            }
+          : {}),
+        ...(hasNewNo
+          ? {
+              newNo: appended.map((child) =>
+                Object.prototype.hasOwnProperty.call(child.props ?? {}, "newNo") ? (child.props?.newNo as number | null) : null,
+              ),
+            }
+          : {}),
       });
+      metrics?.recordAppendLines(appended.length);
+      emitSetProps();
+      return;
+    }
+
+    // Fall through to generic handling for other mutations (edits/deletes)
+  } else {
+    emitSetProps();
+  }
+
+  const minLen = Math.min(prevChildren.length, nextChildren.length);
+  let prefix = 0;
+  while (prefix < minLen && prevChildren[prefix].id === nextChildren[prefix].id) {
+    diffNodeSnapshot(blockId, prevChildren[prefix], nextChildren[prefix], patches, metrics);
+    prefix++;
+  }
+
+  let suffix = 0;
+  while (suffix < minLen - prefix && prevChildren[prevChildren.length - 1 - suffix].id === nextChildren[nextChildren.length - 1 - suffix].id) {
+    const prevIdx = prevChildren.length - 1 - suffix;
+    const nextIdx = nextChildren.length - 1 - suffix;
+    diffNodeSnapshot(blockId, prevChildren[prevIdx], nextChildren[nextIdx], patches, metrics);
+    suffix++;
+  }
+
+  const prevMid = prevChildren.slice(prefix, prevChildren.length - suffix);
+  const nextMid = nextChildren.slice(prefix, nextChildren.length - suffix);
+
+  if (prevMid.length === 0 && nextMid.length === 0) {
+    if (prevNode.type === "code" && nextNode.type === "code") {
+      emitSetProps();
+    }
+    return;
+  }
+
+  if (prevMid.length === nextMid.length && prevMid.length > 0) {
+    const prevIds = prevMid.map((child) => child.id);
+    const nextIds = nextMid.map((child) => child.id);
+    if (haveSameMultiset(prevIds, nextIds)) {
+      const currentOrder = prevIds.slice();
+      const reorderOps: Array<{ from: number; to: number }> = [];
+      for (let targetIdx = 0; targetIdx < nextIds.length; targetIdx++) {
+        const desiredId = nextIds[targetIdx];
+        if (currentOrder[targetIdx] === desiredId) {
+          continue;
+        }
+        const sourceIdx = currentOrder.indexOf(desiredId);
+        if (sourceIdx === -1) continue;
+        reorderOps.push({
+          from: prefix + sourceIdx,
+          to: prefix + targetIdx,
+        });
+        const [moved] = currentOrder.splice(sourceIdx, 1);
+        currentOrder.splice(targetIdx, 0, moved);
+      }
+
+      for (const op of reorderOps) {
+        patches.push({
+          op: "reorder",
+          at: { blockId, nodeId: prevNode.id },
+          from: op.from,
+          to: op.to,
+          count: 1,
+        });
+      }
+
+      const prevMap = new Map(prevMid.map((child) => [child.id, child]));
+      for (const child of nextMid) {
+        const previous = prevMap.get(child.id);
+        if (previous) {
+          diffNodeSnapshot(blockId, previous, child, patches, metrics);
+        }
+      }
       return;
     }
   }
 
-  for (let i = 0; i < divergeIndex; i += 1) {
-    diffNodeSnapshot(prevChildren[i].id, prevChildren[i], nextChildren[i], patches, metrics);
-  }
-
-  const removeCount = prevChildren.length - divergeIndex;
-  for (let i = removeCount - 1; i >= 0; i -= 1) {
+  for (let i = prevChildren.length - 1 - suffix; i >= prefix; i--) {
     patches.push({
       op: "deleteChild",
-      at: { blockId },
-      index: divergeIndex + i,
+      at: { blockId, nodeId: prevNode.id },
+      index: i,
     });
   }
 
-  for (let i = divergeIndex; i < nextChildren.length; i += 1) {
+  for (let i = prefix; i < nextChildren.length - suffix; i++) {
     patches.push({
       op: "insertChild",
-      at: { blockId },
+      at: { blockId, nodeId: prevNode.id },
       index: i,
       node: nextChildren[i],
     });
+  }
+
+  if (prevNode.type === "code" && nextNode.type === "code") {
+    emitSetProps();
   }
 }
 

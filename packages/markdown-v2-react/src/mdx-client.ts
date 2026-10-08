@@ -45,6 +45,9 @@ export class MDXClient {
     this.compileEndpoint = compileEndpoint;
   }
 
+  getCompileEndpoint(): string {
+    return this.compileEndpoint;
+  }
   /**
    * Compile MDX block on server
    */
@@ -449,8 +452,9 @@ let globalComponentFactory: MDXComponentFactory | null = null;
  * Get or create global MDX client
  */
 export function getMDXClient(compileEndpoint?: string): MDXClient {
-  if (!globalMDXClient) {
+  if (!globalMDXClient || (compileEndpoint !== undefined && globalMDXClient.getCompileEndpoint() !== compileEndpoint)) {
     globalMDXClient = new MDXClient(compileEndpoint);
+    globalComponentFactory = null;
   }
   return globalMDXClient;
 }
