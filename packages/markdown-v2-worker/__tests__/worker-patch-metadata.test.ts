@@ -3,6 +3,7 @@ import assert from "node:assert";
 import type { Patch, WorkerOut } from "@stream-mdx/core";
 
 import { createWorkerHarness } from "./worker-test-harness";
+import { readPatchControlMeta } from "../src/engine/patch-emit";
 
 function readPatchMeta(
   patch: Patch,
@@ -66,6 +67,7 @@ async function main() {
     assert.ok(typeof meta?.parseEpoch === "number" && meta.parseEpoch >= 1, `missing parseEpoch on ${patch.op}`);
     assert.ok(typeof meta?.streamSeq === "number" && meta.streamSeq >= 1, `missing streamSeq on ${patch.op}`);
     assert.ok(meta?.kind === "semantic" || meta?.kind === "enrichment", `unexpected patch kind on ${patch.op}`);
+    assert.deepStrictEqual(readPatchControlMeta(patch), { kind: meta.kind, streamSeq: meta.streamSeq, parseEpoch: meta.parseEpoch }, "control metadata reader must recognize actual canonical worker classes");
   }
 
   const secondSemanticBlockPatch = secondAppend.patches.find((patch) => {
@@ -83,6 +85,14 @@ async function main() {
     typeof secondMeta?.parseEpoch === "number" && typeof firstMeta?.parseEpoch === "number" && secondMeta.parseEpoch > firstMeta.parseEpoch,
     "subsequent semantic block updates should advance parseEpoch",
   );
+  const htmlPatch: Patch = {
+    op: "setHTML",
+    at: { blockId: insertedBlockId },
+    html: "<span>enrichment</span>",
+    meta: { kind: "untrusted-content-metadata" },
+    patchMeta: { kind: "enrichment", streamSeq: 7, parseEpoch: 3 },
+  };
+  assert.deepStrictEqual(readPatchControlMeta(htmlPatch), { kind: "enrichment", streamSeq: 7, parseEpoch: 3 }, "HTML control metadata must use patchMeta rather than content metadata");
 }
 
 await main();

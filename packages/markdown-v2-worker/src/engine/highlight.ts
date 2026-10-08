@@ -522,12 +522,15 @@ export async function tokenizeDiffRun(
     return { tokenLines: [], grammarState };
   }
   const text = lines.map((line) => line.raw).join("\n");
-  const rawTokens = highlighter.codeToTokensWithThemes(text, {
+  // Shiki 1.29 forwards this continuation option to codeToTokensBase, although
+  // its multi-theme options declaration omits it.
+  const options = {
     lang: isSupportedLanguage(language) ? language : "text",
     themes: CODE_HIGHLIGHT_THEMES,
-    grammarState: grammarState as any,
-  }) as ShikiThemedToken[][];
-  const nextGrammarState = highlighter.getLastGrammarState(rawTokens as any);
+    grammarState,
+  };
+  const rawTokens = highlighter.codeToTokensWithThemes(text, options);
+  const nextGrammarState = highlighter.getLastGrammarState(rawTokens);
   return {
     tokenLines: renderTokenLines(rawTokens),
     grammarState: nextGrammarState,

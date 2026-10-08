@@ -78,6 +78,12 @@ Serialized code rows and `appendLines.diffKind` use the public `DiffLineKind`
 discriminants (`add`, `del`, `context`, `hunk`, `meta`). Parser-only `DiffKind`
 uses `remove` internally; full and lazy highlighting normalize it before publication.
 
+Patch control metadata uses the existing `semantic` and `enrichment` classes.
+`setHTML` reads control fields from `patchMeta`, separately from HTML content
+metadata. Shiki languages are checked against its native registry and special
+language identifiers before loading; unknown requested languages retain the text
+fallback.
+
 Footnote numbering uses the current canonical rendered document: root references
 first, then reachable definition bodies in footer order. Late root references may
 renumber earlier body-only references; final IR is independent of append chunking
@@ -168,6 +174,8 @@ Notes:
 
 - This policy is intentionally ASCII-stable across runtimes.
 - TOC IDs and rendered heading IDs must always match for anchor integrity.
+- Every TOC record carries the actual owning heading `blockId`. Identity changes
+  participate in TOC patch signatures even when text and slug stay the same.
 
 ## Schema evolution / migration policy
 
