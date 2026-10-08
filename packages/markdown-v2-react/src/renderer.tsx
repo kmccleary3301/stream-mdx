@@ -82,6 +82,9 @@ export class MarkdownRenderer implements Renderer {
         tableVirtualization: this.config.tableVirtualization,
       },
     );
+    if (this.config.html?.literalTagContent) {
+      this.componentRegistry.setLiteralTagContent(this.config.html.literalTagContent);
+    }
     if (this.config.mdx?.compileEndpoint) {
       getMDXComponentFactory(this.config.mdx.compileEndpoint);
     }
@@ -155,6 +158,8 @@ export class MarkdownRenderer implements Renderer {
       prewarmLangs: this.config.highlight?.langs || [],
       docPlugins,
       mdx: { compileMode: this.config.mdx?.compileStrategy ?? "server" },
+      ...(this.config.syntax ? { syntax: this.config.syntax } : {}),
+      ...(this.config.html ? { html: this.config.html } : {}),
     } as WorkerIn);
   }
 
@@ -237,6 +242,8 @@ export class MarkdownRenderer implements Renderer {
         mdx: {
           compileMode: this.config.mdx?.compileStrategy ?? "server",
         },
+        ...(this.config.syntax ? { syntax: this.config.syntax } : {}),
+        ...(this.config.html ? { html: this.config.html } : {}),
       } as WorkerIn);
     });
   }

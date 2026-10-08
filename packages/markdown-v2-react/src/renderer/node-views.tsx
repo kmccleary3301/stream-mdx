@@ -63,6 +63,8 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
   }
 
   const inlineComponents = registry.getInlineComponents();
+  const htmlElements = registry.getHtmlElements();
+  const literalTagContent = registry.getLiteralTagContent();
 
   if (!block.isFinalized) {
     const raw = typeof block.payload.raw === "string" ? block.payload.raw : "";
@@ -74,7 +76,7 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
       if (!allowMixedStreaming) {
         return <p className="markdown-paragraph streaming-partial">{raw}</p>;
       }
-      const structured = renderParagraphMixedSegments(segments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS);
+      const structured = renderParagraphMixedSegments(segments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS, htmlElements, literalTagContent);
       if (structured.length === 1) {
         const [single] = structured;
         return React.isValidElement(single) ? single : single;
@@ -93,7 +95,7 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
             inline: inlineNodes,
           },
         ];
-        const structured = renderParagraphMixedSegments(derivedSegments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS);
+        const structured = renderParagraphMixedSegments(derivedSegments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS, htmlElements, literalTagContent);
         if (structured.length === 1) {
           const [single] = structured;
           return React.isValidElement(single) ? single : single;
@@ -122,7 +124,7 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
     : undefined;
 
   if (segments && segments.length > 0) {
-    const structured = renderParagraphMixedSegments(segments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS);
+    const structured = renderParagraphMixedSegments(segments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS, htmlElements, literalTagContent);
     if (structured.length === 1) {
       const [single] = structured;
       return React.isValidElement(single) ? single : single;
@@ -140,7 +142,7 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
         inline: inlineNodes,
       },
     ];
-    const structured = renderParagraphMixedSegments(derivedSegments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS);
+    const structured = renderParagraphMixedSegments(derivedSegments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS, htmlElements, literalTagContent);
     if (structured.length === 1) {
       const [single] = structured;
       return React.isValidElement(single) ? single : single;
@@ -153,6 +155,7 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
     inlines: block.payload.inline ?? [],
     raw: block.payload.raw,
     meta: block.payload.meta,
+    children: renderInlineNodes(block.payload.inline ?? [], inlineComponents),
   });
 
   if (childIds.length > 0) {

@@ -257,7 +257,7 @@ export function Article({ markdown }: { markdown: string }) {
 - `remarkPlugins`: List of remark plugins or tuples `[plugin, options]`
 - `rehypePlugins`: List of rehype plugins or tuples `[plugin, options]`
 - `components`: Custom React component mapping passed to `hast-util-to-jsx-runtime`
-- `blockTypes`: Block types to route through unified (defaults to all standard blocks: paragraph, heading, blockquote, list, table, code, hr)
+- `blockTypes`: Block types to route through unified (defaults to all standard blocks: `paragraph`, `heading`, `blockquote`, `list`, `table`, `code`, `thematicBreak`). Specialized block types like `html` and `mdx` are opt-in via `blockTypes`.
 - `cacheSize`: Maximum number of rendered blocks to retain in LRU cache (default: `500`)
 - `math`: Enable math syntax (`remark-math`)
 - `gfm`: Enable GitHub Flavored Markdown (`remark-gfm`, default: `true`)
