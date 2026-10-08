@@ -53,8 +53,37 @@ function getMdxComponentNames(config: RendererConfig): string[] | undefined {
 }
 
 interface OwnedInitialization {
+  owner?: MarkdownRenderer;
   resolve?: (blocks: Block[]) => void;
   reject?: (error: Error) => void;
+}
+
+interface WorkerInitializationQueue {
+  pending: OwnedInitialization[];
+  acknowledgements: WeakMap<MessageEvent<WorkerOut>, OwnedInitialization>;
+}
+
+// A borrowed worker can outlive its renderer. Keep cancelled FIFO slots until
+// their native responses arrive, including while no renderer is attached.
+const workerInitializations = new WeakMap<Worker, WorkerInitializationQueue>();
+function getWorkerInitializations(worker: Worker): WorkerInitializationQueue {
+  const existing = workerInitializations.get(worker);
+  if (existing) return existing;
+  const queue: WorkerInitializationQueue = { pending: [], acknowledgements: new WeakMap() };
+  workerInitializations.set(worker, queue);
+  worker.addEventListener("message", (event: MessageEvent<WorkerOut>) => {
+    const message = event.data;
+    if (message.type === "INITIALIZED") {
+      const initialization = queue.pending.shift();
+      if (initialization) {
+        queue.acknowledgements.set(event, initialization);
+        initialization.resolve?.(message.blocks);
+      }
+    } else if (message.type === "ERROR" && message.phase === "INIT" && typeof message.meta?.rule !== "string") {
+      queue.pending.shift()?.reject?.(new Error(message.error.message));
+    }
+  });
+  return queue;
 }
 
 /**
@@ -64,7 +93,7 @@ export class MarkdownRenderer implements Renderer {
   private worker: Worker | null = null;
   private skipWorkerInit = false;
   private workerHasContent = false;
-  private pendingInitializations: OwnedInitialization[] = [];
+  private initializationQueue: WorkerInitializationQueue | null = null;
   private blocks: Block[] = [];
   private updateCallbacks: Array<(blocks: ReadonlyArray<Block>) => void> = [];
   private componentRegistry: ComponentRegistry;
@@ -119,6 +148,7 @@ export class MarkdownRenderer implements Renderer {
    * Attach Web Worker
    */
   attachWorker(worker: Worker, options?: { skipInit?: boolean }): void {
+    if (this.worker) this.detachWorker();
     this.patchScheduler.restart();
     this.store.reset([]);
     this.blocks = [];
@@ -128,6 +158,7 @@ export class MarkdownRenderer implements Renderer {
     this.worker = worker;
     this.skipWorkerInit = options?.skipInit ?? false;
     this.workerHasContent = false;
+    this.initializationQueue = getWorkerInitializations(worker);
     this.workerMessageListener = this.handleWorkerMessage.bind(this);
     this.worker.addEventListener("message", this.workerMessageListener);
 
@@ -158,7 +189,7 @@ export class MarkdownRenderer implements Renderer {
       ...(emitDiffBlocks !== undefined ? { emitDiffBlocks } : {}),
       ...(mdxComponentNames ? { mdxComponentNames } : {}),
     };
-    this.pendingInitializations.push(completion);
+    this.initializationQueue?.pending.push({ ...completion, owner: this });
     try {
       this.worker.postMessage({
         type: "INIT",
@@ -171,7 +202,7 @@ export class MarkdownRenderer implements Renderer {
       } as WorkerIn);
       this.workerHasContent = initialContent.length > 0;
     } catch (error) {
-      this.pendingInitializations.pop();
+      this.initializationQueue?.pending.pop();
       throw error;
     }
   }
@@ -179,10 +210,12 @@ export class MarkdownRenderer implements Renderer {
   detachWorker(options: { terminate?: boolean } = {}): void {
     if (!this.worker) return;
     const shouldTerminate = options.terminate ?? false;
-    const pending = this.pendingInitializations;
-    this.pendingInitializations = [];
-    for (const initialization of pending) {
+    for (const initialization of this.initializationQueue?.pending ?? []) {
+      if (initialization.owner !== this) continue;
       initialization.reject?.(new Error("Worker detached before initialization completed"));
+      initialization.owner = undefined;
+      initialization.resolve = undefined;
+      initialization.reject = undefined;
     }
     try {
       if (this.workerMessageListener) {
@@ -197,6 +230,7 @@ export class MarkdownRenderer implements Renderer {
       this.worker = null;
       this.workerMessageListener = null;
       this.workerHasContent = false;
+      this.initializationQueue = null;
     }
   }
 
@@ -306,8 +340,9 @@ export class MarkdownRenderer implements Renderer {
 
     switch (message.type) {
       case "INITIALIZED": {
-        const initialization = this.pendingInitializations.shift();
-        if (this.pendingInitializations.length === 0) {
+        const initialization = this.initializationQueue?.acknowledgements.get(event);
+        if (initialization && initialization.owner !== this) break;
+        if (this.initializationQueue?.pending.length === 0) {
           this.patchScheduler.clear();
           this.store.reset(message.blocks);
           if (this.updateCallbacks.length > 0) {
@@ -315,7 +350,6 @@ export class MarkdownRenderer implements Renderer {
             this.notifyUpdateCallbacks();
           }
         }
-        initialization?.resolve?.(message.blocks);
         break;
       }
 
@@ -328,7 +362,7 @@ export class MarkdownRenderer implements Renderer {
         break;
 
       case "PATCH": {
-        if (this.pendingInitializations.length > 0) break;
+        if (this.initializationQueue && this.initializationQueue.pending.length > 0) break;
         if (message.metrics) {
           this.lastPatchMetrics = message.metrics;
         }
@@ -358,9 +392,6 @@ export class MarkdownRenderer implements Renderer {
 
       case "ERROR":
         this.lastWorkerError = message;
-        if (message.phase === "INIT" && typeof message.meta?.rule !== "string") {
-          this.pendingInitializations.shift()?.reject?.(new Error(message.error.message));
-        }
         console.error("V2 Markdown worker reported an error", {
           phase: message.phase,
           blockId: message.blockId,

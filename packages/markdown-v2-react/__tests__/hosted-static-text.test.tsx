@@ -80,6 +80,20 @@ try {
     const rejection = assert.rejects(cancelled, /Worker detached/);
     renderer.detachWorker();
     await rejection;
+    const reusedRenderer = new MarkdownRenderer({ plugins: features });
+    reusedRenderer.attachWorker(worker.asBrowserWorker());
+    try {
+      const ownSource = source(250, "Reattached owner document");
+      const ownBlocks = await reusedRenderer.renderStatic(ownSource);
+      assert.equal(ownBlocks[0]?.payload.raw, "Reattached owner document",
+        "pending detached INIT acknowledgment cannot resolve the new attachment's full-content promise");
+      reusedRenderer.finalize();
+      await waitFor(() => reusedRenderer.getStore().getBlocks().every((block) => block.isFinalized),
+        "reused hosted worker finalizes its current document");
+      assert.equal(reusedRenderer.getStore().getBlocks()[0]?.payload.raw, "Reattached owner document");
+    } finally {
+      reusedRenderer.detachWorker();
+    }
   } finally {
     renderer.detachWorker();
     await worker.terminate();
