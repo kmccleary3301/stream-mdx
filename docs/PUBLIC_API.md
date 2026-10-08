@@ -194,7 +194,7 @@ npm install @stream-mdx/mermaid
 ```tsx
 import { MermaidBlock } from "@stream-mdx/mermaid";
 
-<StreamingMarkdown components={{ mermaid: MermaidBlock }} />;
+<StreamingMarkdown codeRenderers={{ mermaid: MermaidBlock }} />;
 ```
 
 When registered, fenced `mermaid` code blocks render as diagrams (with a Diagram/Code toggle). All other code blocks remain unchanged.

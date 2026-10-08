@@ -529,7 +529,7 @@ import { StreamingMarkdown } from "stream-mdx";
 import { MermaidBlock } from "@stream-mdx/mermaid";
 
 export function MermaidDemo({ text }: { text: string }) {
-  return <StreamingMarkdown text={text} components={{ mermaid: MermaidBlock }} />;
+  return <StreamingMarkdown text={text} codeRenderers={{ mermaid: MermaidBlock }} />;
 }
 ```
 
