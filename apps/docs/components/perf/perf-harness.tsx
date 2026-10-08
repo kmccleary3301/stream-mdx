@@ -5,7 +5,7 @@ import type { RendererMetrics, StreamingMarkdownProps, StreamingSchedulerOptions
 import type { WorkerOut } from "@stream-mdx/core";
 import React, { Profiler, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Streamdown, type PluginConfig } from "streamdown";
+import { Streamdown, type LinkSafetyConfig, type PluginConfig } from "streamdown";
 import { code, type CodeHighlighterPlugin } from "@streamdown/code";
 import { createMathPlugin } from "@streamdown/math";
 
@@ -13,10 +13,12 @@ import { ComponentRegistry, StreamingMarkdown, type StreamingMarkdownHandle } fr
 
 import { components as mdxComponents } from "@/mdx-components";
 import { configureDemoRegistry, createDemoHtmlElements, createDemoTableElements } from "@/lib/streaming-demo-registry";
-import { collectSemanticDom, renderedCodeSource, type SemanticDomRecords } from "../../../../scripts/perf/semantic-dom";
+import { collectGeneratedFootnoteLabels, collectSemanticDom, renderedCodeSource, type GeneratedFootnoteLabel, type SemanticDomRecords } from "../../../../scripts/perf/semantic-dom";
 import { createChunkTrace, semanticSha256 } from "../../../../scripts/perf/chunk-trace";
+import { collectCodeReadiness } from "../../../../scripts/perf/code-readiness";
 
 const streamdownMath = createMathPlugin({ singleDollarTextMath: true });
+const PARITY_LINK_SAFETY = { enabled: false } satisfies LinkSafetyConfig;
 
 class BenchmarkHighlighting {
   pending = 0;
@@ -69,6 +71,7 @@ export interface ParityPolicyConfig {
   streamdownControls: boolean;
   streamdownAnimation: boolean;
   html: boolean;
+  linkSafety: boolean;
   gfm: boolean;
   footnotes: boolean;
   customMarkupOverrides: boolean;
@@ -90,6 +93,7 @@ export const PARITY_POLICY: ParityPolicyConfig = {
   streamdownControls: false,
   streamdownAnimation: false,
   html: true,
+  linkSafety: false,
   gfm: true,
   footnotes: true,
   customMarkupOverrides: false,
@@ -111,6 +115,7 @@ export const RICH_POLICY: ParityPolicyConfig = {
   streamdownControls: true,
   streamdownAnimation: true,
   html: true,
+  linkSafety: true,
   gfm: true,
   footnotes: true,
   customMarkupOverrides: true,
@@ -167,6 +172,7 @@ export type LiveSubtreeCounts = {
   li: number;
   math: number;
   katex: number;
+  headings: number;
 };
 export type SemanticContent = {
   rawLength: number;
@@ -174,6 +180,8 @@ export type SemanticContent = {
   normalizedTextHash: string;
   preview: string;
   records: SemanticDomRecords;
+  generatedFootnoteLabels: GeneratedFootnoteLabel[];
+  rawHtml: string;
 };
 
 async function collectLiveDomMetrics(root: HTMLElement | null): Promise<{
@@ -192,6 +200,7 @@ async function collectLiveDomMetrics(root: HTMLElement | null): Promise<{
   const li = root.querySelectorAll("li").length;
   const math = root.querySelectorAll("math").length;
   const katex = root.querySelectorAll(".katex").length;
+  const headings = root.querySelectorAll("h1,h2,h3,h4,h5,h6").length;
 
   const records = collectSemanticDom(root);
   const normalizedText = records.text;
@@ -209,6 +218,7 @@ async function collectLiveDomMetrics(root: HTMLElement | null): Promise<{
       li,
       math: math > 0 ? math : katex,
       katex,
+      headings,
     },
     semanticContent: {
       rawLength: (root.textContent ?? "").length,
@@ -216,18 +226,12 @@ async function collectLiveDomMetrics(root: HTMLElement | null): Promise<{
       normalizedTextHash: hash,
       preview: normalizedText.slice(0, 200),
       records,
+      generatedFootnoteLabels: collectGeneratedFootnoteLabels(root),
+      rawHtml: root.innerHTML,
     },
   };
 }
 
-function expectedLazyCodeLineCount(block: { raw: string; meta?: Record<string, unknown> }): number {
-  const meta = block.meta ?? {};
-  const highlightedLines = Array.isArray(meta.highlightedLines) ? meta.highlightedLines.length : 0;
-  const tokenLines = Array.isArray(meta.tokenLines) ? meta.tokenLines.length : 0;
-  const code = typeof meta.code === "string" ? meta.code : "";
-  const sourceLineCount = code.length > 0 ? code.split("\n").length : 0;
-  return Math.max(highlightedLines, tokenLines, sourceLineCount);
-}
 
 // The public worker factory leaves ownership with the caller on both runtimes.
 class BenchmarkWorker {
@@ -336,12 +340,10 @@ async function waitForStreamMdxCompletion(
         if (!node) throw new Error("Incomplete measurement: rendered store node is missing.");
         if (node.block && !node.block.isFinalized) allFinalized = false;
         pendingNodes.push(...state.store.getChildren(id));
-        if (node.type !== "code") continue;
         const meta = node.block?.payload.meta ?? node.meta ?? node.props;
-        if (!meta.lazyTokenization) continue;
-        const expected = expectedLazyCodeLineCount({ raw: node.block?.payload.raw ?? "", meta });
-        const tokenizedUntil = typeof meta.lazyTokenizedUntil === "number" ? meta.lazyTokenizedUntil : 0;
-        if (tokenizedUntil < expected) pendingLazyCode = true;
+        const readiness = collectCodeReadiness(node.type, meta);
+        if (!readiness.allFinalized) allFinalized = false;
+        if (readiness.pendingLazyCode) pendingLazyCode = true;
       }
       const pendingMath = Array.from(root.querySelectorAll(".math-inline[data-tex],.math-display[data-tex]")).some((element) => !element.querySelector(".katex"));
       if (allFinalized && !pendingLazyCode && !pendingMath && !hasMutations && state.rendererVersion === lastVersion) {
@@ -901,6 +903,7 @@ export function PerfHarness(): JSX.Element {
                 isAnimating={profile === "rich" ? streamdownIsAnimating : false}
                 controls={profile === "rich"}
                 onCommit={onStreamdownCommit}
+                profile={profile}
               />
             </Profiler>
           ) : (
@@ -910,6 +913,7 @@ export function PerfHarness(): JSX.Element {
               isAnimating={profile === "rich" ? streamdownIsAnimating : false}
               controls={profile === "rich"}
               onCommit={onStreamdownCommit}
+              profile={profile}
             />
           )
         ) : profile === "parity" ? (
@@ -990,12 +994,14 @@ function StreamdownHost({
   isAnimating,
   controls,
   onCommit,
+  profile,
 }: {
   text: string;
   plugins: PluginConfig;
   isAnimating: boolean;
   controls: boolean;
   onCommit: (textLength: number) => void;
+  profile: BenchmarkProfile;
 }) {
   useLayoutEffect(() => {
     onCommit(text.length);
@@ -1009,6 +1015,7 @@ function StreamdownHost({
       isAnimating={isAnimating}
       animated={false}
       controls={controls}
+      linkSafety={profile === "parity" ? PARITY_LINK_SAFETY : undefined}
     >
       {text}
     </Streamdown>

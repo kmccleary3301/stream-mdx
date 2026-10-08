@@ -5,6 +5,7 @@ import os from "node:os";
 import { execSync } from "node:child_process";
 
 import { chromium } from "@playwright/test";
+import type { GeneratedFootnoteLabel, SemanticDomRecords } from "./semantic-dom";
 
 
 function getArg(flag: string): string | null {
@@ -99,6 +100,9 @@ type PerfReport = {
         normalizedLength: number;
         normalizedTextHash: string;
         preview: string;
+        records: SemanticDomRecords;
+        generatedFootnoteLabels: GeneratedFootnoteLabel[];
+        rawHtml: string;
       };
     };
   };
@@ -169,6 +173,9 @@ type RunMetadata = {
   rendererVersion: string;
   profile: string;
   policy: Record<string, unknown>;
+  fixtureHash: string;
+  chunkTraceHash: string;
+  chunkCount: number;
   rendererVersions: {
     streammdx: string;
     streamdown: string;
@@ -589,7 +596,7 @@ function formatSummaryText(summary: Summary): string {
     lines.push(`visible semantic text length p50: ${summary.aggregate.semanticTextLength.p50.toFixed(0)} chars`);
   }
   if (summary.aggregate.semanticTextHash) {
-    lines.push(`visible semantic text SHA-256: ${summary.aggregate.semanticTextHash}`);
+    lines.push(`canonical semantic records SHA-256: ${summary.aggregate.semanticTextHash}`);
   }
   lines.push("--- Browser Heap / CDP DOM Counters (Includes Detached Nodes) ---");
   if (summary.aggregate.cdpHeapTotalNodesEnd && summary.aggregate.cdpHeapListenersEnd) {
@@ -655,8 +662,10 @@ async function run(): Promise<void> {
   if (canonicalHashes.some((hash) => !/^[a-f0-9]{64}$/.test(hash)) || new Set(canonicalHashes).size !== 1) {
     throw new Error("Incomplete comparison: measured canonical semantic hashes are invalid or divergent; inspect run.json.");
   }
-  if (new Set(outputs.map((entry) => entry.report.meta.chunkTraceHash)).size !== 1 || new Set(outputs.map((entry) => entry.report.meta.fixtureHash)).size !== 1) {
-    throw new Error("Incomplete comparison: fixture or chunk trace differs across runs; inspect run.json.");
+  if (outputs.some((entry) => !/^[a-f0-9]{64}$/.test(entry.report.meta.fixtureHash) || !/^[a-f0-9]{64}$/.test(entry.report.meta.chunkTraceHash) || !Number.isInteger(entry.report.meta.chunkCount) || entry.report.meta.chunkCount < 1) ||
+    new Set(outputs.map((entry) => entry.report.meta.chunkTraceHash)).size !== 1 || new Set(outputs.map((entry) => entry.report.meta.fixtureHash)).size !== 1 ||
+    new Set(outputs.map((entry) => entry.report.meta.chunkCount)).size !== 1) {
+    throw new Error("Incomplete comparison: fixture or chunk trace is invalid or differs across runs; inspect run.json.");
   }
   let gitSha = "unknown";
   try {
@@ -676,6 +685,9 @@ async function run(): Promise<void> {
     rendererVersion: getRendererVersion(RENDERER, WORKTREE),
     profile: PROFILE,
     policy: outputs[0]?.report.meta.policy ?? {},
+    fixtureHash: outputs[0].report.meta.fixtureHash,
+    chunkTraceHash: outputs[0].report.meta.chunkTraceHash,
+    chunkCount: outputs[0].report.meta.chunkCount,
     rendererVersions: {
       streammdx: getRendererVersion("streammdx", WORKTREE),
       streamdown: getRendererVersion("streamdown", WORKTREE),
@@ -712,6 +724,7 @@ async function run(): Promise<void> {
       renderer: RENDERER,
       profile: PROFILE,
       fixture: FIXTURE,
+      scenario: SCENARIO,
       scheduling: SCHEDULING,
       overrides: SCHEDULING_OVERRIDES,
       runs: RUNS,
@@ -721,6 +734,7 @@ async function run(): Promise<void> {
       cpuThrottle: CPU_THROTTLE ?? null,
       profiler: PROFILER_ENABLED,
     },
+    runs: runSummaries,
     aggregate: {
       durationMs: stats(runSummaries.map((run) => run.durationMs)),
       timeToFirstFlushMs: statsFromRuns(runSummaries.map((run) => run.timeToFirstFlushMs)),
