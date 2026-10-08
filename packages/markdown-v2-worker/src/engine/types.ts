@@ -1,21 +1,9 @@
 import type { MarkdownConfig } from "@lezer/markdown";
 import type {
-  Block,
-  CodeHighlightOutputMode,
   DiffKind,
-  DiffLine,
   DiffLineKind,
-  FormatAnticipationConfig,
   InlineExtension,
-  InlineNode,
-  NodeSnapshot,
-  Patch,
-  ProtectedRange,
-  ThemedLine,
   TokenLineV1,
-  TokenSpan,
-  TokenStyle,
-  WorkerIn,
   WorkerOut,
 } from "@stream-mdx/core";
 import type { DocumentPlugin } from "@stream-mdx/plugins";

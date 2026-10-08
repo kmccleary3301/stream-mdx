@@ -1,6 +1,5 @@
 import assert from "node:assert";
 import { JSDOM } from "jsdom";
-import React from "react";
 import { createRoot } from "react-dom/client";
 import { StreamingMarkdown } from "../src/streaming-markdown";
 
