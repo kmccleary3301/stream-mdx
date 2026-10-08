@@ -43,7 +43,6 @@ import {
   extractCodeLines,
   extractMixedContentSegments,
   generateBlockId,
-  normalizeBlockquoteText,
   normalizeFormatAnticipation,
   parseCodeFenceInfo,
   prepareInlineStreamingContent,
@@ -198,6 +197,7 @@ export class MarkdownEngine {
   private currentLinkReferences = new Map<string, LinkReferenceDefinition>();
   private blockAttemptedReferences = new Map<string, Set<string>>();
   private currentContent = "";
+  private documentGeneration = 0;
 
   private txCounter = 0;
   private parseEpochCounter = 0;
@@ -291,6 +291,9 @@ export class MarkdownEngine {
 
   public dispose(): void {
     this.disposed = true;
+    this.documentGeneration += 1;
+    this.lazyTokenizationScheduled = false;
+    this.lazyTokenizationProcessing = false;
     this.lazyTokenizationQueue.clear();
     this.lazyTokenizationStates.clear();
     this.deferredPatchQueue = [];
@@ -516,6 +519,7 @@ export class MarkdownEngine {
     syntax?: SyntaxRuleSpec[],
     html?: HtmlOptions,
   ): Promise<void> {
+    this.documentGeneration += 1;
     this.performanceTimer = new PerformanceTimer();
     this.blocks = [];
     this.lastTree = null;
@@ -2197,7 +2201,9 @@ export class MarkdownEngine {
   private scheduleLazyTokenizationProcessing(): void {
     if (this.lazyTokenizationScheduled) return;
     this.lazyTokenizationScheduled = true;
+    const generation = this.documentGeneration;
     queueMicrotask(async () => {
+      if (this.disposed || generation !== this.documentGeneration) return;
       this.lazyTokenizationScheduled = false;
       await this.processLazyTokenizationQueue();
     });
@@ -2206,15 +2212,16 @@ export class MarkdownEngine {
   private async processLazyTokenizationQueue(): Promise<void> {
     if (this.lazyTokenizationProcessing) return;
     this.lazyTokenizationProcessing = true;
+    const generation = this.documentGeneration;
     try {
-      while (this.lazyTokenizationQueue.size > 0) {
+      while (!this.disposed && generation === this.documentGeneration && this.lazyTokenizationQueue.size > 0) {
         const next = selectNextLazyRequest(this.lazyTokenizationQueue);
         if (!next) break;
         this.lazyTokenizationQueue.delete(next.blockId);
         await this.handleLazyTokenizationRequest(next);
       }
     } finally {
-      this.lazyTokenizationProcessing = false;
+      if (generation === this.documentGeneration) this.lazyTokenizationProcessing = false;
     }
   }
 
@@ -2346,11 +2353,16 @@ export class MarkdownEngine {
 
   private async handleLazyTokenizationRequest(request: LazyTokenizationRequest): Promise<void> {
     if (!this.lazyTokenizationEnabled || !this.highlighter) return;
+    const generation = this.documentGeneration;
     const target = this.findPreparedCode(request.blockId);
     if (!target) return;
-    const { rootIndex, block } = target;
-    const root = this.blocks[rootIndex];
+    const { block } = target;
     if (block.type !== "code" || !block.isFinalized) return;
+    const currentTarget = () => {
+      if (this.disposed || generation !== this.documentGeneration) return undefined;
+      const current = this.findPreparedCode(block.id);
+      return current?.block === block ? current : undefined;
+    };
 
     const raw = block.payload.raw ?? "";
     const extracted = stripCodeFence(raw);
@@ -2386,9 +2398,11 @@ export class MarkdownEngine {
     let resolvedTokenLanguage = tokenLanguage;
     if (wantsHtml) {
       resolvedLanguage = await resolveHighlightLanguage(this.highlighter, requestedLanguage);
+      if (!currentTarget()) return;
     }
     if (wantsTokens) {
       resolvedTokenLanguage = await resolveHighlightLanguage(this.highlighter, tokenLanguage);
+      if (!currentTarget()) return;
     }
 
     const signature = makeLazySignature(codeBody, resolvedLanguage, resolvedTokenLanguage, diffEnabled);
@@ -2406,7 +2420,7 @@ export class MarkdownEngine {
     this.activeMetricsCollector = metricsCollector;
     metricsCollector.setBlocksProduced(this.blocks.length);
     
-    const prevSnapshot = createBlockSnapshot(root);
+    const previousCode = cloneBlock(block);
 
     const tokenizationStart = now();
     const segmentLines = codeLines.slice(state.processedLines, targetEnd);
@@ -2450,6 +2464,10 @@ export class MarkdownEngine {
           grammarObj,
           this.highlighter,
         );
+        if (!currentTarget()) {
+          if (this.activeMetricsCollector === metricsCollector) this.activeMetricsCollector = null;
+          return;
+        }
         state.grammarState = nextState.context;
 
         for (let i = 0; i < diffLines.length; i += 1) {
@@ -2463,6 +2481,13 @@ export class MarkdownEngine {
       state.processedLines = targetEnd;
     }
 
+    const commitTarget = currentTarget();
+    if (!commitTarget) {
+      if (this.activeMetricsCollector === metricsCollector) this.activeMetricsCollector = null;
+      return;
+    }
+    const root = this.blocks[commitTarget.rootIndex];
+    const prevSnapshot = createBlockSnapshot(this.replacePreparedCode(root, previousCode));
     const tokenizationDuration = now() - tokenizationStart;
     metricsCollector.recordLazyTokenization(targetEnd - startLine, tokenizationDuration, this.lazyTokenizationQueue.size);
 
@@ -2503,7 +2528,7 @@ export class MarkdownEngine {
     }
     updated.payload.meta = nextMeta;
     const updatedRoot = this.replacePreparedCode(root, updated);
-    this.blocks[rootIndex] = updatedRoot;
+    this.blocks[commitTarget.rootIndex] = updatedRoot;
     const nextSnapshot = createBlockSnapshot(updatedRoot);
 
     const patches: Patch[] = [];
