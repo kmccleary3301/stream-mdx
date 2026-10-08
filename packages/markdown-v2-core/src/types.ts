@@ -15,6 +15,7 @@ export interface BlockMeta {
   linkReferences?: BlockResolvedLinkReference[];
   /** Sanitized HTML ownership with inline text prepared by the owning engine parser. */
   htmlTree?: HtmlTreeNode[];
+  htmlParagraphTree?: HtmlTreeNode[];
   [key: string]: unknown;
 }
 
@@ -40,7 +41,7 @@ export interface Block {
 /** Sanitized HTML ownership tree. Block leaves retain the engine's prepared markdown. */
 export type HtmlTreeNode =
   | { kind: "text"; text: string; inline?: InlineNode[] }
-  | { kind: "element"; tagName: string; attributes: Record<string, string>; children: HtmlTreeNode[] }
+  | { kind: "element"; tagName: string; attributes: Record<string, string>; children: HtmlTreeNode[]; inlineNode?: InlineNode; paragraphRoot?: boolean }
   | { kind: "block"; block: Block };
 
 export interface CompiledMdxModule {
@@ -107,6 +108,8 @@ export type InlineNode =
   | {
       kind: "html";
       raw: string;
+      openingRaw?: string;
+      closingRaw?: string;
       sanitized?: string;
       tagName?: string;
       isClose?: boolean;

@@ -4,7 +4,7 @@ import { DefaultDiffRenderer } from "../components/diff-renderer";
 import type { CodeFenceRendererProps } from "../types";
 import { renderInlineNodes, renderParagraphMixedSegments } from "../components";
 import type { ComponentRegistry } from "../components";
-import { DEFAULT_INLINE_HTML_RENDERERS, renderHtmlOwnershipTree, renderInlineHtmlSegment } from "../utils/inline-html";
+import { DEFAULT_INLINE_HTML_RENDERERS, renderInlineHtmlSegment } from "../utils/inline-html";
 import { useRendererChildren, useRendererNode } from "./hooks";
 import { useCodeHighlightRequester } from "./code-highlight-context";
 import { DeferredRenderContext } from "./deferred-render-context";
@@ -65,6 +65,9 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
   const inlineComponents = registry.getInlineComponents();
   const htmlElements = registry.getHtmlElements();
   const literalTagContent = registry.getLiteralTagContent();
+  if (block.payload.meta?.htmlParagraphTree) {
+    return <>{registry.renderHtmlTree(block.payload.meta.htmlParagraphTree, undefined, block)}</>;
+  }
 
   if (!block.isFinalized) {
     const raw = typeof block.payload.raw === "string" ? block.payload.raw : "";
@@ -423,9 +426,8 @@ const HtmlBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
   if (!node || !node.block) return null;
   const tree = node.block.payload.meta?.htmlTree as HtmlTreeNode[] | undefined;
   if (tree) {
-    return <>{renderHtmlOwnershipTree(tree, registry.getHtmlElements(), (block) =>
-      <OwnedHtmlBlock key={block.id} block={block} registry={registry} />,
-      (nodes) => renderInlineNodes(nodes, registry.getInlineComponents()))}</>;
+    return <>{registry.renderHtmlTree(tree, (block) =>
+      <OwnedHtmlBlock key={block.id} block={block} registry={registry} />)}</>;
   }
   return registry.renderBlock(node.block);
 });

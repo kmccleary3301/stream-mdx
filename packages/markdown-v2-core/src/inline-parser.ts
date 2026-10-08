@@ -1,6 +1,7 @@
 import { GFM, type MarkdownConfig, type MarkdownExtension, type MarkdownParser, parser as baseParser } from "@lezer/markdown";
 import { LezerInlineConverter } from "./inline/lezer-converter";
 import { createMathExtension } from "./inline/math-extension";
+import { HtmlCommentCompatibility } from "./inline/html-extension";
 import { compileRegexPluginToExtension, compileSyntaxRuleToExtension, createDefaultRegexPlugins } from "./inline/plugin-adapter";
 import type { InlineExtension, InlineParseOptions, InlineParserOptions, LinkReferenceMap, MarkdownElement } from "./inline/types";
 import { normalizeLinkLabel } from "./inline/reference-collector";
@@ -183,6 +184,7 @@ export class InlineParser {
     const lezerConfigs: (MarkdownConfig | readonly MarkdownExtension[])[] = [
       GFM,
       referenceGuardExtension,
+      HtmlCommentCompatibility,
     ];
 
     if (this.enableMath) {

@@ -11,6 +11,7 @@ import { loadMdxRuntime } from "../mdx-runtime";
 import { useDeferredRender } from "../renderer/use-deferred-render";
 import type {
   Block,
+  HtmlTreeNode,
   InlineNode,
   MixedContentSegment,
 } from "@stream-mdx/core";
@@ -134,10 +135,11 @@ export function renderInlineNodes(nodes: InlineNode[], components: InlineCompone
 
       case "html": {
         const children = node.children ? renderInlineNodes(node.children, components) : undefined;
+        const textValue = node.children?.map((child) => child.kind === "text" ? child.text : "").join("");
         if (components.html) {
-          return React.createElement(components.html, { key, ...node, children });
+          return React.createElement(components.html, { key, ...node, children, textValue });
         }
-        return renderHtmlInlineNode(node, children, undefined, key);
+        return renderHtmlInlineNode(node, children, undefined, key, textValue);
       }
       default: {
         // Handle custom/extensible nodes
@@ -713,8 +715,8 @@ export class ComponentRegistry {
     this.inlineComponents = { ...defaultInlineComponents, ...inlineComponents } as InlineComponents;
     this.htmlElements = getDefaultHtmlElements();
     if (!inlineComponents.html) {
-      this.inlineComponents.html = (node: Omit<Extract<InlineNode, { kind: "html" }>, "children"> & { children?: React.ReactNode }) =>
-        renderHtmlInlineNode(node, node.children, this.htmlElements);
+      this.inlineComponents.html = (node: Omit<Extract<InlineNode, { kind: "html" }>, "children"> & { children?: React.ReactNode; textValue?: string }) =>
+        renderHtmlInlineNode(node, node.children, this.htmlElements, undefined, node.textValue);
     }
     this.tableElements = getDefaultTableElements();
     if (codeRenderers) {
@@ -868,6 +870,24 @@ export class ComponentRegistry {
     return this.inlineComponents;
   }
 
+  renderHtmlTree(tree: HtmlTreeNode[], renderBlock: (block: Block) => React.ReactNode = (block) => this.renderBlock(block), paragraph?: Block): React.ReactNode {
+    return renderHtmlOwnershipTree(tree, this.htmlElements, renderBlock,
+      (nodes) => renderInlineNodes(nodes, this.inlineComponents),
+      (node, children) => {
+        if (node.kind === "strong" || node.kind === "em" || node.kind === "strike" || node.kind === "link") {
+          const component = this.inlineComponents[node.kind];
+          return component ? React.createElement(component, { ...node, children }) : React.createElement("del", {}, children);
+        }
+        if (node.kind === "plugin") {
+          const component = this.inlineComponents[node.name] ?? this.inlineComponents.plugin;
+          return component ? React.createElement(component, { ...node.attrs, name: node.name, attrs: node.attrs, raw: node.raw, children }) : node.raw;
+        }
+        return renderInlineNodes([node], this.inlineComponents);
+      }, paragraph ? (children) => React.createElement(this.getBlockComponent("paragraph"), {
+        ...this.getBlockProps(paragraph), children,
+      }) : undefined);
+  }
+
   getBlockComponentMap(): BlockComponents {
     if (!this.blockComponentMapCache) {
       this.blockComponentMapCache = { ...this.blockComponents } as BlockComponents;
@@ -908,6 +928,9 @@ export class ComponentRegistry {
    * Render a block
    */
   renderBlock(block: Block): React.ReactElement {
+    if (block.type === "paragraph" && block.payload.meta?.htmlParagraphTree) {
+      return React.createElement(React.Fragment, {}, this.renderHtmlTree(block.payload.meta.htmlParagraphTree, undefined, block));
+    }
     const Component = this.getBlockComponent(block.type);
     const props = this.getBlockProps(block);
     const element = React.createElement(Component, {
@@ -1031,8 +1054,7 @@ export class ComponentRegistry {
           isSanitized: isWorkerSanitized,
           literalTagContent: this.literalTagContent,
           children: htmlTree
-            ? renderHtmlOwnershipTree(htmlTree, this.htmlElements, (child) => this.renderBlock(child),
-              (inlines) => renderInlineNodes(inlines, this.inlineComponents))
+            ? this.renderHtmlTree(htmlTree)
             : undefined,
         };
       }
@@ -1208,6 +1230,9 @@ function toReact(
   for (const attr of Array.from(el.attributes)) {
     const name = attr.name === "class" ? "className" : attr.name;
     props[name] = attr.value;
+  }
+  if (tag === "textarea") {
+    return React.createElement(elements[tag] ?? tag, { ...props, key, defaultValue: el.textContent ?? "" });
   }
   const children: React.ReactNode[] = [];
   el.childNodes.forEach((childNode, childIndex) => {

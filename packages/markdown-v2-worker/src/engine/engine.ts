@@ -61,7 +61,7 @@ import {
 } from "@stream-mdx/plugins";
 import { isBlockLevelNode, mapLezerNodeToBlockType } from "../parser/block-types";
 import { HtmlContinuationExtension } from "../parser/html-extension";
-import { groupHtmlOwnership } from "./html-ownership";
+import { containsInlineHtml, groupHtmlOwnership, normalizeHtmlParagraph } from "./html-ownership";
 import { computeParagraphPatchLimit } from "../perf/patch-heuristics";
 import {
   clampLazyRange,
@@ -1178,6 +1178,13 @@ export class MarkdownEngine {
           metaChanged = true;
         }
 
+        if (!nextMeta.mixedSegments && containsInlineHtml(block.payload.inline ?? [])) {
+          nextMeta.htmlParagraphTree = normalizeHtmlParagraph(block, this.htmlConfig);
+          metaChanged = true;
+        } else if (nextMeta.htmlParagraphTree) {
+          delete nextMeta.htmlParagraphTree;
+          metaChanged = true;
+        }
         if (metaChanged) {
           if (Object.keys(nextMeta).length > 0) {
             block.payload.meta = nextMeta;
@@ -1199,7 +1206,7 @@ export class MarkdownEngine {
         const sanitized = sanitizeHtmlInWorker(rawHtml, this.htmlConfig);
         block.payload.sanitizedHtml = sanitized;
         const nextMeta: Record<string, unknown> = { ...(block.payload.meta || {}), sanitized: true };
-        if (this.htmlConfig?.literalTagContent !== undefined && !nextMeta.htmlOwnership) {
+        if (!nextMeta.htmlOwnership) {
           nextMeta.htmlTree = sanitizeHtmlTreeInWorker(rawHtml, this.htmlConfig, undefined, (text) => this.inlineParser.parse(text));
         }
         if (rawHtml) {
@@ -1978,7 +1985,7 @@ export class MarkdownEngine {
       if (nextBlock.type === "html") {
         const nextSanitized = nextBlock.payload.sanitizedHtml ?? sanitizeHtmlInWorker(nextBlock.payload.raw ?? "", this.htmlConfig);
         const prevSanitized = prevBlock.payload.sanitizedHtml ?? "";
-        if (prevSanitized !== nextSanitized || prevBlock.payload.raw !== nextBlock.payload.raw) {
+        if (prevSanitized !== nextSanitized || !blocksStructurallyEqual(prevBlock, nextBlock)) {
           const cloned = cloneBlock(nextBlock);
           cloned.payload.sanitizedHtml = nextSanitized;
           patches.push({

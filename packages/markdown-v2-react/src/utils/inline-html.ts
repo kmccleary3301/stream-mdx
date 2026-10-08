@@ -18,6 +18,7 @@ export function renderHtmlInlineNode(
   children: React.ReactNode,
   elements?: HtmlElements,
   key?: React.Key,
+  textValue?: string,
 ): React.ReactElement | null {
   if (node.isClose || node.tagName === "script" || node.tagName === "style") return null;
   if (!node.tagName || node.sanitized === "") {
@@ -25,6 +26,10 @@ export function renderHtmlInlineNode(
   }
   const props = mapAttributesToProps(node.attributes ?? {});
   props.key = key;
+  if (node.tagName === "textarea") {
+    props.defaultValue = textValue ?? "";
+    return React.createElement(elements?.[node.tagName] ?? node.tagName, props);
+  }
   return React.createElement(elements?.[node.tagName] ?? node.tagName, props, node.isSelfClosing ? undefined : children);
 }
 
@@ -33,17 +38,30 @@ export function renderHtmlOwnershipTree(
   elements: HtmlElements,
   renderBlock: (block: Extract<HtmlTreeNode, { kind: "block" }>["block"]) => React.ReactNode,
   renderInline?: (nodes: InlineNode[]) => React.ReactNode,
+  renderInlineElement?: (node: InlineNode, children: React.ReactNode) => React.ReactNode,
+  renderParagraph?: (children: React.ReactNode) => React.ReactNode,
 ): React.ReactNode {
   return nodes.map((node, index) => {
     if (node.kind === "text") return node.inline && renderInline ? renderInline(node.inline) : node.text;
     if (node.kind === "block") return renderBlock(node.block);
     const props = mapAttributesToProps(node.attributes);
     props.key = index;
-    return React.createElement(
-      elements[node.tagName] ?? node.tagName,
-      props,
-      node.children.length ? renderHtmlOwnershipTree(node.children, elements, renderBlock, renderInline) : undefined,
-    );
+    if (node.tagName === "textarea") {
+      props.defaultValue = node.children.map((child) => child.kind === "text" ? child.text : "").join("");
+      return React.createElement(elements[node.tagName] ?? node.tagName, props);
+    }
+    const children = renderHtmlOwnershipTree(node.children, elements, renderBlock, renderInline, renderInlineElement, renderParagraph);
+    if (node.paragraphRoot && renderParagraph) {
+      return React.createElement(React.Fragment, { key: index }, renderParagraph(children));
+    }
+    if (node.inlineNode && renderInlineElement) {
+      return React.createElement(React.Fragment, { key: index }, renderInlineElement(node.inlineNode, children));
+    }
+    const content = node.tagName === "pre" && node.children.every((child) => child.kind === "text" && !child.inline)
+      ? node.children.map((child) => child.kind === "text" ? child.text : "").join("")
+      : children;
+    return React.createElement(elements[node.tagName] ?? node.tagName, props,
+      node.children.length ? content : undefined);
   });
 }
 
@@ -206,6 +224,14 @@ function parseAttributes(input: string): Record<string, string> {
 
 type HtmlAttributeProps = React.HTMLAttributes<HTMLElement> & Record<string, unknown>;
 
+const BOOLEAN_HTML_PROPS: Record<string, true> = {
+  allowFullScreen: true, async: true, autoFocus: true, autoPlay: true, checked: true,
+  controls: true, default: true, defer: true, disabled: true, formNoValidate: true,
+  hidden: true, inert: true, loop: true, multiple: true, muted: true, noModule: true,
+  noValidate: true, open: true, playsInline: true, readOnly: true, required: true,
+  reversed: true, selected: true, itemScope: true,
+};
+
 function mapAttributesToProps(attrs: Record<string, string>): HtmlAttributeProps & { key?: React.Key } {
   const props: HtmlAttributeProps = {};
   for (const [key, value] of Object.entries(attrs)) {
@@ -220,6 +246,8 @@ function mapAttributesToProps(attrs: Record<string, string>): HtmlAttributeProps
       }
     } else if (/^(?:data|aria)[A-Z]/.test(key)) {
       props[key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)] = value;
+    } else if (BOOLEAN_HTML_PROPS[key]) {
+      props[key] = true;
     } else {
       props[key] = value;
     }

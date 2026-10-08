@@ -206,6 +206,7 @@ export class LezerInlineConverter {
         const end = close?.to ?? to;
         const inner = text.slice(el.to, innerTo);
         converted.raw = text.slice(el.from, end);
+        if (close) converted.closingRaw = text.slice(close.from, close.to);
         const literal = ["code", "pre", "textarea", ...(this.html?.literalTagContent ?? [])]
           .some((tag) => tag.toLowerCase() === converted.tagName);
         converted.children = converted.tagName === "script" || converted.tagName === "style"
@@ -318,8 +319,12 @@ export class LezerInlineConverter {
         // Lezer has already validated this exact range, including quoted '>' and newlines.
         const raw = text.slice(el.from, el.to);
         const tagName = /^<\/?([^\s/>]+)/.exec(raw)?.[1]?.toLowerCase();
-        if (!tagName || raw.startsWith("<!") || raw.startsWith("<?")) {
-          return { kind: "html", raw, sanitized: "", isSelfClosing: true };
+        if (raw.startsWith("<!") || raw.startsWith("<?")) {
+          const safe = sanitizeHtmlTreeInWorker(raw, this.html);
+          return safe.flatMap((node): InlineNode[] => node.kind === "text" ? [{ kind: "text", text: node.text }] : []);
+        }
+        if (!tagName || /^<\/\s/.test(raw) || /\/\s+>$/.test(raw)) {
+          return { kind: "text", text: raw };
         }
         if (raw.startsWith("</")) {
           return { kind: "html", raw, tagName, isClose: true, sanitized: "" };
@@ -328,6 +333,7 @@ export class LezerInlineConverter {
         return {
           kind: "html",
           raw,
+          openingRaw: raw,
           tagName,
           isSelfClosing: raw.endsWith("/>") || Boolean(VOID_TAGS[tagName]),
           attributes: safe?.kind === "element" ? safe.attributes : undefined,

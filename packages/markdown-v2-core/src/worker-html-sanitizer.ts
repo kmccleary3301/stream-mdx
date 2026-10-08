@@ -66,7 +66,7 @@ export function sanitizeHtmlInWorker(html: string, options?: { allowedTags?: Rec
 export function sanitizeHtmlTreeInWorker(
   html: string,
   options?: HtmlOptions,
-  marker?: { attribute: string; blocks: Block[] },
+  marker?: { attribute: string; blocks?: Block[]; inline?: InlineNode[] },
   parseInline?: (text: string) => InlineNode[],
 ): HtmlTreeNode[] {
   const schema = createSchema(options?.allowedTags);
@@ -84,6 +84,7 @@ export function sanitizeHtmlTreeInWorker(
     tagName?: string;
     properties?: Record<string, unknown>;
     children?: HtmlAst[];
+    position?: { start: { offset?: number } };
   };
   const convert = (node: HtmlAst, literal = false): HtmlTreeNode[] => {
     if (node.type === "text") {
@@ -98,10 +99,15 @@ export function sanitizeHtmlTreeInWorker(
     const isLiteral = literal || ["pre", "code", "textarea", ...(options?.literalTagContent ?? [])]
       .some((name) => name.toLowerCase() === tag);
     const attributes: Record<string, string> = {};
+    let inlineNode: InlineNode | undefined;
+    let paragraphRoot = false;
     for (const [name, value] of Object.entries(node.properties ?? {})) {
       if (marker && name === marker.attribute) {
-        const block = marker.blocks[Number(value)];
+        if (String(value) === "paragraph") paragraphRoot = true;
+        const block = marker.blocks?.[Number(value)];
         if (block) return [{ kind: "block", block }];
+        inlineNode = marker.inline?.[Number(value)];
+        continue;
       }
       if (value !== null && value !== undefined && value !== false) {
         attributes[name] = Array.isArray(value) ? value.join(" ") : value === true ? "" : String(value);
@@ -111,6 +117,8 @@ export function sanitizeHtmlTreeInWorker(
       kind: "element",
       tagName: node.tagName ?? "span",
       attributes,
+      ...(inlineNode ? { inlineNode: inlineNode.kind === "link" ? { ...inlineNode, href: attributes.href } : inlineNode } : {}),
+      ...(paragraphRoot ? { paragraphRoot: true } : {}),
       children: (node.children ?? []).flatMap((child) => convert(child, isLiteral)),
     }];
   };

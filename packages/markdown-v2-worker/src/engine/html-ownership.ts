@@ -2,30 +2,30 @@ import type { MarkdownParser } from "@lezer/markdown";
 import { dedentIndentedCode, sanitizeHtmlTreeInWorker, stripCodeFence, type Block, type HtmlOptions, type InlineNode, type MarkdownElement } from "@stream-mdx/core";
 
 const VOID: Record<string, true> = { area: true, base: true, br: true, col: true, embed: true, hr: true, img: true, input: true, link: true, meta: true, param: true, source: true, track: true, wbr: true };
-const escape = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const escapeHtml = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
 
 function inlineHtml(nodes: InlineNode[]): string {
   return nodes.map((node): string => {
     switch (node.kind) {
-      case "text": return escape(node.text);
-      case "code": return `<code>${escape(node.text)}</code>`;
+      case "text": return escapeHtml(node.text);
+      case "code": return `<code>${escapeHtml(node.text)}</code>`;
       case "br": return "<br>\n";
       case "strong": return `<strong>${inlineHtml(node.children)}</strong>`;
       case "em": return `<em>${inlineHtml(node.children)}</em>`;
       case "strike": return `<del>${inlineHtml(node.children)}</del>`;
-      case "link": return `<a${node.href === undefined ? "" : ` href="${escape(node.href)}"`}>${inlineHtml(node.children)}</a>`;
-      case "image": return `<img src="${escape(node.src)}" alt="${escape(node.alt ?? "")}">`;
+      case "link": return `<a${node.href === undefined ? "" : ` href="${escapeHtml(node.href)}"`}>${inlineHtml(node.children)}</a>`;
+      case "image": return `<img src="${escapeHtml(node.src)}" alt="${escapeHtml(node.alt ?? "")}">`;
       case "html": {
         if (node.isClose) return node.raw;
         if (!node.tagName || node.tagName === "script" || node.tagName === "style") return "";
-        const attrs = Object.entries(node.attributes ?? {}).map(([key, value]) => ` ${key === "className" ? "class" : key}="${escape(value)}"`).join("");
+        const attrs = Object.entries(node.attributes ?? {}).map(([key, value]) => ` ${key === "className" ? "class" : key}="${escapeHtml(value)}"`).join("");
         return `<${node.tagName}${attrs}>${node.isSelfClosing ? "" : `${inlineHtml(node.children ?? [])}</${node.tagName}>`}`;
       }
-      case "plugin": return node.children ? inlineHtml(node.children) : escape(node.raw);
-      case "math-inline": case "math-display": return escape(node.tex);
-      case "mention": return escape(`@${node.handle}`);
-      case "citation": return escape(node.id);
-      case "footnote-ref": return escape(`[^${node.label}]`);
+      case "plugin": return node.children ? inlineHtml(node.children) : escapeHtml(node.raw);
+      case "math-inline": case "math-display": return escapeHtml(node.tex);
+      case "mention": return escapeHtml(`@${node.handle}`);
+      case "citation": return escapeHtml(node.id);
+      case "footnote-ref": return escapeHtml(`[^${node.label}]`);
     }
   }).join("");
 }
@@ -35,7 +35,7 @@ function blockHtml(block: Block, attribute: string, index: number): string {
   const meta = block.payload.meta ?? {};
   if (block.type === "code") {
     const code = typeof meta.code === "string" ? meta.code : /^\s*(```|~~~)/.test(block.payload.raw) ? stripCodeFence(block.payload.raw).code : dedentIndentedCode(block.payload.raw);
-    return `<pre${marker}><code>${escape(code.replace(/\n?$/, "\n"))}</code></pre>`;
+    return `<pre${marker}><code>${escapeHtml(code.replace(/\n?$/, "\n"))}</code></pre>`;
   }
   const tag = block.type === "heading" ? `h${meta.headingLevel ?? 1}` : block.type === "hr" ? "hr" : block.type === "blockquote" ? "blockquote" : block.type === "list" ? (meta.ordered ? "ol" : "ul") : "p";
   return `<${tag}${marker}>${inlineHtml(block.payload.inline ?? [])}</${tag}>`;
@@ -108,4 +108,50 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
   }
   flush();
   return result;
+}
+
+/**
+ * Browser reconstruction owns the entire paragraph, not independently auto-closed tag fragments.
+ * The private attribute cannot occur in user source; only generated IR wrappers receive slots.
+ */
+export function normalizeHtmlParagraph(block: Block, options?: HtmlOptions) {
+  const source = block.payload.raw;
+  let attribute = "smdxinline";
+  const lower = source.toLowerCase();
+  while (lower.includes(attribute)) attribute += "x";
+  const inline: InlineNode[] = [];
+  const serialize = (nodes: InlineNode[]): string => nodes.map((node): string => {
+    if (node.kind === "text") return escapeHtml(node.text);
+    if (node.kind === "html") {
+      if (node.isClose) return node.raw;
+      const open = node.openingRaw ?? node.raw;
+      if (node.isSelfClosing) return open;
+      const literal = ["pre", "code", "textarea", ...(options?.literalTagContent ?? [])]
+        .some((tag) => tag.toLowerCase() === node.tagName);
+      const children = literal
+        ? (node.children ?? []).map((child) => child.kind === "text" ? escapeHtml(child.text) : inlineHtml([child])).join("")
+        : serialize(node.children ?? []);
+      return open + children + (node.closingRaw ?? "");
+    }
+    const index = inline.push(node) - 1;
+    const slot = ` ${attribute}="${index}"`;
+    if (node.kind === "strong" || node.kind === "em" || node.kind === "strike" || node.kind === "link") {
+      const tag = node.kind === "strike" ? "del" : node.kind === "link" ? "a" : node.kind;
+      const href = node.kind === "link" && node.href !== undefined ? ` href="${escapeHtml(node.href)}"` : "";
+      return `<${tag}${slot}${href}>${serialize(node.children)}</${tag}>`;
+    }
+    if (node.kind === "plugin" && node.children) {
+      return `<span${slot}>${serialize(node.children)}</span>`;
+    }
+    return `<span${slot}>${inlineHtml([node])}</span>`;
+  }).join("");
+  return sanitizeHtmlTreeInWorker(`<p class="markdown-paragraph" ${attribute}="paragraph">${serialize(block.payload.inline ?? [])}</p>\n`, options, { attribute, inline });
+}
+
+export function containsInlineHtml(nodes: InlineNode[]): boolean {
+  for (const node of nodes) {
+    if (node.kind === "html") return true;
+    if ("children" in node && node.children && containsInlineHtml(node.children)) return true;
+  }
+  return false;
 }
