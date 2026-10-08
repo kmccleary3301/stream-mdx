@@ -91,7 +91,7 @@ function isAsyncPluginError(err: unknown): boolean {
 }
 
 function applyPlugins(
-  processor: ReturnType<typeof unified>,
+  processor: any,
   plugins: PluggableList | undefined,
   markAsync: () => void,
 ): void {
