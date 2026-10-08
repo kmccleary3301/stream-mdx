@@ -847,6 +847,13 @@ export function inlineNodesToPlainText(nodes: InlineNode[]): string {
           result += node.text;
         }
         break;
+      case "plugin":
+        if (node.children && Array.isArray(node.children)) {
+          result += inlineNodesToPlainText(node.children);
+        } else {
+          result += node.raw;
+        }
+        break;
       case "footnote-ref":
         result += `[^${node.label}]`;
         break;
