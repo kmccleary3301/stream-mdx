@@ -18,7 +18,11 @@ import type {
   ShikiTokenStyle,
 } from "./types";
 
-export const DEFAULT_CODE_HIGHLIGHT_THEMES = { dark: "github-dark", light: "github-light" } as const;
+export type CodeThemePair = { light: BundledTheme; dark: BundledTheme };
+export const DEFAULT_CODE_HIGHLIGHT_THEMES: CodeThemePair = {
+  light: "github-light",
+  dark: "github-dark",
+};
 export const CODE_HIGHLIGHT_THEMES = DEFAULT_CODE_HIGHLIGHT_THEMES;
 
 export function isBundledTheme(theme: string): theme is BundledTheme {
@@ -37,7 +41,7 @@ export async function ensureThemeLoaded(
 }
 
 export interface ResolvedHighlightThemesResult {
-  themes: { light: string; dark: string };
+  themes: CodeThemePair;
   errors: Error[];
 }
 
@@ -46,8 +50,8 @@ export async function resolveHighlightThemes(
   requestedThemes?: { light?: string; dark?: string } | null,
 ): Promise<ResolvedHighlightThemesResult> {
   const errors: Error[] = [];
-  let light = DEFAULT_CODE_HIGHLIGHT_THEMES.light as string;
-  let dark = DEFAULT_CODE_HIGHLIGHT_THEMES.dark as string;
+  let light: BundledTheme = DEFAULT_CODE_HIGHLIGHT_THEMES.light;
+  let dark: BundledTheme = DEFAULT_CODE_HIGHLIGHT_THEMES.dark;
 
   if (requestedThemes && typeof requestedThemes === "object") {
     if (requestedThemes.light !== undefined) {
@@ -639,7 +643,7 @@ export async function tokenizeDiffRun(
   language: string,
   grammarState: unknown,
   highlighter: SharedHighlighter,
-  themes: { light: string; dark: string } = DEFAULT_CODE_HIGHLIGHT_THEMES,
+  themes: CodeThemePair = DEFAULT_CODE_HIGHLIGHT_THEMES,
 ): Promise<{ tokenLines: Array<TokenLineV1 | null>; grammarState: unknown }> {
   if (lines.length === 0) {
     return { tokenLines: [], grammarState };
@@ -669,7 +673,7 @@ export async function buildDiffTokenLines(
     context?: unknown;
   },
   highlighter: SharedHighlighter,
-  themes: { light: string; dark: string } = DEFAULT_CODE_HIGHLIGHT_THEMES,
+  themes: CodeThemePair = DEFAULT_CODE_HIGHLIGHT_THEMES,
 ): Promise<{ tokenLines: Array<TokenLineV1 | null>; grammarState: typeof grammarState }> {
   if (lines.length === 0) {
     return { tokenLines: [], grammarState };

@@ -70,11 +70,10 @@ import {
   type LazyTokenizationRequest,
 } from "../lazy-tokenization";
 import {
-  CODE_HIGHLIGHT_THEMES,
   DEFAULT_CODE_HIGHLIGHT_THEMES,
+  type CodeThemePair,
   buildDiffBlocksFromLines,
   buildDiffTokenLines,
-  clearSharedHighlightCache,
   dedentFencedCodeByClosingIndent,
   detectDiffLanguage,
   enhanceHighlightedHtml,
@@ -213,7 +212,7 @@ export class MarkdownEngine {
   private readonly workerGrammarEngine: "js" | "wasm" = "js";
   private workerCredits = 1;
   private deferredPatchQueue: Patch[] = [];
-  private codeThemes: { light: string; dark: string } = {
+  private codeThemes: CodeThemePair = {
     light: DEFAULT_CODE_HIGHLIGHT_THEMES.light,
     dark: DEFAULT_CODE_HIGHLIGHT_THEMES.dark,
   };
@@ -1748,7 +1747,7 @@ export class MarkdownEngine {
         try {
           const highlighted = this.highlighter!.codeToHtml(codeBody, {
             lang: resolvedLanguage as never,
-            themes: this.codeThemes as never,
+            themes: this.codeThemes,
             defaultColor: false,
           });
           const enhanced = enhanceHighlightedHtml(highlighted, resolvedLanguage);
@@ -1807,7 +1806,7 @@ export class MarkdownEngine {
           try {
             const tokens = this.highlighter!.codeToTokensWithThemes(codeBody, {
               lang: resolvedTokenLanguage as never,
-              themes: this.codeThemes as never,
+              themes: this.codeThemes,
             }) as ShikiThemedToken[][];
             tokenLines = renderTokenLines(tokens);
             setCachedHighlight(resolvedTokenLanguage, this.codeThemes, codeBody, {
