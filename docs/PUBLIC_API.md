@@ -113,6 +113,10 @@ type StreamingMarkdownHandle = {
 };
 ```
 
+`restart()` clears the renderer-owned document and cancels the current iterator generation. It does not rewind a single-use iterator, including after EOF. Supply a fresh iterator to `stream` to begin another stream; reiterable sources that return fresh iterators are supported. Each actual iterator is consumed at most once during the component's mounted lifetime, including renderer/readiness changes. A pending `next()` may settle before cancellation closes that iterator; cancelled chunks are discarded.
+
+Removing an open stream releases that generation's activity. It does not end a replacement iterator or an independently open imperative session; call `finalize()` to close imperative activity.
+
 ---
 
 ## 2) Worker Hosting + CSP
