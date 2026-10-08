@@ -55,7 +55,7 @@ import {
   prepareInlineStreamingContent,
   removeHeadingMarkers,
 } from "@stream-mdx/core";
-import { InlineParser, dedentIndentedCode, sanitizeHtmlInWorker, stripCodeFence } from "@stream-mdx/core";
+import { InlineParser, collectLinkReferences, dedentIndentedCode, sanitizeHtmlInWorker, stripCodeFence } from "@stream-mdx/core";
 import { computeHeavyPatchBudget } from "@stream-mdx/core";
 import { getPatchKind, isHeavyPatch } from "@stream-mdx/core/perf/patch-batching";
 import { CalloutsPlugin, HTMLBlockPlugin, MDXDetectionPlugin, TablesPlugin, globalDocumentPluginRegistry, registerFootnotesPlugin } from "@stream-mdx/plugins";
@@ -1180,6 +1180,7 @@ async function parseAll(content: string, options: ParseOptions = {}): Promise<{ 
   metrics?.markParseStart();
 
   const tree = mdParser.parse(content);
+  inlineParser.setReferences(collectLinkReferences(tree, content));
   let extractedBlocks = await extractBlocks(tree, content, options);
 
   // Run document-phase plugins for aggregation and synthetic blocks
@@ -1208,6 +1209,7 @@ async function appendAndReparse(appendedText: string, metrics?: WorkerMetricsCol
 
   // Use Lezer incremental parsing with fragments
   let newTree = lastTree ? mdParser.parse(newContent, lastTree.fragments) : mdParser.parse(newContent);
+  inlineParser.setReferences(collectLinkReferences(newTree, newContent));
 
   // Find the changed region
   let changedBlocks = await extractBlocks(newTree, newContent);
@@ -1218,6 +1220,7 @@ async function appendAndReparse(appendedText: string, metrics?: WorkerMetricsCol
     const tail = newContent.slice(lastTo).trim();
     if (tail.length > 0) {
       const fullTree = mdParser.parse(newContent);
+      inlineParser.setReferences(collectLinkReferences(fullTree, newContent));
       let fullBlocks = await extractBlocks(fullTree, newContent);
       fullBlocks = runDocumentPlugins(fullBlocks, newContent);
       const fullLast = fullBlocks.length > 0 ? fullBlocks[fullBlocks.length - 1]?.payload?.range?.to ?? 0 : 0;
