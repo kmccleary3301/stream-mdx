@@ -9,7 +9,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const nextConfig = {
   reactStrictMode: true,
   outputFileTracingRoot: path.resolve(__dirname, "../../.."),
-  output: "export",
+  output: process.env.NEXT_EXPORT ? "export" : undefined,
   trailingSlash: true,
   basePath: basePath || undefined,
   assetPrefix: basePath || undefined,

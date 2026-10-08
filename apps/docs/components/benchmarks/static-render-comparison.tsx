@@ -10,6 +10,8 @@ import { useCallback, useMemo, useRef, useState, type ComponentType } from "reac
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Streamdown } from "streamdown";
+import { code } from "@streamdown/code";
+import { createMathPlugin } from "@streamdown/math";
 
 type EngineKey = "streammdx" | "streamdown" | "react-markdown";
 type RunState = "idle" | "running" | "done";
@@ -32,7 +34,8 @@ type StaticFixture = {
 const PARITY_FEATURES: NonNullable<StreamingMarkdownProps["features"]> = {
   html: false,
   tables: true,
-  math: false,
+  math: true,
+  liveCodeHighlighting: true,
   mdx: false,
   footnotes: false,
   callouts: false,
@@ -42,6 +45,7 @@ const RICH_FEATURE_STRESS: NonNullable<StreamingMarkdownProps["features"]> = {
   html: true,
   tables: true,
   math: true,
+  liveCodeHighlighting: true,
   mdx: true,
   footnotes: true,
   callouts: true,
@@ -54,6 +58,11 @@ const RICH_FEATURE_STRESS: NonNullable<StreamingMarkdownProps["features"]> = {
     regex: false,
   },
 };
+const streamdownPlugins = {
+  code,
+  math: createMathPlugin({ singleDollarTextMath: true }),
+};
+
 
 const STATIC_FIXTURES = [
   {
@@ -685,6 +694,7 @@ export function StaticRenderComparison() {
                 className="markdown-v2-output"
                 features={streamMdxFeatures}
                 scheduling={{ batch: "rAF", startupMicrotaskFlushes: 4 }}
+                caret={false}
                 mdxComponents={mdxComponents as Record<string, ComponentType<unknown>>}
                 components={registry.getBlockComponentMap()}
                 inlineComponents={registry.getInlineComponentMap()}
@@ -704,7 +714,15 @@ export function StaticRenderComparison() {
             className="h-[250px] overflow-auto p-3"
           >
             <div className="prose max-w-none text-sm">
-              <Streamdown remarkPlugins={[remarkGfm]}>{streamdownText}</Streamdown>
+              <Streamdown
+                mode="static"
+                plugins={streamdownPlugins}
+                parseIncompleteMarkdown={false}
+                isAnimating={false}
+                animated={false}
+              >
+                {streamdownText}
+              </Streamdown>
             </div>
           </div>
         </div>
