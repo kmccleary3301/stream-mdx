@@ -6,9 +6,12 @@ const sourcemap = process.env.SOURCEMAP === "1" || process.env.SOURCEMAP === "tr
 
 const sharedConfig = {
   entry: [resolve("src/index.ts")],
+  // The single-format builds own disjoint .d.ts and .d.cts declarations.
   dts: true,
   sourcemap,
   splitting: false,
+  // The package build script cleans once before these parallel format builds.
+  clean: false,
   banner: {
     js: '"use client";',
   },
@@ -30,7 +33,6 @@ export default defineConfig([
   {
     ...sharedConfig,
     format: ["esm"],
-    clean: true,
     // Let browser consumers resolve the dependencies' browser export conditions.
   },
   {
