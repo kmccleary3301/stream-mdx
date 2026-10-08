@@ -3,7 +3,7 @@ import React, { useMemo } from "react";
 
 import { getBlockKey, PATCH_ROOT_ID } from "@stream-mdx/core";
 import { ComponentRegistry } from "../components";
-import type { CodeFenceRenderer } from "../types";
+import type { BlockRendererOverride, CodeFenceRenderer } from "../types";
 import { useRendererChildren } from "./hooks";
 import { BlockNodeRenderer } from "./node-views";
 import type { RendererStore } from "./store";
@@ -18,17 +18,21 @@ export interface MarkdownBlocksRendererProps {
   className?: string;
   style?: React.CSSProperties;
   store?: RendererStore;
+  blockRenderer?: BlockRendererOverride;
 }
 
 export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
-  ({ blocks, componentRegistry, codeRenderers, className = "markdown-renderer", style, store }) => {
+  ({ blocks, componentRegistry, codeRenderers, blockRenderer, className = "markdown-renderer", style, store }) => {
     const resolvedRegistry = useMemo(() => {
       const reg = componentRegistry ?? new ComponentRegistry();
       if (codeRenderers) {
         reg.setCodeRenderers(codeRenderers);
       }
+      if (blockRenderer) {
+        reg.setBlockRenderer(blockRenderer);
+      }
       return reg;
-    }, [componentRegistry, codeRenderers]);
+    }, [componentRegistry, codeRenderers, blockRenderer]);
   if (store) {
     return React.createElement(
       "div",
@@ -87,12 +91,20 @@ const BlockRenderer = React.memo<{
     return componentRegistry.renderBlock(block);
   }, [block, componentRegistry]);
 
+  const finalElement = useMemo(() => {
+    return componentRegistry.renderFinalizedBlock(block, element);
+  }, [block, componentRegistry, element]);
+
   // Add finalization indicator for debugging
   const className = `markdown-block markdown-block-${block.type} ${isFinalized ? "finalized" : "dirty"}`;
 
-  return React.cloneElement(element, {
-    className: `${element.props.className || ""} ${className}`.trim(),
-    "data-block-id": block.id,
-    "data-finalized": isFinalized,
-  });
+  if (React.isValidElement(finalElement)) {
+    return React.cloneElement(finalElement, {
+      className: `${finalElement.props.className || ""} ${className}`.trim(),
+      "data-block-id": block.id,
+      "data-finalized": isFinalized,
+    });
+  }
+
+  return React.createElement(React.Fragment, null, finalElement);
 });
