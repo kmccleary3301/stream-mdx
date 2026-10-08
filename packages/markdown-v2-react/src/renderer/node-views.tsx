@@ -11,6 +11,7 @@ import { DeferredRenderContext } from "./deferred-render-context";
 import { isListPatchDebugEnabled, type RendererStore } from "./store";
 import { useDeferredRender } from "./use-deferred-render";
 import { DEFAULT_VIRTUALIZED_CODE_CONFIG, type VirtualizedLine, useVirtualizedCode } from "./virtualized-code";
+import { useVirtualizedTable, type TableVirtualizationProps } from "./virtualized-table";
 
 export const BlockNodeRenderer: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = ({ store, blockId, registry }) => {
   const node = useRendererNode(store, blockId);
@@ -669,27 +670,147 @@ const ListItemView: React.FC<{
 ListItemView.displayName = "ListItemView";
 
 const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
+  const node = useRendererNode(store, blockId);
   const tableElements = registry.getTableElements();
   const childIds = useRendererChildren(store, blockId);
-  return (
-    <tableElements.Table className="markdown-table w-full caption-bottom text-base">
+
+  const subscribeVirtualization = React.useCallback(
+    (listener: () => void) => registry.subscribeTableVirtualization(listener),
+    [registry],
+  );
+  const getVirtualization = React.useCallback(() => registry.getTableVirtualization(), [registry]);
+  const virtualizationConfig = React.useSyncExternalStore(subscribeVirtualization, getVirtualization, getVirtualization);
+  const virtualizationDisabled =
+    typeof process !== "undefined" && typeof process.env === "object" && process.env.STREAM_MDX_DISABLE_VIRTUALIZED_TABLE === "true";
+
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const tbodyId = React.useMemo(() => {
+    for (const childId of childIds) {
+      const childNode = store.getNode(childId);
+      if (childNode?.type === "table-body") {
+        return childId;
+      }
+    }
+    return null;
+  }, [childIds, store]);
+
+  const rowIds = useRendererChildren(store, tbodyId ?? "");
+  const rowCount = rowIds.length;
+
+  const theadId = React.useMemo(() => {
+    for (const childId of childIds) {
+      const childNode = store.getNode(childId);
+      if (childNode?.type === "table-header") {
+        return childId;
+      }
+    }
+    return null;
+  }, [childIds, store]);
+
+  const theadCellIds = useRendererChildren(store, theadId ?? "");
+  const columnCount = React.useMemo(() => {
+    if (theadCellIds.length > 0) return theadCellIds.length;
+    if (rowIds.length > 0) {
+      const firstRowCells = store.getChildren(rowIds[0]);
+      if (firstRowCells.length > 0) return firstRowCells.length;
+    }
+    return 1;
+  }, [theadCellIds.length, rowIds, store]);
+
+  const isFinalized = Boolean(node?.block?.isFinalized);
+  const canVirtualize = mounted && typeof window !== "undefined" && isFinalized && !virtualizationDisabled;
+
+  const virtualization = useVirtualizedTable(rowIds, virtualizationConfig, canVirtualize);
+  const { isVirtualized, containerRef, handleScroll, window: virtualWindow, config } = virtualization;
+
+  const virtualizationProps: TableVirtualizationProps | undefined = React.useMemo(() => {
+    if (!isVirtualized) return undefined;
+    return {
+      isVirtualized: true,
+      startIndex: virtualWindow.startIndex,
+      endIndex: virtualWindow.endIndex,
+      topSpacerHeight: virtualWindow.topSpacerHeight,
+      bottomSpacerHeight: virtualWindow.bottomSpacerHeight,
+      columnCount,
+    };
+  }, [isVirtualized, virtualWindow, columnCount]);
+
+  const tableAttrs = {
+    "data-table-block": "true",
+    "data-block-id": blockId,
+    "data-table-virtualized": isVirtualized ? "true" : "false",
+    "data-table-total-rows": String(rowCount),
+    "data-table-mounted-rows": String(isVirtualized ? virtualWindow.mountedRows : rowCount),
+    "data-table-start-index": String(isVirtualized ? virtualWindow.startIndex : 0),
+    "data-table-end-index": String(isVirtualized ? virtualWindow.endIndex : rowCount),
+  };
+
+  const tableElement = (
+    <tableElements.Table
+      className="markdown-table w-full caption-bottom text-base"
+      style={isVirtualized ? { tableLayout: "fixed", width: "100%" } : undefined}
+      {...(!isVirtualized ? tableAttrs : {})}
+    >
       {childIds.map((sectionId) => (
-        <TableSectionView key={sectionId} store={store} nodeId={sectionId} registry={registry} />
+        <TableSectionView
+          key={sectionId}
+          store={store}
+          nodeId={sectionId}
+          registry={registry}
+          virtualization={virtualizationProps}
+        />
       ))}
     </tableElements.Table>
   );
+
+  if (isVirtualized) {
+    const maxHeight = typeof config.maxHeight === "number" ? `${config.maxHeight}px` : config.maxHeight;
+    return (
+      <div
+        ref={containerRef}
+        className="markdown-table-container relative w-full"
+        style={{
+          overflowY: "auto",
+          overflowX: "auto",
+          maxHeight,
+          overflowAnchor: "none",
+        }}
+        onScroll={handleScroll}
+        tabIndex={0}
+        role="region"
+        aria-label="Scrollable table"
+        {...tableAttrs}
+      >
+        {tableElement}
+      </div>
+    );
+  }
+
+  return tableElement;
 });
 
 TableBlockView.displayName = "TableBlockView";
 
-const TableSectionView: React.FC<{ store: RendererStore; nodeId: string; registry: ComponentRegistry }> = React.memo(({ store, nodeId, registry }) => {
+const TableSectionView: React.FC<{
+  store: RendererStore;
+  nodeId: string;
+  registry: ComponentRegistry;
+  virtualization?: TableVirtualizationProps;
+}> = React.memo(({ store, nodeId, registry, virtualization }) => {
   const node = useRendererNode(store, nodeId);
   if (!node) return null;
   const tableElements = registry.getTableElements();
   if (node.type === "table-header") {
     const childIds = useRendererChildren(store, nodeId);
     return (
-      <tableElements.Thead>
+      <tableElements.Thead
+        className={virtualization?.isVirtualized ? "sticky top-0 z-10" : undefined}
+        style={virtualization?.isVirtualized ? { position: "sticky", top: 0, zIndex: 10 } : undefined}
+      >
         <tableElements.Tr>
           {childIds.map((cellId) => (
             <TableCellView key={cellId} store={store} nodeId={cellId} registry={registry} />
@@ -700,11 +821,56 @@ const TableSectionView: React.FC<{ store: RendererStore; nodeId: string; registr
   }
   if (node.type === "table-body") {
     const rowIds = useRendererChildren(store, nodeId);
+    if (!virtualization?.isVirtualized) {
+      return (
+        <tableElements.Tbody>
+          {rowIds.map((rowId) => (
+            <TableRowView key={rowId} store={store} nodeId={rowId} registry={registry} />
+          ))}
+        </tableElements.Tbody>
+      );
+    }
+
+    const { startIndex, endIndex, topSpacerHeight, bottomSpacerHeight, columnCount } = virtualization;
+    const visibleRowIds = rowIds.slice(startIndex, endIndex);
+
     return (
       <tableElements.Tbody>
-        {rowIds.map((rowId) => (
-          <TableRowView key={rowId} store={store} nodeId={rowId} registry={registry} />
+        {topSpacerHeight > 0 && (
+          <tableElements.Tr
+            key={`${nodeId}::spacer-top`}
+            aria-hidden="true"
+            className="markdown-table-spacer markdown-table-spacer-top"
+            style={{ height: `${topSpacerHeight}px`, padding: 0, border: 0 }}
+          >
+            <tableElements.Td
+              colSpan={columnCount}
+              style={{ height: `${topSpacerHeight}px`, padding: 0, border: 0, margin: 0, lineHeight: 0 }}
+            />
+          </tableElements.Tr>
+        )}
+        {visibleRowIds.map((rowId, offset) => (
+          <TableRowView
+            key={rowId}
+            store={store}
+            nodeId={rowId}
+            registry={registry}
+            rowIndex={startIndex + offset}
+          />
         ))}
+        {bottomSpacerHeight > 0 && (
+          <tableElements.Tr
+            key={`${nodeId}::spacer-bottom`}
+            aria-hidden="true"
+            className="markdown-table-spacer markdown-table-spacer-bottom"
+            style={{ height: `${bottomSpacerHeight}px`, padding: 0, border: 0 }}
+          >
+            <tableElements.Td
+              colSpan={columnCount}
+              style={{ height: `${bottomSpacerHeight}px`, padding: 0, border: 0, margin: 0, lineHeight: 0 }}
+            />
+          </tableElements.Tr>
+        )}
       </tableElements.Tbody>
     );
   }
@@ -713,11 +879,19 @@ const TableSectionView: React.FC<{ store: RendererStore; nodeId: string; registr
 
 TableSectionView.displayName = "TableSectionView";
 
-const TableRowView: React.FC<{ store: RendererStore; nodeId: string; registry: ComponentRegistry }> = React.memo(({ store, nodeId, registry }) => {
+const TableRowView: React.FC<{
+  store: RendererStore;
+  nodeId: string;
+  registry: ComponentRegistry;
+  rowIndex?: number;
+}> = React.memo(({ store, nodeId, registry, rowIndex }) => {
   const tableElements = registry.getTableElements();
   const cellIds = useRendererChildren(store, nodeId);
   return (
-    <tableElements.Tr>
+    <tableElements.Tr
+      data-row-id={nodeId}
+      {...(rowIndex !== undefined ? { "data-row-index": rowIndex } : {})}
+    >
       {cellIds.map((cellId) => (
         <TableCellView key={cellId} store={store} nodeId={cellId} registry={registry} />
       ))}
