@@ -120,11 +120,7 @@ If you want ChatGPT-style delimiters:
 - inline: `\\(...\\)`
 - block: `\\[...\\]`
 
-…you can do this by swapping the math tokenizer / configuration in the math plugin layer (the tokenizer is implemented as a plugin concern, not hard-coded into the renderer).
-
-See the math plugin docs and tokenizer entrypoints:
-- `@stream-mdx/plugins/math`
-- `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`
+Math parsing is implemented natively via Lezer math extensions in `@stream-mdx/core` and toggled with `features.math`. Custom delimiters or inline rules can be registered via `syntax` or custom Lezer inline extensions (see `docs/PLUGIN_ABI.md`).
 
 ## 6. Plugins
 
@@ -168,9 +164,8 @@ Math support typically involves:
 - optional delayed rendering / stabilization during streaming
 
 See:
-- `@stream-mdx/plugins/math`
+- `features.math` and `mathRenderer` in `docs/PUBLIC_API.md`
 - `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`
-
 ### 6.5 MDX
 
 MDX adds a compilation/hydration pipeline and therefore additional deployment and security considerations. StreamMDX aims for **parity** between worker compilation and server compilation (see §8).

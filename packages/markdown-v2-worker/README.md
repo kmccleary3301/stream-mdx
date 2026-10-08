@@ -20,7 +20,6 @@ npm install @stream-mdx/worker
 | `@stream-mdx/worker/node` | Node `worker_threads` hosted-worker helper |
 | `@stream-mdx/worker/direct` | Direct compile path without `worker_threads` |
 | `@stream-mdx/worker/mdx-compile` | Shared MDX compile helper |
-| `@stream-mdx/worker/streaming/custom-matcher` | Custom streaming matcher surface |
 | `@stream-mdx/worker/hosted/markdown-worker.js` | Hosted worker bundle asset |
 
 ## Hosted Worker Bundle
