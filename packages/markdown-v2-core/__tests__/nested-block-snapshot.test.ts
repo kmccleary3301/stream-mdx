@@ -40,12 +40,15 @@ const custom: Block = { id: "custom", type: "list", isFinalized: true, payload: 
 custom.payload.meta = { preparedNested: prepareNestedBlockSnapshot(custom, instance, parser.configure([GFM, createBlockCompatibilityExtension()])) };
 const prepared = createBlockSnapshot(JSON.parse(JSON.stringify(custom)) as Block);
 assert.ok((prepared.children?.[0].props?.inline as Array<{ kind: string; name?: string }>).some((node) => node.kind === "plugin" && node.name === "ticket"));
-assert.deepEqual(prepared.children, createBlockSnapshot(custom).children);
+assert.equal(JSON.stringify(prepared.children), JSON.stringify(createBlockSnapshot(custom).children));
 
 const emptyQuote: Block = { id: "definition", type: "blockquote", isFinalized: true, payload: { raw: "> [foo]: /url\n" } };
 assert.deepEqual(createBlockSnapshot(emptyQuote).children, []);
+for (const raw of [">\n", ">\n>  \n> \n"]) {
+  assert.deepEqual(createBlockSnapshot({ ...emptyQuote, payload: { raw } }).children, []);
+}
 const table: Block = { id: "table", type: "table", isFinalized: true, payload: { raw: "|a|\n|-|", meta: { header: [[{ kind: "text", text: "a" }]], rows: [] } } };
-assert.ok(createBlockSnapshot(table).children?.some((node) => node.type === "table-body" && node.children?.length === 0));
+assert.equal(createBlockSnapshot(table).children?.some((node) => node.type === "table-body"), false, "GFM205 omits an empty tbody");
 
 assert.equal(parseCodeFenceInfo("unknown\\+&amp;").lang, "unknown+&");
 assert.equal(parseCodeFenceInfo("\\&amp;").lang, "&amp;", "escaped entity opener is not decoded a second time");

@@ -211,12 +211,14 @@ function enrichTableSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot
     })),
   }));
 
-  children.push({
-    id: `${block.id}::tbody`,
-    type: "table-body",
-    props: { rows: rows.length },
-    children: bodyChildren,
-  });
+  if (bodyChildren.length > 0) {
+    children.push({
+      id: `${block.id}::tbody`,
+      type: "table-body",
+      props: { rows: rows.length },
+      children: bodyChildren,
+    });
+  }
 
   snapshot.children = children;
   return snapshot;

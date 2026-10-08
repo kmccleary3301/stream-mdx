@@ -91,7 +91,7 @@ export function prepareNestedBlockSnapshot(block: Block, inlineParser: InlinePar
         const primaryText = task ? text.slice(task[0].length) : text;
         const inline = parseInline(primaryText);
         const segments = primary ? extractMixedContentSegments(primaryText, undefined, parseInline) : [];
-        const structured = segments.some((segment) => segment.kind !== "text");
+        const structured = segments.some((segment) => segment.kind === "mdx");
         const children: NodeSnapshot[] = structured ? segments.map((segment, segmentIndex) => ({
           id: `${itemId}::list-item:segment:${segmentIndex}`,
           type: `list-item-${segment.kind}`,
@@ -125,6 +125,7 @@ export function prepareNestedBlockSnapshot(block: Block, inlineParser: InlinePar
     }
     let type: Block["type"] = "paragraph";
     let raw = leafText(node);
+    if (name === "Paragraph" && !raw.trim()) return null;
     let inline: InlineNode[] | undefined;
     if (name === "FencedCode" || name === "CodeBlock" || name === "IndentedCode") {
       type = "code";
@@ -141,9 +142,9 @@ export function prepareNestedBlockSnapshot(block: Block, inlineParser: InlinePar
       inline = parseInline(removeHeadingMarkers(raw));
     } else if (name === "HorizontalRule") {
       type = "hr";
-    } else if (name === "HTMLBlock") {
+    } else if (name === "HTMLBlock" || name === "CommentBlock" || name === "ProcessingInstructionBlock") {
       type = "html";
-      baseMeta.lezerNodeType = "HTMLBlock";
+      baseMeta.lezerNodeType = name;
     } else {
       inline = parseInline(raw);
     }
