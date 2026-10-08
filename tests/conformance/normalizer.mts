@@ -12,6 +12,9 @@ export type SemanticNode =
       type: "text";
       value: string;
     };
+export interface NormalizerOptions {
+  strict?: boolean;
+}
 
 const PRUNED_TAGS: Record<string, true> = {
   button: true,
@@ -160,11 +163,37 @@ function codeBlockText(pre: Element): string {
   const text = isLineWrapped ? lineSpans.map(textContent).join("\n") : textContent(code);
   return text.replace(/\n+$/, "");
 }
+function extractCodeLanguage(node: Nodes): string | undefined {
+  if (node.type !== "element") return undefined;
+  const el = node as Element;
+  const classNames = Array.isArray(el.properties?.className)
+    ? el.properties.className.map(String)
+    : typeof el.properties?.className === "string"
+      ? el.properties.className.split(/\s+/)
+      : [];
+  for (const cls of classNames) {
+    if (cls.startsWith("language-") && cls.length > "language-".length) {
+      return cls;
+    }
+  }
+  const dataLang = el.properties?.dataLanguage ?? el.properties?.["data-language"];
+  if (typeof dataLang === "string" && dataLang.trim()) {
+    return `language-${dataLang.trim()}`;
+  }
+  if ("children" in el && Array.isArray(el.children)) {
+    for (const child of el.children as Nodes[]) {
+      const found = extractCodeLanguage(child);
+      if (found) return found;
+    }
+  }
+  return undefined;
+}
 
-function processHastChildren(children: Nodes[], inPre: boolean): SemanticNode[] {
+
+function processHastChildren(children: Nodes[], inPre: boolean, options?: NormalizerOptions): SemanticNode[] {
   const rawList: SemanticNode[] = [];
   for (const child of children) {
-    const converted = convertHastNode(child, inPre);
+    const converted = convertHastNode(child, inPre, options);
     for (const node of converted) {
       rawList.push(node);
     }
@@ -172,7 +201,7 @@ function processHastChildren(children: Nodes[], inPre: boolean): SemanticNode[] 
   return normalizeChildList(rawList, inPre);
 }
 
-function convertHastNode(node: Nodes, inPre: boolean): SemanticNode[] {
+function convertHastNode(node: Nodes, inPre: boolean, options?: NormalizerOptions): SemanticNode[] {
   if (node.type === "comment") return [];
 
   if (node.type === "text") {
@@ -189,7 +218,14 @@ function convertHastNode(node: Nodes, inPre: boolean): SemanticNode[] {
     if (tagName === "pre") {
       const text = codeBlockText(el);
       const codeChildren: SemanticNode[] = text ? [{ type: "text", value: text }] : [];
-      return [{ type: "element", tag: "pre", attrs: {}, children: [{ type: "element", tag: "code", attrs: {}, children: codeChildren }] }];
+      const codeAttrs: Record<string, string> = {};
+      if (options?.strict) {
+        const lang = extractCodeLanguage(el);
+        if (lang) {
+          codeAttrs.class = lang;
+        }
+      }
+      return [{ type: "element", tag: "pre", attrs: {}, children: [{ type: "element", tag: "code", attrs: codeAttrs, children: codeChildren }] }];
     }
 
     // Checkbox input
@@ -206,17 +242,25 @@ function convertHastNode(node: Nodes, inPre: boolean): SemanticNode[] {
 
     if (SEMANTIC_TAGS[tagName]) {
       const isPre = tagName === "pre";
-      const children = processHastChildren(el.children as Nodes[], inPre || isPre);
+      const children = processHastChildren(el.children as Nodes[], inPre || isPre, options);
       const attrs: Record<string, string> = {};
 
-      if (tagName === "a" && el.properties?.href !== undefined) {
-        attrs.href = normalizeUri(String(el.properties.href));
+      if (tagName === "a") {
+        if (el.properties?.href !== undefined) {
+          attrs.href = normalizeUri(String(el.properties.href));
+        }
+        if (options?.strict && el.properties?.title !== undefined) {
+          attrs.title = String(el.properties.title);
+        }
       } else if (tagName === "img") {
         if (el.properties?.src !== undefined) {
           attrs.src = normalizeUri(String(el.properties.src));
         }
         if (el.properties?.alt !== undefined) {
           attrs.alt = String(el.properties.alt);
+        }
+        if (options?.strict && el.properties?.title !== undefined) {
+          attrs.title = String(el.properties.title);
         }
       } else if (tagName === "ol") {
         const start = el.properties?.start;
@@ -227,6 +271,11 @@ function convertHastNode(node: Nodes, inPre: boolean): SemanticNode[] {
         const align = extractAlign(el.properties ?? {});
         if (align) {
           attrs.align = align;
+        }
+      } else if (tagName === "code" && options?.strict) {
+        const lang = extractCodeLanguage(el);
+        if (lang) {
+          attrs.class = lang;
         }
       }
       // A paragraph holding only images is equivalent to the bare images: renderers that wrap
@@ -239,11 +288,11 @@ function convertHastNode(node: Nodes, inPre: boolean): SemanticNode[] {
     }
 
     // Non-semantic wrapper or unrecognized tag: unwrap children
-    return processHastChildren(el.children as Nodes[], inPre);
+    return processHastChildren(el.children as Nodes[], inPre, options);
   }
 
   if ("children" in node && Array.isArray(node.children)) {
-    return processHastChildren(node.children as Nodes[], inPre);
+    return processHastChildren(node.children as Nodes[], inPre, options);
   }
 
   return [];
@@ -327,9 +376,9 @@ function normalizeChildList(nodes: SemanticNode[], inPre: boolean): SemanticNode
   return result;
 }
 
-export function parseSemanticTree(html: string): SemanticNode[] {
+export function parseSemanticTree(html: string, options?: NormalizerOptions): SemanticNode[] {
   const hast = fromHtml(html, { fragment: true });
-  return processHastChildren(hast.children as Nodes[], false);
+  return processHastChildren(hast.children as Nodes[], false, options);
 }
 
 function escapeHtml(str: string): string {
@@ -363,6 +412,6 @@ export function serializeSemanticTree(nodes: SemanticNode[]): string {
   return out;
 }
 
-export function normalizeHtmlSemantics(html: string): string {
-  return serializeSemanticTree(parseSemanticTree(html));
+export function normalizeHtmlSemantics(html: string, options?: NormalizerOptions): string {
+  return serializeSemanticTree(parseSemanticTree(html, options));
 }

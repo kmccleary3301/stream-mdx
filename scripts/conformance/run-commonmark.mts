@@ -12,8 +12,7 @@ import { ComponentRegistry, MarkdownBlocksRenderer, createRendererStore, type Re
 import { compileMarkdownSnapshotDirect } from "@stream-mdx/worker/direct";
 import { createWorkerThread } from "@stream-mdx/worker/node";
 
-import { normalizeHtmlSemantics } from "../../tests/conformance/normalizer.mts";
-
+import { normalizeHtmlSemantics, type NormalizerOptions } from "../../tests/conformance/normalizer.mts";
 type SpecExample = {
   markdown: string;
   html: string;
@@ -29,13 +28,14 @@ type ConformanceExample = {
   expectedHtml: string;
 };
 
-type SectionStats = {
+type EngineStats = {
   total: number;
   streamMdxStatic: number;
   streamMdxSsr: number;
   streamMdxStreaming: number;
   micromark: number;
   streamdown: number;
+  streamdownRaw: number;
   streamingDivergences: number;
 };
 
@@ -49,13 +49,27 @@ type ExampleResult = {
   streamMdxStaticNormalized: string;
   streamMdxSsrNormalized: string;
   streamdownNormalized: string;
+  streamdownRawNormalized: string;
   streamMdxStaticPass: boolean;
   streamMdxSsrPass: boolean;
   streamMdxStreamingPass: boolean;
   micromarkPass: boolean;
   streamdownPass: boolean;
+  streamdownRawPass: boolean;
   streamingDiverged: boolean;
   streamingChunkMatches?: Record<number, boolean>;
+  strictOracleNormalized: string;
+  strictStreamMdxStaticNormalized: string;
+  strictStreamMdxSsrNormalized: string;
+  strictStreamdownNormalized: string;
+  strictStreamdownRawNormalized: string;
+  strictStreamMdxStaticPass: boolean;
+  strictStreamMdxSsrPass: boolean;
+  strictStreamMdxStreamingPass: boolean;
+  strictMicromarkPass: boolean;
+  strictStreamdownPass: boolean;
+  strictStreamdownRawPass: boolean;
+  strictStreamingDiverged: boolean;
 };
 
 type BaselineFile = {
@@ -68,6 +82,7 @@ type BaselineFile = {
     streamMdxStreaming: number;
     micromark: number;
     streamdown: number;
+    streamdownRaw?: number;
   };
   passingIds: string[];
 };
@@ -147,8 +162,14 @@ async function main(): Promise<void> {
   const updateBaseline = args.includes("--update-baseline");
   const checkBaseline = args.includes("--check");
   silenceConsole();
-  const { Streamdown } = (await import("streamdown")) as {
-    Streamdown: React.ComponentType<{ mode: string; children?: React.ReactNode }>;
+  const { Streamdown, defaultRehypePlugins } = (await import("streamdown")) as {
+    Streamdown: React.ComponentType<{
+      mode: string;
+      linkSafety?: { enabled: boolean };
+      rehypePlugins?: unknown[];
+      children?: React.ReactNode;
+    }>;
+    defaultRehypePlugins: { raw: unknown; sanitize: unknown; harden: unknown };
   };
   // The client path runs in a browser: DOMPurify sanitization and HTML-to-React mapping need DOM globals.
   // Installed after the Streamdown import so its react-dom client entry is not selected at load.
@@ -169,9 +190,10 @@ async function main(): Promise<void> {
   };
 
   /** Production client path: StreamingMarkdown renders node views from a patch-driven RendererStore. */
-  function renderStore(store: RendererStore): string {
+  function renderStore(store: RendererStore, options?: NormalizerOptions): string {
     return normalizeHtmlSemantics(
       renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: [], store, componentRegistry: new ComponentRegistry() })),
+      options,
     );
   }
 
@@ -201,31 +223,39 @@ async function main(): Promise<void> {
     streamingWorker.postMessage({ type: "FINALIZE" });
     await finalizedPromise;
     workerFinalizedResolver = null;
-    return streamingStore ? renderStore(streamingStore) : "";
+    return {
+      normalized: streamingStore ? renderStore(streamingStore) : "",
+      strict: streamingStore ? renderStore(streamingStore, { strict: true }) : "",
+    };
   }
-
   const results: ExampleResult[] = [];
   const sectionOrder: string[] = [];
-  const sectionStats: Record<string, SectionStats> = {};
-
+  const createEmptyStats = (): EngineStats => ({
+    total: 0,
+    streamMdxStatic: 0,
+    streamMdxSsr: 0,
+    streamMdxStreaming: 0,
+    micromark: 0,
+    streamdown: 0,
+    streamdownRaw: 0,
+    streamingDivergences: 0,
+  });
+  const sectionStats: Record<string, EngineStats> = {};
+  const strictSectionStats: Record<string, EngineStats> = {};
   for (const ex of examples) {
     if (!sectionStats[ex.section]) {
       sectionOrder.push(ex.section);
-      sectionStats[ex.section] = {
-        total: 0,
-        streamMdxStatic: 0,
-        streamMdxSsr: 0,
-        streamMdxStreaming: 0,
-        micromark: 0,
-        streamdown: 0,
-        streamingDivergences: 0,
-      };
+      sectionStats[ex.section] = createEmptyStats();
+      strictSectionStats[ex.section] = createEmptyStats();
     }
     const stats = sectionStats[ex.section];
+    const strictStats = strictSectionStats[ex.section];
     stats.total++;
+    strictStats.total++;
 
     // Ground truth: the spec's expected HTML. micromark is a sanity column for the normalizer.
     const specNormalized = normalizeHtmlSemantics(ex.expectedHtml);
+    const strictSpecNormalized = normalizeHtmlSemantics(ex.expectedHtml, { strict: true });
     const oracleRaw = micromark(ex.markdown, {
       extensions: [gfm()],
       htmlExtensions: [gfmHtml()],
@@ -233,8 +263,11 @@ async function main(): Promise<void> {
       allowDangerousProtocol: true,
     });
     const oracleNormalized = specNormalized;
+    const strictOracleNormalized = strictSpecNormalized;
     const micromarkPass = normalizeHtmlSemantics(oracleRaw) === specNormalized;
+    const strictMicromarkPass = normalizeHtmlSemantics(oracleRaw, { strict: true }) === strictSpecNormalized;
     if (micromarkPass) stats.micromark++;
+    if (strictMicromarkPass) strictStats.micromark++;
 
     // 2. StreamMDX static compile, rendered through the client store path (what StreamingMarkdown shows)
     //    and through the SSR blocks path (MarkdownBlocksRenderer without a store).
@@ -242,47 +275,92 @@ async function main(): Promise<void> {
       text: ex.markdown,
       init: initConfig,
     });
-    const streamMdxStaticNormalized = renderStore(createRendererStore(staticCompiled.blocks));
+    const staticStore = createRendererStore(staticCompiled.blocks);
+    const streamMdxStaticNormalized = renderStore(staticStore);
+    const strictStreamMdxStaticNormalized = renderStore(staticStore, { strict: true });
     const streamMdxStaticPass = streamMdxStaticNormalized === oracleNormalized;
+    const strictStreamMdxStaticPass = strictStreamMdxStaticNormalized === strictOracleNormalized;
     if (streamMdxStaticPass) stats.streamMdxStatic++;
-    const streamMdxSsrNormalized = normalizeHtmlSemantics(
-      renderToStaticMarkup(
-        React.createElement(MarkdownBlocksRenderer, { blocks: staticCompiled.blocks, componentRegistry: new ComponentRegistry() }),
-      ),
+    if (strictStreamMdxStaticPass) strictStats.streamMdxStatic++;
+    const ssrMarkup = renderToStaticMarkup(
+      React.createElement(MarkdownBlocksRenderer, { blocks: staticCompiled.blocks, componentRegistry: new ComponentRegistry() }),
     );
+    const streamMdxSsrNormalized = normalizeHtmlSemantics(ssrMarkup);
+    const strictStreamMdxSsrNormalized = normalizeHtmlSemantics(ssrMarkup, { strict: true });
     const streamMdxSsrPass = streamMdxSsrNormalized === oracleNormalized;
+    const strictStreamMdxSsrPass = strictStreamMdxSsrNormalized === strictOracleNormalized;
     if (streamMdxSsrPass) stats.streamMdxSsr++;
+    if (strictStreamMdxSsrPass) strictStats.streamMdxSsr++;
 
     // 3. StreamMDX Streaming (chunks: 1, 7, 64)
     let streamingMatchesStatic = true;
+    let strictStreamingMatchesStatic = true;
     const chunkMatches: Record<number, boolean> = {};
     for (const size of [1, 7, 64]) {
-      const streamingNorm = await runStreaming(ex.markdown, size);
-      const matches = streamingNorm === streamMdxStaticNormalized;
+      const streamingRes = await runStreaming(ex.markdown, size);
+      const matches = streamingRes.normalized === streamMdxStaticNormalized;
+      const strictMatches = streamingRes.strict === strictStreamMdxStaticNormalized;
       chunkMatches[size] = matches;
       if (!matches) {
         streamingMatchesStatic = false;
+      }
+      if (!strictMatches) {
+        strictStreamingMatchesStatic = false;
       }
     }
 
     const streamingDiverged = !streamingMatchesStatic;
     if (streamingDiverged) stats.streamingDivergences++;
+    const strictStreamingDiverged = !strictStreamingMatchesStatic;
+    if (strictStreamingDiverged) strictStats.streamingDivergences++;
     const streamMdxStreamingPass = streamingMatchesStatic && streamMdxStaticPass;
+    const strictStreamMdxStreamingPass = strictStreamingMatchesStatic && strictStreamMdxStaticPass;
     if (streamMdxStreamingPass) stats.streamMdxStreaming++;
+    if (strictStreamMdxStreamingPass) strictStats.streamMdxStreaming++;
 
-    // 4. Streamdown 2.7.0
+    // 4. Streamdown 2.7.0 (default chat sanitization)
     let streamdownNormalized = "";
+    let strictStreamdownNormalized = "";
     let streamdownPass = false;
+    let strictStreamdownPass = false;
     try {
       // linkSafety off: its default renders links as <button> (a UI choice, not a parse result).
       const sdownMarkup = renderToStaticMarkup(
         React.createElement(Streamdown, { mode: "static", linkSafety: { enabled: false } }, ex.markdown),
       );
       streamdownNormalized = normalizeHtmlSemantics(sdownMarkup);
+      strictStreamdownNormalized = normalizeHtmlSemantics(sdownMarkup, { strict: true });
       streamdownPass = streamdownNormalized === oracleNormalized;
+      strictStreamdownPass = strictStreamdownNormalized === strictOracleNormalized;
       if (streamdownPass) stats.streamdown++;
+      if (strictStreamdownPass) strictStats.streamdown++;
     } catch (error) {
       streamdownNormalized = `RENDER_ERROR: ${error instanceof Error ? error.message : String(error)}`;
+      strictStreamdownNormalized = streamdownNormalized;
+    }
+
+    // 5. Streamdown 2.7.0 (raw HTML enabled, sanitization/hardening off)
+    let streamdownRawNormalized = "";
+    let strictStreamdownRawNormalized = "";
+    let streamdownRawPass = false;
+    let strictStreamdownRawPass = false;
+    try {
+      const sdownRawMarkup = renderToStaticMarkup(
+        React.createElement(
+          Streamdown,
+          { mode: "static", linkSafety: { enabled: false }, rehypePlugins: [defaultRehypePlugins.raw] },
+          ex.markdown,
+        ),
+      );
+      streamdownRawNormalized = normalizeHtmlSemantics(sdownRawMarkup);
+      strictStreamdownRawNormalized = normalizeHtmlSemantics(sdownRawMarkup, { strict: true });
+      streamdownRawPass = streamdownRawNormalized === oracleNormalized;
+      strictStreamdownRawPass = strictStreamdownRawNormalized === strictOracleNormalized;
+      if (streamdownRawPass) stats.streamdownRaw++;
+      if (strictStreamdownRawPass) strictStats.streamdownRaw++;
+    } catch (error) {
+      streamdownRawNormalized = `RENDER_ERROR: ${error instanceof Error ? error.message : String(error)}`;
+      strictStreamdownRawNormalized = streamdownRawNormalized;
     }
 
     results.push({
@@ -295,61 +373,90 @@ async function main(): Promise<void> {
       streamMdxStaticNormalized,
       streamMdxSsrNormalized,
       streamdownNormalized,
+      streamdownRawNormalized,
       streamMdxStaticPass,
       streamMdxSsrPass,
       streamMdxStreamingPass,
       micromarkPass,
       streamdownPass,
+      streamdownRawPass,
       streamingDiverged,
       streamingChunkMatches: chunkMatches,
+      strictOracleNormalized,
+      strictStreamMdxStaticNormalized,
+      strictStreamMdxSsrNormalized,
+      strictStreamdownNormalized,
+      strictStreamdownRawNormalized,
+      strictStreamMdxStaticPass,
+      strictStreamMdxSsrPass,
+      strictStreamMdxStreamingPass,
+      strictMicromarkPass,
+      strictStreamdownPass,
+      strictStreamdownRawPass,
+      strictStreamingDiverged,
     });
   }
-
   streamingWorker.terminate();
   restoreConsole();
 
   // Print summary table
-  const columns: Array<{ label: string; key: Exclude<keyof SectionStats, "streamingDivergences"> }> = [
+  // Print summary tables
+  const columns: Array<{ label: string; key: Exclude<keyof EngineStats, "streamingDivergences"> }> = [
     { label: "Total", key: "total" },
     { label: "StreamMDX", key: "streamMdxStatic" },
     { label: "Streaming", key: "streamMdxStreaming" },
     { label: "SSR", key: "streamMdxSsr" },
     { label: "micromark", key: "micromark" },
     { label: "Streamdown", key: "streamdown" },
+    { label: "SD (raw)", key: "streamdownRaw" },
   ];
-  const totals: SectionStats = {
-    total: 0,
-    streamMdxStatic: 0,
-    streamMdxSsr: 0,
-    streamMdxStreaming: 0,
-    micromark: 0,
-    streamdown: 0,
-    streamingDivergences: 0,
-  };
-  const row = (name: string, s: SectionStats) =>
-    [name.length > 34 ? `${name.slice(0, 33)}…` : name.padEnd(34), ...columns.map((c) => String(s[c.key]).padStart(10))].join(" | ");
-  const rule = "=".repeat(34 + columns.length * 13);
 
-  console.log("\nCommonMark & GFM Extension Conformance Report");
-  console.log("StreamMDX/Streaming: client store path (StreamingMarkdown). SSR: MarkdownBlocksRenderer without a store.");
-  console.log(rule);
-  console.log(["Section".padEnd(34), ...columns.map((c) => c.label.padStart(10))].join(" | "));
-  console.log("-".repeat(rule.length));
-  for (const sec of sectionOrder) {
-    const s = sectionStats[sec];
-    for (const key of Object.keys(totals) as Array<keyof SectionStats>) totals[key] += s[key];
-    console.log(row(sec, s));
+  function printTable(
+    title: string,
+    subtitle: string,
+    statsMap: Record<string, EngineStats>,
+  ): EngineStats {
+    const totals: EngineStats = createEmptyStats();
+    const row = (name: string, s: EngineStats) =>
+      [name.length > 34 ? `${name.slice(0, 33)}…` : name.padEnd(34), ...columns.map((c) => String(s[c.key]).padStart(10))].join(" | ");
+    const rule = "=".repeat(34 + columns.length * 13);
+
+    console.log(`\n${title}`);
+    if (subtitle) console.log(subtitle);
+    console.log(rule);
+    console.log(["Section".padEnd(34), ...columns.map((c) => c.label.padStart(10))].join(" | "));
+    console.log("-".repeat(rule.length));
+    for (const sec of sectionOrder) {
+      const s = statsMap[sec];
+      for (const key of Object.keys(totals) as Array<keyof EngineStats>) totals[key] += s[key];
+      console.log(row(sec, s));
+    }
+    console.log(rule);
+    console.log(row("TOTAL", totals));
+    console.log(`Streaming divergences from static: ${totals.streamingDivergences}`);
+    return totals;
   }
-  console.log(rule);
-  console.log(row("TOTAL", totals));
-  console.log(`Streaming divergences from static: ${totals.streamingDivergences}`);
+
+  const totals = printTable(
+    "CommonMark & GFM Extension Conformance Report (Normalized Semantics)",
+    "StreamMDX/Streaming: client store path (StreamingMarkdown). SSR: MarkdownBlocksRenderer without a store. SD (raw): Streamdown with raw HTML enabled and sanitization off.",
+    sectionStats,
+  );
+
+  const strictTotals = printTable(
+    "CommonMark & GFM Extension Conformance Report (STRICT: Link/Image Titles + Code Language)",
+    "Preserves link/image titles and code block language-* info strings across all engines.",
+    strictSectionStats,
+  );
 
   // Write full JSON report to tmp/conformance/report.json
   await fs.mkdir(path.dirname(REPORT_PATH), { recursive: true });
   const reportPayload = {
     generatedAt: new Date().toISOString(),
     totals,
+    strictTotals,
     sectionStats,
+    strictSectionStats,
     results,
   };
   await fs.writeFile(REPORT_PATH, JSON.stringify(reportPayload, null, 2));
