@@ -22,7 +22,7 @@ const assertMdx = blocks => {
   for (const block of blocks) visit(block);
   const mdx = owned.find(block => block.payload.raw.startsWith("<SmokeBox>"));
   assert.ok(mdx, "balanced component must retain its owning MDX block");
-  assert.strictEqual(mdx.payload.meta.mdxStatus, "compiled");
+  assert.strictEqual(mdx.payload.meta.mdxStatus, "compiled", mdx.payload.meta.mdxError ?? "native MDX compilation failed");
   assert.ok(mdx.payload.compiledMdxModule.code.includes("©"), "native compiler must decode named entities without a DOM shim");
   assert.ok(mdx.payload.compiledMdxModule.code.includes("katex"), "native compiler must produce actual math artifacts");
   assert.ok(owned.some(block => block.payload.raw.startsWith("<Input") && block.payload.meta.mdxStatus === "compiled"), "case-sensitive Input component must compile without DOM globals");
@@ -36,7 +36,8 @@ const assertMdx = blocks => {
   const direct = await compileMarkdownSnapshotDirect({ text, init });
   assertMdx(direct.blocks);
   unchanged("direct compilation");
-  const threaded = await compileMarkdownSnapshot({ text, init });
+  // The parent eval's --input-type applies only to string input, not worker files.
+  const threaded = await compileMarkdownSnapshot({ text, init, workerOptions: { execArgv: [] } });
   assertMdx(threaded.blocks);
   assert.deepStrictEqual(threaded.blocks, direct.blocks, "physical hosted worker must retain exact DOM-free direct output");
   unchanged("physical worker compilation");

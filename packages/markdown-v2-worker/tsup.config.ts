@@ -1,6 +1,8 @@
 import { join } from "node:path";
 import { defineConfig } from "tsup";
 
+import { applyWorkerRealmAliases, assertWorkerRealmBoundary, workerMdxBundlePackages } from "./tsup.worker-realm";
+
 const resolve = (p: string) => join(__dirname, p);
 const sourcemap = process.env.SOURCEMAP === "1" || process.env.SOURCEMAP === "true";
 
@@ -25,25 +27,31 @@ export default defineConfig({
   outDir: join(__dirname, "dist"),
   target: "es2020",
   tsconfig: join(__dirname, "tsconfig.build.json"),
+  // Direct and MDX helper entries need the same DOM-free, ESM-only pipeline
+  // as the public engine, including when consumers load their CJS builds.
+  noExternal: workerMdxBundlePackages,
+  esbuildOptions(options) {
+    applyWorkerRealmAliases(options);
+  },
   external: [
     "@lezer/markdown",
     "@lezer/lr",
     "@stream-mdx/core",
     "@stream-mdx/plugins",
     "@stream-mdx/react",
-    "@mdx-js/mdx",
     "@shikijs/engine-javascript",
     "@shikijs/engine-oniguruma",
     "character-entities",
-    "rehype-katex",
-    "rehype-slug",
-    "remark-gfm",
-    "remark-math",
     "shiki",
   ],
   outExtension({ format }) {
     return {
       js: format === "cjs" ? ".cjs" : ".mjs",
     };
+  },
+  async onSuccess() {
+    await assertWorkerRealmBoundary(
+      ["index", "direct", "mdx-compile"].flatMap((entry) => ["mjs", "cjs"].map((extension) => resolve(`dist/${entry}.${extension}`))),
+    );
   },
 });
