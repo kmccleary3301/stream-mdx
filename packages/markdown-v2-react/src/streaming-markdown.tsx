@@ -438,22 +438,6 @@ function StreamingMarkdownComponent(
     };
   }, []);
 
-  const previousTextRef = useRef<string | undefined>();
-  useEffect(() => {
-    if (text !== undefined && text !== previousTextRef.current) {
-      previousTextRef.current = text;
-      setSession((prev) => prev + 1);
-    }
-  }, [text]);
-
-  const previousStreamRef = useRef<AsyncIterable<string> | undefined>();
-  useEffect(() => {
-    if (stream && stream !== previousStreamRef.current) {
-      previousStreamRef.current = stream;
-      setSession((prev) => prev + 1);
-    }
-  }, [stream]);
-
   const linkSafetyEnabled = Boolean(linkSafety?.enabled);
   const [linkModalState, setLinkModalState] = useState<{ url: string; isOpen: boolean; isChecking: boolean }>({
     url: "",

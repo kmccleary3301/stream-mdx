@@ -57,6 +57,8 @@ function getMdxComponentNames(config: RendererConfig): string[] | undefined {
  */
 export class MarkdownRenderer implements Renderer {
   private worker: Worker | null = null;
+  private skipWorkerInit = false;
+  private workerHasContent = false;
   private blocks: Block[] = [];
   private updateCallbacks: Array<(blocks: ReadonlyArray<Block>) => void> = [];
   private componentRegistry: ComponentRegistry;
@@ -115,44 +117,45 @@ export class MarkdownRenderer implements Renderer {
       this.notifyUpdateCallbacks();
     }
     this.worker = worker;
+    this.skipWorkerInit = options?.skipInit ?? false;
+    this.workerHasContent = false;
     this.workerMessageListener = this.handleWorkerMessage.bind(this);
     this.worker.addEventListener("message", this.workerMessageListener);
 
-    if (!options?.skipInit) {
-      // Initialize worker
-      const mdxComponentNames = getMdxComponentNames(this.config);
-      const codeHighlighting = this.config.plugins?.codeHighlighting;
-      const outputMode = this.config.plugins?.outputMode;
-      const liveTokenization = this.config.plugins?.liveTokenization;
-      const emitHighlightTokens = this.config.plugins?.emitHighlightTokens;
-      const emitDiffBlocks = this.config.plugins?.emitDiffBlocks;
-      const docPlugins = {
-        footnotes: this.config.plugins?.footnotes ?? true,
-        html: this.config.plugins?.html ?? true,
-        mdx: this.config.plugins?.mdx ?? true,
-        tables: this.config.plugins?.tables ?? true,
-        callouts: this.config.plugins?.callouts ?? false,
-        math: this.config.plugins?.math ?? true,
-        formatAnticipation: this.config.plugins?.formatAnticipation ?? false,
-        ...(codeHighlighting !== undefined ? { codeHighlighting } : {}),
-        ...(outputMode !== undefined ? { outputMode } : {}),
-        liveCodeHighlighting: this.config.plugins?.liveCodeHighlighting ?? false,
-        ...(liveTokenization !== undefined ? { liveTokenization } : {}),
-        ...(emitHighlightTokens !== undefined ? { emitHighlightTokens } : {}),
-        ...(emitDiffBlocks !== undefined ? { emitDiffBlocks } : {}),
-        ...(mdxComponentNames ? { mdxComponentNames } : {}),
-      };
+    this.initializeWorker();
+  }
 
-      this.worker.postMessage({
-        type: "INIT",
-        initialContent: "",
-        prewarmLangs: this.config.highlight?.langs || [],
-        docPlugins,
-        mdx: {
-          compileMode: this.config.mdx?.compileStrategy ?? "server",
-        },
-      } as WorkerIn);
-    }
+  private initializeWorker(): void {
+    if (!this.worker || this.skipWorkerInit) return;
+    const mdxComponentNames = getMdxComponentNames(this.config);
+    const codeHighlighting = this.config.plugins?.codeHighlighting;
+    const outputMode = this.config.plugins?.outputMode;
+    const liveTokenization = this.config.plugins?.liveTokenization;
+    const emitHighlightTokens = this.config.plugins?.emitHighlightTokens;
+    const emitDiffBlocks = this.config.plugins?.emitDiffBlocks;
+    const docPlugins = {
+      footnotes: this.config.plugins?.footnotes ?? true,
+      html: this.config.plugins?.html ?? true,
+      mdx: this.config.plugins?.mdx ?? true,
+      tables: this.config.plugins?.tables ?? true,
+      callouts: this.config.plugins?.callouts ?? false,
+      math: this.config.plugins?.math ?? true,
+      formatAnticipation: this.config.plugins?.formatAnticipation ?? false,
+      ...(codeHighlighting !== undefined ? { codeHighlighting } : {}),
+      ...(outputMode !== undefined ? { outputMode } : {}),
+      liveCodeHighlighting: this.config.plugins?.liveCodeHighlighting ?? false,
+      ...(liveTokenization !== undefined ? { liveTokenization } : {}),
+      ...(emitHighlightTokens !== undefined ? { emitHighlightTokens } : {}),
+      ...(emitDiffBlocks !== undefined ? { emitDiffBlocks } : {}),
+      ...(mdxComponentNames ? { mdxComponentNames } : {}),
+    };
+    this.worker.postMessage({
+      type: "INIT",
+      initialContent: "",
+      prewarmLangs: this.config.highlight?.langs || [],
+      docPlugins,
+      mdx: { compileMode: this.config.mdx?.compileStrategy ?? "server" },
+    } as WorkerIn);
   }
 
   detachWorker(options: { terminate?: boolean } = {}): void {
@@ -170,6 +173,7 @@ export class MarkdownRenderer implements Renderer {
     } finally {
       this.worker = null;
       this.workerMessageListener = null;
+      this.workerHasContent = false;
     }
   }
 
@@ -180,6 +184,7 @@ export class MarkdownRenderer implements Renderer {
     if (!this.worker) {
       throw new Error("Worker not attached");
     }
+    this.workerHasContent ||= text.length > 0;
 
     this.worker.postMessage({
       type: "APPEND",
@@ -223,6 +228,7 @@ export class MarkdownRenderer implements Renderer {
         ...(mdxComponentNames ? { mdxComponentNames } : {}),
       };
 
+      this.workerHasContent = text.length > 0;
       this.worker.postMessage({
         type: "INIT",
         initialContent: text,
@@ -406,6 +412,10 @@ export class MarkdownRenderer implements Renderer {
     this.blocks = [];
     if (this.updateCallbacks.length > 0) {
       this.notifyUpdateCallbacks();
+    }
+    if (this.workerHasContent) {
+      this.initializeWorker();
+      this.workerHasContent = false;
     }
   }
 

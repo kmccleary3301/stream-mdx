@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
-import type { Block, InlineNode } from "@stream-mdx/core";
+import { Worker as NodeWorker } from "node:worker_threads";
+import type { Block, InlineNode, WorkerOut } from "@stream-mdx/core";
 import { StreamingMarkdown, type StreamingMarkdownHandle, type TableElements, type TableVirtualizationOptions } from "@stream-mdx/react";
 import { ComponentRegistry, MarkdownBlocksRenderer } from "@stream-mdx/react/server";
+import { createInlineEngineWorker } from "@stream-mdx/worker/engine";
 import { JSDOM } from "jsdom";
 import React from "react";
 import { createRoot } from "react-dom/client";
@@ -43,19 +45,25 @@ class TestResizeObserver implements ResizeObserver {
   static notify() {
     for (const observer of TestResizeObserver.instances) observer.callback([], observer);
   }
+  deliverPending() { this.callback([], this); }
 }
 
 const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', { pretendToBeVisual: true });
 // Browser geometry at the public DOM boundary. Verify natural passes include all rows.
 let availableWidth = 800;
+let changedIdWidth: number | undefined;
+let changedRowHeight = 0;
 const naturalPassRowCounts: number[] = [];
 dom.window.HTMLTableElement.prototype.getBoundingClientRect = function () {
   if (this.style.tableLayout !== "fixed") naturalPassRowCounts.push(this.querySelectorAll("tbody tr[data-row-id]").length);
   return new dom.window.DOMRect(0, 0, availableWidth, 4800);
 };
 dom.window.HTMLTableCellElement.prototype.getBoundingClientRect = function () {
-  const idWidth = availableWidth === 800 ? 80 : 60;
+  const idWidth = changedIdWidth ?? (availableWidth === 800 ? 80 : 60);
   return new dom.window.DOMRect(0, 0, this.cellIndex === 0 ? idWidth : availableWidth - idWidth, 40);
+};
+dom.window.HTMLTableRowElement.prototype.getBoundingClientRect = function () {
+  return new dom.window.DOMRect(0, 0, availableWidth, this.dataset.rowId ? changedRowHeight : 0);
 };
 Object.defineProperty(dom.window.HTMLDivElement.prototype, "clientWidth", { configurable: true, get: () => availableWidth });
 const globals = {
@@ -89,7 +97,7 @@ const markdown = ["| ID | Description |", "| --- | --- |", ...Array.from({ lengt
 const handle = React.createRef<StreamingMarkdownHandle>();
 const customElements: TableElements = {
   // DOM fixture for apps/docs/components/ui/table.tsx's existing shadcn overflow-auto adapter.
-  Table: (props) => <div className="relative w-full overflow-auto" style={{ overflow: "auto", overflowX: "scroll" }}
+  Table: (props) => <div className="relative w-full overflow-auto" style={{ overflow: "auto", overflowX: "scroll", color: "rgb(10, 20, 30)" }}
     data-custom-wrapper="true"><table {...props} data-custom="table" /></div>,
   Thead: (props) => <thead {...props} data-custom="thead" />,
   Tbody: (props) => <tbody {...props} data-custom="tbody" />,
@@ -97,10 +105,15 @@ const customElements: TableElements = {
   Th: (props) => <th {...props} data-custom="th" />,
   Td: (props) => <td {...props} data-custom="td" />,
 };
+const replacementElements: TableElements = {
+  ...customElements,
+  Table: (props) => <div className="relative w-full overflow-auto" style={{ overflow: "auto" }}
+    data-custom-wrapper="true" data-adapter="replacement"><table {...props} data-custom="table" /></div>,
+};
 const features = { tables: true };
-const render = (tableVirtualization?: TableVirtualizationOptions) => root.render(
+const render = (tableVirtualization?: TableVirtualizationOptions, tableElements = customElements) => root.render(
   <StreamingMarkdown ref={handle} engine="main-thread" text={markdown} features={features} caret={false}
-    tableElements={customElements} tableVirtualization={tableVirtualization} />,
+    tableElements={tableElements} tableVirtualization={tableVirtualization} />,
 );
 const rows = () => container.querySelectorAll<HTMLTableRowElement>("tbody tr[data-row-id]");
 const scrollContainer = () => container.querySelector<HTMLDivElement>('[data-table-virtualized="true"]');
@@ -161,11 +174,50 @@ try {
   render({ enabled: true, minRows: 40, overscan: 10000, maxHeight: 320 });
   await waitFor(() => viewport.style.maxHeight === "320px", "maxHeight config updates a mounted table");
   assert.ok(rows().length <= 60, "overscan is bounded to 50 rows at the bottom");
+  const pendingObservers = Array.from(TestResizeObserver.instances);
   render();
   await waitFor(() => rows().length === 120 && !scrollContainer(), "removing the config restores full rendering");
+  assert.equal(customWrapper.isConnected, false, "captured wrapper is detached and tested only for cleanup");
+  const liveDisabledWrapper = container.querySelector<HTMLElement>('[data-custom-wrapper="true"]');
+  assert.ok(liveDisabledWrapper?.isConnected, "disabled consumer has a current connected adapter");
+  assert.equal(liveDisabledWrapper.style.overflow, "auto");
+  assert.equal(liveDisabledWrapper.style.overflowX, "scroll");
+  assert.equal(liveDisabledWrapper.style.color, "rgb(10, 20, 30)");
   assert.equal(customWrapper.style.getPropertyValue("overflow"), "auto", "disable restores original overflow shorthand");
   assert.equal(customWrapper.style.getPropertyValue("overflow-x"), "scroll", "disable restores original longhand order");
   assert.equal(customWrapper.style.color, "rgb(10, 20, 30)", "cleanup leaves unrelated consumer inline styles intact");
+
+  changedIdWidth = 120;
+  changedRowHeight = 48;
+  render({ minRows: 40, estimatedRowHeight: 40, overscan: 2, maxHeight: 240 });
+  for (const observer of pendingObservers) observer.deliverPending();
+  await waitFor(() => rows().length === 7 && container.querySelector<HTMLTableColElement>("col")?.style.width === "120px",
+    "same-width re-enable discards old row heights and natural column widths");
+  assert.equal(naturalPassRowCounts.at(-1), 120);
+  const oldAdapter = container.querySelector<HTMLElement>('[data-custom-wrapper="true"]');
+  assert.ok(oldAdapter?.isConnected);
+  const oldNativeTable = container.querySelector("table");
+  const swappedObserverCallbacks = Array.from(TestResizeObserver.instances);
+  render({ minRows: 40, estimatedRowHeight: 40, overscan: 2, maxHeight: 240 }, replacementElements);
+  await waitFor(() => container.querySelector<HTMLElement>('[data-adapter="replacement"]')?.style.overflow === "visible",
+    "replacement overflow wrapper is normalized without disabling virtualization");
+  await waitFor(() => rows().length === 7 && Array.from(TestResizeObserver.instances).every((observer) =>
+    Array.from(observer.targets).every((target) => target.isConnected && container.contains(target))),
+    "table/header/row observers target only current connected DOM");
+  assert.notEqual(container.querySelector("table"), oldNativeTable);
+  assert.equal(oldAdapter.isConnected, false);
+  assert.equal(oldAdapter.style.overflow, "auto", "detached old adapter receives its original overflow");
+  const liveReplacement = container.querySelector<HTMLElement>('[data-adapter="replacement"]');
+  assert.ok(liveReplacement?.isConnected);
+  assert.equal(liveReplacement.style.getPropertyPriority("overflow"), "important");
+  for (const observer of swappedObserverCallbacks) observer.deliverPending();
+  assert.equal(rows().length, 7, "queued old observer callbacks cannot change the new measurement generation");
+  liveReplacement.style.setProperty("overflow", "hidden", "important");
+  render(undefined, replacementElements);
+  await waitFor(() => rows().length === 120 && !scrollContainer(), "replacement adapter disables normally");
+  assert.equal(liveReplacement.style.overflow, "hidden", "cleanup preserves authored overflow changes");
+  assert.equal(liveReplacement.style.getPropertyPriority("overflow"), "important");
+  assert.ok(container.querySelector('[data-adapter="replacement"]')?.isConnected);
 
   root.unmount();
   const unfinishedRoot = createRoot(container);
@@ -188,12 +240,46 @@ try {
   assert.ok(handle.current?.getState().blocks.some((entry) => entry.type === "table" && entry.isFinalized),
     "the table is finalized before the surrounding stream ends");
   assert.equal(scrollContainer(), null, "a finalized table in an active session still renders every row");
-  handle.current?.finalize();
-  await waitFor(() => handle.current?.getState().blocks.every((entry) => entry.isFinalized) ?? false,
-    "explicit finalize completes blocks without ending the open iterator");
-  assert.equal(scrollContainer(), null, "native iterator activity owns the streaming guard");
   finishStream();
-  await waitFor(() => Boolean(scrollContainer()), "ending the session enables windowing of its finalized table");
+  await waitFor(() => Boolean(scrollContainer()), "natural iterator EOF finalizes the tail and enables table windowing");
+  assert.ok(handle.current?.getState().blocks.every((entry) => entry.isFinalized));
+  handle.current?.append("\n\nImperative content after EOF");
+  await waitFor(() => rows().length === 120, "append after EOF reopens an imperative session despite the retained stream prop");
+  handle.current?.finalize();
+  await waitFor(() => Boolean(scrollContainer()), "finalize closes imperative activity after EOF");
+  streamingRoot.render(<StreamingMarkdown ref={handle} engine="main-thread" className="stream-removed" features={features} tableVirtualization={true} caret={false} />);
+  await waitFor(() => Boolean(container.querySelector(".stream-removed")), "stream removal commits without replacing the renderer");
+  handle.current?.append("\n\nImperative content after stream removal");
+  await waitFor(() => rows().length === 120, "removed stream permits imperative reuse");
+  handle.current?.finalize();
+  await waitFor(() => Boolean(scrollContainer()), "finalize uses current iterator ownership, not a stale stream closure");
+
+  const { promise: oldGate, resolve: releaseOld } = Promise.withResolvers<void>();
+  const { promise: oldFinished, resolve: markOldFinished } = Promise.withResolvers<void>();
+  const { promise: newGate, resolve: releaseNew } = Promise.withResolvers<void>();
+  const oldStream = (async function* () {
+    try {
+      yield `${markdown}\n\nOld iterator tail`;
+      await oldGate;
+    } finally {
+      markOldFinished();
+    }
+  })();
+  const newStream = (async function* () {
+    yield `${markdown}\n\nNew iterator tail`;
+    await newGate;
+  })();
+  streamingRoot.render(<StreamingMarkdown ref={handle} engine="main-thread" stream={oldStream} features={features} tableVirtualization={true} caret={false} />);
+  await waitFor(() => rows().length === 120 && (container.textContent?.includes("Old iterator tail") ?? false), "old iterator is active");
+  streamingRoot.render(<StreamingMarkdown ref={handle} engine="main-thread" stream={newStream} features={features} tableVirtualization={true} caret={false} />);
+  await waitFor(() => rows().length === 120 && (container.textContent?.includes("New iterator tail") ?? false), "replacement iterator owns the session");
+  releaseOld();
+  await oldFinished;
+  handle.current?.finalize();
+  await waitFor(() => handle.current?.getState().blocks.every((entry) => entry.isFinalized) ?? false, "replacement iterator blocks finalize");
+  assert.equal(scrollContainer(), null, "late cancelled iterator completion cannot clear replacement iterator ownership");
+  releaseNew();
+  await waitFor(() => Boolean(scrollContainer()), "replacement iterator EOF releases its own session");
   streamingRoot.unmount();
   const imperativeRoot = createRoot(container);
   imperativeRoot.render(<StreamingMarkdown ref={handle} engine="main-thread" features={features} tableVirtualization={true} caret={false} />);
@@ -210,6 +296,53 @@ try {
   handle.current?.restart();
   await waitFor(() => rows().length === 0, "restart clears the table and resets session activity");
   imperativeRoot.unmount();
+  const externalWorker = createInlineEngineWorker();
+  let externalInitializations = 0;
+  externalWorker.addEventListener("message", (event: MessageEvent<WorkerOut>) => {
+    if (event.data.type === "INITIALIZED") externalInitializations++;
+  });
+  // Use a real Worker constructor for the browser availability check and the real inline engine factory.
+  const previousWorker = Object.getOwnPropertyDescriptor(globalThis, "Worker");
+  Object.defineProperty(globalThis, "Worker", { configurable: true, writable: true, value: NodeWorker });
+  const managedRoot = createRoot(container);
+  let suppliedStreamConsumed = false;
+  const unconsumedStream = (async function* () {
+    suppliedStreamConsumed = true;
+    yield "Content from the ignored managed iterator";
+  })();
+  const externalFactory = () => externalWorker;
+  try {
+    managedRoot.render(<StreamingMarkdown ref={handle} engine="worker" worker={externalFactory} managedWorker
+      stream={unconsumedStream} features={features} tableVirtualization={true} caret={false} />);
+    await waitFor(() => handle.current?.getState().workerReady ?? false, "real caller-owned worker attaches");
+    externalWorker.postMessage({ type: "INIT", initialContent: `${markdown}\n\nCaller-owned tail`, docPlugins: features });
+    externalWorker.postMessage({ type: "FINALIZE" });
+    await waitFor(() => Boolean(scrollContainer()), "caller initialization renders the managed table");
+    assert.equal(externalInitializations, 1, "attachWorker skipInit preserves caller-owned initialization");
+    handle.current?.append("\n\nManaged imperative content");
+    await waitFor(() => rows().length === 120, "managed imperative append opens activity");
+    handle.current?.finalize();
+    await waitFor(() => Boolean(scrollContainer()), "unconsumed stream prop does not prevent managed imperative finalization");
+    assert.equal(externalInitializations, 1, "managed lifecycle sends no replacement initialization");
+    assert.equal(suppliedStreamConsumed, false, "managed source remains caller-owned");
+    handle.current?.restart();
+    await waitFor(() => rows().length === 0, "managed restart clears only the renderer document");
+    const dump = Promise.withResolvers<ReadonlyArray<Block>>();
+    externalWorker.addEventListener("message", (event: MessageEvent<WorkerOut>) => {
+      if (event.data.type === "DUMP_BLOCKS") dump.resolve(event.data.blocks);
+    });
+    externalWorker.postMessage({ type: "DUMP_BLOCKS" });
+    const externalBlocks = await dump.promise;
+    assert.equal(externalInitializations, 1, "skipInit restart does not reset the caller-owned engine");
+    assert.ok(externalBlocks.some((block) => block.type === "table"), "caller-owned engine retains its table");
+    assert.ok(externalBlocks.some((block) => block.payload.raw.includes("Managed imperative content")),
+      "caller-owned engine retains imperative content after renderer restart");
+  } finally {
+    managedRoot.unmount();
+    externalWorker.terminate();
+    if (previousWorker) Object.defineProperty(globalThis, "Worker", previousWorker);
+    else Reflect.deleteProperty(globalThis, "Worker");
+  }
   assert.equal(TestResizeObserver.instances.size, 0, "unmount disconnects all table observers");
 } finally {
   for (const [key, descriptor] of previousGlobals) {

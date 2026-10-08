@@ -60,25 +60,23 @@ async function runMainThreadEngineSmokeTest(): Promise<void> {
   assert.ok(heading1, "expected <h1> to be rendered on main-thread engine");
   assert.strictEqual(heading1.textContent?.trim(), "Main Thread Engine Heading");
 
-  // Step 2: Appended text reaching finalized DOM
+  // Step 2: Replace the document through the public text prop.
   root.render(
     <StreamingMarkdown
       engine="main-thread"
-      text={"# Main Thread Engine Heading\n\nInitial provisional paragraph.\n\nFinalized paragraph text reaching the DOM."}
+      text={"# Replacement engine heading\n\nReplacement paragraph reaching the DOM."}
     />,
   );
 
   await waitForMutation(container!, () => {
-    return container!.textContent?.includes("Finalized paragraph text reaching the DOM.") ?? false;
+    return container!.textContent?.includes("Replacement paragraph reaching the DOM.") ?? false;
   });
 
-  assert.ok(
-    container!.textContent?.includes("Finalized paragraph text reaching the DOM."),
-    "appended text should reach finalized DOM",
-  );
-
-  const paragraphs = container!.querySelectorAll("p");
-  assert.ok(paragraphs.length >= 2, "expected at least two paragraphs in finalized DOM");
+  assert.strictEqual(container.querySelectorAll("h1").length, 1, "text replacement must not duplicate headings");
+  assert.strictEqual(container.querySelector("h1")?.textContent?.trim(), "Replacement engine heading");
+  assert.strictEqual(container.textContent?.includes("Main Thread Engine Heading"), false, "old heading must be gone");
+  assert.strictEqual(container.textContent?.includes("Initial provisional paragraph."), false, "old paragraph must be gone");
+  assert.strictEqual(container.querySelectorAll("p").length, 1, "only the replacement paragraph remains");
 
   // Step 3: Clean unmount
   root.unmount();

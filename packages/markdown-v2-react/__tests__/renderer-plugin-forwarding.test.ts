@@ -38,6 +38,22 @@ function testPluginForwarding(): void {
   );
   assert.strictEqual(init?.mdx?.compileMode, "worker", "mdx compile mode should propagate to worker");
 
+  renderer.restart();
+  assert.strictEqual(worker.messages.filter((message) => message.type === "INIT").length, 1,
+    "restarting an empty attached engine does not initialize it twice");
+  renderer.append("Existing stream content");
+  renderer.restart();
+  assert.deepStrictEqual(worker.messages.at(-1), init, "restarting content reinitializes with the same plugin and MDX configuration");
+
+  const managedRenderer = new MarkdownRenderer();
+  const managedWorker = new MockWorker();
+  managedRenderer.attachWorker(managedWorker as unknown as Worker, { skipInit: true });
+  managedRenderer.append("Externally managed content");
+  managedRenderer.restart();
+  assert.strictEqual(managedWorker.messages.some((message) => message.type === "INIT"), false,
+    "renderer restart never initializes an externally managed worker");
+  managedRenderer.detachWorker();
+
   renderer.detachWorker();
 }
 

@@ -803,7 +803,16 @@ export class ComponentRegistry {
 
   /** Update table element mapping for table blocks */
   setTableElements(map: Partial<TableElements>): void {
+    if (
+      (map.Table === undefined || map.Table === this.tableElements.Table) &&
+      (map.Thead === undefined || map.Thead === this.tableElements.Thead) &&
+      (map.Tbody === undefined || map.Tbody === this.tableElements.Tbody) &&
+      (map.Tr === undefined || map.Tr === this.tableElements.Tr) &&
+      (map.Th === undefined || map.Th === this.tableElements.Th) &&
+      (map.Td === undefined || map.Td === this.tableElements.Td)
+    ) return;
     this.tableElements = { ...this.tableElements, ...map } as TableElements;
+    this.setTableVirtualization(this.tableVirtualization);
   }
 
   /**

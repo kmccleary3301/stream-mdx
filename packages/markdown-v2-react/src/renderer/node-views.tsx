@@ -1,7 +1,7 @@
 import { dedentIndentedCode, getDefaultCodeWrapperAttributes, normalizeBlockquoteText, stripCodeFence, type Block, type InlineNode, type MixedContentSegment, type TokenLineV1 } from "@stream-mdx/core";
 import React from "react";
 import { DefaultDiffRenderer } from "../components/diff-renderer";
-import type { CodeFenceRendererProps } from "../types";
+import type { CodeFenceRendererProps, TableElements } from "../types";
 import { renderInlineNodes, renderParagraphMixedSegments } from "../components";
 import type { ComponentRegistry } from "../components";
 import { DEFAULT_INLINE_HTML_RENDERERS, renderInlineHtmlSegment } from "../utils/inline-html";
@@ -768,6 +768,7 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
           store={store}
           nodeId={sectionId}
           registry={registry}
+          tableElements={tableElements}
           virtualization={virtualizationProps}
         />
       ))}
@@ -806,11 +807,11 @@ const TableSectionView: React.FC<{
   store: RendererStore;
   nodeId: string;
   registry: ComponentRegistry;
+  tableElements: TableElements;
   virtualization?: TableVirtualizationProps;
-}> = React.memo(({ store, nodeId, registry, virtualization }) => {
+}> = React.memo(({ store, nodeId, registry, tableElements, virtualization }) => {
   const node = useRendererNode(store, nodeId);
   if (!node) return null;
-  const tableElements = registry.getTableElements();
   if (node.type === "table-header") {
     const childIds = useRendererChildren(store, nodeId);
     return (
@@ -825,7 +826,7 @@ const TableSectionView: React.FC<{
       >
         <tableElements.Tr>
           {childIds.map((cellId) => (
-            <TableCellView key={cellId} store={store} nodeId={cellId} registry={registry} />
+            <TableCellView key={cellId} store={store} nodeId={cellId} registry={registry} tableElements={tableElements} />
           ))}
         </tableElements.Tr>
       </tableElements.Thead>
@@ -837,7 +838,7 @@ const TableSectionView: React.FC<{
       return (
         <tableElements.Tbody>
           {rowIds.map((rowId) => (
-            <TableRowView key={rowId} store={store} nodeId={rowId} registry={registry} />
+            <TableRowView key={rowId} store={store} nodeId={rowId} registry={registry} tableElements={tableElements} />
           ))}
         </tableElements.Tbody>
       );
@@ -862,13 +863,11 @@ const TableSectionView: React.FC<{
           </tableElements.Tr>
         )}
         {visibleRowIds.map((rowId, offset) => (
-          <TableRowView
-            key={rowId}
-            store={store}
-            nodeId={rowId}
-            registry={registry}
-            rowIndex={startIndex + offset}
-          />
+          <TableRowView key={rowId}
+          store={store}
+          nodeId={rowId}
+          registry={registry}
+          rowIndex={startIndex + offset} tableElements={tableElements} />
         ))}
         {bottomSpacerHeight > 0 && (
           <tableElements.Tr
@@ -895,9 +894,9 @@ const TableRowView: React.FC<{
   store: RendererStore;
   nodeId: string;
   registry: ComponentRegistry;
+  tableElements: TableElements;
   rowIndex?: number;
-}> = React.memo(({ store, nodeId, registry, rowIndex }) => {
-  const tableElements = registry.getTableElements();
+}> = React.memo(({ store, nodeId, registry, tableElements, rowIndex }) => {
   const cellIds = useRendererChildren(store, nodeId);
   return (
     <tableElements.Tr
@@ -905,7 +904,7 @@ const TableRowView: React.FC<{
       {...(rowIndex !== undefined ? { "data-row-index": rowIndex } : {})}
     >
       {cellIds.map((cellId) => (
-        <TableCellView key={cellId} store={store} nodeId={cellId} registry={registry} />
+        <TableCellView key={cellId} store={store} nodeId={cellId} registry={registry} tableElements={tableElements} />
       ))}
     </tableElements.Tr>
   );
@@ -913,10 +912,9 @@ const TableRowView: React.FC<{
 
 TableRowView.displayName = "TableRowView";
 
-const TableCellView: React.FC<{ store: RendererStore; nodeId: string; registry: ComponentRegistry }> = React.memo(({ store, nodeId, registry }) => {
+const TableCellView: React.FC<{ store: RendererStore; nodeId: string; registry: ComponentRegistry; tableElements: TableElements }> = React.memo(({ store, nodeId, registry, tableElements }) => {
   const node = useRendererNode(store, nodeId);
   const inlineComponents = registry.getInlineComponents();
-  const tableElements = registry.getTableElements();
   if (!node) return null;
   const Tag = node.type === "table-header-cell" ? tableElements.Th : tableElements.Td;
   const inline = (node.props?.inline as InlineNode[] | undefined) ?? [];
