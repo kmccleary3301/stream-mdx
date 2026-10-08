@@ -5,6 +5,7 @@ const BLOCK_NODE_TYPES = new Set([
   "Paragraph",
   "Blockquote",
   "FencedCode",
+  "CodeBlock",
   "IndentedCode",
   "BulletList",
   "OrderedList",
@@ -43,6 +44,7 @@ export function mapLezerNodeToBlockType(nodeType: string): string {
     case "Paragraph":
       return "paragraph";
     case "FencedCode":
+    case "CodeBlock":
     case "IndentedCode":
       return "code";
     case "Blockquote":

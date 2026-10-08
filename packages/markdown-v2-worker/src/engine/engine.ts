@@ -709,10 +709,13 @@ export class MarkdownEngine {
       if (cursor.firstChild()) {
         do {
           const nodeType = cursor.type.name;
-          const from = cursor.from;
+          let from = cursor.from;
           const to = cursor.to;
+          if (nodeType === "CodeBlock") {
+            const lineStart = content.lastIndexOf("\n", from - 1) + 1;
+            from = lineStart;
+          }
           const raw = content.slice(from, to);
-
           if (isBlockLevelNode(nodeType)) {
             const blockType = mapLezerNodeToBlockType(nodeType);
             const block = await this.createBlock(blockType, raw, from, to, content, options);

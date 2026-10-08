@@ -220,7 +220,7 @@ function buildListItemSnapshot(
       } else if (name === "Blockquote") {
         const quoteId = `${id}::blockquote:${blockquoteIndex++}`;
         childSnapshots.push(buildBlockquoteSnapshot(block, cursor.node, quoteId, baseOffset, raw));
-      } else if (name === "FencedCode" || name === "IndentedCode") {
+      } else if (name === "FencedCode" || name === "IndentedCode" || name === "CodeBlock") {
         const codeId = `${id}::code:${codeIndex++}`;
         const isFenced = name === "FencedCode";
         const snapshot = buildCodeBlockSnapshot(block, cursor.node, codeId, baseOffset, raw, isFenced);
