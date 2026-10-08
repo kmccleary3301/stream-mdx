@@ -41,6 +41,9 @@ To render MDX blocks:
 - `inlineComponents`: override inline renders (strong/em/link/code/etc).
 - `tableElements`: override table tags (Shadcn table wrappers).
 - `htmlElements`: override HTML tag renders (when HTML is enabled).
+- `codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `artifact`, `diff`, custom languages).
+- `mathRenderer`: provide custom inline and display math renderers (KaTeX is built-in default; MathJax supported).
+- `artifactHtml`: opt-in flag (`true` to render standard ````html ```` code fences via `ArtifactFrame`).
 
 ## Mermaid diagrams (optional)
 

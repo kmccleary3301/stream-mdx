@@ -535,6 +535,101 @@ export function MermaidDemo({ text }: { text: string }) {
 
 The Code view uses the same optimized code rendering path (including incremental updates and virtualization) because StreamMDX passes the standard code renderer into the Mermaid component.
 
+### Code Fence Renderers (`codeRenderers`)
+
+Fenced code blocks can be mapped to custom renderers by language via `codeRenderers`:
+
+```tsx
+import { StreamingMarkdown } from "stream-mdx";
+import { MermaidBlock } from "@stream-mdx/mermaid";
+import { ArtifactFrame } from "@stream-mdx/react";
+
+export function DocsPage({ content }: { content: string }) {
+  return (
+    <StreamingMarkdown
+      text={content}
+      codeRenderers={{
+        mermaid: MermaidBlock,
+        artifact: ArtifactFrame,
+        "html-artifact": ArtifactFrame,
+      }}
+    />
+  );
+}
+```
+
+#### Deferring heavy renderers
+To defer mounting heavy block components until they enter the viewport:
+```tsx
+<StreamingMarkdown
+  deferHeavyBlocks={{ rootMargin: "200px" }}
+  codeRenderers={{
+    mermaid: MermaidBlock, // MermaidBlock opts in by default
+    chart: {
+      component: CustomChartBlock,
+      defer: true,
+    },
+  }}
+/>
+```
+
+### Structured Diff Rendering
+When worker has `emitDiffBlocks` enabled (`features={{ emitDiffBlocks: true }}`), code blocks with diffs automatically render structured rows with line numbers (`+`, `-`, `@` hunk, meta):
+
+```tsx
+<StreamingMarkdown
+  text={content}
+  features={{ emitDiffBlocks: true }}
+/>
+```
+You can override diff rendering globally with `codeRenderers={{ diff: MyDiffComponent }}`.
+
+### Math Rendering (KaTeX & MathJax)
+
+KaTeX is built-in as the first-party default for inline (`$...$`) and display (`$$...$$`) math.
+
+To integrate **MathJax** instead:
+```tsx
+import React, { useEffect, useRef } from "react";
+import { StreamingMarkdown } from "stream-mdx";
+
+function MathJaxFormula({ tex, display = false }: { tex: string; display?: boolean }) {
+  const containerRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const win = window as unknown as { MathJax?: { typesetPromise?: (elements: Element[]) => Promise<void> } };
+    if (containerRef.current && win.MathJax?.typesetPromise) {
+      containerRef.current.innerHTML = display ? `\\[${tex}\\]` : `\\(${tex}\\)`;
+      win.MathJax.typesetPromise([containerRef.current]).catch((err: unknown) => {
+        console.error("MathJax render error:", err);
+      });
+    }
+  }, [tex, display]);
+
+  return (
+    <span
+      ref={containerRef}
+      className={display ? "mathjax-display block my-2 overflow-x-auto" : "mathjax-inline inline-block"}
+    >
+      {display ? `$$${tex}$$` : `$${tex}$`}
+    </span>
+  );
+}
+
+export function MathJaxArticle({ content }: { content: string }) {
+  return (
+    <StreamingMarkdown
+      text={content}
+      features={{ math: true }}
+      mathRenderer={{
+        inline: ({ tex }) => <MathJaxFormula tex={tex} display={false} />,
+        display: ({ tex }) => <MathJaxFormula tex={tex} display={true} />,
+      }}
+    />
+  );
+}
+```
+
 ### Override Inline Components
 
 ```tsx

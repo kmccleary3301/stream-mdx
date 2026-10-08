@@ -199,6 +199,59 @@ import { MermaidBlock } from "@stream-mdx/mermaid";
 
 When registered, fenced `mermaid` code blocks render as diagrams (with a Diagram/Code toggle). All other code blocks remain unchanged.
 
+## 3.2) Code Fence Renderers (`codeRenderers`)
+
+Custom code fence rendering is registered via `codeRenderers` on `<StreamingMarkdown />` or `<MarkdownBlocksRenderer />`:
+
+```tsx
+import { ArtifactFrame } from "@stream-mdx/react";
+import { MermaidBlock } from "@stream-mdx/mermaid";
+
+<StreamingMarkdown
+  codeRenderers={{
+    mermaid: MermaidBlock,
+    artifact: ArtifactFrame,
+    custom: ({ code, language, isFinalized, renderCode }) => (
+      <div>Language: {language}</div>
+    ),
+    heavy: {
+      component: HeavyDiagramComponent,
+      defer: true, // opts in to deferHeavyBlocks viewport deferral
+    },
+  }}
+/>
+```
+
+### CodeFenceRenderer contract
+- **Language lookup**: Case-insensitive and trimmed (`"ts"`, `"TS"`, `"python"`).
+- **Renderer shape**: `Component | { component: Component; defer?: boolean }`.
+- **Props passed**:
+  - `code`: Un-fenced source code string.
+  - `language`: Normalized language string.
+  - `meta`: Block payload metadata object.
+  - `info`: Code fence info string.
+  - `isFinalized`: Boolean indicating if streaming for this block has finished.
+  - `blockId`: Unique block ID.
+  - `renderCode`: Pre-rendered fallback code view element.
+
+### Built-in Renderers
+1. **ArtifactFrame (P4)**: Built-in sandboxed iframe renderer for fence languages `artifact` and `html-artifact` (and `html` with `artifactHtml: true`). Displays fallback code view while streaming; once finalized, mounts an isolated `<iframe sandbox="allow-scripts" srcdoc="...">` with strict CSP meta (`connect-src 'none'`), auto-height messaging, and `noopener` link safety.
+2. **DefaultDiffRenderer**: When a code block payload includes `meta.diffBlocks` (from worker `features.emitDiffBlocks`), it automatically renders a structured git diff table with line kinds, old/new line numbers, and token colors. Overridable via `codeRenderers={{ diff: CustomDiff }}`.
+
+## 3.3) Math Rendering (`mathRenderer`)
+
+StreamMDX includes first-party KaTeX math rendering by default for inline (`$...$`) and display (`$$...$$`) math.
+
+To override or use MathJax:
+```tsx
+<StreamingMarkdown
+  mathRenderer={{
+    inline: ({ tex }) => <span className="mathjax-inline">\({tex}\)</span>,
+    display: ({ tex }) => <div className="mathjax-display">\[{tex}\]</div>,
+  }}
+/>
+```
+
 ## 4) MDX Compilation Modes
 
 `mdxCompileMode` selects how MDX blocks are compiled:
