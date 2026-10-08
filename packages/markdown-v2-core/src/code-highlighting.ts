@@ -183,13 +183,15 @@ function manualExtractHighlightedLines(html: string, fallbackLength: number): Hi
 
 export function getDefaultCodeWrapperAttributes(
   lang?: string,
-  themes: { dark: string; light: string } = { dark: "github-dark", light: "github-light" },
+  themes?: { dark?: string; light?: string },
 ): {
   preAttrs: Record<string, string>;
   codeAttrs: Record<string, string>;
 } {
   const language = lang && typeof lang === "string" && lang.trim().length > 0 ? lang.trim() : undefined;
-  const themeLabel = `${themes.dark} ${themes.light}`;
+  const darkTheme = themes?.dark ?? "github-dark";
+  const lightTheme = themes?.light ?? "github-light";
+  const themeLabel = `${darkTheme} ${lightTheme}`;
   const preAttrs: Record<string, string> = {
     class: `shiki shiki-themes ${themeLabel}`,
     style: "--shiki-dark-bg: transparent; --shiki-light-bg: transparent",

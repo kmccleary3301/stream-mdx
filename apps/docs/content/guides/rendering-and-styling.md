@@ -46,6 +46,31 @@ export function StyledCode({ text }: { text: string }) {
 
 This wraps the optimized code rendering inside a horizontal scroll container while keeping the patch pipeline intact. The wrapper class is intentionally app-owned; do not treat it as a default visual prescription for other projects.
 
+## Code highlighting themes
+
+StreamMDX provides end-to-end configurable Shiki themes for code blocks. Pass any Shiki bundled theme name for light and dark modes:
+
+```tsx
+<StreamingMarkdown
+  text={content}
+  themes={{ light: "min-light", dark: "nord" }}
+/>
+```
+
+Themes are loaded on demand into the worker highlighter singleton, and cache partitions prevent cross-contamination between engines with different themes. Unknown or invalid theme names report an initialization error through the standard error callback and fall back safely to default GitHub themes.
+
+When using static snapshot compilation directly:
+
+```ts
+import { compileMarkdownSnapshotDirect } from "@stream-mdx/worker/direct";
+
+const result = await compileMarkdownSnapshotDirect({
+  text,
+  init: {
+    themes: { light: "vitesse-light", dark: "vitesse-dark" },
+  },
+});
+```
 ## Inline overrides
 
 Inline overrides let you swap tags for specific inline nodes:

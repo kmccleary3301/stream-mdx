@@ -37,6 +37,10 @@ export interface ApplyPatchesOptions {
   allowEmpty?: boolean;
 }
 
+export interface RendererStoreOptions {
+  themes?: { light: string; dark: string };
+}
+
 export interface RendererStore {
   reset(blocks: Block[]): void;
   applyPatches(patches: Patch[], options?: ApplyPatchesOptions): Set<string>;
@@ -50,6 +54,8 @@ export interface RendererStore {
   getDebugCounters(): Readonly<Record<string, number>>;
   subscribe(listener: () => void): () => void;
   getLastCoalescingMetrics(): CoalescingMetrics | null;
+  getThemes(): { light: string; dark: string } | undefined;
+  setThemes(themes?: { light: string; dark: string }): void;
 }
 
 function snapshotToBlock(node: NodeSnapshot): Block | null {
@@ -800,13 +806,13 @@ function mergeInlineSegmentProps(previous: Record<string, unknown> | undefined, 
   return result;
 }
 
-function applyCodeBlockMetadata(record: NodeRecord) {
+function applyCodeBlockMetadata(record: NodeRecord, themes?: { light?: string; dark?: string }) {
   const block = record.block;
   const highlightedHtml = block?.payload.highlightedHtml ?? "";
   const lang = typeof block?.payload.meta?.lang === "string" ? (block?.payload.meta?.lang as string) : record.props?.lang;
   let { preAttrs, codeAttrs } = extractCodeWrapperAttributes(highlightedHtml);
   if (!preAttrs || !codeAttrs) {
-    const defaults = getDefaultCodeWrapperAttributes(typeof lang === "string" ? lang : undefined);
+    const defaults = getDefaultCodeWrapperAttributes(typeof lang === "string" ? lang : undefined, themes);
     preAttrs = preAttrs ?? defaults.preAttrs;
     codeAttrs = codeAttrs ?? defaults.codeAttrs;
   }
@@ -994,7 +1000,13 @@ function collectStoreInvariantViolations(nodes: NodeMap): string[] {
 
   return violations;
 }
-function buildNodeFromSnapshot(map: NodeMap, snapshot: NodeSnapshot, parentId: string | null, blockEpoch: number): NodeRecord {
+function buildNodeFromSnapshot(
+  map: NodeMap,
+  snapshot: NodeSnapshot,
+  parentId: string | null,
+  blockEpoch: number,
+  themes?: { light?: string; dark?: string },
+): NodeRecord {
   const record: NodeRecord = {
     id: snapshot.id,
     type: snapshot.type,
@@ -1009,14 +1021,14 @@ function buildNodeFromSnapshot(map: NodeMap, snapshot: NodeSnapshot, parentId: s
   };
 
   if (record.type === "code") {
-    applyCodeBlockMetadata(record);
+    applyCodeBlockMetadata(record, themes);
   }
 
   map.set(record.id, record);
 
   const childSnapshots = ensureArray(snapshot.children);
   for (const child of childSnapshots) {
-    const childRecord = buildNodeFromSnapshot(map, child, record.id, blockEpoch);
+    const childRecord = buildNodeFromSnapshot(map, child, record.id, blockEpoch, themes);
     record.children.push(childRecord.id);
   }
 
@@ -1088,13 +1100,14 @@ function insertSnapshotAt(
   snapshot: NodeSnapshot,
   touched?: Set<string>,
   blockEpoch?: number,
+  themes?: { light?: string; dark?: string },
 ): { record: NodeRecord; insertedIds: string[] } | null {
   if (!parent) return null;
   const existingIndex = parent.children.indexOf(snapshot.id);
   if (existingIndex !== -1) {
     removeSubtree(map, parent.children[existingIndex], touched ?? new Set<string>());
   }
-  const record = buildNodeFromSnapshot(map, snapshot, parent.id, blockEpoch ?? readSnapshotBlockEpoch(snapshot) ?? parent.blockEpoch);
+  const record = buildNodeFromSnapshot(map, snapshot, parent.id, blockEpoch ?? readSnapshotBlockEpoch(snapshot) ?? parent.blockEpoch, themes);
   const insertedIds: string[] = [];
 
   const queue = [record];
@@ -1122,13 +1135,14 @@ function replaceSnapshotAt(
   snapshot: NodeSnapshot,
   touched: Set<string>,
   blockEpoch?: number,
+  themes?: { light?: string; dark?: string },
 ) {
   if (!parent) return;
   if (index < 0 || index >= parent.children.length) return;
   const targetId = parent.children[index];
   parent.children.splice(index, 1);
   removeSubtree(map, targetId, touched);
-  const inserted = insertSnapshotAt(map, parent, index, snapshot, touched, blockEpoch);
+  const inserted = insertSnapshotAt(map, parent, index, snapshot, touched, blockEpoch, themes);
   if (inserted) {
     for (const id of inserted.insertedIds) {
       touched.add(id);
@@ -1141,7 +1155,8 @@ function replaceSnapshotAt(
   }
 }
 
-export function createRendererStore(initialBlocks: Block[] = []): RendererStore {
+export function createRendererStore(initialBlocks: Block[] = [], options?: RendererStoreOptions): RendererStore {
+  let currentThemes = options?.themes;
   let nodes: NodeMap = new Map();
   let version = 0;
   let blocksCache: Block[] = [];
@@ -1482,7 +1497,7 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
             }
           }
           if (target.type === "code") {
-            applyCodeBlockMetadata(target);
+            applyCodeBlockMetadata(target, currentThemes);
           }
           if (semanticUpdate) {
             advanceBlockEpoch(at.blockId, touched, preferredEpoch, tx);
@@ -2096,6 +2111,14 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
       return () => {
         listeners.delete(listener);
       };
+    },
+
+    getThemes() {
+      return currentThemes;
+    },
+
+    setThemes(themes?: { light: string; dark: string }) {
+      currentThemes = themes;
     },
   };
 

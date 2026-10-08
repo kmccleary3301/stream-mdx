@@ -223,6 +223,9 @@ export interface SnapshotArtifactV1 {
     docPlugins?: WorkerInitMessage["docPlugins"];
     mdx?: WorkerInitMessage["mdx"];
     prewarmLangs?: string[];
+    themes?: WorkerInitMessage["themes"];
+    syntax?: WorkerInitMessage["syntax"];
+    html?: WorkerInitMessage["html"];
   };
 }
 
@@ -420,6 +423,9 @@ export async function compileMarkdownSnapshot(options: CompileMarkdownSnapshotOp
       prewarmLangs: init?.prewarmLangs,
       docPlugins: init?.docPlugins,
       mdx: init?.mdx,
+      themes: init?.themes,
+      syntax: init?.syntax,
+      html: init?.html,
     };
     worker.postMessage(initMessage);
 

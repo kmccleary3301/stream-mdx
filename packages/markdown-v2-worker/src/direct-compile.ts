@@ -26,6 +26,9 @@ export interface SnapshotArtifactV1 {
     docPlugins?: WorkerInitMessage["docPlugins"];
     mdx?: WorkerInitMessage["mdx"];
     prewarmLangs?: string[];
+    themes?: WorkerInitMessage["themes"];
+    syntax?: WorkerInitMessage["syntax"];
+    html?: WorkerInitMessage["html"];
   };
 }
 
@@ -325,6 +328,9 @@ export async function compileMarkdownSnapshotDirect(
         prewarmLangs: init?.prewarmLangs,
         docPlugins: init?.docPlugins,
         mdx: init?.mdx,
+        themes: init?.themes,
+        syntax: init?.syntax,
+        html: init?.html,
       },
       timeoutMs,
     );
@@ -375,6 +381,9 @@ export async function compileMarkdownSnapshotDirect(
             docPlugins: init.docPlugins,
             mdx: init.mdx,
             prewarmLangs: init.prewarmLangs,
+            themes: init.themes,
+            syntax: init.syntax,
+            html: init.html,
           }
         : undefined,
     };

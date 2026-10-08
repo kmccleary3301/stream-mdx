@@ -33,6 +33,7 @@ interface StreamingMarkdownConfigSignature {
   mdxHydration?: MdxHydrationOptions;
   syntax?: SyntaxRuleSpec[];
   html?: HtmlOptions;
+  themes?: { light: string; dark: string };
 }
 
 export interface StreamingSchedulerOptions {
@@ -63,6 +64,7 @@ export interface StreamingFeatureFlags {
   liveTokenization?: boolean;
   emitHighlightTokens?: boolean;
   emitDiffBlocks?: boolean;
+  themes?: { light: string; dark: string };
 }
 
 /**
@@ -134,6 +136,7 @@ export interface StreamingMarkdownProps {
   managedWorker?: boolean;
   prewarmLangs?: string[];
   features?: StreamingFeatureFlags;
+  themes?: { light: string; dark: string };
   components?: Partial<BlockComponents>;
   tableElements?: Partial<TableElements>;
   htmlElements?: Partial<HtmlElements>;
@@ -290,6 +293,7 @@ function StreamingMarkdownComponent(
     engine = "auto",
     prewarmLangs = [],
     features = {},
+    themes,
     components,
     tableElements,
     htmlElements,
@@ -329,6 +333,7 @@ function StreamingMarkdownComponent(
     (typeof effectiveScheduling.maxBatchesPerFlush === "number"
       ? effectiveScheduling.maxBatchesPerFlush
       : DEFAULT_ADAPTIVE_QUEUE_THRESHOLD);
+  const effectiveThemes = themes ?? features?.themes;
   const configSignature = useMemo(
     () =>
       createConfigSignature({
@@ -340,8 +345,9 @@ function StreamingMarkdownComponent(
         mdxHydration,
         syntax,
         html,
+        themes: effectiveThemes,
       }),
-    [features, prewarmLangs, effectiveScheduling, mdxCompileMode, mdxComponents, mdxHydration, syntax, html],
+    [features, prewarmLangs, effectiveScheduling, mdxCompileMode, mdxComponents, mdxHydration, syntax, html, effectiveThemes],
   );
 
   const mdxHydrationController = useMemo(() => createMdxHydrationController(mdxHydration), [mdxHydration]);
@@ -373,6 +379,7 @@ function StreamingMarkdownComponent(
           }
         : undefined;
     const rendererConfig: RendererConfig = {
+      themes: effectiveThemes,
       codeRenderers,
       mathRenderer,
       artifactHtml,
