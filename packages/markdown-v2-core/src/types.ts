@@ -107,7 +107,7 @@ export type InlineNode =
   | { kind: "em"; children: InlineNode[] }
   | { kind: "strike"; children: InlineNode[] }
   | { kind: "code"; text: string }
-  | { kind: "link"; href?: string; title?: string; children: InlineNode[] }
+  | { kind: "link"; href?: string; title?: string; children: InlineNode[]; autolink?: boolean }
   | { kind: "image"; src: string; alt?: string; title?: string }
   | { kind: "br" }
   | {

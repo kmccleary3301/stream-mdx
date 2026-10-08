@@ -196,6 +196,7 @@ async function main() {
         kind: "link",
         href: "https://x.y",
         children: [{ kind: "text", text: "https://x.y" }],
+        autolink: true,
       },
     ]);
   }
@@ -207,6 +208,7 @@ async function main() {
         kind: "link",
         href: "http://www.example.com",
         children: [{ kind: "text", text: "www.example.com" }],
+        autolink: true,
       },
     ]);
   }

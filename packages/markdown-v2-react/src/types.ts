@@ -38,11 +38,40 @@ export interface CodeFenceRendererProps {
 export interface CodeFenceRendererConfig {
   component: React.ComponentType<CodeFenceRendererProps>;
   defer?: boolean;
+  language?: string | string[];
+  languages?: string[];
+  aliases?: string[];
+}
+
+export interface CustomCodeRenderer {
+  component: React.ComponentType<CodeFenceRendererProps>;
+  language: string | string[];
+  defer?: boolean;
 }
 
 export type CodeFenceRenderer =
   | React.ComponentType<CodeFenceRendererProps>
   | CodeFenceRendererConfig;
+
+export type CodeRenderersConfig =
+  | Record<string, CodeFenceRenderer>
+  | Array<CustomCodeRenderer>;
+
+export interface ElementFilterDescriptor {
+  tagName: string;
+  properties: Record<string, unknown>;
+  blockType?: string;
+}
+
+export interface ElementFilterContext {
+  source: "markdown" | "html";
+  parentTagName?: string;
+}
+
+export type AllowElementFn = (
+  element: ElementFilterDescriptor,
+  context: ElementFilterContext,
+) => boolean;
 
 export interface MathRendererProps {
   tex: string;
@@ -155,14 +184,18 @@ export interface RendererConfig {
     emitHighlightTokens?: boolean;
     emitDiffBlocks?: boolean;
   };
-  codeRenderers?: Record<string, CodeFenceRenderer>;
+  codeRenderers?: CodeRenderersConfig;
+  allowedElements?: string[];
+  disallowedElements?: string[];
+  allowElement?: AllowElementFn;
+  unwrapDisallowed?: boolean;
+  disableAutolinkProtocols?: string[];
   mathRenderer?: MathRenderer;
   artifactHtml?: boolean;
   blockRenderer?: BlockRendererOverride;
   syntax?: SyntaxRuleSpec[];
   html?: HtmlOptions;
   urlTransform?: (url: string, attribute: "href" | "src", context: { source: "markdown" | "html" }) => string | null | undefined;
-  tableVirtualization?: TableVirtualizationOptions;
   performance?: {
     frameBudgetMs?: number;
     flushTimeoutMs?: number;
@@ -199,7 +232,7 @@ export interface Renderer {
   setBlockComponents(map: Partial<BlockComponents>): void;
   setInlineComponents(map: Partial<InlineComponents>): void;
   setMdxComponents(map: Record<string, GenericComponent>): void;
-  setCodeRenderers(map: Record<string, CodeFenceRenderer>): void;
+  setCodeRenderers(map: CodeRenderersConfig): void;
   setMathRenderer(renderer: MathRenderer): void;
   setTableVirtualization(options: TableVirtualizationOptions): void;
   getComponentRegistry(): ComponentRegistry;

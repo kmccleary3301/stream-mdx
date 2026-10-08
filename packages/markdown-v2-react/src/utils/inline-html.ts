@@ -21,50 +21,91 @@ export function renderHtmlInlineNode(
   key?: React.Key,
   textValue?: string,
   urlTransform?: UrlTransform,
+  filterElement?: (
+    element: { tagName: string; properties: Record<string, unknown>; blockType?: string },
+    context: { source: "markdown" | "html"; parentTagName?: string },
+    renderElement: () => React.ReactNode,
+    renderChildren?: () => React.ReactNode,
+  ) => React.ReactNode,
+  parentTagName?: string,
 ): React.ReactElement | null {
   if (node.isClose || node.tagName === "script" || node.tagName === "style") return null;
   if (!node.tagName || node.sanitized === "") {
     return React.createElement(React.Fragment, { key }, children);
   }
+  const tag = node.tagName.toLowerCase();
   const props = mapAttributesToProps(node.attributes ?? {}, urlTransform);
   props.key = key;
-  if (node.tagName === "textarea") {
-    props.defaultValue = textValue ?? "";
-    return React.createElement(elements?.[node.tagName] ?? node.tagName, props);
+
+  const renderElement = () => {
+    if (tag === "textarea") {
+      props.defaultValue = textValue ?? "";
+      return React.createElement(elements?.[tag] ?? tag, props);
+    }
+    return React.createElement(elements?.[tag] ?? tag, props, node.isSelfClosing ? undefined : children);
+  };
+
+  if (filterElement) {
+    return filterElement(
+      { tagName: tag, properties: props },
+      { source: "html", parentTagName },
+      renderElement,
+      () => children,
+    ) as React.ReactElement | null;
   }
-  return React.createElement(elements?.[node.tagName] ?? node.tagName, props, node.isSelfClosing ? undefined : children);
+  return renderElement();
 }
 
 export function renderHtmlOwnershipTree(
   nodes: HtmlTreeNode[],
   elements: HtmlElements,
   renderBlock: (block: Extract<HtmlTreeNode, { kind: "block" }>["block"]) => React.ReactNode,
-  renderInline?: (nodes: InlineNode[]) => React.ReactNode,
+  renderInline?: (nodes: InlineNode[], parentTagName?: string) => React.ReactNode,
   renderInlineElement?: (node: InlineNode, children: React.ReactNode) => React.ReactNode,
   renderParagraph?: (children: React.ReactNode) => React.ReactNode,
   urlTransform?: UrlTransform,
+  filterElement?: (
+    element: { tagName: string; properties: Record<string, unknown>; blockType?: string },
+    context: { source: "markdown" | "html"; parentTagName?: string },
+    renderElement: () => React.ReactNode,
+    renderChildren?: () => React.ReactNode,
+  ) => React.ReactNode,
+  parentTagName?: string,
 ): React.ReactNode {
   return nodes.map((node, index) => {
-    if (node.kind === "text") return node.inline && renderInline ? renderInline(node.inline) : node.text;
+    if (node.kind === "text") return node.inline && renderInline ? renderInline(node.inline, parentTagName) : node.text;
     if (node.kind === "block") return renderBlock(node.block);
+    const tag = node.tagName.toLowerCase();
     const props = mapAttributesToProps(node.attributes, urlTransform);
     props.key = index;
-    if (node.tagName === "textarea") {
-      props.defaultValue = node.children.map((child) => child.kind === "text" ? child.text : "").join("");
-      return React.createElement(elements[node.tagName] ?? node.tagName, props);
-    }
-    const children = renderHtmlOwnershipTree(node.children, elements, renderBlock, renderInline, renderInlineElement, renderParagraph, urlTransform);
+    const children = renderHtmlOwnershipTree(node.children, elements, renderBlock, renderInline, renderInlineElement, renderParagraph, urlTransform, filterElement, tag);
     if (node.paragraphRoot && renderParagraph) {
       return React.createElement(React.Fragment, { key: index }, renderParagraph(children));
     }
     if (node.inlineNode && renderInlineElement) {
       return React.createElement(React.Fragment, { key: index }, renderInlineElement(node.inlineNode, children));
     }
-    const content = node.tagName === "pre" && node.children.every((child) => child.kind === "text" && !child.inline)
-      ? node.children.map((child) => child.kind === "text" ? child.text : "").join("")
-      : children;
-    return React.createElement(elements[node.tagName] ?? node.tagName, props,
-      node.children.length ? content : undefined);
+    const renderElement = () => {
+      if (tag === "textarea") {
+        props.defaultValue = node.children.map((child) => child.kind === "text" ? child.text : "").join("");
+        return React.createElement(elements[tag] ?? tag, props);
+      }
+      const content = tag === "pre" && node.children.every((child) => child.kind === "text" && !child.inline)
+        ? node.children.map((child) => child.kind === "text" ? child.text : "").join("")
+        : children;
+      return React.createElement(elements[tag] ?? tag, props,
+        node.children.length ? content : undefined);
+    };
+
+    if (filterElement) {
+      return filterElement(
+        { tagName: tag, properties: props },
+        { source: "html", parentTagName },
+        renderElement,
+        () => children,
+      );
+    }
+    return renderElement();
   });
 }
 
