@@ -2,6 +2,7 @@ import { type Tree, TreeFragment } from "@lezer/common";
 import { parser as mdParser } from "@lezer/markdown";
 import type {
   Block,
+  BlockResolvedLinkReference,
   CodeHighlightOutputMode,
   CompiledMdxModule,
   DiffKind,
@@ -65,7 +66,6 @@ import {
   detectDiffLanguage,
   enhanceHighlightedHtml,
   getSharedHighlighter,
-  getSharedHighlighterInstanceCount,
   guessLanguageFromDiffLines,
   looksLikeUnifiedDiff,
   parseUnifiedDiffLine,
@@ -236,10 +236,6 @@ export class MarkdownEngine {
 
   private messageQueue: Promise<void> = Promise.resolve();
   private disposed = false;
-  public static getHighlighterInstanceCount(): number {
-    return getSharedHighlighterInstanceCount();
-  }
-
 
   constructor(options: MarkdownEngineOptions) {
     this.postFn = options.post;
@@ -910,7 +906,40 @@ export class MarkdownEngine {
   private async enrichBlock(block: Block): Promise<void> {
     this.inlineParser.startCollectingAttemptedReferences();
     try {
-      this.performanceTimer.mark("enrich-block");
+      await this.enrichBlockContent(block);
+    } finally {
+      this.recordLinkReferences(block, this.inlineParser.stopCollectingAttemptedReferences());
+    }
+  }
+
+  /**
+   * Remembers which reference labels a block tried to resolve (so a later definition can re-enrich it)
+   * and publishes the resolved definitions as `meta.linkReferences` for consumers that re-parse block source.
+   */
+  private recordLinkReferences(block: Block, attempted: Set<string>): void {
+    if (attempted.size === 0) {
+      this.blockAttemptedReferences.delete(block.id);
+    } else {
+      this.blockAttemptedReferences.set(block.id, attempted);
+    }
+    const resolved: BlockResolvedLinkReference[] = [];
+    for (const key of attempted) {
+      const def = this.currentLinkReferences.get(key);
+      if (def) {
+        resolved.push(def.title !== undefined ? { label: def.label ?? key, href: def.href, title: def.title } : { label: def.label ?? key, href: def.href });
+      }
+    }
+    const meta = block.payload.meta;
+    if (resolved.length > 0) {
+      block.payload.meta = { ...meta, linkReferences: resolved };
+    } else if (meta && "linkReferences" in meta) {
+      const { linkReferences: _stale, ...rest } = meta;
+      block.payload.meta = rest;
+    }
+  }
+
+  private async enrichBlockContent(block: Block): Promise<void> {
+    this.performanceTimer.mark("enrich-block");
     const metrics = this.activeMetricsCollector;
     metrics?.countBlockType(block.type);
     const rawLength = typeof block.payload.raw === "string" ? block.payload.raw.length : 0;
@@ -1151,37 +1180,9 @@ export class MarkdownEngine {
     };
     await updateMdxCompilationState(mdxState, block);
 
-      const enrichDuration = this.performanceTimer.measure("enrich-block");
-      metrics?.recordEnrich(enrichDuration);
-      metrics?.recordBlockEnrich(block.type, enrichDuration);
-    } finally {
-      const attempted = this.inlineParser.stopCollectingAttemptedReferences();
-      if (attempted.size > 0) {
-        this.blockAttemptedReferences.set(block.id, attempted);
-        const resolved: Array<{ label: string; href: string; title?: string }> = [];
-        for (const key of attempted) {
-          const def = this.currentLinkReferences.get(key);
-          if (def) {
-            resolved.push({
-              label: def.label ?? key,
-              href: def.href,
-              ...(def.title !== undefined ? { title: def.title } : {}),
-            });
-          }
-        }
-        if (resolved.length > 0) {
-          block.payload.meta = { ...block.payload.meta, linkReferences: resolved };
-        } else if (block.payload.meta && "linkReferences" in block.payload.meta) {
-          const nextMeta = { ...block.payload.meta };
-          delete nextMeta.linkReferences;
-          block.payload.meta = nextMeta;
-        }
-      } else if (block.payload.meta && "linkReferences" in block.payload.meta) {
-        const nextMeta = { ...block.payload.meta };
-        delete nextMeta.linkReferences;
-        block.payload.meta = nextMeta;
-      }
-    }
+    const enrichDuration = this.performanceTimer.measure("enrich-block");
+    metrics?.recordEnrich(enrichDuration);
+    metrics?.recordBlockEnrich(block.type, enrichDuration);
   }
 
   public async enrichCodeBlock(block: Block): Promise<void> {

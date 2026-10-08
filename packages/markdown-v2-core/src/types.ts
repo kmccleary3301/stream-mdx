@@ -1,14 +1,13 @@
 // Core contracts (public types) - V2 Markdown Renderer
 // Based on final_spec.md architecture
 
-
 export interface BlockResolvedLinkReference {
   label: string;
   href: string;
   title?: string;
 }
 
-export interface BlockMeta extends Record<string, unknown> {
+export interface BlockMeta {
   /**
    * Link reference definitions resolved and referenced by this block's inline content.
    * Omitted when no reference definitions were used.
@@ -16,6 +15,7 @@ export interface BlockMeta extends Record<string, unknown> {
   linkReferences?: BlockResolvedLinkReference[];
   [key: string]: unknown;
 }
+
 /**
  * Core Block representation for streaming markdown
  */

@@ -50,6 +50,7 @@ export function cloneBlock(block: Block): Block {
 }
 
 export function blocksStructurallyEqual(a: Block, b: Block): boolean {
+  if (a === b) return true;
   if (a.type !== b.type) return false;
   if (a.isFinalized !== b.isFinalized) return false;
   if (a.payload.raw !== b.payload.raw) return false;

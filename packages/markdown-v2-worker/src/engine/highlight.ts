@@ -29,14 +29,8 @@ export type SharedHighlighter = Highlighter;
 
 let sharedHighlighterPromise: Promise<SharedHighlighter> | null = null;
 let sharedHighlighter: SharedHighlighter | null = null;
-let sharedHighlighterInstanceCount = 0;
-
-export function getSharedHighlighterInstanceCount(): number {
-  return sharedHighlighterInstanceCount;
-}
 export async function getSharedHighlighter(prewarmLangs: string[] = []): Promise<SharedHighlighter> {
   if (!sharedHighlighterPromise) {
-    sharedHighlighterInstanceCount++;
     const coreLangs = ["javascript", "typescript", "json", "text", "markdown", "diff"];
     const initialLangs = Array.from(new Set([...coreLangs, ...prewarmLangs]));
     sharedHighlighterPromise = createHighlighter({
