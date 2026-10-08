@@ -21,6 +21,7 @@ import type { BlockComponents, BlockRendererOverride, CodeFenceRenderer, HtmlEle
 import { ArtifactFrame } from "./artifact-frame";
 import { DefaultDiffRenderer } from "./diff-renderer";
 import { KaTeXBlockMath, KaTeXInlineMath } from "./katex-math";
+import { DEFAULT_TABLE_VIRTUALIZATION_CONFIG, resolveTableVirtualizationConfig, type TableVirtualizationConfig, type TableVirtualizationOptions } from "../renderer/virtualized-table";
 export { DefaultLinkSafetyModal, type LinkSafetyModalProps } from "./link-safety-modal";
 
 class MdxRuntimeBoundary extends React.Component<
@@ -664,13 +665,14 @@ export class ComponentRegistry {
   private linkHandler: ((url: string) => void) | undefined;
   private blockRenderer?: BlockRendererOverride;
   private blockComponentMapCache: BlockComponents | null = null;
+  private tableVirtualization: TableVirtualizationConfig = DEFAULT_TABLE_VIRTUALIZATION_CONFIG;
   private inlineComponentMapCache: InlineComponents | null = null;
 
   constructor(
     blockComponents: Partial<BlockComponents> = {},
     inlineComponents: Partial<InlineComponents> = {},
     codeRenderers: Record<string, CodeFenceRenderer> = {},
-    options?: { artifactHtml?: boolean; mathRenderer?: MathRenderer; blockRenderer?: BlockRendererOverride },
+    options?: { artifactHtml?: boolean; mathRenderer?: MathRenderer; blockRenderer?: BlockRendererOverride; tableVirtualization?: TableVirtualizationOptions },
   ) {
     this.blockComponents = { ...defaultBlockComponents, ...blockComponents } as BlockComponents;
     for (const key of Object.keys(blockComponents)) {
@@ -689,6 +691,9 @@ export class ComponentRegistry {
     }
     if (options?.blockRenderer) {
       this.setBlockRenderer(options.blockRenderer);
+    }
+    if (options?.tableVirtualization !== undefined) {
+      this.setTableVirtualization(options.tableVirtualization);
     }
   }
 
@@ -830,6 +835,14 @@ export class ComponentRegistry {
 
   getTableElements(): TableElements {
     return this.tableElements;
+  }
+
+  setTableVirtualization(options: TableVirtualizationOptions | undefined): void {
+    this.tableVirtualization = resolveTableVirtualizationConfig(options);
+  }
+
+  getTableVirtualization(): TableVirtualizationConfig {
+    return this.tableVirtualization;
   }
 
   /**

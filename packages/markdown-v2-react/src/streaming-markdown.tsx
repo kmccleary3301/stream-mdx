@@ -15,7 +15,7 @@ import { DeferredRenderContext, type DeferredRenderConfig } from "./renderer/def
 import { useRendererBlocks } from "./renderer/hooks";
 import type { RendererStore } from "./renderer/store";
 import { createDefaultWorker, releaseDefaultWorker } from "@stream-mdx/worker";
-import type { BlockComponents, BlockRendererOverride, CodeFenceRenderer, HtmlElements, InlineComponents, MathRenderer, RendererConfig, TableElements } from "./types";
+import type { BlockComponents, BlockRendererOverride, CodeFenceRenderer, HtmlElements, InlineComponents, MathRenderer, RendererConfig, TableElements, TableVirtualizationOptions } from "./types";
 
 const EMPTY_BLOCKS: ReadonlyArray<Block> = [];
 
@@ -150,6 +150,7 @@ export interface StreamingMarkdownProps {
   artifactHtml?: boolean;
   deferHeavyBlocks?: boolean | DeferredRenderConfig;
   blockRenderer?: BlockRendererOverride;
+  tableVirtualization?: TableVirtualizationOptions;
 }
 
 const MdxCoordinatorBridge: React.FC<{ store: RendererStore; mode: "server" | "worker" }> = ({ store, mode }) => {
@@ -303,6 +304,7 @@ function StreamingMarkdownComponent(
     artifactHtml,
     deferHeavyBlocks,
     blockRenderer,
+    tableVirtualization,
   }: StreamingMarkdownProps,
   ref: React.ForwardedRef<StreamingMarkdownHandle>,
 ) {
@@ -359,6 +361,7 @@ function StreamingMarkdownComponent(
       codeRenderers,
       mathRenderer,
       artifactHtml,
+      tableVirtualization,
       highlight: prewarmLangs.length > 0 ? { langs: prewarmLangs } : undefined,
       plugins: features,
       performance: {
@@ -617,7 +620,10 @@ function StreamingMarkdownComponent(
     if (artifactHtml !== undefined) {
       renderer.getComponentRegistry().setArtifactHtml(artifactHtml);
     }
-  }, [renderer, components, mdxComponents, inlineComponents, resolvedInlineComponents, tableElements, htmlElements, codeRenderers, mathRenderer, artifactHtml]);
+    if (tableVirtualization !== undefined) {
+      renderer.getComponentRegistry().setTableVirtualization(tableVirtualization);
+    }
+  }, [renderer, components, mdxComponents, inlineComponents, resolvedInlineComponents, tableElements, htmlElements, codeRenderers, mathRenderer, artifactHtml, tableVirtualization]);
 
   useEffect(() => {
     const removeListener = renderer.addFlushListener((result) => {
