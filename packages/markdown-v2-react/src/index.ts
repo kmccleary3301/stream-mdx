@@ -25,6 +25,7 @@ export type {
   CodeFenceRendererConfig,
   CodeFenceRendererProps,
   HtmlElements,
+  HtmlOptions,
   InlineComponents,
   InlineHtmlRenderer,
   InlineHtmlRendererMap,
@@ -32,7 +33,7 @@ export type {
   MathRendererProps,
   Renderer,
   RendererConfig,
+  SyntaxRuleSpec,
   TableElements,
-  TableVirtualizationConfig,
   TableVirtualizationOptions,
 } from "./types";

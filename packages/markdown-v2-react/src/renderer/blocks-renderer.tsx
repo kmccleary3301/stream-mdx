@@ -28,9 +28,7 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
       if (codeRenderers) {
         reg.setCodeRenderers(codeRenderers);
       }
-      if (blockRenderer) {
-        reg.setBlockRenderer(blockRenderer);
-      }
+      reg.setBlockRenderer(blockRenderer);
       return reg;
     }, [componentRegistry, codeRenderers, blockRenderer]);
     const effectiveStore = useMemo(() => {
@@ -43,18 +41,25 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
         className,
         style: { contain: "content", ...(style ?? {}) }, // CSS containment for performance
       },
-      React.createElement(StoreBackedBlocks, { store: effectiveStore, componentRegistry: resolvedRegistry }),
+      React.createElement(StoreBackedBlocks, { store: effectiveStore, componentRegistry: resolvedRegistry, blockRenderer }),
     );
   },
 );
 
-const StoreBackedBlocks = React.memo<{ store: RendererStore; componentRegistry: ComponentRegistry }>(
-  ({ store, componentRegistry }) => {
+const StoreBackedBlocks = React.memo<{ store: RendererStore; componentRegistry: ComponentRegistry; blockRenderer?: BlockRendererOverride }>(
+  ({ store, componentRegistry, blockRenderer }) => {
     const blockIds = useRendererChildren(store, PATCH_ROOT_ID);
     return React.createElement(
       React.Fragment,
       null,
-      blockIds.map((blockId) => React.createElement(BlockNodeRenderer, { key: blockId, store, blockId, registry: componentRegistry })),
+      blockIds.map((blockId) =>
+        React.createElement(BlockNodeRenderer, {
+          key: `${blockId}:${blockRenderer ? "custom" : "default"}`,
+          store,
+          blockId,
+          registry: componentRegistry,
+        }),
+      ),
     );
   },
 );

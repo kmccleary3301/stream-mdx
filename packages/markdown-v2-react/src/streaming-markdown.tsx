@@ -375,6 +375,7 @@ function StreamingMarkdownComponent(
       mathRenderer,
       artifactHtml,
       tableVirtualization,
+      blockRenderer,
       highlight: prewarmLangs.length > 0 ? { langs: prewarmLangs } : undefined,
       plugins: features,
       performance: {
@@ -652,11 +653,10 @@ function StreamingMarkdownComponent(
     }
   }, [historyLimit]);
 
+  const activeInstanceRef = useRef<{ worker: Worker; owned: boolean; release?: () => void; source: unknown; engine: string; session: number } | null>(null);
+
   useEffect(() => {
     let cancelled = false;
-    let activeWorker: Worker | null = null;
-    let activeOwned = false;
-    let activeRelease: (() => void) | undefined;
 
     if (process.env.NODE_ENV !== "production" && DEBUG_WORKER) {
       // eslint-disable-next-line no-console
@@ -676,27 +676,58 @@ function StreamingMarkdownComponent(
         }
         return;
       }
-      activeWorker = inst.worker;
-      activeOwned = inst.owned;
-      activeRelease = inst.release;
 
-      if (!activeWorker) {
+      if (!inst.worker) {
         onErrorRef.current?.(new Error("Failed to create markdown worker instance"));
         return;
       }
 
+      activeInstanceRef.current = {
+        worker: inst.worker,
+        owned: managedWorker ? false : inst.owned,
+        release: inst.release,
+        source: workerSource,
+        engine,
+        session,
+      };
+
       renderer.detachWorker();
-      renderer.attachWorker(activeWorker, { skipInit: managedWorker });
+      renderer.attachWorker(inst.worker, { skipInit: managedWorker });
       readyRendererRef.current = renderer;
       setWorkerReady(true);
       workerReadyRef.current = true;
     };
+
+    // If an existing worker instance matches the current (workerSource, engine, session), reuse it
+    const existing = activeInstanceRef.current;
+    if (existing && existing.source === workerSource && existing.engine === engine && (managedWorker || existing.session === session)) {
+      renderer.attachWorker(existing.worker, { skipInit: managedWorker });
+      readyRendererRef.current = renderer;
+      setWorkerReady(true);
+      workerReadyRef.current = true;
+      return () => {
+        setWorkerReady(false);
+        workerReadyRef.current = false;
+        if (readyRendererRef.current === renderer) readyRendererRef.current = null;
+        renderer.detachWorker();
+      };
+    }
+
+    // Terminate old instance if source/engine/session changed
+    if (existing?.owned && existing.worker) {
+      try {
+        existing.worker.terminate();
+      } catch {}
+      existing.release?.();
+      activeInstanceRef.current = null;
+    }
 
     const resolveAndSetup = async () => {
       if (engine === "main-thread") {
         try {
           // Dynamic import: avoids bundling @stream-mdx/worker/engine into consumer bundles unless main-thread is explicitly selected
           const { createInlineEngineWorker } = await import("@stream-mdx/worker/engine");
+          if (cancelled) return;
           const inlineWorker = createInlineEngineWorker();
           setupWorker({ worker: inlineWorker as unknown as Worker, owned: true });
         } catch (error) {
@@ -750,16 +781,23 @@ function StreamingMarkdownComponent(
       workerReadyRef.current = false;
       if (readyRendererRef.current === renderer) readyRendererRef.current = null;
       renderer.detachWorker();
-      if (activeOwned && activeWorker) {
+    };
+  }, [renderer, workerSource, engine, session, managedWorker]);
+
+  useEffect(() => {
+    return () => {
+      const current = activeInstanceRef.current;
+      if (current?.owned && current.worker) {
         try {
-          activeWorker.terminate();
+          current.worker.terminate();
         } catch (error) {
           console.warn("Unable to terminate markdown worker", error);
         }
-        activeRelease?.();
+        current.release?.();
+        activeInstanceRef.current = null;
       }
     };
-  }, [renderer, workerSource, engine, session, managedWorker]);
+  }, []);
   useEffect(() => {
     const restartToken = session;
     void restartToken;
@@ -987,17 +1025,28 @@ export const StreamingMarkdown = StreamingMarkdownWithRef as React.ForwardRefExo
   StreamingMarkdownProps & React.RefAttributes<StreamingMarkdownHandle>
 >;
 
+function isWorkerInstance(value: unknown): value is Worker {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !(value instanceof URL) &&
+    (value instanceof Worker ||
+      (typeof (value as Worker).postMessage === "function" &&
+        typeof (value as Worker).addEventListener === "function"))
+  );
+}
+
 function instantiateWorker(source?: Worker | URL | (() => Worker) | string): WorkerInstance {
   if (typeof window === "undefined" || typeof Worker === "undefined") {
     return { worker: null, owned: false };
   }
-  if (source instanceof Worker) {
+  if (isWorkerInstance(source)) {
     return { worker: source, owned: false };
   }
   if (typeof source === "function") {
     try {
       const worker = source();
-      return { worker, owned: false };
+      return { worker, owned: true };
     } catch (error) {
       console.warn("StreamingMarkdown: worker factory failed", error);
       return { worker: null, owned: false };
