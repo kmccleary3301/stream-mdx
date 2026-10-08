@@ -3,7 +3,7 @@ import React, { useMemo, useRef } from "react";
 
 import { PATCH_ROOT_ID } from "@stream-mdx/core";
 import { ComponentRegistry } from "../components";
-import type { BlockRendererOverride, CodeFenceRenderer } from "../types";
+import type { AllowElementFn, BlockRendererOverride, CodeRenderersConfig } from "../types";
 import { useRendererChildren } from "./hooks";
 import { BlockNodeRenderer } from "./node-views";
 import { createRendererStore, type RendererStore } from "./store";
@@ -14,19 +14,46 @@ import { createRendererStore, type RendererStore } from "./store";
 export interface MarkdownBlocksRendererProps {
   blocks: ReadonlyArray<Block>;
   componentRegistry?: ComponentRegistry;
-  codeRenderers?: Record<string, CodeFenceRenderer>;
+  codeRenderers?: CodeRenderersConfig;
   className?: string;
   style?: React.CSSProperties;
   store?: RendererStore;
   blockRenderer?: BlockRendererOverride;
   urlTransform?: UrlTransform;
+  allowedElements?: string[];
+  disallowedElements?: string[];
+  allowElement?: AllowElementFn;
+  unwrapDisallowed?: boolean;
+  disableAutolinkProtocols?: string[];
 }
 
 export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
-  ({ blocks, componentRegistry, codeRenderers, blockRenderer, urlTransform, className = "markdown-renderer", style, store }) => {
+  ({
+    blocks,
+    componentRegistry,
+    codeRenderers,
+    blockRenderer,
+    urlTransform,
+    allowedElements,
+    disallowedElements,
+    allowElement,
+    unwrapDisallowed,
+    disableAutolinkProtocols,
+    className = "markdown-renderer",
+    style,
+    store,
+  }) => {
     // Props override the registry; a prop removed after being set reverts the registry,
     // while overrides configured directly on a caller-provided registry stay untouched.
-    const appliedOverrides = useRef<{ blockRenderer?: BlockRendererOverride; urlTransform?: UrlTransform }>({});
+    const appliedOverrides = useRef<{
+      blockRenderer?: BlockRendererOverride;
+      urlTransform?: UrlTransform;
+      allowedElements?: string[];
+      disallowedElements?: string[];
+      allowElement?: AllowElementFn;
+      unwrapDisallowed?: boolean;
+      disableAutolinkProtocols?: string[];
+    }>({});
     const resolvedRegistry = useMemo(() => {
       const reg = componentRegistry ?? new ComponentRegistry();
       if (codeRenderers) {
@@ -39,9 +66,42 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
       if (urlTransform !== undefined || applied.urlTransform !== undefined) {
         reg.setUrlTransform(urlTransform);
       }
-      appliedOverrides.current = { blockRenderer, urlTransform };
+      if (allowedElements !== undefined || applied.allowedElements !== undefined) {
+        reg.setAllowedElements(allowedElements);
+      }
+      if (disallowedElements !== undefined || applied.disallowedElements !== undefined) {
+        reg.setDisallowedElements(disallowedElements);
+      }
+      if (allowElement !== undefined || applied.allowElement !== undefined) {
+        reg.setAllowElement(allowElement);
+      }
+      if (unwrapDisallowed !== undefined || applied.unwrapDisallowed !== undefined) {
+        reg.setUnwrapDisallowed(unwrapDisallowed);
+      }
+      if (disableAutolinkProtocols !== undefined || applied.disableAutolinkProtocols !== undefined) {
+        reg.setDisableAutolinkProtocols(disableAutolinkProtocols);
+      }
+      appliedOverrides.current = {
+        blockRenderer,
+        urlTransform,
+        allowedElements,
+        disallowedElements,
+        allowElement,
+        unwrapDisallowed,
+        disableAutolinkProtocols,
+      };
       return reg;
-    }, [componentRegistry, codeRenderers, blockRenderer, urlTransform]);
+    }, [
+      componentRegistry,
+      codeRenderers,
+      blockRenderer,
+      urlTransform,
+      allowedElements,
+      disallowedElements,
+      allowElement,
+      unwrapDisallowed,
+      disableAutolinkProtocols,
+    ]);
     const effectiveStore = useMemo(() => {
       if (store) return store;
       return createRendererStore(blocks as Block[]);

@@ -92,7 +92,12 @@ export function Example() {
 | `linkSafety` | `{ enabled?, onLinkCheck?, renderModal? }` | Intercept links and require confirmation before navigation. Rejected URLs never navigate. |
 | `urlTransform` | `UrlTransform` | Custom URL transformation callback `(url, attribute, context) => string \| null \| undefined`. Defaults to `defaultUrlTransform` from `@stream-mdx/core`. |
 | `deferHeavyBlocks` | `DeferHeavyBlocks` | Defer heavy blocks (e.g. Mermaid) until in view/idle. |
-| `codeRenderers` | `Record<string, CodeFenceRenderer>` | Language-keyed code fence components or `{ component, defer? }` entries. |
+| `codeRenderers` | `CodeRenderersConfig` | Language-keyed code fence components, `{ component, defer? }`, or array of `{ language: string | string[], component }` / `{ languages: string[], renderer }` alias entries (resolved case-insensitively). |
+| `allowedElements` | `string[]` | Whitelist HTML tag names to allow (mutually exclusive with `disallowedElements`). Filtered at render time across markdown and raw HTML tags. |
+| `disallowedElements` | `string[]` | Tag names to disallow (mutually exclusive with `allowedElements`). Removed tags drop subtrees unless `unwrapDisallowed` is enabled. |
+| `allowElement` | `(element, context) => boolean` | Custom element filter callback. Receives `{ tagName, properties, blockType? }` and `{ source: "markdown" | "html", parentTagName? }`. |
+| `unwrapDisallowed` | `boolean` | When true, disallowed tags render their child content in place instead of dropping their entire subtree. Default `false`. |
+| `disableAutolinkProtocols` | `string[]` | Protocols (e.g. `["mailto"]`, case-insensitive, trailing colon optional) whose autolinks render as plain text. Explicit markdown links `[label](url)` remain links. |
 | `mathRenderer` | `MathRenderer` | Replace inline/display KaTeX rendering without changing math parsing. |
 | `artifactHtml` | `boolean` | Default `false`. Render ordinary `html` fences as artifacts; `artifact` and `html-artifact` fences already select `ArtifactFrame`. |
 | `blockRenderer` | `BlockRendererOverride` | Finalized-block override receiving `{ block, element }`. Streaming blocks retain native rendering. |
@@ -100,7 +105,6 @@ export function Example() {
 | `onMetrics` | `(metrics: RendererMetrics) => void` | Invoked after each flush (queue depth, timings, adaptive budget state, worker metrics). |
 | `onError` | `(error: Error) => void` | Render-time errors. Updating the callback does not restart the engine or discard streamed content. (Worker runtime errors surface via `error` events on the Worker.) |
 | `className`, `style` | React props forwarded to the root container. |
-
 Notes:
 - When `linkSafety.enabled` is on, the component replaces the `link` entry, including a supplied `inlineComponents.link`, with its confirmation-aware link renderer.
 - Owned `text` renders initialize the complete document in one parse, then finalize the tail. Replacing text does not simulate chunked streaming. Rapid replacements match initialization acknowledgements in order; only the current source generation finalizes or reports a rejected initialization. Async iterators and imperative `append()` retain incremental parsing.
@@ -311,11 +315,11 @@ export function CodeExample({ text }: { text: string }) {
 ```
 
 ### Code fence renderer contract
+Language keys are trimmed and lowercased. Entries accept a component, `{ component: Component, defer?: boolean }`, or an array of alias entries:
+- `{ language: string | string[], component: Component }` (Streamdown compatibility)
+- `{ languages: string[], renderer: Component }`
 
-Language keys are trimmed and lowercased. Entries accept a component or `{ component: Component, defer?: boolean }`. `defer: true` opts that renderer into viewport/idle deferral when `deferHeavyBlocks` is enabled.
-
-```ts
-import type React from "react";
+Language matching is case-insensitive (e.g. `JS` resolves to the `js` renderer). `defer: true` opts that renderer into viewport/idle deferral when `deferHeavyBlocks` is enabled.
 
 interface CodeFenceRendererProps {
   code: string;
@@ -455,11 +459,35 @@ To override or use MathJax:
   }}
 />
 ```
+## 3.5) Element Filtering and Autolink Protocols
 
+StreamMDX mirrors Streamdown / react-markdown element filtering semantics:
+
+- `allowedElements`: Whitelist tag names to render (e.g. `["p", "a", "strong"]`). Mutually exclusive with `disallowedElements` (throws in development if both are supplied).
+- `disallowedElements`: Blacklist tag names to remove (e.g. `["img", "script"]`). Removed tags drop their entire subtree by default.
+- `unwrapDisallowed`: When `true`, disallowed elements render their children in place rather than dropping the subtree (e.g. `<em>text</em>` renders as `text`).
+- `allowElement`: Fine-grained predicate `(element: ElementFilterDescriptor, context: ElementFilterContext) => boolean`. Receives `{ tagName, properties, blockType? }` and `{ source: "markdown" | "html", parentTagName? }`. Returning `false` disallows the element.
+- `disableAutolinkProtocols`: Protocols to disable for autolinks (e.g. `["mailto"]`). Autolinked URLs/emails using these protocols render as plain text instead of links. Explicit markdown links `[contact](mailto:...)` remain links. Protocols can be specified with or without a trailing colon and are matched case-insensitively.
+
+Filtering applies consistently at render time across client streaming, client node views, SSR (`@stream-mdx/react/server`), and raw HTML blocks/inlines.
+
+```tsx
+<StreamingMarkdown
+  text={markdown}
+  disallowedElements={["img"]}
+  unwrapDisallowed={true}
+  disableAutolinkProtocols={["mailto"]}
+  allowElement={(element, context) => {
+    if (context.source === "html" && element.tagName === "iframe") {
+      return false;
+    }
+    return true;
+  }}
+/>
+```
 ## 4) MDX Compilation Modes
 
 `mdxCompileMode` selects how MDX blocks are compiled:
-
 - `"worker"`: compilation happens client-side in the worker.
 - `"server"`: compilation requests go to `/api/mdx-compile-v2` by default (you must implement this endpoint in your app).
 

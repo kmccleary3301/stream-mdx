@@ -23,7 +23,7 @@ export const BlockNodeRenderer: React.FC<{ store: RendererStore; blockId: string
     return <>{registry.renderFinalizedBlock(block, registry.renderBlock(block))}</>;
   }
 
-  let element: React.ReactElement;
+  let element: React.ReactElement | null;
   switch (block.type) {
     case "paragraph":
       element = <ParagraphBlockView store={store} blockId={block.id} registry={registry} />;
@@ -51,6 +51,7 @@ export const BlockNodeRenderer: React.FC<{ store: RendererStore; blockId: string
       break;
   }
 
+  if (element === null) return null;
   return <>{registry.renderFinalizedBlock(block, element)}</>;
 };
 
@@ -106,10 +107,21 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
         return structured;
       }
 
-      return <p className="markdown-paragraph streaming-partial">{renderInlineNodes(inlineNodes, inlineComponents, registry.getUrlTransform())}</p>;
+      const partialInline = renderInlineNodes(inlineNodes, inlineComponents, registry.getUrlTransform(), registry, "p");
+      return registry.filterElement(
+        { tagName: "p", properties: { className: "markdown-paragraph streaming-partial" }, blockType: "paragraph" },
+        { source: "markdown" },
+        () => <p className="markdown-paragraph streaming-partial">{partialInline}</p>,
+        () => partialInline,
+      ) as React.ReactElement | null;
     }
 
-    return <p className="markdown-paragraph streaming-partial">{raw}</p>;
+    return registry.filterElement(
+      { tagName: "p", properties: { className: "markdown-paragraph streaming-partial" }, blockType: "paragraph" },
+      { source: "markdown" },
+      () => <p className="markdown-paragraph streaming-partial">{raw}</p>,
+      () => raw,
+    ) as React.ReactElement | null;
   }
 
   const propsBlock = node.props?.block as Block | undefined;
@@ -119,7 +131,12 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
     (node.props?.inlineStatus as string | undefined);
   if (inlineStatus && inlineStatus !== "complete") {
     const raw = typeof block.payload.raw === "string" ? block.payload.raw : "";
-    return <p className="markdown-paragraph">{raw}</p>;
+    return registry.filterElement(
+      { tagName: "p", properties: { className: "markdown-paragraph" }, blockType: "paragraph" },
+      { source: "markdown" },
+      () => <p className="markdown-paragraph">{raw}</p>,
+      () => raw,
+    ) as React.ReactElement | null;
   }
 
   const segments = Array.isArray((block.payload.meta as { mixedSegments?: MixedContentSegment[] } | undefined)?.mixedSegments)
@@ -153,28 +170,43 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
     return structured;
   }
 
+  const inlines = renderInlineNodes(block.payload.inline ?? [], inlineComponents, registry.getUrlTransform(), registry, "p");
   const ParagraphComponent = registry.getBlockComponent("paragraph");
   const baseElement = React.createElement(ParagraphComponent, {
     inlines: block.payload.inline ?? [],
     raw: block.payload.raw,
     meta: block.payload.meta,
-    children: renderInlineNodes(block.payload.inline ?? [], inlineComponents, registry.getUrlTransform()),
+    children: inlines,
   });
 
-  if (childIds.length > 0) {
-    const renderedChildren = childIds.map((childId) => <MixedSegmentView key={childId} store={store} nodeId={childId} inlineComponents={inlineComponents} urlTransform={registry.getUrlTransform()} />);
-    if (React.isValidElement(baseElement)) {
-      const { children: _ignored, className = "markdown-paragraph", inlines: _inlines, raw: _raw, meta: _meta, ...rest } = baseElement.props ?? {};
-      return React.createElement("p", { ...rest, className }, renderedChildren);
+  const renderParagraph = () => {
+    if (childIds.length > 0) {
+      const renderedChildren = childIds.map((childId) => <MixedSegmentView key={childId} store={store} nodeId={childId} inlineComponents={inlineComponents} urlTransform={registry.getUrlTransform()} registry={registry} parentTagName="p" />);
+      if (React.isValidElement(baseElement)) {
+        const { children: _ignored, className = "markdown-paragraph", inlines: _inlines, raw: _raw, meta: _meta, ...rest } = (baseElement.props as Record<string, unknown>) ?? {};
+        return React.createElement("p", { ...rest, className }, renderedChildren);
+      }
+      return <p className="markdown-paragraph">{renderedChildren}</p>;
     }
-    return <p className="markdown-paragraph">{renderedChildren}</p>;
-  }
-
-  if (React.isValidElement(baseElement)) {
-    return baseElement;
-  }
-
-  return <p className="markdown-paragraph">{renderInlineNodes(block.payload.inline ?? [], inlineComponents, registry.getUrlTransform())}</p>;
+    if (React.isValidElement(baseElement)) {
+      return baseElement;
+    }
+    return <p className="markdown-paragraph">{inlines}</p>;
+  };
+  const renderChildren = () => {
+    if (childIds.length > 0) {
+      return childIds.map((childId) => <MixedSegmentView key={childId} store={store} nodeId={childId} inlineComponents={inlineComponents} urlTransform={registry.getUrlTransform()} registry={registry} parentTagName="p" />);
+    }
+    return inlines;
+  };
+  const filtered = registry.filterElement(
+    { tagName: "p", properties: { className: "markdown-paragraph" }, blockType: "paragraph" },
+    { source: "markdown" },
+    renderParagraph,
+    renderChildren,
+  );
+  if (filtered === null || filtered === undefined) return null;
+  return React.isValidElement(filtered) ? filtered : <>{filtered}</>;
 });
 
 ParagraphBlockView.displayName = "ParagraphBlockView";
@@ -222,7 +254,7 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
 
   const renderInlineContent = (inline: InlineNode[] | undefined, keyPrefix: string) => {
     if (inline && inline.length > 0) {
-      return renderInlineNodes(inline, inlineComponents, registry.getUrlTransform());
+      return renderInlineNodes(inline, inlineComponents, registry.getUrlTransform(), registry, "div");
     }
     return null;
   };
@@ -284,13 +316,13 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
   const fallbackElements = normalizedText ? renderTextWithBreaks(normalizedText, `blockquote-fallback-${block.id}-`) : null;
 
   const inlineNodes = block.payload.inline ?? [];
-  const inlineElements = inlineNodes.length > 0 ? renderInlineNodes(inlineNodes, inlineComponents, registry.getUrlTransform()) : null;
+  const inlineElements = inlineNodes.length > 0 ? renderInlineNodes(inlineNodes, inlineComponents, registry.getUrlTransform(), registry, "blockquote") : null;
 
   const childContent = childIds.map((childId) => {
     const childNode = store.getNode(childId);
     if (!childNode) return null;
     if (childNode.type?.startsWith("blockquote-")) {
-      return <MixedSegmentView key={childId} store={store} nodeId={childId} inlineComponents={inlineComponents} urlTransform={registry.getUrlTransform()} />;
+      return <MixedSegmentView key={childId} store={store} nodeId={childId} inlineComponents={inlineComponents} urlTransform={registry.getUrlTransform()} registry={registry} parentTagName="blockquote" />;
     }
     if (childNode.type === "list") {
       return <ListBlockView key={childId} store={store} blockId={childId} registry={registry} depth={0} />;
@@ -299,7 +331,12 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
   });
 
   if (block.payload.meta?.preparedNested && childIds.length === 0) {
-    return <blockquote className="markdown-blockquote" />;
+    return registry.filterElement(
+      { tagName: "blockquote", properties: { className: "markdown-blockquote" }, blockType: "blockquote" },
+      { source: "markdown" },
+      () => <blockquote className="markdown-blockquote" />,
+      () => null,
+    ) as React.ReactElement | null;
   }
   if (!block.isFinalized) {
     const streamingContent = childIds.length
@@ -311,7 +348,12 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
           : fallbackElements;
     const shouldShowStreaming = !block.isFinalized && (!streamingContent || (Array.isArray(streamingContent) && streamingContent.length === 0));
     const className = shouldShowStreaming ? "markdown-blockquote streaming-partial" : "markdown-blockquote";
-    return <blockquote className={className}>{streamingContent}</blockquote>;
+    return registry.filterElement(
+      { tagName: "blockquote", properties: { className }, blockType: "blockquote" },
+      { source: "markdown" },
+      () => <blockquote className={className}>{streamingContent}</blockquote>,
+      () => streamingContent,
+    ) as React.ReactElement | null;
   }
   const renderedContent = (() => {
     if (childIds.length > 0) {
@@ -345,11 +387,15 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
     renderedContent,
   );
 
-  if (React.isValidElement(baseElement)) {
-    return baseElement;
-  }
-
-  return <blockquote className="markdown-blockquote">{renderedContent}</blockquote>;
+  const base = React.isValidElement(baseElement) ? baseElement : <blockquote className="markdown-blockquote">{renderedContent}</blockquote>;
+  const filtered = registry.filterElement(
+    { tagName: "blockquote", properties: { className: "markdown-blockquote" }, blockType: "blockquote" },
+    { source: "markdown" },
+    () => base,
+    () => renderedContent,
+  );
+  if (filtered === null || filtered === undefined) return null;
+  return React.isValidElement(filtered) ? filtered : <>{filtered}</>;
 });
 
 BlockquoteBlockView.displayName = "BlockquoteBlockView";
@@ -359,7 +405,9 @@ const MixedSegmentView: React.FC<{
   nodeId: string;
   inlineComponents: InlineComponents;
   urlTransform?: UrlTransform;
-}> = React.memo(({ store, nodeId, inlineComponents, urlTransform }) => {
+  registry?: ComponentRegistry;
+  parentTagName?: string;
+}> = React.memo(({ store, nodeId, inlineComponents, urlTransform, registry, parentTagName }) => {
   const node = useRendererNode(store, nodeId);
   if (!node) return null;
 
@@ -369,7 +417,7 @@ const MixedSegmentView: React.FC<{
     case "list-item-text": {
       const inline = (node.props?.inline as InlineNode[] | undefined) ?? [];
       if (inline.length > 0) {
-        return renderInlineNodes(inline, inlineComponents, urlTransform);
+        return renderInlineNodes(inline, inlineComponents, urlTransform, registry, parentTagName);
       }
       const text = typeof node.props?.text === "string" ? (node.props?.text as string) : "";
       if (!text) return null;
@@ -514,15 +562,8 @@ const ListBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
     }, [ordered, listItemIds, store, depth]);
     if (listItemIds.length === 0) return null;
     const start = typeof node?.props?.start === "number" ? node.props.start : undefined;
-    return (
-      <Tag
-        className={`markdown-list ${ordered ? "ordered" : "unordered"}`}
-        data-list-depth={depth}
-        data-marker-digits={ordered ? markerDigits : undefined}
-        data-list-id={listDebugEnabled ? blockId : undefined}
-        style={listStyle}
-        start={ordered && start !== undefined && start !== 1 ? start : undefined}
-      >
+    const renderChildren = () => (
+      <>
         {listItemIds.map((childId, index) => (
           <ListItemView
             key={childId}
@@ -535,8 +576,28 @@ const ListBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
             depth={depth}
           />
         ))}
+      </>
+    );
+    const renderElement = () => (
+      <Tag
+        className={`markdown-list ${ordered ? "ordered" : "unordered"}`}
+        data-list-depth={depth}
+        data-marker-digits={ordered ? markerDigits : undefined}
+        data-list-id={listDebugEnabled ? blockId : undefined}
+        style={listStyle}
+        start={ordered && start !== undefined && start !== 1 ? start : undefined}
+      >
+        {renderChildren()}
       </Tag>
     );
+    const filtered = registry.filterElement(
+      { tagName: Tag, properties: { className: `markdown-list ${ordered ? "ordered" : "unordered"}` }, blockType: "list" },
+      { source: "markdown" },
+      renderElement,
+      renderChildren,
+    );
+    if (filtered === null || filtered === undefined) return null;
+    return React.isValidElement(filtered) ? filtered : <>{filtered}</>;
   },
 );
 
@@ -584,16 +645,15 @@ const ListItemView: React.FC<{
   }, [childIds, store]);
 
   const segmentElements = React.useMemo(() => {
-    return segmentChildIds.map((childId) => <MixedSegmentView key={childId} store={store} nodeId={childId} inlineComponents={inlineComponents} urlTransform={registry.getUrlTransform()} />);
-  }, [segmentChildIds, store, inlineComponents]);
+    return segmentChildIds.map((childId) => <MixedSegmentView key={childId} store={store} nodeId={childId} inlineComponents={inlineComponents} urlTransform={registry.getUrlTransform()} registry={registry} parentTagName="li" />);
+  }, [segmentChildIds, store, inlineComponents, registry]);
 
   const primaryContent = React.useMemo(() => {
     if (segmentChildIds.length > 0) {
       return segmentElements;
     }
-    return renderInlineNodes(inline, inlineComponents, registry.getUrlTransform());
-  }, [segmentChildIds, segmentElements, inline, inlineComponents]);
-
+    return renderInlineNodes(inline, inlineComponents, registry.getUrlTransform(), registry, "li");
+  }, [segmentChildIds, segmentElements, inline, inlineComponents, registry]);
   const trailingChildren = React.useMemo(() => {
     return contentChildIds.map((childId) => {
       const childNode = store.getNode(childId);
@@ -601,12 +661,20 @@ const ListItemView: React.FC<{
       switch (childNode.type) {
         case "paragraph": {
           const childInline = childNode.block?.payload.inline ?? (childNode.props?.inline as InlineNode[] | undefined) ?? [];
+          const childInlines = renderInlineNodes(childInline, inlineComponents, registry.getUrlTransform(), registry, "p");
           return childNode.props?.tight ? (
-            <React.Fragment key={childId}>{renderInlineNodes(childInline, inlineComponents, registry.getUrlTransform())}</React.Fragment>
+            <React.Fragment key={childId}>{childInlines}</React.Fragment>
           ) : (
-            <p key={childId} className="markdown-list-item-paragraph">
-              {renderInlineNodes(childInline, inlineComponents, registry.getUrlTransform())}
-            </p>
+            registry.filterElement(
+              { tagName: "p", properties: { className: "markdown-list-item-paragraph" }, blockType: "paragraph" },
+              { source: "markdown", parentTagName: "li" },
+              () => (
+                <p key={childId} className="markdown-list-item-paragraph">
+                  {childInlines}
+                </p>
+              ),
+              () => childInlines,
+            )
           );
         }
         case "list":
@@ -676,17 +744,30 @@ const ListItemView: React.FC<{
     </>
   );
 
-  return (
+  const renderChildren = () => (
+    <>
+      {renderedPrimary}
+      {hasChildren ? <div className="markdown-list-item-children">{filteredChildren}</div> : null}
+    </>
+  );
+  const renderElement = () => (
     <li
       className={`markdown-list-item${isTask ? " markdown-list-item-task" : ""}`}
       data-counter-text={counterText}
       data-list-depth={depth}
       data-list-item-id={listDebugEnabled ? nodeId : undefined}
     >
-      {renderedPrimary}
-      {hasChildren ? <div className="markdown-list-item-children">{filteredChildren}</div> : null}
+      {renderChildren()}
     </li>
   );
+  const filtered = registry.filterElement(
+    { tagName: "li", properties: { className: `markdown-list-item${isTask ? " markdown-list-item-task" : ""}` } },
+    { source: "markdown", parentTagName: ordered ? "ol" : "ul" },
+    renderElement,
+    renderChildren,
+  );
+  if (filtered === null || filtered === undefined) return null;
+  return React.isValidElement(filtered) ? filtered : <>{filtered}</>;
 });
 
 ListItemView.displayName = "ListItemView";
@@ -799,6 +880,27 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
     </tableElements.Table>
   );
 
+  const renderChildren = () => (
+    <>
+      {childIds.map((sectionId) => (
+        <TableSectionView
+          key={sectionId}
+          store={store}
+          nodeId={sectionId}
+          registry={registry}
+          tableElements={tableElements}
+          virtualization={virtualizationProps}
+        />
+      ))}
+    </>
+  );
+  const filteredTable = registry.filterElement(
+    { tagName: "table", properties: { className: "markdown-table" }, blockType: "table" },
+    { source: "markdown" },
+    () => tableElement,
+    renderChildren,
+  );
+  if (filteredTable === null || filteredTable === undefined) return null;
   if (isEligible) {
     const maxHeight = typeof config.maxHeight === "number" ? `${config.maxHeight}px` : config.maxHeight;
     return (
@@ -817,12 +919,12 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
         aria-label="Scrollable table"
         {...tableAttrs}
       >
-        {tableElement}
+        {filteredTable}
       </div>
     );
   }
 
-  return tableElement;
+  return React.isValidElement(filteredTable) ? filteredTable : <>{filteredTable}</>;
 });
 
 TableBlockView.displayName = "TableBlockView";
@@ -940,14 +1042,23 @@ const TableCellView: React.FC<{ store: RendererStore; nodeId: string; registry: 
   const node = useRendererNode(store, nodeId);
   const inlineComponents = registry.getInlineComponents();
   if (!node) return null;
-  const Tag = node.type === "table-header-cell" ? tableElements.Th : tableElements.Td;
+  const isHeader = node.type === "table-header-cell";
+  const Tag = isHeader ? tableElements.Th : tableElements.Td;
+  const tag = isHeader ? "th" : "td";
   const inline = (node.props?.inline as InlineNode[] | undefined) ?? [];
   const align = node.props?.align as string | undefined;
-  const content = renderInlineNodes(inline, inlineComponents, registry.getUrlTransform());
+  const content = renderInlineNodes(inline, inlineComponents, registry.getUrlTransform(), registry, tag);
   const alignProps = align ? { align } : undefined;
-  return <Tag {...alignProps}>{content}</Tag>;
+  const renderElement = () => <Tag {...alignProps}>{content}</Tag>;
+  const filtered = registry.filterElement(
+    { tagName: tag, properties: alignProps ?? {} },
+    { source: "markdown", parentTagName: "tr" },
+    renderElement,
+    () => content,
+  );
+  if (filtered === null || filtered === undefined) return null;
+  return React.isValidElement(filtered) ? filtered : <>{filtered}</>;
 });
-
 TableCellView.displayName = "TableCellView";
 
 const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
@@ -1328,52 +1439,62 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
   const sourceText = resolveCodeSourceText(raw, metaCode);
   const infoText = typeof blockMeta?.info === "string" ? (blockMeta.info as string) : (lang ?? "");
 
-  if (codeRenderer) {
-    const CustomComponent = typeof codeRenderer === "function" ? codeRenderer : codeRenderer.component;
-    const shouldOptInDefer = Boolean(
-      (typeof codeRenderer === "object" && codeRenderer !== null && codeRenderer.defer) ||
-        (CustomComponent && typeof CustomComponent === "function" && "defer" in CustomComponent && Boolean(CustomComponent.defer)),
-    );
-    const rendererProps: CodeFenceRendererProps = {
-      code: sourceText,
-      language: lang ?? "",
-      meta: node.block.payload.meta,
-      info: infoText,
-      isFinalized: node.block.isFinalized,
-      blockId,
-      renderCode: codeView,
-      openLink: registry.getLinkHandler(),
-    };
-
-    if (shouldOptInDefer && deferredConfig) {
-      return (
-        <div ref={deferredRef}>
-          {shouldRenderDeferred
-            ? React.createElement(CustomComponent, rendererProps)
-            : codeView}
-        </div>
+  const elementToFilter = (() => {
+    if (codeRenderer) {
+      const CustomComponent = typeof codeRenderer === "function" ? codeRenderer : codeRenderer.component;
+      const shouldOptInDefer = Boolean(
+        (typeof codeRenderer === "object" && codeRenderer !== null && codeRenderer.defer) ||
+          (CustomComponent && typeof CustomComponent === "function" && "defer" in CustomComponent && Boolean(CustomComponent.defer)),
       );
+      const rendererProps: CodeFenceRendererProps = {
+        code: sourceText,
+        language: lang ?? "",
+        meta: node.block.payload.meta,
+        info: infoText,
+        isFinalized: node.block.isFinalized,
+        blockId,
+        renderCode: codeView,
+        openLink: registry.getLinkHandler(),
+      };
+
+      if (shouldOptInDefer && deferredConfig) {
+        return (
+          <div ref={deferredRef}>
+            {shouldRenderDeferred
+              ? React.createElement(CustomComponent, rendererProps)
+              : codeView}
+          </div>
+        );
+      }
+
+      return React.createElement(CustomComponent, rendererProps);
     }
 
-    return React.createElement(CustomComponent, rendererProps);
-  }
+    // Structured diff fallback when meta.diffBlocks is present
+    if (Array.isArray(blockMeta?.diffBlocks) && blockMeta.diffBlocks.length > 0) {
+      return React.createElement(DefaultDiffRenderer, {
+        code: sourceText,
+        language: lang ?? "",
+        meta: node.block.payload.meta,
+        info: infoText,
+        isFinalized: node.block.isFinalized,
+        blockId,
+        renderCode: codeView,
+      });
+    }
 
-  // Structured diff fallback when meta.diffBlocks is present
-  if (Array.isArray(blockMeta?.diffBlocks) && blockMeta.diffBlocks.length > 0) {
-    return React.createElement(DefaultDiffRenderer, {
-      code: sourceText,
-      language: lang ?? "",
-      meta: node.block.payload.meta,
-      info: infoText,
-      isFinalized: node.block.isFinalized,
-      blockId,
-      renderCode: codeView,
-    });
-  }
+    return codeView;
+  })();
 
-  return codeView;
+  const filtered = registry.filterElement(
+    { tagName: "pre", properties: { className: codeFrameClass }, blockType: "code" },
+    { source: "markdown" },
+    () => elementToFilter,
+    () => sourceText,
+  );
+  if (filtered === null || filtered === undefined) return null;
+  return React.isValidElement(filtered) ? filtered : <>{filtered}</>;
 });
-
 CodeBlockView.displayName = "CodeBlockView";
 
 function composeHighlightedHtml(

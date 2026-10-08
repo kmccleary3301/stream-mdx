@@ -18,12 +18,18 @@ export * from "./streaming-markdown";
 export type { RendererMetrics } from "./streaming-markdown";
 export type { AdaptiveBudgetState } from "./renderer/patch-commit-scheduler";
 export type {
+  AllowElementFn,
   BlockComponents,
   BlockRendererOverride,
-  FinalizedBlockRenderProps,
   CodeFenceRenderer,
   CodeFenceRendererConfig,
   CodeFenceRendererProps,
+  CodeRenderersConfig,
+  ComponentRegistryOptions,
+  CustomCodeRenderer,
+  ElementFilterContext,
+  ElementFilterDescriptor,
+  FinalizedBlockRenderProps,
   HtmlElements,
   HtmlOptions,
   InlineComponents,

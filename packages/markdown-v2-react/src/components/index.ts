@@ -26,7 +26,9 @@ import type {
   BlockRendererOverride,
   CodeFenceRenderer,
   CodeFenceRendererConfig,
+  CodeFenceRendererProps,
   CodeRenderersConfig,
+  ComponentRegistryOptions,
   CustomCodeRenderer,
   ElementFilterContext,
   ElementFilterDescriptor,
@@ -36,12 +38,12 @@ import type {
   MathRenderer,
   TableElements,
 } from "../types";
+export type { CodeFenceRendererProps, ComponentRegistryOptions, CustomCodeRenderer };
 import { ArtifactFrame } from "./artifact-frame";
 import { DefaultDiffRenderer } from "./diff-renderer";
 import { KaTeXBlockMath, KaTeXInlineMath } from "./katex-math";
 import { DEFAULT_TABLE_VIRTUALIZATION_CONFIG, resolveTableVirtualizationConfig, type TableVirtualizationConfig, type TableVirtualizationOptions } from "../renderer/virtualized-table";
 export { DefaultLinkSafetyModal, type LinkSafetyModalProps } from "./link-safety-modal";
-
 class MdxRuntimeBoundary extends React.Component<
   { resetKey: number; onError: (error: Error) => void; children?: React.ReactNode },
   { hasError: boolean }
@@ -101,7 +103,7 @@ export function renderInlineNodes(
           });
         if (registry) {
           return registry.filterElement(
-            { tagName: "strong", properties: {}, blockType: undefined },
+            { tagName: "strong", properties: { key }, blockType: undefined },
             { source: "markdown", parentTagName },
             renderElement,
             renderChildren,
@@ -119,7 +121,7 @@ export function renderInlineNodes(
           });
         if (registry) {
           return registry.filterElement(
-            { tagName: "em", properties: {}, blockType: undefined },
+            { tagName: "em", properties: { key }, blockType: undefined },
             { source: "markdown", parentTagName },
             renderElement,
             renderChildren,
@@ -138,7 +140,7 @@ export function renderInlineNodes(
           });
         if (registry) {
           return registry.filterElement(
-            { tagName: "del", properties: {}, blockType: undefined },
+            { tagName: "del", properties: { key }, blockType: undefined },
             { source: "markdown", parentTagName },
             renderElement,
             renderChildren,
@@ -152,7 +154,7 @@ export function renderInlineNodes(
         const renderElement = () => React.createElement(components.code, { key, text: node.text });
         if (registry) {
           return registry.filterElement(
-            { tagName: "code", properties: { text: node.text }, blockType: undefined },
+            { tagName: "code", properties: { key, text: node.text }, blockType: undefined },
             { source: "markdown", parentTagName },
             renderElement,
             renderChildren,
@@ -180,7 +182,7 @@ export function renderInlineNodes(
           );
         if (registry) {
           return registry.filterElement(
-            { tagName: "a", properties: { href: safeHref, title: node.title }, blockType: undefined },
+            { tagName: "a", properties: { key, href: safeHref, title: node.title }, blockType: undefined },
             { source: "markdown", parentTagName },
             renderElement,
             renderChildren,
@@ -201,7 +203,7 @@ export function renderInlineNodes(
           });
         if (registry) {
           return registry.filterElement(
-            { tagName: "img", properties: { src: safeSrc, alt: node.alt ?? "", title: node.title }, blockType: undefined },
+            { tagName: "img", properties: { key, src: safeSrc, alt: node.alt ?? "", title: node.title }, blockType: undefined },
             { source: "markdown", parentTagName },
             renderElement,
             undefined,
@@ -220,7 +222,7 @@ export function renderInlineNodes(
           );
         if (registry) {
           return registry.filterElement(
-            { tagName: "br", properties: {}, blockType: undefined },
+            { tagName: "br", properties: { key }, blockType: undefined },
             { source: "markdown", parentTagName },
             renderElement,
             undefined,
@@ -843,72 +845,100 @@ export class ComponentRegistry {
   private disableAutolinkProtocols?: ReadonlySet<string>;
   private hasFilterConfig = false;
 
+  constructor(options?: ComponentRegistryOptions);
   constructor(
-    blockComponents: Partial<BlockComponents> = {},
+    blockComponents?: Partial<BlockComponents>,
+    inlineComponents?: Partial<InlineComponents>,
+    codeRenderers?: CodeRenderersConfig,
+    options?: ComponentRegistryOptions,
+  );
+  constructor(
+    blockComponentsOrOptions: Partial<BlockComponents> | ComponentRegistryOptions = {},
     inlineComponents: Partial<InlineComponents> = {},
     codeRenderers: CodeRenderersConfig = {},
-    options?: {
-      artifactHtml?: boolean;
-      mathRenderer?: MathRenderer;
-      blockRenderer?: BlockRendererOverride;
-      tableVirtualization?: TableVirtualizationOptions;
-      urlTransform?: UrlTransform;
-      allowedElements?: string[];
-      disallowedElements?: string[];
-      allowElement?: AllowElementFn;
-      unwrapDisallowed?: boolean;
-      disableAutolinkProtocols?: string[];
-    },
+    options?: ComponentRegistryOptions,
   ) {
-    this.blockComponents = { ...defaultBlockComponents, ...blockComponents } as BlockComponents;
-    this.inlineComponents = { ...defaultInlineComponents, ...inlineComponents } as InlineComponents;
-    this.htmlElements = getDefaultHtmlElements();
-    if (options?.urlTransform) {
-      this.urlTransform = options.urlTransform;
+    let resolvedBlockComponents: Partial<BlockComponents> = {};
+    let resolvedInlineComponents: Partial<InlineComponents> = inlineComponents;
+    let resolvedCodeRenderers: CodeRenderersConfig = codeRenderers;
+    let resolvedOptions = options;
+
+    const isConfig =
+      blockComponentsOrOptions &&
+      typeof blockComponentsOrOptions === "object" &&
+      !Array.isArray(blockComponentsOrOptions) &&
+      ("allowedElements" in blockComponentsOrOptions ||
+        "disallowedElements" in blockComponentsOrOptions ||
+        "allowElement" in blockComponentsOrOptions ||
+        "unwrapDisallowed" in blockComponentsOrOptions ||
+        "disableAutolinkProtocols" in blockComponentsOrOptions ||
+        "codeRenderers" in blockComponentsOrOptions ||
+        "mathRenderer" in blockComponentsOrOptions ||
+        "tableVirtualization" in blockComponentsOrOptions ||
+        "blockRenderer" in blockComponentsOrOptions);
+
+    if (isConfig) {
+      const cfg = blockComponentsOrOptions as Record<string, unknown>;
+      resolvedOptions = { ...cfg, ...options };
+      resolvedBlockComponents = ((cfg.blockComponents ?? cfg.components ?? {}) as Partial<BlockComponents>);
+      resolvedInlineComponents = ((cfg.inlineComponents ?? inlineComponents) as Partial<InlineComponents>);
+      resolvedCodeRenderers = ((cfg.codeRenderers ?? codeRenderers) as CodeRenderersConfig);
+    } else {
+      resolvedBlockComponents = blockComponentsOrOptions as Partial<BlockComponents>;
     }
-    if (!inlineComponents.html) {
+
+    const effectiveOptions = resolvedOptions;
+    const effectiveInline = resolvedInlineComponents;
+    const effectiveCodeRenderers = resolvedCodeRenderers;
+    this.blockComponents = { ...defaultBlockComponents, ...resolvedBlockComponents } as BlockComponents;
+    this.inlineComponents = { ...defaultInlineComponents, ...effectiveInline } as InlineComponents;
+    this.htmlElements = getDefaultHtmlElements();
+    if (effectiveOptions?.urlTransform) {
+      this.urlTransform = effectiveOptions.urlTransform;
+    }
+    if (!effectiveInline.html) {
       this.inlineComponents.html = (node: Omit<Extract<InlineNode, { kind: "html" }>, "children"> & { children?: React.ReactNode; textValue?: string }) =>
         renderHtmlInlineNode(node, node.children, this.htmlElements, undefined, node.textValue, this.urlTransform);
     }
     this.tableElements = getDefaultTableElements();
-    if (codeRenderers) {
-      this.setCodeRenderers(codeRenderers);
+    if (effectiveCodeRenderers) {
+      this.setCodeRenderers(effectiveCodeRenderers);
     }
-    if (options?.mathRenderer) {
-      this.setMathRenderer(options.mathRenderer);
+    if (effectiveOptions?.mathRenderer) {
+      this.setMathRenderer(effectiveOptions.mathRenderer);
     }
-    if (options?.blockRenderer) {
-      this.setBlockRenderer(options.blockRenderer);
+    if (effectiveOptions?.blockRenderer) {
+      this.setBlockRenderer(effectiveOptions.blockRenderer);
     }
-    if (options?.tableVirtualization !== undefined) {
-      this.setTableVirtualization(options.tableVirtualization);
+    if (effectiveOptions?.tableVirtualization !== undefined) {
+      this.setTableVirtualization(effectiveOptions.tableVirtualization);
     }
-    if (options?.allowedElements !== undefined && options?.disallowedElements !== undefined) {
+    if (effectiveOptions?.allowedElements !== undefined && effectiveOptions?.disallowedElements !== undefined) {
       if (typeof process === "undefined" || process.env?.NODE_ENV !== "production") {
-        throw new Error("Unexpected combined `allowedElements` and `disallowedElements`, expected one or the other");
+        throw new Error("Cannot specify both allowedElements and disallowedElements; expected one or the other");
       }
     }
-    if (options?.allowedElements !== undefined) {
-      this.setAllowedElements(options.allowedElements);
+    if (effectiveOptions?.allowedElements !== undefined) {
+      this.setAllowedElements(effectiveOptions.allowedElements);
     }
-    if (options?.disallowedElements !== undefined) {
-      this.setDisallowedElements(options.disallowedElements);
+    if (effectiveOptions?.disallowedElements !== undefined) {
+      this.setDisallowedElements(effectiveOptions.disallowedElements);
     }
-    if (options?.allowElement !== undefined) {
-      this.setAllowElement(options.allowElement);
+    if (effectiveOptions?.allowElement !== undefined) {
+      this.setAllowElement(effectiveOptions.allowElement);
     }
-    if (options?.unwrapDisallowed !== undefined) {
-      this.setUnwrapDisallowed(options.unwrapDisallowed);
+    if (effectiveOptions?.unwrapDisallowed !== undefined) {
+      this.setUnwrapDisallowed(effectiveOptions.unwrapDisallowed);
     }
-    if (options?.disableAutolinkProtocols !== undefined) {
-      this.setDisableAutolinkProtocols(options.disableAutolinkProtocols);
+    if (effectiveOptions?.disableAutolinkProtocols !== undefined) {
+      this.setDisableAutolinkProtocols(effectiveOptions.disableAutolinkProtocols);
     }
   }
 
   setAllowedElements(elements?: string[]): void {
     if (elements !== undefined && this.rawDisallowedElements !== undefined) {
       if (typeof process === "undefined" || process.env?.NODE_ENV !== "production") {
-        throw new Error("Unexpected combined `allowedElements` and `disallowedElements`, expected one or the other");
+        throw new Error("Cannot specify both allowedElements and disallowedElements; expected one or the other");
       }
     }
     this.rawAllowedElements = elements;
@@ -919,7 +949,7 @@ export class ComponentRegistry {
   setDisallowedElements(elements?: string[]): void {
     if (elements !== undefined && this.rawAllowedElements !== undefined) {
       if (typeof process === "undefined" || process.env?.NODE_ENV !== "production") {
-        throw new Error("Unexpected combined `allowedElements` and `disallowedElements`, expected one or the other");
+        throw new Error("Cannot specify both allowedElements and disallowedElements; expected one or the other");
       }
     }
     this.rawDisallowedElements = elements;
@@ -987,7 +1017,8 @@ export class ComponentRegistry {
     if (this.unwrapDisallowed && renderChildren) {
       const children = renderChildren();
       if (children === undefined || children === null) return null;
-      return React.createElement(React.Fragment, null, children);
+      const key = element.properties?.key as string | number | undefined;
+      return React.createElement(React.Fragment, key !== undefined ? { key } : null, children);
     }
     return null;
   }
@@ -996,10 +1027,13 @@ export class ComponentRegistry {
     const next: Record<string, CodeFenceRenderer> = { ...this.codeRenderers };
     if (Array.isArray(renderers)) {
       for (const entry of renderers) {
-        const langs = Array.isArray(entry.language) ? entry.language : [entry.language];
+        const entryObj = entry as unknown as Record<string, unknown>;
+        const rawLangs = entryObj.languages ?? entryObj.language;
+        const langs = Array.isArray(rawLangs) ? rawLangs : [rawLangs];
+        const actualRenderer = (entryObj.renderer ?? entryObj.component ?? entry) as CodeFenceRenderer;
         for (const l of langs) {
           if (typeof l === "string") {
-            next[l.trim().toLowerCase()] = entry;
+            next[l.trim().toLowerCase()] = actualRenderer;
           }
         }
       }
@@ -1093,7 +1127,14 @@ export class ComponentRegistry {
   getCodeRenderer(language: string): CodeFenceRenderer | undefined {
     const normalized = (language ?? "").trim().toLowerCase();
     if (Object.prototype.hasOwnProperty.call(this.codeRenderers, normalized)) {
-      return this.codeRenderers[normalized];
+      const entry = this.codeRenderers[normalized];
+      if (entry && typeof entry === "object") {
+        const obj = entry as unknown as Record<string, unknown>;
+        if ("renderer" in obj || "component" in obj) {
+          return (obj.renderer ?? obj.component) as CodeFenceRenderer;
+        }
+      }
+      return entry;
     }
     if (normalized === "artifact" || normalized === "html-artifact") {
       return ArtifactFrame;
@@ -1397,7 +1438,7 @@ export class ComponentRegistry {
         const headingText =
           typeof meta.headingText === "string" && meta.headingText.trim().length > 0 ? (meta.headingText as string) : removeHeadingMarkers(rawHeading).trim();
         const level = (normalizedLevel ?? this.extractHeadingLevel(rawHeading)) as 1 | 2 | 3 | 4 | 5 | 6;
-        const renderedChildren = renderInlineNodes(inlineNodes, this.inlineComponents, this.urlTransform);
+        const renderedChildren = renderInlineNodes(inlineNodes, this.inlineComponents, this.urlTransform, this, `h${level}`);
         return {
           level,
           inlines: inlineNodes,
@@ -1411,14 +1452,13 @@ export class ComponentRegistry {
           inlines: block.payload.inline || [],
           raw: block.payload.raw,
           meta: block.payload.meta,
-          children: renderInlineNodes(block.payload.inline ?? [], this.inlineComponents, this.urlTransform),
+          children: renderInlineNodes(block.payload.inline ?? [], this.inlineComponents, this.urlTransform, this, "p"),
         };
       case "blockquote":
         return {
           inlines: block.payload.inline || [],
-          renderedContent: renderInlineNodes(block.payload.inline || [], this.inlineComponents, this.urlTransform),
+          renderedContent: renderInlineNodes(block.payload.inline || [], this.inlineComponents, this.urlTransform, this, "blockquote"),
         };
-
       case "hr": {
         const range = block.payload.range;
         return {

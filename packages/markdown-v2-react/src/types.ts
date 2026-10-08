@@ -12,6 +12,7 @@ import type {
   LazyTokenizationPriority,
   SyntaxRuleSpec,
   TokenLineV1,
+  UrlTransform,
 } from "@stream-mdx/core";
 import type { ComponentRegistry } from "./components";
 
@@ -44,9 +45,12 @@ export interface CodeFenceRendererConfig {
 }
 
 export interface CustomCodeRenderer {
-  component: React.ComponentType<CodeFenceRendererProps>;
-  language: string | string[];
+  component?: React.ComponentType<CodeFenceRendererProps>;
+  renderer?: React.ComponentType<CodeFenceRendererProps>;
+  language?: string | string[];
+  languages?: string[];
   defer?: boolean;
+  artifact?: boolean;
 }
 
 export type CodeFenceRenderer =
@@ -153,6 +157,22 @@ export interface FinalizedBlockRenderProps {
 
 export type BlockRendererOverride = (props: FinalizedBlockRenderProps) => React.ReactNode;
 
+export interface ComponentRegistryOptions {
+  allowedElements?: string[];
+  disallowedElements?: string[];
+  allowElement?: AllowElementFn;
+  unwrapDisallowed?: boolean;
+  disableAutolinkProtocols?: string[];
+  codeRenderers?: CodeRenderersConfig;
+  artifactHtml?: boolean;
+  mathRenderer?: MathRenderer;
+  blockRenderer?: BlockRendererOverride;
+  tableVirtualization?: TableVirtualizationOptions;
+  urlTransform?: UrlTransform;
+  blockComponents?: Partial<BlockComponents>;
+  components?: Partial<BlockComponents>;
+  inlineComponents?: Partial<InlineComponents>;
+}
 export interface RendererConfig {
   themes?: { light: string; dark: string };
   highlight?: {
@@ -196,6 +216,7 @@ export interface RendererConfig {
   syntax?: SyntaxRuleSpec[];
   html?: HtmlOptions;
   urlTransform?: (url: string, attribute: "href" | "src", context: { source: "markdown" | "html" }) => string | null | undefined;
+  tableVirtualization?: TableVirtualizationOptions;
   performance?: {
     frameBudgetMs?: number;
     flushTimeoutMs?: number;
