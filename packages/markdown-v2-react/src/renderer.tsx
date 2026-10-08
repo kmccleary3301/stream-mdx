@@ -78,6 +78,9 @@ export class MarkdownRenderer implements Renderer {
         mathRenderer: this.config.mathRenderer,
       },
     );
+    if (this.config.html?.literalTagContent) {
+      this.componentRegistry.setLiteralTagContent(this.config.html.literalTagContent);
+    }
     if (this.config.mdx?.compileEndpoint) {
       getMDXComponentFactory(this.config.mdx.compileEndpoint);
     }

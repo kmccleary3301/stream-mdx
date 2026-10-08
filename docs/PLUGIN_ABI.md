@@ -1,46 +1,111 @@
-# StreamMDX Plugin ABI (Worker + Parser)
+# StreamMDX Plugin & Extension ABI
 
-This document describes the **plugin ABI** for StreamMDX’s V2 pipeline. It focuses on **worker‑side parsing** and **document‑phase aggregation**, plus the inline plugin system in `@stream-mdx/core`.
-
-If you simply need tables, math, HTML, MDX, or callouts, use the `features` prop on `<StreamingMarkdown />` instead of custom plugins:
-
-```tsx
-<StreamingMarkdown features={{ tables: true, html: true, math: true, mdx: true, footnotes: true }} />
-```
-
-Use the plugin ABI when you are building a **custom worker bundle** or integrating StreamMDX into another system that needs custom syntax.
+StreamMDX provides multiple extension surfaces designed for streaming performance, parser correctness, and ease of integration.
 
 ---
 
-## 1) Plugin Layers
+## 1) Declarative Syntax Rules (`syntax`)
 
-### 1.1 Markdown Plugins (Lezer + streaming)
-These plugins participate in the worker’s Lezer‑based parser and incremental streaming matcher. They live in `@stream-mdx/plugins`.
+Declarative syntax rules allow extending inline markdown syntax directly from the UI layer (`<StreamingMarkdown syntax={[...]} />`) without compiling or bundling a custom worker.
 
-**Key interface:** `MarkdownPlugin` (`packages/markdown-v2-plugins/src/plugins/base.ts`)
+### 1.1 Specification (`SyntaxRuleSpec`)
 
 ```ts
-export interface MarkdownPlugin {
+export interface SyntaxRuleSpec {
+  /** Unique name for the syntax node */
   name: string;
-  priority: number;
-  patterns: PluginPatterns;
-  tokenizer: ExternalTokenizer;
-  contextTracker?: ContextTracker<unknown>;
-  renderer?: unknown;
-  streamingHandler: IncrementalMatchHandler;
-  config?: PluginConfig;
+  /** Regex pattern (compiled sticky at cursor) */
+  pattern: {
+    source: string;
+    flags?: string;
+  };
+  /** Fast character check before executing regex */
+  trigger?: string;
+  /** Lezer inline parser precedence, e.g. 'Emphasis' */
+  before?: string;
+  /** Attribute mapping from capture group index or literal values */
+  attrs?: Record<string, number | string>;
+  /** Capture group index to parse recursively as inline children */
+  content?: number;
+  /** Streaming anticipation markers */
+  anticipation?: {
+    open: string;
+    close: string;
+  };
 }
 ```
 
-- **patterns**: regexes used by streaming matchers and conflict resolution.
-- **tokenizer**: Lezer external tokenizer used during parsing.
-- **streamingHandler**: incremental matcher used during streaming (`checkPartialMatch`, `completeMatch`).
-- **priority**: used to resolve conflicts between overlapping plugins.
+### 1.2 Behavior & Error Recovery Contract
 
-### 1.2 Document Plugins (post‑parse aggregation)
-Document plugins run after blocks are built and can mutate blocks or append synthetic blocks (e.g., footnotes).
+- **INIT Validation**: During worker `INIT`, syntax rules are validated. If a rule specifies an invalid regular expression:
+  - An `ERROR` message is posted with phase `"INIT"` and `{ rule: rule.name }`.
+  - The worker **skips the invalid rule** and proceeds with initialization of all remaining valid rules.
+  - This ensures a single broken user regex does not crash the worker or brick rendering.
+- **Node Output**: Emits an `InlineNode` of kind `"plugin"`:
+  ```ts
+  {
+    kind: "plugin",
+    name: rule.name,
+    attrs: { ... },
+    children: [ ... ],
+    raw: "#ABC-1"
+  }
+  ```
+- **React Rendering**: Rendered via `<StreamingMarkdown inlineComponents={{ [rule.name]: Component }} />`. If unmapped, falls back to rendering the raw text.
+- **Anticipation**: During streaming, an unclosed `open` delimiter at the buffer tail triggers anticipation, rendering the node with partial content until finalized.
 
-**Key interfaces:** `DocumentPlugin`, `DocumentContext`, `DocumentContribution` (`packages/markdown-v2-plugins/src/plugins/document.ts`)
+---
+
+## 2) HTML Control (`html`)
+
+StreamMDX provides fine-grained control over HTML tags and attributes via the `html` configuration:
+
+```ts
+<StreamingMarkdown
+  html={{
+    allowedTags: {
+      kbd: ["data-x", "hotkey"],
+      callout: ["type", "collapsible"],
+    },
+    literalTagContent: ["kbd", "code", "pre"],
+  }}
+  htmlElements={{
+    kbd: CustomKbd,
+    callout: CalloutView,
+  }}
+/>
+```
+
+- **`allowedTags`**: Maps allowed custom or standard HTML tag names to an allowlist of permitted attribute names. Unlisted attributes are stripped during worker sanitization.
+- **`literalTagContent`**: Array of tag names whose text contents must **not** be parsed as markdown (treated as literal raw text). For tags not in this list, inner markdown formatting (e.g. `<span>**bold**</span>`) is parsed and rendered.
+- **`htmlElements`**: Map of custom React components for rendering allowed HTML tags.
+
+---
+
+## 3) Worker In-Process Extensions
+
+When hosting or bundling your own markdown worker, you can inject native Lezer and document extensions directly into the `MarkdownEngine`:
+
+```ts
+import { serveMarkdownWorker, createInlineEngineWorker } from "@stream-mdx/worker/engine";
+
+serveMarkdownWorker({
+  extensions: {
+    markdown: [ /* Lezer MarkdownConfig extensions */ ],
+    inline: [ /* Lezer InlineExtension objects */ ],
+    documentPlugins: [ /* DocumentPlugin instances */ ],
+    syntax: [ /* Server-side default SyntaxRuleSpec rules */ ],
+  },
+});
+```
+
+For main-thread execution or embedded environments without a separate worker process, `createInlineEngineWorker({ extensions })` accepts the exact same options.
+
+---
+
+## 4) Document Plugins (`DocumentPlugin`)
+
+Document plugins run post-parse within the `MarkdownEngine` instance:
 
 ```ts
 export interface DocumentPlugin {
@@ -51,138 +116,4 @@ export interface DocumentPlugin {
 }
 ```
 
-### 1.3 Inline Plugins (core inline parser)
-Inline plugins live in `@stream-mdx/core` and plug into `InlineParser`:
-
-- `InlinePlugin` (AST visitor)
-- `RegexInlinePlugin`
-- `ASTInlinePlugin`
-
-These run over inline nodes for paragraphs/list items. See `packages/markdown-v2-core/src/types.ts` and `inline-parser.ts`.
-
----
-
-## 2) Registration APIs
-
-### 2.1 Markdown Plugins
-Use the global registry exported from `@stream-mdx/plugins`:
-
-```ts
-import { globalPluginRegistry } from "@stream-mdx/plugins";
-import type { MarkdownPlugin } from "@stream-mdx/plugins";
-
-const myPlugin: MarkdownPlugin = {
-  name: "my-plugin",
-  priority: 50,
-  patterns: {
-    start: /@@/,
-    end: /@@/,
-    full: /@@[\s\S]+?@@/,
-    multiline: true,
-    minLength: 4,
-  },
-  tokenizer: myTokenizer,
-  streamingHandler: myStreamingHandler,
-};
-
-globalPluginRegistry.register(myPlugin);
-```
-
-### 2.2 Document Plugins
-
-Document plugins run inside the engine that parses the document, so they are registered per engine.
-In a worker entry (bundled by your app):
-
-```ts
-import { serveMarkdownWorker } from "@stream-mdx/worker/engine";
-
-serveMarkdownWorker({
-  extensions: {
-    documentPlugins: [
-      {
-        name: "my-doc-plugin",
-        process(ctx) {
-          // mutate ctx.blocks or append synthetic blocks
-          return { syntheticBlocks: [] };
-        },
-      },
-    ],
-  },
-});
-```
-
----
-
-## 3) Conflict Resolution
-
-`PluginRegistry` supports multiple conflict strategies:
-
-- `PRIORITY` (default)
-- `LONGEST_MATCH`
-- `CONFIDENCE`
-- `FIRST_REGISTERED`
-
-Set via:
-
-```ts
-import { ConflictResolution, globalPluginRegistry } from "@stream-mdx/plugins";
-
-globalPluginRegistry.setConflictResolution(ConflictResolution.PRIORITY);
-```
-
----
-
-## 4) Streaming Handler Contract
-
-`IncrementalMatchHandler` must be deterministic and inexpensive:
-
-- `checkPartialMatch(content)` should be **fast** (ideally regex + minimal parsing)
-- `completeMatch(content)` should return:
-  - `success` boolean
-  - `metadata` with `start`, `end`, `plugin`, `type`, and `data`
-
-If you cannot complete a match quickly, return `success: false` rather than blocking the worker.
-
----
-
-## 5) Protected Ranges
-
-The worker maintains **protected ranges** (math, code, HTML, autolinks). Plugins should **avoid** mutating or claiming ranges that overlap protected spans unless explicitly intended.
-
-Guidelines:
-
-- If your plugin introduces new inline syntax that should not be interpreted as MDX/HTML, add protected ranges to `meta.protectedRanges` (worker path).
-- Avoid defining patterns that overlap `$...$`, `` `...` ``, fenced code, or HTML blocks unless you also supply a conflict strategy.
-
----
-
-## 6) Performance & Safety Guidance
-
-- **Regex patterns**: avoid catastrophic backtracking; prefer anchored or bounded regex.
-- **Streaming handler**: keep partial checks O(n) or better for the examined chunk.
-- **Tokenizer**: avoid heavy allocations per token.
-- **Avoid global state** unless you explicitly reset it in `reset()` or `onBegin()`.
-
----
-
-## 7) Testing & Validation
-
-Recommended checks for custom plugins:
-
-- Unit tests for match boundaries and conflict resolution.
-- Streaming tests with chunked input (ensure incremental matches finalize correctly).
-- Replay harness: record patches and verify deterministic output.
-
-Helpful tooling:
-
-- `scripts/capture-content-mixing.ts`
-- `scripts/run-markdown-v2-capture.ts`
-- `scripts/replay-markdown-patches.ts`
-
----
-
-## 8) Related Docs
-
-- `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`
-- `docs/REACT_INTEGRATION_GUIDE.md`
-- `docs/PUBLIC_API.md`
+Registered document plugins can inspect and mutate AST blocks or append synthetic blocks (e.g. footnotes, TOC metadata).

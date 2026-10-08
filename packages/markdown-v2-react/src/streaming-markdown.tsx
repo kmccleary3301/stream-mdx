@@ -30,6 +30,8 @@ interface StreamingMarkdownConfigSignature {
   mdxStrategy?: "server" | "worker";
   mdxComponentKeys: string[];
   mdxHydration?: MdxHydrationOptions;
+  syntax?: SyntaxRuleSpec[];
+  html?: HtmlOptions;
 }
 
 export interface StreamingSchedulerOptions {
@@ -329,8 +331,10 @@ function StreamingMarkdownComponent(
         mdxStrategy: mdxCompileMode,
         mdxComponentKeys: mdxComponents ? Object.keys(mdxComponents).sort() : [],
         mdxHydration,
+        syntax,
+        html,
       }),
-    [features, prewarmLangs, effectiveScheduling, mdxCompileMode, mdxComponents, mdxHydration],
+    [features, prewarmLangs, effectiveScheduling, mdxCompileMode, mdxComponents, mdxHydration, syntax, html],
   );
 
   const mdxHydrationController = useMemo(() => createMdxHydrationController(mdxHydration), [mdxHydration]);

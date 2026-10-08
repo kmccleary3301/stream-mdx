@@ -8,6 +8,8 @@ export interface RenderInlineHtmlOptions {
   renderers?: InlineHtmlRendererMap;
   className?: string;
   htmlElements?: HtmlElements;
+  literalTagContent?: string[];
+  parseMarkdown?: (text: string) => React.ReactNode;
 }
 
 const BACKTICK_CONTENT = /^`([\s\S]+)`$/;
@@ -38,17 +40,10 @@ export function renderInlineHtmlSegment(
   if (!descriptor) {
     return null;
   }
-  const customElementComp = options.htmlElements?.[descriptor.tagName];
-  if (customElementComp) {
-    const props = mapAttributesToProps(descriptor.attributes);
-    if (options.key !== undefined && options.key !== null) {
-      props.key = options.key;
-    }
-    return React.createElement(customElementComp, props, descriptor.text || descriptor.sanitizedInner || undefined);
-  }
 
   const className = options.className ?? "markdown-inline-html";
-  const isInlineTag = INLINE_ELEMENTS.has(descriptor.tagName);
+  const hasCustomElement = Boolean(options.htmlElements?.[descriptor.tagName]);
+  const isInlineTag = INLINE_ELEMENTS.has(descriptor.tagName) || hasCustomElement;
 
   const defaultRender = () => {
     if (!descriptor.sanitized || descriptor.sanitized.length === 0) {
@@ -62,10 +57,25 @@ export function renderInlineHtmlSegment(
     }
 
     if (isInlineTag) {
-      const parsedElement = renderSanitizedHtmlTree(descriptor.sanitized, options.key, options.htmlElements);
+      const parsedElement = renderSanitizedHtmlTree(
+        descriptor.sanitized,
+        options.key,
+        options.htmlElements,
+        options.literalTagContent,
+        options.parseMarkdown,
+      );
       if (parsedElement) {
         return parsedElement;
       }
+    }
+
+    const customElementComp = options.htmlElements?.[descriptor.tagName];
+    if (customElementComp) {
+      const props = mapAttributesToProps(descriptor.attributes);
+      if (options.key !== undefined && options.key !== null) {
+        props.key = options.key;
+      }
+      return React.createElement(customElementComp, props, descriptor.text || descriptor.sanitizedInner || undefined);
     }
 
     const props: React.HTMLAttributes<HTMLSpanElement> & { key?: React.Key } = {
@@ -78,15 +88,17 @@ export function renderInlineHtmlSegment(
     return React.createElement("span", props);
   };
 
-  const allRenderers = options.renderers ? { ...DEFAULT_INLINE_HTML_RENDERERS, ...options.renderers } : DEFAULT_INLINE_HTML_RENDERERS;
-  const renderer = allRenderers[descriptor.tagName];
-  if (renderer) {
-    const rendered = renderer(descriptor, { key: options.key, defaultRender });
-    if (rendered) {
-      if (options.key !== undefined && options.key !== null && React.isValidElement(rendered) && rendered.key === null) {
-        return React.cloneElement(rendered, { key: options.key });
+  if (!hasCustomElement) {
+    const allRenderers = options.renderers ? { ...DEFAULT_INLINE_HTML_RENDERERS, ...options.renderers } : DEFAULT_INLINE_HTML_RENDERERS;
+    const renderer = allRenderers[descriptor.tagName];
+    if (renderer) {
+      const rendered = renderer(descriptor, { key: options.key, defaultRender });
+      if (rendered) {
+        if (options.key !== undefined && options.key !== null && React.isValidElement(rendered) && rendered.key === null) {
+          return React.cloneElement(rendered, { key: options.key });
+        }
+        return rendered;
       }
-      return rendered;
     }
   }
 
@@ -198,7 +210,15 @@ function extractPlainText(value: string): string {
   return decodeHtmlEntities(withoutTags);
 }
 
-function renderSanitizedHtmlTree(html: string, key: React.Key | undefined, htmlElements?: HtmlElements): React.ReactElement | null {
+const DEFAULT_LITERAL_TAGS = new Set(["code", "pre", "kbd", "script", "style", "textarea"]);
+
+function renderSanitizedHtmlTree(
+  html: string,
+  key: React.Key | undefined,
+  htmlElements?: HtmlElements,
+  literalTagContent?: string[],
+  parseMarkdown?: (text: string) => React.ReactNode,
+): React.ReactElement | null {
   if (typeof DOMParser === "undefined") {
     return null;
   }
@@ -211,9 +231,13 @@ function renderSanitizedHtmlTree(html: string, key: React.Key | undefined, htmlE
       return null;
     }
 
+    const literalTags = literalTagContent
+      ? new Set([...DEFAULT_LITERAL_TAGS, ...literalTagContent.map((t) => t.toLowerCase())])
+      : DEFAULT_LITERAL_TAGS;
+
     const baseKey = typeof key === "string" || typeof key === "number" ? String(key) : "inline-html";
     const children = nodes
-      .map((node, index) => convertDomNode(node, `${baseKey}-${index}`, htmlElements))
+      .map((node, index) => convertDomNode(node, `${baseKey}-${index}`, htmlElements, literalTags, false, parseMarkdown))
       .filter((child): child is React.ReactNode => child !== null && child !== undefined);
 
     if (children.length === 0) {
@@ -243,9 +267,20 @@ function renderSanitizedHtmlTree(html: string, key: React.Key | undefined, htmlE
   }
 }
 
-function convertDomNode(node: Node, key: string, htmlElements?: HtmlElements): React.ReactNode | null {
+function convertDomNode(
+  node: Node,
+  key: string,
+  htmlElements?: HtmlElements,
+  literalTags?: Set<string>,
+  parentIsLiteral?: boolean,
+  parseMarkdown?: (text: string) => React.ReactNode,
+): React.ReactNode | null {
   if (node.nodeType === Node.TEXT_NODE) {
-    return node.textContent ?? "";
+    const rawText = node.textContent ?? "";
+    if (parentIsLiteral || !parseMarkdown) {
+      return rawText;
+    }
+    return parseMarkdown(rawText);
   }
   if (node.nodeType !== Node.ELEMENT_NODE) {
     return null;
@@ -255,9 +290,10 @@ function convertDomNode(node: Node, key: string, htmlElements?: HtmlElements): R
   const attrs = getElementAttributes(element);
   const props = mapAttributesToProps(attrs);
   props.key = key;
+  const isLiteral = parentIsLiteral || (literalTags ? literalTags.has(tagName) : false);
   const children: React.ReactNode[] = [];
   element.childNodes.forEach((child, index) => {
-    const converted = convertDomNode(child, `${key}-${index}`, htmlElements);
+    const converted = convertDomNode(child, `${key}-${index}`, htmlElements, literalTags, isLiteral, parseMarkdown);
     if (converted !== null && converted !== undefined) {
       children.push(converted);
     }

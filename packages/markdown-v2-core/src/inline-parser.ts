@@ -293,7 +293,15 @@ export class InlineParser {
         }
       } else {
         if (!afterOpen.includes(close)) {
-          return close;
+          let needed = close;
+          for (let len = close.length - 1; len > 0; len--) {
+            const prefix = close.slice(0, len);
+            if (content.endsWith(prefix)) {
+              needed = close.slice(len);
+              break;
+            }
+          }
+          return needed;
         }
       }
     }

@@ -20,6 +20,7 @@ export interface MixedContentOptions {
   protectedRanges?: ReadonlyArray<ProtectedRange>;
   protectedRangeKinds?: ReadonlyArray<ProtectedRange["kind"]>;
   allowedTags?: Record<string, string[]>;
+  literalTagContent?: string[];
 }
 
 const DEFAULT_INLINE_HTML_AUTOCLOSE_TAGS = new Set([

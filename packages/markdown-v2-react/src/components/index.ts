@@ -4,7 +4,7 @@ export * from "./artifact-frame";
 export * from "./diff-renderer";
 export * from "./katex-math";
 
-import { createTrustedHTML, sanitizeHTML, stripCodeFence } from "@stream-mdx/core";
+import { InlineParser, createTrustedHTML, sanitizeHTML, stripCodeFence } from "@stream-mdx/core";
 import { markMdxHydrated, markMdxHydrationError, markMdxHydrationStart } from "../mdx-hydration-metrics";
 import { MdxHydrationContext } from "../mdx-hydration-context";
 import { loadMdxRuntime } from "../mdx-runtime";
@@ -273,12 +273,15 @@ export const defaultBlockComponents: BlockComponents = {
     );
   },
 
-  heading: ({ level, inlines, text, meta }) => {
+  heading: ({ level, inlines, text, meta, children }) => {
     const tag = `h${level}` as keyof JSX.IntrinsicElements;
     const onlyPlainText = Array.isArray(inlines) && inlines.length > 0 && inlines.every((node) => node.kind === "text");
-    const children = onlyPlainText
-      ? inlines.map((node) => (node.kind === "text" ? node.text : "")).join("")
-      : renderInlineNodes(inlines, defaultInlineComponents);
+    const content =
+      children !== undefined
+        ? children
+        : onlyPlainText
+          ? inlines.map((node) => (node.kind === "text" ? node.text : "")).join("")
+          : renderInlineNodes(inlines, defaultInlineComponents);
     const headingId = typeof meta?.headingId === "string" && meta.headingId.length > 0 ? meta.headingId : undefined;
     return React.createElement(
       tag,
@@ -287,7 +290,7 @@ export const defaultBlockComponents: BlockComponents = {
         ...(text ? { "data-heading-text": text } : {}),
         ...(headingId ? { id: headingId, "data-heading-id": headingId } : {}),
       },
-      children,
+      content,
     );
   },
 
@@ -380,15 +383,14 @@ export const defaultBlockComponents: BlockComponents = {
     );
   },
 
-  html: ({ __trustedHtml, elements }) => {
+  html: ({ __trustedHtml, elements, isSanitized, literalTagContent }) => {
     const raw = typeof __trustedHtml === "string" ? __trustedHtml : __trustedHtml.toString();
-    // Worker-compiled flows already sanitize HTML at the source.
-    // On the server we may not have a DOM available for DOMPurify, so keep the
-    // HTML string as-is in that environment.
-    const htmlString = typeof window === "undefined" ? raw : sanitizeHTML(raw);
+    // Worker-compiled flows already sanitize HTML at the source using configured allowedTags.
+    // Re-sanitizing on the client with fixed DOMPurify policies would strip configured allowed custom tags/attributes.
+    const htmlString = isSanitized || typeof window === "undefined" ? raw : sanitizeHTML(raw);
     // If client and mapping provided, convert to React tree using mapping
     if (typeof window !== "undefined" && elements) {
-      const content = mapHtmlToReact(htmlString, elements);
+      const content = mapHtmlToReact(htmlString, elements, literalTagContent);
       return React.createElement("div", { className: "markdown-html" }, content);
     }
     // Fallback: trusted injection
@@ -672,6 +674,7 @@ export class ComponentRegistry {
   private inlineComponents: InlineComponents;
   private htmlElements: HtmlElements;
   private tableElements: TableElements;
+  private literalTagContent?: string[];
   private codeRenderers: Record<string, CodeFenceRenderer> = {};
   private artifactHtml = false;
   private linkHandler: ((url: string) => void) | undefined;
@@ -781,6 +784,16 @@ export class ComponentRegistry {
     return this.htmlElements;
   }
 
+  /** Update literal tag content list */
+  setLiteralTagContent(tags?: string[]): void {
+    this.literalTagContent = tags;
+  }
+
+  /** Get literal tag content list */
+  getLiteralTagContent(): string[] | undefined {
+    return this.literalTagContent;
+  }
+
   /** Update table element mapping for table blocks */
   setTableElements(map: Partial<TableElements>): void {
     this.tableElements = { ...this.tableElements, ...map } as TableElements;
@@ -887,14 +900,15 @@ export class ComponentRegistry {
         const headingText =
           typeof meta.headingText === "string" && meta.headingText.trim().length > 0 ? (meta.headingText as string) : removeHeadingMarkers(rawHeading).trim();
         const level = (normalizedLevel ?? this.extractHeadingLevel(rawHeading)) as 1 | 2 | 3 | 4 | 5 | 6;
+        const renderedChildren = renderInlineNodes(inlineNodes, this.inlineComponents);
         return {
           level,
           inlines: inlineNodes,
           text: headingText,
           meta,
+          children: renderedChildren,
         };
       }
-
       case "paragraph":
         return {
           inlines: block.payload.inline || [],
@@ -904,6 +918,7 @@ export class ComponentRegistry {
       case "blockquote":
         return {
           inlines: block.payload.inline || [],
+          renderedContent: renderInlineNodes(block.payload.inline || [], this.inlineComponents),
         };
 
       case "hr": {
@@ -931,12 +946,15 @@ export class ComponentRegistry {
       }
 
       case "html": {
-        const trusted = block.payload.sanitizedHtml ?? block.payload.raw;
+        const isWorkerSanitized = Boolean(
+          block.payload.sanitizedHtml || (block.payload.meta as { sanitized?: boolean } | undefined)?.sanitized,
+        );
+        const content = block.payload.sanitizedHtml ?? block.payload.raw ?? "";
         return {
-          // Server render should not depend on DOMPurify (which requires a DOM `window`).
-          // In worker-compiled flows, `sanitizedHtml` is already sanitized at the source.
-          __trustedHtml: typeof window === "undefined" ? String(trusted ?? "") : createTrustedHTML(String(trusted ?? "")),
+          __trustedHtml: isWorkerSanitized || typeof window === "undefined" ? String(content) : createTrustedHTML(String(content)),
           elements: this.htmlElements,
+          isSanitized: isWorkerSanitized,
+          literalTagContent: this.literalTagContent,
         };
       }
 
@@ -1055,12 +1073,25 @@ function getDefaultTableElements(overrides?: Partial<TableElements>): TableEleme
   return { ...base, ...(overrides || {}) };
 }
 
-export function mapHtmlToReact(html: string, elements: HtmlElements): React.ReactNode {
-  const parser = new DOMParser();
+const DEFAULT_LITERAL_TAGS = new Set(["code", "pre", "kbd", "script", "style", "textarea"]);
+
+export function mapHtmlToReact(
+  html: string,
+  elements: HtmlElements,
+  literalTagContent?: string[],
+  parseMarkdown?: (text: string) => React.ReactNode,
+): React.ReactNode {
+  const ParserClass = typeof DOMParser !== "undefined" ? DOMParser : typeof window !== "undefined" ? window.DOMParser : undefined;
+  if (!ParserClass) return null;
+  const parser = new ParserClass();
   const doc = parser.parseFromString(html, "text/html");
   const children: React.ReactNode[] = [];
+  const literalTags = literalTagContent
+    ? new Set([...DEFAULT_LITERAL_TAGS, ...literalTagContent.map((t) => t.toLowerCase())])
+    : DEFAULT_LITERAL_TAGS;
+
   doc.body.childNodes.forEach((node, index) => {
-    const element = toReact(node, elements, `root-${index}`);
+    const element = toReact(node, elements, `root-${index}`, undefined, literalTags, false, parseMarkdown);
     if (element) {
       children.push(element);
     }
@@ -1070,13 +1101,22 @@ export function mapHtmlToReact(html: string, elements: HtmlElements): React.Reac
 
 const TABLE_TEXT_FORBIDDEN_PARENTS = new Set(["table", "thead", "tbody", "tfoot", "tr", "colgroup"]);
 
-function toReact(node: Node, elements: HtmlElements, key: string, parentTag?: string): React.ReactElement | null {
+function toReact(
+  node: Node,
+  elements: HtmlElements,
+  key: string,
+  parentTag?: string,
+  literalTags?: Set<string>,
+  parentIsLiteral?: boolean,
+  parseMarkdown?: (text: string) => React.ReactNode,
+): React.ReactElement | null {
   if (node.nodeType === Node.TEXT_NODE) {
     const text = node.textContent ?? "";
     if (parentTag && TABLE_TEXT_FORBIDDEN_PARENTS.has(parentTag) && text.trim().length === 0) {
       return null;
     }
-    return React.createElement(React.Fragment, { key }, text);
+    const content = parentIsLiteral || !parseMarkdown ? text : parseMarkdown(text);
+    return React.createElement(React.Fragment, { key }, content);
   }
   if (node.nodeType !== Node.ELEMENT_NODE) {
     return null;
@@ -1084,6 +1124,7 @@ function toReact(node: Node, elements: HtmlElements, key: string, parentTag?: st
 
   const el = node as HTMLElement;
   const tag = el.tagName.toLowerCase();
+  const isLiteral = parentIsLiteral || (literalTags ? literalTags.has(tag) : false);
   const props: Record<string, unknown> = {};
   for (const attr of Array.from(el.attributes)) {
     const name = attr.name === "class" ? "className" : attr.name;
@@ -1091,7 +1132,7 @@ function toReact(node: Node, elements: HtmlElements, key: string, parentTag?: st
   }
   const children: React.ReactNode[] = [];
   el.childNodes.forEach((childNode, childIndex) => {
-    const child = toReact(childNode, elements, `${key}-${childIndex}`, tag);
+    const child = toReact(childNode, elements, `${key}-${childIndex}`, tag, literalTags, isLiteral, parseMarkdown);
     if (child) {
       children.push(child);
     }
@@ -1148,6 +1189,7 @@ export function renderParagraphMixedSegments(
   inlineComponents: InlineComponents,
   inlineHtmlRenderers: InlineHtmlRendererMap,
   htmlElements?: HtmlElements,
+  literalTagContent?: string[],
 ): React.ReactNode[] {
   const result: React.ReactNode[] = [];
   let inlineBuffer: React.ReactNode[] = [];
@@ -1243,10 +1285,18 @@ export function renderParagraphMixedSegments(
       case "html": {
         const html = segment.sanitized ?? segment.value;
         const isBlockLevel = isBlockLevelHtml(html);
+        const parseMarkdown = (text: string) => {
+          if (!text || (!text.includes("*") && !text.includes("_") && !text.includes("[") && !text.includes("`") && !text.includes("#"))) {
+            return text;
+          }
+          return renderInlineNodes(new InlineParser().parse(text), inlineComponents);
+        };
         const element = renderInlineHtmlSegment(segment.value, segment.sanitized, {
           key,
           renderers: inlineHtmlRenderers,
           htmlElements,
+          literalTagContent,
+          parseMarkdown,
         });
         if (isBlockLevel) {
           flushInline();

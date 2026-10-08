@@ -842,17 +842,19 @@ export class MarkdownEngine {
     }
     let preparedContent = prepared.content;
     let appended = prepared.appended;
+    let status = prepared.status;
     if (this.formatAnticipationConfig.regex || this.syntaxRules.some((r) => r.anticipation)) {
       const regexAppend = this.inlineParser.getRegexAnticipationAppend(content);
       if (regexAppend) {
         preparedContent += regexAppend;
         appended += regexAppend;
+        status = "anticipated";
       }
     }
     const inlines = this.inlineParser.parse(preparedContent);
     return {
       inline: inlines,
-      status: prepared.status,
+      status,
     };
   }
 
@@ -863,7 +865,12 @@ export class MarkdownEngine {
     const rawLength = typeof block.payload.raw === "string" ? block.payload.raw.length : 0;
     metrics?.recordBlockSize(block.type, rawLength);
 
-    const shouldTrackInline = this.formatAnticipationConfig.inline || this.formatAnticipationConfig.mathInline || this.formatAnticipationConfig.mathBlock;
+    const shouldTrackInline =
+      this.formatAnticipationConfig.inline ||
+      this.formatAnticipationConfig.mathInline ||
+      this.formatAnticipationConfig.mathBlock ||
+      this.formatAnticipationConfig.regex ||
+      this.syntaxRules.some((r) => r.anticipation);
     const allowMixed = this.formatAnticipationConfig.html || this.formatAnticipationConfig.mdx;
 
     switch (block.type) {
@@ -967,6 +974,7 @@ export class MarkdownEngine {
             ...mixedOptions,
             ...(protectedRangesAbsolute ? { protectedRanges: protectedRangesAbsolute } : {}),
             ...(this.htmlConfig?.allowedTags ? { allowedTags: this.htmlConfig.allowedTags } : {}),
+            ...(this.htmlConfig?.literalTagContent ? { literalTagContent: this.htmlConfig.literalTagContent } : {}),
           };
           const inlineFn = block.isFinalized ? (v: string) => this.inlineParser.parse(v) : (v: string) => this.parseInlineStreaming(v).inline;
           const segments = extractMixedContentSegments(rawParagraph, baseOffset, inlineFn, mixedSegmentOptions);
