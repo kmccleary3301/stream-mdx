@@ -35,6 +35,7 @@ export function buildTocHeadings(blocksInput: Block[]): TocHeading[] {
     const text = typeof meta.headingText === "string" ? meta.headingText : String(block.payload.raw ?? "");
     headings.push({
       id: id || "heading",
+      blockId: block.id,
       level,
       text: text.trim(),
     });
@@ -45,7 +46,7 @@ export function buildTocHeadings(blocksInput: Block[]): TocHeading[] {
 
 export function tocSignatureFor(headings: TocHeading[]): string {
   if (headings.length === 0) return "";
-  return headings.map((heading) => `${heading.id}:${heading.level}:${heading.text}`).join("|");
+  return headings.map((heading) => `${heading.blockId}:${heading.id}:${heading.level}:${heading.text}`).join("|");
 }
 
 export function maybeBuildTocPatch(
