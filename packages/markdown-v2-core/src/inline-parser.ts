@@ -2,6 +2,7 @@ import { GFM, type MarkdownConfig, type MarkdownExtension, type MarkdownParser, 
 import { LezerInlineConverter } from "./inline/lezer-converter";
 import { createMathExtension } from "./inline/math-extension";
 import { HtmlCommentCompatibility } from "./inline/html-extension";
+import { FtpAutolink } from "./inline/ftp-autolink-extension";
 import { compileRegexPluginToExtension, compileSyntaxRuleToExtension, createDefaultRegexPlugins } from "./inline/plugin-adapter";
 import type { InlineExtension, InlineParseOptions, InlineParserOptions, LinkReferenceMap, MarkdownElement } from "./inline/types";
 import { normalizeLinkLabel } from "./inline/reference-collector";
@@ -183,6 +184,7 @@ export class InlineParser {
   private rebuildParser(): void {
     const lezerConfigs: (MarkdownConfig | readonly MarkdownExtension[])[] = [
       GFM,
+      FtpAutolink,
       referenceGuardExtension,
       HtmlCommentCompatibility,
     ];
