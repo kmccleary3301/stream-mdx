@@ -601,13 +601,10 @@ const ListItemView: React.FC<{
       data-list-item-id={listDebugEnabled ? nodeId : undefined}
     >
       {isTask ? (
-        <div className="markdown-task">
-          <input type="checkbox" className="markdown-task-checkbox" checked={isChecked} readOnly disabled tabIndex={-1} aria-checked={isChecked} />
-          <span className="markdown-task-content">{primaryContent}</span>
-        </div>
-      ) : (
-        primaryContent
-      )}
+        <input type="checkbox" className="markdown-task-checkbox" checked={isChecked} readOnly disabled tabIndex={-1} aria-checked={isChecked} />
+      ) : null}
+      {isTask ? " " : null}
+      {primaryContent}
       {hasChildren ? <div className="markdown-list-item-children">{filteredChildren}</div> : null}
     </li>
   );

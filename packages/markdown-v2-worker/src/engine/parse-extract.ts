@@ -327,3 +327,76 @@ export function collectChangedBlockIds(previousBlocks: Block[], nextBlocks: Bloc
   }
   return ids;
 }
+
+export function parseGfmTableFromTree(
+  raw: string,
+  inlineParser: InlineParser,
+): { header: InlineNode[][]; align: ("left" | "center" | "right" | null)[]; rows: InlineNode[][][] } | null {
+  const lines = raw.split("\n").filter((l) => l.trim().length > 0);
+  if (lines.length < 2) return null;
+  const headerLine = lines[0];
+  const delimLine = lines[1];
+  const bodyLines = lines.slice(2);
+
+  const splitCells = (line: string): string[] => {
+    let trimmed = line.trim();
+    if (trimmed.startsWith("|")) trimmed = trimmed.slice(1);
+    if (trimmed.endsWith("|")) {
+      let count = 0;
+      let j = trimmed.length - 2;
+      while (j >= 0 && trimmed[j] === "\\") {
+        count++;
+        j--;
+      }
+      if (count % 2 === 0) {
+        trimmed = trimmed.slice(0, -1);
+      }
+    }
+    const cells: string[] = [];
+    let cur = "";
+    let inCode = false;
+    for (let i = 0; i < trimmed.length; i++) {
+      const ch = trimmed[i];
+      if (ch === "`") {
+        inCode = !inCode;
+        cur += ch;
+      } else if (ch === "\\" && i + 1 < trimmed.length) {
+        cur += ch + trimmed[i + 1];
+        i++;
+      } else if (ch === "|" && !inCode) {
+        cells.push(cur.trim());
+        cur = "";
+      } else {
+        cur += ch;
+      }
+    }
+    cells.push(cur.trim());
+    return cells;
+  };
+
+  const headerCells = splitCells(headerLine);
+  const delimCells = splitCells(delimLine);
+  if (headerCells.length === 0 || delimCells.length === 0) return null;
+
+  const align: ("left" | "center" | "right" | null)[] = delimCells.map((cell) => {
+    const left = cell.startsWith(":");
+    const right = cell.endsWith(":");
+    if (left && right) return "center";
+    if (left) return "left";
+    if (right) return "right";
+    return null;
+  });
+
+  const header = headerCells.map((c) => inlineParser.parse(c.replace(/\\\|/g, "|")));
+  const colCount = header.length;
+
+  const rows: InlineNode[][][] = bodyLines.map((line) => {
+    const rowCells = splitCells(line);
+    while (rowCells.length < colCount) {
+      rowCells.push("");
+    }
+    return rowCells.slice(0, colCount).map((c) => inlineParser.parse(c.replace(/\\\|/g, "|")));
+  });
+
+  return { header, align: align.slice(0, colCount), rows };
+}

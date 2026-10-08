@@ -1,5 +1,5 @@
 import type { Tree } from "@lezer/common";
-import { parser as mdParser } from "@lezer/markdown";
+import { GFM, parser as mdParser } from "@lezer/markdown";
 import type {
   Block,
   CodeHighlightOutputMode,
@@ -102,6 +102,7 @@ import {
   computeChangedRanges,
   enrichListBlock,
   maybeBuildTocPatch,
+  parseGfmTableFromTree,
   reportWorkerStructuralInvariantViolations,
   slugifyHeading,
 } from "./parse-extract";
@@ -235,11 +236,8 @@ export class MarkdownEngine {
     this.postFn = options.post;
     this.extensions = options.extensions;
 
-    if (this.extensions?.markdown && this.extensions.markdown.length > 0) {
-      this.mdParser = mdParser.configure(this.extensions.markdown);
-    } else {
-      this.mdParser = mdParser;
-    }
+    const markdownExtensions = [GFM, ...(this.extensions?.markdown ?? [])];
+    this.mdParser = mdParser.configure(markdownExtensions);
 
     this.documentPluginRegistry = new DocumentPluginRegistry();
     if (this.extensions?.documentPlugins) {
@@ -792,8 +790,13 @@ export class MarkdownEngine {
   ): Promise<Block | null> {
     if (!raw.trim()) return null;
 
-    const id = generateBlockId(`${from}:${type}`, type);
     const isFinalized = options.forceFinalize ? true : to < fullContent.length - 1;
+    let blockType = type;
+    if (blockType === "table" && !isFinalized) {
+      blockType = "paragraph";
+    }
+
+    const id = generateBlockId(`${from}:${blockType}`, blockType);
 
     const initialMeta: Record<string, unknown> = {};
     if (nodeType === "SetextHeading1") {
@@ -809,7 +812,7 @@ export class MarkdownEngine {
 
     const block: Block = {
       id,
-      type,
+      type: blockType,
       isFinalized,
       payload: {
         raw,
@@ -1047,8 +1050,21 @@ export class MarkdownEngine {
       case "list":
         enrichListBlock(block, this.inlineParser, this.enableMath, this.formatAnticipationConfig);
         break;
-    }
 
+      case "table": {
+        const tableData = parseGfmTableFromTree(block.payload.raw ?? "", this.inlineParser);
+        if (tableData) {
+          block.payload.inline = [];
+          block.payload.meta = {
+            ...(block.payload.meta ?? {}),
+            header: tableData.header,
+            align: tableData.align,
+            rows: tableData.rows,
+          };
+        }
+        break;
+      }
+    }
     if (block.type === "paragraph" || block.type === "html") {
       const maybeMeta = block.payload.meta as Record<string, unknown> | undefined;
       const protectedRanges = Array.isArray(maybeMeta?.protectedRanges) ? (maybeMeta?.protectedRanges as ProtectedRange[]) : undefined;

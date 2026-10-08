@@ -10,6 +10,7 @@ const BLOCK_NODE_TYPES = new Set([
   "BulletList",
   "OrderedList",
   "HTMLBlock",
+  "Table",
   "ThematicBreak",
   "HorizontalRule",
   "ATXHeading",
@@ -54,6 +55,8 @@ export function mapLezerNodeToBlockType(nodeType: string): string {
       return "list";
     case "HTMLBlock":
       return "html";
+    case "Table":
+      return "table";
     case "ThematicBreak":
     case "HorizontalRule":
       return "hr";
