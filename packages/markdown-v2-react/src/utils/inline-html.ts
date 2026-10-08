@@ -18,6 +18,7 @@ export function renderHtmlInlineNode(
   children: React.ReactNode,
   elements?: HtmlElements,
   key?: React.Key,
+  textValue?: string,
 ): React.ReactElement | null {
   if (node.isClose || node.tagName === "script" || node.tagName === "style") return null;
   if (!node.tagName || node.sanitized === "") {
@@ -25,6 +26,10 @@ export function renderHtmlInlineNode(
   }
   const props = mapAttributesToProps(node.attributes ?? {});
   props.key = key;
+  if (node.tagName === "textarea") {
+    props.defaultValue = textValue ?? "";
+    return React.createElement(elements?.[node.tagName] ?? node.tagName, props);
+  }
   return React.createElement(elements?.[node.tagName] ?? node.tagName, props, node.isSelfClosing ? undefined : children);
 }
 
@@ -33,6 +38,7 @@ export function renderHtmlOwnershipTree(
   elements: HtmlElements,
   renderBlock: (block: Extract<HtmlTreeNode, { kind: "block" }>["block"]) => React.ReactNode,
   renderInline?: (nodes: InlineNode[]) => React.ReactNode,
+  renderInlineElement?: (node: InlineNode, children: React.ReactNode) => React.ReactNode,
 ): React.ReactNode {
   return nodes.map((node, index) => {
     if (node.kind === "text") return node.inline && renderInline ? renderInline(node.inline) : node.text;
@@ -43,11 +49,13 @@ export function renderHtmlOwnershipTree(
       props.defaultValue = node.children.map((child) => child.kind === "text" ? child.text : "").join("");
       return React.createElement(elements[node.tagName] ?? node.tagName, props);
     }
-    return React.createElement(
-      elements[node.tagName] ?? node.tagName,
-      props,
-      node.children.length ? renderHtmlOwnershipTree(node.children, elements, renderBlock, renderInline) : undefined,
-    );
+    const children = renderHtmlOwnershipTree(node.children, elements, renderBlock, renderInline, renderInlineElement);
+    if (node.inlineNode && renderInlineElement) {
+      return React.createElement(React.Fragment, { key: index }, renderInlineElement(node.inlineNode, children));
+    }
+    const content = node.leadingNewline ? ["\n", children] : children;
+    return React.createElement(elements[node.tagName] ?? node.tagName, props,
+      node.children.length || node.leadingNewline ? content : undefined);
   });
 }
 

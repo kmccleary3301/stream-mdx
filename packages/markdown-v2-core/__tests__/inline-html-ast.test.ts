@@ -22,7 +22,7 @@ assert.ok(strong?.kind === "strong");
 assert.equal(strong.children[0]?.kind, "plugin");
 assert.deepEqual(nodes[nodes.length - 1], { kind: "text", text: " after" });
 
-assert.deepEqual(parser.parse("<kbd>**literal**</kbd>"), [{ kind: "html", raw: "<kbd>**literal**</kbd>", tagName: "kbd", isSelfClosing: false, attributes: {}, sanitized: undefined, children: [{ kind: "text", text: "**literal**" }] }]);
+assert.deepEqual(parser.parse("<kbd>**literal**</kbd>"), [{ kind: "html", raw: "<kbd>**literal**</kbd>", openingRaw: "<kbd>", closingRaw: "</kbd>", tagName: "kbd", isSelfClosing: false, attributes: {}, sanitized: undefined, children: [{ kind: "text", text: "**literal**" }] }]);
 assert.deepEqual(parser.parse('<a h*#ref="hi">'), [{ kind: "text", text: '<a h*#ref="hi">' }]);
 const quoted = parser.parse('*<img src="foo" title="*"/>');
 assert.deepEqual(quoted[0], { kind: "text", text: "*" });

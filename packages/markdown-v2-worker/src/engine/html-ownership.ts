@@ -109,3 +109,46 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
   flush();
   return result;
 }
+
+/**
+ * Browser reconstruction owns the entire paragraph, not independently auto-closed tag fragments.
+ * The private attribute cannot occur in user source; only generated IR wrappers receive slots.
+ */
+export function normalizeHtmlParagraph(block: Block, options?: HtmlOptions) {
+  const source = block.payload.raw;
+  let attribute = "smdxinline";
+  const lower = source.toLowerCase();
+  while (lower.includes(attribute)) attribute += "x";
+  const inline: InlineNode[] = [];
+  const serialize = (nodes: InlineNode[]): string => nodes.map((node): string => {
+    if (node.kind === "text") return escapeHtml(node.text);
+    if (node.kind === "html") {
+      if (node.isClose) return node.raw;
+      const open = node.openingRaw ?? node.raw;
+      if (node.isSelfClosing) return open;
+      const literal = ["pre", "code", "textarea", ...(options?.literalTagContent ?? [])]
+        .some((tag) => tag.toLowerCase() === node.tagName);
+      const children = literal
+        ? (node.children ?? []).map((child) => child.kind === "text" ? escapeHtml(child.text) : inlineHtml([child])).join("")
+        : serialize(node.children ?? []);
+      return open + children + (node.closingRaw ?? "");
+    }
+    const index = inline.push(node) - 1;
+    const slot = ` ${attribute}="${index}"`;
+    if (node.kind === "strong" || node.kind === "em" || node.kind === "strike" || node.kind === "link") {
+      const tag = node.kind === "strike" ? "del" : node.kind === "link" ? "a" : node.kind;
+      const href = node.kind === "link" && node.href !== undefined ? ` href="${escapeHtml(node.href)}"` : "";
+      return `<${tag}${slot}${href}>${serialize(node.children)}</${tag}>`;
+    }
+    return `<span${slot}>${inlineHtml([node])}</span>`;
+  }).join("");
+  return sanitizeHtmlTreeInWorker(`<p class="markdown-paragraph">${serialize(block.payload.inline ?? [])}</p>\n`, options, { attribute, inline });
+}
+
+export function containsInlineHtml(nodes: InlineNode[]): boolean {
+  for (const node of nodes) {
+    if (node.kind === "html") return true;
+    if ("children" in node && node.children && containsInlineHtml(node.children)) return true;
+  }
+  return false;
+}

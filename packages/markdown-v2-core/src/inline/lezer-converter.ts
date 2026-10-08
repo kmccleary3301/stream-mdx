@@ -206,6 +206,7 @@ export class LezerInlineConverter {
         const end = close?.to ?? to;
         const inner = text.slice(el.to, innerTo);
         converted.raw = text.slice(el.from, end);
+        if (close) converted.closingRaw = text.slice(close.from, close.to);
         const literal = ["code", "pre", "textarea", ...(this.html?.literalTagContent ?? [])]
           .some((tag) => tag.toLowerCase() === converted.tagName);
         converted.children = converted.tagName === "script" || converted.tagName === "style"
@@ -332,6 +333,7 @@ export class LezerInlineConverter {
         return {
           kind: "html",
           raw,
+          openingRaw: raw,
           tagName,
           isSelfClosing: raw.endsWith("/>") || Boolean(VOID_TAGS[tagName]),
           attributes: safe?.kind === "element" ? safe.attributes : undefined,

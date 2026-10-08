@@ -66,7 +66,7 @@ export function sanitizeHtmlInWorker(html: string, options?: { allowedTags?: Rec
 export function sanitizeHtmlTreeInWorker(
   html: string,
   options?: HtmlOptions,
-  marker?: { attribute: string; blocks: Block[] },
+  marker?: { attribute: string; blocks?: Block[]; inline?: InlineNode[] },
   parseInline?: (text: string) => InlineNode[],
 ): HtmlTreeNode[] {
   const schema = createSchema(options?.allowedTags);
@@ -84,6 +84,7 @@ export function sanitizeHtmlTreeInWorker(
     tagName?: string;
     properties?: Record<string, unknown>;
     children?: HtmlAst[];
+    position?: { start: { offset?: number } };
   };
   const convert = (node: HtmlAst, literal = false): HtmlTreeNode[] => {
     if (node.type === "text") {
@@ -98,19 +99,38 @@ export function sanitizeHtmlTreeInWorker(
     const isLiteral = literal || ["pre", "code", "textarea", ...(options?.literalTagContent ?? [])]
       .some((name) => name.toLowerCase() === tag);
     const attributes: Record<string, string> = {};
+    let inlineNode: InlineNode | undefined;
     for (const [name, value] of Object.entries(node.properties ?? {})) {
       if (marker && name === marker.attribute) {
-        const block = marker.blocks[Number(value)];
+        const block = marker.blocks?.[Number(value)];
         if (block) return [{ kind: "block", block }];
+        inlineNode = marker.inline?.[Number(value)];
+        continue;
       }
       if (value !== null && value !== undefined && value !== false) {
         attributes[name] = Array.isArray(value) ? value.join(" ") : value === true ? "" : String(value);
+      }
+    }
+    let leadingNewline = false;
+    if (tag === "pre" && node.position?.start.offset !== undefined) {
+      let quote = "";
+      for (let offset = node.position.start.offset; offset < html.length; offset++) {
+        const char = html[offset];
+        if (quote) {
+          if (char === quote) quote = "";
+        } else if (char === '"' || char === "'") quote = char;
+        else if (char === ">") {
+          leadingNewline = html[offset + 1] === "\n" || html.slice(offset + 1, offset + 3) === "\r\n";
+          break;
+        }
       }
     }
     return [{
       kind: "element",
       tagName: node.tagName ?? "span",
       attributes,
+      ...(inlineNode ? { inlineNode: inlineNode.kind === "link" ? { ...inlineNode, href: attributes.href } : inlineNode } : {}),
+      ...(leadingNewline ? { leadingNewline: true } : {}),
       children: (node.children ?? []).flatMap((child) => convert(child, isLiteral)),
     }];
   };

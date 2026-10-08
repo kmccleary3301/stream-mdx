@@ -11,6 +11,7 @@ import { loadMdxRuntime } from "../mdx-runtime";
 import { useDeferredRender } from "../renderer/use-deferred-render";
 import type {
   Block,
+  HtmlTreeNode,
   InlineNode,
   MixedContentSegment,
 } from "@stream-mdx/core";
@@ -134,10 +135,11 @@ export function renderInlineNodes(nodes: InlineNode[], components: InlineCompone
 
       case "html": {
         const children = node.children ? renderInlineNodes(node.children, components) : undefined;
+        const textValue = node.children?.map((child) => child.kind === "text" ? child.text : "").join("");
         if (components.html) {
-          return React.createElement(components.html, { key, ...node, children });
+          return React.createElement(components.html, { key, ...node, children, textValue });
         }
-        return renderHtmlInlineNode(node, children, undefined, key);
+        return renderHtmlInlineNode(node, children, undefined, key, textValue);
       }
       default: {
         // Handle custom/extensible nodes
@@ -240,6 +242,7 @@ export const defaultInlineComponents: InlineComponents = {
  */
 export const defaultBlockComponents: BlockComponents = {
   paragraph: ({ inlines, raw, meta, children }) => {
+    if (meta?.htmlParagraphTree && children !== undefined) return React.createElement(React.Fragment, {}, children);
     if (children !== undefined) {
       return React.createElement(
         "p",
@@ -713,8 +716,8 @@ export class ComponentRegistry {
     this.inlineComponents = { ...defaultInlineComponents, ...inlineComponents } as InlineComponents;
     this.htmlElements = getDefaultHtmlElements();
     if (!inlineComponents.html) {
-      this.inlineComponents.html = (node: Omit<Extract<InlineNode, { kind: "html" }>, "children"> & { children?: React.ReactNode }) =>
-        renderHtmlInlineNode(node, node.children, this.htmlElements);
+      this.inlineComponents.html = (node: Omit<Extract<InlineNode, { kind: "html" }>, "children"> & { children?: React.ReactNode; textValue?: string }) =>
+        renderHtmlInlineNode(node, node.children, this.htmlElements, undefined, node.textValue);
     }
     this.tableElements = getDefaultTableElements();
     if (codeRenderers) {
@@ -868,6 +871,17 @@ export class ComponentRegistry {
     return this.inlineComponents;
   }
 
+  renderHtmlTree(tree: HtmlTreeNode[], renderBlock: (block: Block) => React.ReactNode = (block) => this.renderBlock(block)): React.ReactNode {
+    return renderHtmlOwnershipTree(tree, this.htmlElements, renderBlock,
+      (nodes) => renderInlineNodes(nodes, this.inlineComponents),
+      (node, children) => {
+        if (node.kind === "strong" || node.kind === "em" || node.kind === "strike" || node.kind === "link") {
+          return React.createElement(this.inlineComponents[node.kind], { ...node, children });
+        }
+        return renderInlineNodes([node], this.inlineComponents);
+      });
+  }
+
   getBlockComponentMap(): BlockComponents {
     if (!this.blockComponentMapCache) {
       this.blockComponentMapCache = { ...this.blockComponents } as BlockComponents;
@@ -987,7 +1001,9 @@ export class ComponentRegistry {
           inlines: block.payload.inline || [],
           raw: block.payload.raw,
           meta: block.payload.meta,
-          children: renderInlineNodes(block.payload.inline ?? [], this.inlineComponents),
+          children: block.payload.meta?.htmlParagraphTree
+            ? this.renderHtmlTree(block.payload.meta.htmlParagraphTree)
+            : renderInlineNodes(block.payload.inline ?? [], this.inlineComponents),
         };
       case "blockquote":
         return {
@@ -1031,8 +1047,7 @@ export class ComponentRegistry {
           isSanitized: isWorkerSanitized,
           literalTagContent: this.literalTagContent,
           children: htmlTree
-            ? renderHtmlOwnershipTree(htmlTree, this.htmlElements, (child) => this.renderBlock(child),
-              (inlines) => renderInlineNodes(inlines, this.inlineComponents))
+            ? this.renderHtmlTree(htmlTree)
             : undefined,
         };
       }
