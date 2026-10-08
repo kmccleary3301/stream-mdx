@@ -165,12 +165,10 @@ function isWithinRanges(start: number, end: number, ranges: Array<{ from: number
  * Parse code fence info (language and metadata)
  */
 export function parseCodeFenceInfo(info: string): { lang: string; meta: Record<string, unknown> } {
-  let decoded = (info || "").replace(/\\([!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~])/g, "$1");
-  try {
-    decoded = decodeHTML5Strict(decoded);
-  } catch {
-    // Keep unescaped if entity decoding fails
-  }
+  const decoded = (info || "").replace(
+    /\\([!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~])|&(?:#[xX][0-9a-fA-F]{1,6}|#[0-9]{1,7}|[a-zA-Z][a-zA-Z0-9]{1,31});/g,
+    (match, escaped: string | undefined) => escaped ?? decodeHTML5Strict(match),
+  );
   const parts = decoded.trim().split(/\s+/);
   const lang = normalizeLang(parts[0]);
   const meta: Record<string, unknown> = {};

@@ -8,12 +8,9 @@ import type {
 } from "@stream-mdx/core";
 import {
   PATCH_ROOT_ID,
-  cloneBlock,
   computeHeavyPatchBudget,
-  createBlockSnapshot,
 } from "@stream-mdx/core";
 import { getPatchKind, isHeavyPatch } from "@stream-mdx/core/perf/patch-batching";
-import type { SharedHighlighter } from "./highlight";
 import type { WorkerMetricsCollector } from "./metrics";
 
 const sharedTextEncoder: TextEncoder | null = typeof TextEncoder !== "undefined" ? new TextEncoder() : null;
@@ -711,60 +708,3 @@ export function diffNodeSnapshot(
   }
 }
 
-function isBlockLike(value: unknown): value is Block {
-  if (!value || typeof value !== "object") return false;
-  const candidate = value as { id?: unknown; type?: unknown; payload?: unknown };
-  if (typeof candidate.id !== "string" || typeof candidate.type !== "string") return false;
-  return typeof candidate.payload === "object" && candidate.payload !== null;
-}
-
-export async function enrichNestedCodeBlocks(
-  snapshot: NodeSnapshot,
-  allowHighlight: boolean,
-  highlighter: SharedHighlighter | null,
-  enrichCodeFn: (block: Block) => Promise<void>,
-): Promise<void> {
-  if (!allowHighlight || !highlighter) {
-    return;
-  }
-  const stack: NodeSnapshot[] = [snapshot];
-  while (stack.length > 0) {
-    const current = stack.pop();
-    if (!current) continue;
-
-    const props = (current.props ?? {}) as Record<string, unknown>;
-    const maybeBlock = props.block;
-    if (isBlockLike(maybeBlock) && maybeBlock.type === "code") {
-      const block = cloneBlock(maybeBlock);
-      const hasHighlight = typeof block.payload.highlightedHtml === "string" && block.payload.highlightedHtml.trim().length > 0;
-      if (!hasHighlight) {
-        await enrichCodeFn(block);
-        const updated = createBlockSnapshot(block);
-        current.type = updated.type;
-        current.props = updated.props;
-        current.meta = updated.meta;
-        current.range = updated.range;
-        current.children = updated.children;
-        continue;
-      }
-    }
-
-    const children = current.children ?? [];
-    for (let idx = children.length - 1; idx >= 0; idx -= 1) {
-      const child = children[idx];
-      if (child) {
-        stack.push(child);
-      }
-    }
-  }
-}
-
-export async function blockToNodeSnapshot(
-  block: Block,
-  highlighter: SharedHighlighter | null,
-  enrichCodeFn: (block: Block) => Promise<void>,
-): Promise<NodeSnapshot> {
-  const snapshot = createBlockSnapshot(cloneBlock(block));
-  await enrichNestedCodeBlocks(snapshot, Boolean(block.isFinalized), highlighter, enrichCodeFn);
-  return snapshot;
-}

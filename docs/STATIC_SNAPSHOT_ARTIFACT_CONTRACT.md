@@ -38,6 +38,23 @@ This document defines the artifact format produced by `npm run docs:snapshots:bu
 - Renderer output uses `blocks` and does not depend on stream chunk boundaries.
 - `tocHeadings` is derived from block metadata, not DOM reads.
 
+## Nested block ownership
+
+List and blockquote `payload.meta.preparedNested` contains `{ props, children }`, where
+`children` is a serialized `NodeSnapshot[]` in source order. The owning engine uses
+its configured block parser and actual inline parser instance to prepare these
+children. Native plugin conversion callbacks are never reconstructed from JSON.
+
+Core snapshot consumers and React stores reuse this structure after transport or
+JSON serialization. Nested blocks retain `sourceContainer` metadata, absolute
+source ranges, and their container's finalization state. Reference-definition
+updates re-enrich the container, including nested headings and list items.
+
+Nested code contains normalized `meta.code`, normal highlight metadata, and
+`code-line` children before patch emission. Renderers do not need to reparse code
+or repair a line-count mismatch to reconstruct a static snapshot.
+
+
 ## Heading ID policy (normative)
 
 `tocHeadings[].id` and heading block `payload.meta.headingId` must follow the same deterministic policy:

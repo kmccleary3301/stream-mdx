@@ -292,6 +292,9 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
     return <BlockNodeRenderer key={childId} store={store} blockId={childId} registry={registry} />;
   });
 
+  if (block.payload.meta?.preparedNested && childIds.length === 0) {
+    return <blockquote className="markdown-blockquote" />;
+  }
   if (!block.isFinalized) {
     const streamingContent = childIds.length
       ? childContent.filter((c) => c !== null)
@@ -579,8 +582,10 @@ const ListItemView: React.FC<{
       if (!childNode) return null;
       switch (childNode.type) {
         case "paragraph": {
-          const childInline = (childNode.props?.inline as InlineNode[] | undefined) ?? [];
-          return (
+          const childInline = childNode.block?.payload.inline ?? (childNode.props?.inline as InlineNode[] | undefined) ?? [];
+          return childNode.props?.tight ? (
+            <React.Fragment key={childId}>{renderInlineNodes(childInline, inlineComponents)}</React.Fragment>
+          ) : (
             <p key={childId} className="markdown-list-item-paragraph">
               {renderInlineNodes(childInline, inlineComponents)}
             </p>
