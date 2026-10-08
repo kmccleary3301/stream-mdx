@@ -128,14 +128,35 @@ export function renderedCodeSource(body: Element): string {
 export function collectSemanticDom(root: HTMLElement): SemanticDomRecords {
   const footnotes = generatedFootnoteGraph(root);
   const codeBodies = Array.from(root.querySelectorAll("pre code"));
+  const generatedOwners = new Map<Element, Element>();
+  for (const body of codeBodies) {
+    const wrapper = body.closest(".markdown-code-block,[data-streamdown='code-block']");
+    if (!wrapper) continue;
+    const frame = wrapper.parentElement;
+    // The public native frame owns one highlighted fence, not authored PRE
+    // siblings or text. Its inner PRE/CODE structure is renderer-generated.
+    const nativeFrame = wrapper.matches("div.markdown-code-block") &&
+      frame?.matches("pre[data-code-block='true'][data-block-id][data-code-total-lines]") === true;
+    const ownsNativeFrame = nativeFrame &&
+      body.parentElement?.tagName === "PRE" && body.parentElement.parentElement === wrapper &&
+      body.parentElement.childNodes.length === 1 && body.parentElement.firstChild === body &&
+      Array.from(body.querySelectorAll("*")).every((child) => child.tagName === "SPAN" &&
+        !Array.from(child.attributes).some((attribute) => /^(href|src|alt|title|open|datetime|cite|lang|dir|role|target|rel|download|type|checked|disabled|aria-)/.test(attribute.name))) &&
+      wrapper.children.length === 1 && wrapper.firstElementChild === body.parentElement &&
+      Array.from(wrapper.childNodes).every((child) => child === body.parentElement || (child.nodeType === 3 && !child.textContent?.trim())) &&
+      frame.children.length === 1 && frame.firstElementChild === wrapper &&
+      Array.from(frame.childNodes).every((child) => child === wrapper || (child.nodeType === 3 && !child.textContent?.trim()));
+    if (nativeFrame && !ownsNativeFrame) continue;
+    generatedOwners.set(body, ownsNativeFrame && frame ? frame : wrapper);
+  }
   const preformatted = Array.from(root.querySelectorAll<Element>("pre")).filter((element) => {
     if (element.closest(CONTROL_SELECTOR)) return false;
+    if (Array.from(generatedOwners.values()).some((owner) => owner === element || owner.contains(element))) return false;
     const code = element.querySelector("code");
     if (!code) return true;
     // Renderer-owned fences replace their whole wrapper with the code source.
     // Authored PRE siblings, including whitespace, are visible source too.
-    return !element.closest(".markdown-code-block,[data-streamdown='code-block']") &&
-      (element.childNodes.length !== 1 || element.firstChild !== code ||
+    return (element.childNodes.length !== 1 || element.firstChild !== code ||
         Array.from(code.querySelectorAll("*")).some((child) => child.tagName !== "SPAN" ||
           Array.from(child.attributes).some((attribute) => /^(href|src|alt|title|open|datetime|cite|lang|dir|role|aria-)/.test(attribute.name))));
   });
@@ -143,7 +164,7 @@ export function collectSemanticDom(root: HTMLElement): SemanticDomRecords {
   for (const body of codeBodies) {
     const pre = body.closest("pre");
     if (!pre || preformatted.includes(pre)) continue;
-    const wrapper = body.closest(".markdown-code-block,[data-streamdown='code-block']") ?? pre;
+    const wrapper = generatedOwners.get(body) ?? pre;
     outerCode.set(wrapper, { body, index: codeBodies.indexOf(body) });
   }
 
@@ -166,7 +187,7 @@ export function collectSemanticDom(root: HTMLElement): SemanticDomRecords {
     if (element.tagName === "HR") return "\n";
     const content = Array.from(element.childNodes, textOf).join("");
     if (element.tagName === "TD" || element.tagName === "TH") return `${content}\t`;
-    return BLOCK_TAGS[element.tagName] ? `\n${content}\n` : content;
+    return BLOCK_TAGS[element.tagName] || element.matches("ul,ol") ? `\n${content}\n` : content;
   };
   const normalizeText = (text: string): string => text.replace(/ *\n */g, "\n").replace(/\n{3,}/g, "\n\n").trim();
   const contentOf = (element: Element): string => normalizeText(textOf(element))
@@ -197,7 +218,7 @@ export function collectSemanticDom(root: HTMLElement): SemanticDomRecords {
     if (identity) attributes.push(["footnote-target", identity]);
     return attributes.sort(([left], [right]) => left.localeCompare(right));
   };
-  const semanticHtml = (element: Element): boolean => element.matches("details,summary,abbr,mark,time,img,video,audio,iframe,blockquote,hr,strong,em,b,u,s,button,del,ins,kbd,sup,sub,[data-streamdown='strong']") ||
+  const semanticHtml = (element: Element): boolean => Boolean(footnotes.identity(element)) || element.matches("details,summary,abbr,mark,time,img,video,audio,iframe,blockquote,hr,strong,em,b,u,s,button,del,ins,kbd,sup,sub,[data-streamdown='strong']") ||
     semanticAttributes(element).some(([name]) => /^(alt|title|open|datetime|cite|lang|dir|role|target|rel|download|type|checked|disabled|aria-)/.test(name));
   // Enter/exit events associate repeated text with its inline semantics. Plain
   // styling spans contribute text but no events, including Shiki token wrappers.
@@ -253,7 +274,8 @@ export function collectSemanticDom(root: HTMLElement): SemanticDomRecords {
     codeBlocks: codeBodies.map((body) => {
       const wrapper = body.closest("[data-language]");
       const languageClass = Array.from(body.classList).find((name) => name.startsWith("language-")) ?? Array.from(body.closest("pre")?.classList ?? []).find((name) => name.startsWith("language-"));
-      return { language: wrapper?.getAttribute("data-language") ?? languageClass?.slice(9) ?? "", code: renderedCodeSource(body) };
+      const language = wrapper?.getAttribute("data-language") ?? languageClass?.slice(9) ?? "";
+      return { language: generatedOwners.has(body) && !language ? "text" : language, code: renderedCodeSource(body) };
     }),
     headings: Array.from(root.querySelectorAll("h1,h2,h3,h4,h5,h6")).filter(outsideCode).map((heading) => ({ level: Number(heading.tagName.slice(1)), text: contentOf(heading) })),
     math: mathRoots.filter((element) => !element.closest("pre")).map((element) => ({ display: Boolean(element.closest(".katex-display,.math-display")), tex: mathSource(element) })),

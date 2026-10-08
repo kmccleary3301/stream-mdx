@@ -15,13 +15,13 @@ This showcase demonstrates mapping raw HTML and standard markdown tags to design
 import type { TableElements } from "stream-mdx";
 
 const tableElements: Partial<TableElements> = {
-  table: ({ className, ...props }) => (
+  Table: ({ className, ...props }) => (
     <div className="overflow-x-auto rounded-md border border-border/60">
       <table className={`w-full text-sm ${className ?? ""}`} {...props} />
     </div>
   ),
-  th: ({ className, ...props }) => <th className={`bg-muted/40 text-left font-semibold ${className ?? ""}`} {...props} />,
-  td: ({ className, ...props }) => <td className={`align-top ${className ?? ""}`} {...props} />,
+  Th: ({ className, ...props }) => <th className={`bg-muted/40 text-left font-semibold ${className ?? ""}`} {...props} />,
+  Td: ({ className, ...props }) => <td className={`align-top ${className ?? ""}`} {...props} />,
 };
 
 <StreamingMarkdown text={markdown} tableElements={tableElements} worker="/workers/markdown-worker.js" />;

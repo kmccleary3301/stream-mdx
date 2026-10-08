@@ -101,6 +101,8 @@ export function Example() {
 
 Notes:
 - When `linkSafety.enabled` is on, the component replaces the `link` entry, including a supplied `inlineComponents.link`, with its confirmation-aware link renderer.
+- Owned `text` renders initialize the complete document in one parse, then finalize the tail. Replacing text does not simulate chunked streaming. Rapid replacements match initialization acknowledgements in order; only the current source generation finalizes or reports a rejected initialization. Async iterators and imperative `append()` retain incremental parsing.
+- Borrowed workers may be reused after detachment. Pending static calls reject on detach, but their initialization acknowledgement slots remain with the worker until drained; a later attachment cannot consume an older document's response as its own.
 
 Type aliases:
 - `type WorkerLike = Worker | URL | string | (() => Worker)`

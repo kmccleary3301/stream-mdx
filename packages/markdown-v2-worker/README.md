@@ -59,7 +59,7 @@ engine.dispose();
 
 Each engine owns document state and emits protocol messages through `post`. A new `INIT` resets the document while retaining instance extensions. Constructor options are `{ post, extensions? }`; flags and HTML settings belong in `INIT`.
 
-Bundle native functions with `serveMarkdownWorker({ extensions })`. For in-process use, `createInlineEngineWorker({ extensions })` returns a Worker-compatible adapter with microtask delivery and `terminate()`. Extensions accept `markdown`, `inline`, `documentPlugins`, and serializable `syntax` arrays. See the [complete custom worker entry](../../docs/PLUGIN_ABI.md#3-custom-bundled-worker-entry).
+Bundle native functions with `serveMarkdownWorker({ extensions })`. For in-process use, `createInlineEngineWorker({ extensions })` returns a Worker-compatible adapter with microtask delivery and `terminate()`. Extensions accept `markdown`, `inline`, `documentPlugins`, and serializable `syntax` arrays. See the [complete custom worker entry](../../docs/PLUGIN_ABI.md#3-custom-bundled-worker-entry). The published engine entry is pre-built for the worker realm with DOM-free MDX dependencies, so browser-targeted bundlers (the documented esbuild `--platform=browser` command) produce a worker that boots without `document`/`DOMParser` shims, aliases, or extra configuration.
 
 ## Node `worker_threads` Helper
 

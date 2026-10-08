@@ -777,17 +777,17 @@ function StreamingMarkdownComponent(
     }
 
     if (text !== undefined) {
-      try {
-        imperativeActivityRef.current = false;
-        setStreamStatus("streaming");
-        renderer.restart();
-        renderer.append(text);
+      imperativeActivityRef.current = false;
+      setStreamStatus("streaming");
+      void renderer.renderStatic(text).then(() => {
+        if (cancelled || readyRendererRef.current !== renderer) return;
         renderer.finalize();
-        setStreamStatus("done");
-      } catch (error) {
-        setStreamStatus("done");
+        setStreamStatus(imperativeActivityRef.current ? "streaming" : "done");
+      }).catch((error: unknown) => {
+        if (cancelled || readyRendererRef.current !== renderer) return;
+        setStreamStatus(imperativeActivityRef.current ? "streaming" : "done");
         onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
-      }
+      });
       return () => {
         cancelled = true;
       };

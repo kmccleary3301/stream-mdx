@@ -1,4 +1,4 @@
-import * as characterEntities from "character-entities";
+import { decodeNamedCharacterReference } from "./entities/named-character-reference";
 
 declare global {
   // eslint-disable-next-line no-var
@@ -11,7 +11,6 @@ declare global {
 }
 
 if (typeof document === "undefined") {
-  const entityMap = characterEntities as unknown as Record<string, string>;
   (globalThis as typeof globalThis & { document?: typeof document }).document = {
     compatMode: "CSS1Compat",
     createElement() {
@@ -26,9 +25,9 @@ if (typeof document === "undefined") {
         get textContent() {
           const match = /^&([^;]+);$/.exec(this._inner);
           if (match) {
-            const entity = entityMap[match[1]];
-            if (typeof entity === "string") {
-              return entity;
+            const decoded = decodeNamedCharacterReference(match[1]);
+            if (decoded !== false) {
+              return decoded;
             }
           }
           return this._inner;
