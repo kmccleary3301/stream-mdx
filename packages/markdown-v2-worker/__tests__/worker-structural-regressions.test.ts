@@ -329,13 +329,15 @@ async function runMdxErrorTransitionArtifactInvariantTest(): Promise<void> {
   };
 
   try {
-    const cases: Array<{ fixture: string; chunkSize: number }> = [
-      { fixture: "mdx-multi-status.mdx", chunkSize: 10 },
-      { fixture: "mdx-transitions.mdx", chunkSize: 5 },
+    // A balanced component that spans blank lines no longer compiles mid-stream (it stays a
+    // pending region until it closes), so the transitions fixture appends a genuinely unclosed
+    // component to keep exercising error transitions.
+    const cases: Array<{ fixture: string; content: string; chunkSize: number }> = [
+      { fixture: "mdx-multi-status.mdx", content: await loadFixture("mdx-multi-status.mdx"), chunkSize: 10 },
+      { fixture: "mdx-transitions.mdx", content: `${await loadFixture("mdx-transitions.mdx")}\n\n<Unclosed>still open\n`, chunkSize: 5 },
     ];
 
-    for (const { fixture, chunkSize } of cases) {
-      const content = await loadFixture(fixture);
+    for (const { fixture, content, chunkSize } of cases) {
       const harness = await createWorkerHarness();
       const store = createRendererStore();
 
