@@ -213,7 +213,7 @@ The constructor accepts only `{ post, extensions? }`. `extensions` has `markdown
 
 - `tables`: GitHub-flavored markdown tables → table block snapshots (`tableElements` controls rendering).
 - `html`: enables inline/raw HTML (sanitized by default; `htmlElements` controls rendering).
-- `mdx`: recognizes MDX blocks (requires `mdxCompileMode` to compile/hydrate).
+- `mdx`: recognizes MDX blocks (requires `mdxCompileMode` to compile/hydrate). A balanced JSX/MDX component whose native HTML block would be split by blank lines (for example `<SmokeBox>` … `</SmokeBox>`) stays one owning root and compiles as a single module; while it is still unclosed it remains a pending `html` root and is not compiled until it closes or the document finalizes.
 - `math`: recognizes inline + display math (default delimiters: `$…$` and `$$…$$`).
 - `footnotes`: enables footnote aggregation.
 - `callouts`: enables callout blockquote syntax (disabled by default in the worker).
