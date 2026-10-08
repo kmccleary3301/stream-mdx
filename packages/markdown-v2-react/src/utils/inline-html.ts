@@ -39,6 +39,7 @@ export function renderHtmlOwnershipTree(
   renderBlock: (block: Extract<HtmlTreeNode, { kind: "block" }>["block"]) => React.ReactNode,
   renderInline?: (nodes: InlineNode[]) => React.ReactNode,
   renderInlineElement?: (node: InlineNode, children: React.ReactNode) => React.ReactNode,
+  renderParagraph?: (children: React.ReactNode) => React.ReactNode,
 ): React.ReactNode {
   return nodes.map((node, index) => {
     if (node.kind === "text") return node.inline && renderInline ? renderInline(node.inline) : node.text;
@@ -49,13 +50,18 @@ export function renderHtmlOwnershipTree(
       props.defaultValue = node.children.map((child) => child.kind === "text" ? child.text : "").join("");
       return React.createElement(elements[node.tagName] ?? node.tagName, props);
     }
-    const children = renderHtmlOwnershipTree(node.children, elements, renderBlock, renderInline, renderInlineElement);
+    const children = renderHtmlOwnershipTree(node.children, elements, renderBlock, renderInline, renderInlineElement, renderParagraph);
+    if (node.paragraphRoot && renderParagraph) {
+      return React.createElement(React.Fragment, { key: index }, renderParagraph(children));
+    }
     if (node.inlineNode && renderInlineElement) {
       return React.createElement(React.Fragment, { key: index }, renderInlineElement(node.inlineNode, children));
     }
-    const content = node.leadingNewline ? ["\n", children] : children;
+    const content = node.tagName === "pre" && node.children.every((child) => child.kind === "text" && !child.inline)
+      ? node.children.map((child) => child.kind === "text" ? child.text : "").join("")
+      : children;
     return React.createElement(elements[node.tagName] ?? node.tagName, props,
-      node.children.length || node.leadingNewline ? content : undefined);
+      node.children.length ? content : undefined);
   });
 }
 

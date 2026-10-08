@@ -4,7 +4,7 @@
 
 - Convert Lezer HTML tags, comments, and processing instructions to typed inline nodes. Keep parsed markdown children inside allowed inline tags and apply the configured attribute policy.
 - Keep HTML containers open across markdown block boundaries using a sanitized ownership tree with prepared markdown children. Add textarea Type 1 continuation through blank lines and strip script/style contents.
-- Normalize HTML-containing paragraphs as complete browser-owned regions. Keep native inline plugin renderers through private serialized slots, including reconstructed formatting boundaries and literal HTML line feeds.
+- Normalize HTML-containing paragraphs as complete browser-owned regions. Keep configured paragraph components and native inline plugin renderers through private serialized slots, including reconstructed formatting boundaries. Preserve literal pre indentation with matching server and client DOM semantics.
 - Complete only the missing closer suffix for identical and different multi-character syntax anticipation markers, without leaking trailing marker text.
 
 ## 0.1.0

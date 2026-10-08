@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
-import React from "react";
+import React, { act } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { createRoot, hydrateRoot } from "react-dom/client";
 import { JSDOM } from "jsdom";
 import type { Block, HtmlOptions, SyntaxRuleSpec, WorkerOut } from "@stream-mdx/core";
 import { compileMarkdownSnapshotDirect } from "@stream-mdx/worker/direct";
@@ -100,4 +101,51 @@ const forged = await streamed('**native** <span smdxinline="0" smdxinlinex="0">f
 const forgedDocument = new JSDOM(render([], undefined, forged)).window.document;
 assert.equal(forgedDocument.querySelector("span")?.textContent, "forged");
 assert.equal(forgedDocument.querySelectorAll("strong").length, 1);
+
+const paragraphStore = await streamed("A <span>B</span>");
+const paragraphRegistry = new ComponentRegistry({
+  paragraph: ({ children }) => <p data-paragraph="configured">{children}</p>,
+});
+const paragraphDocument = new JSDOM(render([], paragraphRegistry, paragraphStore)).window.document;
+assert.equal(paragraphDocument.querySelector('p[data-paragraph="configured"]')?.textContent, "A B");
+assert.equal(paragraphDocument.querySelectorAll("p").length, 1, "normalized paragraph must use its configured component exactly once");
+
+const captureStore = await streamed('start {{<a href="/outer">[inner](/inner) trailing}} end', {
+  syntax: [{ name: "capture", pattern: { source: "\\{\\{([\\s\\S]+?)\\}\\}" }, content: 1 }],
+});
+const captureRegistry = new ComponentRegistry({}, {
+  capture: ({ children }: { children?: React.ReactNode }) => <mark data-capture="configured">{children}</mark>,
+});
+const captureDocument = new JSDOM(render([], captureRegistry, captureStore)).window.document;
+assert.ok(captureDocument.querySelector('mark[data-capture="configured"]'));
+assert.equal(captureDocument.querySelector('mark a[href="/inner"]')?.textContent, "inner");
+assert.equal(captureDocument.querySelector('mark a[href="/outer"]:last-child')?.textContent, " trailing");
+
+const actEnvironment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };
+actEnvironment.IS_REACT_ACT_ENVIRONMENT = true;
+for (const [source, expected] of [
+  ["> <pre>\n>     literal\n> </pre>\n", "    literal\n"],
+  ["> <pre>\n>\n>     literal\n> </pre>\n", "\n    literal\n"],
+] as const) {
+  const compiled = await compileMarkdownSnapshotDirect({ text: source, init });
+  const element = <MarkdownBlocksRenderer blocks={compiled.blocks} />;
+  const server = renderToStaticMarkup(element);
+  assert.equal(new JSDOM(server).window.document.querySelector("pre")?.textContent, expected);
+  const mounted = window.document.createElement("div");
+  const root = createRoot(mounted);
+  await act(async () => { root.render(element); });
+  assert.equal(mounted.querySelector("pre")?.textContent, expected);
+  await act(async () => { root.unmount(); });
+  const hydrated = window.document.createElement("div");
+  hydrated.innerHTML = server;
+  const errors: unknown[] = [];
+  let hydrationRoot!: ReturnType<typeof hydrateRoot>;
+  await act(async () => {
+    hydrationRoot = hydrateRoot(hydrated, element, { onRecoverableError: (error) => errors.push(error) });
+  });
+  assert.equal(hydrated.querySelector("pre")?.textContent, expected);
+  assert.deepEqual(errors, [], "literal HTML hydration must not replace mismatched server text");
+  await act(async () => { hydrationRoot.unmount(); });
+}
+actEnvironment.IS_REACT_ACT_ENVIRONMENT = false;
 console.log("HTML public consumer ownership, scoped plugins, sanitizer and literal content tests passed");

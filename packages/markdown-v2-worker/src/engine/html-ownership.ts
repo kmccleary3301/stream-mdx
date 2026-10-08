@@ -140,9 +140,12 @@ export function normalizeHtmlParagraph(block: Block, options?: HtmlOptions) {
       const href = node.kind === "link" && node.href !== undefined ? ` href="${escapeHtml(node.href)}"` : "";
       return `<${tag}${slot}${href}>${serialize(node.children)}</${tag}>`;
     }
+    if (node.kind === "plugin" && node.children) {
+      return `<span${slot}>${serialize(node.children)}</span>`;
+    }
     return `<span${slot}>${inlineHtml([node])}</span>`;
   }).join("");
-  return sanitizeHtmlTreeInWorker(`<p class="markdown-paragraph">${serialize(block.payload.inline ?? [])}</p>\n`, options, { attribute, inline });
+  return sanitizeHtmlTreeInWorker(`<p class="markdown-paragraph" ${attribute}="paragraph">${serialize(block.payload.inline ?? [])}</p>\n`, options, { attribute, inline });
 }
 
 export function containsInlineHtml(nodes: InlineNode[]): boolean {
