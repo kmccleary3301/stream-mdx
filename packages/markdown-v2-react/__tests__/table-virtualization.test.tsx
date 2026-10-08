@@ -46,6 +46,18 @@ class TestResizeObserver implements ResizeObserver {
 }
 
 const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', { pretendToBeVisual: true });
+// Browser geometry at the public DOM boundary. Verify natural passes include all rows.
+let availableWidth = 800;
+const naturalPassRowCounts: number[] = [];
+dom.window.HTMLTableElement.prototype.getBoundingClientRect = function () {
+  if (this.style.tableLayout !== "fixed") naturalPassRowCounts.push(this.querySelectorAll("tbody tr[data-row-id]").length);
+  return new dom.window.DOMRect(0, 0, availableWidth, 4800);
+};
+dom.window.HTMLTableCellElement.prototype.getBoundingClientRect = function () {
+  const idWidth = availableWidth === 800 ? 80 : 60;
+  return new dom.window.DOMRect(0, 0, this.cellIndex === 0 ? idWidth : availableWidth - idWidth, 40);
+};
+Object.defineProperty(dom.window.HTMLDivElement.prototype, "clientWidth", { configurable: true, get: () => availableWidth });
 const globals = {
   window: dom.window,
   document: dom.window.document,
@@ -76,7 +88,9 @@ const root = createRoot(container);
 const markdown = ["| ID | Description |", "| --- | --- |", ...Array.from({ length: 120 }, (_, index) => `| Row-${index} | Description-${index} |`)].join("\n");
 const handle = React.createRef<StreamingMarkdownHandle>();
 const customElements: TableElements = {
-  Table: (props) => <div data-custom-wrapper="true"><table {...props} data-custom="table" /></div>,
+  // DOM fixture for apps/docs/components/ui/table.tsx's existing shadcn overflow-auto adapter.
+  Table: (props) => <div className="relative w-full overflow-auto" style={{ overflow: "auto", overflowX: "scroll" }}
+    data-custom-wrapper="true"><table {...props} data-custom="table" /></div>,
   Thead: (props) => <thead {...props} data-custom="thead" />,
   Tbody: (props) => <tbody {...props} data-custom="tbody" />,
   Tr: (props) => <tr {...props} data-custom="tr" />,
@@ -110,19 +124,33 @@ try {
   }
   assert.ok(container.querySelector('[data-custom-wrapper="true"] table'));
   assert.equal(container.querySelector("thead")?.style.position, "sticky");
+  assert.equal(container.querySelector("thead")?.style.backgroundColor, "var(--stream-mdx-table-header-background, Canvas)");
+  const customWrapper = container.querySelector<HTMLElement>('[data-custom-wrapper="true"]');
+  assert.ok(customWrapper);
+  assert.equal(customWrapper.style.getPropertyValue("overflow"), "visible");
+  assert.equal(customWrapper.style.getPropertyPriority("overflow"), "important");
+  assert.deepEqual(Array.from(container.querySelectorAll<HTMLTableColElement>("col"), (col) => col.style.width), ["80px", "720px"]);
+  assert.ok(naturalPassRowCounts.includes(120), "columns are measured from the complete natural table");
+  customWrapper.style.setProperty("color", "rgb(10, 20, 30)");
   const spacer = container.querySelector("tr.markdown-table-spacer-bottom");
   assert.equal(spacer?.getAttribute("aria-hidden"), "true");
   assert.equal(spacer?.querySelector("td")?.colSpan, 2);
 
   // Six 40px visible rows plus two overscan rows. Measured 80px rows reduce the window.
   Object.defineProperty(viewport, "clientHeight", { configurable: true, value: 240 });
-  Object.defineProperty(viewport, "clientWidth", { configurable: true, value: 800 });
+  Object.defineProperty(viewport, "clientWidth", { configurable: true, get: () => availableWidth });
   for (const row of rows()) {
     row.getBoundingClientRect = () => new dom.window.DOMRect(0, 0, 800, 80);
   }
   TestResizeObserver.notify();
   await waitFor(() => rows().length === 5, "ResizeObserver updates the window for variable row heights");
   assert.equal(rows()[0].dataset.rowId, firstId);
+
+  availableWidth = 400;
+  TestResizeObserver.notify();
+  await waitFor(() => container.querySelector<HTMLTableColElement>("col")?.style.width === "60px", "viewport resize remeasures natural columns");
+  assert.deepEqual(Array.from(container.querySelectorAll<HTMLTableColElement>("col"), (col) => col.style.width), ["60px", "340px"]);
+  assert.equal(naturalPassRowCounts.at(-1), 120, "resize measurement uses every row, not the current window");
 
   viewport.scrollTop = 100000;
   viewport.dispatchEvent(new dom.window.Event("scroll"));
@@ -135,6 +163,9 @@ try {
   assert.ok(rows().length <= 60, "overscan is bounded to 50 rows at the bottom");
   render();
   await waitFor(() => rows().length === 120 && !scrollContainer(), "removing the config restores full rendering");
+  assert.equal(customWrapper.style.getPropertyValue("overflow"), "auto", "disable restores original overflow shorthand");
+  assert.equal(customWrapper.style.getPropertyValue("overflow-x"), "scroll", "disable restores original longhand order");
+  assert.equal(customWrapper.style.color, "rgb(10, 20, 30)", "cleanup leaves unrelated consumer inline styles intact");
 
   root.unmount();
   const unfinishedRoot = createRoot(container);
@@ -148,16 +179,37 @@ try {
   const streamingRoot = createRoot(container);
   const { promise: streamFinished, resolve: finishStream } = Promise.withResolvers<void>();
   const stream = (async function* () {
-    yield `${markdown}\n`;
+    yield `${markdown}\n\nStill streaming paragraph`;
     await streamFinished;
   })();
   streamingRoot.render(<StreamingMarkdown ref={handle} engine="main-thread" stream={stream} features={features} tableVirtualization={true} caret={false} />);
-  await waitFor(() => container.textContent?.includes("Row-119") ?? false, "active stream retains all table content");
-  assert.equal(scrollContainer(), null, "unfinished stream must not virtualize its tail table");
-  finishStream();
+  await waitFor(() => rows().length === 120 && (container.textContent?.includes("Still streaming paragraph") ?? false),
+    "open stream renders a completed table followed by an unfinished paragraph");
+  assert.ok(handle.current?.getState().blocks.some((entry) => entry.type === "table" && entry.isFinalized),
+    "the table is finalized before the surrounding stream ends");
+  assert.equal(scrollContainer(), null, "a finalized table in an active session still renders every row");
   handle.current?.finalize();
-  await waitFor(() => Boolean(scrollContainer()), "finalization enables windowing of the streamed table");
+  await waitFor(() => handle.current?.getState().blocks.every((entry) => entry.isFinalized) ?? false,
+    "explicit finalize completes blocks without ending the open iterator");
+  assert.equal(scrollContainer(), null, "native iterator activity owns the streaming guard");
+  finishStream();
+  await waitFor(() => Boolean(scrollContainer()), "ending the session enables windowing of its finalized table");
   streamingRoot.unmount();
+  const imperativeRoot = createRoot(container);
+  imperativeRoot.render(<StreamingMarkdown ref={handle} engine="main-thread" features={features} tableVirtualization={true} caret={false} />);
+  await waitFor(() => handle.current?.getState().workerReady ?? false, "imperative engine is ready");
+  handle.current?.append(`${markdown}\n\n---\n\n`);
+  await waitFor(() => rows().length === 120, "imperative append renders the complete table");
+  assert.ok(handle.current?.getState().blocks.some((entry) => entry.type === "table" && entry.isFinalized));
+  assert.equal(scrollContainer(), null, "imperative session stays active after a completed table");
+  handle.current?.finalize();
+  await waitFor(() => Boolean(scrollContainer()), "imperative finalize ends the session and enables windowing");
+  handle.current?.append("\n\nAnother unfinished paragraph");
+  await waitFor(() => rows().length === 120, "append reopens the session and restores every table row");
+  assert.equal(scrollContainer(), null);
+  handle.current?.restart();
+  await waitFor(() => rows().length === 0, "restart clears the table and resets session activity");
+  imperativeRoot.unmount();
   assert.equal(TestResizeObserver.instances.size, 0, "unmount disconnects all table observers");
 } finally {
   for (const [key, descriptor] of previousGlobals) {

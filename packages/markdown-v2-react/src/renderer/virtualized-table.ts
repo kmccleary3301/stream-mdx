@@ -52,6 +52,46 @@ export interface TableVirtualizationProps {
   topSpacerHeight: number;
   bottomSpacerHeight: number;
   columnCount: number;
+  headerBackgroundColor: string;
+}
+
+interface NaturalTableLayout {
+  rowIds: ReadonlyArray<string>;
+  viewportWidth: number;
+  tableWidth: number;
+  columnWidths: number[];
+}
+
+// Only custom Table wrappers inside our viewport are managed, never consumer ancestors.
+function normalizeTableScrollAncestors(table: HTMLTableElement, container: HTMLDivElement): () => void {
+  const restore: Array<() => void> = [];
+  const properties = ["overflow", "overflow-x", "overflow-y"];
+  for (let ancestor = table.parentElement; ancestor && ancestor !== container; ancestor = ancestor.parentElement) {
+    const computed = ancestor.ownerDocument.defaultView?.getComputedStyle(ancestor);
+    if (!computed || ![computed.overflow, computed.overflowX, computed.overflowY].some(
+      (value) => /^(auto|scroll|hidden|clip|overlay)$/.test(value),
+    )) continue;
+    const style = ancestor.style;
+    const original = Array.from(style).filter((property) => properties.includes(property)).map((property) => ({
+      property, value: style.getPropertyValue(property), priority: style.getPropertyPriority(property),
+    }));
+    for (const property of properties) style.removeProperty(property);
+    style.setProperty("overflow", "visible", "important");
+    const owned = properties.map((property) => ({
+      property, value: style.getPropertyValue(property), priority: style.getPropertyPriority(property),
+    }));
+    restore.push(() => {
+      // An inline author change transfers ownership. Do not overwrite it during cleanup.
+      if (owned.some(({ property, value, priority }) =>
+        style.getPropertyValue(property) !== value || style.getPropertyPriority(property) !== priority,
+      )) return;
+      for (const property of properties) style.removeProperty(property);
+      for (const { property, value, priority } of original) style.setProperty(property, value, priority);
+    });
+  }
+  return () => {
+    for (const cleanup of restore) cleanup();
+  };
 }
 
 /** Measurements follow stable renderer row IDs, not positions in the current window. */
@@ -68,9 +108,12 @@ export function useVirtualizedTable(
   const measuredWidth = useRef(0);
   const measuredHeights = useRef(new Map<string, number>());
   const [measureVersion, setMeasureVersion] = useState(0);
+  const [naturalLayout, setNaturalLayout] = useState<NaturalTableLayout | null>(null);
+  const [headerBackgroundColor, setHeaderBackgroundColor] = useState("Canvas");
   const atBottom = useRef(false);
   const rowCount = rowIds.length;
-  const isVirtualized = enabledCondition && config.enabled && rowCount >= config.minRows;
+  const isEligible = enabledCondition && config.enabled && rowCount >= config.minRows;
+  const isVirtualized = isEligible && naturalLayout?.rowIds === rowIds && naturalLayout.viewportWidth === containerWidth;
 
   // Rebuild only when measurements or rows change, never for a scroll event.
   const offsets = useMemo(() => {
@@ -122,7 +165,7 @@ export function useVirtualizedTable(
   }, [isVirtualized, rowCount, offsets, scrollTop, containerHeight, headerHeight, config.maxHeight, config.overscan]);
 
   useEffect(() => {
-    if (!isVirtualized) return;
+    if (!isEligible) return;
     const container = containerRef.current;
     if (!container) return;
     const header = container.querySelector("thead");
@@ -144,7 +187,57 @@ export function useVirtualizedTable(
     observer.observe(container);
     if (header) observer.observe(header);
     return () => observer.disconnect();
-  }, [isVirtualized, config.maxHeight]);
+  }, [isEligible, config.maxHeight]);
+
+  useEffect(() => {
+    if (!isEligible) return;
+    const container = containerRef.current;
+    const table = container?.querySelector("table");
+    if (!container || !table) return;
+    return normalizeTableScrollAncestors(table, container);
+  }, [isEligible]);
+
+  // The complete auto-layout table is committed before each initial/width-change window.
+  useEffect(() => {
+    if (!isEligible || isVirtualized) return;
+    const container = containerRef.current;
+    const table = container?.querySelector("table");
+    if (!container || !table) return;
+    const cells = table.querySelectorAll<HTMLTableCellElement>("thead tr:first-child > th, thead tr:first-child > td");
+    const naturalCells = cells.length ? cells : table.querySelectorAll<HTMLTableCellElement>("tbody tr:first-child > td");
+    const columnWidths = Array.from(naturalCells, (cell) => cell.getBoundingClientRect().width);
+    setNaturalLayout({
+      rowIds,
+      viewportWidth: container.clientWidth,
+      tableWidth: table.getBoundingClientRect().width,
+      columnWidths: columnWidths.every((width) => width > 0) ? columnWidths : [],
+    });
+  }, [isEligible, isVirtualized, rowIds, containerWidth]);
+
+  useEffect(() => {
+    if (!isEligible) return;
+    const container = containerRef.current;
+    if (!container) return;
+    const ancestors: HTMLElement[] = [];
+    for (let ancestor: HTMLElement | null = container; ancestor; ancestor = ancestor.parentElement) ancestors.push(ancestor);
+    const updateBackground = () => {
+      for (const ancestor of ancestors) {
+        const color = ancestor.ownerDocument.defaultView?.getComputedStyle(ancestor).backgroundColor;
+        if (!color || color === "transparent") continue;
+        if (color.startsWith("rgba(") && !/,\s*1(?:\.0*)?\)$/.test(color)) continue;
+        if (color.includes("/") && !/\/\s*1(?:\.0*)?\)$/.test(color)) continue;
+        setHeaderBackgroundColor(color);
+        return;
+      }
+      setHeaderBackgroundColor("Canvas");
+    };
+    updateBackground();
+    const Observer = container.ownerDocument.defaultView?.MutationObserver;
+    if (!Observer) return;
+    const observer = new Observer(updateBackground);
+    for (const ancestor of ancestors) observer.observe(ancestor, { attributes: true, attributeFilter: ["class", "style"] });
+    return () => observer.disconnect();
+  }, [isEligible]);
 
   useEffect(() => {
     if (!isVirtualized) return;
@@ -180,5 +273,5 @@ export function useVirtualizedTable(
     setScrollTop(container.scrollTop);
   }, [isVirtualized, offsets]);
 
-  return { containerRef, window, handleScroll, config, isVirtualized };
+  return { containerRef, window, handleScroll, config, isEligible, isVirtualized, naturalLayout, headerBackgroundColor };
 }

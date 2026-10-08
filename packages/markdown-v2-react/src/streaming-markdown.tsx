@@ -13,6 +13,7 @@ import { prefetchMdxRuntime } from "./mdx-runtime";
 import type { AdaptiveBudgetState, PatchFlushResult } from "./renderer/patch-commit-scheduler";
 import { DeferredRenderContext, type DeferredRenderConfig } from "./renderer/deferred-render-context";
 import { useRendererBlocks } from "./renderer/hooks";
+import { StreamingActivityContext } from "./renderer/streaming-activity-context";
 import type { RendererStore } from "./renderer/store";
 import { createDefaultWorker, releaseDefaultWorker } from "@stream-mdx/worker";
 import type { BlockComponents, BlockRendererOverride, CodeFenceRenderer, HtmlElements, HtmlOptions, InlineComponents, MathRenderer, RendererConfig, SyntaxRuleSpec, TableElements, TableVirtualizationOptions } from "./types";
@@ -847,13 +848,16 @@ function StreamingMarkdownComponent(
         renderer.resume();
       },
       restart() {
+        setStreamStatus("idle");
         setSession((prev) => prev + 1);
       },
       finalize() {
         renderer.finalize();
+        if (!stream) setStreamStatus("done");
       },
       append(text: string) {
         if (!text || !workerReadyRef.current) return;
+        setStreamStatus("streaming");
         renderer.append(text);
       },
       setCredits(value: number) {
@@ -942,6 +946,7 @@ function StreamingMarkdownComponent(
         <MdxPrefetchBridge store={store} />
         {mdxMode === "server" ? <MdxCoordinatorBridge store={store} mode={mdxMode} /> : null}
         <CodeHighlightRequestContext.Provider value={highlightRequester}>
+        <StreamingActivityContext.Provider value={streamStatus === "streaming" || hasActiveBlocks}>
           <MarkdownBlocksRenderer
             blocks={EMPTY_BLOCKS}
             componentRegistry={renderer.getComponentRegistry()}
@@ -951,6 +956,7 @@ function StreamingMarkdownComponent(
             style={resolvedStyle}
             store={store}
           />
+        </StreamingActivityContext.Provider>
         </CodeHighlightRequestContext.Provider>
         {linkModal}
       </DeferredRenderContext.Provider>

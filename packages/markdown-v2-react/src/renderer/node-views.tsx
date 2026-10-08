@@ -12,6 +12,7 @@ import { createRendererStore, isListPatchDebugEnabled, type RendererStore } from
 import { useDeferredRender } from "./use-deferred-render";
 import { DEFAULT_VIRTUALIZED_CODE_CONFIG, type VirtualizedLine, useVirtualizedCode } from "./virtualized-code";
 import { useVirtualizedTable, type TableVirtualizationProps } from "./virtualized-table";
+import { StreamingActivityContext } from "./streaming-activity-context";
 
 export const BlockNodeRenderer: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = ({ store, blockId, registry }) => {
   const node = useRendererNode(store, blockId);
@@ -737,11 +738,12 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
     return 1;
   }, [theadCellIds.length, rowIds, store]);
 
+  const sessionActive = React.useContext(StreamingActivityContext);
   const isFinalized = Boolean(node?.block?.isFinalized);
-  const canVirtualize = mounted && typeof window !== "undefined" && isFinalized && !virtualizationDisabled;
+  const canVirtualize = mounted && typeof window !== "undefined" && isFinalized && !sessionActive && !virtualizationDisabled;
 
   const virtualization = useVirtualizedTable(rowIds, virtualizationConfig, canVirtualize);
-  const { isVirtualized, containerRef, handleScroll, window: virtualWindow, config } = virtualization;
+  const { isEligible, isVirtualized, containerRef, handleScroll, window: virtualWindow, config, naturalLayout, headerBackgroundColor } = virtualization;
 
   const virtualizationProps: TableVirtualizationProps | undefined = React.useMemo(() => {
     if (!isVirtualized) return undefined;
@@ -752,8 +754,9 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
       topSpacerHeight: virtualWindow.topSpacerHeight,
       bottomSpacerHeight: virtualWindow.bottomSpacerHeight,
       columnCount,
+      headerBackgroundColor,
     };
-  }, [isVirtualized, virtualWindow, columnCount]);
+  }, [isVirtualized, virtualWindow, columnCount, headerBackgroundColor]);
 
   const tableAttrs = {
     "data-table-block": "true",
@@ -768,9 +771,16 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
   const tableElement = (
     <tableElements.Table
       className="markdown-table w-full caption-bottom text-base"
-      style={isVirtualized ? { tableLayout: "fixed", width: "100%" } : undefined}
-      {...(!isVirtualized ? tableAttrs : {})}
+      style={isVirtualized && naturalLayout?.columnWidths.length
+        ? { tableLayout: "fixed", width: naturalLayout.tableWidth }
+        : undefined}
+      {...(!isEligible ? tableAttrs : {})}
     >
+      {isVirtualized && naturalLayout?.columnWidths.length ? (
+        <colgroup>
+          {naturalLayout.columnWidths.map((width, index) => <col key={index} style={{ width }} />)}
+        </colgroup>
+      ) : null}
       {childIds.map((sectionId) => (
         <TableSectionView
           key={sectionId}
@@ -783,7 +793,7 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
     </tableElements.Table>
   );
 
-  if (isVirtualized) {
+  if (isEligible) {
     const maxHeight = typeof config.maxHeight === "number" ? `${config.maxHeight}px` : config.maxHeight;
     return (
       <div
@@ -825,7 +835,12 @@ const TableSectionView: React.FC<{
     return (
       <tableElements.Thead
         className={virtualization?.isVirtualized ? "sticky top-0 z-10" : undefined}
-        style={virtualization?.isVirtualized ? { position: "sticky", top: 0, zIndex: 10 } : undefined}
+        style={virtualization?.isVirtualized ? {
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+          backgroundColor: `var(--stream-mdx-table-header-background, ${virtualization.headerBackgroundColor})`,
+        } : undefined}
       >
         <tableElements.Tr>
           {childIds.map((cellId) => (
