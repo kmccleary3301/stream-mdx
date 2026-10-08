@@ -8,7 +8,7 @@ This plugin adds footnote support to the V2 Markdown pipeline while preserving @
 
 ## Rules
 
-- Numbering: first-seen reference order is retained across streaming updates. Defined, rendered footnotes receive dense display numbers in that order; unresolved labels do not create visible numbering holes.
+- Numbering follows the current rendered document: root references first, then reachable definition bodies in footer order. Defined footnotes receive dense numbers; unresolved labels create no visible holes. Final numbers and occurrence IDs match a fresh complete parse regardless of chunking or earlier finalization.
 - Definitions:
   - Syntax: `[^label]: text...`
   - Continuation: subsequent indented lines (4 spaces or tab) and blank lines are included.
@@ -40,7 +40,7 @@ This plugin adds footnote support to the V2 Markdown pipeline while preserving @
 
 ## Edge Cases
 
-- Reference before definition: its first-seen order is retained; when the definition appears, the item and links are populated. Resolving an earlier reference can renumber later defined footnotes.
+- Reference before definition: resolving it can renumber later defined footnotes. A late root reference precedes existing body-only references and may renumber them; reference links and footer items update together.
 - Multiple references to the same label: reuse the same display number, but have distinct occurrence IDs and backlinks.
 - Duplicate definitions: first definition wins (later duplicates ignored).
 - References in code or literal HTML contents are ignored. References inside a rendered definition body are included, using the owning inline parser.

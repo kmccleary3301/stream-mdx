@@ -21,7 +21,6 @@ export const FootnotesPlugin: DocumentPlugin = {
 	        definitionOrigins: new Map<string, number>(),
 	        referenceCounts: new Map<string, number>(),
 	        definitionInlines: new Map<string, InlineNode[]>(),
-	        nextNumber: 1,
 	        inlineParser: ctx.state.inlineParser,
 	      };
 	      ctx.state.footnotes = initialState;
@@ -72,7 +71,6 @@ type FootnoteState = {
   definitionOrigins: Map<string, number>;
   referenceCounts: Map<string, number>;
   definitionInlines: Map<string, InlineNode[]>;
-  nextNumber: number;
   inlineParser?: InlineParserAdapter;
 };
 
@@ -159,6 +157,7 @@ interface FootnoteReferenceScope {
 
 function assignNumbersFromReferencesInBlocks(blocks: Block[], state: FootnoteState) {
   const scopes = new Map<string, FootnoteReferenceScope>();
+  state.labelToNumber.clear();
   state.referenceCounts.clear();
   state.definitionInlines.clear();
   const pendingDefinitions: string[] = [];
@@ -174,12 +173,11 @@ function assignNumbersFromReferencesInBlocks(blocks: Block[], state: FootnoteSta
     for (const node of nodes) {
       if (node.kind === "footnote-ref") {
         if (!state.labelToNumber.has(node.label)) {
-          const number = state.nextNumber++;
-          state.labelToNumber.set(node.label, number);
+          state.labelToNumber.set(node.label, state.labelToNumber.size + 1);
         }
         const occurrence = (state.referenceCounts.get(node.label) ?? 0) + 1;
         state.referenceCounts.set(node.label, occurrence);
-        if (occurrence === 1 && state.definitions.has(node.label)) pendingDefinitions.push(node.label);
+        if (occurrence === 1 && state.definitions.has(node.label) && !state.definitionInlines.has(node.label)) pendingDefinitions.push(node.label);
         for (const scope of parents) {
           const occurrences = scope.references.get(node.label);
           if (occurrences) occurrences.push(occurrence);
@@ -266,6 +264,16 @@ function assignNumbersFromReferencesInBlocks(blocks: Block[], state: FootnoteSta
     }
   };
   for (const block of blocks) visitBlock(block, []);
+  const queuedDefinitions = new Set(pendingDefinitions);
+  const discoverDefinitions = (nodes: InlineNode[]): void => {
+    for (const node of nodes) {
+      if (node.kind === "footnote-ref" && state.definitions.has(node.label) && !queuedDefinitions.has(node.label)) {
+        queuedDefinitions.add(node.label);
+        pendingDefinitions.push(node.label);
+      }
+      if (hasInlineChildren(node)) discoverDefinitions(node.children);
+    }
+  };
   for (let index = 0; index < pendingDefinitions.length; index++) {
     const label = pendingDefinitions[index];
     const raw = state.definitions.get(label) ?? "";
@@ -276,7 +284,12 @@ function assignNumbersFromReferencesInBlocks(blocks: Block[], state: FootnoteSta
       inline = [{ kind: "text", text: raw }];
     }
     state.definitionInlines.set(label, inline);
-    scanInline(inline, [scopeFor(`footnote-definition:${label}`)]);
+    discoverDefinitions(inline);
+  }
+  // Count bodies in the current canonical footer order, not definition discovery order.
+  for (const label of state.labelToNumber.keys()) {
+    const inline = state.definitionInlines.get(label);
+    if (inline) scanInline(inline, [scopeFor(`footnote-definition:${label}`)]);
   }
   return scopes;
 }
@@ -419,11 +432,48 @@ function numberInlineReferences(blocks: Block[], state: FootnoteState, scopes: M
 
 /** Visit the inline nodes consumed by prepared child views, once and in source order. */
 function visitPreparedInline(children: NodeSnapshot[], visit: (nodes: InlineNode[]) => void): void {
+  const visitBlock = (block: Block): void => {
+    if (block.type === "code" || block.type === "footnote-def" || block.type === "footnotes") return;
+    const meta = block.payload.meta;
+    const tree = meta?.htmlParagraphTree ?? meta?.htmlTree;
+    if (Array.isArray(tree)) {
+      visitHtml(tree as HtmlTreeNode[]);
+      return;
+    }
+    const prepared = meta?.preparedNested as PreparedNestedSnapshot | undefined;
+    if (prepared) visitPreparedInline(prepared.children, visit);
+    else if (block.type === "table") {
+      for (const cell of (meta?.header as InlineNode[][] | undefined) ?? []) visit(cell);
+      for (const row of (meta?.rows as InlineNode[][][] | undefined) ?? []) for (const cell of row) visit(cell);
+    } else if (Array.isArray(meta?.mixedSegments)) {
+      for (const segment of meta.mixedSegments as { inline?: InlineNode[] }[]) if (segment.inline) visit(segment.inline);
+    } else if (block.type !== "html" && block.payload.inline) visit(block.payload.inline);
+  };
+  const visitHtml = (tree: HtmlTreeNode[]): void => {
+    for (const node of tree) {
+      if (node.kind === "block") visitBlock(node.block);
+      else if (node.kind === "text") {
+        if (node.inline) visit(node.inline);
+      } else if (!["code", "pre", "textarea"].includes(node.tagName.toLowerCase())) {
+        if (node.inlineNode?.kind === "footnote-ref") visit([node.inlineNode]);
+        visitHtml(node.children);
+      }
+    }
+  };
   for (const snapshot of children) {
-    if (snapshot.type === "code" || snapshot.type === "html") continue;
+    if (snapshot.type === "code" || snapshot.type === "footnote-def") continue;
     const nestedChildren = snapshot.children ?? [];
     const segmented = nestedChildren.some((child) => child.type === "list-item-text" || child.type === "paragraph-text");
     const block = snapshot.props?.block as Block | undefined;
+    const tree = block?.payload.meta?.htmlParagraphTree ?? block?.payload.meta?.htmlTree;
+    if (Array.isArray(tree)) {
+      visitHtml(tree as HtmlTreeNode[]);
+      continue;
+    }
+    if (snapshot.type === "html") {
+      if (block) visitBlock(block);
+      continue;
+    }
     if (snapshot.type !== "list" && snapshot.type !== "blockquote" && !segmented) {
       const inline = snapshot.props?.inline ?? block?.payload.inline;
       if (Array.isArray(inline)) visit(inline as InlineNode[]);

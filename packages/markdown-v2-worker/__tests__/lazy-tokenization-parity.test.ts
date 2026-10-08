@@ -297,7 +297,9 @@ async function runPublicTokenThemeConsumers(): Promise<void> {
   const diffDom = new JSDOM(diffHtml);
   const diffRows = diffDom.window.document.querySelectorAll<HTMLElement>("[data-diff-row]");
   assert.strictEqual(diffRows.length, lines.length);
-  expected.forEach((line, row) => {
+  const rawDiff = highlighter.codeToTokensWithThemes(lines.map((line) => `+${line}`).join("\n"), { lang: "markdown", themes: CODE_HIGHLIGHT_THEMES }) as ShikiThemedToken[][];
+  const expectedDiff = rawDiff.map(([first, ...rest]) => first.content === "+" ? rest : [{ ...first, content: first.content.slice(1) }, ...rest]);
+  expectedDiff.forEach((line, row) => {
     const tokens = diffRows[row].querySelectorAll<HTMLElement>("span");
     assert.strictEqual(tokens.length, line.length);
     line.forEach((token, index) => {
