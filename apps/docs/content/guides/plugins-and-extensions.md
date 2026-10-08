@@ -51,6 +51,27 @@ import { MermaidBlock } from "@stream-mdx/mermaid";
 />
 ```
 
+## Sandboxed artifacts and generic codeRenderers
+
+You can register custom code fence renderers for arbitrary languages using `codeRenderers`. Built-in options include `MermaidBlock` and `ArtifactFrame`, which sandboxes HTML visualizations inside an isolated iframe:
+
+```tsx
+import { ArtifactFrame, StreamingMarkdown } from "@stream-mdx/react";
+import { MermaidBlock } from "@stream-mdx/mermaid";
+
+<StreamingMarkdown
+  text={content}
+  engine="worker" // or "main-thread"
+  codeRenderers={{
+    mermaid: MermaidBlock,
+    "html-artifact": ArtifactFrame,
+    artifact: ArtifactFrame,
+  }}
+/>
+```
+
+For security guidelines, sandbox restrictions, and a complete chat-thread demo with dual-engine selection, see the [Deployment and Security Guide](/docs/guides/deployment-and-security#sandboxed-agent-artifacts-and-code-renderers) and the [`/showcase/assistant-stream`](/showcase/assistant-stream) showcase.
+
 ## Remark and Rehype plugins (@stream-mdx/unified)
 
 If you are migrating from `react-markdown` or `Streamdown` and want to reuse existing remark or rehype plugins, install `@stream-mdx/unified`:
