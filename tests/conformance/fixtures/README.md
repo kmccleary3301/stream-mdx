@@ -71,3 +71,29 @@ FTP is required by the pinned `0.29.0.gfm.13` example, even though the current p
 No security policy changed. Existing explicit Markdown destinations and angle autolinks already retain FTP through `inline/lezer-converter.ts` and React's `renderInlineNodes`. The existing DOMPurify `ALLOWED_URI_REGEXP` in `security.ts` explicitly includes FTP via `(?:f|ht)tps?`. The separate exported `sanitizeURL` utility and raw-HTML worker sanitizer have narrower policies; neither is broadened by this change.
 
 The isolated residual-standards gate passed all 675 cases on client static, SSR, and hosted-worker streaming paths, with zero streaming divergences and all 427 baseline IDs retained. Core's 20 test files, React's 38 test files, package builds, and the hosted bundle build passed. The worker suite stopped at the independently owned `worker-footnotes-finalize.test.ts:79` assertion, where the finalized blockquote footnote number was `undefined` instead of `1`; this packet does not change footnote ownership or claim that suite is green.
+
+## Quoted HTML blank-line boundary
+
+The native Lezer HTML block parser checked physical line text for Type 6/7 blank-line termination. A quoted blank line still contains `>`, so an HTML block inside a quote could consume subsequent Markdown as literal text.
+
+Reproduced input:
+
+````markdown
+- outer
+
+  > <div>
+  >
+  > ```js
+  > const x=1;
+  > ```
+  >
+  > </div>
+````
+
+The observed normalized client output was `<ul><li><p>outer</p><blockquote>```js const x=1; ```</blockquote></li></ul>`. Micromark's expected semantics are `<ul><li><p>outer</p><blockquote><pre><code>const x=1;</code></pre></blockquote></li></ul>`.
+
+The owning parser's block-compatibility extension now uses the native container-relative line position to terminate Type 6/7 HTML. It keeps native quote-marker ranges and source offsets, retains the configured inline parser and plugins, and leaves Type 1 literal HTML continuation unchanged. No HTML helper parser, renderer workaround, sanitizer change, or independent nested parser is added.
+
+Consumer fixtures compare direct/client, SSR, and hosted `FINALIZED` results against micromark for quoted Type 6/7, nested quotes, continuation text, container exit, Type 1 literal control, and root/list-only controls. The core nested snapshot regression checks the resulting native code node, source offset, configured inline plugin, and quote-marker removal.
+
+After the native boundary fix, package and hosted-worker builds passed, the targeted core nested snapshot checks passed, and all 22 consumer fixtures passed compilation/client, SSR, and hosted `FINALIZED` at chunks 1/7/64. The 675-case conformance gate passed all three paths with zero streaming divergences and retained all 427 baseline IDs. The known independently owned footnote suite was not rerun.
