@@ -15,12 +15,9 @@ npm install @stream-mdx/plugins
 | Export | Purpose |
 | --- | --- |
 | `@stream-mdx/plugins` | Main plugin surface |
-| `@stream-mdx/plugins/registry` | Registry and plugin registration helpers |
-| `@stream-mdx/plugins/base` | Base plugin contracts |
 | `@stream-mdx/plugins/document` | `DocumentPlugin`, `DocumentContext`, `DocumentContribution`, and `DocumentPluginRegistry` |
 | `@stream-mdx/plugins/tables` | Table plugin |
 | `@stream-mdx/plugins/html` | HTML plugin |
-| `@stream-mdx/plugins/math` | Math plugin |
 | `@stream-mdx/plugins/mdx` | MDX plugin |
 | `@stream-mdx/plugins/footnotes` | Footnotes plugin |
 | `@stream-mdx/plugins/callouts` | Callouts plugin |

@@ -1,16 +1,5 @@
 # @stream-mdx/core
 
-## Unreleased
-
-- Sanitize finalized code-row HTML without a DOM: `sanitizeCodeHTML`'s Node/SSR path now reuses the shared DOM-free rehype pipeline (same `pre`/`code`/`span`/`div`/`br` + `class`/`data-*`/`style` allowlist and the same allowlisted-property/ASCII-charset style policy as DOMPurify, rejecting CSS backslash escapes, comment-splitting, and `url(...)`/`expression(...)` values) instead of throwing when `window` is unavailable.
-- End Type 6/7 HTML blocks on native container-relative blank lines. Preserve fenced code, plugin parsing, source offsets, and typed HTML-owned children inside quoted/listed wrappers; Type 1 HTML remains literal through blank lines.
-- Preserve whitespace beyond the required four columns on internal indented-code blank lines, including nested containers. Include invisible reference definitions when determining loose lists.
-- Recognize bare FTP links with native GFM URL punctuation and parenthesis handling. Keep the existing Markdown URI and raw-HTML sanitizer policies unchanged.
-- Convert Lezer HTML tags, comments, and processing instructions to typed inline nodes. Keep parsed markdown children inside allowed inline tags and apply the configured attribute policy.
-- Keep HTML containers open across markdown block boundaries using a sanitized ownership tree with prepared markdown children. Add textarea Type 1 continuation through blank lines and strip script/style contents.
-- Normalize HTML-containing paragraphs as complete browser-owned regions. Keep configured paragraph components and native inline plugin renderers through private serialized slots, including reconstructed formatting boundaries. Preserve literal pre indentation with matching server and client DOM semantics.
-- Complete only the missing closer suffix for identical and different multi-character syntax anticipation markers, without leaking trailing marker text.
-
 ## 0.1.0
 
 ### Minor Changes

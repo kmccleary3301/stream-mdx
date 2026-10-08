@@ -41,11 +41,6 @@
       "import": "./dist/mdx-compile.mjs",
       "require": "./dist/mdx-compile.cjs"
     },
-    "./streaming/custom-matcher": {
-      "types": "./dist/streaming/custom-matcher.d.ts",
-      "import": "./dist/streaming/custom-matcher.mjs",
-      "require": "./dist/streaming/custom-matcher.cjs"
-    },
     "./node": {
       "types": "./dist/node/index.d.ts",
       "import": "./dist/node/index.mjs",

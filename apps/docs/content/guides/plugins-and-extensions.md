@@ -31,11 +31,22 @@ If you need custom syntax (custom regex, domain tokens, or non-standard blocks),
 3. Build a hosted worker bundle.
 
 ```ts
-import { createWorkerRegistry } from "@stream-mdx/plugins";
-import { mathPlugin } from "@stream-mdx/plugins/math";
+import type { DocumentPlugin } from "@stream-mdx/plugins/document";
+import { serveMarkdownWorker } from "@stream-mdx/worker/engine";
 
-const registry = createWorkerRegistry();
-registry.use(mathPlugin());
+const customPlugin: DocumentPlugin = {
+  name: "custom-plugin",
+  process(ctx) {
+    // Custom document transformation
+    return undefined;
+  },
+};
+
+serveMarkdownWorker({
+  extensions: {
+    documentPlugins: [customPlugin],
+  },
+});
 ```
 
 ## Mermaid diagrams
