@@ -31,7 +31,7 @@ import { removeHeadingMarkers } from "@stream-mdx/core";
 import React from "react";
 import { DEFAULT_INLINE_HTML_RENDERERS, renderHtmlInlineNode, renderHtmlOwnershipTree, renderInlineHtmlSegment } from "../utils/inline-html";
 import type { BlockComponents, BlockRendererOverride, CodeFenceRenderer, ControlsComponentProps, ControlsConfig, HtmlElements, InlineComponents, InlineHtmlRendererMap, MathRenderer, TableElements } from "../types";
-import { AnimationTimeline, resolveAnimatedOptions, splitTextSegments, type RenderInlineAnimationContext } from "../animation";
+import { AnimationTimeline, resolveAnimatedOptions, splitTextSegments, type RenderInlineAnimationContext, type ResolvedAnimatedOptions } from "../animation";
 import type { AnimatedOptions, AnimatedProp } from "../types";
 import { ArtifactFrame } from "./artifact-frame";
 import { DefaultDiffRenderer } from "./diff-renderer";
@@ -89,18 +89,12 @@ export function renderInlineNodes(
   urlTransform?: UrlTransform,
   animationContext?: RenderInlineAnimationContext,
 ): React.ReactNode {
-  const childContext = animationContext
-    ? {
-        ...animationContext,
-        nodeKeyPrefix: animationContext.nodeKeyPrefix ? `${animationContext.nodeKeyPrefix}` : undefined,
-      }
-    : undefined;
   return nodes.map((node, index) => {
     const key = `${node.kind}-${index}`;
-    const itemChildContext = childContext
+    const itemChildContext = animationContext
       ? {
-          ...childContext,
-          nodeKeyPrefix: childContext.nodeKeyPrefix ? `${childContext.nodeKeyPrefix}:${key}` : key,
+          ...animationContext,
+          nodeKeyPrefix: animationContext.nodeKeyPrefix ? `${animationContext.nodeKeyPrefix}:${key}` : key,
         }
       : undefined;
 
@@ -124,15 +118,8 @@ export function renderInlineNodes(
             state.count = segments.length;
             state.delays.length = segments.length;
           }
-          const animName =
-            animated.animation === "fadeIn"
-              ? "stream-mdx-fade-in"
-              : animated.animation === "blurIn"
-                ? "stream-mdx-blur-in"
-                : animated.animation === "slideUp"
-                  ? "stream-mdx-slide-up"
-                  : animated.animation;
-          const durationStr = `${animated.duration}ms`;
+          const animName = animated.animationName;
+          const durationStr = animated.durationStr;
           const spans = segments.map((segment, segmentIndex) => {
             const delay = state.delays[segmentIndex] ?? 0;
             const animStyle: React.CSSProperties & Record<string, string | number> = {
@@ -813,7 +800,7 @@ export class ComponentRegistry {
   private controls: ControlsConfig = false;
   private controlsComponent?: React.ComponentType<ControlsComponentProps>;
   private animated?: AnimatedProp;
-  private animatedOptions: Required<AnimatedOptions> | null = null;
+  private animatedOptions: ResolvedAnimatedOptions | null = null;
   private animationTimeline: AnimationTimeline | null = null;
 
   constructor(
@@ -912,7 +899,7 @@ export class ComponentRegistry {
     return this.animated;
   }
 
-  getAnimatedOptions(): Required<AnimatedOptions> | null {
+  getAnimatedOptions(): ResolvedAnimatedOptions | null {
     return this.animatedOptions;
   }
 
@@ -921,7 +908,13 @@ export class ComponentRegistry {
   }
 
   getRenderInlineContext(isFinalized?: boolean, blockId?: string): RenderInlineAnimationContext | undefined {
-    if (isFinalized || !this.animatedOptions || !this.animationTimeline) {
+    if (isFinalized) {
+      if (blockId && this.animationTimeline) {
+        this.animationTimeline.releasePrefix(blockId);
+      }
+      return undefined;
+    }
+    if (!this.animatedOptions || !this.animationTimeline) {
       return undefined;
     }
     return {
@@ -930,6 +923,10 @@ export class ComponentRegistry {
       timeline: this.animationTimeline,
       nodeKeyPrefix: blockId,
     };
+  }
+
+  resetAnimationTimeline(): void {
+    this.animationTimeline?.reset();
   }
 
   getUrlTransform(): UrlTransform | undefined {
@@ -946,6 +943,9 @@ export class ComponentRegistry {
 
   /** Finalized blocks go through the `blockRenderer` override (e.g. block transform adapters); streaming blocks never do. */
   renderFinalizedBlock(block: Block, defaultElement: React.ReactElement): React.ReactNode {
+    if (block.isFinalized && this.animationTimeline) {
+      this.animationTimeline.releasePrefix(block.id);
+    }
     if (this.blockRenderer && block.isFinalized) {
       return this.blockRenderer({
         block,

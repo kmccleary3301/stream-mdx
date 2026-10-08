@@ -1,4 +1,5 @@
 export * from "./components";
+export { STREAM_MDX_ANIMATION_CSS } from "./animation";
 export * from "./mdx-client";
 export * from "./mdx-coordinator";
 export * from "./mdx-prefetch";
@@ -18,6 +19,9 @@ export * from "./streaming-markdown";
 export type { RendererMetrics } from "./streaming-markdown";
 export type { AdaptiveBudgetState } from "./renderer/patch-commit-scheduler";
 export type {
+  AnimatedAnimationName,
+  AnimatedOptions,
+  AnimatedProp,
   BlockComponents,
   BlockRendererOverride,
   FinalizedBlockRenderProps,

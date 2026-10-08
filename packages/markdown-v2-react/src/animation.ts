@@ -1,21 +1,44 @@
 import type React from "react";
 import type { AnimatedAnimationName, AnimatedOptions, AnimatedProp } from "./types";
 
-export const DEFAULT_ANIMATED_OPTIONS: Required<AnimatedOptions> = {
+const BUILTIN_ANIMATION_NAMES: Record<string, string> = {
+  fadeIn: "stream-mdx-fade-in",
+  blurIn: "stream-mdx-blur-in",
+  slideUp: "stream-mdx-slide-up",
+};
+
+export interface ResolvedAnimatedOptions {
+  animation: AnimatedAnimationName;
+  animationName: string;
+  duration: number;
+  durationStr: string;
+  easing: string;
+  sep: "word" | "char";
+  stagger: number;
+  maxBacklogMs: number;
+}
+
+export const DEFAULT_ANIMATED_OPTIONS: ResolvedAnimatedOptions = {
   animation: "fadeIn",
+  animationName: "stream-mdx-fade-in",
   duration: 150,
+  durationStr: "150ms",
   easing: "ease-out",
   sep: "word",
   stagger: 20,
   maxBacklogMs: 320,
 };
 
-export function resolveAnimatedOptions(prop: AnimatedProp | undefined): Required<AnimatedOptions> | null {
+export function resolveAnimatedOptions(prop: AnimatedProp | undefined): ResolvedAnimatedOptions | null {
   if (!prop) return null;
   if (prop === true) return DEFAULT_ANIMATED_OPTIONS;
+  const animation = prop.animation ?? DEFAULT_ANIMATED_OPTIONS.animation;
+  const duration = typeof prop.duration === "number" ? prop.duration : DEFAULT_ANIMATED_OPTIONS.duration;
   return {
-    animation: prop.animation ?? DEFAULT_ANIMATED_OPTIONS.animation,
-    duration: typeof prop.duration === "number" ? prop.duration : DEFAULT_ANIMATED_OPTIONS.duration,
+    animation,
+    animationName: BUILTIN_ANIMATION_NAMES[animation] ?? animation,
+    duration,
+    durationStr: `${duration}ms`,
     easing: prop.easing ?? DEFAULT_ANIMATED_OPTIONS.easing,
     sep: prop.sep ?? DEFAULT_ANIMATED_OPTIONS.sep,
     stagger: typeof prop.stagger === "number" ? prop.stagger : DEFAULT_ANIMATED_OPTIONS.stagger,
@@ -215,18 +238,20 @@ export class AnimationTimeline {
     this.passActive = false;
     this.nodeStates.clear();
   }
+  releasePrefix(prefix: string): void {
+    const prefixColon = `${prefix}:`;
+    for (const key of this.nodeStates.keys()) {
+      if (key === prefix || key.startsWith(prefixColon)) {
+        this.nodeStates.delete(key);
+      }
+    }
+  }
+
 }
 
 export interface RenderInlineAnimationContext {
   isFinalized?: boolean;
-  animated?: Required<AnimatedOptions> | null;
+  animated?: ResolvedAnimatedOptions | null;
   timeline?: AnimationTimeline | null;
   nodeKeyPrefix?: string;
-}
-
-export function resolveAnimationName(animation: AnimatedAnimationName): string {
-  if (animation === "fadeIn") return "stream-mdx-fade-in";
-  if (animation === "blurIn") return "stream-mdx-blur-in";
-  if (animation === "slideUp") return "stream-mdx-slide-up";
-  return animation;
 }

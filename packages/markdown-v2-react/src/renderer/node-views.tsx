@@ -240,7 +240,7 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
 
   const renderInlineContent = (inline: InlineNode[] | undefined, keyPrefix: string) => {
     if (inline && inline.length > 0) {
-      return renderInlineNodes(inline, inlineComponents, registry.getUrlTransform());
+      return renderInlineNodes(inline, inlineComponents, registry.getUrlTransform(), registry.getRenderInlineContext(block.isFinalized, `${block.id}:${keyPrefix}`));
     }
     return null;
   };
@@ -302,7 +302,7 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
   const fallbackElements = normalizedText ? renderTextWithBreaks(normalizedText, `blockquote-fallback-${block.id}-`) : null;
 
   const inlineNodes = block.payload.inline ?? [];
-  const inlineElements = inlineNodes.length > 0 ? renderInlineNodes(inlineNodes, inlineComponents, registry.getUrlTransform()) : null;
+  const inlineElements = inlineNodes.length > 0 ? renderInlineNodes(inlineNodes, inlineComponents, registry.getUrlTransform(), registry.getRenderInlineContext(block.isFinalized, block.id)) : null;
 
   const childContent = childIds.map((childId) => {
     const childNode = store.getNode(childId);
@@ -585,7 +585,7 @@ const ListItemView: React.FC<{
   const counterText = !isTask ? (isOrdered ? `${itemNumber}.` : "\u2022") : undefined;
   const listDebugEnabled = isListPatchDebugEnabled();
   const inlineLength = inline.length;
-
+  const animCtx = registry.getRenderInlineContext(Boolean(block?.isFinalized), nodeId);
   const [segmentChildIds, contentChildIds] = React.useMemo(() => {
     const segments: string[] = [];
     const structural: string[] = [];
@@ -609,7 +609,7 @@ const ListItemView: React.FC<{
     if (segmentChildIds.length > 0) {
       return segmentElements;
     }
-    return renderInlineNodes(inline, inlineComponents, registry.getUrlTransform());
+    return renderInlineNodes(inline, inlineComponents, registry.getUrlTransform(), animCtx);
   }, [segmentChildIds, segmentElements, inline, inlineComponents]);
 
   const trailingChildren = React.useMemo(() => {
@@ -619,11 +619,12 @@ const ListItemView: React.FC<{
       switch (childNode.type) {
         case "paragraph": {
           const childInline = childNode.block?.payload.inline ?? (childNode.props?.inline as InlineNode[] | undefined) ?? [];
+          const childAnimCtx = registry.getRenderInlineContext(Boolean(childNode.block?.isFinalized), childId);
           return childNode.props?.tight ? (
-            <React.Fragment key={childId}>{renderInlineNodes(childInline, inlineComponents, registry.getUrlTransform())}</React.Fragment>
+            <React.Fragment key={childId}>{renderInlineNodes(childInline, inlineComponents, registry.getUrlTransform(), childAnimCtx)}</React.Fragment>
           ) : (
             <p key={childId} className="markdown-list-item-paragraph">
-              {renderInlineNodes(childInline, inlineComponents, registry.getUrlTransform())}
+              {renderInlineNodes(childInline, inlineComponents, registry.getUrlTransform(), childAnimCtx)}
             </p>
           );
         }
@@ -1045,7 +1046,8 @@ const TableCellView: React.FC<{ store: RendererStore; nodeId: string; registry: 
   const Tag = node.type === "table-header-cell" ? tableElements.Th : tableElements.Td;
   const inline = (node.props?.inline as InlineNode[] | undefined) ?? [];
   const align = node.props?.align as string | undefined;
-  const content = renderInlineNodes(inline, inlineComponents, registry.getUrlTransform());
+  const animCtx = registry.getRenderInlineContext(Boolean(node.block?.isFinalized), nodeId);
+  const content = renderInlineNodes(inline, inlineComponents, registry.getUrlTransform(), animCtx);
   const alignProps = align ? { align } : undefined;
   return <Tag {...alignProps}>{content}</Tag>;
 });

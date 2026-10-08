@@ -175,6 +175,7 @@ export class MarkdownRenderer implements Renderer {
   attachWorker(worker: Worker, options?: { skipInit?: boolean }): void {
     if (this.worker) this.detachWorker();
     this.patchScheduler.restart();
+    this.componentRegistry.resetAnimationTimeline();
     this.store.reset([]);
     this.blocks = [];
     if (this.updateCallbacks.length > 0) {
@@ -313,6 +314,7 @@ export class MarkdownRenderer implements Renderer {
       }
 
       this.patchScheduler.restart();
+      this.componentRegistry.resetAnimationTimeline();
       this.store.reset([]);
       this.blocks = [];
       if (this.updateCallbacks.length > 0) this.notifyUpdateCallbacks();
@@ -501,6 +503,7 @@ export class MarkdownRenderer implements Renderer {
 
   restart(): void {
     this.patchScheduler.restart();
+    this.componentRegistry.resetAnimationTimeline();
     this.store.reset([]);
     this.blocks = [];
     if (this.updateCallbacks.length > 0) {
