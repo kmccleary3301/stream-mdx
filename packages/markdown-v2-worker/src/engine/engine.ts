@@ -718,8 +718,7 @@ export class MarkdownEngine {
           const raw = content.slice(from, to);
           if (isBlockLevelNode(nodeType)) {
             const blockType = mapLezerNodeToBlockType(nodeType);
-            const block = await this.createBlock(blockType, raw, from, to, content, options);
-
+            const block = await this.createBlock(blockType, raw, from, to, content, options, nodeType);
             if (block && raw.trim()) {
               extracted.push(block);
             }
@@ -789,11 +788,24 @@ export class MarkdownEngine {
     to: number,
     fullContent: string,
     options: ParseOptions = {},
+    nodeType?: string,
   ): Promise<Block | null> {
     if (!raw.trim()) return null;
 
     const id = generateBlockId(`${from}:${type}`, type);
     const isFinalized = options.forceFinalize ? true : to < fullContent.length - 1;
+
+    const initialMeta: Record<string, unknown> = {};
+    if (nodeType === "SetextHeading1") {
+      initialMeta.headingLevel = 1;
+    } else if (nodeType === "SetextHeading2") {
+      initialMeta.headingLevel = 2;
+    } else if (nodeType && nodeType.startsWith("ATXHeading")) {
+      const lvl = parseInt(nodeType.slice(10), 10);
+      if (!Number.isNaN(lvl)) {
+        initialMeta.headingLevel = lvl;
+      }
+    }
 
     const block: Block = {
       id,
@@ -801,6 +813,7 @@ export class MarkdownEngine {
       isFinalized,
       payload: {
         raw,
+        meta: Object.keys(initialMeta).length > 0 ? initialMeta : undefined,
         range: { from, to },
       },
     };
@@ -847,7 +860,21 @@ export class MarkdownEngine {
       case "heading": {
         const rawHeading = typeof block.payload.raw === "string" ? block.payload.raw : "";
         const normalizedHeading = removeHeadingMarkers(rawHeading);
-        const headingLevel = Math.min(Math.max(rawHeading.match(/^#{1,6}/)?.[0].length ?? 1, 1), 6);
+        const metaLevel = (block.payload.meta as { headingLevel?: number } | undefined)?.headingLevel;
+        let headingLevel = metaLevel;
+        if (typeof headingLevel !== "number") {
+          const atxMatch = rawHeading.match(/^#{1,6}/);
+          if (atxMatch) {
+            headingLevel = atxMatch[0].length;
+          } else if (/(?:\r?\n)\s*=+\s*$/.test(rawHeading)) {
+            headingLevel = 1;
+          } else if (/(?:\r?\n)\s*-+\s*$/.test(rawHeading)) {
+            headingLevel = 2;
+          } else {
+            headingLevel = 1;
+          }
+        }
+        headingLevel = Math.min(Math.max(headingLevel, 1), 6);
         const baseSlug = slugifyHeading(normalizedHeading) || "heading";
         const nextCount = (this.headingIdCounts.get(baseSlug) ?? 0) + 1;
         this.headingIdCounts.set(baseSlug, nextCount);
