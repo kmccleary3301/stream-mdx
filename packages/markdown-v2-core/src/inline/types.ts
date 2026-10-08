@@ -11,6 +11,7 @@ export interface MarkdownElement {
 export interface LinkReferenceDefinition {
   href: string;
   title?: string;
+  label?: string; // label as written in the source definition
 }
 
 export type LinkReferenceMap = Map<string, LinkReferenceDefinition> | Record<string, LinkReferenceDefinition>;

@@ -20,6 +20,7 @@ export function collectLinkReferences(tree: Tree, content: string): Map<string, 
   do {
     if (cursor.type.name === "LinkReference") {
       let label = "";
+      let rawLabel = "";
       let href: string | undefined;
       let title: string | undefined;
 
@@ -31,8 +32,10 @@ export function collectLinkReferences(tree: Tree, content: string): Map<string, 
           if (type === "LinkLabel") {
             // Strip outer [ and ]
             if (slice.startsWith("[") && slice.endsWith("]")) {
-              label = normalizeLinkLabel(slice.slice(1, -1));
+              rawLabel = slice.slice(1, -1);
+              label = normalizeLinkLabel(rawLabel);
             } else {
+              rawLabel = slice;
               label = normalizeLinkLabel(slice);
             }
           } else if (type === "URL") {
@@ -45,7 +48,7 @@ export function collectLinkReferences(tree: Tree, content: string): Map<string, 
       }
 
       if (label && href !== undefined && !references.has(label)) {
-        references.set(label, { href, title });
+        references.set(label, { href, title, label: rawLabel });
       }
     }
   } while (cursor.nextSibling());

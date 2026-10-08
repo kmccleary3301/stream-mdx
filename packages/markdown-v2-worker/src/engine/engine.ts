@@ -65,6 +65,7 @@ import {
   detectDiffLanguage,
   enhanceHighlightedHtml,
   getSharedHighlighter,
+  getSharedHighlighterInstanceCount,
   guessLanguageFromDiffLines,
   looksLikeUnifiedDiff,
   parseUnifiedDiffLine,
@@ -235,6 +236,10 @@ export class MarkdownEngine {
 
   private messageQueue: Promise<void> = Promise.resolve();
   private disposed = false;
+  public static getHighlighterInstanceCount(): number {
+    return getSharedHighlighterInstanceCount();
+  }
+
 
   constructor(options: MarkdownEngineOptions) {
     this.postFn = options.post;
@@ -1124,6 +1129,28 @@ export class MarkdownEngine {
       const attempted = this.inlineParser.stopCollectingAttemptedReferences();
       if (attempted.size > 0) {
         this.blockAttemptedReferences.set(block.id, attempted);
+        const resolved: Array<{ label: string; href: string; title?: string }> = [];
+        for (const key of attempted) {
+          const def = this.currentLinkReferences.get(key);
+          if (def) {
+            resolved.push({
+              label: def.label ?? key,
+              href: def.href,
+              ...(def.title !== undefined ? { title: def.title } : {}),
+            });
+          }
+        }
+        if (resolved.length > 0) {
+          block.payload.meta = { ...block.payload.meta, linkReferences: resolved };
+        } else if (block.payload.meta && "linkReferences" in block.payload.meta) {
+          const nextMeta = { ...block.payload.meta };
+          delete nextMeta.linkReferences;
+          block.payload.meta = nextMeta;
+        }
+      } else if (block.payload.meta && "linkReferences" in block.payload.meta) {
+        const nextMeta = { ...block.payload.meta };
+        delete nextMeta.linkReferences;
+        block.payload.meta = nextMeta;
       }
     }
   }
