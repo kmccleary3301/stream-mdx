@@ -15,7 +15,7 @@ import { DeferredRenderContext, type DeferredRenderConfig } from "./renderer/def
 import { useRendererBlocks } from "./renderer/hooks";
 import type { RendererStore } from "./renderer/store";
 import { createDefaultWorker, releaseDefaultWorker } from "@stream-mdx/worker";
-import type { BlockComponents, HtmlElements, InlineComponents, RendererConfig, TableElements } from "./types";
+import type { BlockComponents, CodeFenceRenderer, HtmlElements, InlineComponents, MathRenderer, RendererConfig, TableElements } from "./types";
 
 const EMPTY_BLOCKS: ReadonlyArray<Block> = [];
 
@@ -142,6 +142,9 @@ export interface StreamingMarkdownProps {
   style?: React.CSSProperties;
   caret?: StreamingCaret;
   linkSafety?: LinkSafetyConfig;
+  codeRenderers?: Record<string, CodeFenceRenderer>;
+  mathRenderer?: MathRenderer;
+  artifactHtml?: boolean;
   deferHeavyBlocks?: boolean | DeferredRenderConfig;
 }
 
@@ -290,6 +293,9 @@ function StreamingMarkdownComponent(
     style,
     caret,
     linkSafety,
+    codeRenderers,
+    mathRenderer,
+    artifactHtml,
     deferHeavyBlocks,
   }: StreamingMarkdownProps,
   ref: React.ForwardedRef<StreamingMarkdownHandle>,
@@ -342,6 +348,9 @@ function StreamingMarkdownComponent(
           }
         : undefined;
     const rendererConfig: RendererConfig = {
+      codeRenderers,
+      mathRenderer,
+      artifactHtml,
       highlight: prewarmLangs.length > 0 ? { langs: prewarmLangs } : undefined,
       plugins: features,
       performance: {
@@ -586,7 +595,16 @@ function StreamingMarkdownComponent(
     if (htmlElements) {
       renderer.getComponentRegistry().setHtmlElements(htmlElements);
     }
-  }, [renderer, components, mdxComponents, inlineComponents, resolvedInlineComponents, tableElements, htmlElements]);
+    if (codeRenderers) {
+      renderer.setCodeRenderers(codeRenderers);
+    }
+    if (mathRenderer) {
+      renderer.setMathRenderer(mathRenderer);
+    }
+    if (artifactHtml !== undefined) {
+      renderer.getComponentRegistry().setArtifactHtml(artifactHtml);
+    }
+  }, [renderer, components, mdxComponents, inlineComponents, resolvedInlineComponents, tableElements, htmlElements, codeRenderers, mathRenderer, artifactHtml]);
 
   useEffect(() => {
     const removeListener = renderer.addFlushListener((result) => {
@@ -851,6 +869,7 @@ function StreamingMarkdownComponent(
           <MarkdownBlocksRenderer
             blocks={EMPTY_BLOCKS}
             componentRegistry={renderer.getComponentRegistry()}
+            codeRenderers={codeRenderers}
             className={resolvedClassName}
             style={resolvedStyle}
             store={store}

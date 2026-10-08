@@ -2,7 +2,7 @@ import type { Block, PatchMetrics, WorkerIn, WorkerOut } from "@stream-mdx/core"
 // Main V2 Markdown Renderer
 // Client-side renderer with component registry and worker integration
 import type { PatchCommitSchedulerOptions, PatchFlushResult } from "./renderer/patch-commit-scheduler";
-import type { BlockComponents, CodeHighlightRangeRequest, InlineComponents, Renderer, RendererConfig } from "./types";
+import type { BlockComponents, CodeFenceRenderer, CodeHighlightRangeRequest, InlineComponents, MathRenderer, Renderer, RendererConfig } from "./types";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
@@ -69,7 +69,15 @@ export class MarkdownRenderer implements Renderer {
 
   constructor(config: RendererConfig = {}) {
     this.config = config;
-    this.componentRegistry = new ComponentRegistry();
+    this.componentRegistry = new ComponentRegistry(
+      {},
+      {},
+      this.config.codeRenderers ?? {},
+      {
+        artifactHtml: this.config.artifactHtml,
+        mathRenderer: this.config.mathRenderer,
+      },
+    );
     if (this.config.mdx?.compileEndpoint) {
       getMDXComponentFactory(this.config.mdx.compileEndpoint);
     }
@@ -259,6 +267,13 @@ export class MarkdownRenderer implements Renderer {
       getMDXComponentFactory(this.config.mdx.compileEndpoint);
     }
     registerMDXComponents(map);
+  }
+  setCodeRenderers(map: Record<string, CodeFenceRenderer>): void {
+    this.componentRegistry.setCodeRenderers(map);
+  }
+
+  setMathRenderer(mathRenderer: MathRenderer): void {
+    this.componentRegistry.setMathRenderer(mathRenderer);
   }
 
   /**

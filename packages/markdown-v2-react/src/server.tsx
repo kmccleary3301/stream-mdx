@@ -9,4 +9,9 @@ export type {
   InlineHtmlRendererMap,
   RendererConfig,
   TableElements,
+  CodeFenceRenderer,
+  CodeFenceRendererConfig,
+  CodeFenceRendererProps,
+  MathRenderer,
+  MathRendererProps,
 } from "./types";
