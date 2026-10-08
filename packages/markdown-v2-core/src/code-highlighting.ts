@@ -4,7 +4,7 @@ function normalizeNewlines(input: string): string {
   return input.replace(/\r\n?/g, "\n");
 }
 
-const OPEN_FENCE_REGEX = /^( *)(`{3,}|~{3,})(.*)$/;
+const OPEN_FENCE_REGEX = /^( {0,3})(`{3,}|~{3,})(.*)$/;
 export function stripCodeFence(raw: string): { code: string; info: string; hadFence: boolean } {
   if (!raw) {
     return { code: "", info: "", hadFence: false };
@@ -27,7 +27,7 @@ export function stripCodeFence(raw: string): { code: string; info: string; hadFe
   const info = openMatch[3].trim();
 
   let endIndex = -1;
-  const closeRegex = new RegExp(`^\\s*${fenceChar === "`" ? "\\`" : "~"}{${fenceLen},}\\s*$`);
+  const closeRegex = new RegExp(`^( {0,3})${fenceChar === "`" ? "\\`" : "~"}{${fenceLen},}\\s*$`);
   for (let i = lines.length - 1; i > 0; i--) {
     if (closeRegex.test(lines[i])) {
       endIndex = i;

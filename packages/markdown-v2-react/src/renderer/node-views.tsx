@@ -1,14 +1,14 @@
-import { dedentIndentedCode, getDefaultCodeWrapperAttributes, normalizeBlockquoteText, stripCodeFence, type Block, type InlineNode, type MixedContentSegment, type TokenLineV1 } from "@stream-mdx/core";
+import { dedentIndentedCode, getDefaultCodeWrapperAttributes, normalizeBlockquoteText, stripCodeFence, type Block, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type TokenLineV1 } from "@stream-mdx/core";
 import React from "react";
 import { DefaultDiffRenderer } from "../components/diff-renderer";
 import type { CodeFenceRendererProps } from "../types";
 import { renderInlineNodes, renderParagraphMixedSegments } from "../components";
 import type { ComponentRegistry } from "../components";
-import { DEFAULT_INLINE_HTML_RENDERERS, renderInlineHtmlSegment } from "../utils/inline-html";
+import { DEFAULT_INLINE_HTML_RENDERERS, renderHtmlOwnershipTree, renderInlineHtmlSegment } from "../utils/inline-html";
 import { useRendererChildren, useRendererNode } from "./hooks";
 import { useCodeHighlightRequester } from "./code-highlight-context";
 import { DeferredRenderContext } from "./deferred-render-context";
-import { isListPatchDebugEnabled, type RendererStore } from "./store";
+import { createRendererStore, isListPatchDebugEnabled, type RendererStore } from "./store";
 import { useDeferredRender } from "./use-deferred-render";
 import { DEFAULT_VIRTUALIZED_CODE_CONFIG, type VirtualizedLine, useVirtualizedCode } from "./virtualized-code";
 import { useVirtualizedTable, type TableVirtualizationProps } from "./virtualized-table";
@@ -293,6 +293,9 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
     return <BlockNodeRenderer key={childId} store={store} blockId={childId} registry={registry} />;
   });
 
+  if (block.payload.meta?.preparedNested && childIds.length === 0) {
+    return <blockquote className="markdown-blockquote" />;
+  }
   if (!block.isFinalized) {
     const streamingContent = childIds.length
       ? childContent.filter((c) => c !== null)
@@ -417,10 +420,21 @@ MixedSegmentView.displayName = "MixedSegmentView";
 const HtmlBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
   const node = useRendererNode(store, blockId);
   if (!node || !node.block) return null;
+  const tree = node.block.payload.meta?.htmlTree as HtmlTreeNode[] | undefined;
+  if (tree) {
+    return <>{renderHtmlOwnershipTree(tree, registry.getHtmlElements(), (block) =>
+      <OwnedHtmlBlock key={block.id} block={block} registry={registry} />,
+      (nodes) => renderInlineNodes(nodes, registry.getInlineComponents()))}</>;
+  }
   return registry.renderBlock(node.block);
 });
 
 HtmlBlockView.displayName = "HtmlBlockView";
+
+const OwnedHtmlBlock: React.FC<{ block: Block; registry: ComponentRegistry }> = ({ block, registry }) => {
+  const store = React.useMemo(() => createRendererStore([block]), [block]);
+  return <BlockNodeRenderer store={store} blockId={block.id} registry={registry} />;
+};
 
 const MdxBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
   const node = useRendererNode(store, blockId);
@@ -580,8 +594,10 @@ const ListItemView: React.FC<{
       if (!childNode) return null;
       switch (childNode.type) {
         case "paragraph": {
-          const childInline = (childNode.props?.inline as InlineNode[] | undefined) ?? [];
-          return (
+          const childInline = childNode.block?.payload.inline ?? (childNode.props?.inline as InlineNode[] | undefined) ?? [];
+          return childNode.props?.tight ? (
+            <React.Fragment key={childId}>{renderInlineNodes(childInline, inlineComponents)}</React.Fragment>
+          ) : (
             <p key={childId} className="markdown-list-item-paragraph">
               {renderInlineNodes(childInline, inlineComponents)}
             </p>

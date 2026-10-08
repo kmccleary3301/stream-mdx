@@ -1,5 +1,5 @@
 import type { MarkdownConfig } from "@lezer/markdown";
-import type { InlineNode, SyntaxRuleSpec } from "../types";
+import type { HtmlOptions, InlineNode, SyntaxRuleSpec } from "../types";
 
 export interface MarkdownElement {
   readonly type: number;
@@ -38,6 +38,9 @@ export interface InlineParserOptions {
    * Defaults to `true`.
    */
   enableMath?: boolean;
+
+  /** Sanitizer allowlist and tags whose content is literal rather than markdown. */
+  html?: HtmlOptions;
 
   /**
    * Initial link reference definitions.

@@ -16,7 +16,7 @@ import type {
 } from "@stream-mdx/core";
 import { removeHeadingMarkers } from "@stream-mdx/core";
 import React from "react";
-import { DEFAULT_INLINE_HTML_RENDERERS, renderInlineHtmlSegment } from "../utils/inline-html";
+import { DEFAULT_INLINE_HTML_RENDERERS, renderHtmlInlineNode, renderHtmlOwnershipTree, renderInlineHtmlSegment } from "../utils/inline-html";
 import type { BlockComponents, BlockRendererOverride, CodeFenceRenderer, HtmlElements, InlineComponents, InlineHtmlRendererMap, MathRenderer, TableElements } from "../types";
 import { ArtifactFrame } from "./artifact-frame";
 import { DefaultDiffRenderer } from "./diff-renderer";
@@ -132,6 +132,13 @@ export function renderInlineNodes(nodes: InlineNode[], components: InlineCompone
         return React.createElement(React.Fragment, { key }, node.raw);
       }
 
+      case "html": {
+        const children = node.children ? renderInlineNodes(node.children, components) : undefined;
+        if (components.html) {
+          return React.createElement(components.html, { key, ...node, children });
+        }
+        return renderHtmlInlineNode(node, children, undefined, key);
+      }
       default: {
         // Handle custom/extensible nodes
         const component = components[node.kind];
@@ -384,7 +391,10 @@ export const defaultBlockComponents: BlockComponents = {
     );
   },
 
-  html: ({ __trustedHtml, elements, isSanitized, literalTagContent }) => {
+  html: ({ __trustedHtml, elements, isSanitized, literalTagContent, children }) => {
+    if (children !== undefined) {
+      return React.createElement("div", { className: "markdown-html" }, children);
+    }
     const raw = typeof __trustedHtml === "string" ? __trustedHtml : __trustedHtml.toString();
     // Worker-compiled flows already sanitize HTML at the source using configured allowedTags.
     // Re-sanitizing on the client with fixed DOMPurify policies would strip configured allowed custom tags/attributes.
@@ -658,11 +668,13 @@ export const defaultBlockComponents: BlockComponents = {
       El.Table,
       { className: "markdown-table" },
       header && header.length > 0 ? React.createElement(El.Thead, {}, React.createElement(El.Tr, {}, renderCells(header, "th", -1))) : null,
-      React.createElement(
-        El.Tbody,
-        {},
-        rows.map((row, r) => React.createElement(El.Tr, { key: r }, renderCells(row, "td", r))),
-      ),
+      rows && rows.length > 0
+        ? React.createElement(
+            El.Tbody,
+            {},
+            rows.map((row, r) => React.createElement(El.Tr, { key: r }, renderCells(row, "td", r))),
+          )
+        : null,
     );
   },
 };
@@ -700,6 +712,10 @@ export class ComponentRegistry {
     }
     this.inlineComponents = { ...defaultInlineComponents, ...inlineComponents } as InlineComponents;
     this.htmlElements = getDefaultHtmlElements();
+    if (!inlineComponents.html) {
+      this.inlineComponents.html = (node: Omit<Extract<InlineNode, { kind: "html" }>, "children"> & { children?: React.ReactNode }) =>
+        renderHtmlInlineNode(node, node.children, this.htmlElements);
+    }
     this.tableElements = getDefaultTableElements();
     if (codeRenderers) {
       this.setCodeRenderers(codeRenderers);
@@ -971,6 +987,7 @@ export class ComponentRegistry {
           inlines: block.payload.inline || [],
           raw: block.payload.raw,
           meta: block.payload.meta,
+          children: renderInlineNodes(block.payload.inline ?? [], this.inlineComponents),
         };
       case "blockquote":
         return {
@@ -1007,11 +1024,16 @@ export class ComponentRegistry {
           block.payload.sanitizedHtml || (block.payload.meta as { sanitized?: boolean } | undefined)?.sanitized,
         );
         const content = block.payload.sanitizedHtml ?? block.payload.raw ?? "";
+        const htmlTree = block.payload.meta?.htmlTree;
         return {
           __trustedHtml: isWorkerSanitized || typeof window === "undefined" ? String(content) : createTrustedHTML(String(content)),
           elements: this.htmlElements,
           isSanitized: isWorkerSanitized,
           literalTagContent: this.literalTagContent,
+          children: htmlTree
+            ? renderHtmlOwnershipTree(htmlTree, this.htmlElements, (child) => this.renderBlock(child),
+              (inlines) => renderInlineNodes(inlines, this.inlineComponents))
+            : undefined,
         };
       }
 
@@ -1130,7 +1152,7 @@ function getDefaultTableElements(overrides?: Partial<TableElements>): TableEleme
   return { ...base, ...(overrides || {}) };
 }
 
-const DEFAULT_LITERAL_TAGS = new Set(["code", "pre", "kbd", "script", "style", "textarea"]);
+const DEFAULT_LITERAL_TAGS = new Set(["code", "pre", "script", "style", "textarea"]);
 
 export function mapHtmlToReact(
   html: string,
@@ -1370,6 +1392,14 @@ export function renderParagraphMixedSegments(
           }
         } else if (element) {
           inlineBuffer.push(element);
+        } else if (html) {
+          inlineBuffer.push(
+            React.createElement("span", {
+              key,
+              className: "markdown-inline-html",
+              dangerouslySetInnerHTML: { __html: html },
+            }),
+          );
         }
         break;
       }

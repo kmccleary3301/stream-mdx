@@ -9,9 +9,16 @@ import {
   referenceGuardExtension,
   setActiveReferencePredicate,
 } from "./inline/reference-guard";
-import type { ASTInlinePlugin, InlineNode, InlinePlugin, RegexInlinePlugin, SyntaxRuleSpec } from "./types";
+import type { ASTInlinePlugin, HtmlOptions, InlineNode, InlinePlugin, RegexInlinePlugin, SyntaxRuleSpec } from "./types";
 
 export type { InlineParserOptions, InlineParseOptions, InlineExtension, LinkReferenceDefinition, LinkReferenceMap } from "./inline/types";
+
+/** Native block classification for document plugins that lack engine node metadata. */
+export function isNativeHtmlBlock(content: string): boolean {
+  const node = baseParser.parse(content).topNode.firstChild;
+  return Boolean(node && ["HTMLBlock", "CommentBlock", "ProcessingInstructionBlock"].includes(node.name) &&
+    node.to === content.trimEnd().length);
+}
 
 function ensureGlobal(pattern: RegExp): RegExp {
   if (pattern.global) return pattern;
@@ -63,6 +70,7 @@ export class InlineParser {
   private maxCacheEntries: number;
   private enableMath: boolean;
   private references?: LinkReferenceMap;
+  private html?: HtmlOptions;
   private lezerParser!: MarkdownParser;
   private converter!: LezerInlineConverter;
 
@@ -72,6 +80,7 @@ export class InlineParser {
       : 2000;
     this.enableMath = options.enableMath !== false;
     this.references = options.references;
+    this.html = options.html;
 
     if (options.extensions) {
       this.extensions.push(...options.extensions);
@@ -196,6 +205,7 @@ export class InlineParser {
       nodeSet: this.lezerParser.nodeSet,
       references: this.references,
       extensionsByName,
+      html: this.html,
     });
     this.cache.clear();
   }
@@ -342,22 +352,17 @@ export class InlineParser {
           count++;
           idx = content.indexOf(open, idx + open.length);
         }
-        if (count % 2 !== 0) {
-          return close;
-        }
-      } else {
-        if (!afterOpen.includes(close)) {
-          let needed = close;
-          for (let len = close.length - 1; len > 0; len--) {
-            const prefix = close.slice(0, len);
-            if (content.endsWith(prefix)) {
-              needed = close.slice(len);
-              break;
-            }
-          }
-          return needed;
+        if (count % 2 === 0) continue;
+      } else if (afterOpen.includes(close)) {
+        continue;
+      }
+      // Complete only the missing suffix after an unmatched opener.
+      for (let len = close.length - 1; len > 0; len--) {
+        if (afterOpen.endsWith(close.slice(0, len))) {
+          return close.slice(len);
         }
       }
+      return close;
     }
     return null;
   }

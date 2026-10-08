@@ -1,5 +1,7 @@
 export * from "./types";
 export * from "./block-snapshot";
+export * from "./nested-block-snapshot";
+export * from "./block-compatibility";
 export * from "./code-highlighting";
 export * from "./utils";
 export * from "./mixed-content";

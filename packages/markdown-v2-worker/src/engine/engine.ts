@@ -1,5 +1,5 @@
-import { type Tree, TreeFragment } from "@lezer/common";
-import { GFM, parser as mdParser } from "@lezer/markdown";
+import { type SyntaxNode, type Tree, TreeFragment } from "@lezer/common";
+import { GFM, Table, parser as mdParser } from "@lezer/markdown";
 import type {
   Block,
   BlockResolvedLinkReference,
@@ -13,6 +13,7 @@ import type {
   NormalizedFormatAnticipation,
   LinkReferenceDefinition,
   Patch,
+  NodeSnapshot,
   PatchMetrics,
   PerformanceMetrics,
   ProtectedRange,
@@ -29,6 +30,10 @@ import {
   PerformanceTimer,
   blocksStructurallyEqual,
   cloneBlock,
+  createBlockSnapshot,
+  extractLezerCode,
+  prepareNestedBlockSnapshot,
+  createBlockCompatibilityExtension,
   collectLinkReferences,
   diffLinkReferences,
   dedentIndentedCode,
@@ -42,6 +47,7 @@ import {
   prepareInlineStreamingContent,
   removeHeadingMarkers,
   sanitizeHtmlInWorker,
+  sanitizeHtmlTreeInWorker,
   stripCodeFence,
 } from "@stream-mdx/core";
 import {
@@ -54,6 +60,8 @@ import {
   registerFootnotesPlugin,
 } from "@stream-mdx/plugins";
 import { isBlockLevelNode, mapLezerNodeToBlockType } from "../parser/block-types";
+import { HtmlContinuationExtension } from "../parser/html-extension";
+import { groupHtmlOwnership } from "./html-ownership";
 import { computeParagraphPatchLimit } from "../perf/patch-heuristics";
 import {
   clampLazyRange,
@@ -105,14 +113,12 @@ import {
   collectHtmlProtectedRangesFromSegments,
   collectMathProtectedRanges,
   computeChangedRanges,
-  enrichListBlock,
   maybeBuildTocPatch,
   parseGfmTableFromTree,
   reportWorkerStructuralInvariantViolations,
   slugifyHeading,
 } from "./parse-extract";
 import {
-  blockToNodeSnapshot,
   countChangedBlocksFromPatches,
   diffNodeSnapshot,
   ensureAnnotatedPatchBatch,
@@ -174,7 +180,7 @@ function sliceAppendChunk(text: string, maxChars: number): { chunk: string; rest
 export class MarkdownEngine {
   private readonly postFn: (message: WorkerOut) => void;
   public readonly extensions?: EngineExtensions;
-  private readonly mdParser: typeof mdParser;
+  private mdParser!: typeof mdParser;
 
   public readonly documentPluginRegistry: DocumentPluginRegistry;
   private readonly documentPluginState: DocumentState = {};
@@ -245,8 +251,7 @@ export class MarkdownEngine {
     this.postFn = options.post;
     this.extensions = options.extensions;
 
-    const markdownExtensions = [GFM, ...(this.extensions?.markdown ?? [])];
-    this.mdParser = mdParser.configure(markdownExtensions);
+    this.buildMarkdownParser(true);
 
     this.documentPluginRegistry = new DocumentPluginRegistry();
     if (this.extensions?.documentPlugins) {
@@ -261,10 +266,16 @@ export class MarkdownEngine {
     this.buildInlineParser();
   }
 
+  private buildMarkdownParser(tables: boolean): void {
+    const gfm = tables ? GFM : GFM.filter((extension) => extension !== Table);
+    this.mdParser = mdParser.configure([gfm, createBlockCompatibilityExtension(), HtmlContinuationExtension, ...(this.extensions?.markdown ?? [])]);
+  }
+
   private buildInlineParser(): void {
     const inlineExt = this.extensions?.inline;
     this.inlineParser = new InlineParser({
       enableMath: this.enableMath,
+      html: this.htmlConfig,
       ...(inlineExt ? { extensions: inlineExt } : {}),
       ...(this.syntaxRules.length > 0 ? { syntax: this.syntaxRules } : {}),
     });
@@ -563,6 +574,7 @@ export class MarkdownEngine {
       emitHighlightTokens: docPlugins?.emitHighlightTokens ?? true,
       emitDiffBlocks: docPlugins?.emitDiffBlocks ?? false,
     };
+    this.buildMarkdownParser(enable.tables);
 
     this.mdxEnabled = enable.mdx;
     this.enableMath = enable.math;
@@ -821,7 +833,7 @@ export class MarkdownEngine {
             }
 
             if (!block) {
-              block = await this.createBlock(blockType, raw, from, to, content, options, nodeType);
+              block = await this.createBlock(blockType, raw, from, to, content, options, nodeType, cursor.node);
             }
             if (block && raw.trim()) {
               extracted.push(block);
@@ -834,7 +846,7 @@ export class MarkdownEngine {
         return await this.extractBlocksSimple(content, options);
       }
 
-      return extracted;
+      return groupHtmlOwnership(extracted, this.mdParser, content, this.htmlConfig, 0, (text) => this.inlineParser.parse(text));
     } catch (error) {
       console.warn("Lezer parsing failed, falling back to simple parsing:", error);
       return await this.extractBlocksSimple(content, options);
@@ -895,6 +907,7 @@ export class MarkdownEngine {
     fullContent: string,
     options: ParseOptions = {},
     nodeType?: string,
+    syntaxNode?: SyntaxNode,
   ): Promise<Block | null> {
     if (!raw.trim()) return null;
 
@@ -906,7 +919,12 @@ export class MarkdownEngine {
 
     const id = generateBlockId(`${from}:${blockType}`, blockType);
 
-    const initialMeta: Record<string, unknown> = {};
+    const initialMeta: Record<string, unknown> = nodeType ? { lezerNodeType: nodeType } : {};
+    if (type === "code" && syntaxNode) {
+      const { code, info } = extractLezerCode(syntaxNode, fullContent);
+      initialMeta.code = code;
+      initialMeta.info = info;
+    }
     if (nodeType === "SetextHeading1") {
       initialMeta.headingLevel = 1;
     } else if (nodeType === "SetextHeading2") {
@@ -1054,16 +1072,9 @@ export class MarkdownEngine {
         break;
       }
 
-      case "blockquote": {
-        const normalized = normalizeBlockquoteText(block.payload.raw ?? "");
-        const streamingParsed = !block.isFinalized ? this.parseInlineStreaming(normalized) : null;
-        if (block.isFinalized) {
-          block.payload.inline = this.inlineParser.parse(normalized);
-        } else {
-          block.payload.inline = streamingParsed?.inline ?? [{ kind: "text", text: normalized }];
-        }
+      case "blockquote":
+        await this.prepareNestedChildren(block);
         break;
-      }
 
       case "paragraph": {
         const rawParagraph = typeof block.payload.raw === "string" ? block.payload.raw : "";
@@ -1127,7 +1138,7 @@ export class MarkdownEngine {
           };
           const inlineFn = block.isFinalized ? (v: string) => this.inlineParser.parse(v) : (v: string) => this.parseInlineStreaming(v).inline;
           const segments = extractMixedContentSegments(rawParagraph, baseOffset, inlineFn, mixedSegmentOptions);
-          const hasStructuredSegments = segments.some((segment) => segment.kind !== "text");
+          const hasStructuredSegments = segments.some((segment) => segment.kind === "mdx");
           const htmlRanges = collectHtmlProtectedRangesFromSegments(segments, baseOffset);
           if (htmlRanges.length > 0) {
             protectedRanges.push(...htmlRanges);
@@ -1188,6 +1199,9 @@ export class MarkdownEngine {
         const sanitized = sanitizeHtmlInWorker(rawHtml, this.htmlConfig);
         block.payload.sanitizedHtml = sanitized;
         const nextMeta: Record<string, unknown> = { ...(block.payload.meta || {}), sanitized: true };
+        if (this.htmlConfig?.literalTagContent !== undefined && !nextMeta.htmlOwnership) {
+          nextMeta.htmlTree = sanitizeHtmlTreeInWorker(rawHtml, this.htmlConfig, undefined, (text) => this.inlineParser.parse(text));
+        }
         if (rawHtml) {
           nextMeta.protectedRanges = [{ from: 0, to: rawHtml.length, kind: "html-block" }];
         }
@@ -1196,7 +1210,7 @@ export class MarkdownEngine {
       }
 
       case "list":
-        enrichListBlock(block, this.inlineParser, this.enableMath, this.formatAnticipationConfig);
+        await this.prepareNestedChildren(block);
         break;
 
       case "table": {
@@ -1271,16 +1285,84 @@ export class MarkdownEngine {
     metrics?.recordBlockEnrich(block.type, enrichDuration);
   }
 
+  private async prepareNestedChildren(block: Block): Promise<void> {
+    block.payload.meta = { ...block.payload.meta, mathEnabled: this.enableMath, formatAnticipation: this.formatAnticipationConfig };
+    const prepared = prepareNestedBlockSnapshot(block, this.inlineParser, this.mdParser, (text) => this.parseInlineStreaming(text).inline);
+    const groupChildren = (children: NodeSnapshot[]): NodeSnapshot[] => {
+      const grouped: NodeSnapshot[] = [];
+      let sequence: NodeSnapshot[] = [];
+      const flush = () => {
+        const blocks = sequence.map((child) => child.props?.block as Block);
+        const owned = groupHtmlOwnership(blocks, this.mdParser, block.payload.raw, this.htmlConfig, block.payload.range?.from ?? 0, (text) => this.inlineParser.parse(text));
+        for (const child of owned) {
+          const original = sequence.find((candidate) => candidate.props?.block === child);
+          grouped.push(original ?? createBlockSnapshot(child));
+        }
+        sequence = [];
+      };
+      for (const child of children) {
+        if (child.props?.block) sequence.push(child);
+        else {
+          flush();
+          grouped.push(child);
+        }
+      }
+      flush();
+      return grouped;
+    };
+    const enrich = async (snapshot: NodeSnapshot): Promise<void> => {
+      for (const child of snapshot.children ?? []) await enrich(child);
+      snapshot.children = groupChildren(snapshot.children ?? []);
+      const nested = snapshot.props?.block as Block | undefined;
+      if (!nested) return;
+      if (nested.type === "list" || nested.type === "blockquote" || nested.type === "list-item") {
+        const { block: _block, ...props } = snapshot.props ?? {};
+        nested.payload.meta = { ...nested.payload.meta, preparedNested: { props, children: snapshot.children ?? [] } };
+      } else {
+        await this.enrichBlockContent(nested);
+        const updated = createBlockSnapshot(nested);
+        snapshot.type = updated.type;
+        snapshot.props = { ...snapshot.props, ...updated.props, inline: nested.payload.inline };
+        snapshot.meta = updated.meta;
+        snapshot.children = updated.children;
+      }
+    };
+    for (const child of prepared.children) await enrich(child);
+    prepared.children = groupChildren(prepared.children);
+    const canonicalize = (value: unknown): void => {
+      if (!value || typeof value !== "object") return;
+      if (Array.isArray(value)) {
+        for (const child of value) canonicalize(child);
+      } else {
+        const record = value as Record<string, unknown>;
+        for (const key of Object.keys(record)) {
+          if (record[key] === undefined) delete record[key];
+          else canonicalize(record[key]);
+        }
+      }
+    };
+    canonicalize(prepared);
+    block.payload.meta = {
+      ...block.payload.meta,
+      ...prepared.props,
+      ...(block.type === "list" ? { items: prepared.children.map((child) => child.props?.inline ?? []) } : {}),
+      preparedNested: prepared,
+    };
+  }
+
   public async enrichCodeBlock(block: Block): Promise<void> {
     this.performanceTimer.mark("highlight-code");
     const metrics = this.activeMetricsCollector;
 
     const raw = block.payload.raw ?? "";
-    const { code, info, hadFence } = stripCodeFence(raw);
+    const extracted = stripCodeFence(raw);
+    const preparedCode = block.payload.meta?.code;
+    const info = typeof block.payload.meta?.info === "string" ? block.payload.meta.info : extracted.info;
     const { lang, meta } = parseCodeFenceInfo(info);
     let diffInfo = detectDiffLanguage(lang, meta);
-    const codeBody = hadFence ? dedentFencedCodeByClosingIndent(raw, code) : dedentIndentedCode(raw);
-    const codeLines = extractCodeLines(raw);
+    const codeBody = typeof preparedCode === "string" ? preparedCode
+      : extracted.hadFence ? dedentFencedCodeByClosingIndent(raw, extracted.code) : dedentIndentedCode(raw);
+    const codeLines = codeBody.split("\n");
     if (!diffInfo.isDiff && this.emitDiffBlocks && looksLikeUnifiedDiff(codeLines)) {
       diffInfo = {
         isDiff: true,
@@ -1688,7 +1770,7 @@ export class MarkdownEngine {
     this.tocHeadings = nextHeadings;
     this.tocSignature = nextSignature;
 
-    const enrichCodeFn = (b: Block) => this.enrichCodeBlock(b);
+    
     for (let index = 0; index < currentBlocks.length; index++) {
       const block = currentBlocks[index];
       if (!block) continue;
@@ -1696,7 +1778,7 @@ export class MarkdownEngine {
         op: "insertChild",
         at: { blockId: PATCH_ROOT_ID },
         index,
-        node: await blockToNodeSnapshot(block, this.highlighter, enrichCodeFn),
+        node: createBlockSnapshot(block),
       });
     }
     if (tocPatch) {
@@ -1755,7 +1837,7 @@ export class MarkdownEngine {
 
     const removeCount = prevTail >= prefix ? prevTail - prefix + 1 : 0;
     const addCount = nextTail >= prefix ? nextTail - prefix + 1 : 0;
-    const enrichCodeFn = (b: Block) => this.enrichCodeBlock(b);
+    
 
     if (removeCount === addCount) {
       for (let offset = 0; offset < addCount; offset++) {
@@ -1764,7 +1846,7 @@ export class MarkdownEngine {
           op: "replaceChild",
           at: { blockId: PATCH_ROOT_ID },
           index: targetIndex,
-          node: await blockToNodeSnapshot(nextBlocks[targetIndex], this.highlighter, enrichCodeFn),
+          node: createBlockSnapshot(nextBlocks[targetIndex]),
         });
       }
     } else {
@@ -1783,7 +1865,7 @@ export class MarkdownEngine {
           op: "insertChild",
           at: { blockId: PATCH_ROOT_ID },
           index: insertIndex,
-          node: await blockToNodeSnapshot(block, this.highlighter, enrichCodeFn),
+          node: createBlockSnapshot(block),
         });
       }
     }
@@ -1880,7 +1962,7 @@ export class MarkdownEngine {
     const patches: Patch[] = [];
     const prevMap = new Map(previousBlocks.map((block) => [block.id, block]));
     const changedBlockIds = collectChangedBlockIds(previousBlocks, nextBlocks, changedRanges);
-    const enrichCodeFn = (b: Block) => this.enrichCodeBlock(b);
+    
 
     for (const nextBlock of nextBlocks) {
       const prevBlock = prevMap.get(nextBlock.id);
@@ -1912,8 +1994,8 @@ export class MarkdownEngine {
         continue;
       }
 
-      const prevSnapshot = await blockToNodeSnapshot(prevBlock, this.highlighter, enrichCodeFn);
-      const nextSnapshot = await blockToNodeSnapshot(nextBlock, this.highlighter, enrichCodeFn);
+      const prevSnapshot = createBlockSnapshot(prevBlock);
+      const nextSnapshot = createBlockSnapshot(nextBlock);
       diffNodeSnapshot(nextBlock.id, prevSnapshot, nextSnapshot, patches, metrics);
     }
 
@@ -2045,7 +2127,7 @@ export class MarkdownEngine {
 
   private async dispatchFinalCanonicalSnapshot(finalBlocks: Block[]): Promise<void> {
     const patches: Patch[] = [];
-    const enrichCodeFn = (b: Block) => this.enrichCodeBlock(b);
+    
     for (let index = 0; index < finalBlocks.length; index++) {
       const block = finalBlocks[index];
       if (!block) continue;
@@ -2053,7 +2135,7 @@ export class MarkdownEngine {
         op: "replaceChild",
         at: { blockId: PATCH_ROOT_ID },
         index,
-        node: await blockToNodeSnapshot(block, this.highlighter, enrichCodeFn),
+        node: createBlockSnapshot(block),
       });
     }
     this.dispatchPatchBatch(patches);
@@ -2182,8 +2264,8 @@ export class MarkdownEngine {
     const metricsCollector = new WorkerMetricsCollector(this.workerGrammarEngine);
     this.activeMetricsCollector = metricsCollector;
     metricsCollector.setBlocksProduced(this.blocks.length);
-    const enrichCodeFn = (b: Block) => this.enrichCodeBlock(b);
-    const prevSnapshot = await blockToNodeSnapshot(block, this.highlighter, enrichCodeFn);
+    
+    const prevSnapshot = createBlockSnapshot(block);
 
     const tokenizationStart = now();
     const segmentLines = codeLines.slice(state.processedLines, targetEnd);
@@ -2281,7 +2363,7 @@ export class MarkdownEngine {
     updated.payload.meta = nextMeta;
     this.blocks[index] = updated;
 
-    const nextSnapshot = await blockToNodeSnapshot(updated, this.highlighter, enrichCodeFn);
+    const nextSnapshot = createBlockSnapshot(updated);
 
     const patches: Patch[] = [];
     diffNodeSnapshot(updated.id, prevSnapshot, nextSnapshot, patches, metricsCollector);

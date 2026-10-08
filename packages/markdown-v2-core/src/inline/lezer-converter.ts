@@ -1,7 +1,8 @@
 import type { NodeSet } from "@lezer/common";
-import type { InlineNode } from "../types";
-import { decodeEntity } from "./entities";
 import { decodeHTML5Strict } from "entities";
+import type { HtmlOptions, InlineNode } from "../types";
+import { decodeEntity } from "./entities";
+import { sanitizeHtmlTreeInWorker } from "../worker-html-sanitizer";
 import { normalizeLinkLabel } from "./reference-collector";
 import type { InlineExtension, LinkReferenceDefinition, LinkReferenceMap, MarkdownElement } from "./types";
 
@@ -9,6 +10,7 @@ export interface LezerConverterOptions {
   nodeSet: NodeSet;
   references?: LinkReferenceMap;
   extensionsByName?: Record<string, InlineExtension>;
+  html?: HtmlOptions;
 }
 
 function resolveReference(map: LinkReferenceMap | undefined, rawLabel: string): LinkReferenceDefinition | undefined {
@@ -121,15 +123,35 @@ export function mergeAdjacentTextNodes(nodes: InlineNode[]): InlineNode[] {
   return result;
 }
 
+const VOID_TAGS: Record<string, true> = {
+  br: true,
+  hr: true,
+  img: true,
+  meta: true,
+  input: true,
+  link: true,
+  source: true,
+  track: true,
+  area: true,
+  base: true,
+  col: true,
+  embed: true,
+  param: true,
+  wbr: true,
+};
+
+
 export class LezerInlineConverter {
   private nodeSet: NodeSet;
   private references?: LinkReferenceMap;
   private extensionsByName: Record<string, InlineExtension>;
+  private html?: HtmlOptions;
 
   constructor(options: LezerConverterOptions) {
     this.nodeSet = options.nodeSet;
     this.references = options.references;
     this.extensionsByName = options.extensionsByName ?? {};
+    this.html = options.html;
   }
 
   setReferences(references: LinkReferenceMap | undefined): void {
@@ -145,7 +167,8 @@ export class LezerInlineConverter {
     const nodes: InlineNode[] = [];
     let cursor = from;
 
-    for (const el of elements) {
+    for (let index = 0; index < elements.length; index++) {
+      const el = elements[index];
       if (el.to <= from || el.from >= to) {
         continue;
       }
@@ -160,6 +183,39 @@ export class LezerInlineConverter {
 
       const nodeName = this.nodeSet.types[el.type]?.name ?? "";
       const converted = this.convertElement(el, nodeName, text);
+      if (converted && !Array.isArray(converted) && converted.kind === "html" &&
+          !converted.isClose && !converted.isSelfClosing && converted.tagName) {
+        let depth = 1;
+        let closeIndex = elements.length;
+        for (let next = index + 1; next < elements.length; next++) {
+          const candidate = elements[next];
+          if (candidate.from >= to) break;
+          if (this.nodeSet.types[candidate.type]?.name !== "HTMLTag") continue;
+          const raw = text.slice(candidate.from, candidate.to);
+          const name = /^<\/?([^\s/>]+)/.exec(raw)?.[1]?.toLowerCase();
+          if (name !== converted.tagName) continue;
+          if (raw.startsWith("</")) depth--;
+          else if (!raw.endsWith("/>")) depth++;
+          if (depth === 0) {
+            closeIndex = next;
+            break;
+          }
+        }
+        const close = elements[closeIndex];
+        const innerTo = close?.from ?? to;
+        const end = close?.to ?? to;
+        const inner = text.slice(el.to, innerTo);
+        converted.raw = text.slice(el.from, end);
+        const literal = ["code", "pre", "textarea", ...(this.html?.literalTagContent ?? [])]
+          .some((tag) => tag.toLowerCase() === converted.tagName);
+        converted.children = converted.tagName === "script" || converted.tagName === "style"
+          ? []
+          : literal
+            ? [{ kind: "text", text: decodeEntity(inner) }]
+            : this.convertRange(elements.slice(index + 1, closeIndex), text, el.to, innerTo);
+        index = close ? closeIndex : elements.length;
+        cursor = end;
+      }
       if (Array.isArray(converted)) {
         nodes.push(...converted);
       } else if (converted !== null && converted !== undefined) {
@@ -254,11 +310,31 @@ export class LezerInlineConverter {
 
       case "Entity":
         return { kind: "text", text: decodeEntity(text.slice(el.from, el.to)) };
+      case "Comment":
+      case "ProcessingInstruction":
+        return { kind: "html", raw: text.slice(el.from, el.to), sanitized: "", isSelfClosing: true };
 
-      case "HTMLTag":
-        // Preserve HTML tag verbatim as text so downstream mixed-content / react handle it
-        return { kind: "text", text: text.slice(el.from, el.to) };
-
+      case "HTMLTag": {
+        // Lezer has already validated this exact range, including quoted '>' and newlines.
+        const raw = text.slice(el.from, el.to);
+        const tagName = /^<\/?([^\s/>]+)/.exec(raw)?.[1]?.toLowerCase();
+        if (!tagName || raw.startsWith("<!") || raw.startsWith("<?")) {
+          return { kind: "html", raw, sanitized: "", isSelfClosing: true };
+        }
+        if (raw.startsWith("</")) {
+          return { kind: "html", raw, tagName, isClose: true, sanitized: "" };
+        }
+        const safe = sanitizeHtmlTreeInWorker(raw, this.html).find((node) => node.kind === "element");
+        return {
+          kind: "html",
+          raw,
+          tagName,
+          isSelfClosing: raw.endsWith("/>") || Boolean(VOID_TAGS[tagName]),
+          attributes: safe?.kind === "element" ? safe.attributes : undefined,
+          sanitized: safe ? undefined : "",
+          children: [],
+        };
+      }
       case "InlineMath": {
         const tex = text.slice(el.from + 1, el.to - 1).trim();
         return { kind: "math-inline", tex };

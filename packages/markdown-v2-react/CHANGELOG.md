@@ -1,5 +1,10 @@
 # @stream-mdx/react
 
+## Unreleased
+
+- Honor explicit HTML block markdown opt-in through engine-prepared inline children and scoped component mappings, including server rendering. Native CommonMark HTML blocks remain raw by default.
+- Add consumer coverage for HTML literal precedence, native inline extensions, and streamed partial closing markers.
+
 ## 0.1.0
 
 ### Minor Changes
