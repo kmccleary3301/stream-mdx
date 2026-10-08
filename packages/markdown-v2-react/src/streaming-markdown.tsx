@@ -929,13 +929,6 @@ function StreamingMarkdownComponent(
         onCopy: handleLinkCopy,
       })
     : null;
-  const documentContext = useMemo(() => {
-    if (typeof text !== "string") return undefined;
-    return {
-      documentText: text,
-    };
-  }, [text]);
-  renderer.getComponentRegistry().setDocumentContext(documentContext);
 
 
   return (
@@ -949,7 +942,6 @@ function StreamingMarkdownComponent(
             componentRegistry={renderer.getComponentRegistry()}
             codeRenderers={codeRenderers}
             blockRenderer={blockRenderer}
-            documentContext={documentContext}
             className={resolvedClassName}
             style={resolvedStyle}
             store={store}

@@ -102,7 +102,6 @@ async function runTests() {
   // Test 3: reference links resolve inside a routed paragraph
   {
     console.log("Test 3: reference links resolve inside a routed paragraph...");
-    const documentText = '[stream-docs]: https://stream-mdx.dev "Official Docs"\n\nVisit [stream-docs] for more.';
     const unifiedRenderer = createUnifiedRenderer({
       components: {
         a: (props) => React.createElement("a", { ...props, className: "custom-ref-link" }),
@@ -115,6 +114,15 @@ async function runTests() {
       isFinalized: true,
       payload: {
         raw: "Visit [stream-docs] for more.",
+        meta: {
+          linkReferences: [
+            {
+              label: "stream-docs",
+              href: "https://stream-mdx.dev",
+              title: "Official Docs",
+            },
+          ],
+        },
       },
     };
 
@@ -122,9 +130,6 @@ async function runTests() {
     const rendered = unifiedRenderer({
       block: paragraphBlock,
       element: defaultElement,
-      context: {
-        documentText,
-      },
     });
 
     const html = ReactDOMServer.renderToStaticMarkup(rendered as React.ReactElement);
@@ -143,7 +148,7 @@ async function runTests() {
       /class="custom-ref-link"/,
       "Custom component mapping should be applied to resolved link",
     );
-    console.log("✓ Test 3 passed: Reference links resolve properly using document context");
+    console.log("✓ Test 3 passed: Reference links resolve properly using block.payload.meta.linkReferences");
   }
 
   // Test 4: streaming in 1-char chunks yields the same final DOM as static
@@ -250,6 +255,72 @@ async function runTests() {
     ReactDOMServer.renderToStaticMarkup(el3 as React.ReactElement);
     assert.strictEqual(parseCalls, 2, "After clearCache(), plugin should run again");
     console.log("✓ Test 5 passed: Finalized block caching works as expected");
+  }
+
+  // Test 6: Bounded LRU cache eviction and key uniqueness with linkReferences
+  {
+    console.log("Test 6: Bounded LRU cache eviction and key uniqueness...");
+    let runs = 0;
+    function trackingPlugin() {
+      return () => {
+        runs += 1;
+      };
+    }
+
+    const smallCacheRenderer = createUnifiedRenderer({
+      remarkPlugins: [trackingPlugin],
+      cacheSize: 2,
+    });
+
+    const b1: Block = { id: "b1", type: "paragraph", isFinalized: true, payload: { raw: "one" } };
+    const b2: Block = { id: "b2", type: "paragraph", isFinalized: true, payload: { raw: "two" } };
+    const b3: Block = { id: "b3", type: "paragraph", isFinalized: true, payload: { raw: "three" } };
+
+    // Fill cache with b1 and b2
+    ReactDOMServer.renderToStaticMarkup(smallCacheRenderer({ block: b1, element: React.createElement("p") }) as React.ReactElement);
+    ReactDOMServer.renderToStaticMarkup(smallCacheRenderer({ block: b2, element: React.createElement("p") }) as React.ReactElement);
+    assert.strictEqual(runs, 2, "b1 and b2 should compute");
+
+    // Adding b3 should evict b1 (oldest)
+    ReactDOMServer.renderToStaticMarkup(smallCacheRenderer({ block: b3, element: React.createElement("p") }) as React.ReactElement);
+    assert.strictEqual(runs, 3, "b3 should compute and evict b1");
+
+    // b2 is still in cache
+    ReactDOMServer.renderToStaticMarkup(smallCacheRenderer({ block: b2, element: React.createElement("p") }) as React.ReactElement);
+    assert.strictEqual(runs, 3, "b2 should still be cached");
+
+    // b1 was evicted so re-rendering it recomputes
+    ReactDOMServer.renderToStaticMarkup(smallCacheRenderer({ block: b1, element: React.createElement("p") }) as React.ReactElement);
+    assert.strictEqual(runs, 4, "evicted b1 should recompute");
+
+    // Cache key includes linkReferences: same raw text but different linkReferences must recompute
+    const bWithRefs: Block = {
+      id: "b-refs",
+      type: "paragraph",
+      isFinalized: true,
+      payload: {
+        raw: "link [x]",
+        meta: { linkReferences: [{ label: "x", href: "https://a.com" }] },
+      },
+    };
+    const bWithDifferentRefs: Block = {
+      id: "b-refs",
+      type: "paragraph",
+      isFinalized: true,
+      payload: {
+        raw: "link [x]",
+        meta: { linkReferences: [{ label: "x", href: "https://b.com" }] },
+      },
+    };
+
+    const r1 = smallCacheRenderer({ block: bWithRefs, element: React.createElement("p") });
+    const html1 = ReactDOMServer.renderToStaticMarkup(r1 as React.ReactElement);
+    assert.match(html1, /https:\/\/a\.com/);
+
+    const r2 = smallCacheRenderer({ block: bWithDifferentRefs, element: React.createElement("p") });
+    const html2 = ReactDOMServer.renderToStaticMarkup(r2 as React.ReactElement);
+    assert.match(html2, /https:\/\/b\.com/);
+    console.log("✓ Test 6 passed: LRU cache is bounded and cache key incorporates linkReferences");
   }
 
   console.log("All @stream-mdx/unified tests passed successfully!");

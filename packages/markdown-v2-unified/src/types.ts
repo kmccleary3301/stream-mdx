@@ -1,6 +1,5 @@
 import type React from "react";
 import type { PluggableList } from "unified";
-export type { PluggableList } from "unified";
 import type { FinalizedBlockRenderProps } from "@stream-mdx/react";
 
 export interface UnifiedRendererOptions {
@@ -13,11 +12,6 @@ export interface UnifiedRendererOptions {
    */
   blockTypes?: string[];
   /**
-   * Optional explicit link reference definitions to resolve reference links.
-   * Can be raw markdown definitions (`[ref]: http://...`) or a getter function.
-   */
-  linkReferences?: string | (() => string);
-  /**
    * Enable math support (remark-math). Defaults to false.
    */
   math?: boolean;
@@ -25,6 +19,10 @@ export interface UnifiedRendererOptions {
    * Enable GitHub Flavored Markdown (remark-gfm). Defaults to true.
    */
   gfm?: boolean;
+  /**
+   * Maximum number of rendered blocks to retain in LRU cache. Defaults to 500.
+   */
+  cacheSize?: number;
 }
 
 export interface UnifiedRenderer {
@@ -32,3 +30,5 @@ export interface UnifiedRenderer {
   clearCache(): void;
   options: UnifiedRendererOptions;
 }
+
+export type { PluggableList } from "unified";

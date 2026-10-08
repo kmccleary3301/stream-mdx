@@ -257,10 +257,9 @@ export function Article({ markdown }: { markdown: string }) {
 - `rehypePlugins`: List of rehype plugins or tuples `[plugin, options]`
 - `components`: Custom React component mapping passed to `hast-util-to-jsx-runtime`
 - `blockTypes`: Block types to route through unified (defaults to all standard blocks: paragraph, heading, blockquote, list, table, code, hr)
-- `linkReferences`: Optional custom link definitions string or getter
+- `cacheSize`: Maximum number of rendered blocks to retain in LRU cache (default: `500`)
 - `math`: Enable math syntax (`remark-math`)
 - `gfm`: Enable GitHub Flavored Markdown (`remark-gfm`, default: `true`)
-```
 
 ### CodeFenceRenderer contract
 - **Language lookup**: Case-insensitive and trimmed (`"ts"`, `"TS"`, `"python"`).

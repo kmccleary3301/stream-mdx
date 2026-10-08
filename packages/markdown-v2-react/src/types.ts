@@ -110,7 +110,6 @@ export type InlineComponents = Record<string, GenericComponent> & {
 export interface FinalizedBlockRenderProps {
   block: Block;
   element: React.ReactElement;
-  context?: Record<string, unknown>;
 }
 
 export type BlockRendererOverride = (props: FinalizedBlockRenderProps) => React.ReactNode;

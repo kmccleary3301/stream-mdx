@@ -8,7 +8,6 @@ import remarkRehype from "remark-rehype";
 import { toJsxRuntime } from "hast-util-to-jsx-runtime";
 import type { Block } from "@stream-mdx/core";
 import type { FinalizedBlockRenderProps } from "@stream-mdx/react";
-import { extractLinkDefinitions } from "./link-definitions";
 import type { UnifiedRenderer, UnifiedRendererOptions } from "./types";
 
 type HastNode = Parameters<typeof toJsxRuntime>[0];
@@ -16,6 +15,12 @@ type HastNode = Parameters<typeof toJsxRuntime>[0];
 export interface UnifiedBlockProcessor {
   parse(input: string): unknown;
   runSync(tree: unknown): unknown;
+}
+
+export interface ResolvedLinkReference {
+  label: string;
+  href: string;
+  title?: string;
 }
 
 const DEFAULT_ROUTED_BLOCK_TYPES: Record<string, true> = {
@@ -27,6 +32,59 @@ const DEFAULT_ROUTED_BLOCK_TYPES: Record<string, true> = {
   code: true,
   hr: true,
 };
+
+export class BoundedLruCache<K, V> {
+  private readonly maxEntries: number;
+  private readonly map = new Map<K, V>();
+
+  constructor(maxEntries = 500) {
+    this.maxEntries = Math.max(1, maxEntries);
+  }
+
+  get(key: K): V | undefined {
+    const value = this.map.get(key);
+    if (value !== undefined) {
+      this.map.delete(key);
+      this.map.set(key, value);
+    }
+    return value;
+  }
+
+  set(key: K, value: V): void {
+    if (this.map.has(key)) {
+      this.map.delete(key);
+    } else if (this.map.size >= this.maxEntries) {
+      const oldestKey = this.map.keys().next().value;
+      if (oldestKey !== undefined) {
+        this.map.delete(oldestKey);
+      }
+    }
+    this.map.set(key, value);
+  }
+
+  clear(): void {
+    this.map.clear();
+  }
+
+  get size(): number {
+    return this.map.size;
+  }
+}
+
+export function formatLinkDefinitions(refs: readonly ResolvedLinkReference[]): string {
+  const lines: string[] = [];
+  for (const ref of refs) {
+    if (!ref.label || !ref.href) continue;
+    const cleanHref = `<${ref.href.replace(/>/g, "%3E")}>`;
+    if (ref.title) {
+      const cleanTitle = ref.title.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+      lines.push(`[${ref.label}]: ${cleanHref} "${cleanTitle}"`);
+    } else {
+      lines.push(`[${ref.label}]: ${cleanHref}`);
+    }
+  }
+  return lines.join("\n");
+}
 
 function buildProcessor(options: UnifiedRendererOptions): UnifiedBlockProcessor {
   const p = unified().use(remarkParse);
@@ -55,23 +113,27 @@ function buildProcessor(options: UnifiedRendererOptions): UnifiedBlockProcessor 
 interface UnifiedBlockItemProps {
   block: Block;
   element: React.ReactElement;
-  context?: Record<string, unknown>;
   processor: UnifiedBlockProcessor;
   options: UnifiedRendererOptions;
-  cache: Map<string, React.ReactNode>;
+  cache: BoundedLruCache<string, React.ReactNode>;
 }
 
 export const UnifiedBlockItem: React.FC<UnifiedBlockItemProps> = ({
   block,
   element,
-  context,
   processor,
   options,
   cache,
 }) => {
   const raw = typeof block.payload.raw === "string" ? block.payload.raw : "";
-  const cacheKey = `${block.id}::${raw}`;
+  const metaRefs = Array.isArray(block.payload.meta?.linkReferences)
+    ? (block.payload.meta.linkReferences as ResolvedLinkReference[])
+    : undefined;
+  const serializedRefs = metaRefs && metaRefs.length > 0 ? JSON.stringify(metaRefs) : "";
+  const cacheKey = `${block.id}::${raw}::${serializedRefs}`;
 
+  // Note: processor, options, and cache are immutable per createUnifiedRenderer instance
+  // and created once upon initialization; all read variables are listed in the dependency array.
   const rendered = useMemo(() => {
     const cached = cache.get(cacheKey);
     if (cached !== undefined) {
@@ -79,17 +141,7 @@ export const UnifiedBlockItem: React.FC<UnifiedBlockItemProps> = ({
     }
 
     try {
-      let linkDefs = "";
-      if (typeof options.linkReferences === "string") {
-        linkDefs = options.linkReferences;
-      } else if (typeof options.linkReferences === "function") {
-        linkDefs = options.linkReferences();
-      } else if (typeof context?.linkReferenceDefinitions === "string") {
-        linkDefs = context.linkReferenceDefinitions;
-      } else if (typeof context?.documentText === "string") {
-        linkDefs = extractLinkDefinitions(context.documentText);
-      }
-
+      const linkDefs = metaRefs && metaRefs.length > 0 ? formatLinkDefinitions(metaRefs) : "";
       const input = linkDefs ? `${linkDefs}\n\n${raw}` : raw;
       const mdast = processor.parse(input);
       const hast = processor.runSync(mdast);
@@ -107,7 +159,7 @@ export const UnifiedBlockItem: React.FC<UnifiedBlockItemProps> = ({
       console.warn("Unified block rendering failed, falling back to default:", error);
       return element;
     }
-  }, [cacheKey, element, context?.linkReferenceDefinitions, context?.documentText]);
+  }, [cacheKey, element, cache, processor, options, metaRefs, raw]);
 
   if (React.isValidElement(rendered)) {
     return rendered;
@@ -116,14 +168,14 @@ export const UnifiedBlockItem: React.FC<UnifiedBlockItemProps> = ({
 };
 
 export function createUnifiedRenderer(options: UnifiedRendererOptions = {}): UnifiedRenderer {
-  const cache = new Map<string, React.ReactNode>();
+  const cache = new BoundedLruCache<string, React.ReactNode>(options.cacheSize ?? 500);
   const processor = buildProcessor(options);
   const routedTypeMap: Record<string, true> = options.blockTypes
     ? Object.fromEntries(options.blockTypes.map((type) => [type, true]))
     : DEFAULT_ROUTED_BLOCK_TYPES;
 
   const renderer: UnifiedRenderer = (props: FinalizedBlockRenderProps) => {
-    const { block, element, context } = props;
+    const { block, element } = props;
     if (!block.isFinalized || !routedTypeMap[block.type]) {
       return element;
     }
@@ -133,7 +185,6 @@ export function createUnifiedRenderer(options: UnifiedRendererOptions = {}): Uni
         key={block.id}
         block={block}
         element={element}
-        context={context}
         processor={processor}
         options={options}
         cache={cache}

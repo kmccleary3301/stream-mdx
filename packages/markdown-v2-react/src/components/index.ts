@@ -662,7 +662,6 @@ export class ComponentRegistry {
   private artifactHtml = false;
   private linkHandler: ((url: string) => void) | undefined;
   private blockRenderer?: BlockRendererOverride;
-  private documentContext?: Record<string, unknown>;
   private blockComponentMapCache: BlockComponents | null = null;
   private inlineComponentMapCache: InlineComponents | null = null;
 
@@ -715,21 +714,11 @@ export class ComponentRegistry {
   getBlockRenderer(): BlockRendererOverride | undefined {
     return this.blockRenderer;
   }
-
-  setDocumentContext(ctx?: Record<string, unknown>): void {
-    this.documentContext = ctx;
-  }
-
-  getDocumentContext(): Record<string, unknown> | undefined {
-    return this.documentContext;
-  }
-
   renderFinalizedBlock(block: Block, defaultElement: React.ReactElement): React.ReactNode {
     if (this.blockRenderer && block.isFinalized) {
       return this.blockRenderer({
         block,
         element: defaultElement,
-        context: this.documentContext,
       });
     }
     return defaultElement;

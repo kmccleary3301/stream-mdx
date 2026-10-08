@@ -19,11 +19,10 @@ export interface MarkdownBlocksRendererProps {
   style?: React.CSSProperties;
   store?: RendererStore;
   blockRenderer?: BlockRendererOverride;
-  documentContext?: Record<string, unknown>;
 }
 
 export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
-  ({ blocks, componentRegistry, codeRenderers, blockRenderer, documentContext, className = "markdown-renderer", style, store }) => {
+  ({ blocks, componentRegistry, codeRenderers, blockRenderer, className = "markdown-renderer", style, store }) => {
     const resolvedRegistry = useMemo(() => {
       const reg = componentRegistry ?? new ComponentRegistry();
       if (codeRenderers) {
@@ -32,11 +31,8 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
       if (blockRenderer) {
         reg.setBlockRenderer(blockRenderer);
       }
-      if (documentContext) {
-        reg.setDocumentContext(documentContext);
-      }
       return reg;
-    }, [componentRegistry, codeRenderers, blockRenderer, documentContext]);
+    }, [componentRegistry, codeRenderers, blockRenderer]);
   if (store) {
     return React.createElement(
       "div",
