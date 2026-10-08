@@ -96,6 +96,15 @@ export type InlineNode =
   | { kind: "link"; href?: string; title?: string; children: InlineNode[] }
   | { kind: "image"; src: string; alt?: string; title?: string }
   | { kind: "br" }
+  | {
+      kind: "html";
+      raw: string;
+      sanitized?: string;
+      tagName?: string;
+      isClose?: boolean;
+      isSelfClosing?: boolean;
+      attributes?: Record<string, string>;
+    }
   // extensible:
   | { kind: "mention"; handle: string }
   | { kind: "citation"; id: string }
