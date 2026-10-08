@@ -15,6 +15,8 @@ import { cn } from "@/lib/utils";
 import { StreamingMarkdown, type StreamingMarkdownHandle, type StreamingSchedulerOptions } from "@stream-mdx/react";
 import ReactMarkdown from "react-markdown";
 import { Streamdown } from "streamdown";
+import { code } from "@streamdown/code";
+import { createMathPlugin } from "@streamdown/math";
 import remarkGfm from "remark-gfm";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
@@ -250,19 +252,21 @@ function ReactMarkdownPanel({
     </div>
   );
 }
+const streamdownPlugins = {
+  code,
+  math: createMathPlugin({ singleDollarTextMath: true }),
+};
 
 function StreamdownPanel({
   text,
   seq,
   onCommit,
-  remarkPlugins,
-  rehypePlugins,
+  isAnimating = false,
 }: {
   text: string;
   seq: number;
   onCommit: (seq: number) => void;
-  remarkPlugins?: any[];
-  rehypePlugins?: any[];
+  isAnimating?: boolean;
 }) {
   useLayoutEffect(() => {
     if (seq > 0) onCommit(seq);
@@ -270,7 +274,13 @@ function StreamdownPanel({
 
   return (
     <div className="prose max-w-none text-sm">
-      <Streamdown remarkPlugins={remarkPlugins} rehypePlugins={rehypePlugins}>
+      <Streamdown
+        mode="streaming"
+        plugins={streamdownPlugins}
+        parseIncompleteMarkdown={true}
+        isAnimating={isAnimating}
+        animated={false}
+      >
         {text}
       </Streamdown>
     </div>
@@ -294,6 +304,7 @@ function StreamMdxPanel({
     mdx: boolean;
     footnotes: boolean;
     callouts: boolean;
+    liveCodeHighlighting?: boolean;
   };
   scheduling: StreamingSchedulerOptions;
 }) {
@@ -324,6 +335,7 @@ function StreamMdxPanel({
         className="markdown-v2-output"
         features={features}
         scheduling={scheduling}
+        caret={false}
       />
     </div>
   );
@@ -400,8 +412,8 @@ export function LiveRendererComparison() {
   const streamMdxFeatures = useMemo(
     () =>
       profile === "parity-gfm"
-        ? { html: false, tables: true, math: false, mdx: false, footnotes: false, callouts: false }
-        : { html: true, tables: true, math: true, mdx: true, footnotes: true, callouts: true },
+        ? { html: false, tables: true, math: true, mdx: false, footnotes: false, callouts: false, liveCodeHighlighting: true }
+        : { html: true, tables: true, math: true, mdx: true, footnotes: true, callouts: true, liveCodeHighlighting: true },
     [profile],
   );
   const streamMdxScheduling = useMemo(
@@ -409,10 +421,6 @@ export function LiveRendererComparison() {
     [methodologyMode],
   );
   const reactMarkdownPlugins = useMemo(() => [remarkGfm], []);
-  const streamdownPlugins = useMemo(
-    () => (profile === "parity-gfm" ? { remarkPlugins: [remarkGfm], rehypePlugins: [] as any[] } : undefined),
-    [profile],
-  );
 
   const syncPointsState = useCallback(() => {
     const ordered = [...pointsBySeqRef.current.values()].sort((a, b) => a.seq - b.seq);
@@ -1574,8 +1582,7 @@ export function LiveRendererComparison() {
                 text={engineText.streamdown}
                 seq={activeEngine === "streamdown" ? activeSeq : 0}
                 onCommit={handleStreamdownCommit}
-                remarkPlugins={streamdownPlugins?.remarkPlugins}
-                rehypePlugins={streamdownPlugins?.rehypePlugins}
+                isAnimating={activeEngine === "streamdown" && runState === "running"}
               />
             </BottomStickScrollArea>
           ) : null}

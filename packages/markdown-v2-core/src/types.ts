@@ -212,7 +212,7 @@ export type WorkerOut =
 export interface InlinePlugin {
   id: string;
   priority: number; // lower runs earlier
-  apply(nodes: InlineNode[]): InlineNode[];
+  apply?: (nodes: InlineNode[]) => InlineNode[];
 }
 
 export interface RegexInlinePlugin extends InlinePlugin {

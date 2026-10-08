@@ -1,4 +1,3 @@
-import "./worker-dom-stub";
-import { serveMarkdownWorker } from "./engine";
+import { serveMarkdownWorker } from "./engine/index";
 
 serveMarkdownWorker();

@@ -28,6 +28,7 @@ import {
   PerformanceTimer,
   blocksStructurallyEqual,
   cloneBlock,
+  collectLinkReferences,
   computeHeavyPatchBudget,
   dedentIndentedCode,
   detectMDX,
@@ -646,9 +647,8 @@ export class MarkdownEngine {
     metrics?.markParseStart();
 
     const tree = this.mdParser.parse(content);
+    this.inlineParser.setReferences(collectLinkReferences(tree, content));
     let extractedBlocks = await this.extractBlocks(tree, content, options);
-
-    extractedBlocks = this.runDocumentPlugins(extractedBlocks, content);
 
     this.performanceTimer.measure("parse-all");
     metrics?.markParseEnd();
@@ -670,15 +670,16 @@ export class MarkdownEngine {
 
     const treeFragments = this.lastTree && "fragments" in this.lastTree ? (this.lastTree as unknown as { fragments?: unknown }).fragments as never : undefined;
     let newTree = treeFragments ? this.mdParser.parse(newContent, treeFragments) : this.mdParser.parse(newContent);
+    this.inlineParser.setReferences(collectLinkReferences(newTree, newContent));
 
     let changedBlocks = await this.extractBlocks(newTree, newContent);
-    changedBlocks = this.runDocumentPlugins(changedBlocks, newContent);
     const lastRange = changedBlocks.length > 0 ? changedBlocks[changedBlocks.length - 1]?.payload?.range : undefined;
     const lastTo = typeof lastRange?.to === "number" ? lastRange.to : 0;
     if (lastTo < newContent.length - 1) {
       const tail = newContent.slice(lastTo).trim();
       if (tail.length > 0) {
         const fullTree = this.mdParser.parse(newContent);
+        this.inlineParser.setReferences(collectLinkReferences(fullTree, newContent));
         let fullBlocks = await this.extractBlocks(fullTree, newContent);
         fullBlocks = this.runDocumentPlugins(fullBlocks, newContent);
         const fullLast = fullBlocks.length > 0 ? fullBlocks[fullBlocks.length - 1]?.payload?.range?.to ?? 0 : 0;

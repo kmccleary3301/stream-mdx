@@ -3,20 +3,32 @@ import React, { useMemo } from "react";
 
 import { getBlockKey, PATCH_ROOT_ID } from "@stream-mdx/core";
 import { ComponentRegistry } from "../components";
+import type { CodeFenceRenderer } from "../types";
 import { useRendererChildren } from "./hooks";
 import { BlockNodeRenderer } from "./node-views";
-import { createRendererStore } from "./store";
+import type { RendererStore } from "./store";
 
 /**
  * React component for rendering markdown blocks
  */
-export const MarkdownBlocksRenderer = React.memo<{
+export interface MarkdownBlocksRendererProps {
   blocks: ReadonlyArray<Block>;
-  componentRegistry: ComponentRegistry;
+  componentRegistry?: ComponentRegistry;
+  codeRenderers?: Record<string, CodeFenceRenderer>;
   className?: string;
   style?: React.CSSProperties;
-  store?: ReturnType<typeof createRendererStore>;
-}>(({ blocks, componentRegistry, className = "markdown-renderer", style, store }) => {
+  store?: RendererStore;
+}
+
+export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
+  ({ blocks, componentRegistry, codeRenderers, className = "markdown-renderer", style, store }) => {
+    const resolvedRegistry = useMemo(() => {
+      const reg = componentRegistry ?? new ComponentRegistry();
+      if (codeRenderers) {
+        reg.setCodeRenderers(codeRenderers);
+      }
+      return reg;
+    }, [componentRegistry, codeRenderers]);
   if (store) {
     return React.createElement(
       "div",
@@ -24,7 +36,7 @@ export const MarkdownBlocksRenderer = React.memo<{
         className,
         style: { contain: "content", ...(style ?? {}) }, // CSS containment for performance
       },
-      React.createElement(StoreBackedBlocks, { store, componentRegistry }),
+      React.createElement(StoreBackedBlocks, { store, componentRegistry: resolvedRegistry }),
     );
   }
 
@@ -34,11 +46,11 @@ export const MarkdownBlocksRenderer = React.memo<{
       return React.createElement(BlockRenderer, {
         key,
         block,
-        componentRegistry,
+        componentRegistry: resolvedRegistry,
         isFinalized: block.isFinalized,
       });
     });
-  }, [blocks, componentRegistry]);
+  }, [blocks, resolvedRegistry]);
 
   return React.createElement(
     "div",
@@ -50,7 +62,7 @@ export const MarkdownBlocksRenderer = React.memo<{
   );
 });
 
-const StoreBackedBlocks = React.memo<{ store: ReturnType<typeof createRendererStore>; componentRegistry: ComponentRegistry }>(
+const StoreBackedBlocks = React.memo<{ store: RendererStore; componentRegistry: ComponentRegistry }>(
   ({ store, componentRegistry }) => {
     const blockIds = useRendererChildren(store, PATCH_ROOT_ID);
     return React.createElement(

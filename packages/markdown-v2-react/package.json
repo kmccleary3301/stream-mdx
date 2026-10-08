@@ -41,6 +41,21 @@
       "import": "./dist/components/bottom-stick-scroll-area.mjs",
       "require": "./dist/components/bottom-stick-scroll-area.cjs"
     },
+    "./components/artifact-frame": {
+      "types": "./dist/components/artifact-frame.d.ts",
+      "import": "./dist/components/artifact-frame.mjs",
+      "require": "./dist/components/artifact-frame.cjs"
+    },
+    "./components/diff-renderer": {
+      "types": "./dist/components/diff-renderer.d.ts",
+      "import": "./dist/components/diff-renderer.mjs",
+      "require": "./dist/components/diff-renderer.cjs"
+    },
+    "./components/katex-math": {
+      "types": "./dist/components/katex-math.d.ts",
+      "import": "./dist/components/katex-math.mjs",
+      "require": "./dist/components/katex-math.cjs"
+    },
     "./renderer": {
       "types": "./dist/renderer/index.d.ts",
       "import": "./dist/renderer/index.mjs",
@@ -109,6 +124,12 @@
   },
   "peerDependencies": {
     "react": ">=18.2.0",
-    "react-dom": ">=18.2.0"
+    "react-dom": ">=18.2.0",
+    "katex": "^0.16.0"
+  },
+  "peerDependenciesMeta": {
+    "katex": {
+      "optional": true
+    }
   }
 }

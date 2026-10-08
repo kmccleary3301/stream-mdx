@@ -2,4 +2,3 @@
 
 export { MathInlinePlugin, MathDisplayPlugin } from "./plugins";
 export { MathTokenizer } from "./tokenizer";
-export { MathInlineRenderer, MathDisplayRenderer } from "./renderer";

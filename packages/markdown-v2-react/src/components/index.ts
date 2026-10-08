@@ -1,7 +1,10 @@
 // Default component implementations for V2 Markdown Renderer
 export * from "./bottom-stick-scroll-area";
+export * from "./artifact-frame";
+export * from "./diff-renderer";
+export * from "./katex-math";
 
-import { createTrustedHTML, sanitizeHTML } from "@stream-mdx/core";
+import { createTrustedHTML, sanitizeHTML, stripCodeFence } from "@stream-mdx/core";
 import { markMdxHydrated, markMdxHydrationError, markMdxHydrationStart } from "../mdx-hydration-metrics";
 import { MdxHydrationContext } from "../mdx-hydration-context";
 import { loadMdxRuntime } from "../mdx-runtime";
@@ -14,7 +17,10 @@ import type {
 import { removeHeadingMarkers } from "@stream-mdx/core";
 import React from "react";
 import { DEFAULT_INLINE_HTML_RENDERERS, renderInlineHtmlSegment } from "../utils/inline-html";
-import type { BlockComponents, HtmlElements, InlineComponents, InlineHtmlRendererMap, TableElements } from "../types";
+import type { BlockComponents, CodeFenceRenderer, HtmlElements, InlineComponents, InlineHtmlRendererMap, MathRenderer, TableElements } from "../types";
+import { ArtifactFrame } from "./artifact-frame";
+import { DefaultDiffRenderer } from "./diff-renderer";
+import { KaTeXBlockMath, KaTeXInlineMath } from "./katex-math";
 export { DefaultLinkSafetyModal, type LinkSafetyModalProps } from "./link-safety-modal";
 
 class MdxRuntimeBoundary extends React.Component<
@@ -99,12 +105,17 @@ export function renderInlineNodes(nodes: InlineNode[], components: InlineCompone
         return React.createElement(components.image, {
           key,
           src: node.src,
-          alt: node.alt,
+          alt: node.alt ?? "",
           title: node.title,
         });
 
       case "br":
-        return React.createElement(React.Fragment, { key }, React.createElement(components.br, {} as Record<string, never>));
+        return React.createElement(
+          React.Fragment,
+          { key },
+          React.createElement(components.br, {} as Record<string, never>),
+          "\n",
+        );
 
       default: {
         // Handle custom/extensible nodes
@@ -183,26 +194,11 @@ export const defaultInlineComponents: InlineComponents = {
       `[${id}]`,
     ),
 
-  "math-inline": ({ tex }) =>
-    React.createElement(
-      "span",
-      {
-        className: "math-inline",
-        "data-tex": tex,
-      },
-      `$${tex}$`,
-    ),
+  "math-inline": ({ tex }: { tex: string }) =>
+    React.createElement(KaTeXInlineMath, { tex }),
 
-  "math-display": ({ tex }) =>
-    React.createElement(
-      "div",
-      {
-        className: "math-display markdown-math-display",
-        "data-tex": tex,
-        style: { overflowX: "auto" },
-      },
-      React.createElement("span", { className: "math-display-content" }, `$$${tex}$$`),
-    ),
+  "math-display": ({ tex }: { tex: string }) =>
+    React.createElement(KaTeXBlockMath, { tex }),
 
   // Footnote inline reference (superscript anchor)
   "footnote-ref": ({ label, number }: { label: string; number?: number }) => {
@@ -662,14 +658,87 @@ export class ComponentRegistry {
   private inlineComponents: InlineComponents;
   private htmlElements: HtmlElements;
   private tableElements: TableElements;
+  private codeRenderers: Record<string, CodeFenceRenderer> = {};
+  private artifactHtml = false;
+  private linkHandler: ((url: string) => void) | undefined;
   private blockComponentMapCache: BlockComponents | null = null;
   private inlineComponentMapCache: InlineComponents | null = null;
 
-  constructor(blockComponents: Partial<BlockComponents> = {}, inlineComponents: Partial<InlineComponents> = {}) {
+  constructor(
+    blockComponents: Partial<BlockComponents> = {},
+    inlineComponents: Partial<InlineComponents> = {},
+    codeRenderers: Record<string, CodeFenceRenderer> = {},
+    options?: { artifactHtml?: boolean; mathRenderer?: MathRenderer },
+  ) {
     this.blockComponents = { ...defaultBlockComponents, ...blockComponents } as BlockComponents;
     this.inlineComponents = { ...defaultInlineComponents, ...inlineComponents } as InlineComponents;
     this.htmlElements = getDefaultHtmlElements();
     this.tableElements = getDefaultTableElements();
+    this.artifactHtml = Boolean(options?.artifactHtml);
+    if (codeRenderers) {
+      this.setCodeRenderers(codeRenderers);
+    }
+    if (options?.mathRenderer) {
+      this.setMathRenderer(options.mathRenderer);
+    }
+  }
+
+  setCodeRenderers(renderers: Record<string, CodeFenceRenderer>): void {
+    const next: Record<string, CodeFenceRenderer> = { ...this.codeRenderers };
+    for (const [lang, renderer] of Object.entries(renderers)) {
+      next[lang.trim().toLowerCase()] = renderer;
+    }
+    this.codeRenderers = next;
+  }
+
+  setArtifactHtml(enabled: boolean): void {
+    this.artifactHtml = enabled;
+  }
+
+  /** Link handler handed to code fence renderers as `openLink` (StreamingMarkdown installs its `linkSafety`-aware handler). */
+  setLinkHandler(handler: ((url: string) => void) | undefined): void {
+    this.linkHandler = handler;
+  }
+
+  getLinkHandler(): ((url: string) => void) | undefined {
+    return this.linkHandler;
+  }
+
+  setMathRenderer(mathRenderer: MathRenderer): void {
+    if (typeof mathRenderer === "function") {
+      this.inlineComponents = {
+        ...this.inlineComponents,
+        "math-inline": ({ tex }: { tex: string }) => React.createElement(mathRenderer, { tex, display: false }),
+        "math-display": ({ tex }: { tex: string }) => React.createElement(mathRenderer, { tex, display: true }),
+      } as InlineComponents;
+    } else if (mathRenderer && typeof mathRenderer === "object") {
+      const inlineComp = mathRenderer.inline;
+      const displayComp = mathRenderer.display;
+      this.inlineComponents = {
+        ...this.inlineComponents,
+        ...(inlineComp ? { "math-inline": ({ tex }: { tex: string }) => React.createElement(inlineComp, { tex }) } : {}),
+        ...(displayComp ? { "math-display": ({ tex }: { tex: string }) => React.createElement(displayComp, { tex }) } : {}),
+      } as InlineComponents;
+    }
+    this.inlineComponentMapCache = null;
+  }
+
+  getCodeRenderer(language: string): CodeFenceRenderer | undefined {
+    const normalized = (language ?? "").trim().toLowerCase();
+    if (Object.prototype.hasOwnProperty.call(this.codeRenderers, normalized)) {
+      return this.codeRenderers[normalized];
+    }
+    if (normalized === "artifact" || normalized === "html-artifact") {
+      return ArtifactFrame;
+    }
+    if (normalized === "html" && this.artifactHtml) {
+      return ArtifactFrame;
+    }
+    return undefined;
+  }
+
+  getCodeRendererMap(): Record<string, CodeFenceRenderer> {
+    return { ...this.codeRenderers };
   }
 
   /**
@@ -736,11 +805,53 @@ export class ComponentRegistry {
   renderBlock(block: Block): React.ReactElement {
     const Component = this.getBlockComponent(block.type);
     const props = this.getBlockProps(block);
-
-    return React.createElement(Component, {
+    const element = React.createElement(Component, {
       key: block.id,
       ...props,
     });
+
+    if (block.type === "code") {
+      const meta = (block.payload.meta ?? {}) as Record<string, unknown>;
+      const lang = typeof meta.lang === "string" ? String(meta.lang) : "";
+      const normalizedLang = lang.trim().toLowerCase();
+      const codeRenderer = this.getCodeRenderer(normalizedLang);
+      const raw = typeof block.payload.raw === "string" ? block.payload.raw : "";
+      const metaCode = typeof meta.code === "string" ? (meta.code as string) : null;
+      const normalizedRaw = raw.replace(/\r\n?/g, "\n");
+      const fenced = stripCodeFence(normalizedRaw);
+      const codeText = metaCode !== null ? metaCode.replace(/\r\n?/g, "\n") : (fenced.hadFence ? fenced.code : normalizedRaw);
+      const infoText = typeof meta.info === "string" ? (meta.info as string) : lang;
+
+      if (codeRenderer) {
+        const RendererComponent = typeof codeRenderer === "function" ? codeRenderer : codeRenderer.component;
+        return React.createElement(RendererComponent, {
+          key: block.id,
+          code: codeText,
+          language: lang,
+          meta,
+          info: infoText,
+          isFinalized: block.isFinalized,
+          blockId: block.id,
+          renderCode: element,
+          openLink: this.linkHandler,
+        });
+      }
+
+      if (Array.isArray(meta.diffBlocks) && meta.diffBlocks.length > 0) {
+        return React.createElement(DefaultDiffRenderer, {
+          key: block.id,
+          code: codeText,
+          language: lang,
+          meta,
+          info: infoText,
+          isFinalized: block.isFinalized,
+          blockId: block.id,
+          renderCode: element,
+        });
+      }
+    }
+
+    return element;
   }
 
   /**

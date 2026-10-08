@@ -16,4 +16,18 @@ export * from "./renderer/virtualized-code";
 export * from "./streaming-markdown";
 export type { RendererMetrics } from "./streaming-markdown";
 export type { AdaptiveBudgetState } from "./renderer/patch-commit-scheduler";
-export type { BlockComponents, HtmlElements, InlineComponents, InlineHtmlRenderer, InlineHtmlRendererMap, Renderer, RendererConfig, TableElements } from "./types";
+export type {
+  BlockComponents,
+  CodeFenceRenderer,
+  CodeFenceRendererConfig,
+  CodeFenceRendererProps,
+  HtmlElements,
+  InlineComponents,
+  InlineHtmlRenderer,
+  InlineHtmlRendererMap,
+  MathRenderer,
+  MathRendererProps,
+  Renderer,
+  RendererConfig,
+  TableElements,
+} from "./types";

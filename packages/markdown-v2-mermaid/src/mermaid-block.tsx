@@ -40,11 +40,18 @@ export type MermaidBlockProps = {
   renderCode: React.ReactNode;
   meta?: Record<string, unknown>;
   isFinalized?: boolean;
+  language: string;
+  info?: string;
+  blockId?: string;
   defaultView?: "diagram" | "code";
   debounceMs?: number;
 };
+export interface MermaidBlockComponent extends React.FC<MermaidBlockProps> {
+  defer?: boolean;
+}
 
-export const MermaidBlock: React.FC<MermaidBlockProps> = ({ code, renderCode, defaultView = "diagram", debounceMs = 200 }) => {
+
+export const MermaidBlock: MermaidBlockComponent = ({ code, renderCode, defaultView = "diagram", debounceMs = 200 }) => {
   const [view, setView] = React.useState<"diagram" | "code">(defaultView);
   const [svg, setSvg] = React.useState<string>("");
   const [error, setError] = React.useState<string | null>(null);
@@ -188,4 +195,5 @@ export const MermaidBlock: React.FC<MermaidBlockProps> = ({ code, renderCode, de
     </div>
   );
 };
+MermaidBlock.defer = true;
 

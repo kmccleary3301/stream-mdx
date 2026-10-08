@@ -47,7 +47,7 @@ import { MermaidBlock } from "@stream-mdx/mermaid";
 
 <StreamingMarkdown
   text={content}
-  components={{ mermaid: MermaidBlock }}
+  codeRenderers={{ mermaid: MermaidBlock }}
 />
 ```
 

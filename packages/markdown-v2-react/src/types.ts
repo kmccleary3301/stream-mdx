@@ -13,6 +13,40 @@ import type {
 } from "@stream-mdx/core";
 import type { ComponentRegistry } from "./components";
 
+export interface CodeFenceRendererProps {
+  code: string;
+  language: string;
+  meta?: Record<string, unknown>;
+  info?: string;
+  isFinalized?: boolean;
+  blockId?: string;
+  renderCode: React.ReactNode;
+  /** Host link handler (honors `linkSafety`). Renderers that surface links, such as artifacts, route clicks through it. */
+  openLink?: (url: string) => void;
+}
+
+export interface CodeFenceRendererConfig {
+  component: React.ComponentType<CodeFenceRendererProps>;
+  defer?: boolean;
+}
+
+export type CodeFenceRenderer =
+  | React.ComponentType<CodeFenceRendererProps>
+  | CodeFenceRendererConfig;
+
+export interface MathRendererProps {
+  tex: string;
+  display?: boolean;
+  className?: string;
+}
+
+export type MathRenderer =
+  | React.ComponentType<MathRendererProps>
+  | {
+      inline?: React.ComponentType<{ tex: string; className?: string }>;
+      display?: React.ComponentType<{ tex: string; className?: string }>;
+    };
+
 export type GenericComponent = React.ComponentType<any>;
 
 export interface TableElements {
@@ -104,6 +138,9 @@ export interface RendererConfig {
     emitHighlightTokens?: boolean;
     emitDiffBlocks?: boolean;
   };
+  codeRenderers?: Record<string, CodeFenceRenderer>;
+  mathRenderer?: MathRenderer;
+  artifactHtml?: boolean;
   performance?: {
     frameBudgetMs?: number;
     flushTimeoutMs?: number;
@@ -140,6 +177,8 @@ export interface Renderer {
   setBlockComponents(map: Partial<BlockComponents>): void;
   setInlineComponents(map: Partial<InlineComponents>): void;
   setMdxComponents(map: Record<string, GenericComponent>): void;
+  setCodeRenderers(map: Record<string, CodeFenceRenderer>): void;
+  setMathRenderer(renderer: MathRenderer): void;
   getComponentRegistry(): ComponentRegistry;
   getStore(): RendererStore;
   requestCodeHighlightRange(request: CodeHighlightRangeRequest): void;

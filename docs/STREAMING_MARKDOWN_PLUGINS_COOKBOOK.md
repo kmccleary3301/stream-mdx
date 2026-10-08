@@ -29,7 +29,6 @@ When you *do* need the plugin primitives (custom worker bundles, custom tokenize
 - `stream-mdx/plugins/html`
 - `stream-mdx/plugins/mdx`
 - `stream-mdx/plugins/math`
-- `stream-mdx/plugins/math/renderer`
 
 Scoped equivalents are available at `@stream-mdx/plugins/*`.
 
