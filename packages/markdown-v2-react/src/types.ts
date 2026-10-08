@@ -16,12 +16,12 @@ import type {
 import type { ComponentRegistry } from "./components";
 
 export type { HtmlOptions, SyntaxRuleSpec } from "@stream-mdx/core";
-
 import type {
   TableVirtualizationConfig,
   TableVirtualizationOptions,
 } from "./renderer/virtualized-table";
 export type { TableVirtualizationConfig, TableVirtualizationOptions };
+
 export interface CodeFenceRendererProps {
   code: string;
   language: string;

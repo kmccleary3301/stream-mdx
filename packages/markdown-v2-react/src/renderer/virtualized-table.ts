@@ -56,6 +56,7 @@ export interface TableVirtualizationProps {
 }
 
 interface NaturalTableLayout {
+  table: HTMLTableElement;
   rowIds: ReadonlyArray<string>;
   viewportWidth: number;
   tableWidth: number;
@@ -94,6 +95,12 @@ function normalizeTableScrollAncestors(table: HTMLTableElement, container: HTMLD
   };
 }
 
+interface TableDOMTargets {
+  table: HTMLTableElement;
+  header: HTMLTableSectionElement | null;
+  rows: HTMLTableRowElement[];
+}
+
 /** Measurements follow stable renderer row IDs, not positions in the current window. */
 export function useVirtualizedTable(
   rowIds: ReadonlyArray<string>,
@@ -101,6 +108,10 @@ export function useVirtualizedTable(
   enabledCondition: boolean,
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const [domTargets, setDOMTargets] = useState<TableDOMTargets | null>(null);
+  const targetsRef = useRef<TableDOMTargets | null>(null);
+  const viewportGeneration = useRef(0);
+  const measurementGeneration = useRef(0);
   const [scrollTop, setScrollTop] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
   const [headerHeight, setHeaderHeight] = useState(0);
@@ -113,7 +124,8 @@ export function useVirtualizedTable(
   const atBottom = useRef(false);
   const rowCount = rowIds.length;
   const isEligible = enabledCondition && config.enabled && rowCount >= config.minRows;
-  const isVirtualized = isEligible && naturalLayout?.rowIds === rowIds && naturalLayout.viewportWidth === containerWidth;
+  const isVirtualized = isEligible && domTargets !== null && naturalLayout?.table === domTargets.table &&
+    naturalLayout.rowIds === rowIds && naturalLayout.viewportWidth === containerWidth;
 
   // Rebuild only when measurements or rows change, never for a scroll event.
   const offsets = useMemo(() => {
@@ -127,6 +139,7 @@ export function useVirtualizedTable(
 
   const handleScroll = useCallback((event: React.UIEvent<HTMLDivElement>) => {
     const target = event.currentTarget;
+    if (target !== containerRef.current) return;
     atBottom.current = target.scrollTop > 0 && target.scrollHeight - target.clientHeight - target.scrollTop <= 1;
     setScrollTop(target.scrollTop);
     setContainerHeight(target.clientHeight);
@@ -164,12 +177,65 @@ export function useVirtualizedTable(
     };
   }, [isVirtualized, rowCount, offsets, scrollTop, containerHeight, headerHeight, config.maxHeight, config.overscan]);
 
+  const invalidateMeasurements = useCallback(() => {
+    measurementGeneration.current++;
+    measuredHeights.current.clear();
+    measuredWidth.current = 0;
+    atBottom.current = false;
+    setNaturalLayout(null);
+    setMeasureVersion((version) => version + 1);
+  }, []);
+
+  // Track actual DOM replacements, including adapters which replace their own native nodes.
   useEffect(() => {
-    if (!isEligible) return;
+    const container = containerRef.current;
+    if (!isEligible || !container) return;
+    const owner = ++viewportGeneration.current;
+    const updateTargets = () => {
+      if (viewportGeneration.current !== owner) return;
+      const table = container.querySelector("table");
+      if (!table) {
+        if (targetsRef.current) {
+          targetsRef.current = null;
+          setDOMTargets(null);
+          invalidateMeasurements();
+        }
+        return;
+      }
+      const header = table.querySelector("thead");
+      const rows = Array.from(table.querySelectorAll<HTMLTableRowElement>("tbody tr[data-row-id]"));
+      const previous = targetsRef.current;
+      if (previous?.table === table && previous.header === header &&
+        previous.rows.length === rows.length && previous.rows.every((row, index) => row === rows[index])) return;
+      if (previous?.table !== table || previous.header !== header) invalidateMeasurements();
+      const next = { table, header, rows };
+      targetsRef.current = next;
+      setDOMTargets(next);
+    };
+    updateTargets();
+    const Observer = container.ownerDocument.defaultView?.MutationObserver;
+    const observer = Observer ? new Observer(updateTargets) : null;
+    observer?.observe(container, { childList: true, subtree: true });
+    return () => {
+      observer?.disconnect();
+      if (viewportGeneration.current !== owner) return;
+      viewportGeneration.current++;
+      targetsRef.current = null;
+      setDOMTargets(null);
+      invalidateMeasurements();
+    };
+  }, [isEligible, invalidateMeasurements]);
+
+  useEffect(() => {
+    if (!isEligible || !domTargets) return;
     const container = containerRef.current;
     if (!container) return;
-    const header = container.querySelector("thead");
+    const { header } = domTargets;
+    const generation = measurementGeneration.current;
+    let active = true;
     const measureContainer = () => {
+      if (!active || measurementGeneration.current !== generation) return;
+      if (container.querySelector("table") !== domTargets.table) return;
       setScrollTop(container.scrollTop);
       setContainerHeight(container.clientHeight);
       setHeaderHeight(header?.getBoundingClientRect().height ?? 0);
@@ -186,41 +252,47 @@ export function useVirtualizedTable(
     const observer = new ResizeObserver(measureContainer);
     observer.observe(container);
     if (header) observer.observe(header);
-    return () => observer.disconnect();
-  }, [isEligible, config.maxHeight]);
+    return () => {
+      active = false;
+      observer.disconnect();
+    };
+  }, [isEligible, domTargets?.table, domTargets?.header, config.maxHeight]);
 
   useEffect(() => {
-    if (!isEligible) return;
+    if (!isEligible || !domTargets) return;
     const container = containerRef.current;
-    const table = container?.querySelector("table");
+    const table = domTargets.table;
     if (!container || !table) return;
     return normalizeTableScrollAncestors(table, container);
-  }, [isEligible]);
+  }, [isEligible, domTargets?.table]);
 
   // The complete auto-layout table is committed before each initial/width-change window.
   useEffect(() => {
-    if (!isEligible || isVirtualized) return;
+    if (!isEligible || isVirtualized || !domTargets) return;
     const container = containerRef.current;
-    const table = container?.querySelector("table");
+    const table = domTargets.table;
     if (!container || !table) return;
     const cells = table.querySelectorAll<HTMLTableCellElement>("thead tr:first-child > th, thead tr:first-child > td");
     const naturalCells = cells.length ? cells : table.querySelectorAll<HTMLTableCellElement>("tbody tr:first-child > td");
     const columnWidths = Array.from(naturalCells, (cell) => cell.getBoundingClientRect().width);
     setNaturalLayout({
+      table,
       rowIds,
       viewportWidth: container.clientWidth,
       tableWidth: table.getBoundingClientRect().width,
       columnWidths: columnWidths.every((width) => width > 0) ? columnWidths : [],
     });
-  }, [isEligible, isVirtualized, rowIds, containerWidth]);
+  }, [isEligible, isVirtualized, domTargets?.table, rowIds, containerWidth]);
 
   useEffect(() => {
     if (!isEligible) return;
     const container = containerRef.current;
     if (!container) return;
     const ancestors: HTMLElement[] = [];
+    const owner = viewportGeneration.current;
     for (let ancestor: HTMLElement | null = container; ancestor; ancestor = ancestor.parentElement) ancestors.push(ancestor);
     const updateBackground = () => {
+      if (!container.isConnected || viewportGeneration.current !== owner) return;
       for (const ancestor of ancestors) {
         const color = ancestor.ownerDocument.defaultView?.getComputedStyle(ancestor).backgroundColor;
         if (!color || color === "transparent") continue;
@@ -240,13 +312,18 @@ export function useVirtualizedTable(
   }, [isEligible]);
 
   useEffect(() => {
-    if (!isVirtualized) return;
+    if (!isVirtualized || !domTargets) return;
     const container = containerRef.current;
     if (!container) return;
-    const rows = container.querySelectorAll<HTMLTableRowElement>("tbody tr[data-row-id]");
+    const { rows } = domTargets;
+    const generation = measurementGeneration.current;
+    let active = true;
     const measureRows = () => {
+      if (!active || measurementGeneration.current !== generation) return;
+      if (container.querySelector("table") !== domTargets.table || naturalLayout?.viewportWidth !== container.clientWidth) return;
       let changed = false;
       for (const row of rows) {
+        if (!row.isConnected || !container.contains(row)) continue;
         const id = row.dataset.rowId;
         const height = row.getBoundingClientRect().height || row.offsetHeight;
         if (!id || height <= 0) continue;
@@ -262,8 +339,11 @@ export function useVirtualizedTable(
     if (typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver(measureRows);
     for (const row of rows) observer.observe(row);
-    return () => observer.disconnect();
-  }, [isVirtualized, rowIds, window.startIndex, window.endIndex, containerWidth]);
+    return () => {
+      active = false;
+      observer.disconnect();
+    };
+  }, [isVirtualized, domTargets?.rows, rowIds, window.startIndex, window.endIndex, containerWidth]);
 
   // Newly measured tail rows may move the scroll boundary. Keep a bottom scroll at the bottom.
   useEffect(() => {
