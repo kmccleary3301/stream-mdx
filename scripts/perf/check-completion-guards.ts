@@ -14,6 +14,11 @@ assert.notDeepEqual(collect('<table><tr><td>ab</td><td>c</td></tr></table>'), co
 assert.notDeepEqual(collect('<a href="/one">same</a>'), collect('<a href="/two">same</a>'));
 assert.notDeepEqual(collect('<details open><summary>same</summary></details>'), collect('<details><summary>same</summary></details>'));
 assert.equal(collect('<div>Hello</div><section>Done</section>').text, 'Hello\n\nDone');
+assert.notDeepEqual(collect('<p><code>a  b</code></p>'), collect('<p><code>a b</code></p>'));
+assert.notDeepEqual(collect('<p><code>a b</code></p>'), collect('<p>a b</p>'));
+assert.equal(collect('<button>Authored action</button>').text, 'Authored action');
+assert.notDeepEqual(collect('<b>bold</b>'), collect('<u>bold</u>'));
+assert.notDeepEqual(collect('<ol reversed type="a"><li>item</li></ol>'), collect('<ol><li>item</li></ol>'));
 const scenario = { updateIntervalMs: 1, charRateCps: 20000, maxChunkChars: 7 };
 const trace = createChunkTrace('abcdefghijklmnopqrstuvwxyz', scenario);
 assert.equal(trace.map(chunk => chunk.text).join(''), 'abcdefghijklmnopqrstuvwxyz');

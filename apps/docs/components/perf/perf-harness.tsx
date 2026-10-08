@@ -16,8 +16,11 @@ import { configureDemoRegistry, createDemoHtmlElements, createDemoTableElements 
 import { collectSemanticDom, renderedCodeSource, type SemanticDomRecords } from "../../../../scripts/perf/semantic-dom";
 import { createChunkTrace, semanticSha256 } from "../../../../scripts/perf/chunk-trace";
 
-const PARITY_CODE_RENDERERS: NonNullable<StreamingMarkdownProps["codeRenderers"]> = {
-  diff: ({ renderCode }) => <>{renderCode}</>,
+// Baseline ignores this optional config and already renders diff as ordinary code.
+const PARITY_RENDERER_OPTIONS = {
+  codeRenderers: {
+    diff: ({ renderCode }: { renderCode: React.ReactNode }) => <>{renderCode}</>,
+  },
 };
 const streamdownMath = createMathPlugin({ singleDollarTextMath: true });
 
@@ -776,7 +779,7 @@ export function PerfHarness(): JSX.Element {
           let hasContent = false;
           while (textNodes.nextNode()) {
             const node = textNodes.currentNode;
-            if ((node.textContent ?? "").trim() && !node.parentElement?.closest("button,[data-control],script,style,[data-streamdown='code-block-header']")) {
+            if ((node.textContent ?? "").trim() && !node.parentElement?.closest("[data-control],script,style,[data-streamdown='code-block-header'],[data-streamdown$='-button']")) {
               hasContent = true;
               break;
             }
@@ -924,7 +927,7 @@ export function PerfHarness(): JSX.Element {
                 onError={benchmarkWorker.onError}
                 className="markdown-v2-output"
                 features={PARITY_FEATURES}
-                codeRenderers={PARITY_CODE_RENDERERS}
+                {...PARITY_RENDERER_OPTIONS}
                 scheduling={scheduling}
                 caret={false}
                 onMetrics={onMetrics}
@@ -938,7 +941,7 @@ export function PerfHarness(): JSX.Element {
               onError={benchmarkWorker.onError}
               className="markdown-v2-output"
               features={PARITY_FEATURES}
-              codeRenderers={PARITY_CODE_RENDERERS}
+              {...PARITY_RENDERER_OPTIONS}
               scheduling={scheduling}
               caret={false}
               onMetrics={onMetrics}
