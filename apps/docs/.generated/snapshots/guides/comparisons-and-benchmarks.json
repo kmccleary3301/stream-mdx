@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-02-11T20:25:57.244Z",
-  "hash": "0b8750aa974cf83672843b6ed0c76e23ad0d3bd380d5977f837a55d88af83e3f",
+  "createdAt": "2026-10-08T19:49:00.859Z",
+  "hash": "ce7ad4d5cf509aba8e3950e71e7e592bed65426bb10651976556cfcb05dbd6db",
   "contentHash": "9ab4898f58320e62190a25a0f9793f9da729a4e0c95f691b1c2724edb104e919",
-  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
-  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "configHash": "a274f269183e8eac42eeb12b1ae0dc7fea9398cc27792626c9ca0c17911fb0b4",
+  "hashSalt": "docs-snapshots-v2:9417117db4c19b323c5bd2a5c7754c6e0d46bf7c962c13c422b86e6485aac7c0",
   "blocks": [
     {
       "id": "db082c0",
@@ -13,14 +13,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Comparisons and Benchmarks",
-        "range": {
-          "from": 0,
-          "to": 28
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading1",
           "headingLevel": 1,
           "headingText": "Comparisons and Benchmarks",
           "headingId": "comparisons-and-benchmarks"
+        },
+        "range": {
+          "from": 0,
+          "to": 28
         },
         "inline": [
           {
@@ -36,6 +37,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "This article is a roadmap for making fair, reproducible comparisons against other renderers (streamdown, react-markdown, or any custom pipeline). It focuses on testing methodology and on how to interpret the metrics StreamMDX records.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 30,
           "to": 264
@@ -54,14 +58,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "What to compare",
-        "range": {
-          "from": 266,
-          "to": 284
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "What to compare",
           "headingId": "what-to-compare"
+        },
+        "range": {
+          "from": 266,
+          "to": 284
         },
         "inline": [
           {
@@ -77,12 +82,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- **Time to first visible render**: first flush time with a realistic streaming scenario.\n- **Total stream duration**: time until the final render is stable.\n- **Stutter and jank**: long tasks and RAF delta p95.\n- **Memory growth**: peak heap size over the full stream.\n- **Output correctness**: HTML regression snapshots for the same fixture.",
-        "range": {
-          "from": 286,
-          "to": 629
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -160,7 +172,448 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "2e89b684::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 286,
+                  "to": 375
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "2e89b684::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **Time to first visible render**: first flush time with a realistic streaming scenario.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Time to first visible render"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": first flush time with a realistic streaming scenario."
+                        }
+                      ],
+                      "range": {
+                        "from": 286,
+                        "to": 375
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Time to first visible render"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": first flush time with a realistic streaming scenario."
+                              }
+                            ],
+                            "text": "Time to first visible render: first flush time with a realistic streaming scenario.",
+                            "raw": "- **Time to first visible render**: first flush time with a realistic streaming scenario."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Time to first visible render"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": first flush time with a realistic streaming scenario."
+                    }
+                  ],
+                  "text": "Time to first visible render: first flush time with a realistic streaming scenario.",
+                  "raw": "- **Time to first visible render**: first flush time with a realistic streaming scenario."
+                },
+                "children": []
+              },
+              {
+                "id": "2e89b684::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 376,
+                  "to": 443
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "2e89b684::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **Total stream duration**: time until the final render is stable.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Total stream duration"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": time until the final render is stable."
+                        }
+                      ],
+                      "range": {
+                        "from": 376,
+                        "to": 443
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Total stream duration"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": time until the final render is stable."
+                              }
+                            ],
+                            "text": "Total stream duration: time until the final render is stable.",
+                            "raw": "- **Total stream duration**: time until the final render is stable."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Total stream duration"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": time until the final render is stable."
+                    }
+                  ],
+                  "text": "Total stream duration: time until the final render is stable.",
+                  "raw": "- **Total stream duration**: time until the final render is stable."
+                },
+                "children": []
+              },
+              {
+                "id": "2e89b684::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 444,
+                  "to": 497
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "2e89b684::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **Stutter and jank**: long tasks and RAF delta p95.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Stutter and jank"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": long tasks and RAF delta p95."
+                        }
+                      ],
+                      "range": {
+                        "from": 444,
+                        "to": 497
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Stutter and jank"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": long tasks and RAF delta p95."
+                              }
+                            ],
+                            "text": "Stutter and jank: long tasks and RAF delta p95.",
+                            "raw": "- **Stutter and jank**: long tasks and RAF delta p95."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Stutter and jank"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": long tasks and RAF delta p95."
+                    }
+                  ],
+                  "text": "Stutter and jank: long tasks and RAF delta p95.",
+                  "raw": "- **Stutter and jank**: long tasks and RAF delta p95."
+                },
+                "children": []
+              },
+              {
+                "id": "2e89b684::item:3",
+                "type": "list-item",
+                "range": {
+                  "from": 498,
+                  "to": 555
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "2e89b684::item:3",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **Memory growth**: peak heap size over the full stream.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Memory growth"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": peak heap size over the full stream."
+                        }
+                      ],
+                      "range": {
+                        "from": 498,
+                        "to": 555
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 3,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Memory growth"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": peak heap size over the full stream."
+                              }
+                            ],
+                            "text": "Memory growth: peak heap size over the full stream.",
+                            "raw": "- **Memory growth**: peak heap size over the full stream."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 3,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Memory growth"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": peak heap size over the full stream."
+                    }
+                  ],
+                  "text": "Memory growth: peak heap size over the full stream.",
+                  "raw": "- **Memory growth**: peak heap size over the full stream."
+                },
+                "children": []
+              },
+              {
+                "id": "2e89b684::item:4",
+                "type": "list-item",
+                "range": {
+                  "from": 556,
+                  "to": 629
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "2e89b684::item:4",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **Output correctness**: HTML regression snapshots for the same fixture.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Output correctness"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": HTML regression snapshots for the same fixture."
+                        }
+                      ],
+                      "range": {
+                        "from": 556,
+                        "to": 629
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 4,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Output correctness"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": HTML regression snapshots for the same fixture."
+                              }
+                            ],
+                            "text": "Output correctness: HTML regression snapshots for the same fixture.",
+                            "raw": "- **Output correctness**: HTML regression snapshots for the same fixture."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 4,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Output correctness"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": HTML regression snapshots for the same fixture."
+                    }
+                  ],
+                  "text": "Output correctness: HTML regression snapshots for the same fixture.",
+                  "raw": "- **Output correctness**: HTML regression snapshots for the same fixture."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 286,
+          "to": 629
         }
       }
     },
@@ -170,14 +623,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Recommended workflow",
-        "range": {
-          "from": 631,
-          "to": 654
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Recommended workflow",
           "headingId": "recommended-workflow"
+        },
+        "range": {
+          "from": 631,
+          "to": 654
         },
         "inline": [
           {
@@ -193,12 +647,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "1. Capture StreamMDX baselines locally using the perf harness.\n2. Re-run the same fixture against competitors using their recommended API.\n3. Keep scenario definitions and chunk/tick sizes identical.\n4. Compare deltas with the harness comparator and log results.\n5. Validate final HTML output against baseline snapshots.",
-        "range": {
-          "from": 656,
-          "to": 976
-        },
         "meta": {
+          "lezerNodeType": "OrderedList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": true,
+          "loose": false,
           "items": [
             [
               {
@@ -231,7 +692,313 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": true,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "2f5bb83d::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 656,
+                  "to": 718
+                },
+                "props": {
+                  "ordered": true,
+                  "loose": false,
+                  "block": {
+                    "id": "2f5bb83d::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "1. Capture StreamMDX baselines locally using the perf harness.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Capture StreamMDX baselines locally using the perf harness."
+                        }
+                      ],
+                      "range": {
+                        "from": 656,
+                        "to": 718
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": true,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Capture StreamMDX baselines locally using the perf harness."
+                              }
+                            ],
+                            "text": "Capture StreamMDX baselines locally using the perf harness.",
+                            "raw": "1. Capture StreamMDX baselines locally using the perf harness."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Capture StreamMDX baselines locally using the perf harness."
+                    }
+                  ],
+                  "text": "Capture StreamMDX baselines locally using the perf harness.",
+                  "raw": "1. Capture StreamMDX baselines locally using the perf harness."
+                },
+                "children": []
+              },
+              {
+                "id": "2f5bb83d::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 719,
+                  "to": 794
+                },
+                "props": {
+                  "ordered": true,
+                  "loose": false,
+                  "block": {
+                    "id": "2f5bb83d::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "2. Re-run the same fixture against competitors using their recommended API.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Re-run the same fixture against competitors using their recommended API."
+                        }
+                      ],
+                      "range": {
+                        "from": 719,
+                        "to": 794
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": true,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Re-run the same fixture against competitors using their recommended API."
+                              }
+                            ],
+                            "text": "Re-run the same fixture against competitors using their recommended API.",
+                            "raw": "2. Re-run the same fixture against competitors using their recommended API."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Re-run the same fixture against competitors using their recommended API."
+                    }
+                  ],
+                  "text": "Re-run the same fixture against competitors using their recommended API.",
+                  "raw": "2. Re-run the same fixture against competitors using their recommended API."
+                },
+                "children": []
+              },
+              {
+                "id": "2f5bb83d::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 795,
+                  "to": 855
+                },
+                "props": {
+                  "ordered": true,
+                  "loose": false,
+                  "block": {
+                    "id": "2f5bb83d::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "3. Keep scenario definitions and chunk/tick sizes identical.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Keep scenario definitions and chunk/tick sizes identical."
+                        }
+                      ],
+                      "range": {
+                        "from": 795,
+                        "to": 855
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": true,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Keep scenario definitions and chunk/tick sizes identical."
+                              }
+                            ],
+                            "text": "Keep scenario definitions and chunk/tick sizes identical.",
+                            "raw": "3. Keep scenario definitions and chunk/tick sizes identical."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Keep scenario definitions and chunk/tick sizes identical."
+                    }
+                  ],
+                  "text": "Keep scenario definitions and chunk/tick sizes identical.",
+                  "raw": "3. Keep scenario definitions and chunk/tick sizes identical."
+                },
+                "children": []
+              },
+              {
+                "id": "2f5bb83d::item:3",
+                "type": "list-item",
+                "range": {
+                  "from": 856,
+                  "to": 918
+                },
+                "props": {
+                  "ordered": true,
+                  "loose": false,
+                  "block": {
+                    "id": "2f5bb83d::item:3",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "4. Compare deltas with the harness comparator and log results.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Compare deltas with the harness comparator and log results."
+                        }
+                      ],
+                      "range": {
+                        "from": 856,
+                        "to": 918
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": true,
+                            "loose": false,
+                            "index": 3,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Compare deltas with the harness comparator and log results."
+                              }
+                            ],
+                            "text": "Compare deltas with the harness comparator and log results.",
+                            "raw": "4. Compare deltas with the harness comparator and log results."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 3,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Compare deltas with the harness comparator and log results."
+                    }
+                  ],
+                  "text": "Compare deltas with the harness comparator and log results.",
+                  "raw": "4. Compare deltas with the harness comparator and log results."
+                },
+                "children": []
+              },
+              {
+                "id": "2f5bb83d::item:4",
+                "type": "list-item",
+                "range": {
+                  "from": 919,
+                  "to": 976
+                },
+                "props": {
+                  "ordered": true,
+                  "loose": false,
+                  "block": {
+                    "id": "2f5bb83d::item:4",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "5. Validate final HTML output against baseline snapshots.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Validate final HTML output against baseline snapshots."
+                        }
+                      ],
+                      "range": {
+                        "from": 919,
+                        "to": 976
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": true,
+                            "loose": false,
+                            "index": 4,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Validate final HTML output against baseline snapshots."
+                              }
+                            ],
+                            "text": "Validate final HTML output against baseline snapshots.",
+                            "raw": "5. Validate final HTML output against baseline snapshots."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 4,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Validate final HTML output against baseline snapshots."
+                    }
+                  ],
+                  "text": "Validate final HTML output against baseline snapshots.",
+                  "raw": "5. Validate final HTML output against baseline snapshots."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 656,
+          "to": 976
         }
       }
     },
@@ -241,14 +1008,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Fixtures and scenarios (current local baselines)",
-        "range": {
-          "from": 978,
-          "to": 1029
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Fixtures and scenarios (current local baselines)",
           "headingId": "fixtures-and-scenarios-current-local-baselines"
+        },
+        "range": {
+          "from": 978,
+          "to": 1029
         },
         "inline": [
           {
@@ -264,12 +1032,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- `naive-bayes`: `S1_slow_small`, `S2_typical`, `S4_chunky_network`\n- `table-large`: `S2_typical`, `S6_extreme`",
-        "range": {
-          "from": 1031,
-          "to": 1142
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -324,7 +1099,256 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "1e91955f::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 1031,
+                  "to": 1098
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "1e91955f::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `naive-bayes`: `S1_slow_small`, `S2_typical`, `S4_chunky_network`",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "naive-bayes"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "S1_slow_small"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "S2_typical"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "S4_chunky_network"
+                        }
+                      ],
+                      "range": {
+                        "from": 1031,
+                        "to": 1098
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "naive-bayes"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "S1_slow_small"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "S2_typical"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "S4_chunky_network"
+                              }
+                            ],
+                            "text": "naive-bayes: S1_slow_small, S2_typical, S4_chunky_network",
+                            "raw": "- `naive-bayes`: `S1_slow_small`, `S2_typical`, `S4_chunky_network`"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "naive-bayes"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "S1_slow_small"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "S2_typical"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "S4_chunky_network"
+                    }
+                  ],
+                  "text": "naive-bayes: S1_slow_small, S2_typical, S4_chunky_network",
+                  "raw": "- `naive-bayes`: `S1_slow_small`, `S2_typical`, `S4_chunky_network`"
+                },
+                "children": []
+              },
+              {
+                "id": "1e91955f::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 1099,
+                  "to": 1142
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "1e91955f::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `table-large`: `S2_typical`, `S6_extreme`",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "table-large"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "S2_typical"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "S6_extreme"
+                        }
+                      ],
+                      "range": {
+                        "from": 1099,
+                        "to": 1142
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "table-large"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "S2_typical"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "S6_extreme"
+                              }
+                            ],
+                            "text": "table-large: S2_typical, S6_extreme",
+                            "raw": "- `table-large`: `S2_typical`, `S6_extreme`"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "table-large"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "S2_typical"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "S6_extreme"
+                    }
+                  ],
+                  "text": "table-large: S2_typical, S6_extreme",
+                  "raw": "- `table-large`: `S2_typical`, `S6_extreme`"
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 1031,
+          "to": 1142
         }
       }
     },
@@ -334,14 +1358,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "StreamMDX perf harness",
-        "range": {
-          "from": 1144,
-          "to": 1169
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "StreamMDX perf harness",
           "headingId": "streammdx-perf-harness"
+        },
+        "range": {
+          "from": 1144,
+          "to": 1169
         },
         "inline": [
           {
@@ -357,6 +1382,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "Start the docs server (required for harness runs):",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 1171,
           "to": 1221
@@ -375,15 +1403,18 @@
       "isFinalized": true,
       "payload": {
         "raw": "```bash\nNEXT_PUBLIC_STREAMING_DEMO_API=true npm run docs:dev\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "NEXT_PUBLIC_STREAMING_DEMO_API=true npm run docs:dev",
+          "info": "bash",
+          "lang": "bash",
+          "highlightLang": "bash"
+        },
         "range": {
           "from": 1223,
           "to": 1287
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">NEXT_PUBLIC_STREAMING_DEMO_API</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">true</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> docs:dev</span></span></code></pre>",
-        "meta": {
-          "lang": "bash",
-          "code": "NEXT_PUBLIC_STREAMING_DEMO_API=true npm run docs:dev"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-bash\" data-language=\"bash\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">NEXT_PUBLIC_STREAMING_DEMO_API</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">true</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> docs:dev</span></span></code></pre>"
       }
     },
     {
@@ -392,6 +1423,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "Run the harness (examples):",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 1289,
           "to": 1316
@@ -410,15 +1444,18 @@
       "isFinalized": true,
       "payload": {
         "raw": "```bash\nnpm run perf:harness -- --fixture naive-bayes --scenario S1_slow_small --runs 3 --warmup 1 --out tmp/perf-baselines\nnpm run perf:harness -- --fixture naive-bayes --scenario S2_typical --runs 3 --warmup 1 --out tmp/perf-baselines\nnpm run perf:harness -- --fixture naive-bayes --scenario S4_chunky_network --runs 3 --warmup 1 --out tmp/perf-baselines\nnpm run perf:harness -- --fixture table-large --scenario S2_typical --runs 3 --warmup 1 --out tmp/perf-baselines\nnpm run perf:harness -- --fixture table-large --scenario S6_extreme --runs 3 --warmup 1 --out tmp/perf-baselines\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "npm run perf:harness -- --fixture naive-bayes --scenario S1_slow_small --runs 3 --warmup 1 --out tmp/perf-baselines\nnpm run perf:harness -- --fixture naive-bayes --scenario S2_typical --runs 3 --warmup 1 --out tmp/perf-baselines\nnpm run perf:harness -- --fixture naive-bayes --scenario S4_chunky_network --runs 3 --warmup 1 --out tmp/perf-baselines\nnpm run perf:harness -- --fixture table-large --scenario S2_typical --runs 3 --warmup 1 --out tmp/perf-baselines\nnpm run perf:harness -- --fixture table-large --scenario S6_extreme --runs 3 --warmup 1 --out tmp/perf-baselines",
+          "info": "bash",
+          "lang": "bash",
+          "highlightLang": "bash"
+        },
         "range": {
           "from": 1318,
           "to": 1904
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:harness</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --fixture</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> naive-bayes</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --scenario</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> S1_slow_small</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --runs</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 3</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --warmup</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 1</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --out</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/perf-baselines</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:harness</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --fixture</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> naive-bayes</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --scenario</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> S2_typical</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --runs</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 3</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --warmup</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 1</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --out</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/perf-baselines</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:harness</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --fixture</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> naive-bayes</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --scenario</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> S4_chunky_network</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --runs</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 3</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --warmup</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 1</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --out</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/perf-baselines</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:harness</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --fixture</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> table-large</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --scenario</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> S2_typical</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --runs</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 3</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --warmup</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 1</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --out</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/perf-baselines</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:harness</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --fixture</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> table-large</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --scenario</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> S6_extreme</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --runs</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 3</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --warmup</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 1</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --out</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/perf-baselines</span></span></code></pre>",
-        "meta": {
-          "lang": "bash",
-          "code": "npm run perf:harness -- --fixture naive-bayes --scenario S1_slow_small --runs 3 --warmup 1 --out tmp/perf-baselines\nnpm run perf:harness -- --fixture naive-bayes --scenario S2_typical --runs 3 --warmup 1 --out tmp/perf-baselines\nnpm run perf:harness -- --fixture naive-bayes --scenario S4_chunky_network --runs 3 --warmup 1 --out tmp/perf-baselines\nnpm run perf:harness -- --fixture table-large --scenario S2_typical --runs 3 --warmup 1 --out tmp/perf-baselines\nnpm run perf:harness -- --fixture table-large --scenario S6_extreme --runs 3 --warmup 1 --out tmp/perf-baselines"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-bash\" data-language=\"bash\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:harness</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --fixture</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> naive-bayes</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --scenario</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> S1_slow_small</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --runs</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 3</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --warmup</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 1</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --out</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/perf-baselines</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:harness</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --fixture</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> naive-bayes</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --scenario</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> S2_typical</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --runs</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 3</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --warmup</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 1</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --out</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/perf-baselines</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:harness</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --fixture</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> naive-bayes</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --scenario</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> S4_chunky_network</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --runs</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 3</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --warmup</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 1</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --out</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/perf-baselines</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:harness</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --fixture</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> table-large</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --scenario</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> S2_typical</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --runs</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 3</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --warmup</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 1</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --out</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/perf-baselines</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:harness</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --fixture</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> table-large</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --scenario</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> S6_extreme</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --runs</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 3</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --warmup</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 1</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --out</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/perf-baselines</span></span></code></pre>"
       }
     },
     {
@@ -427,6 +1464,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "Compare candidates:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 1906,
           "to": 1925
@@ -445,15 +1485,18 @@
       "isFinalized": true,
       "payload": {
         "raw": "```bash\nnpm run perf:compare -- --base tmp/perf-baselines/<baseline> --candidate tmp/perf-baselines/<candidate>\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "npm run perf:compare -- --base tmp/perf-baselines/<baseline> --candidate tmp/perf-baselines/<candidate>",
+          "info": "bash",
+          "lang": "bash",
+          "highlightLang": "bash"
+        },
         "range": {
           "from": 1927,
           "to": 2042
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:compare</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --base</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/perf-baselines/</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">&#x3C;</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">baselin</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">e</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">></span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --candidate</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/perf-baselines/</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">&#x3C;</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">candidat</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">e</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">></span></span></code></pre>",
-        "meta": {
-          "lang": "bash",
-          "code": "npm run perf:compare -- --base tmp/perf-baselines/<baseline> --candidate tmp/perf-baselines/<candidate>"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-bash\" data-language=\"bash\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:compare</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --base</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/perf-baselines/</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">&#x3C;</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">baselin</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">e</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">></span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --candidate</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/perf-baselines/</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">&#x3C;</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">candidat</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">e</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">></span></span></code></pre>"
       }
     },
     {
@@ -462,6 +1505,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "Record results in `/docs/perf-quality-changelog` and keep run paths up to date in `/docs/perf-harness`.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 2044,
           "to": 2147
@@ -496,14 +1542,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Notes on interpretation",
-        "range": {
-          "from": 2149,
-          "to": 2175
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Notes on interpretation",
           "headingId": "notes-on-interpretation"
+        },
+        "range": {
+          "from": 2149,
+          "to": 2175
         },
         "inline": [
           {
@@ -519,12 +1566,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- **First flush** is the most user-visible latency metric.\n- **Long task p95** tracks stutter; lower is better.\n- **RAF p95** near 16-17ms indicates smoother animation/scrolling.\n- **Memory peak** is most important for multi-stream dashboards.",
-        "range": {
-          "from": 2177,
-          "to": 2420
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -587,7 +1641,362 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "772ce03::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 2177,
+                  "to": 2235
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "772ce03::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **First flush** is the most user-visible latency metric.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "First flush"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": " is the most user-visible latency metric."
+                        }
+                      ],
+                      "range": {
+                        "from": 2177,
+                        "to": 2235
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "First flush"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": " is the most user-visible latency metric."
+                              }
+                            ],
+                            "text": "First flush is the most user-visible latency metric.",
+                            "raw": "- **First flush** is the most user-visible latency metric."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "First flush"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": " is the most user-visible latency metric."
+                    }
+                  ],
+                  "text": "First flush is the most user-visible latency metric.",
+                  "raw": "- **First flush** is the most user-visible latency metric."
+                },
+                "children": []
+              },
+              {
+                "id": "772ce03::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 2236,
+                  "to": 2288
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "772ce03::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **Long task p95** tracks stutter; lower is better.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Long task p95"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": " tracks stutter; lower is better."
+                        }
+                      ],
+                      "range": {
+                        "from": 2236,
+                        "to": 2288
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Long task p95"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": " tracks stutter; lower is better."
+                              }
+                            ],
+                            "text": "Long task p95 tracks stutter; lower is better.",
+                            "raw": "- **Long task p95** tracks stutter; lower is better."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Long task p95"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": " tracks stutter; lower is better."
+                    }
+                  ],
+                  "text": "Long task p95 tracks stutter; lower is better.",
+                  "raw": "- **Long task p95** tracks stutter; lower is better."
+                },
+                "children": []
+              },
+              {
+                "id": "772ce03::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 2289,
+                  "to": 2355
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "772ce03::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **RAF p95** near 16-17ms indicates smoother animation/scrolling.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "RAF p95"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": " near 16-17ms indicates smoother animation/scrolling."
+                        }
+                      ],
+                      "range": {
+                        "from": 2289,
+                        "to": 2355
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "RAF p95"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": " near 16-17ms indicates smoother animation/scrolling."
+                              }
+                            ],
+                            "text": "RAF p95 near 16-17ms indicates smoother animation/scrolling.",
+                            "raw": "- **RAF p95** near 16-17ms indicates smoother animation/scrolling."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "RAF p95"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": " near 16-17ms indicates smoother animation/scrolling."
+                    }
+                  ],
+                  "text": "RAF p95 near 16-17ms indicates smoother animation/scrolling.",
+                  "raw": "- **RAF p95** near 16-17ms indicates smoother animation/scrolling."
+                },
+                "children": []
+              },
+              {
+                "id": "772ce03::item:3",
+                "type": "list-item",
+                "range": {
+                  "from": 2356,
+                  "to": 2420
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "772ce03::item:3",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **Memory peak** is most important for multi-stream dashboards.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Memory peak"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": " is most important for multi-stream dashboards."
+                        }
+                      ],
+                      "range": {
+                        "from": 2356,
+                        "to": 2420
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 3,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Memory peak"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": " is most important for multi-stream dashboards."
+                              }
+                            ],
+                            "text": "Memory peak is most important for multi-stream dashboards.",
+                            "raw": "- **Memory peak** is most important for multi-stream dashboards."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 3,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Memory peak"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": " is most important for multi-stream dashboards."
+                    }
+                  ],
+                  "text": "Memory peak is most important for multi-stream dashboards.",
+                  "raw": "- **Memory peak** is most important for multi-stream dashboards."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 2177,
+          "to": 2420
         }
       }
     },
@@ -597,14 +2006,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "When the comparison is not apples-to-apples",
-        "range": {
-          "from": 2422,
-          "to": 2468
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "When the comparison is not apples-to-apples",
           "headingId": "when-the-comparison-is-not-apples-to-apples"
+        },
+        "range": {
+          "from": 2422,
+          "to": 2468
         },
         "inline": [
           {
@@ -620,6 +2030,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "If another renderer doesn't support MDX, HTML sanitization, or streaming patches, call that out. Use a \"reduced\" fixture if needed, but keep a second \"full\" fixture to show StreamMDX's complete feature coverage.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 2470,
           "to": 2681
@@ -636,45 +2049,45 @@
   "tocHeadings": [
     {
       "id": "comparisons-and-benchmarks",
-      "text": "Comparisons and Benchmarks",
+      "blockId": "db082c0",
       "level": 1,
-      "blockId": "db082c0"
+      "text": "Comparisons and Benchmarks"
     },
     {
       "id": "what-to-compare",
-      "text": "What to compare",
+      "blockId": "63db82",
       "level": 2,
-      "blockId": "63db82"
+      "text": "What to compare"
     },
     {
       "id": "recommended-workflow",
-      "text": "Recommended workflow",
+      "blockId": "6e3bd7dc",
       "level": 2,
-      "blockId": "6e3bd7dc"
+      "text": "Recommended workflow"
     },
     {
       "id": "fixtures-and-scenarios-current-local-baselines",
-      "text": "Fixtures and scenarios (current local baselines)",
+      "blockId": "2f770dea",
       "level": 2,
-      "blockId": "2f770dea"
+      "text": "Fixtures and scenarios (current local baselines)"
     },
     {
       "id": "streammdx-perf-harness",
-      "text": "StreamMDX perf harness",
+      "blockId": "4b5ba460",
       "level": 2,
-      "blockId": "4b5ba460"
+      "text": "StreamMDX perf harness"
     },
     {
       "id": "notes-on-interpretation",
-      "text": "Notes on interpretation",
+      "blockId": "5e53d3fc",
       "level": 2,
-      "blockId": "5e53d3fc"
+      "text": "Notes on interpretation"
     },
     {
       "id": "when-the-comparison-is-not-apples-to-apples",
-      "text": "When the comparison is not apples-to-apples",
+      "blockId": "69e85902",
       "level": 2,
-      "blockId": "69e85902"
+      "text": "When the comparison is not apples-to-apples"
     }
   ],
   "init": {

@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-08T12:24:09.312Z",
-  "hash": "d47a738ffcd50dd9476338e772b4bba7f8f1bbadc8868305fb5ee34d283f81d4",
-  "contentHash": "0a4e4accee2b3f213e4ec2de115628903ca114b730c0eccccda4a89a55e37d5e",
-  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
-  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "createdAt": "2026-10-08T19:48:58.207Z",
+  "hash": "b51c40e05aa016de2c6af7b72bbfdaef4049d6f8238bf6121bd6b39ddd2d938d",
+  "contentHash": "a7ffaf55a147d272814ee0c176cc6b60cfb400c1227153cac5b1c5757d4fdb9a",
+  "configHash": "a274f269183e8eac42eeb12b1ae0dc7fea9398cc27792626c9ca0c17911fb0b4",
+  "hashSalt": "docs-snapshots-v2:9417117db4c19b323c5bd2a5c7754c6e0d46bf7c962c13c422b86e6485aac7c0",
   "blocks": [
     {
       "id": "db082c0",
@@ -1833,6 +1833,1398 @@
       "type": "heading",
       "isFinalized": true,
       "payload": {
+        "raw": "Conformance and Spec Parity (CommonMark 0.31.2 + GFM Extensions)",
+        "meta": {
+          "lezerNodeType": "ATXHeading2",
+          "headingLevel": 2,
+          "headingText": "Conformance and Spec Parity (CommonMark 0.31.2 + GFM Extensions)",
+          "headingId": "conformance-and-spec-parity-commonmark-0-31-2-gfm-extensions"
+        },
+        "range": {
+          "from": 3432,
+          "to": 3499
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Conformance and Spec Parity (CommonMark 0.31.2 + GFM Extensions)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "4a3f59dd",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Harness: `scripts/conformance/run-commonmark.mts` evaluating 675 examples (652 CommonMark 0.31.2 + 23 GFM extension fixtures).",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
+        "range": {
+          "from": 3501,
+          "to": 3627
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Harness: "
+          },
+          {
+            "kind": "code",
+            "text": "scripts/conformance/run-commonmark.mts"
+          },
+          {
+            "kind": "text",
+            "text": " evaluating 675 examples (652 CommonMark 0.31.2 + 23 GFM extension fixtures)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "5acc8d6a",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Comparing Streamdown with default chat sanitization against StreamMDX with `docPlugins.html: true` is unfair on HTML sections. Streamdown is evaluated under two configurations:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
+        "range": {
+          "from": 3629,
+          "to": 3805
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Comparing Streamdown with default chat sanitization against StreamMDX with "
+          },
+          {
+            "kind": "code",
+            "text": "docPlugins.html: true"
+          },
+          {
+            "kind": "text",
+            "text": " is unfair on HTML sections. Streamdown is evaluated under two configurations:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "10069c4f",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "1. **Default**: chat sanitization and hardening enabled (`linkSafety: { enabled: false }`).\n2. **Raw HTML**: raw HTML enabled and sanitization/hardening disabled via `rehypePlugins: [defaultRehypePlugins.raw]` (`linkSafety: { enabled: false }`).",
+        "meta": {
+          "lezerNodeType": "OrderedList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
+          "ordered": true,
+          "loose": false,
+          "items": [
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Default"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": chat sanitization and hardening enabled ("
+              },
+              {
+                "kind": "code",
+                "text": "linkSafety: { enabled: false }"
+              },
+              {
+                "kind": "text",
+                "text": ")."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Raw HTML"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": raw HTML enabled and sanitization/hardening disabled via "
+              },
+              {
+                "kind": "code",
+                "text": "rehypePlugins: [defaultRehypePlugins.raw]"
+              },
+              {
+                "kind": "text",
+                "text": " ("
+              },
+              {
+                "kind": "code",
+                "text": "linkSafety: { enabled: false }"
+              },
+              {
+                "kind": "text",
+                "text": ")."
+              }
+            ]
+          ],
+          "preparedNested": {
+            "props": {
+              "ordered": true,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "10069c4f::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 3806,
+                  "to": 3897
+                },
+                "props": {
+                  "ordered": true,
+                  "loose": false,
+                  "block": {
+                    "id": "10069c4f::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "1. **Default**: chat sanitization and hardening enabled (`linkSafety: { enabled: false }`).",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Default"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": chat sanitization and hardening enabled ("
+                        },
+                        {
+                          "kind": "code",
+                          "text": "linkSafety: { enabled: false }"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ")."
+                        }
+                      ],
+                      "range": {
+                        "from": 3806,
+                        "to": 3897
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": true,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Default"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": chat sanitization and hardening enabled ("
+                              },
+                              {
+                                "kind": "code",
+                                "text": "linkSafety: { enabled: false }"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ")."
+                              }
+                            ],
+                            "text": "Default: chat sanitization and hardening enabled (linkSafety: { enabled: false }).",
+                            "raw": "1. **Default**: chat sanitization and hardening enabled (`linkSafety: { enabled: false }`)."
+                          },
+                          "children": [
+                            {
+                              "id": "10069c4f::item:0::list-item:segment:0",
+                              "type": "list-item-text",
+                              "props": {
+                                "inline": [
+                                  {
+                                    "kind": "strong",
+                                    "children": [
+                                      {
+                                        "kind": "text",
+                                        "text": "Default"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "kind": "text",
+                                    "text": ": chat sanitization and hardening enabled (`linkSafety: "
+                                  }
+                                ],
+                                "text": "**Default**: chat sanitization and hardening enabled (`linkSafety: "
+                              },
+                              "children": []
+                            },
+                            {
+                              "id": "10069c4f::item:0::list-item:segment:1",
+                              "type": "list-item-mdx",
+                              "props": {
+                                "raw": "{ enabled: false }",
+                                "status": "pending"
+                              },
+                              "children": []
+                            },
+                            {
+                              "id": "10069c4f::item:0::list-item:segment:2",
+                              "type": "list-item-text",
+                              "props": {
+                                "inline": [
+                                  {
+                                    "kind": "text",
+                                    "text": "`)."
+                                  }
+                                ],
+                                "text": "`)."
+                              },
+                              "children": []
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Default"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": chat sanitization and hardening enabled ("
+                    },
+                    {
+                      "kind": "code",
+                      "text": "linkSafety: { enabled: false }"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ")."
+                    }
+                  ],
+                  "text": "Default: chat sanitization and hardening enabled (linkSafety: { enabled: false }).",
+                  "raw": "1. **Default**: chat sanitization and hardening enabled (`linkSafety: { enabled: false }`)."
+                },
+                "children": [
+                  {
+                    "id": "10069c4f::item:0::list-item:segment:0",
+                    "type": "list-item-text",
+                    "props": {
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Default"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": chat sanitization and hardening enabled (`linkSafety: "
+                        }
+                      ],
+                      "text": "**Default**: chat sanitization and hardening enabled (`linkSafety: "
+                    },
+                    "children": []
+                  },
+                  {
+                    "id": "10069c4f::item:0::list-item:segment:1",
+                    "type": "list-item-mdx",
+                    "props": {
+                      "raw": "{ enabled: false }",
+                      "status": "pending"
+                    },
+                    "children": []
+                  },
+                  {
+                    "id": "10069c4f::item:0::list-item:segment:2",
+                    "type": "list-item-text",
+                    "props": {
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "`)."
+                        }
+                      ],
+                      "text": "`)."
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "id": "10069c4f::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 3898,
+                  "to": 4051
+                },
+                "props": {
+                  "ordered": true,
+                  "loose": false,
+                  "block": {
+                    "id": "10069c4f::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "2. **Raw HTML**: raw HTML enabled and sanitization/hardening disabled via `rehypePlugins: [defaultRehypePlugins.raw]` (`linkSafety: { enabled: false }`).",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Raw HTML"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": raw HTML enabled and sanitization/hardening disabled via "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "rehypePlugins: [defaultRehypePlugins.raw]"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " ("
+                        },
+                        {
+                          "kind": "code",
+                          "text": "linkSafety: { enabled: false }"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ")."
+                        }
+                      ],
+                      "range": {
+                        "from": 3898,
+                        "to": 4051
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": true,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Raw HTML"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": raw HTML enabled and sanitization/hardening disabled via "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "rehypePlugins: [defaultRehypePlugins.raw]"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " ("
+                              },
+                              {
+                                "kind": "code",
+                                "text": "linkSafety: { enabled: false }"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ")."
+                              }
+                            ],
+                            "text": "Raw HTML: raw HTML enabled and sanitization/hardening disabled via rehypePlugins: [defaultRehypePlugins.raw] (linkSafety: { enabled: false }).",
+                            "raw": "2. **Raw HTML**: raw HTML enabled and sanitization/hardening disabled via `rehypePlugins: [defaultRehypePlugins.raw]` (`linkSafety: { enabled: false }`)."
+                          },
+                          "children": [
+                            {
+                              "id": "10069c4f::item:1::list-item:segment:0",
+                              "type": "list-item-text",
+                              "props": {
+                                "inline": [
+                                  {
+                                    "kind": "strong",
+                                    "children": [
+                                      {
+                                        "kind": "text",
+                                        "text": "Raw HTML"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "kind": "text",
+                                    "text": ": raw HTML enabled and sanitization/hardening disabled via "
+                                  },
+                                  {
+                                    "kind": "code",
+                                    "text": "rehypePlugins: [defaultRehypePlugins.raw]"
+                                  },
+                                  {
+                                    "kind": "text",
+                                    "text": " (`linkSafety: "
+                                  }
+                                ],
+                                "text": "**Raw HTML**: raw HTML enabled and sanitization/hardening disabled via `rehypePlugins: [defaultRehypePlugins.raw]` (`linkSafety: "
+                              },
+                              "children": []
+                            },
+                            {
+                              "id": "10069c4f::item:1::list-item:segment:1",
+                              "type": "list-item-mdx",
+                              "props": {
+                                "raw": "{ enabled: false }",
+                                "status": "pending"
+                              },
+                              "children": []
+                            },
+                            {
+                              "id": "10069c4f::item:1::list-item:segment:2",
+                              "type": "list-item-text",
+                              "props": {
+                                "inline": [
+                                  {
+                                    "kind": "text",
+                                    "text": "`)."
+                                  }
+                                ],
+                                "text": "`)."
+                              },
+                              "children": []
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Raw HTML"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": raw HTML enabled and sanitization/hardening disabled via "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "rehypePlugins: [defaultRehypePlugins.raw]"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " ("
+                    },
+                    {
+                      "kind": "code",
+                      "text": "linkSafety: { enabled: false }"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ")."
+                    }
+                  ],
+                  "text": "Raw HTML: raw HTML enabled and sanitization/hardening disabled via rehypePlugins: [defaultRehypePlugins.raw] (linkSafety: { enabled: false }).",
+                  "raw": "2. **Raw HTML**: raw HTML enabled and sanitization/hardening disabled via `rehypePlugins: [defaultRehypePlugins.raw]` (`linkSafety: { enabled: false }`)."
+                },
+                "children": [
+                  {
+                    "id": "10069c4f::item:1::list-item:segment:0",
+                    "type": "list-item-text",
+                    "props": {
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Raw HTML"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": raw HTML enabled and sanitization/hardening disabled via "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "rehypePlugins: [defaultRehypePlugins.raw]"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " (`linkSafety: "
+                        }
+                      ],
+                      "text": "**Raw HTML**: raw HTML enabled and sanitization/hardening disabled via `rehypePlugins: [defaultRehypePlugins.raw]` (`linkSafety: "
+                    },
+                    "children": []
+                  },
+                  {
+                    "id": "10069c4f::item:1::list-item:segment:1",
+                    "type": "list-item-mdx",
+                    "props": {
+                      "raw": "{ enabled: false }",
+                      "status": "pending"
+                    },
+                    "children": []
+                  },
+                  {
+                    "id": "10069c4f::item:1::list-item:segment:2",
+                    "type": "list-item-text",
+                    "props": {
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "`)."
+                        }
+                      ],
+                      "text": "`)."
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 3806,
+          "to": 4051
+        }
+      }
+    },
+    {
+      "id": "1ea5666",
+      "type": "table",
+      "isFinalized": true,
+      "payload": {
+        "raw": "| Evaluation Mode | StreamMDX (Static/Stream/SSR) | micromark (GFM) | Streamdown (Default) | Streamdown (Raw HTML) |\n| --- | --- | --- | --- | --- |\n| **Normalized Semantics** | **675 / 675** (0 divergences) | 669 / 675 | 540 / 675 | 586 / 675 |\n| **Strict Semantics** (titles + language) | **675 / 675** (0 divergences) | 669 / 675 | 540 / 675 | 586 / 675 |",
+        "meta": {
+          "lezerNodeType": "Table",
+          "header": [
+            [
+              {
+                "kind": "text",
+                "text": "Evaluation Mode"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "StreamMDX (Static/Stream/SSR)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "micromark (GFM)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Streamdown (Default)"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Streamdown (Raw HTML)"
+              }
+            ]
+          ],
+          "align": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "rows": [
+            [
+              [
+                {
+                  "kind": "strong",
+                  "children": [
+                    {
+                      "kind": "text",
+                      "text": "Normalized Semantics"
+                    }
+                  ]
+                }
+              ],
+              [
+                {
+                  "kind": "strong",
+                  "children": [
+                    {
+                      "kind": "text",
+                      "text": "675 / 675"
+                    }
+                  ]
+                },
+                {
+                  "kind": "text",
+                  "text": " (0 divergences)"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "669 / 675"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "540 / 675"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "586 / 675"
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "strong",
+                  "children": [
+                    {
+                      "kind": "text",
+                      "text": "Strict Semantics"
+                    }
+                  ]
+                },
+                {
+                  "kind": "text",
+                  "text": " (titles + language)"
+                }
+              ],
+              [
+                {
+                  "kind": "strong",
+                  "children": [
+                    {
+                      "kind": "text",
+                      "text": "675 / 675"
+                    }
+                  ]
+                },
+                {
+                  "kind": "text",
+                  "text": " (0 divergences)"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "669 / 675"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "540 / 675"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "586 / 675"
+                }
+              ]
+            ]
+          ]
+        },
+        "range": {
+          "from": 4053,
+          "to": 4411
+        },
+        "inline": []
+      }
+    },
+    {
+      "id": "1946a1a2",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Key takeaways on conformance",
+        "meta": {
+          "lezerNodeType": "ATXHeading3",
+          "headingLevel": 3,
+          "headingText": "Key takeaways on conformance",
+          "headingId": "key-takeaways-on-conformance"
+        },
+        "range": {
+          "from": 4413,
+          "to": 4445
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Key takeaways on conformance"
+          }
+        ]
+      }
+    },
+    {
+      "id": "47adf3c6",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- **HTML Sanitization Fairness**: Enabling raw HTML on Streamdown raises its score from 540 to 586 (+46 examples), closing the gap on HTML blocks and raw HTML inlines.\n- **Strict Parity**: StreamMDX achieves 100% strict conformance (675/675) across static, streaming, and SSR paths with zero divergences. Unlabeled code blocks and indented code blocks emit bare `<pre><code>` without `language-*` classes, preserving 100% parity on link titles (90/90), image titles (22/22), and code blocks.\n- **micromark 669**: The 6 micromark failures are standard GFM tagfilter escaping on 5 HTML blocks (`cm_170`, `cm_171`, `cm_172`, `cm_176`, `cm_178`) and a dropped FTP autolink in modern micromark (`gfm_628`).",
+        "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
+          "ordered": false,
+          "loose": false,
+          "items": [
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "HTML Sanitization Fairness"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": Enabling raw HTML on Streamdown raises its score from 540 to 586 (+46 examples), closing the gap on HTML blocks and raw HTML inlines."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Strict Parity"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": StreamMDX achieves 100% strict conformance (675/675) across static, streaming, and SSR paths with zero divergences. Unlabeled code blocks and indented code blocks emit bare "
+              },
+              {
+                "kind": "code",
+                "text": "<pre><code>"
+              },
+              {
+                "kind": "text",
+                "text": " without "
+              },
+              {
+                "kind": "code",
+                "text": "language-*"
+              },
+              {
+                "kind": "text",
+                "text": " classes, preserving 100% parity on link titles (90/90), image titles (22/22), and code blocks."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "micromark 669"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": The 6 micromark failures are standard GFM tagfilter escaping on 5 HTML blocks ("
+              },
+              {
+                "kind": "code",
+                "text": "cm_170"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "cm_171"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "cm_172"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "cm_176"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "cm_178"
+              },
+              {
+                "kind": "text",
+                "text": ") and a dropped FTP autolink in modern micromark ("
+              },
+              {
+                "kind": "code",
+                "text": "gfm_628"
+              },
+              {
+                "kind": "text",
+                "text": ")."
+              }
+            ]
+          ],
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "47adf3c6::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 4446,
+                  "to": 4613
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "47adf3c6::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **HTML Sanitization Fairness**: Enabling raw HTML on Streamdown raises its score from 540 to 586 (+46 examples), closing the gap on HTML blocks and raw HTML inlines.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "HTML Sanitization Fairness"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": Enabling raw HTML on Streamdown raises its score from 540 to 586 (+46 examples), closing the gap on HTML blocks and raw HTML inlines."
+                        }
+                      ],
+                      "range": {
+                        "from": 4446,
+                        "to": 4613
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "HTML Sanitization Fairness"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": Enabling raw HTML on Streamdown raises its score from 540 to 586 (+46 examples), closing the gap on HTML blocks and raw HTML inlines."
+                              }
+                            ],
+                            "text": "HTML Sanitization Fairness: Enabling raw HTML on Streamdown raises its score from 540 to 586 (+46 examples), closing the gap on HTML blocks and raw HTML inlines.",
+                            "raw": "- **HTML Sanitization Fairness**: Enabling raw HTML on Streamdown raises its score from 540 to 586 (+46 examples), closing the gap on HTML blocks and raw HTML inlines."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "HTML Sanitization Fairness"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": Enabling raw HTML on Streamdown raises its score from 540 to 586 (+46 examples), closing the gap on HTML blocks and raw HTML inlines."
+                    }
+                  ],
+                  "text": "HTML Sanitization Fairness: Enabling raw HTML on Streamdown raises its score from 540 to 586 (+46 examples), closing the gap on HTML blocks and raw HTML inlines.",
+                  "raw": "- **HTML Sanitization Fairness**: Enabling raw HTML on Streamdown raises its score from 540 to 586 (+46 examples), closing the gap on HTML blocks and raw HTML inlines."
+                },
+                "children": []
+              },
+              {
+                "id": "47adf3c6::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 4614,
+                  "to": 4937
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "47adf3c6::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **Strict Parity**: StreamMDX achieves 100% strict conformance (675/675) across static, streaming, and SSR paths with zero divergences. Unlabeled code blocks and indented code blocks emit bare `<pre><code>` without `language-*` classes, preserving 100% parity on link titles (90/90), image titles (22/22), and code blocks.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Strict Parity"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": StreamMDX achieves 100% strict conformance (675/675) across static, streaming, and SSR paths with zero divergences. Unlabeled code blocks and indented code blocks emit bare "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "<pre><code>"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " without "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "language-*"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " classes, preserving 100% parity on link titles (90/90), image titles (22/22), and code blocks."
+                        }
+                      ],
+                      "range": {
+                        "from": 4614,
+                        "to": 4937
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Strict Parity"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": StreamMDX achieves 100% strict conformance (675/675) across static, streaming, and SSR paths with zero divergences. Unlabeled code blocks and indented code blocks emit bare "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "<pre><code>"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " without "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "language-*"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " classes, preserving 100% parity on link titles (90/90), image titles (22/22), and code blocks."
+                              }
+                            ],
+                            "text": "Strict Parity: StreamMDX achieves 100% strict conformance (675/675) across static, streaming, and SSR paths with zero divergences. Unlabeled code blocks and indented code blocks emit bare <pre><code> without language-* classes, preserving 100% parity on link titles (90/90), image titles (22/22), and code blocks.",
+                            "raw": "- **Strict Parity**: StreamMDX achieves 100% strict conformance (675/675) across static, streaming, and SSR paths with zero divergences. Unlabeled code blocks and indented code blocks emit bare `<pre><code>` without `language-*` classes, preserving 100% parity on link titles (90/90), image titles (22/22), and code blocks."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Strict Parity"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": StreamMDX achieves 100% strict conformance (675/675) across static, streaming, and SSR paths with zero divergences. Unlabeled code blocks and indented code blocks emit bare "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "<pre><code>"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " without "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "language-*"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " classes, preserving 100% parity on link titles (90/90), image titles (22/22), and code blocks."
+                    }
+                  ],
+                  "text": "Strict Parity: StreamMDX achieves 100% strict conformance (675/675) across static, streaming, and SSR paths with zero divergences. Unlabeled code blocks and indented code blocks emit bare <pre><code> without language-* classes, preserving 100% parity on link titles (90/90), image titles (22/22), and code blocks.",
+                  "raw": "- **Strict Parity**: StreamMDX achieves 100% strict conformance (675/675) across static, streaming, and SSR paths with zero divergences. Unlabeled code blocks and indented code blocks emit bare `<pre><code>` without `language-*` classes, preserving 100% parity on link titles (90/90), image titles (22/22), and code blocks."
+                },
+                "children": []
+              },
+              {
+                "id": "47adf3c6::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 4938,
+                  "to": 5147
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "47adf3c6::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **micromark 669**: The 6 micromark failures are standard GFM tagfilter escaping on 5 HTML blocks (`cm_170`, `cm_171`, `cm_172`, `cm_176`, `cm_178`) and a dropped FTP autolink in modern micromark (`gfm_628`).",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "micromark 669"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": The 6 micromark failures are standard GFM tagfilter escaping on 5 HTML blocks ("
+                        },
+                        {
+                          "kind": "code",
+                          "text": "cm_170"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "cm_171"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "cm_172"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "cm_176"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "cm_178"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ") and a dropped FTP autolink in modern micromark ("
+                        },
+                        {
+                          "kind": "code",
+                          "text": "gfm_628"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ")."
+                        }
+                      ],
+                      "range": {
+                        "from": 4938,
+                        "to": 5147
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "micromark 669"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": The 6 micromark failures are standard GFM tagfilter escaping on 5 HTML blocks ("
+                              },
+                              {
+                                "kind": "code",
+                                "text": "cm_170"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "cm_171"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "cm_172"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "cm_176"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "cm_178"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ") and a dropped FTP autolink in modern micromark ("
+                              },
+                              {
+                                "kind": "code",
+                                "text": "gfm_628"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ")."
+                              }
+                            ],
+                            "text": "micromark 669: The 6 micromark failures are standard GFM tagfilter escaping on 5 HTML blocks (cm_170, cm_171, cm_172, cm_176, cm_178) and a dropped FTP autolink in modern micromark (gfm_628).",
+                            "raw": "- **micromark 669**: The 6 micromark failures are standard GFM tagfilter escaping on 5 HTML blocks (`cm_170`, `cm_171`, `cm_172`, `cm_176`, `cm_178`) and a dropped FTP autolink in modern micromark (`gfm_628`)."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "micromark 669"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": The 6 micromark failures are standard GFM tagfilter escaping on 5 HTML blocks ("
+                    },
+                    {
+                      "kind": "code",
+                      "text": "cm_170"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "cm_171"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "cm_172"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "cm_176"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "cm_178"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ") and a dropped FTP autolink in modern micromark ("
+                    },
+                    {
+                      "kind": "code",
+                      "text": "gfm_628"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ")."
+                    }
+                  ],
+                  "text": "micromark 669: The 6 micromark failures are standard GFM tagfilter escaping on 5 HTML blocks (cm_170, cm_171, cm_172, cm_176, cm_178) and a dropped FTP autolink in modern micromark (gfm_628).",
+                  "raw": "- **micromark 669**: The 6 micromark failures are standard GFM tagfilter escaping on 5 HTML blocks (`cm_170`, `cm_171`, `cm_172`, `cm_176`, `cm_178`) and a dropped FTP autolink in modern micromark (`gfm_628`)."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 4446,
+          "to": 5147
+        }
+      }
+    },
+    {
+      "id": "247cad20",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
         "raw": "Where Streamdown is the better fit",
         "meta": {
           "lezerNodeType": "ATXHeading2",
@@ -1841,8 +3233,8 @@
           "headingId": "where-streamdown-is-the-better-fit"
         },
         "range": {
-          "from": 3432,
-          "to": 3469
+          "from": 5148,
+          "to": 5185
         },
         "inline": [
           {
@@ -1853,7 +3245,7 @@
       }
     },
     {
-      "id": "45c7ec1f",
+      "id": "15bf45bf",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -1906,17 +3298,17 @@
             },
             "children": [
               {
-                "id": "45c7ec1f::item:0",
+                "id": "15bf45bf::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 3471,
-                  "to": 3544
+                  "from": 5187,
+                  "to": 5260
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "45c7ec1f::item:0",
+                    "id": "15bf45bf::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1936,8 +3328,8 @@
                         }
                       ],
                       "range": {
-                        "from": 3471,
-                        "to": 3544
+                        "from": 5187,
+                        "to": 5260
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1989,17 +3381,17 @@
                 "children": []
               },
               {
-                "id": "45c7ec1f::item:1",
+                "id": "15bf45bf::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 3545,
-                  "to": 3629
+                  "from": 5261,
+                  "to": 5345
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "45c7ec1f::item:1",
+                    "id": "15bf45bf::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2011,8 +3403,8 @@
                         }
                       ],
                       "range": {
-                        "from": 3545,
-                        "to": 3629
+                        "from": 5261,
+                        "to": 5345
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2048,17 +3440,17 @@
                 "children": []
               },
               {
-                "id": "45c7ec1f::item:2",
+                "id": "15bf45bf::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 3630,
-                  "to": 3712
+                  "from": 5346,
+                  "to": 5428
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "45c7ec1f::item:2",
+                    "id": "15bf45bf::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2070,8 +3462,8 @@
                         }
                       ],
                       "range": {
-                        "from": 3630,
-                        "to": 3712
+                        "from": 5346,
+                        "to": 5428
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2110,13 +3502,13 @@
           }
         },
         "range": {
-          "from": 3471,
-          "to": 3712
+          "from": 5187,
+          "to": 5428
         }
       }
     },
     {
-      "id": "64878387",
+      "id": "4cbddc3c",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -2128,8 +3520,8 @@
           "headingId": "where-streammdx-is-the-better-fit"
         },
         "range": {
-          "from": 3714,
-          "to": 3750
+          "from": 5430,
+          "to": 5466
         },
         "inline": [
           {
@@ -2140,7 +3532,7 @@
       }
     },
     {
-      "id": "763c0365",
+      "id": "46335d05",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -2191,17 +3583,17 @@
             },
             "children": [
               {
-                "id": "763c0365::item:0",
+                "id": "46335d05::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 3752,
-                  "to": 3825
+                  "from": 5468,
+                  "to": 5541
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "763c0365::item:0",
+                    "id": "46335d05::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2213,8 +3605,8 @@
                         }
                       ],
                       "range": {
-                        "from": 3752,
-                        "to": 3825
+                        "from": 5468,
+                        "to": 5541
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2250,17 +3642,17 @@
                 "children": []
               },
               {
-                "id": "763c0365::item:1",
+                "id": "46335d05::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 3826,
-                  "to": 3904
+                  "from": 5542,
+                  "to": 5620
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "763c0365::item:1",
+                    "id": "46335d05::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2272,8 +3664,8 @@
                         }
                       ],
                       "range": {
-                        "from": 3826,
-                        "to": 3904
+                        "from": 5542,
+                        "to": 5620
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2309,17 +3701,17 @@
                 "children": []
               },
               {
-                "id": "763c0365::item:2",
+                "id": "46335d05::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 3905,
-                  "to": 4006
+                  "from": 5621,
+                  "to": 5722
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "763c0365::item:2",
+                    "id": "46335d05::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2331,8 +3723,8 @@
                         }
                       ],
                       "range": {
-                        "from": 3905,
-                        "to": 4006
+                        "from": 5621,
+                        "to": 5722
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2368,17 +3760,17 @@
                 "children": []
               },
               {
-                "id": "763c0365::item:3",
+                "id": "46335d05::item:3",
                 "type": "list-item",
                 "range": {
-                  "from": 4007,
-                  "to": 4089
+                  "from": 5723,
+                  "to": 5805
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "763c0365::item:3",
+                    "id": "46335d05::item:3",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2390,8 +3782,8 @@
                         }
                       ],
                       "range": {
-                        "from": 4007,
-                        "to": 4089
+                        "from": 5723,
+                        "to": 5805
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2430,13 +3822,13 @@
           }
         },
         "range": {
-          "from": 3752,
-          "to": 4089
+          "from": 5468,
+          "to": 5805
         }
       }
     },
     {
-      "id": "3f768194",
+      "id": "2eaca316",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -2448,8 +3840,8 @@
           "headingId": "benchmark-reading-guidance"
         },
         "range": {
-          "from": 4091,
-          "to": 4120
+          "from": 5807,
+          "to": 5836
         },
         "inline": [
           {
@@ -2460,7 +3852,7 @@
       }
     },
     {
-      "id": "7e25acc3",
+      "id": "6e5b2048",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -2469,8 +3861,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 4122,
-          "to": 4230
+          "from": 5838,
+          "to": 5946
         },
         "inline": [
           {
@@ -2481,7 +3873,7 @@
       }
     },
     {
-      "id": "5329eb41",
+      "id": "57660cd4",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -2558,17 +3950,17 @@
             },
             "children": [
               {
-                "id": "5329eb41::item:0",
+                "id": "57660cd4::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 4232,
-                  "to": 4286
+                  "from": 5948,
+                  "to": 6002
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "5329eb41::item:0",
+                    "id": "57660cd4::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2580,8 +3972,8 @@
                         }
                       ],
                       "range": {
-                        "from": 4232,
-                        "to": 4286
+                        "from": 5948,
+                        "to": 6002
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2617,17 +4009,17 @@
                 "children": []
               },
               {
-                "id": "5329eb41::item:1",
+                "id": "57660cd4::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 4287,
-                  "to": 4358
+                  "from": 6003,
+                  "to": 6074
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "5329eb41::item:1",
+                    "id": "57660cd4::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2665,8 +4057,8 @@
                         }
                       ],
                       "range": {
-                        "from": 4287,
-                        "to": 4358
+                        "from": 6003,
+                        "to": 6074
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2754,17 +4146,17 @@
                 "children": []
               },
               {
-                "id": "5329eb41::item:2",
+                "id": "57660cd4::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 4359,
-                  "to": 4431
+                  "from": 6075,
+                  "to": 6147
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "5329eb41::item:2",
+                    "id": "57660cd4::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2776,8 +4168,8 @@
                         }
                       ],
                       "range": {
-                        "from": 4359,
-                        "to": 4431
+                        "from": 6075,
+                        "to": 6147
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2813,17 +4205,17 @@
                 "children": []
               },
               {
-                "id": "5329eb41::item:3",
+                "id": "57660cd4::item:3",
                 "type": "list-item",
                 "range": {
-                  "from": 4432,
-                  "to": 4544
+                  "from": 6148,
+                  "to": 6260
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "5329eb41::item:3",
+                    "id": "57660cd4::item:3",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2835,8 +4227,8 @@
                         }
                       ],
                       "range": {
-                        "from": 4432,
-                        "to": 4544
+                        "from": 6148,
+                        "to": 6260
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2875,13 +4267,13 @@
           }
         },
         "range": {
-          "from": 4232,
-          "to": 4544
+          "from": 5948,
+          "to": 6260
         }
       }
     },
     {
-      "id": "47d4f4c3",
+      "id": "300b4d78",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -2893,8 +4285,8 @@
           "headingId": "engine-v2-production-comparison-2026-10-08"
         },
         "range": {
-          "from": 4546,
-          "to": 4593
+          "from": 6262,
+          "to": 6309
         },
         "inline": [
           {
@@ -2905,7 +4297,7 @@
       }
     },
     {
-      "id": "30700b1d",
+      "id": "79fa64a3",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -2914,8 +4306,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 4595,
-          "to": 5018
+          "from": 6311,
+          "to": 6734
         },
         "inline": [
           {
@@ -2958,7 +4350,7 @@
       }
     },
     {
-      "id": "4b6bb0d9",
+      "id": "37ec7de4",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -2967,8 +4359,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 5020,
-          "to": 5376
+          "from": 6736,
+          "to": 7092
         },
         "inline": [
           {
@@ -2979,7 +4371,7 @@
       }
     },
     {
-      "id": "1b6d6ac1",
+      "id": "676a6b4c",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -2988,8 +4380,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 5378,
-          "to": 5776
+          "from": 7094,
+          "to": 7492
         },
         "inline": [
           {
@@ -3040,7 +4432,7 @@
       }
     },
     {
-      "id": "7eb53103",
+      "id": "66eb89b8",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -3052,8 +4444,8 @@
           "headingId": "related-references"
         },
         "range": {
-          "from": 5778,
-          "to": 5799
+          "from": 7494,
+          "to": 7515
         },
         "inline": [
           {
@@ -3064,7 +4456,7 @@
       }
     },
     {
-      "id": "ffa0698",
+      "id": "4002acf8",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -3143,17 +4535,17 @@
             },
             "children": [
               {
-                "id": "ffa0698::item:0",
+                "id": "4002acf8::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 5801,
-                  "to": 5841
+                  "from": 7517,
+                  "to": 7557
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "ffa0698::item:0",
+                    "id": "4002acf8::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -3171,8 +4563,8 @@
                         }
                       ],
                       "range": {
-                        "from": 5801,
-                        "to": 5841
+                        "from": 7517,
+                        "to": 7557
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -3220,17 +4612,17 @@
                 "children": []
               },
               {
-                "id": "ffa0698::item:1",
+                "id": "4002acf8::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 5842,
-                  "to": 5892
+                  "from": 7558,
+                  "to": 7608
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "ffa0698::item:1",
+                    "id": "4002acf8::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -3248,8 +4640,8 @@
                         }
                       ],
                       "range": {
-                        "from": 5842,
-                        "to": 5892
+                        "from": 7558,
+                        "to": 7608
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -3297,17 +4689,17 @@
                 "children": []
               },
               {
-                "id": "ffa0698::item:2",
+                "id": "4002acf8::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 5893,
-                  "to": 5969
+                  "from": 7609,
+                  "to": 7685
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "ffa0698::item:2",
+                    "id": "4002acf8::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -3325,8 +4717,8 @@
                         }
                       ],
                       "range": {
-                        "from": 5893,
-                        "to": 5969
+                        "from": 7609,
+                        "to": 7685
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -3374,17 +4766,17 @@
                 "children": []
               },
               {
-                "id": "ffa0698::item:3",
+                "id": "4002acf8::item:3",
                 "type": "list-item",
                 "range": {
-                  "from": 5970,
-                  "to": 6038
+                  "from": 7686,
+                  "to": 7754
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "ffa0698::item:3",
+                    "id": "4002acf8::item:3",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -3406,8 +4798,8 @@
                         }
                       ],
                       "range": {
-                        "from": 5970,
-                        "to": 6038
+                        "from": 7686,
+                        "to": 7754
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -3466,8 +4858,8 @@
           }
         },
         "range": {
-          "from": 5801,
-          "to": 6038
+          "from": 7517,
+          "to": 7754
         }
       }
     }
@@ -3516,32 +4908,44 @@
       "text": "Security and isolation"
     },
     {
-      "id": "where-streamdown-is-the-better-fit",
+      "id": "conformance-and-spec-parity-commonmark-0-31-2-gfm-extensions",
       "blockId": "65e36f80",
+      "level": 2,
+      "text": "Conformance and Spec Parity (CommonMark 0.31.2 + GFM Extensions)"
+    },
+    {
+      "id": "key-takeaways-on-conformance",
+      "blockId": "1946a1a2",
+      "level": 3,
+      "text": "Key takeaways on conformance"
+    },
+    {
+      "id": "where-streamdown-is-the-better-fit",
+      "blockId": "247cad20",
       "level": 2,
       "text": "Where Streamdown is the better fit"
     },
     {
       "id": "where-streammdx-is-the-better-fit",
-      "blockId": "64878387",
+      "blockId": "4cbddc3c",
       "level": 2,
       "text": "Where StreamMDX is the better fit"
     },
     {
       "id": "benchmark-reading-guidance",
-      "blockId": "3f768194",
+      "blockId": "2eaca316",
       "level": 2,
       "text": "Benchmark reading guidance"
     },
     {
       "id": "engine-v2-production-comparison-2026-10-08",
-      "blockId": "47d4f4c3",
+      "blockId": "300b4d78",
       "level": 3,
       "text": "Engine-v2 production comparison, 2026-10-08"
     },
     {
       "id": "related-references",
-      "blockId": "7eb53103",
+      "blockId": "66eb89b8",
       "level": 2,
       "text": "Related references"
     }

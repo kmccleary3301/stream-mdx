@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-02-11T20:25:55.694Z",
-  "hash": "58c46ff7f32253ae3b6710cc98daa34facc6bf39a56c6676f5a6b717fd08ad5d",
+  "createdAt": "2026-10-08T19:49:00.247Z",
+  "hash": "982719e0dca0fe1f4890a2a4a4e96388dc17c48d6c53936cf58b8b56b4285107",
   "contentHash": "2091adec7e68e86ed0d6f69b6d94e89e2790b8095862cae8b7b2011592009111",
-  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
-  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "configHash": "a274f269183e8eac42eeb12b1ae0dc7fea9398cc27792626c9ca0c17911fb0b4",
+  "hashSalt": "docs-snapshots-v2:9417117db4c19b323c5bd2a5c7754c6e0d46bf7c962c13c422b86e6485aac7c0",
   "blocks": [
     {
       "id": "db082c0",
@@ -13,14 +13,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Performance and Backpressure",
-        "range": {
-          "from": 0,
-          "to": 30
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading1",
           "headingLevel": 1,
           "headingText": "Performance and Backpressure",
           "headingId": "performance-and-backpressure"
+        },
+        "range": {
+          "from": 0,
+          "to": 30
         },
         "inline": [
           {
@@ -36,14 +37,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "The goal: steady rendering at scale",
-        "range": {
-          "from": 32,
-          "to": 70
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "The goal: steady rendering at scale",
           "headingId": "the-goal-steady-rendering-at-scale"
+        },
+        "range": {
+          "from": 32,
+          "to": 70
         },
         "inline": [
           {
@@ -59,6 +61,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "StreamMDX prioritizes steady frame times during long streams. Instead of re-rendering everything, it coalesces patches and applies them with an adaptive scheduler.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 72,
           "to": 235
@@ -77,6 +82,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "Key concepts:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 237,
           "to": 250
@@ -95,12 +103,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- **Patch coalescing**: adjacent changes are merged into a single render batch.\n- **Adaptive budget**: the renderer adjusts how much work to do per frame.\n- **Backpressure**: the worker can be slowed when the UI is overloaded.",
-        "range": {
-          "from": 252,
-          "to": 478
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -148,7 +163,276 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "76fc5dbb::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 252,
+                  "to": 331
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "76fc5dbb::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **Patch coalescing**: adjacent changes are merged into a single render batch.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Patch coalescing"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": adjacent changes are merged into a single render batch."
+                        }
+                      ],
+                      "range": {
+                        "from": 252,
+                        "to": 331
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Patch coalescing"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": adjacent changes are merged into a single render batch."
+                              }
+                            ],
+                            "text": "Patch coalescing: adjacent changes are merged into a single render batch.",
+                            "raw": "- **Patch coalescing**: adjacent changes are merged into a single render batch."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Patch coalescing"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": adjacent changes are merged into a single render batch."
+                    }
+                  ],
+                  "text": "Patch coalescing: adjacent changes are merged into a single render batch.",
+                  "raw": "- **Patch coalescing**: adjacent changes are merged into a single render batch."
+                },
+                "children": []
+              },
+              {
+                "id": "76fc5dbb::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 332,
+                  "to": 406
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "76fc5dbb::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **Adaptive budget**: the renderer adjusts how much work to do per frame.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Adaptive budget"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": the renderer adjusts how much work to do per frame."
+                        }
+                      ],
+                      "range": {
+                        "from": 332,
+                        "to": 406
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Adaptive budget"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": the renderer adjusts how much work to do per frame."
+                              }
+                            ],
+                            "text": "Adaptive budget: the renderer adjusts how much work to do per frame.",
+                            "raw": "- **Adaptive budget**: the renderer adjusts how much work to do per frame."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Adaptive budget"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": the renderer adjusts how much work to do per frame."
+                    }
+                  ],
+                  "text": "Adaptive budget: the renderer adjusts how much work to do per frame.",
+                  "raw": "- **Adaptive budget**: the renderer adjusts how much work to do per frame."
+                },
+                "children": []
+              },
+              {
+                "id": "76fc5dbb::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 407,
+                  "to": 478
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "76fc5dbb::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **Backpressure**: the worker can be slowed when the UI is overloaded.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Backpressure"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": the worker can be slowed when the UI is overloaded."
+                        }
+                      ],
+                      "range": {
+                        "from": 407,
+                        "to": 478
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Backpressure"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": the worker can be slowed when the UI is overloaded."
+                              }
+                            ],
+                            "text": "Backpressure: the worker can be slowed when the UI is overloaded.",
+                            "raw": "- **Backpressure**: the worker can be slowed when the UI is overloaded."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Backpressure"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": the worker can be slowed when the UI is overloaded."
+                    }
+                  ],
+                  "text": "Backpressure: the worker can be slowed when the UI is overloaded.",
+                  "raw": "- **Backpressure**: the worker can be slowed when the UI is overloaded."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 252,
+          "to": 478
         }
       }
     },
@@ -158,14 +442,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Scheduling knobs",
-        "range": {
-          "from": 480,
-          "to": 499
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Scheduling knobs",
           "headingId": "scheduling-knobs"
+        },
+        "range": {
+          "from": 480,
+          "to": 499
         },
         "inline": [
           {
@@ -181,6 +466,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "The scheduling config lets you tune performance without touching the parser:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 501,
           "to": 577
@@ -199,15 +487,18 @@
       "isFinalized": true,
       "payload": {
         "raw": "```tsx\n<StreamingMarkdown\n  text={content}\n  scheduling={{\n    frameBudgetMs: 6,\n    lowPriorityFrameBudgetMs: 4,\n    maxBatchesPerFlush: 6,\n    maxLowPriorityBatchesPerFlush: 2,\n  }}\n/>\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "<StreamingMarkdown\n  text={content}\n  scheduling={{\n    frameBudgetMs: 6,\n    lowPriorityFrameBudgetMs: 4,\n    maxBatchesPerFlush: 6,\n    maxLowPriorityBatchesPerFlush: 2,\n  }}\n/>",
+          "info": "tsx",
+          "lang": "tsx",
+          "highlightLang": "tsx"
+        },
         "range": {
           "from": 579,
           "to": 769
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content}</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  scheduling</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    frameBudgetMs: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">6</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    lowPriorityFrameBudgetMs: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">4</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    maxBatchesPerFlush: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">6</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    maxLowPriorityBatchesPerFlush: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">2</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }}</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/></span></span></code></pre>",
-        "meta": {
-          "lang": "tsx",
-          "code": "<StreamingMarkdown\n  text={content}\n  scheduling={{\n    frameBudgetMs: 6,\n    lowPriorityFrameBudgetMs: 4,\n    maxBatchesPerFlush: 6,\n    maxLowPriorityBatchesPerFlush: 2,\n  }}\n/>"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content}</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  scheduling</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    frameBudgetMs: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">6</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    lowPriorityFrameBudgetMs: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">4</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    maxBatchesPerFlush: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">6</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    maxLowPriorityBatchesPerFlush: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">2</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }}</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/></span></span></code></pre>"
       }
     },
     {
@@ -216,6 +507,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "These values are optional. The defaults are tuned for real-time streaming in browsers.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 771,
           "to": 857
@@ -234,14 +528,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Metrics",
-        "range": {
-          "from": 859,
-          "to": 869
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Metrics",
           "headingId": "metrics"
+        },
+        "range": {
+          "from": 859,
+          "to": 869
         },
         "inline": [
           {
@@ -257,6 +552,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "`onMetrics` lets you capture timing data:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 871,
           "to": 912
@@ -279,15 +577,18 @@
       "isFinalized": true,
       "payload": {
         "raw": "```tsx\n<StreamingMarkdown\n  text={content}\n  onMetrics={(metrics) => {\n    console.log(\"patch apply\", metrics.patchApplyMs);\n    console.log(\"queue depth\", metrics.queueDepth);\n  }}\n/>\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "<StreamingMarkdown\n  text={content}\n  onMetrics={(metrics) => {\n    console.log(\"patch apply\", metrics.patchApplyMs);\n    console.log(\"queue depth\", metrics.queueDepth);\n  }}\n/>",
+          "info": "tsx",
+          "lang": "tsx",
+          "highlightLang": "tsx"
+        },
         "range": {
           "from": 914,
           "to": 1102
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content}</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  onMetrics</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{(</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">metrics</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    console.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">log</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"patch apply\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, metrics.patchApplyMs);</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    console.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">log</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"queue depth\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, metrics.queueDepth);</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }}</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/></span></span></code></pre>",
-        "meta": {
-          "lang": "tsx",
-          "code": "<StreamingMarkdown\n  text={content}\n  onMetrics={(metrics) => {\n    console.log(\"patch apply\", metrics.patchApplyMs);\n    console.log(\"queue depth\", metrics.queueDepth);\n  }}\n/>"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content}</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  onMetrics</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{(</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">metrics</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    console.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">log</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"patch apply\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, metrics.patchApplyMs);</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    console.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">log</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"queue depth\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, metrics.queueDepth);</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }}</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/></span></span></code></pre>"
       }
     },
     {
@@ -296,6 +597,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "Use these metrics to verify improvements instead of relying on subjective feel.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 1104,
           "to": 1183
@@ -314,14 +618,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Practical tuning tips",
-        "range": {
-          "from": 1185,
-          "to": 1209
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Practical tuning tips",
           "headingId": "practical-tuning-tips"
+        },
+        "range": {
+          "from": 1185,
+          "to": 1209
         },
         "inline": [
           {
@@ -337,12 +642,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- Keep the update interval low for smooth streams.\n- Avoid extra work in custom components during hot paths.\n- Prefer wrapping (ScrollArea, callouts) over replacing rendering logic.",
-        "range": {
-          "from": 1211,
-          "to": 1392
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -363,7 +675,195 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "7b788765::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 1211,
+                  "to": 1261
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "7b788765::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Keep the update interval low for smooth streams.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Keep the update interval low for smooth streams."
+                        }
+                      ],
+                      "range": {
+                        "from": 1211,
+                        "to": 1261
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Keep the update interval low for smooth streams."
+                              }
+                            ],
+                            "text": "Keep the update interval low for smooth streams.",
+                            "raw": "- Keep the update interval low for smooth streams."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Keep the update interval low for smooth streams."
+                    }
+                  ],
+                  "text": "Keep the update interval low for smooth streams.",
+                  "raw": "- Keep the update interval low for smooth streams."
+                },
+                "children": []
+              },
+              {
+                "id": "7b788765::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 1262,
+                  "to": 1319
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "7b788765::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Avoid extra work in custom components during hot paths.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Avoid extra work in custom components during hot paths."
+                        }
+                      ],
+                      "range": {
+                        "from": 1262,
+                        "to": 1319
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Avoid extra work in custom components during hot paths."
+                              }
+                            ],
+                            "text": "Avoid extra work in custom components during hot paths.",
+                            "raw": "- Avoid extra work in custom components during hot paths."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Avoid extra work in custom components during hot paths."
+                    }
+                  ],
+                  "text": "Avoid extra work in custom components during hot paths.",
+                  "raw": "- Avoid extra work in custom components during hot paths."
+                },
+                "children": []
+              },
+              {
+                "id": "7b788765::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 1320,
+                  "to": 1392
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "7b788765::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Prefer wrapping (ScrollArea, callouts) over replacing rendering logic.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Prefer wrapping (ScrollArea, callouts) over replacing rendering logic."
+                        }
+                      ],
+                      "range": {
+                        "from": 1320,
+                        "to": 1392
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Prefer wrapping (ScrollArea, callouts) over replacing rendering logic."
+                              }
+                            ],
+                            "text": "Prefer wrapping (ScrollArea, callouts) over replacing rendering logic.",
+                            "raw": "- Prefer wrapping (ScrollArea, callouts) over replacing rendering logic."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Prefer wrapping (ScrollArea, callouts) over replacing rendering logic."
+                    }
+                  ],
+                  "text": "Prefer wrapping (ScrollArea, callouts) over replacing rendering logic.",
+                  "raw": "- Prefer wrapping (ScrollArea, callouts) over replacing rendering logic."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 1211,
+          "to": 1392
         }
       }
     },
@@ -373,14 +873,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Known expensive operations",
-        "range": {
-          "from": 1394,
-          "to": 1423
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Known expensive operations",
           "headingId": "known-expensive-operations"
+        },
+        "range": {
+          "from": 1394,
+          "to": 1423
         },
         "inline": [
           {
@@ -396,12 +897,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- Very large HTML blocks\n- Heavy MDX components that trigger layout thrash\n- Unbounded DOM for extremely long sessions",
-        "range": {
-          "from": 1425,
-          "to": 1543
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -422,7 +930,195 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "6ffc8fea::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 1425,
+                  "to": 1449
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "6ffc8fea::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Very large HTML blocks",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Very large HTML blocks"
+                        }
+                      ],
+                      "range": {
+                        "from": 1425,
+                        "to": 1449
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Very large HTML blocks"
+                              }
+                            ],
+                            "text": "Very large HTML blocks",
+                            "raw": "- Very large HTML blocks"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Very large HTML blocks"
+                    }
+                  ],
+                  "text": "Very large HTML blocks",
+                  "raw": "- Very large HTML blocks"
+                },
+                "children": []
+              },
+              {
+                "id": "6ffc8fea::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 1450,
+                  "to": 1499
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "6ffc8fea::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Heavy MDX components that trigger layout thrash",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Heavy MDX components that trigger layout thrash"
+                        }
+                      ],
+                      "range": {
+                        "from": 1450,
+                        "to": 1499
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Heavy MDX components that trigger layout thrash"
+                              }
+                            ],
+                            "text": "Heavy MDX components that trigger layout thrash",
+                            "raw": "- Heavy MDX components that trigger layout thrash"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Heavy MDX components that trigger layout thrash"
+                    }
+                  ],
+                  "text": "Heavy MDX components that trigger layout thrash",
+                  "raw": "- Heavy MDX components that trigger layout thrash"
+                },
+                "children": []
+              },
+              {
+                "id": "6ffc8fea::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 1500,
+                  "to": 1543
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "6ffc8fea::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Unbounded DOM for extremely long sessions",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Unbounded DOM for extremely long sessions"
+                        }
+                      ],
+                      "range": {
+                        "from": 1500,
+                        "to": 1543
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Unbounded DOM for extremely long sessions"
+                              }
+                            ],
+                            "text": "Unbounded DOM for extremely long sessions",
+                            "raw": "- Unbounded DOM for extremely long sessions"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Unbounded DOM for extremely long sessions"
+                    }
+                  ],
+                  "text": "Unbounded DOM for extremely long sessions",
+                  "raw": "- Unbounded DOM for extremely long sessions"
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 1425,
+          "to": 1543
         }
       }
     },
@@ -432,6 +1128,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "In those cases, use `features` flags to turn off unused blocks, or chunk your content.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 1545,
           "to": 1631
@@ -456,39 +1155,39 @@
   "tocHeadings": [
     {
       "id": "performance-and-backpressure",
-      "text": "Performance and Backpressure",
+      "blockId": "db082c0",
       "level": 1,
-      "blockId": "db082c0"
+      "text": "Performance and Backpressure"
     },
     {
       "id": "the-goal-steady-rendering-at-scale",
-      "text": "The goal: steady rendering at scale",
+      "blockId": "72c393a1",
       "level": 2,
-      "blockId": "72c393a1"
+      "text": "The goal: steady rendering at scale"
     },
     {
       "id": "scheduling-knobs",
-      "text": "Scheduling knobs",
+      "blockId": "66da76c4",
       "level": 2,
-      "blockId": "66da76c4"
+      "text": "Scheduling knobs"
     },
     {
       "id": "metrics",
-      "text": "Metrics",
+      "blockId": "4643e7ec",
       "level": 2,
-      "blockId": "4643e7ec"
+      "text": "Metrics"
     },
     {
       "id": "practical-tuning-tips",
-      "text": "Practical tuning tips",
+      "blockId": "1a0e8f1d",
       "level": 2,
-      "blockId": "1a0e8f1d"
+      "text": "Practical tuning tips"
     },
     {
       "id": "known-expensive-operations",
-      "text": "Known expensive operations",
+      "blockId": "5c230943",
       "level": 2,
-      "blockId": "5c230943"
+      "text": "Known expensive operations"
     }
   ],
   "init": {

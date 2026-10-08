@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-08T12:24:09.194Z",
-  "hash": "c88a21abee8a5d7350f9c2794b72813ca0facbb1ac17650481cdedd0738e1629",
-  "contentHash": "461d6f9808e3afa52dc726c0ed10dee481825268bc2d03ea0d635e9abd4e31c2",
-  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
-  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "createdAt": "2026-10-08T19:48:58.081Z",
+  "hash": "f103489b2f7d0e8d89b801dd9f6a9e244ff0e55235015ec2db1a3e99a6fa65f3",
+  "contentHash": "07c654f90249c196165f88a386d2c87d39aa3a47708d4f5ba71af29d742bfe48",
+  "configHash": "a274f269183e8eac42eeb12b1ae0dc7fea9398cc27792626c9ca0c17911fb0b4",
+  "hashSalt": "docs-snapshots-v2:9417117db4c19b323c5bd2a5c7754c6e0d46bf7c962c13c422b86e6485aac7c0",
   "blocks": [
     {
       "id": "db082c0",
@@ -6546,7 +6546,7 @@
       "type": "list",
       "isFinalized": true,
       "payload": {
-        "raw": "- Node 20 integrated suites: 20 core, 50 worker, 42 React, and one unified test file passed.\n- CommonMark/GFM corpus: 675/675 static, streaming, and SSR cases; zero divergences; all 427 previously passing IDs retained. This is the configured corpus, not universal conformance.\n- Final production HTML regressions: 120/120 scenarios passed in a non-update run.\n- Fresh packed ESM/CJS consumers and production Next/Vite builds passed on Node 20. Real main-thread browser consumers rendered remark/rehype output and Mermaid SVGs.\n- Physical browser workers exercised native Lezer grammar/inline extensions, document plugins, and serialized syntax rules. Finalized table virtualization retained the last row through streaming replacement and rendered every row when disabled.\n- Consumer API, renderer replacements, artifacts, chat example, and optional unified integration are documented in `docs/PUBLIC_API.md` and `docs/REACT_INTEGRATION_GUIDE.md`.",
+        "raw": "- Node 20 integrated suites: 20 core, 50 worker, 42 React, and one unified test file passed.\n- CommonMark/GFM corpus (675 cases): 675/675 static, streaming, and SSR cases under normalized semantics with zero streaming divergences (retaining the 675 ratchet baseline). Under strict semantics preserving link/image titles and code language-* info strings, StreamMDX scores 675/675 across all three paths with zero streaming divergences (unlabeled and indented code blocks emit bare `<pre><code>` with no class). For comparison, micromark scores 669/675 (5 GFM tagfilter differences + 1 dropped FTP autolink), Streamdown default chat mode scores 540/675, and Streamdown raw HTML mode scores 586/675. This is the configured corpus, not universal conformance.\n- Final production HTML regressions: 120/120 scenarios passed in a non-update run.\n- Fresh packed ESM/CJS consumers and production Next/Vite builds passed on Node 20. Real main-thread browser consumers rendered remark/rehype output and Mermaid SVGs.\n- Physical browser workers exercised native Lezer grammar/inline extensions, document plugins, and serialized syntax rules. Finalized table virtualization retained the last row through streaming replacement and rendered every row when disabled.\n- Consumer API, renderer replacements, artifacts, chat example, and optional unified integration are documented in `docs/PUBLIC_API.md` and `docs/REACT_INTEGRATION_GUIDE.md`.",
         "meta": {
           "lezerNodeType": "BulletList",
           "mathEnabled": true,
@@ -6570,7 +6570,15 @@
             [
               {
                 "kind": "text",
-                "text": "CommonMark/GFM corpus: 675/675 static, streaming, and SSR cases; zero divergences; all 427 previously passing IDs retained. This is the configured corpus, not universal conformance."
+                "text": "CommonMark/GFM corpus (675 cases): 675/675 static, streaming, and SSR cases under normalized semantics with zero streaming divergences (retaining the 675 ratchet baseline). Under strict semantics preserving link/image titles and code language-* info strings, StreamMDX scores 675/675 across all three paths with zero streaming divergences (unlabeled and indented code blocks emit bare "
+              },
+              {
+                "kind": "code",
+                "text": "<pre><code>"
+              },
+              {
+                "kind": "text",
+                "text": " with no class). For comparison, micromark scores 669/675 (5 GFM tagfilter differences + 1 dropped FTP autolink), Streamdown default chat mode scores 540/675, and Streamdown raw HTML mode scores 586/675. This is the configured corpus, not universal conformance."
               }
             ],
             [
@@ -6684,7 +6692,7 @@
                 "type": "list-item",
                 "range": {
                   "from": 4335,
-                  "to": 4518
+                  "to": 4996
                 },
                 "props": {
                   "ordered": false,
@@ -6694,16 +6702,24 @@
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
-                      "raw": "- CommonMark/GFM corpus: 675/675 static, streaming, and SSR cases; zero divergences; all 427 previously passing IDs retained. This is the configured corpus, not universal conformance.",
+                      "raw": "- CommonMark/GFM corpus (675 cases): 675/675 static, streaming, and SSR cases under normalized semantics with zero streaming divergences (retaining the 675 ratchet baseline). Under strict semantics preserving link/image titles and code language-* info strings, StreamMDX scores 675/675 across all three paths with zero streaming divergences (unlabeled and indented code blocks emit bare `<pre><code>` with no class). For comparison, micromark scores 669/675 (5 GFM tagfilter differences + 1 dropped FTP autolink), Streamdown default chat mode scores 540/675, and Streamdown raw HTML mode scores 586/675. This is the configured corpus, not universal conformance.",
                       "inline": [
                         {
                           "kind": "text",
-                          "text": "CommonMark/GFM corpus: 675/675 static, streaming, and SSR cases; zero divergences; all 427 previously passing IDs retained. This is the configured corpus, not universal conformance."
+                          "text": "CommonMark/GFM corpus (675 cases): 675/675 static, streaming, and SSR cases under normalized semantics with zero streaming divergences (retaining the 675 ratchet baseline). Under strict semantics preserving link/image titles and code language-* info strings, StreamMDX scores 675/675 across all three paths with zero streaming divergences (unlabeled and indented code blocks emit bare "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "<pre><code>"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " with no class). For comparison, micromark scores 669/675 (5 GFM tagfilter differences + 1 dropped FTP autolink), Streamdown default chat mode scores 540/675, and Streamdown raw HTML mode scores 586/675. This is the configured corpus, not universal conformance."
                         }
                       ],
                       "range": {
                         "from": 4335,
-                        "to": 4518
+                        "to": 4996
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -6715,11 +6731,19 @@
                             "inline": [
                               {
                                 "kind": "text",
-                                "text": "CommonMark/GFM corpus: 675/675 static, streaming, and SSR cases; zero divergences; all 427 previously passing IDs retained. This is the configured corpus, not universal conformance."
+                                "text": "CommonMark/GFM corpus (675 cases): 675/675 static, streaming, and SSR cases under normalized semantics with zero streaming divergences (retaining the 675 ratchet baseline). Under strict semantics preserving link/image titles and code language-* info strings, StreamMDX scores 675/675 across all three paths with zero streaming divergences (unlabeled and indented code blocks emit bare "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "<pre><code>"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " with no class). For comparison, micromark scores 669/675 (5 GFM tagfilter differences + 1 dropped FTP autolink), Streamdown default chat mode scores 540/675, and Streamdown raw HTML mode scores 586/675. This is the configured corpus, not universal conformance."
                               }
                             ],
-                            "text": "CommonMark/GFM corpus: 675/675 static, streaming, and SSR cases; zero divergences; all 427 previously passing IDs retained. This is the configured corpus, not universal conformance.",
-                            "raw": "- CommonMark/GFM corpus: 675/675 static, streaming, and SSR cases; zero divergences; all 427 previously passing IDs retained. This is the configured corpus, not universal conformance."
+                            "text": "CommonMark/GFM corpus (675 cases): 675/675 static, streaming, and SSR cases under normalized semantics with zero streaming divergences (retaining the 675 ratchet baseline). Under strict semantics preserving link/image titles and code language-* info strings, StreamMDX scores 675/675 across all three paths with zero streaming divergences (unlabeled and indented code blocks emit bare <pre><code> with no class). For comparison, micromark scores 669/675 (5 GFM tagfilter differences + 1 dropped FTP autolink), Streamdown default chat mode scores 540/675, and Streamdown raw HTML mode scores 586/675. This is the configured corpus, not universal conformance.",
+                            "raw": "- CommonMark/GFM corpus (675 cases): 675/675 static, streaming, and SSR cases under normalized semantics with zero streaming divergences (retaining the 675 ratchet baseline). Under strict semantics preserving link/image titles and code language-* info strings, StreamMDX scores 675/675 across all three paths with zero streaming divergences (unlabeled and indented code blocks emit bare `<pre><code>` with no class). For comparison, micromark scores 669/675 (5 GFM tagfilter differences + 1 dropped FTP autolink), Streamdown default chat mode scores 540/675, and Streamdown raw HTML mode scores 586/675. This is the configured corpus, not universal conformance."
                           },
                           "children": []
                         }
@@ -6730,11 +6754,19 @@
                   "inline": [
                     {
                       "kind": "text",
-                      "text": "CommonMark/GFM corpus: 675/675 static, streaming, and SSR cases; zero divergences; all 427 previously passing IDs retained. This is the configured corpus, not universal conformance."
+                      "text": "CommonMark/GFM corpus (675 cases): 675/675 static, streaming, and SSR cases under normalized semantics with zero streaming divergences (retaining the 675 ratchet baseline). Under strict semantics preserving link/image titles and code language-* info strings, StreamMDX scores 675/675 across all three paths with zero streaming divergences (unlabeled and indented code blocks emit bare "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "<pre><code>"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " with no class). For comparison, micromark scores 669/675 (5 GFM tagfilter differences + 1 dropped FTP autolink), Streamdown default chat mode scores 540/675, and Streamdown raw HTML mode scores 586/675. This is the configured corpus, not universal conformance."
                     }
                   ],
-                  "text": "CommonMark/GFM corpus: 675/675 static, streaming, and SSR cases; zero divergences; all 427 previously passing IDs retained. This is the configured corpus, not universal conformance.",
-                  "raw": "- CommonMark/GFM corpus: 675/675 static, streaming, and SSR cases; zero divergences; all 427 previously passing IDs retained. This is the configured corpus, not universal conformance."
+                  "text": "CommonMark/GFM corpus (675 cases): 675/675 static, streaming, and SSR cases under normalized semantics with zero streaming divergences (retaining the 675 ratchet baseline). Under strict semantics preserving link/image titles and code language-* info strings, StreamMDX scores 675/675 across all three paths with zero streaming divergences (unlabeled and indented code blocks emit bare <pre><code> with no class). For comparison, micromark scores 669/675 (5 GFM tagfilter differences + 1 dropped FTP autolink), Streamdown default chat mode scores 540/675, and Streamdown raw HTML mode scores 586/675. This is the configured corpus, not universal conformance.",
+                  "raw": "- CommonMark/GFM corpus (675 cases): 675/675 static, streaming, and SSR cases under normalized semantics with zero streaming divergences (retaining the 675 ratchet baseline). Under strict semantics preserving link/image titles and code language-* info strings, StreamMDX scores 675/675 across all three paths with zero streaming divergences (unlabeled and indented code blocks emit bare `<pre><code>` with no class). For comparison, micromark scores 669/675 (5 GFM tagfilter differences + 1 dropped FTP autolink), Streamdown default chat mode scores 540/675, and Streamdown raw HTML mode scores 586/675. This is the configured corpus, not universal conformance."
                 },
                 "children": []
               },
@@ -6742,8 +6774,8 @@
                 "id": "1e43b000::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 4519,
-                  "to": 4601
+                  "from": 4997,
+                  "to": 5079
                 },
                 "props": {
                   "ordered": false,
@@ -6761,8 +6793,8 @@
                         }
                       ],
                       "range": {
-                        "from": 4519,
-                        "to": 4601
+                        "from": 4997,
+                        "to": 5079
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -6801,8 +6833,8 @@
                 "id": "1e43b000::item:3",
                 "type": "list-item",
                 "range": {
-                  "from": 4602,
-                  "to": 4768
+                  "from": 5080,
+                  "to": 5246
                 },
                 "props": {
                   "ordered": false,
@@ -6820,8 +6852,8 @@
                         }
                       ],
                       "range": {
-                        "from": 4602,
-                        "to": 4768
+                        "from": 5080,
+                        "to": 5246
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -6860,8 +6892,8 @@
                 "id": "1e43b000::item:4",
                 "type": "list-item",
                 "range": {
-                  "from": 4769,
-                  "to": 5013
+                  "from": 5247,
+                  "to": 5491
                 },
                 "props": {
                   "ordered": false,
@@ -6879,8 +6911,8 @@
                         }
                       ],
                       "range": {
-                        "from": 4769,
-                        "to": 5013
+                        "from": 5247,
+                        "to": 5491
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -6919,8 +6951,8 @@
                 "id": "1e43b000::item:5",
                 "type": "list-item",
                 "range": {
-                  "from": 5014,
-                  "to": 5188
+                  "from": 5492,
+                  "to": 5666
                 },
                 "props": {
                   "ordered": false,
@@ -6954,8 +6986,8 @@
                         }
                       ],
                       "range": {
-                        "from": 5014,
-                        "to": 5188
+                        "from": 5492,
+                        "to": 5666
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -7027,12 +7059,12 @@
         },
         "range": {
           "from": 4242,
-          "to": 5188
+          "to": 5666
         }
       }
     },
     {
-      "id": "6fca3cf3",
+      "id": "5795fc9d",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -7041,8 +7073,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 5190,
-          "to": 5387
+          "from": 5668,
+          "to": 5865
         },
         "inline": [
           {

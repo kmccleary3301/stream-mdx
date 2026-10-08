@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-08T06:16:58.874Z",
-  "hash": "19d75356e0fc3b4a94bca8ff66b9e34eba585bcf16d4404161d11a5f1fc9d34f",
+  "createdAt": "2026-10-08T19:48:57.665Z",
+  "hash": "c4d8e31e5dd34be4f51c047d6016c81bbdb72614f9cc6295c6e41096dd0fd30c",
   "contentHash": "5195bb9f327b0169d38d85dc088b7bf2632db900cd99619850ec6b0d3830c212",
-  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
-  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "configHash": "a274f269183e8eac42eeb12b1ae0dc7fea9398cc27792626c9ca0c17911fb0b4",
+  "hashSalt": "docs-snapshots-v2:9417117db4c19b323c5bd2a5c7754c6e0d46bf7c962c13c422b86e6485aac7c0",
   "blocks": [
     {
       "id": "db082c0",
@@ -364,7 +364,7 @@
                                   "props": {
                                     "index": 0,
                                     "text": "npm ci",
-                                    "html": null
+                                    "html": "<span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> ci</span>"
                                   },
                                   "children": []
                                 }
@@ -443,7 +443,7 @@
                         "props": {
                           "index": 0,
                           "text": "npm ci",
-                          "html": null
+                          "html": "<span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> ci</span>"
                         },
                         "children": []
                       }
@@ -785,7 +785,7 @@
                                   "props": {
                                     "index": 0,
                                     "text": "npm run build",
-                                    "html": null
+                                    "html": "<span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> build</span>"
                                   },
                                   "children": []
                                 }
@@ -1093,7 +1093,7 @@
                         "props": {
                           "index": 0,
                           "text": "npm run build",
-                          "html": null
+                          "html": "<span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> build</span>"
                         },
                         "children": []
                       }
@@ -1607,7 +1607,7 @@
                                   "props": {
                                     "index": 0,
                                     "text": "SOURCEMAP=1 npm run build",
-                                    "html": null
+                                    "html": "<span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">SOURCEMAP</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">1</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> build</span>"
                                   },
                                   "children": []
                                 }
@@ -2087,7 +2087,7 @@
                         "props": {
                           "index": 0,
                           "text": "SOURCEMAP=1 npm run build",
-                          "html": null
+                          "html": "<span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">SOURCEMAP</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">1</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> build</span>"
                         },
                         "children": []
                       }
@@ -2200,7 +2200,7 @@
                                   "props": {
                                     "index": 0,
                                     "text": "npm run worker:build",
-                                    "html": null
+                                    "html": "<span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> worker:build</span>"
                                   },
                                   "children": []
                                 }
@@ -2279,7 +2279,7 @@
                         "props": {
                           "index": 0,
                           "text": "npm run worker:build",
-                          "html": null
+                          "html": "<span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> worker:build</span>"
                         },
                         "children": []
                       }
@@ -2392,7 +2392,7 @@
                                   "props": {
                                     "index": 0,
                                     "text": "npm test",
-                                    "html": null
+                                    "html": "<span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> test</span>"
                                   },
                                   "children": []
                                 }
@@ -2471,7 +2471,7 @@
                         "props": {
                           "index": 0,
                           "text": "npm test",
-                          "html": null
+                          "html": "<span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> test</span>"
                         },
                         "children": []
                       }
@@ -2584,7 +2584,7 @@
                                   "props": {
                                     "index": 0,
                                     "text": "npm run test:regression:html",
-                                    "html": null
+                                    "html": "<span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> test:regression:html</span>"
                                   },
                                   "children": []
                                 },
@@ -2594,7 +2594,7 @@
                                   "props": {
                                     "index": 1,
                                     "text": "npm run test:regression:styles",
-                                    "html": null
+                                    "html": "<span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> test:regression:styles</span>"
                                   },
                                   "children": []
                                 }
@@ -4808,7 +4808,7 @@
                         "props": {
                           "index": 0,
                           "text": "npm run test:regression:html",
-                          "html": null
+                          "html": "<span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> test:regression:html</span>"
                         },
                         "children": []
                       },
@@ -4818,7 +4818,7 @@
                         "props": {
                           "index": 1,
                           "text": "npm run test:regression:styles",
-                          "html": null
+                          "html": "<span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> test:regression:styles</span>"
                         },
                         "children": []
                       }
@@ -7066,7 +7066,7 @@
                                   "props": {
                                     "index": 0,
                                     "text": "NEXT_PUBLIC_STREAMING_DEMO_API=true npm run docs:dev",
-                                    "html": null
+                                    "html": "<span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">NEXT_PUBLIC_STREAMING_DEMO_API</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">true</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> docs:dev</span>"
                                   },
                                   "children": []
                                 },
@@ -7076,7 +7076,7 @@
                                   "props": {
                                     "index": 1,
                                     "text": "npm run perf:demo -- --rate 12000 --tick 5 --runs 1",
-                                    "html": null
+                                    "html": "<span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:demo</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --rate</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 12000</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --tick</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 5</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --runs</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 1</span>"
                                   },
                                   "children": []
                                 }
@@ -7526,7 +7526,7 @@
                         "props": {
                           "index": 0,
                           "text": "NEXT_PUBLIC_STREAMING_DEMO_API=true npm run docs:dev",
-                          "html": null
+                          "html": "<span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">NEXT_PUBLIC_STREAMING_DEMO_API</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">true</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> docs:dev</span>"
                         },
                         "children": []
                       },
@@ -7536,7 +7536,7 @@
                         "props": {
                           "index": 1,
                           "text": "npm run perf:demo -- --rate 12000 --tick 5 --runs 1",
-                          "html": null
+                          "html": "<span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:demo</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --rate</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 12000</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --tick</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 5</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --runs</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 1</span>"
                         },
                         "children": []
                       }
@@ -8020,7 +8020,7 @@
                                   "props": {
                                     "index": 0,
                                     "text": "npm run perf:compare -- --base tmp/perf-baselines/<baseline> --candidate tmp/perf-baselines/<candidate>",
-                                    "html": null
+                                    "html": "<span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:compare</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --base</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/perf-baselines/</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">&#x3C;</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">baselin</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">e</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">></span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --candidate</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/perf-baselines/</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">&#x3C;</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">candidat</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">e</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">></span>"
                                   },
                                   "children": []
                                 }
@@ -8470,7 +8470,7 @@
                         "props": {
                           "index": 0,
                           "text": "npm run perf:compare -- --base tmp/perf-baselines/<baseline> --candidate tmp/perf-baselines/<candidate>",
-                          "html": null
+                          "html": "<span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:compare</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --base</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/perf-baselines/</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">&#x3C;</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">baselin</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">e</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">></span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --candidate</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/perf-baselines/</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">&#x3C;</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">candidat</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">e</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">></span>"
                         },
                         "children": []
                       }
@@ -13025,7 +13025,7 @@
                                   "props": {
                                     "index": 0,
                                     "text": "mkdir -p tmp/release-packs",
-                                    "html": null
+                                    "html": "<span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">mkdir</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> -p</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/release-packs</span>"
                                   },
                                   "children": []
                                 },
@@ -13035,7 +13035,7 @@
                                   "props": {
                                     "index": 1,
                                     "text": "(cd packages/markdown-v2-core && npm pack --pack-destination ../../tmp/release-packs)",
-                                    "html": null
+                                    "html": "<span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">cd</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> packages/markdown-v2-core</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x26;&#x26; </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> pack</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --pack-destination</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> ../../tmp/release-packs</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)</span>"
                                   },
                                   "children": []
                                 },
@@ -13045,7 +13045,7 @@
                                   "props": {
                                     "index": 2,
                                     "text": "(cd packages/markdown-v2-plugins && npm pack --pack-destination ../../tmp/release-packs)",
-                                    "html": null
+                                    "html": "<span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">cd</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> packages/markdown-v2-plugins</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x26;&#x26; </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> pack</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --pack-destination</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> ../../tmp/release-packs</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)</span>"
                                   },
                                   "children": []
                                 },
@@ -13055,7 +13055,7 @@
                                   "props": {
                                     "index": 3,
                                     "text": "(cd packages/markdown-v2-protocol && npm pack --pack-destination ../../tmp/release-packs)",
-                                    "html": null
+                                    "html": "<span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">cd</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> packages/markdown-v2-protocol</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x26;&#x26; </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> pack</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --pack-destination</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> ../../tmp/release-packs</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)</span>"
                                   },
                                   "children": []
                                 },
@@ -13065,7 +13065,7 @@
                                   "props": {
                                     "index": 4,
                                     "text": "(cd packages/markdown-v2-worker && npm pack --pack-destination ../../tmp/release-packs)",
-                                    "html": null
+                                    "html": "<span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">cd</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> packages/markdown-v2-worker</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x26;&#x26; </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> pack</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --pack-destination</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> ../../tmp/release-packs</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)</span>"
                                   },
                                   "children": []
                                 },
@@ -13075,7 +13075,7 @@
                                   "props": {
                                     "index": 5,
                                     "text": "(cd packages/markdown-v2-react && npm pack --pack-destination ../../tmp/release-packs)",
-                                    "html": null
+                                    "html": "<span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">cd</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> packages/markdown-v2-react</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x26;&#x26; </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> pack</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --pack-destination</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> ../../tmp/release-packs</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)</span>"
                                   },
                                   "children": []
                                 },
@@ -13085,7 +13085,7 @@
                                   "props": {
                                     "index": 6,
                                     "text": "(cd packages/markdown-v2-mermaid && npm pack --pack-destination ../../tmp/release-packs)",
-                                    "html": null
+                                    "html": "<span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">cd</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> packages/markdown-v2-mermaid</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x26;&#x26; </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> pack</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --pack-destination</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> ../../tmp/release-packs</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)</span>"
                                   },
                                   "children": []
                                 },
@@ -13095,7 +13095,7 @@
                                   "props": {
                                     "index": 7,
                                     "text": "(cd packages/markdown-v2-unified && npm pack --pack-destination ../../tmp/release-packs)",
-                                    "html": null
+                                    "html": "<span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">cd</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> packages/markdown-v2-unified</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x26;&#x26; </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> pack</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --pack-destination</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> ../../tmp/release-packs</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)</span>"
                                   },
                                   "children": []
                                 },
@@ -13105,7 +13105,7 @@
                                   "props": {
                                     "index": 8,
                                     "text": "(cd packages/markdown-v2-tui && npm pack --pack-destination ../../tmp/release-packs)",
-                                    "html": null
+                                    "html": "<span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">cd</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> packages/markdown-v2-tui</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x26;&#x26; </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> pack</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --pack-destination</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> ../../tmp/release-packs</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)</span>"
                                   },
                                   "children": []
                                 },
@@ -13115,7 +13115,7 @@
                                   "props": {
                                     "index": 9,
                                     "text": "(cd packages/theme-tailwind && npm pack --pack-destination ../../tmp/release-packs)",
-                                    "html": null
+                                    "html": "<span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">cd</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> packages/theme-tailwind</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x26;&#x26; </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> pack</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --pack-destination</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> ../../tmp/release-packs</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)</span>"
                                   },
                                   "children": []
                                 },
@@ -13125,7 +13125,7 @@
                                   "props": {
                                     "index": 10,
                                     "text": "(cd packages/stream-mdx && npm pack --pack-destination ../../tmp/release-packs)",
-                                    "html": null
+                                    "html": "<span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">cd</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> packages/stream-mdx</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x26;&#x26; </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> pack</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --pack-destination</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> ../../tmp/release-packs</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)</span>"
                                   },
                                   "children": []
                                 }
@@ -13204,7 +13204,7 @@
                         "props": {
                           "index": 0,
                           "text": "mkdir -p tmp/release-packs",
-                          "html": null
+                          "html": "<span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">mkdir</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> -p</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/release-packs</span>"
                         },
                         "children": []
                       },
@@ -13214,7 +13214,7 @@
                         "props": {
                           "index": 1,
                           "text": "(cd packages/markdown-v2-core && npm pack --pack-destination ../../tmp/release-packs)",
-                          "html": null
+                          "html": "<span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">cd</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> packages/markdown-v2-core</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x26;&#x26; </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> pack</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --pack-destination</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> ../../tmp/release-packs</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)</span>"
                         },
                         "children": []
                       },
@@ -13224,7 +13224,7 @@
                         "props": {
                           "index": 2,
                           "text": "(cd packages/markdown-v2-plugins && npm pack --pack-destination ../../tmp/release-packs)",
-                          "html": null
+                          "html": "<span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">cd</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> packages/markdown-v2-plugins</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x26;&#x26; </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> pack</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --pack-destination</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> ../../tmp/release-packs</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)</span>"
                         },
                         "children": []
                       },
@@ -13234,7 +13234,7 @@
                         "props": {
                           "index": 3,
                           "text": "(cd packages/markdown-v2-protocol && npm pack --pack-destination ../../tmp/release-packs)",
-                          "html": null
+                          "html": "<span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">cd</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> packages/markdown-v2-protocol</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x26;&#x26; </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> pack</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --pack-destination</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> ../../tmp/release-packs</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)</span>"
                         },
                         "children": []
                       },
@@ -13244,7 +13244,7 @@
                         "props": {
                           "index": 4,
                           "text": "(cd packages/markdown-v2-worker && npm pack --pack-destination ../../tmp/release-packs)",
-                          "html": null
+                          "html": "<span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">cd</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> packages/markdown-v2-worker</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x26;&#x26; </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> pack</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --pack-destination</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> ../../tmp/release-packs</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)</span>"
                         },
                         "children": []
                       },
@@ -13254,7 +13254,7 @@
                         "props": {
                           "index": 5,
                           "text": "(cd packages/markdown-v2-react && npm pack --pack-destination ../../tmp/release-packs)",
-                          "html": null
+                          "html": "<span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">cd</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> packages/markdown-v2-react</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x26;&#x26; </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> pack</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --pack-destination</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> ../../tmp/release-packs</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)</span>"
                         },
                         "children": []
                       },
@@ -13264,7 +13264,7 @@
                         "props": {
                           "index": 6,
                           "text": "(cd packages/markdown-v2-mermaid && npm pack --pack-destination ../../tmp/release-packs)",
-                          "html": null
+                          "html": "<span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">cd</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> packages/markdown-v2-mermaid</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x26;&#x26; </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> pack</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --pack-destination</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> ../../tmp/release-packs</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)</span>"
                         },
                         "children": []
                       },
@@ -13274,7 +13274,7 @@
                         "props": {
                           "index": 7,
                           "text": "(cd packages/markdown-v2-unified && npm pack --pack-destination ../../tmp/release-packs)",
-                          "html": null
+                          "html": "<span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">cd</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> packages/markdown-v2-unified</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x26;&#x26; </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> pack</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --pack-destination</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> ../../tmp/release-packs</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)</span>"
                         },
                         "children": []
                       },
@@ -13284,7 +13284,7 @@
                         "props": {
                           "index": 8,
                           "text": "(cd packages/markdown-v2-tui && npm pack --pack-destination ../../tmp/release-packs)",
-                          "html": null
+                          "html": "<span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">cd</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> packages/markdown-v2-tui</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x26;&#x26; </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> pack</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --pack-destination</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> ../../tmp/release-packs</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)</span>"
                         },
                         "children": []
                       },
@@ -13294,7 +13294,7 @@
                         "props": {
                           "index": 9,
                           "text": "(cd packages/theme-tailwind && npm pack --pack-destination ../../tmp/release-packs)",
-                          "html": null
+                          "html": "<span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">cd</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> packages/theme-tailwind</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x26;&#x26; </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> pack</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --pack-destination</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> ../../tmp/release-packs</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)</span>"
                         },
                         "children": []
                       },
@@ -13304,7 +13304,7 @@
                         "props": {
                           "index": 10,
                           "text": "(cd packages/stream-mdx && npm pack --pack-destination ../../tmp/release-packs)",
-                          "html": null
+                          "html": "<span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">cd</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> packages/stream-mdx</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x26;&#x26; </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> pack</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --pack-destination</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> ../../tmp/release-packs</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)</span>"
                         },
                         "children": []
                       }
@@ -20711,7 +20711,7 @@
                                   "props": {
                                     "index": 0,
                                     "text": "npm run changeset",
-                                    "html": null
+                                    "html": "<span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> changeset</span>"
                                   },
                                   "children": []
                                 }
@@ -20790,7 +20790,7 @@
                         "props": {
                           "index": 0,
                           "text": "npm run changeset",
-                          "html": null
+                          "html": "<span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> changeset</span>"
                         },
                         "children": []
                       }
@@ -20903,7 +20903,7 @@
                                   "props": {
                                     "index": 0,
                                     "text": "npm run changeset:version",
-                                    "html": null
+                                    "html": "<span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> changeset:version</span>"
                                   },
                                   "children": []
                                 }
@@ -20982,7 +20982,7 @@
                         "props": {
                           "index": 0,
                           "text": "npm run changeset:version",
-                          "html": null
+                          "html": "<span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> changeset:version</span>"
                         },
                         "children": []
                       }
@@ -25301,7 +25301,7 @@
                                   "props": {
                                     "index": 0,
                                     "text": "npm whoami",
-                                    "html": null
+                                    "html": "<span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> whoami</span>"
                                   },
                                   "children": []
                                 }
@@ -25380,7 +25380,7 @@
                         "props": {
                           "index": 0,
                           "text": "npm whoami",
-                          "html": null
+                          "html": "<span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> whoami</span>"
                         },
                         "children": []
                       }
@@ -39971,7 +39971,7 @@
                                   "props": {
                                     "index": 0,
                                     "text": "npm run changeset:publish",
-                                    "html": null
+                                    "html": "<span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> changeset:publish</span>"
                                   },
                                   "children": []
                                 }
@@ -40050,7 +40050,7 @@
                         "props": {
                           "index": 0,
                           "text": "npm run changeset:publish",
-                          "html": null
+                          "html": "<span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> changeset:publish</span>"
                         },
                         "children": []
                       }
@@ -40163,7 +40163,7 @@
                                   "props": {
                                     "index": 0,
                                     "text": "scripts/publish-v0.4.0.sh",
-                                    "html": null
+                                    "html": "<span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">scripts/publish-v0.4.0.sh</span>"
                                   },
                                   "children": []
                                 }
@@ -40565,7 +40565,7 @@
                         "props": {
                           "index": 0,
                           "text": "scripts/publish-v0.4.0.sh",
-                          "html": null
+                          "html": "<span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">scripts/publish-v0.4.0.sh</span>"
                         },
                         "children": []
                       }
@@ -47414,56 +47414,67 @@
   "tocHeadings": [
     {
       "id": "streammdx-release-checklist",
+      "blockId": "db082c0",
       "level": 1,
       "text": "StreamMDX — Release Checklist"
     },
     {
       "id": "1-preflight-local",
+      "blockId": "236014e1",
       "level": 2,
       "text": "1. Preflight (local)"
     },
     {
       "id": "2-pack-external-install-gate-high-signal",
+      "blockId": "67bba55f",
       "level": 2,
       "text": "2. Pack + external install gate (high signal)"
     },
     {
       "id": "2-1-ci-equivalent-smoke-test-recommended",
+      "blockId": "66aba1c9",
       "level": 3,
       "text": "2.1 CI-equivalent smoke test (recommended)"
     },
     {
       "id": "2-2-manual-pack-optional",
+      "blockId": "27ba9e9",
       "level": 3,
       "text": "2.2 Manual pack (optional)"
     },
     {
       "id": "3-versioning-tagging-changesets",
+      "blockId": "70d627fc",
       "level": 2,
       "text": "3. Versioning & tagging (Changesets)"
     },
     {
       "id": "4-publish",
+      "blockId": "7802ee14",
       "level": 2,
       "text": "4. Publish"
     },
     {
       "id": "5-ci-gates-current-repo",
+      "blockId": "57920aa1",
       "level": 2,
       "text": "5. CI gates (current repo)"
     },
     {
       "id": "6-post-publish-checks",
+      "blockId": "59da22bd",
       "level": 2,
       "text": "6. Post-publish checks"
     },
     {
       "id": "7-docs-release-notes",
+      "blockId": "349a8604",
       "level": 2,
       "text": "7. Docs & release notes"
     },
     {
       "id": "8-rollback-plan",
+      "blockId": "55d4255c",
       "level": 2,
       "text": "8. Rollback plan"
     }

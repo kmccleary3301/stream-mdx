@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-04-03T05:03:20.672Z",
-  "hash": "57b947558302aef6ab5ffbbc95ba5e13295e0917d8f289ece02f8a220d8b4e55",
+  "createdAt": "2026-10-08T19:48:54.912Z",
+  "hash": "5e89c7ec3ee0e18fe8d0808e636edb2f4308ed16efca2ad69f5b8b0edeefc415",
   "contentHash": "4f69972fbcead31ff58a373192299bbcabf479b7f2e1244b027006ca00280259",
-  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
-  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "configHash": "a274f269183e8eac42eeb12b1ae0dc7fea9398cc27792626c9ca0c17911fb0b4",
+  "hashSalt": "docs-snapshots-v2:9417117db4c19b323c5bd2a5c7754c6e0d46bf7c962c13c422b86e6485aac7c0",
   "blocks": [
     {
       "id": "db082c0",
@@ -13,14 +13,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Getting Started",
-        "range": {
-          "from": 0,
-          "to": 17
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading1",
           "headingLevel": 1,
           "headingText": "Getting Started",
           "headingId": "getting-started"
+        },
+        "range": {
+          "from": 0,
+          "to": 17
         },
         "inline": [
           {
@@ -36,14 +37,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Install",
-        "range": {
-          "from": 19,
-          "to": 29
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Install",
           "headingId": "install"
+        },
+        "range": {
+          "from": 19,
+          "to": 29
         },
         "inline": [
           {
@@ -59,15 +61,18 @@
       "isFinalized": true,
       "payload": {
         "raw": "```bash\nnpm install stream-mdx\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "npm install stream-mdx",
+          "info": "bash",
+          "lang": "bash",
+          "highlightLang": "bash"
+        },
         "range": {
           "from": 31,
           "to": 65
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> install</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> stream-mdx</span></span></code></pre>",
-        "meta": {
-          "lang": "bash",
-          "code": "npm install stream-mdx"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-bash\" data-language=\"bash\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> install</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> stream-mdx</span></span></code></pre>"
       }
     },
     {
@@ -76,14 +81,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Host the worker bundle",
-        "range": {
-          "from": 67,
-          "to": 92
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Host the worker bundle",
           "headingId": "host-the-worker-bundle"
+        },
+        "range": {
+          "from": 67,
+          "to": 92
         },
         "inline": [
           {
@@ -99,6 +105,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "In production, host the worker bundle from static assets (avoid `blob:` CSP requirements):",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 94,
           "to": 184
@@ -125,15 +134,18 @@
       "isFinalized": true,
       "payload": {
         "raw": "```bash\nmkdir -p public/workers\ncp node_modules/@stream-mdx/worker/dist/hosted/markdown-worker.js public/workers/markdown-worker.js\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "mkdir -p public/workers\ncp node_modules/@stream-mdx/worker/dist/hosted/markdown-worker.js public/workers/markdown-worker.js",
+          "info": "bash",
+          "lang": "bash",
+          "highlightLang": "bash"
+        },
         "range": {
           "from": 186,
           "to": 321
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">mkdir</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> -p</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> public/workers</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">cp</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> node_modules/@stream-mdx/worker/dist/hosted/markdown-worker.js</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> public/workers/markdown-worker.js</span></span></code></pre>",
-        "meta": {
-          "lang": "bash",
-          "code": "mkdir -p public/workers\ncp node_modules/@stream-mdx/worker/dist/hosted/markdown-worker.js public/workers/markdown-worker.js"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-bash\" data-language=\"bash\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">mkdir</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> -p</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> public/workers</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">cp</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> node_modules/@stream-mdx/worker/dist/hosted/markdown-worker.js</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> public/workers/markdown-worker.js</span></span></code></pre>"
       }
     },
     {
@@ -142,14 +154,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Render Markdown (CLI / Node)",
-        "range": {
-          "from": 323,
-          "to": 354
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Render Markdown (CLI / Node)",
           "headingId": "render-markdown-cli-node"
+        },
+        "range": {
+          "from": 323,
+          "to": 354
         },
         "inline": [
           {
@@ -165,6 +178,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "If you want to reuse the worker + patch stream in a terminal UI (Ink, etc.), use the Node worker helper:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 356,
           "to": 460
@@ -183,12 +199,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- `stream-mdx/worker/node` (or `@stream-mdx/worker/node`)",
-        "range": {
-          "from": 462,
-          "to": 519
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -209,7 +232,113 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "7253c8bc::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 462,
+                  "to": 519
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "7253c8bc::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `stream-mdx/worker/node` (or `@stream-mdx/worker/node`)",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "stream-mdx/worker/node"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " (or "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "@stream-mdx/worker/node"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ")"
+                        }
+                      ],
+                      "range": {
+                        "from": 462,
+                        "to": 519
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "stream-mdx/worker/node"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " (or "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "@stream-mdx/worker/node"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ")"
+                              }
+                            ],
+                            "text": "stream-mdx/worker/node (or @stream-mdx/worker/node)",
+                            "raw": "- `stream-mdx/worker/node` (or `@stream-mdx/worker/node`)"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "stream-mdx/worker/node"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " (or "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "@stream-mdx/worker/node"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ")"
+                    }
+                  ],
+                  "text": "stream-mdx/worker/node (or @stream-mdx/worker/node)",
+                  "raw": "- `stream-mdx/worker/node` (or `@stream-mdx/worker/node`)"
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 462,
+          "to": 519
         }
       }
     },
@@ -219,6 +348,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "Start with [`docs/TUI_GUIDE.md`](./TUI_GUIDE.md) for the recommended architecture and package choices, then use [`docs/CLI_USAGE.md`](./CLI_USAGE.md) for the lower-level worker/message examples.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 521,
           "to": 715
@@ -226,23 +358,35 @@
         "inline": [
           {
             "kind": "text",
-            "text": "Start with ["
+            "text": "Start with "
           },
           {
-            "kind": "code",
-            "text": "docs/TUI_GUIDE.md"
+            "kind": "link",
+            "href": "./TUI_GUIDE.md",
+            "children": [
+              {
+                "kind": "code",
+                "text": "docs/TUI_GUIDE.md"
+              }
+            ]
           },
           {
             "kind": "text",
-            "text": "](./TUI_GUIDE.md) for the recommended architecture and package choices, then use ["
+            "text": " for the recommended architecture and package choices, then use "
           },
           {
-            "kind": "code",
-            "text": "docs/CLI_USAGE.md"
+            "kind": "link",
+            "href": "./CLI_USAGE.md",
+            "children": [
+              {
+                "kind": "code",
+                "text": "docs/CLI_USAGE.md"
+              }
+            ]
           },
           {
             "kind": "text",
-            "text": "](./CLI_USAGE.md) for the lower-level worker/message examples."
+            "text": " for the lower-level worker/message examples."
           }
         ]
       }
@@ -253,14 +397,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Render Markdown (React)",
-        "range": {
-          "from": 717,
-          "to": 743
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Render Markdown (React)",
           "headingId": "render-markdown-react"
+        },
+        "range": {
+          "from": 717,
+          "to": 743
         },
         "inline": [
           {
@@ -276,14 +421,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Next.js (App Router)",
-        "range": {
-          "from": 745,
-          "to": 769
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading3",
           "headingLevel": 3,
           "headingText": "Next.js (App Router)",
           "headingId": "next-js-app-router"
+        },
+        "range": {
+          "from": 745,
+          "to": 769
         },
         "inline": [
           {
@@ -299,6 +445,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "`StreamingMarkdown` is a client component.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 771,
           "to": 813
@@ -321,15 +470,18 @@
       "isFinalized": true,
       "payload": {
         "raw": "```tsx\n\"use client\";\n\nimport { StreamingMarkdown } from \"stream-mdx\";\n\nexport function Demo({ text }: { text: string }) {\n  return <StreamingMarkdown text={text} worker=\"/workers/markdown-worker.js\" />;\n}\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "\"use client\";\n\nimport { StreamingMarkdown } from \"stream-mdx\";\n\nexport function Demo({ text }: { text: string }) {\n  return <StreamingMarkdown text={text} worker=\"/workers/markdown-worker.js\" />;\n}",
+          "info": "tsx",
+          "lang": "tsx",
+          "highlightLang": "tsx"
+        },
         "range": {
           "from": 815,
           "to": 1023
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"use client\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { StreamingMarkdown } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"4\"></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">export</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> function</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> Demo</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">({ </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">text</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }) {</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  return</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{text} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> />;</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}</span></span></code></pre>",
-        "meta": {
-          "lang": "tsx",
-          "code": "\"use client\";\n\nimport { StreamingMarkdown } from \"stream-mdx\";\n\nexport function Demo({ text }: { text: string }) {\n  return <StreamingMarkdown text={text} worker=\"/workers/markdown-worker.js\" />;\n}"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"use client\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { StreamingMarkdown } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"4\"></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">export</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> function</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> Demo</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">({ </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">text</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }) {</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  return</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{text} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> />;</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}</span></span></code></pre>"
       }
     },
     {
@@ -338,14 +490,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Vite React",
-        "range": {
-          "from": 1025,
-          "to": 1039
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading3",
           "headingLevel": 3,
           "headingText": "Vite React",
           "headingId": "vite-react"
+        },
+        "range": {
+          "from": 1025,
+          "to": 1039
         },
         "inline": [
           {
@@ -361,15 +514,18 @@
       "isFinalized": true,
       "payload": {
         "raw": "```tsx\nimport { StreamingMarkdown } from \"stream-mdx\";\n\nexport default function App() {\n  return <StreamingMarkdown text=\"## Hello\\n\\nStreaming **markdown**\" worker=\"/workers/markdown-worker.js\" />;\n}\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "import { StreamingMarkdown } from \"stream-mdx\";\n\nexport default function App() {\n  return <StreamingMarkdown text=\"## Hello\\n\\nStreaming **markdown**\" worker=\"/workers/markdown-worker.js\" />;\n}",
+          "info": "tsx",
+          "lang": "tsx",
+          "highlightLang": "tsx"
+        },
         "range": {
           "from": 1041,
           "to": 1245
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { StreamingMarkdown } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">export</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> default</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> function</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> App</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">() {</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  return</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"## Hello\\n\\nStreaming **markdown**\"</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> />;</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}</span></span></code></pre>",
-        "meta": {
-          "lang": "tsx",
-          "code": "import { StreamingMarkdown } from \"stream-mdx\";\n\nexport default function App() {\n  return <StreamingMarkdown text=\"## Hello\\n\\nStreaming **markdown**\" worker=\"/workers/markdown-worker.js\" />;\n}"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { StreamingMarkdown } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">export</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> default</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> function</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> App</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">() {</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  return</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"## Hello\\n\\nStreaming **markdown**\"</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> />;</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}</span></span></code></pre>"
       }
     },
     {
@@ -378,14 +534,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Next steps",
-        "range": {
-          "from": 1247,
-          "to": 1260
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Next steps",
           "headingId": "next-steps"
+        },
+        "range": {
+          "from": 1247,
+          "to": 1260
         },
         "inline": [
           {
@@ -401,12 +558,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- Props/types: `docs/PUBLIC_API.md`\n- MDX + customization: `docs/REACT_INTEGRATION_GUIDE.md`\n- Plugin/worker cookbook: `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`",
-        "range": {
-          "from": 1262,
-          "to": 1426
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -439,7 +603,231 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "71448681::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 1262,
+                  "to": 1297
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "71448681::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Props/types: `docs/PUBLIC_API.md`",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Props/types: "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "docs/PUBLIC_API.md"
+                        }
+                      ],
+                      "range": {
+                        "from": 1262,
+                        "to": 1297
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Props/types: "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "docs/PUBLIC_API.md"
+                              }
+                            ],
+                            "text": "Props/types: docs/PUBLIC_API.md",
+                            "raw": "- Props/types: `docs/PUBLIC_API.md`"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Props/types: "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "docs/PUBLIC_API.md"
+                    }
+                  ],
+                  "text": "Props/types: docs/PUBLIC_API.md",
+                  "raw": "- Props/types: `docs/PUBLIC_API.md`"
+                },
+                "children": []
+              },
+              {
+                "id": "71448681::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 1298,
+                  "to": 1354
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "71448681::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- MDX + customization: `docs/REACT_INTEGRATION_GUIDE.md`",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "MDX + customization: "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "docs/REACT_INTEGRATION_GUIDE.md"
+                        }
+                      ],
+                      "range": {
+                        "from": 1298,
+                        "to": 1354
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "MDX + customization: "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "docs/REACT_INTEGRATION_GUIDE.md"
+                              }
+                            ],
+                            "text": "MDX + customization: docs/REACT_INTEGRATION_GUIDE.md",
+                            "raw": "- MDX + customization: `docs/REACT_INTEGRATION_GUIDE.md`"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "MDX + customization: "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "docs/REACT_INTEGRATION_GUIDE.md"
+                    }
+                  ],
+                  "text": "MDX + customization: docs/REACT_INTEGRATION_GUIDE.md",
+                  "raw": "- MDX + customization: `docs/REACT_INTEGRATION_GUIDE.md`"
+                },
+                "children": []
+              },
+              {
+                "id": "71448681::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 1355,
+                  "to": 1426
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "71448681::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Plugin/worker cookbook: `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Plugin/worker cookbook: "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md"
+                        }
+                      ],
+                      "range": {
+                        "from": 1355,
+                        "to": 1426
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Plugin/worker cookbook: "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md"
+                              }
+                            ],
+                            "text": "Plugin/worker cookbook: docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md",
+                            "raw": "- Plugin/worker cookbook: `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Plugin/worker cookbook: "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md"
+                    }
+                  ],
+                  "text": "Plugin/worker cookbook: docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md",
+                  "raw": "- Plugin/worker cookbook: `docs/STREAMING_MARKDOWN_PLUGINS_COOKBOOK.md`"
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 1262,
+          "to": 1426
         }
       }
     }
@@ -447,51 +835,51 @@
   "tocHeadings": [
     {
       "id": "getting-started",
-      "text": "Getting Started",
+      "blockId": "db082c0",
       "level": 1,
-      "blockId": "db082c0"
+      "text": "Getting Started"
     },
     {
       "id": "install",
-      "text": "Install",
+      "blockId": "4d776cd8",
       "level": 2,
-      "blockId": "4d776cd8"
+      "text": "Install"
     },
     {
       "id": "host-the-worker-bundle",
-      "text": "Host the worker bundle",
+      "blockId": "4f6eeac1",
       "level": 2,
-      "blockId": "4f6eeac1"
+      "text": "Host the worker bundle"
     },
     {
       "id": "render-markdown-cli-node",
-      "text": "Render Markdown (CLI / Node)",
+      "blockId": "7557cc4",
       "level": 2,
-      "blockId": "7557cc4"
+      "text": "Render Markdown (CLI / Node)"
     },
     {
       "id": "render-markdown-react",
-      "text": "Render Markdown (React)",
+      "blockId": "484f6d53",
       "level": 2,
-      "blockId": "484f6d53"
+      "text": "Render Markdown (React)"
     },
     {
       "id": "next-js-app-router",
-      "text": "Next.js (App Router)",
+      "blockId": "6c040808",
       "level": 3,
-      "blockId": "6c040808"
+      "text": "Next.js (App Router)"
     },
     {
       "id": "vite-react",
-      "text": "Vite React",
+      "blockId": "348eca5e",
       "level": 3,
-      "blockId": "348eca5e"
+      "text": "Vite React"
     },
     {
       "id": "next-steps",
-      "text": "Next steps",
+      "blockId": "6565b64",
       "level": 2,
-      "blockId": "6565b64"
+      "text": "Next steps"
     }
   ],
   "init": {

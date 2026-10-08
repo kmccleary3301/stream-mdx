@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-08T11:21:07.328Z",
-  "hash": "bf41d84aded61d9a77582669187290dada65e1d62c59dd39473ef5bff8b4bc7d",
-  "contentHash": "12b5d77ac9e2aa92e711b1097d99460e5897df1d02825bccf7b1fe16150bc80b",
-  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
-  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "createdAt": "2026-10-08T19:48:56.948Z",
+  "hash": "841a7c2e7909672beb7de3b227957ba81f387d6ccfedbb407767ef8089a84669",
+  "contentHash": "9c9cbe317855839d9583f9cd0c1bd7cca1b4158d0d5cbe9c738e4437dabc7d98",
+  "configHash": "a274f269183e8eac42eeb12b1ae0dc7fea9398cc27792626c9ca0c17911fb0b4",
+  "hashSalt": "docs-snapshots-v2:9417117db4c19b323c5bd2a5c7754c6e0d46bf7c962c13c422b86e6485aac7c0",
   "blocks": [
     {
       "id": "db082c0",
@@ -316,7 +316,2722 @@
       }
     },
     {
-      "id": "4e97f33b",
+      "id": "157cd25d",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "URL Sanitization Policy",
+        "meta": {
+          "lezerNodeType": "ATXHeading3",
+          "headingLevel": 3,
+          "headingText": "URL Sanitization Policy",
+          "headingId": "url-sanitization-policy"
+        },
+        "range": {
+          "from": 311,
+          "to": 338
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "URL Sanitization Policy"
+          }
+        ]
+      }
+    },
+    {
+      "id": "2f37cf69",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "StreamMDX sanitizes URLs at render-time using `@stream-mdx/core`'s `defaultUrlTransform(url, attribute, context)`. This policy is uniformly applied to:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
+        "range": {
+          "from": 340,
+          "to": 491
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "StreamMDX sanitizes URLs at render-time using "
+          },
+          {
+            "kind": "code",
+            "text": "@stream-mdx/core"
+          },
+          {
+            "kind": "text",
+            "text": "'s "
+          },
+          {
+            "kind": "code",
+            "text": "defaultUrlTransform(url, attribute, context)"
+          },
+          {
+            "kind": "text",
+            "text": ". This policy is uniformly applied to:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "2c5ee907",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Markdown link destinations (`[text](url)`) and image sources (`![alt](url)`).\n- Raw HTML attributes: `href`, `src`, `action`, `formaction`, and `xlink:href`.\n- Client-side interactive rendering, server-side rendering (SSR), unified HAST post-processing, and link navigation callbacks (`openLink`, `linkSafety`).",
+        "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
+          "ordered": false,
+          "loose": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Markdown link destinations ("
+              },
+              {
+                "kind": "code",
+                "text": "[text](url)"
+              },
+              {
+                "kind": "text",
+                "text": ") and image sources ("
+              },
+              {
+                "kind": "code",
+                "text": "![alt](url)"
+              },
+              {
+                "kind": "text",
+                "text": ")."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Raw HTML attributes: "
+              },
+              {
+                "kind": "code",
+                "text": "href"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "src"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "action"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "formaction"
+              },
+              {
+                "kind": "text",
+                "text": ", and "
+              },
+              {
+                "kind": "code",
+                "text": "xlink:href"
+              },
+              {
+                "kind": "text",
+                "text": "."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Client-side interactive rendering, server-side rendering (SSR), unified HAST post-processing, and link navigation callbacks ("
+              },
+              {
+                "kind": "code",
+                "text": "openLink"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "linkSafety"
+              },
+              {
+                "kind": "text",
+                "text": ")."
+              }
+            ]
+          ],
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "2c5ee907::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 492,
+                  "to": 571
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "2c5ee907::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Markdown link destinations (`[text](url)`) and image sources (`![alt](url)`).",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Markdown link destinations ("
+                        },
+                        {
+                          "kind": "code",
+                          "text": "[text](url)"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ") and image sources ("
+                        },
+                        {
+                          "kind": "code",
+                          "text": "![alt](url)"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ")."
+                        }
+                      ],
+                      "range": {
+                        "from": 492,
+                        "to": 571
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Markdown link destinations ("
+                              },
+                              {
+                                "kind": "code",
+                                "text": "[text](url)"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ") and image sources ("
+                              },
+                              {
+                                "kind": "code",
+                                "text": "![alt](url)"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ")."
+                              }
+                            ],
+                            "text": "Markdown link destinations ([text](url)) and image sources (![alt](url)).",
+                            "raw": "- Markdown link destinations (`[text](url)`) and image sources (`![alt](url)`)."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Markdown link destinations ("
+                    },
+                    {
+                      "kind": "code",
+                      "text": "[text](url)"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ") and image sources ("
+                    },
+                    {
+                      "kind": "code",
+                      "text": "![alt](url)"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ")."
+                    }
+                  ],
+                  "text": "Markdown link destinations ([text](url)) and image sources (![alt](url)).",
+                  "raw": "- Markdown link destinations (`[text](url)`) and image sources (`![alt](url)`)."
+                },
+                "children": []
+              },
+              {
+                "id": "2c5ee907::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 572,
+                  "to": 651
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "2c5ee907::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Raw HTML attributes: `href`, `src`, `action`, `formaction`, and `xlink:href`.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Raw HTML attributes: "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "href"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "src"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "action"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "formaction"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", and "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "xlink:href"
+                        },
+                        {
+                          "kind": "text",
+                          "text": "."
+                        }
+                      ],
+                      "range": {
+                        "from": 572,
+                        "to": 651
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Raw HTML attributes: "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "href"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "src"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "action"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "formaction"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", and "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "xlink:href"
+                              },
+                              {
+                                "kind": "text",
+                                "text": "."
+                              }
+                            ],
+                            "text": "Raw HTML attributes: href, src, action, formaction, and xlink:href.",
+                            "raw": "- Raw HTML attributes: `href`, `src`, `action`, `formaction`, and `xlink:href`."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Raw HTML attributes: "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "href"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "src"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "action"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "formaction"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", and "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "xlink:href"
+                    },
+                    {
+                      "kind": "text",
+                      "text": "."
+                    }
+                  ],
+                  "text": "Raw HTML attributes: href, src, action, formaction, and xlink:href.",
+                  "raw": "- Raw HTML attributes: `href`, `src`, `action`, `formaction`, and `xlink:href`."
+                },
+                "children": []
+              },
+              {
+                "id": "2c5ee907::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 652,
+                  "to": 805
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "2c5ee907::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Client-side interactive rendering, server-side rendering (SSR), unified HAST post-processing, and link navigation callbacks (`openLink`, `linkSafety`).",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Client-side interactive rendering, server-side rendering (SSR), unified HAST post-processing, and link navigation callbacks ("
+                        },
+                        {
+                          "kind": "code",
+                          "text": "openLink"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "linkSafety"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ")."
+                        }
+                      ],
+                      "range": {
+                        "from": 652,
+                        "to": 805
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Client-side interactive rendering, server-side rendering (SSR), unified HAST post-processing, and link navigation callbacks ("
+                              },
+                              {
+                                "kind": "code",
+                                "text": "openLink"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "linkSafety"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ")."
+                              }
+                            ],
+                            "text": "Client-side interactive rendering, server-side rendering (SSR), unified HAST post-processing, and link navigation callbacks (openLink, linkSafety).",
+                            "raw": "- Client-side interactive rendering, server-side rendering (SSR), unified HAST post-processing, and link navigation callbacks (`openLink`, `linkSafety`)."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Client-side interactive rendering, server-side rendering (SSR), unified HAST post-processing, and link navigation callbacks ("
+                    },
+                    {
+                      "kind": "code",
+                      "text": "openLink"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "linkSafety"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ")."
+                    }
+                  ],
+                  "text": "Client-side interactive rendering, server-side rendering (SSR), unified HAST post-processing, and link navigation callbacks (openLink, linkSafety).",
+                  "raw": "- Client-side interactive rendering, server-side rendering (SSR), unified HAST post-processing, and link navigation callbacks (`openLink`, `linkSafety`)."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 492,
+          "to": 805
+        }
+      }
+    },
+    {
+      "id": "6cd19ee7",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "**Scheme verification rules:**",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
+        "range": {
+          "from": 807,
+          "to": 837
+        },
+        "inline": [
+          {
+            "kind": "strong",
+            "children": [
+              {
+                "kind": "text",
+                "text": "Scheme verification rules:"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "6744b349",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Leading and internal ASCII whitespace and control characters are stripped and HTML entities are decoded before scheme detection, preventing filter bypasses (e.g. `java\\0script:`, ` jav&#x09;ascript:`).\n- Potentially dangerous schemes are rejected (returning `null`, causing the attribute to be omitted from the output markup): `javascript:`, `vbscript:`, `file:`, and unapproved `data:` URLs.\n- For `src` attributes exclusively, safe image data schemes (`data:image/png`, `data:image/gif`, `data:image/jpeg`, `data:image/webp`, and `data:image/avif`) are permitted; all other `data:` URLs (including `data:text/html` and SVG) are rejected.\n- Relative paths, fragment identifiers (`#`), and custom application schemes (e.g. `intent:`, `myapp:`) are permitted, preserving strict CommonMark specification conformance (675/675).\n- Callers can customize URL rewriting and filtering via the `urlTransform` prop on `<StreamingMarkdown />`, `ComponentRegistry`, and `createUnifiedRenderer()`. A rejected URL never executes or navigates.",
+        "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
+          "ordered": false,
+          "loose": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Leading and internal ASCII whitespace and control characters are stripped and HTML entities are decoded before scheme detection, preventing filter bypasses (e.g. "
+              },
+              {
+                "kind": "code",
+                "text": "java\\0script:"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": " jav&#x09;ascript:"
+              },
+              {
+                "kind": "text",
+                "text": ")."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Potentially dangerous schemes are rejected (returning "
+              },
+              {
+                "kind": "code",
+                "text": "null"
+              },
+              {
+                "kind": "text",
+                "text": ", causing the attribute to be omitted from the output markup): "
+              },
+              {
+                "kind": "code",
+                "text": "javascript:"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "vbscript:"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "file:"
+              },
+              {
+                "kind": "text",
+                "text": ", and unapproved "
+              },
+              {
+                "kind": "code",
+                "text": "data:"
+              },
+              {
+                "kind": "text",
+                "text": " URLs."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "For "
+              },
+              {
+                "kind": "code",
+                "text": "src"
+              },
+              {
+                "kind": "text",
+                "text": " attributes exclusively, safe image data schemes ("
+              },
+              {
+                "kind": "code",
+                "text": "data:image/png"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "data:image/gif"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "data:image/jpeg"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "data:image/webp"
+              },
+              {
+                "kind": "text",
+                "text": ", and "
+              },
+              {
+                "kind": "code",
+                "text": "data:image/avif"
+              },
+              {
+                "kind": "text",
+                "text": ") are permitted; all other "
+              },
+              {
+                "kind": "code",
+                "text": "data:"
+              },
+              {
+                "kind": "text",
+                "text": " URLs (including "
+              },
+              {
+                "kind": "code",
+                "text": "data:text/html"
+              },
+              {
+                "kind": "text",
+                "text": " and SVG) are rejected."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Relative paths, fragment identifiers ("
+              },
+              {
+                "kind": "code",
+                "text": "#"
+              },
+              {
+                "kind": "text",
+                "text": "), and custom application schemes (e.g. "
+              },
+              {
+                "kind": "code",
+                "text": "intent:"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "myapp:"
+              },
+              {
+                "kind": "text",
+                "text": ") are permitted, preserving strict CommonMark specification conformance (675/675)."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Callers can customize URL rewriting and filtering via the "
+              },
+              {
+                "kind": "code",
+                "text": "urlTransform"
+              },
+              {
+                "kind": "text",
+                "text": " prop on "
+              },
+              {
+                "kind": "code",
+                "text": "<StreamingMarkdown />"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "ComponentRegistry"
+              },
+              {
+                "kind": "text",
+                "text": ", and "
+              },
+              {
+                "kind": "code",
+                "text": "createUnifiedRenderer()"
+              },
+              {
+                "kind": "text",
+                "text": ". A rejected URL never executes or navigates."
+              }
+            ]
+          ],
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "6744b349::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 838,
+                  "to": 1041
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "6744b349::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Leading and internal ASCII whitespace and control characters are stripped and HTML entities are decoded before scheme detection, preventing filter bypasses (e.g. `java\\0script:`, ` jav&#x09;ascript:`).",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Leading and internal ASCII whitespace and control characters are stripped and HTML entities are decoded before scheme detection, preventing filter bypasses (e.g. "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "java\\0script:"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": " jav&#x09;ascript:"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ")."
+                        }
+                      ],
+                      "range": {
+                        "from": 838,
+                        "to": 1041
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Leading and internal ASCII whitespace and control characters are stripped and HTML entities are decoded before scheme detection, preventing filter bypasses (e.g. "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "java\\0script:"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": " jav&#x09;ascript:"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ")."
+                              }
+                            ],
+                            "text": "Leading and internal ASCII whitespace and control characters are stripped and HTML entities are decoded before scheme detection, preventing filter bypasses (e.g. java\\0script:,  jav&#x09;ascript:).",
+                            "raw": "- Leading and internal ASCII whitespace and control characters are stripped and HTML entities are decoded before scheme detection, preventing filter bypasses (e.g. `java\\0script:`, ` jav&#x09;ascript:`)."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Leading and internal ASCII whitespace and control characters are stripped and HTML entities are decoded before scheme detection, preventing filter bypasses (e.g. "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "java\\0script:"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": " jav&#x09;ascript:"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ")."
+                    }
+                  ],
+                  "text": "Leading and internal ASCII whitespace and control characters are stripped and HTML entities are decoded before scheme detection, preventing filter bypasses (e.g. java\\0script:,  jav&#x09;ascript:).",
+                  "raw": "- Leading and internal ASCII whitespace and control characters are stripped and HTML entities are decoded before scheme detection, preventing filter bypasses (e.g. `java\\0script:`, ` jav&#x09;ascript:`)."
+                },
+                "children": []
+              },
+              {
+                "id": "6744b349::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 1042,
+                  "to": 1232
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "6744b349::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Potentially dangerous schemes are rejected (returning `null`, causing the attribute to be omitted from the output markup): `javascript:`, `vbscript:`, `file:`, and unapproved `data:` URLs.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Potentially dangerous schemes are rejected (returning "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "null"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", causing the attribute to be omitted from the output markup): "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "javascript:"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "vbscript:"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "file:"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", and unapproved "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "data:"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " URLs."
+                        }
+                      ],
+                      "range": {
+                        "from": 1042,
+                        "to": 1232
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Potentially dangerous schemes are rejected (returning "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "null"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", causing the attribute to be omitted from the output markup): "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "javascript:"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "vbscript:"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "file:"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", and unapproved "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "data:"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " URLs."
+                              }
+                            ],
+                            "text": "Potentially dangerous schemes are rejected (returning null, causing the attribute to be omitted from the output markup): javascript:, vbscript:, file:, and unapproved data: URLs.",
+                            "raw": "- Potentially dangerous schemes are rejected (returning `null`, causing the attribute to be omitted from the output markup): `javascript:`, `vbscript:`, `file:`, and unapproved `data:` URLs."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Potentially dangerous schemes are rejected (returning "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "null"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", causing the attribute to be omitted from the output markup): "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "javascript:"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "vbscript:"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "file:"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", and unapproved "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "data:"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " URLs."
+                    }
+                  ],
+                  "text": "Potentially dangerous schemes are rejected (returning null, causing the attribute to be omitted from the output markup): javascript:, vbscript:, file:, and unapproved data: URLs.",
+                  "raw": "- Potentially dangerous schemes are rejected (returning `null`, causing the attribute to be omitted from the output markup): `javascript:`, `vbscript:`, `file:`, and unapproved `data:` URLs."
+                },
+                "children": []
+              },
+              {
+                "id": "6744b349::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 1233,
+                  "to": 1479
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "6744b349::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- For `src` attributes exclusively, safe image data schemes (`data:image/png`, `data:image/gif`, `data:image/jpeg`, `data:image/webp`, and `data:image/avif`) are permitted; all other `data:` URLs (including `data:text/html` and SVG) are rejected.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "For "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "src"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " attributes exclusively, safe image data schemes ("
+                        },
+                        {
+                          "kind": "code",
+                          "text": "data:image/png"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "data:image/gif"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "data:image/jpeg"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "data:image/webp"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", and "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "data:image/avif"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ") are permitted; all other "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "data:"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " URLs (including "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "data:text/html"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " and SVG) are rejected."
+                        }
+                      ],
+                      "range": {
+                        "from": 1233,
+                        "to": 1479
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "For "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "src"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " attributes exclusively, safe image data schemes ("
+                              },
+                              {
+                                "kind": "code",
+                                "text": "data:image/png"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "data:image/gif"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "data:image/jpeg"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "data:image/webp"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", and "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "data:image/avif"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ") are permitted; all other "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "data:"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " URLs (including "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "data:text/html"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " and SVG) are rejected."
+                              }
+                            ],
+                            "text": "For src attributes exclusively, safe image data schemes (data:image/png, data:image/gif, data:image/jpeg, data:image/webp, and data:image/avif) are permitted; all other data: URLs (including data:text/html and SVG) are rejected.",
+                            "raw": "- For `src` attributes exclusively, safe image data schemes (`data:image/png`, `data:image/gif`, `data:image/jpeg`, `data:image/webp`, and `data:image/avif`) are permitted; all other `data:` URLs (including `data:text/html` and SVG) are rejected."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "For "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "src"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " attributes exclusively, safe image data schemes ("
+                    },
+                    {
+                      "kind": "code",
+                      "text": "data:image/png"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "data:image/gif"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "data:image/jpeg"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "data:image/webp"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", and "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "data:image/avif"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ") are permitted; all other "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "data:"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " URLs (including "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "data:text/html"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " and SVG) are rejected."
+                    }
+                  ],
+                  "text": "For src attributes exclusively, safe image data schemes (data:image/png, data:image/gif, data:image/jpeg, data:image/webp, and data:image/avif) are permitted; all other data: URLs (including data:text/html and SVG) are rejected.",
+                  "raw": "- For `src` attributes exclusively, safe image data schemes (`data:image/png`, `data:image/gif`, `data:image/jpeg`, `data:image/webp`, and `data:image/avif`) are permitted; all other `data:` URLs (including `data:text/html` and SVG) are rejected."
+                },
+                "children": []
+              },
+              {
+                "id": "6744b349::item:3",
+                "type": "list-item",
+                "range": {
+                  "from": 1480,
+                  "to": 1664
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "6744b349::item:3",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Relative paths, fragment identifiers (`#`), and custom application schemes (e.g. `intent:`, `myapp:`) are permitted, preserving strict CommonMark specification conformance (675/675).",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Relative paths, fragment identifiers ("
+                        },
+                        {
+                          "kind": "code",
+                          "text": "#"
+                        },
+                        {
+                          "kind": "text",
+                          "text": "), and custom application schemes (e.g. "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "intent:"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "myapp:"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ") are permitted, preserving strict CommonMark specification conformance (675/675)."
+                        }
+                      ],
+                      "range": {
+                        "from": 1480,
+                        "to": 1664
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 3,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Relative paths, fragment identifiers ("
+                              },
+                              {
+                                "kind": "code",
+                                "text": "#"
+                              },
+                              {
+                                "kind": "text",
+                                "text": "), and custom application schemes (e.g. "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "intent:"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "myapp:"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ") are permitted, preserving strict CommonMark specification conformance (675/675)."
+                              }
+                            ],
+                            "text": "Relative paths, fragment identifiers (#), and custom application schemes (e.g. intent:, myapp:) are permitted, preserving strict CommonMark specification conformance (675/675).",
+                            "raw": "- Relative paths, fragment identifiers (`#`), and custom application schemes (e.g. `intent:`, `myapp:`) are permitted, preserving strict CommonMark specification conformance (675/675)."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 3,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Relative paths, fragment identifiers ("
+                    },
+                    {
+                      "kind": "code",
+                      "text": "#"
+                    },
+                    {
+                      "kind": "text",
+                      "text": "), and custom application schemes (e.g. "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "intent:"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "myapp:"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ") are permitted, preserving strict CommonMark specification conformance (675/675)."
+                    }
+                  ],
+                  "text": "Relative paths, fragment identifiers (#), and custom application schemes (e.g. intent:, myapp:) are permitted, preserving strict CommonMark specification conformance (675/675).",
+                  "raw": "- Relative paths, fragment identifiers (`#`), and custom application schemes (e.g. `intent:`, `myapp:`) are permitted, preserving strict CommonMark specification conformance (675/675)."
+                },
+                "children": []
+              },
+              {
+                "id": "6744b349::item:4",
+                "type": "list-item",
+                "range": {
+                  "from": 1665,
+                  "to": 1868
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "6744b349::item:4",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Callers can customize URL rewriting and filtering via the `urlTransform` prop on `<StreamingMarkdown />`, `ComponentRegistry`, and `createUnifiedRenderer()`. A rejected URL never executes or navigates.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Callers can customize URL rewriting and filtering via the "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "urlTransform"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " prop on "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "<StreamingMarkdown />"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "ComponentRegistry"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", and "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "createUnifiedRenderer()"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ". A rejected URL never executes or navigates."
+                        }
+                      ],
+                      "range": {
+                        "from": 1665,
+                        "to": 1868
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 4,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Callers can customize URL rewriting and filtering via the "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "urlTransform"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " prop on "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "<StreamingMarkdown />"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "ComponentRegistry"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", and "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "createUnifiedRenderer()"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ". A rejected URL never executes or navigates."
+                              }
+                            ],
+                            "text": "Callers can customize URL rewriting and filtering via the urlTransform prop on <StreamingMarkdown />, ComponentRegistry, and createUnifiedRenderer(). A rejected URL never executes or navigates.",
+                            "raw": "- Callers can customize URL rewriting and filtering via the `urlTransform` prop on `<StreamingMarkdown />`, `ComponentRegistry`, and `createUnifiedRenderer()`. A rejected URL never executes or navigates."
+                          },
+                          "children": [
+                            {
+                              "id": "6744b349::item:4::list-item:segment:0",
+                              "type": "list-item-text",
+                              "props": {
+                                "inline": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Callers can customize URL rewriting and filtering via the "
+                                  },
+                                  {
+                                    "kind": "code",
+                                    "text": "urlTransform"
+                                  },
+                                  {
+                                    "kind": "text",
+                                    "text": " prop on `"
+                                  }
+                                ],
+                                "text": "Callers can customize URL rewriting and filtering via the `urlTransform` prop on `"
+                              },
+                              "children": []
+                            },
+                            {
+                              "id": "6744b349::item:4::list-item:segment:1",
+                              "type": "list-item-mdx",
+                              "props": {
+                                "raw": "<StreamingMarkdown />",
+                                "status": "pending"
+                              },
+                              "children": []
+                            },
+                            {
+                              "id": "6744b349::item:4::list-item:segment:2",
+                              "type": "list-item-text",
+                              "props": {
+                                "inline": [
+                                  {
+                                    "kind": "code",
+                                    "text": ", "
+                                  },
+                                  {
+                                    "kind": "text",
+                                    "text": "ComponentRegistry"
+                                  },
+                                  {
+                                    "kind": "code",
+                                    "text": ", and "
+                                  },
+                                  {
+                                    "kind": "text",
+                                    "text": "createUnifiedRenderer()`. A rejected URL never executes or navigates."
+                                  }
+                                ],
+                                "text": "`, `ComponentRegistry`, and `createUnifiedRenderer()`. A rejected URL never executes or navigates."
+                              },
+                              "children": []
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "index": 4,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Callers can customize URL rewriting and filtering via the "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "urlTransform"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " prop on "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "<StreamingMarkdown />"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "ComponentRegistry"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", and "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "createUnifiedRenderer()"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ". A rejected URL never executes or navigates."
+                    }
+                  ],
+                  "text": "Callers can customize URL rewriting and filtering via the urlTransform prop on <StreamingMarkdown />, ComponentRegistry, and createUnifiedRenderer(). A rejected URL never executes or navigates.",
+                  "raw": "- Callers can customize URL rewriting and filtering via the `urlTransform` prop on `<StreamingMarkdown />`, `ComponentRegistry`, and `createUnifiedRenderer()`. A rejected URL never executes or navigates."
+                },
+                "children": [
+                  {
+                    "id": "6744b349::item:4::list-item:segment:0",
+                    "type": "list-item-text",
+                    "props": {
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Callers can customize URL rewriting and filtering via the "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "urlTransform"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " prop on `"
+                        }
+                      ],
+                      "text": "Callers can customize URL rewriting and filtering via the `urlTransform` prop on `"
+                    },
+                    "children": []
+                  },
+                  {
+                    "id": "6744b349::item:4::list-item:segment:1",
+                    "type": "list-item-mdx",
+                    "props": {
+                      "raw": "<StreamingMarkdown />",
+                      "status": "pending"
+                    },
+                    "children": []
+                  },
+                  {
+                    "id": "6744b349::item:4::list-item:segment:2",
+                    "type": "list-item-text",
+                    "props": {
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "text",
+                          "text": "ComponentRegistry"
+                        },
+                        {
+                          "kind": "code",
+                          "text": ", and "
+                        },
+                        {
+                          "kind": "text",
+                          "text": "createUnifiedRenderer()`. A rejected URL never executes or navigates."
+                        }
+                      ],
+                      "text": "`, `ComponentRegistry`, and `createUnifiedRenderer()`. A rejected URL never executes or navigates."
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 838,
+          "to": 1868
+        }
+      }
+    },
+    {
+      "id": "52afd640",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Raw HTML Attribute & Style Hardening",
+        "meta": {
+          "lezerNodeType": "ATXHeading3",
+          "headingLevel": 3,
+          "headingText": "Raw HTML Attribute & Style Hardening",
+          "headingId": "raw-html-attribute-style-hardening"
+        },
+        "range": {
+          "from": 1870,
+          "to": 1910
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Raw HTML Attribute & Style Hardening"
+          }
+        ]
+      }
+    },
+    {
+      "id": "48a78509",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "When `features.html` is enabled:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
+        "range": {
+          "from": 1912,
+          "to": 1944
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "When "
+          },
+          {
+            "kind": "code",
+            "text": "features.html"
+          },
+          {
+            "kind": "text",
+            "text": " is enabled:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "135c6f3",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- **Forbidden Attributes**: Attribute names beginning with `on*` (such as `onclick`, `onload`, `onerror`) and `srcdoc` are strictly forbidden and always stripped by the sanitizer and React renderer, regardless of whether a consumer configures them in `html.allowedTags`.\n- **Forbidden Tags**: `<script>` tags are strictly excluded and never executed.\n- **CSS Style Sanitization**: Raw HTML `style` attributes are sanitized using a DOM-free allowlist parser. Declarations with dangerous properties (`position`, `behavior`, etc.), functions (`url(...)`, `expression(...)`), backslash escapes, or multi-line comment tricks are dropped, while safe formatting declarations (`color`, `font-size`, `background-color`, `border`, etc.) are retained.",
+        "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
+          "ordered": false,
+          "loose": false,
+          "items": [
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Forbidden Attributes"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": Attribute names beginning with "
+              },
+              {
+                "kind": "code",
+                "text": "on*"
+              },
+              {
+                "kind": "text",
+                "text": " (such as "
+              },
+              {
+                "kind": "code",
+                "text": "onclick"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "onload"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "onerror"
+              },
+              {
+                "kind": "text",
+                "text": ") and "
+              },
+              {
+                "kind": "code",
+                "text": "srcdoc"
+              },
+              {
+                "kind": "text",
+                "text": " are strictly forbidden and always stripped by the sanitizer and React renderer, regardless of whether a consumer configures them in "
+              },
+              {
+                "kind": "code",
+                "text": "html.allowedTags"
+              },
+              {
+                "kind": "text",
+                "text": "."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Forbidden Tags"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": "
+              },
+              {
+                "kind": "code",
+                "text": "<script>"
+              },
+              {
+                "kind": "text",
+                "text": " tags are strictly excluded and never executed."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "CSS Style Sanitization"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": Raw HTML "
+              },
+              {
+                "kind": "code",
+                "text": "style"
+              },
+              {
+                "kind": "text",
+                "text": " attributes are sanitized using a DOM-free allowlist parser. Declarations with dangerous properties ("
+              },
+              {
+                "kind": "code",
+                "text": "position"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "behavior"
+              },
+              {
+                "kind": "text",
+                "text": ", etc.), functions ("
+              },
+              {
+                "kind": "code",
+                "text": "url(...)"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "expression(...)"
+              },
+              {
+                "kind": "text",
+                "text": "), backslash escapes, or multi-line comment tricks are dropped, while safe formatting declarations ("
+              },
+              {
+                "kind": "code",
+                "text": "color"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "font-size"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "background-color"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "border"
+              },
+              {
+                "kind": "text",
+                "text": ", etc.) are retained."
+              }
+            ]
+          ],
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "135c6f3::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 1945,
+                  "to": 2215
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "135c6f3::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **Forbidden Attributes**: Attribute names beginning with `on*` (such as `onclick`, `onload`, `onerror`) and `srcdoc` are strictly forbidden and always stripped by the sanitizer and React renderer, regardless of whether a consumer configures them in `html.allowedTags`.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Forbidden Attributes"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": Attribute names beginning with "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "on*"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " (such as "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "onclick"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "onload"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "onerror"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ") and "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "srcdoc"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " are strictly forbidden and always stripped by the sanitizer and React renderer, regardless of whether a consumer configures them in "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "html.allowedTags"
+                        },
+                        {
+                          "kind": "text",
+                          "text": "."
+                        }
+                      ],
+                      "range": {
+                        "from": 1945,
+                        "to": 2215
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Forbidden Attributes"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": Attribute names beginning with "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "on*"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " (such as "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "onclick"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "onload"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "onerror"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ") and "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "srcdoc"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " are strictly forbidden and always stripped by the sanitizer and React renderer, regardless of whether a consumer configures them in "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "html.allowedTags"
+                              },
+                              {
+                                "kind": "text",
+                                "text": "."
+                              }
+                            ],
+                            "text": "Forbidden Attributes: Attribute names beginning with on* (such as onclick, onload, onerror) and srcdoc are strictly forbidden and always stripped by the sanitizer and React renderer, regardless of whether a consumer configures them in html.allowedTags.",
+                            "raw": "- **Forbidden Attributes**: Attribute names beginning with `on*` (such as `onclick`, `onload`, `onerror`) and `srcdoc` are strictly forbidden and always stripped by the sanitizer and React renderer, regardless of whether a consumer configures them in `html.allowedTags`."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Forbidden Attributes"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": Attribute names beginning with "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "on*"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " (such as "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "onclick"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "onload"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "onerror"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ") and "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "srcdoc"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " are strictly forbidden and always stripped by the sanitizer and React renderer, regardless of whether a consumer configures them in "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "html.allowedTags"
+                    },
+                    {
+                      "kind": "text",
+                      "text": "."
+                    }
+                  ],
+                  "text": "Forbidden Attributes: Attribute names beginning with on* (such as onclick, onload, onerror) and srcdoc are strictly forbidden and always stripped by the sanitizer and React renderer, regardless of whether a consumer configures them in html.allowedTags.",
+                  "raw": "- **Forbidden Attributes**: Attribute names beginning with `on*` (such as `onclick`, `onload`, `onerror`) and `srcdoc` are strictly forbidden and always stripped by the sanitizer and React renderer, regardless of whether a consumer configures them in `html.allowedTags`."
+                },
+                "children": []
+              },
+              {
+                "id": "135c6f3::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 2216,
+                  "to": 2295
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "135c6f3::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **Forbidden Tags**: `<script>` tags are strictly excluded and never executed.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Forbidden Tags"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "<script>"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " tags are strictly excluded and never executed."
+                        }
+                      ],
+                      "range": {
+                        "from": 2216,
+                        "to": 2295
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Forbidden Tags"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "<script>"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " tags are strictly excluded and never executed."
+                              }
+                            ],
+                            "text": "Forbidden Tags: <script> tags are strictly excluded and never executed.",
+                            "raw": "- **Forbidden Tags**: `<script>` tags are strictly excluded and never executed."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Forbidden Tags"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "<script>"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " tags are strictly excluded and never executed."
+                    }
+                  ],
+                  "text": "Forbidden Tags: <script> tags are strictly excluded and never executed.",
+                  "raw": "- **Forbidden Tags**: `<script>` tags are strictly excluded and never executed."
+                },
+                "children": []
+              },
+              {
+                "id": "135c6f3::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 2296,
+                  "to": 2685
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "135c6f3::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **CSS Style Sanitization**: Raw HTML `style` attributes are sanitized using a DOM-free allowlist parser. Declarations with dangerous properties (`position`, `behavior`, etc.), functions (`url(...)`, `expression(...)`), backslash escapes, or multi-line comment tricks are dropped, while safe formatting declarations (`color`, `font-size`, `background-color`, `border`, etc.) are retained.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "CSS Style Sanitization"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": Raw HTML "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "style"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " attributes are sanitized using a DOM-free allowlist parser. Declarations with dangerous properties ("
+                        },
+                        {
+                          "kind": "code",
+                          "text": "position"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "behavior"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", etc.), functions ("
+                        },
+                        {
+                          "kind": "code",
+                          "text": "url(...)"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "expression(...)"
+                        },
+                        {
+                          "kind": "text",
+                          "text": "), backslash escapes, or multi-line comment tricks are dropped, while safe formatting declarations ("
+                        },
+                        {
+                          "kind": "code",
+                          "text": "color"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "font-size"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "background-color"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "border"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", etc.) are retained."
+                        }
+                      ],
+                      "range": {
+                        "from": 2296,
+                        "to": 2685
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "CSS Style Sanitization"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": Raw HTML "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "style"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " attributes are sanitized using a DOM-free allowlist parser. Declarations with dangerous properties ("
+                              },
+                              {
+                                "kind": "code",
+                                "text": "position"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "behavior"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", etc.), functions ("
+                              },
+                              {
+                                "kind": "code",
+                                "text": "url(...)"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "expression(...)"
+                              },
+                              {
+                                "kind": "text",
+                                "text": "), backslash escapes, or multi-line comment tricks are dropped, while safe formatting declarations ("
+                              },
+                              {
+                                "kind": "code",
+                                "text": "color"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "font-size"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "background-color"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "border"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", etc.) are retained."
+                              }
+                            ],
+                            "text": "CSS Style Sanitization: Raw HTML style attributes are sanitized using a DOM-free allowlist parser. Declarations with dangerous properties (position, behavior, etc.), functions (url(...), expression(...)), backslash escapes, or multi-line comment tricks are dropped, while safe formatting declarations (color, font-size, background-color, border, etc.) are retained.",
+                            "raw": "- **CSS Style Sanitization**: Raw HTML `style` attributes are sanitized using a DOM-free allowlist parser. Declarations with dangerous properties (`position`, `behavior`, etc.), functions (`url(...)`, `expression(...)`), backslash escapes, or multi-line comment tricks are dropped, while safe formatting declarations (`color`, `font-size`, `background-color`, `border`, etc.) are retained."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "CSS Style Sanitization"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": Raw HTML "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "style"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " attributes are sanitized using a DOM-free allowlist parser. Declarations with dangerous properties ("
+                    },
+                    {
+                      "kind": "code",
+                      "text": "position"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "behavior"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", etc.), functions ("
+                    },
+                    {
+                      "kind": "code",
+                      "text": "url(...)"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "expression(...)"
+                    },
+                    {
+                      "kind": "text",
+                      "text": "), backslash escapes, or multi-line comment tricks are dropped, while safe formatting declarations ("
+                    },
+                    {
+                      "kind": "code",
+                      "text": "color"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "font-size"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "background-color"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "border"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", etc.) are retained."
+                    }
+                  ],
+                  "text": "CSS Style Sanitization: Raw HTML style attributes are sanitized using a DOM-free allowlist parser. Declarations with dangerous properties (position, behavior, etc.), functions (url(...), expression(...)), backslash escapes, or multi-line comment tricks are dropped, while safe formatting declarations (color, font-size, background-color, border, etc.) are retained.",
+                  "raw": "- **CSS Style Sanitization**: Raw HTML `style` attributes are sanitized using a DOM-free allowlist parser. Declarations with dangerous properties (`position`, `behavior`, etc.), functions (`url(...)`, `expression(...)`), backslash escapes, or multi-line comment tricks are dropped, while safe formatting declarations (`color`, `font-size`, `background-color`, `border`, etc.) are retained."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 1945,
+          "to": 2685
+        }
+      }
+    },
+    {
+      "id": "32c09043",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Highlighter Code-Row Sanitization",
+        "meta": {
+          "lezerNodeType": "ATXHeading3",
+          "headingLevel": 3,
+          "headingText": "Highlighter Code-Row Sanitization",
+          "headingId": "highlighter-code-row-sanitization"
+        },
+        "range": {
+          "from": 2687,
+          "to": 2724
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Highlighter Code-Row Sanitization"
+          }
+        ]
+      }
+    },
+    {
+      "id": "573c4df7",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -325,8 +3040,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 311,
-          "to": 919
+          "from": 2726,
+          "to": 3334
         },
         "inline": [
           {
@@ -449,7 +3164,7 @@
       }
     },
     {
-      "id": "5c28cf48",
+      "id": "7233f63e",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -461,8 +3176,8 @@
           "headingId": "csp-recommendations"
         },
         "range": {
-          "from": 921,
-          "to": 943
+          "from": 3335,
+          "to": 3357
         },
         "inline": [
           {
@@ -473,7 +3188,7 @@
       }
     },
     {
-      "id": "6a329276",
+      "id": "388f57fc",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -485,8 +3200,8 @@
           "headingId": "prefer-hosted-workers"
         },
         "range": {
-          "from": 945,
-          "to": 970
+          "from": 3359,
+          "to": 3384
         },
         "inline": [
           {
@@ -497,7 +3212,7 @@
       }
     },
     {
-      "id": "574752c4",
+      "id": "140be22",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -506,8 +3221,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 972,
-          "to": 1021
+          "from": 3386,
+          "to": 3435
         },
         "inline": [
           {
@@ -518,7 +3233,7 @@
       }
     },
     {
-      "id": "6687ef3a",
+      "id": "6a4f1e75",
       "type": "code",
       "isFinalized": true,
       "payload": {
@@ -531,14 +3246,14 @@
           "highlightLang": "tsx"
         },
         "range": {
-          "from": 1023,
-          "to": 1092
+          "from": 3437,
+          "to": 3506
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> /></span></span></code></pre>"
       }
     },
     {
-      "id": "4d62dafa",
+      "id": "37fe7696",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -547,8 +3262,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 1094,
-          "to": 1160
+          "from": 3508,
+          "to": 3574
         },
         "inline": [
           {
@@ -583,7 +3298,7 @@
       }
     },
     {
-      "id": "74ae5fdc",
+      "id": "1cffa2c1",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -595,8 +3310,8 @@
           "headingId": "mdx-evaluation-and-script-src-unsafe-eval"
         },
         "range": {
-          "from": 1162,
-          "to": 1213
+          "from": 3576,
+          "to": 3627
         },
         "inline": [
           {
@@ -623,7 +3338,7 @@
       }
     },
     {
-      "id": "7e3f903b",
+      "id": "5acc8d6a",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -632,8 +3347,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 1215,
-          "to": 1549
+          "from": 3629,
+          "to": 3963
         },
         "inline": [
           {
@@ -706,7 +3421,7 @@
       }
     },
     {
-      "id": "187d4dc0",
+      "id": "e76949b",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -715,8 +3430,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 1551,
-          "to": 1626
+          "from": 3965,
+          "to": 4040
         },
         "inline": [
           {
@@ -735,7 +3450,7 @@
       }
     },
     {
-      "id": "632f7b12",
+      "id": "10451da3",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -782,17 +3497,17 @@
             },
             "children": [
               {
-                "id": "632f7b12::item:0",
+                "id": "10451da3::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 1627,
-                  "to": 1683
+                  "from": 4041,
+                  "to": 4097
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "632f7b12::item:0",
+                    "id": "10451da3::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -812,8 +3527,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1627,
-                        "to": 1683
+                        "from": 4041,
+                        "to": 4097
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -841,7 +3556,7 @@
                           },
                           "children": [
                             {
-                              "id": "632f7b12::item:0::list-item:segment:0",
+                              "id": "10451da3::item:0::list-item:segment:0",
                               "type": "list-item-text",
                               "props": {
                                 "inline": [
@@ -855,7 +3570,7 @@
                               "children": []
                             },
                             {
-                              "id": "632f7b12::item:0::list-item:segment:1",
+                              "id": "10451da3::item:0::list-item:segment:1",
                               "type": "list-item-mdx",
                               "props": {
                                 "raw": "{ mdx: false }",
@@ -864,7 +3579,7 @@
                               "children": []
                             },
                             {
-                              "id": "632f7b12::item:0::list-item:segment:2",
+                              "id": "10451da3::item:0::list-item:segment:2",
                               "type": "list-item-text",
                               "props": {
                                 "inline": [
@@ -902,7 +3617,7 @@
                 },
                 "children": [
                   {
-                    "id": "632f7b12::item:0::list-item:segment:0",
+                    "id": "10451da3::item:0::list-item:segment:0",
                     "type": "list-item-text",
                     "props": {
                       "inline": [
@@ -916,7 +3631,7 @@
                     "children": []
                   },
                   {
-                    "id": "632f7b12::item:0::list-item:segment:1",
+                    "id": "10451da3::item:0::list-item:segment:1",
                     "type": "list-item-mdx",
                     "props": {
                       "raw": "{ mdx: false }",
@@ -925,7 +3640,7 @@
                     "children": []
                   },
                   {
-                    "id": "632f7b12::item:0::list-item:segment:2",
+                    "id": "10451da3::item:0::list-item:segment:2",
                     "type": "list-item-text",
                     "props": {
                       "inline": [
@@ -941,17 +3656,17 @@
                 ]
               },
               {
-                "id": "632f7b12::item:1",
+                "id": "10451da3::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 1684,
-                  "to": 1794
+                  "from": 4098,
+                  "to": 4208
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "632f7b12::item:1",
+                    "id": "10451da3::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -963,8 +3678,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1684,
-                        "to": 1794
+                        "from": 4098,
+                        "to": 4208
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1003,13 +3718,13 @@
           }
         },
         "range": {
-          "from": 1627,
-          "to": 1794
+          "from": 4041,
+          "to": 4208
         }
       }
     },
     {
-      "id": "1ff89fc3",
+      "id": "32afef1d",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -1021,8 +3736,8 @@
           "headingId": "artifact-sandbox-model-p4"
         },
         "range": {
-          "from": 1796,
-          "to": 1826
+          "from": 4210,
+          "to": 4240
         },
         "inline": [
           {
@@ -1033,7 +3748,7 @@
       }
     },
     {
-      "id": "20cdab93",
+      "id": "7fc0a47c",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -1042,8 +3757,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 1828,
-          "to": 1982
+          "from": 4242,
+          "to": 4396
         },
         "inline": [
           {
@@ -1086,7 +3801,7 @@
       }
     },
     {
-      "id": "2cefb624",
+      "id": "c03a2de",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -1098,8 +3813,8 @@
           "headingId": "1-hardened-iframe-isolation"
         },
         "range": {
-          "from": 1984,
-          "to": 2016
+          "from": 4398,
+          "to": 4430
         },
         "inline": [
           {
@@ -1110,7 +3825,7 @@
       }
     },
     {
-      "id": "5346a198",
+      "id": "7ae395de",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -1211,17 +3926,17 @@
             },
             "children": [
               {
-                "id": "5346a198::item:0",
+                "id": "7ae395de::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 2017,
-                  "to": 2320
+                  "from": 4431,
+                  "to": 4734
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "5346a198::item:0",
+                    "id": "7ae395de::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1278,8 +3993,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2017,
-                        "to": 2320
+                        "from": 4431,
+                        "to": 4734
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1405,17 +4120,17 @@
                 "children": []
               },
               {
-                "id": "5346a198::item:1",
+                "id": "7ae395de::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 2321,
-                  "to": 2520
+                  "from": 4735,
+                  "to": 4934
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "5346a198::item:1",
+                    "id": "7ae395de::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1444,8 +4159,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2321,
-                        "to": 2520
+                        "from": 4735,
+                        "to": 4934
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1518,13 +4233,13 @@
           }
         },
         "range": {
-          "from": 2017,
-          "to": 2520
+          "from": 4431,
+          "to": 4934
         }
       }
     },
     {
-      "id": "132f43d",
+      "id": "58e1b158",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -1536,8 +4251,8 @@
           "headingId": "2-in-frame-content-security-policy-csp"
         },
         "range": {
-          "from": 2522,
-          "to": 2567
+          "from": 4936,
+          "to": 4981
         },
         "inline": [
           {
@@ -1548,7 +4263,7 @@
       }
     },
     {
-      "id": "144da005",
+      "id": "241c677f",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -1564,8 +4279,8 @@
           ]
         },
         "range": {
-          "from": 2568,
-          "to": 2656
+          "from": 4982,
+          "to": 5070
         },
         "inline": [
           {
@@ -1592,7 +4307,7 @@
       }
     },
     {
-      "id": "69d9642a",
+      "id": "433c3e67",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -1721,17 +4436,17 @@
             },
             "children": [
               {
-                "id": "69d9642a::item:0",
+                "id": "433c3e67::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 2657,
-                  "to": 2679
+                  "from": 5071,
+                  "to": 5093
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "69d9642a::item:0",
+                    "id": "433c3e67::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1743,8 +4458,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2657,
-                        "to": 2679
+                        "from": 5071,
+                        "to": 5093
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1780,17 +4495,17 @@
                 "children": []
               },
               {
-                "id": "69d9642a::item:1",
+                "id": "433c3e67::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 2680,
-                  "to": 2839
+                  "from": 5094,
+                  "to": 5253
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "69d9642a::item:1",
+                    "id": "433c3e67::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1838,8 +4553,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2680,
-                        "to": 2839
+                        "from": 5094,
+                        "to": 5253
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1947,17 +4662,17 @@
                 "children": []
               },
               {
-                "id": "69d9642a::item:2",
+                "id": "433c3e67::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 2840,
-                  "to": 2893
+                  "from": 5254,
+                  "to": 5307
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "69d9642a::item:2",
+                    "id": "433c3e67::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1973,8 +4688,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2840,
-                        "to": 2893
+                        "from": 5254,
+                        "to": 5307
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2018,17 +4733,17 @@
                 "children": []
               },
               {
-                "id": "69d9642a::item:3",
+                "id": "433c3e67::item:3",
                 "type": "list-item",
                 "range": {
-                  "from": 2894,
-                  "to": 2946
+                  "from": 5308,
+                  "to": 5360
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "69d9642a::item:3",
+                    "id": "433c3e67::item:3",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2044,8 +4759,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2894,
-                        "to": 2946
+                        "from": 5308,
+                        "to": 5360
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2089,17 +4804,17 @@
                 "children": []
               },
               {
-                "id": "69d9642a::item:4",
+                "id": "433c3e67::item:4",
                 "type": "list-item",
                 "range": {
-                  "from": 2947,
-                  "to": 2993
+                  "from": 5361,
+                  "to": 5407
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "69d9642a::item:4",
+                    "id": "433c3e67::item:4",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2115,8 +4830,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2947,
-                        "to": 2993
+                        "from": 5361,
+                        "to": 5407
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2160,17 +4875,17 @@
                 "children": []
               },
               {
-                "id": "69d9642a::item:5",
+                "id": "433c3e67::item:5",
                 "type": "list-item",
                 "range": {
-                  "from": 2994,
-                  "to": 3035
+                  "from": 5408,
+                  "to": 5449
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "69d9642a::item:5",
+                    "id": "433c3e67::item:5",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2186,8 +4901,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2994,
-                        "to": 3035
+                        "from": 5408,
+                        "to": 5449
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2231,17 +4946,17 @@
                 "children": []
               },
               {
-                "id": "69d9642a::item:6",
+                "id": "433c3e67::item:6",
                 "type": "list-item",
                 "range": {
-                  "from": 3036,
-                  "to": 3077
+                  "from": 5450,
+                  "to": 5491
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "69d9642a::item:6",
+                    "id": "433c3e67::item:6",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2261,8 +4976,8 @@
                         }
                       ],
                       "range": {
-                        "from": 3036,
-                        "to": 3077
+                        "from": 5450,
+                        "to": 5491
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2317,13 +5032,13 @@
           }
         },
         "range": {
-          "from": 2657,
-          "to": 3077
+          "from": 5071,
+          "to": 5491
         }
       }
     },
     {
-      "id": "15cd5ec1",
+      "id": "5fe9747",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -2332,8 +5047,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 3079,
-          "to": 3280
+          "from": 5493,
+          "to": 5694
         },
         "inline": [
           {
@@ -2368,7 +5083,7 @@
       }
     },
     {
-      "id": "43568fa7",
+      "id": "6a4a7202",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -2377,8 +5092,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 3282,
-          "to": 3620
+          "from": 5696,
+          "to": 6034
         },
         "inline": [
           {
@@ -2389,7 +5104,7 @@
       }
     },
     {
-      "id": "649c9c1d",
+      "id": "7a77509d",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -2401,8 +5116,8 @@
           "headingId": "3-secure-host-communication"
         },
         "range": {
-          "from": 3622,
-          "to": 3654
+          "from": 6036,
+          "to": 6068
         },
         "inline": [
           {
@@ -2413,11 +5128,11 @@
       }
     },
     {
-      "id": "27015999",
+      "id": "4fbec8e1",
       "type": "list",
       "isFinalized": true,
       "payload": {
-        "raw": "- **Origin and window verification**: The artifact communicates with the host window via `postMessage`. The host listener verifies that `event.source === iframeRef.current.contentWindow`. Foreign-source messages and spoofed dimensions are ignored.\n- **Safe navigation**: Navigation links clicked inside the artifact are prevented and posted to the host via `stream-mdx:artifact-link`. The host drops every URL whose protocol is not `http:`, `https:`, or `mailto:` (so `javascript:` and `data:` never reach the host), then calls the renderer's `onLinkClick`, else the `openLink` prop (which `StreamingMarkdown` wires to its `linkSafety` policy), else `window.open(url, \"_blank\", \"noopener,noreferrer\")`.",
+        "raw": "- **Origin and window verification**: The artifact communicates with the host window via `postMessage`. The host listener verifies that `event.source === iframeRef.current.contentWindow`. Foreign-source messages and spoofed dimensions are ignored. Resizing messages (`stream-mdx:artifact-size`) strictly validate `Number.isFinite(data.height)` and clamp accepted values between 50px and 10,000px, ignoring `NaN`, `Infinity`, or negative dimensions.",
         "meta": {
           "lezerNodeType": "BulletList",
           "mathEnabled": true,
@@ -2460,34 +5175,27 @@
               },
               {
                 "kind": "text",
-                "text": ". Foreign-source messages and spoofed dimensions are ignored."
-              }
-            ],
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Safe navigation"
-                  }
-                ]
-              },
-              {
-                "kind": "text",
-                "text": ": Navigation links clicked inside the artifact are prevented and posted to the host via "
+                "text": ". Foreign-source messages and spoofed dimensions are ignored. Resizing messages ("
               },
               {
                 "kind": "code",
-                "text": "stream-mdx:artifact-link"
+                "text": "stream-mdx:artifact-size"
               },
               {
                 "kind": "text",
-                "text": ". The host drops every URL whose protocol is not "
+                "text": ") strictly validate "
               },
               {
                 "kind": "code",
-                "text": "http:"
+                "text": "Number.isFinite(data.height)"
+              },
+              {
+                "kind": "text",
+                "text": " and clamp accepted values between 50px and 10,000px, ignoring "
+              },
+              {
+                "kind": "code",
+                "text": "NaN"
               },
               {
                 "kind": "text",
@@ -2495,75 +5203,11 @@
               },
               {
                 "kind": "code",
-                "text": "https:"
+                "text": "Infinity"
               },
               {
                 "kind": "text",
-                "text": ", or "
-              },
-              {
-                "kind": "code",
-                "text": "mailto:"
-              },
-              {
-                "kind": "text",
-                "text": " (so "
-              },
-              {
-                "kind": "code",
-                "text": "javascript:"
-              },
-              {
-                "kind": "text",
-                "text": " and "
-              },
-              {
-                "kind": "code",
-                "text": "data:"
-              },
-              {
-                "kind": "text",
-                "text": " never reach the host), then calls the renderer's "
-              },
-              {
-                "kind": "code",
-                "text": "onLinkClick"
-              },
-              {
-                "kind": "text",
-                "text": ", else the "
-              },
-              {
-                "kind": "code",
-                "text": "openLink"
-              },
-              {
-                "kind": "text",
-                "text": " prop (which "
-              },
-              {
-                "kind": "code",
-                "text": "StreamingMarkdown"
-              },
-              {
-                "kind": "text",
-                "text": " wires to its "
-              },
-              {
-                "kind": "code",
-                "text": "linkSafety"
-              },
-              {
-                "kind": "text",
-                "text": " policy), else "
-              },
-              {
-                "kind": "code",
-                "text": "window.open(url, \"_blank\", \"noopener,noreferrer\")"
-              },
-              {
-                "kind": "text",
-                "text": "."
+                "text": ", or negative dimensions."
               }
             ]
           ],
@@ -2574,21 +5218,21 @@
             },
             "children": [
               {
-                "id": "27015999::item:0",
+                "id": "4fbec8e1::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 3655,
-                  "to": 3902
+                  "from": 6069,
+                  "to": 6517
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "27015999::item:0",
+                    "id": "4fbec8e1::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
-                      "raw": "- **Origin and window verification**: The artifact communicates with the host window via `postMessage`. The host listener verifies that `event.source === iframeRef.current.contentWindow`. Foreign-source messages and spoofed dimensions are ignored.",
+                      "raw": "- **Origin and window verification**: The artifact communicates with the host window via `postMessage`. The host listener verifies that `event.source === iframeRef.current.contentWindow`. Foreign-source messages and spoofed dimensions are ignored. Resizing messages (`stream-mdx:artifact-size`) strictly validate `Number.isFinite(data.height)` and clamp accepted values between 50px and 10,000px, ignoring `NaN`, `Infinity`, or negative dimensions.",
                       "inline": [
                         {
                           "kind": "strong",
@@ -2617,12 +5261,44 @@
                         },
                         {
                           "kind": "text",
-                          "text": ". Foreign-source messages and spoofed dimensions are ignored."
+                          "text": ". Foreign-source messages and spoofed dimensions are ignored. Resizing messages ("
+                        },
+                        {
+                          "kind": "code",
+                          "text": "stream-mdx:artifact-size"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ") strictly validate "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "Number.isFinite(data.height)"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " and clamp accepted values between 50px and 10,000px, ignoring "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "NaN"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "Infinity"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", or negative dimensions."
                         }
                       ],
                       "range": {
-                        "from": 3655,
-                        "to": 3902
+                        "from": 6069,
+                        "to": 6517
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2659,11 +5335,43 @@
                               },
                               {
                                 "kind": "text",
-                                "text": ". Foreign-source messages and spoofed dimensions are ignored."
+                                "text": ". Foreign-source messages and spoofed dimensions are ignored. Resizing messages ("
+                              },
+                              {
+                                "kind": "code",
+                                "text": "stream-mdx:artifact-size"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ") strictly validate "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "Number.isFinite(data.height)"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " and clamp accepted values between 50px and 10,000px, ignoring "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "NaN"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "Infinity"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", or negative dimensions."
                               }
                             ],
-                            "text": "Origin and window verification: The artifact communicates with the host window via postMessage. The host listener verifies that event.source === iframeRef.current.contentWindow. Foreign-source messages and spoofed dimensions are ignored.",
-                            "raw": "- **Origin and window verification**: The artifact communicates with the host window via `postMessage`. The host listener verifies that `event.source === iframeRef.current.contentWindow`. Foreign-source messages and spoofed dimensions are ignored."
+                            "text": "Origin and window verification: The artifact communicates with the host window via postMessage. The host listener verifies that event.source === iframeRef.current.contentWindow. Foreign-source messages and spoofed dimensions are ignored. Resizing messages (stream-mdx:artifact-size) strictly validate Number.isFinite(data.height) and clamp accepted values between 50px and 10,000px, ignoring NaN, Infinity, or negative dimensions.",
+                            "raw": "- **Origin and window verification**: The artifact communicates with the host window via `postMessage`. The host listener verifies that `event.source === iframeRef.current.contentWindow`. Foreign-source messages and spoofed dimensions are ignored. Resizing messages (`stream-mdx:artifact-size`) strictly validate `Number.isFinite(data.height)` and clamp accepted values between 50px and 10,000px, ignoring `NaN`, `Infinity`, or negative dimensions."
                           },
                           "children": []
                         }
@@ -2699,281 +5407,27 @@
                     },
                     {
                       "kind": "text",
-                      "text": ". Foreign-source messages and spoofed dimensions are ignored."
-                    }
-                  ],
-                  "text": "Origin and window verification: The artifact communicates with the host window via postMessage. The host listener verifies that event.source === iframeRef.current.contentWindow. Foreign-source messages and spoofed dimensions are ignored.",
-                  "raw": "- **Origin and window verification**: The artifact communicates with the host window via `postMessage`. The host listener verifies that `event.source === iframeRef.current.contentWindow`. Foreign-source messages and spoofed dimensions are ignored."
-                },
-                "children": []
-              },
-              {
-                "id": "27015999::item:1",
-                "type": "list-item",
-                "range": {
-                  "from": 3903,
-                  "to": 4357
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "27015999::item:1",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- **Safe navigation**: Navigation links clicked inside the artifact are prevented and posted to the host via `stream-mdx:artifact-link`. The host drops every URL whose protocol is not `http:`, `https:`, or `mailto:` (so `javascript:` and `data:` never reach the host), then calls the renderer's `onLinkClick`, else the `openLink` prop (which `StreamingMarkdown` wires to its `linkSafety` policy), else `window.open(url, \"_blank\", \"noopener,noreferrer\")`.",
-                      "inline": [
-                        {
-                          "kind": "strong",
-                          "children": [
-                            {
-                              "kind": "text",
-                              "text": "Safe navigation"
-                            }
-                          ]
-                        },
-                        {
-                          "kind": "text",
-                          "text": ": Navigation links clicked inside the artifact are prevented and posted to the host via "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "stream-mdx:artifact-link"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ". The host drops every URL whose protocol is not "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "http:"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ", "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "https:"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ", or "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "mailto:"
-                        },
-                        {
-                          "kind": "text",
-                          "text": " (so "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "javascript:"
-                        },
-                        {
-                          "kind": "text",
-                          "text": " and "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "data:"
-                        },
-                        {
-                          "kind": "text",
-                          "text": " never reach the host), then calls the renderer's "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "onLinkClick"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ", else the "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "openLink"
-                        },
-                        {
-                          "kind": "text",
-                          "text": " prop (which "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "StreamingMarkdown"
-                        },
-                        {
-                          "kind": "text",
-                          "text": " wires to its "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "linkSafety"
-                        },
-                        {
-                          "kind": "text",
-                          "text": " policy), else "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "window.open(url, \"_blank\", \"noopener,noreferrer\")"
-                        },
-                        {
-                          "kind": "text",
-                          "text": "."
-                        }
-                      ],
-                      "range": {
-                        "from": 3903,
-                        "to": 4357
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 1,
-                            "inline": [
-                              {
-                                "kind": "strong",
-                                "children": [
-                                  {
-                                    "kind": "text",
-                                    "text": "Safe navigation"
-                                  }
-                                ]
-                              },
-                              {
-                                "kind": "text",
-                                "text": ": Navigation links clicked inside the artifact are prevented and posted to the host via "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "stream-mdx:artifact-link"
-                              },
-                              {
-                                "kind": "text",
-                                "text": ". The host drops every URL whose protocol is not "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "http:"
-                              },
-                              {
-                                "kind": "text",
-                                "text": ", "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "https:"
-                              },
-                              {
-                                "kind": "text",
-                                "text": ", or "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "mailto:"
-                              },
-                              {
-                                "kind": "text",
-                                "text": " (so "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "javascript:"
-                              },
-                              {
-                                "kind": "text",
-                                "text": " and "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "data:"
-                              },
-                              {
-                                "kind": "text",
-                                "text": " never reach the host), then calls the renderer's "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "onLinkClick"
-                              },
-                              {
-                                "kind": "text",
-                                "text": ", else the "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "openLink"
-                              },
-                              {
-                                "kind": "text",
-                                "text": " prop (which "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "StreamingMarkdown"
-                              },
-                              {
-                                "kind": "text",
-                                "text": " wires to its "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "linkSafety"
-                              },
-                              {
-                                "kind": "text",
-                                "text": " policy), else "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "window.open(url, \"_blank\", \"noopener,noreferrer\")"
-                              },
-                              {
-                                "kind": "text",
-                                "text": "."
-                              }
-                            ],
-                            "text": "Safe navigation: Navigation links clicked inside the artifact are prevented and posted to the host via stream-mdx:artifact-link. The host drops every URL whose protocol is not http:, https:, or mailto: (so javascript: and data: never reach the host), then calls the renderer's onLinkClick, else the openLink prop (which StreamingMarkdown wires to its linkSafety policy), else window.open(url, \"_blank\", \"noopener,noreferrer\").",
-                            "raw": "- **Safe navigation**: Navigation links clicked inside the artifact are prevented and posted to the host via `stream-mdx:artifact-link`. The host drops every URL whose protocol is not `http:`, `https:`, or `mailto:` (so `javascript:` and `data:` never reach the host), then calls the renderer's `onLinkClick`, else the `openLink` prop (which `StreamingMarkdown` wires to its `linkSafety` policy), else `window.open(url, \"_blank\", \"noopener,noreferrer\")`."
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 1,
-                  "inline": [
-                    {
-                      "kind": "strong",
-                      "children": [
-                        {
-                          "kind": "text",
-                          "text": "Safe navigation"
-                        }
-                      ]
-                    },
-                    {
-                      "kind": "text",
-                      "text": ": Navigation links clicked inside the artifact are prevented and posted to the host via "
+                      "text": ". Foreign-source messages and spoofed dimensions are ignored. Resizing messages ("
                     },
                     {
                       "kind": "code",
-                      "text": "stream-mdx:artifact-link"
+                      "text": "stream-mdx:artifact-size"
                     },
                     {
                       "kind": "text",
-                      "text": ". The host drops every URL whose protocol is not "
+                      "text": ") strictly validate "
                     },
                     {
                       "kind": "code",
-                      "text": "http:"
+                      "text": "Number.isFinite(data.height)"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " and clamp accepted values between 50px and 10,000px, ignoring "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "NaN"
                     },
                     {
                       "kind": "text",
@@ -2981,79 +5435,15 @@
                     },
                     {
                       "kind": "code",
-                      "text": "https:"
+                      "text": "Infinity"
                     },
                     {
                       "kind": "text",
-                      "text": ", or "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "mailto:"
-                    },
-                    {
-                      "kind": "text",
-                      "text": " (so "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "javascript:"
-                    },
-                    {
-                      "kind": "text",
-                      "text": " and "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "data:"
-                    },
-                    {
-                      "kind": "text",
-                      "text": " never reach the host), then calls the renderer's "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "onLinkClick"
-                    },
-                    {
-                      "kind": "text",
-                      "text": ", else the "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "openLink"
-                    },
-                    {
-                      "kind": "text",
-                      "text": " prop (which "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "StreamingMarkdown"
-                    },
-                    {
-                      "kind": "text",
-                      "text": " wires to its "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "linkSafety"
-                    },
-                    {
-                      "kind": "text",
-                      "text": " policy), else "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "window.open(url, \"_blank\", \"noopener,noreferrer\")"
-                    },
-                    {
-                      "kind": "text",
-                      "text": "."
+                      "text": ", or negative dimensions."
                     }
                   ],
-                  "text": "Safe navigation: Navigation links clicked inside the artifact are prevented and posted to the host via stream-mdx:artifact-link. The host drops every URL whose protocol is not http:, https:, or mailto: (so javascript: and data: never reach the host), then calls the renderer's onLinkClick, else the openLink prop (which StreamingMarkdown wires to its linkSafety policy), else window.open(url, \"_blank\", \"noopener,noreferrer\").",
-                  "raw": "- **Safe navigation**: Navigation links clicked inside the artifact are prevented and posted to the host via `stream-mdx:artifact-link`. The host drops every URL whose protocol is not `http:`, `https:`, or `mailto:` (so `javascript:` and `data:` never reach the host), then calls the renderer's `onLinkClick`, else the `openLink` prop (which `StreamingMarkdown` wires to its `linkSafety` policy), else `window.open(url, \"_blank\", \"noopener,noreferrer\")`."
+                  "text": "Origin and window verification: The artifact communicates with the host window via postMessage. The host listener verifies that event.source === iframeRef.current.contentWindow. Foreign-source messages and spoofed dimensions are ignored. Resizing messages (stream-mdx:artifact-size) strictly validate Number.isFinite(data.height) and clamp accepted values between 50px and 10,000px, ignoring NaN, Infinity, or negative dimensions.",
+                  "raw": "- **Origin and window verification**: The artifact communicates with the host window via `postMessage`. The host listener verifies that `event.source === iframeRef.current.contentWindow`. Foreign-source messages and spoofed dimensions are ignored. Resizing messages (`stream-mdx:artifact-size`) strictly validate `Number.isFinite(data.height)` and clamp accepted values between 50px and 10,000px, ignoring `NaN`, `Infinity`, or negative dimensions."
                 },
                 "children": []
               }
@@ -3061,13 +5451,13 @@
           }
         },
         "range": {
-          "from": 3655,
-          "to": 4357
+          "from": 6069,
+          "to": 6517
         }
       }
     },
     {
-      "id": "30ddb29d",
+      "id": "37293927",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -3079,8 +5469,8 @@
           "headingId": "reporting-security-issues"
         },
         "range": {
-          "from": 4359,
-          "to": 4387
+          "from": 6519,
+          "to": 6547
         },
         "inline": [
           {
@@ -3091,7 +5481,7 @@
       }
     },
     {
-      "id": "60b4dc40",
+      "id": "21462e84",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -3100,8 +5490,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 4389,
-          "to": 4432
+          "from": 6549,
+          "to": 6592
         },
         "inline": [
           {
@@ -3134,50 +5524,68 @@
       "text": "HTML is an XSS surface"
     },
     {
+      "id": "url-sanitization-policy",
+      "blockId": "157cd25d",
+      "level": 3,
+      "text": "URL Sanitization Policy"
+    },
+    {
+      "id": "raw-html-attribute-style-hardening",
+      "blockId": "52afd640",
+      "level": 3,
+      "text": "Raw HTML Attribute & Style Hardening"
+    },
+    {
+      "id": "highlighter-code-row-sanitization",
+      "blockId": "32c09043",
+      "level": 3,
+      "text": "Highlighter Code-Row Sanitization"
+    },
+    {
       "id": "csp-recommendations",
-      "blockId": "5c28cf48",
+      "blockId": "7233f63e",
       "level": 2,
       "text": "CSP recommendations"
     },
     {
       "id": "prefer-hosted-workers",
-      "blockId": "6a329276",
+      "blockId": "388f57fc",
       "level": 3,
       "text": "Prefer hosted workers"
     },
     {
       "id": "mdx-evaluation-and-script-src-unsafe-eval",
-      "blockId": "74ae5fdc",
+      "blockId": "1cffa2c1",
       "level": 3,
       "text": "MDX evaluation and `script-src` (`unsafe-eval`)"
     },
     {
       "id": "artifact-sandbox-model-p4",
-      "blockId": "1ff89fc3",
+      "blockId": "32afef1d",
       "level": 2,
       "text": "Artifact Sandbox Model (P4)"
     },
     {
       "id": "1-hardened-iframe-isolation",
-      "blockId": "2cefb624",
+      "blockId": "c03a2de",
       "level": 3,
       "text": "1. Hardened iframe isolation"
     },
     {
       "id": "2-in-frame-content-security-policy-csp",
-      "blockId": "132f43d",
+      "blockId": "58e1b158",
       "level": 3,
       "text": "2. In-frame Content Security Policy (CSP)"
     },
     {
       "id": "3-secure-host-communication",
-      "blockId": "649c9c1d",
+      "blockId": "7a77509d",
       "level": 3,
       "text": "3. Secure host communication"
     },
     {
       "id": "reporting-security-issues",
-      "blockId": "30ddb29d",
+      "blockId": "37293927",
       "level": 2,
       "text": "Reporting security issues"
     }

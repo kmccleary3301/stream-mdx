@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-04-10T17:51:28.155Z",
-  "hash": "92d8290beea4de86179440ecaebb6a983475d2bd9100b54eb79e988b067a3832",
+  "createdAt": "2026-10-08T19:48:57.830Z",
+  "hash": "ce191099b842f210aa43321c3e63fde94ba0ffd65a1cf19d8b59e3eb10ad2f30",
   "contentHash": "a0aa44c40eb3c18c9242afd99f33d04e17bacec0d2ba56bb587a4d5c66b6fb77",
-  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
-  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "configHash": "a274f269183e8eac42eeb12b1ae0dc7fea9398cc27792626c9ca0c17911fb0b4",
+  "hashSalt": "docs-snapshots-v2:9417117db4c19b323c5bd2a5c7754c6e0d46bf7c962c13c422b86e6485aac7c0",
   "blocks": [
     {
       "id": "db082c0",
@@ -13,14 +13,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "StreamMDX Perf Harness",
-        "range": {
-          "from": 0,
-          "to": 24
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading1",
           "headingLevel": 1,
           "headingText": "StreamMDX Perf Harness",
           "headingId": "streammdx-perf-harness"
+        },
+        "range": {
+          "from": 0,
+          "to": 24
         },
         "inline": [
           {
@@ -36,6 +37,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "This harness streams a fixture through the real `StreamingMarkdown` renderer in the docs app and collects:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 26,
           "to": 132
@@ -62,12 +66,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- flush metrics (`RendererMetrics`)\n- long tasks (filtered to the stream window)\n- rAF cadence\n- optional memory samples (Chromium only)\n- optional CDP performance metrics (task/script/layout/recalc/paint deltas)\n- optional DOM counters (nodes/event listeners)",
-        "range": {
-          "from": 133,
-          "to": 393
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -114,7 +125,396 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "46f5287d::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 133,
+                  "to": 168
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "46f5287d::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- flush metrics (`RendererMetrics`)",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "flush metrics ("
+                        },
+                        {
+                          "kind": "code",
+                          "text": "RendererMetrics"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ")"
+                        }
+                      ],
+                      "range": {
+                        "from": 133,
+                        "to": 168
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "flush metrics ("
+                              },
+                              {
+                                "kind": "code",
+                                "text": "RendererMetrics"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ")"
+                              }
+                            ],
+                            "text": "flush metrics (RendererMetrics)",
+                            "raw": "- flush metrics (`RendererMetrics`)"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "flush metrics ("
+                    },
+                    {
+                      "kind": "code",
+                      "text": "RendererMetrics"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ")"
+                    }
+                  ],
+                  "text": "flush metrics (RendererMetrics)",
+                  "raw": "- flush metrics (`RendererMetrics`)"
+                },
+                "children": []
+              },
+              {
+                "id": "46f5287d::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 169,
+                  "to": 213
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "46f5287d::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- long tasks (filtered to the stream window)",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "long tasks (filtered to the stream window)"
+                        }
+                      ],
+                      "range": {
+                        "from": 169,
+                        "to": 213
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "long tasks (filtered to the stream window)"
+                              }
+                            ],
+                            "text": "long tasks (filtered to the stream window)",
+                            "raw": "- long tasks (filtered to the stream window)"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "long tasks (filtered to the stream window)"
+                    }
+                  ],
+                  "text": "long tasks (filtered to the stream window)",
+                  "raw": "- long tasks (filtered to the stream window)"
+                },
+                "children": []
+              },
+              {
+                "id": "46f5287d::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 214,
+                  "to": 227
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "46f5287d::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- rAF cadence",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "rAF cadence"
+                        }
+                      ],
+                      "range": {
+                        "from": 214,
+                        "to": 227
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "rAF cadence"
+                              }
+                            ],
+                            "text": "rAF cadence",
+                            "raw": "- rAF cadence"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "rAF cadence"
+                    }
+                  ],
+                  "text": "rAF cadence",
+                  "raw": "- rAF cadence"
+                },
+                "children": []
+              },
+              {
+                "id": "46f5287d::item:3",
+                "type": "list-item",
+                "range": {
+                  "from": 228,
+                  "to": 269
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "46f5287d::item:3",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- optional memory samples (Chromium only)",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "optional memory samples (Chromium only)"
+                        }
+                      ],
+                      "range": {
+                        "from": 228,
+                        "to": 269
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 3,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "optional memory samples (Chromium only)"
+                              }
+                            ],
+                            "text": "optional memory samples (Chromium only)",
+                            "raw": "- optional memory samples (Chromium only)"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 3,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "optional memory samples (Chromium only)"
+                    }
+                  ],
+                  "text": "optional memory samples (Chromium only)",
+                  "raw": "- optional memory samples (Chromium only)"
+                },
+                "children": []
+              },
+              {
+                "id": "46f5287d::item:4",
+                "type": "list-item",
+                "range": {
+                  "from": 270,
+                  "to": 345
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "46f5287d::item:4",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- optional CDP performance metrics (task/script/layout/recalc/paint deltas)",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "optional CDP performance metrics (task/script/layout/recalc/paint deltas)"
+                        }
+                      ],
+                      "range": {
+                        "from": 270,
+                        "to": 345
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 4,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "optional CDP performance metrics (task/script/layout/recalc/paint deltas)"
+                              }
+                            ],
+                            "text": "optional CDP performance metrics (task/script/layout/recalc/paint deltas)",
+                            "raw": "- optional CDP performance metrics (task/script/layout/recalc/paint deltas)"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 4,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "optional CDP performance metrics (task/script/layout/recalc/paint deltas)"
+                    }
+                  ],
+                  "text": "optional CDP performance metrics (task/script/layout/recalc/paint deltas)",
+                  "raw": "- optional CDP performance metrics (task/script/layout/recalc/paint deltas)"
+                },
+                "children": []
+              },
+              {
+                "id": "46f5287d::item:5",
+                "type": "list-item",
+                "range": {
+                  "from": 346,
+                  "to": 393
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "46f5287d::item:5",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- optional DOM counters (nodes/event listeners)",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "optional DOM counters (nodes/event listeners)"
+                        }
+                      ],
+                      "range": {
+                        "from": 346,
+                        "to": 393
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 5,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "optional DOM counters (nodes/event listeners)"
+                              }
+                            ],
+                            "text": "optional DOM counters (nodes/event listeners)",
+                            "raw": "- optional DOM counters (nodes/event listeners)"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 5,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "optional DOM counters (nodes/event listeners)"
+                    }
+                  ],
+                  "text": "optional DOM counters (nodes/event listeners)",
+                  "raw": "- optional DOM counters (nodes/event listeners)"
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 133,
+          "to": 393
         }
       }
     },
@@ -124,6 +524,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "It is local-only by design and is intended for iterative optimization with the regression suite as a hardline behavior lock.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 395,
           "to": 519
@@ -142,14 +545,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Prereqs",
-        "range": {
-          "from": 521,
-          "to": 531
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Prereqs",
           "headingId": "prereqs"
+        },
+        "range": {
+          "from": 521,
+          "to": 531
         },
         "inline": [
           {
@@ -165,6 +569,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "Start the docs dev server (port 3000):",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 533,
           "to": 571
@@ -183,15 +590,17 @@
       "isFinalized": true,
       "payload": {
         "raw": "```\nnpm run perf:sync-fixtures\nnpm run docs:dev\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "npm run perf:sync-fixtures\nnpm run docs:dev",
+          "info": "",
+          "highlightLang": "text"
+        },
         "range": {
           "from": 573,
           "to": 624
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>npm run perf:sync-fixtures</span></span>\n<span class=\"line\" data-line=\"2\"><span>npm run docs:dev</span></span></code></pre>",
-        "meta": {
-          "lang": "text",
-          "code": "npm run perf:sync-fixtures\nnpm run docs:dev"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code><span class=\"line\" data-line=\"1\"><span>npm run perf:sync-fixtures</span></span>\n<span class=\"line\" data-line=\"2\"><span>npm run docs:dev</span></span></code></pre>"
       }
     },
     {
@@ -200,14 +609,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Run the harness",
-        "range": {
-          "from": 626,
-          "to": 644
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Run the harness",
           "headingId": "run-the-harness"
+        },
+        "range": {
+          "from": 626,
+          "to": 644
         },
         "inline": [
           {
@@ -223,15 +633,17 @@
       "isFinalized": true,
       "payload": {
         "raw": "```\nnpm run perf:harness -- --fixture naive-bayes --scenario S2_typical --scheduling aggressive --runs 3 --warmup 1\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "npm run perf:harness -- --fixture naive-bayes --scenario S2_typical --scheduling aggressive --runs 3 --warmup 1",
+          "info": "",
+          "highlightLang": "text"
+        },
         "range": {
           "from": 646,
           "to": 765
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>npm run perf:harness -- --fixture naive-bayes --scenario S2_typical --scheduling aggressive --runs 3 --warmup 1</span></span></code></pre>",
-        "meta": {
-          "lang": "text",
-          "code": "npm run perf:harness -- --fixture naive-bayes --scenario S2_typical --scheduling aggressive --runs 3 --warmup 1"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code><span class=\"line\" data-line=\"1\"><span>npm run perf:harness -- --fixture naive-bayes --scenario S2_typical --scheduling aggressive --runs 3 --warmup 1</span></span></code></pre>"
       }
     },
     {
@@ -240,6 +652,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "If you want to compare syntax highlighting modes, add `features.codeHighlighting` to the streaming config\nin the demo/harness (default is `\"incremental\"`). A typical workflow is:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 767,
           "to": 945
@@ -274,12 +689,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "1. Run a baseline with `codeHighlighting: \"final\"`.\n2. Run a candidate with `codeHighlighting: \"incremental\"` or `\"live\"`.\n3. Compare summaries with `perf:compare`.",
-        "range": {
-          "from": 947,
-          "to": 1111
-        },
         "meta": {
+          "lezerNodeType": "OrderedList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": true,
+          "loose": false,
           "items": [
             [
               {
@@ -332,7 +754,291 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": true,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "33cddc38::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 947,
+                  "to": 998
+                },
+                "props": {
+                  "ordered": true,
+                  "loose": false,
+                  "block": {
+                    "id": "33cddc38::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "1. Run a baseline with `codeHighlighting: \"final\"`.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Run a baseline with "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "codeHighlighting: \"final\""
+                        },
+                        {
+                          "kind": "text",
+                          "text": "."
+                        }
+                      ],
+                      "range": {
+                        "from": 947,
+                        "to": 998
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": true,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Run a baseline with "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "codeHighlighting: \"final\""
+                              },
+                              {
+                                "kind": "text",
+                                "text": "."
+                              }
+                            ],
+                            "text": "Run a baseline with codeHighlighting: \"final\".",
+                            "raw": "1. Run a baseline with `codeHighlighting: \"final\"`."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Run a baseline with "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "codeHighlighting: \"final\""
+                    },
+                    {
+                      "kind": "text",
+                      "text": "."
+                    }
+                  ],
+                  "text": "Run a baseline with codeHighlighting: \"final\".",
+                  "raw": "1. Run a baseline with `codeHighlighting: \"final\"`."
+                },
+                "children": []
+              },
+              {
+                "id": "33cddc38::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 999,
+                  "to": 1069
+                },
+                "props": {
+                  "ordered": true,
+                  "loose": false,
+                  "block": {
+                    "id": "33cddc38::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "2. Run a candidate with `codeHighlighting: \"incremental\"` or `\"live\"`.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Run a candidate with "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "codeHighlighting: \"incremental\""
+                        },
+                        {
+                          "kind": "text",
+                          "text": " or "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "\"live\""
+                        },
+                        {
+                          "kind": "text",
+                          "text": "."
+                        }
+                      ],
+                      "range": {
+                        "from": 999,
+                        "to": 1069
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": true,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Run a candidate with "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "codeHighlighting: \"incremental\""
+                              },
+                              {
+                                "kind": "text",
+                                "text": " or "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "\"live\""
+                              },
+                              {
+                                "kind": "text",
+                                "text": "."
+                              }
+                            ],
+                            "text": "Run a candidate with codeHighlighting: \"incremental\" or \"live\".",
+                            "raw": "2. Run a candidate with `codeHighlighting: \"incremental\"` or `\"live\"`."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Run a candidate with "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "codeHighlighting: \"incremental\""
+                    },
+                    {
+                      "kind": "text",
+                      "text": " or "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "\"live\""
+                    },
+                    {
+                      "kind": "text",
+                      "text": "."
+                    }
+                  ],
+                  "text": "Run a candidate with codeHighlighting: \"incremental\" or \"live\".",
+                  "raw": "2. Run a candidate with `codeHighlighting: \"incremental\"` or `\"live\"`."
+                },
+                "children": []
+              },
+              {
+                "id": "33cddc38::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 1070,
+                  "to": 1111
+                },
+                "props": {
+                  "ordered": true,
+                  "loose": false,
+                  "block": {
+                    "id": "33cddc38::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "3. Compare summaries with `perf:compare`.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Compare summaries with "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "perf:compare"
+                        },
+                        {
+                          "kind": "text",
+                          "text": "."
+                        }
+                      ],
+                      "range": {
+                        "from": 1070,
+                        "to": 1111
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": true,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Compare summaries with "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "perf:compare"
+                              },
+                              {
+                                "kind": "text",
+                                "text": "."
+                              }
+                            ],
+                            "text": "Compare summaries with perf:compare.",
+                            "raw": "3. Compare summaries with `perf:compare`."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Compare summaries with "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "perf:compare"
+                    },
+                    {
+                      "kind": "text",
+                      "text": "."
+                    }
+                  ],
+                  "text": "Compare summaries with perf:compare.",
+                  "raw": "3. Compare summaries with `perf:compare`."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 947,
+          "to": 1111
         }
       }
     },
@@ -342,6 +1048,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "Outputs land in:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 1113,
           "to": 1129
@@ -360,15 +1069,17 @@
       "isFinalized": true,
       "payload": {
         "raw": "```\ntmp/perf-runs/<fixture>-<scenario>-<timestamp>/\n  run.json\n  summary.json\n  summary.txt\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "tmp/perf-runs/<fixture>-<scenario>-<timestamp>/\n  run.json\n  summary.json\n  summary.txt",
+          "info": "",
+          "highlightLang": "text"
+        },
         "range": {
           "from": 1131,
           "to": 1226
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>tmp/perf-runs/&#x3C;fixture>-&#x3C;scenario>-&#x3C;timestamp>/</span></span>\n<span class=\"line\" data-line=\"2\"><span>  run.json</span></span>\n<span class=\"line\" data-line=\"3\"><span>  summary.json</span></span>\n<span class=\"line\" data-line=\"4\"><span>  summary.txt</span></span></code></pre>",
-        "meta": {
-          "lang": "text",
-          "code": "tmp/perf-runs/<fixture>-<scenario>-<timestamp>/\n  run.json\n  summary.json\n  summary.txt"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code><span class=\"line\" data-line=\"1\"><span>tmp/perf-runs/&#x3C;fixture>-&#x3C;scenario>-&#x3C;timestamp>/</span></span>\n<span class=\"line\" data-line=\"2\"><span>  run.json</span></span>\n<span class=\"line\" data-line=\"3\"><span>  summary.json</span></span>\n<span class=\"line\" data-line=\"4\"><span>  summary.txt</span></span></code></pre>"
       }
     },
     {
@@ -377,14 +1088,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Fixtures and scenarios",
-        "range": {
-          "from": 1228,
-          "to": 1253
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Fixtures and scenarios",
           "headingId": "fixtures-and-scenarios"
+        },
+        "range": {
+          "from": 1228,
+          "to": 1253
         },
         "inline": [
           {
@@ -400,12 +1112,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- Fixtures: `tests/regression/fixtures/*.md`\n- Scenarios: `tests/regression/scenarios/*.json`",
-        "range": {
-          "from": 1255,
-          "to": 1348
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -428,7 +1147,160 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "5ef3c81b::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 1255,
+                  "to": 1299
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "5ef3c81b::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Fixtures: `tests/regression/fixtures/*.md`",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Fixtures: "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "tests/regression/fixtures/*.md"
+                        }
+                      ],
+                      "range": {
+                        "from": 1255,
+                        "to": 1299
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Fixtures: "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "tests/regression/fixtures/*.md"
+                              }
+                            ],
+                            "text": "Fixtures: tests/regression/fixtures/*.md",
+                            "raw": "- Fixtures: `tests/regression/fixtures/*.md`"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Fixtures: "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "tests/regression/fixtures/*.md"
+                    }
+                  ],
+                  "text": "Fixtures: tests/regression/fixtures/*.md",
+                  "raw": "- Fixtures: `tests/regression/fixtures/*.md`"
+                },
+                "children": []
+              },
+              {
+                "id": "5ef3c81b::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 1300,
+                  "to": 1348
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "5ef3c81b::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Scenarios: `tests/regression/scenarios/*.json`",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Scenarios: "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "tests/regression/scenarios/*.json"
+                        }
+                      ],
+                      "range": {
+                        "from": 1300,
+                        "to": 1348
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Scenarios: "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "tests/regression/scenarios/*.json"
+                              }
+                            ],
+                            "text": "Scenarios: tests/regression/scenarios/*.json",
+                            "raw": "- Scenarios: `tests/regression/scenarios/*.json`"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Scenarios: "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "tests/regression/scenarios/*.json"
+                    }
+                  ],
+                  "text": "Scenarios: tests/regression/scenarios/*.json",
+                  "raw": "- Scenarios: `tests/regression/scenarios/*.json`"
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 1255,
+          "to": 1348
         }
       }
     },
@@ -438,6 +1310,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "Sync them into the docs public folder when fixtures change:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 1350,
           "to": 1409
@@ -456,15 +1331,17 @@
       "isFinalized": true,
       "payload": {
         "raw": "```\nnpm run perf:sync-fixtures\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "npm run perf:sync-fixtures",
+          "info": "",
+          "highlightLang": "text"
+        },
         "range": {
           "from": 1411,
           "to": 1445
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>npm run perf:sync-fixtures</span></span></code></pre>",
-        "meta": {
-          "lang": "text",
-          "code": "npm run perf:sync-fixtures"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code><span class=\"line\" data-line=\"1\"><span>npm run perf:sync-fixtures</span></span></code></pre>"
       }
     },
     {
@@ -473,6 +1350,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "Example scenario format:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 1447,
           "to": 1471
@@ -491,15 +1371,18 @@
       "isFinalized": true,
       "payload": {
         "raw": "```json\n{\n  \"id\": \"S2_typical\",\n  \"label\": \"Typical streaming\",\n  \"updateIntervalMs\": 16,\n  \"charRateCps\": 1200,\n  \"maxChunkChars\": 256\n}\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "{\n  \"id\": \"S2_typical\",\n  \"label\": \"Typical streaming\",\n  \"updateIntervalMs\": 16,\n  \"charRateCps\": 1200,\n  \"maxChunkChars\": 256\n}",
+          "info": "json",
+          "lang": "json",
+          "highlightLang": "json"
+        },
         "range": {
           "from": 1473,
           "to": 1614
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"json\"><code data-language=\"json\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">  \"id\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"S2_typical\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">  \"label\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"Typical streaming\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">  \"updateIntervalMs\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">16</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">  \"charRateCps\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">1200</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">  \"maxChunkChars\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">256</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}</span></span></code></pre>",
-        "meta": {
-          "lang": "json",
-          "code": "{\n  \"id\": \"S2_typical\",\n  \"label\": \"Typical streaming\",\n  \"updateIntervalMs\": 16,\n  \"charRateCps\": 1200,\n  \"maxChunkChars\": 256\n}"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-json\" data-language=\"json\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">  \"id\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"S2_typical\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">  \"label\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"Typical streaming\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">  \"updateIntervalMs\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">16</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">  \"charRateCps\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">1200</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">  \"maxChunkChars\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">256</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}</span></span></code></pre>"
       }
     },
     {
@@ -508,14 +1391,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Scheduling presets",
-        "range": {
-          "from": 1616,
-          "to": 1637
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Scheduling presets",
           "headingId": "scheduling-presets"
+        },
+        "range": {
+          "from": 1616,
+          "to": 1637
         },
         "inline": [
           {
@@ -531,6 +1415,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "The harness accepts `--scheduling` (`default`, `smooth`, `aggressive`) and optional overrides. If omitted, it defaults to `aggressive`:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 1639,
           "to": 1774
@@ -589,15 +1476,17 @@
       "isFinalized": true,
       "payload": {
         "raw": "```\n--batch microtask|timeout|rAF\n--frameBudgetMs 8\n--maxBatchesPerFlush 8\n--lowPriorityFrameBudgetMs 4\n--maxLowPriorityBatchesPerFlush 2\n--urgentQueueThreshold 3\n--historyLimit 200\n--startupMicrotaskFlushes 4\n--adaptiveBudgeting true|false\n--adaptiveSwitch true|false\n--adaptiveQueueThreshold 12\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "--batch microtask|timeout|rAF\n--frameBudgetMs 8\n--maxBatchesPerFlush 8\n--lowPriorityFrameBudgetMs 4\n--maxLowPriorityBatchesPerFlush 2\n--urgentQueueThreshold 3\n--historyLimit 200\n--startupMicrotaskFlushes 4\n--adaptiveBudgeting true|false\n--adaptiveSwitch true|false\n--adaptiveQueueThreshold 12",
+          "info": "",
+          "highlightLang": "text"
+        },
         "range": {
           "from": 1776,
           "to": 2076
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>--batch microtask|timeout|rAF</span></span>\n<span class=\"line\" data-line=\"2\"><span>--frameBudgetMs 8</span></span>\n<span class=\"line\" data-line=\"3\"><span>--maxBatchesPerFlush 8</span></span>\n<span class=\"line\" data-line=\"4\"><span>--lowPriorityFrameBudgetMs 4</span></span>\n<span class=\"line\" data-line=\"5\"><span>--maxLowPriorityBatchesPerFlush 2</span></span>\n<span class=\"line\" data-line=\"6\"><span>--urgentQueueThreshold 3</span></span>\n<span class=\"line\" data-line=\"7\"><span>--historyLimit 200</span></span>\n<span class=\"line\" data-line=\"8\"><span>--startupMicrotaskFlushes 4</span></span>\n<span class=\"line\" data-line=\"9\"><span>--adaptiveBudgeting true|false</span></span>\n<span class=\"line\" data-line=\"10\"><span>--adaptiveSwitch true|false</span></span>\n<span class=\"line\" data-line=\"11\"><span>--adaptiveQueueThreshold 12</span></span></code></pre>",
-        "meta": {
-          "lang": "text",
-          "code": "--batch microtask|timeout|rAF\n--frameBudgetMs 8\n--maxBatchesPerFlush 8\n--lowPriorityFrameBudgetMs 4\n--maxLowPriorityBatchesPerFlush 2\n--urgentQueueThreshold 3\n--historyLimit 200\n--startupMicrotaskFlushes 4\n--adaptiveBudgeting true|false\n--adaptiveSwitch true|false\n--adaptiveQueueThreshold 12"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code><span class=\"line\" data-line=\"1\"><span>--batch microtask|timeout|rAF</span></span>\n<span class=\"line\" data-line=\"2\"><span>--frameBudgetMs 8</span></span>\n<span class=\"line\" data-line=\"3\"><span>--maxBatchesPerFlush 8</span></span>\n<span class=\"line\" data-line=\"4\"><span>--lowPriorityFrameBudgetMs 4</span></span>\n<span class=\"line\" data-line=\"5\"><span>--maxLowPriorityBatchesPerFlush 2</span></span>\n<span class=\"line\" data-line=\"6\"><span>--urgentQueueThreshold 3</span></span>\n<span class=\"line\" data-line=\"7\"><span>--historyLimit 200</span></span>\n<span class=\"line\" data-line=\"8\"><span>--startupMicrotaskFlushes 4</span></span>\n<span class=\"line\" data-line=\"9\"><span>--adaptiveBudgeting true|false</span></span>\n<span class=\"line\" data-line=\"10\"><span>--adaptiveSwitch true|false</span></span>\n<span class=\"line\" data-line=\"11\"><span>--adaptiveQueueThreshold 12</span></span></code></pre>"
       }
     },
     {
@@ -606,6 +1495,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "These map to `StreamingSchedulerOptions` in `@stream-mdx/react`.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 2078,
           "to": 2142
@@ -640,6 +1532,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "Interpretation rule:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 2144,
           "to": 2164
@@ -658,12 +1553,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- use a fixed scheduler preset when comparing candidate vs baseline\n- do not change scheduler knobs mid-comparison and then treat the result as a pure renderer win/loss\n- if you need claim-grade browser comparisons, line them up with the locked methodology described in [`SCHEDULING_AND_JITTER.md`](./SCHEDULING_AND_JITTER.md)",
-        "range": {
-          "from": 2166,
-          "to": 2492
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -680,19 +1582,239 @@
             [
               {
                 "kind": "text",
-                "text": "if you need claim-grade browser comparisons, line them up with the locked methodology described in ["
+                "text": "if you need claim-grade browser comparisons, line them up with the locked methodology described in "
               },
               {
-                "kind": "code",
-                "text": "SCHEDULING_AND_JITTER.md"
-              },
-              {
-                "kind": "text",
-                "text": "](./SCHEDULING_AND_JITTER.md)"
+                "kind": "link",
+                "href": "./SCHEDULING_AND_JITTER.md",
+                "children": [
+                  {
+                    "kind": "code",
+                    "text": "SCHEDULING_AND_JITTER.md"
+                  }
+                ]
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "3e0de1e3::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 2166,
+                  "to": 2233
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "3e0de1e3::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- use a fixed scheduler preset when comparing candidate vs baseline",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "use a fixed scheduler preset when comparing candidate vs baseline"
+                        }
+                      ],
+                      "range": {
+                        "from": 2166,
+                        "to": 2233
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "use a fixed scheduler preset when comparing candidate vs baseline"
+                              }
+                            ],
+                            "text": "use a fixed scheduler preset when comparing candidate vs baseline",
+                            "raw": "- use a fixed scheduler preset when comparing candidate vs baseline"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "use a fixed scheduler preset when comparing candidate vs baseline"
+                    }
+                  ],
+                  "text": "use a fixed scheduler preset when comparing candidate vs baseline",
+                  "raw": "- use a fixed scheduler preset when comparing candidate vs baseline"
+                },
+                "children": []
+              },
+              {
+                "id": "3e0de1e3::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 2234,
+                  "to": 2334
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "3e0de1e3::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- do not change scheduler knobs mid-comparison and then treat the result as a pure renderer win/loss",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "do not change scheduler knobs mid-comparison and then treat the result as a pure renderer win/loss"
+                        }
+                      ],
+                      "range": {
+                        "from": 2234,
+                        "to": 2334
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "do not change scheduler knobs mid-comparison and then treat the result as a pure renderer win/loss"
+                              }
+                            ],
+                            "text": "do not change scheduler knobs mid-comparison and then treat the result as a pure renderer win/loss",
+                            "raw": "- do not change scheduler knobs mid-comparison and then treat the result as a pure renderer win/loss"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "do not change scheduler knobs mid-comparison and then treat the result as a pure renderer win/loss"
+                    }
+                  ],
+                  "text": "do not change scheduler knobs mid-comparison and then treat the result as a pure renderer win/loss",
+                  "raw": "- do not change scheduler knobs mid-comparison and then treat the result as a pure renderer win/loss"
+                },
+                "children": []
+              },
+              {
+                "id": "3e0de1e3::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 2335,
+                  "to": 2492
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "3e0de1e3::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- if you need claim-grade browser comparisons, line them up with the locked methodology described in [`SCHEDULING_AND_JITTER.md`](./SCHEDULING_AND_JITTER.md)",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "if you need claim-grade browser comparisons, line them up with the locked methodology described in "
+                        },
+                        {
+                          "kind": "link",
+                          "href": "./SCHEDULING_AND_JITTER.md",
+                          "children": [
+                            {
+                              "kind": "code",
+                              "text": "SCHEDULING_AND_JITTER.md"
+                            }
+                          ]
+                        }
+                      ],
+                      "range": {
+                        "from": 2335,
+                        "to": 2492
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "if you need claim-grade browser comparisons, line them up with the locked methodology described in "
+                              },
+                              {
+                                "kind": "link",
+                                "href": "./SCHEDULING_AND_JITTER.md",
+                                "children": [
+                                  {
+                                    "kind": "code",
+                                    "text": "SCHEDULING_AND_JITTER.md"
+                                  }
+                                ]
+                              }
+                            ],
+                            "text": "if you need claim-grade browser comparisons, line them up with the locked methodology described in SCHEDULING_AND_JITTER.md",
+                            "raw": "- if you need claim-grade browser comparisons, line them up with the locked methodology described in [`SCHEDULING_AND_JITTER.md`](./SCHEDULING_AND_JITTER.md)"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "if you need claim-grade browser comparisons, line them up with the locked methodology described in "
+                    },
+                    {
+                      "kind": "link",
+                      "href": "./SCHEDULING_AND_JITTER.md",
+                      "children": [
+                        {
+                          "kind": "code",
+                          "text": "SCHEDULING_AND_JITTER.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "text": "if you need claim-grade browser comparisons, line them up with the locked methodology described in SCHEDULING_AND_JITTER.md",
+                  "raw": "- if you need claim-grade browser comparisons, line them up with the locked methodology described in [`SCHEDULING_AND_JITTER.md`](./SCHEDULING_AND_JITTER.md)"
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 2166,
+          "to": 2492
         }
       }
     },
@@ -702,6 +1824,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "Useful scheduler-specific commands:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 2494,
           "to": 2529
@@ -720,15 +1845,18 @@
       "isFinalized": true,
       "payload": {
         "raw": "```bash\nnpm run test:regression:scheduler-parity\nSTREAM_MDX_PERF_BASE_URL=http://127.0.0.1:3012 npm run perf:characterize:scheduler\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "npm run test:regression:scheduler-parity\nSTREAM_MDX_PERF_BASE_URL=http://127.0.0.1:3012 npm run perf:characterize:scheduler",
+          "info": "bash",
+          "lang": "bash",
+          "highlightLang": "bash"
+        },
         "range": {
           "from": 2531,
           "to": 2666
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> test:regression:scheduler-parity</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">STREAM_MDX_PERF_BASE_URL</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">http://127.0.0.1:3012</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:characterize:scheduler</span></span></code></pre>",
-        "meta": {
-          "lang": "bash",
-          "code": "npm run test:regression:scheduler-parity\nSTREAM_MDX_PERF_BASE_URL=http://127.0.0.1:3012 npm run perf:characterize:scheduler"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-bash\" data-language=\"bash\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> test:regression:scheduler-parity</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">STREAM_MDX_PERF_BASE_URL</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">http://127.0.0.1:3012</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:characterize:scheduler</span></span></code></pre>"
       }
     },
     {
@@ -737,12 +1865,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- `test:regression:scheduler-parity` checks that representative fixtures converge to the same final HTML under `smooth`, `timeout`, and `microtask`.\n- `perf:characterize:scheduler` writes a local `CI locked` vs `Explore` summary to `tmp/perf-runs/scheduler-characterization/`.",
-        "range": {
-          "from": 2668,
-          "to": 2944
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -813,7 +1948,304 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "333e504a::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 2668,
+                  "to": 2816
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "333e504a::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `test:regression:scheduler-parity` checks that representative fixtures converge to the same final HTML under `smooth`, `timeout`, and `microtask`.",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "test:regression:scheduler-parity"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " checks that representative fixtures converge to the same final HTML under "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "smooth"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "timeout"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", and "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "microtask"
+                        },
+                        {
+                          "kind": "text",
+                          "text": "."
+                        }
+                      ],
+                      "range": {
+                        "from": 2668,
+                        "to": 2816
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "test:regression:scheduler-parity"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " checks that representative fixtures converge to the same final HTML under "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "smooth"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "timeout"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", and "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "microtask"
+                              },
+                              {
+                                "kind": "text",
+                                "text": "."
+                              }
+                            ],
+                            "text": "test:regression:scheduler-parity checks that representative fixtures converge to the same final HTML under smooth, timeout, and microtask.",
+                            "raw": "- `test:regression:scheduler-parity` checks that representative fixtures converge to the same final HTML under `smooth`, `timeout`, and `microtask`."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "test:regression:scheduler-parity"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " checks that representative fixtures converge to the same final HTML under "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "smooth"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "timeout"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", and "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "microtask"
+                    },
+                    {
+                      "kind": "text",
+                      "text": "."
+                    }
+                  ],
+                  "text": "test:regression:scheduler-parity checks that representative fixtures converge to the same final HTML under smooth, timeout, and microtask.",
+                  "raw": "- `test:regression:scheduler-parity` checks that representative fixtures converge to the same final HTML under `smooth`, `timeout`, and `microtask`."
+                },
+                "children": []
+              },
+              {
+                "id": "333e504a::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 2817,
+                  "to": 2944
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "333e504a::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `perf:characterize:scheduler` writes a local `CI locked` vs `Explore` summary to `tmp/perf-runs/scheduler-characterization/`.",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "perf:characterize:scheduler"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " writes a local "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "CI locked"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " vs "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "Explore"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " summary to "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "tmp/perf-runs/scheduler-characterization/"
+                        },
+                        {
+                          "kind": "text",
+                          "text": "."
+                        }
+                      ],
+                      "range": {
+                        "from": 2817,
+                        "to": 2944
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "perf:characterize:scheduler"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " writes a local "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "CI locked"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " vs "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "Explore"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " summary to "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "tmp/perf-runs/scheduler-characterization/"
+                              },
+                              {
+                                "kind": "text",
+                                "text": "."
+                              }
+                            ],
+                            "text": "perf:characterize:scheduler writes a local CI locked vs Explore summary to tmp/perf-runs/scheduler-characterization/.",
+                            "raw": "- `perf:characterize:scheduler` writes a local `CI locked` vs `Explore` summary to `tmp/perf-runs/scheduler-characterization/`."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "perf:characterize:scheduler"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " writes a local "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "CI locked"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " vs "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "Explore"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " summary to "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "tmp/perf-runs/scheduler-characterization/"
+                    },
+                    {
+                      "kind": "text",
+                      "text": "."
+                    }
+                  ],
+                  "text": "perf:characterize:scheduler writes a local CI locked vs Explore summary to tmp/perf-runs/scheduler-characterization/.",
+                  "raw": "- `perf:characterize:scheduler` writes a local `CI locked` vs `Explore` summary to `tmp/perf-runs/scheduler-characterization/`."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 2668,
+          "to": 2944
         }
       }
     },
@@ -823,14 +2255,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Optional React profiler",
-        "range": {
-          "from": 2946,
-          "to": 2972
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Optional React profiler",
           "headingId": "optional-react-profiler"
+        },
+        "range": {
+          "from": 2946,
+          "to": 2972
         },
         "inline": [
           {
@@ -846,6 +2279,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "Capture React commit durations for the `StreamingMarkdown` subtree:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 2974,
           "to": 3041
@@ -872,15 +2308,17 @@
       "isFinalized": true,
       "payload": {
         "raw": "```\n--profiler\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "--profiler",
+          "info": "",
+          "highlightLang": "text"
+        },
         "range": {
           "from": 3043,
           "to": 3061
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>--profiler</span></span></code></pre>",
-        "meta": {
-          "lang": "text",
-          "code": "--profiler"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code><span class=\"line\" data-line=\"1\"><span>--profiler</span></span></code></pre>"
       }
     },
     {
@@ -889,6 +2327,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "This adds `profiler actual/base` stats to the summary output.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 3063,
           "to": 3124
@@ -915,14 +2356,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Optional CPU throttling",
-        "range": {
-          "from": 3126,
-          "to": 3152
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Optional CPU throttling",
           "headingId": "optional-cpu-throttling"
+        },
+        "range": {
+          "from": 3126,
+          "to": 3152
         },
         "inline": [
           {
@@ -938,6 +2380,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "You can apply a CDP CPU throttle to reduce variance (Chromium only):",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 3154,
           "to": 3222
@@ -956,15 +2401,17 @@
       "isFinalized": true,
       "payload": {
         "raw": "```\n--cpuThrottle 4\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "--cpuThrottle 4",
+          "info": "",
+          "highlightLang": "text"
+        },
         "range": {
           "from": 3224,
           "to": 3247
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>--cpuThrottle 4</span></span></code></pre>",
-        "meta": {
-          "lang": "text",
-          "code": "--cpuThrottle 4"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code><span class=\"line\" data-line=\"1\"><span>--cpuThrottle 4</span></span></code></pre>"
       }
     },
     {
@@ -973,6 +2420,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "Omit the flag to run unthrottled.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 3249,
           "to": 3282
@@ -991,14 +2441,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Compare / gate perf runs",
-        "range": {
-          "from": 3284,
-          "to": 3311
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Compare / gate perf runs",
           "headingId": "compare-gate-perf-runs"
+        },
+        "range": {
+          "from": 3284,
+          "to": 3311
         },
         "inline": [
           {
@@ -1014,15 +2465,17 @@
       "isFinalized": true,
       "payload": {
         "raw": "```\nnpm run perf:compare -- --base tmp/perf-runs/<base>/summary.json --candidate tmp/perf-runs/<cand>/summary.json\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "npm run perf:compare -- --base tmp/perf-runs/<base>/summary.json --candidate tmp/perf-runs/<cand>/summary.json",
+          "info": "",
+          "highlightLang": "text"
+        },
         "range": {
           "from": 3313,
           "to": 3431
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>npm run perf:compare -- --base tmp/perf-runs/&#x3C;base>/summary.json --candidate tmp/perf-runs/&#x3C;cand>/summary.json</span></span></code></pre>",
-        "meta": {
-          "lang": "text",
-          "code": "npm run perf:compare -- --base tmp/perf-runs/<base>/summary.json --candidate tmp/perf-runs/<cand>/summary.json"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code><span class=\"line\" data-line=\"1\"><span>npm run perf:compare -- --base tmp/perf-runs/&#x3C;base>/summary.json --candidate tmp/perf-runs/&#x3C;cand>/summary.json</span></span></code></pre>"
       }
     },
     {
@@ -1031,6 +2484,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "Add `--gate` to fail on regressions. Defaults are conservative; override per metric:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 3433,
           "to": 3517
@@ -1057,15 +2513,17 @@
       "isFinalized": true,
       "payload": {
         "raw": "```\n--durationP95MaxPct 0.1\n--firstFlushP95MaxPct 0.1\n--longTaskP95MaxPct 0.25\n--rafP95MaxPct 0.2\n--memoryPeakP95MaxPct 0.15\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "--durationP95MaxPct 0.1\n--firstFlushP95MaxPct 0.1\n--longTaskP95MaxPct 0.25\n--rafP95MaxPct 0.2\n--memoryPeakP95MaxPct 0.15",
+          "info": "",
+          "highlightLang": "text"
+        },
         "range": {
           "from": 3519,
           "to": 3647
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>--durationP95MaxPct 0.1</span></span>\n<span class=\"line\" data-line=\"2\"><span>--firstFlushP95MaxPct 0.1</span></span>\n<span class=\"line\" data-line=\"3\"><span>--longTaskP95MaxPct 0.25</span></span>\n<span class=\"line\" data-line=\"4\"><span>--rafP95MaxPct 0.2</span></span>\n<span class=\"line\" data-line=\"5\"><span>--memoryPeakP95MaxPct 0.15</span></span></code></pre>",
-        "meta": {
-          "lang": "text",
-          "code": "--durationP95MaxPct 0.1\n--firstFlushP95MaxPct 0.1\n--longTaskP95MaxPct 0.25\n--rafP95MaxPct 0.2\n--memoryPeakP95MaxPct 0.15"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code><span class=\"line\" data-line=\"1\"><span>--durationP95MaxPct 0.1</span></span>\n<span class=\"line\" data-line=\"2\"><span>--firstFlushP95MaxPct 0.1</span></span>\n<span class=\"line\" data-line=\"3\"><span>--longTaskP95MaxPct 0.25</span></span>\n<span class=\"line\" data-line=\"4\"><span>--rafP95MaxPct 0.2</span></span>\n<span class=\"line\" data-line=\"5\"><span>--memoryPeakP95MaxPct 0.15</span></span></code></pre>"
       }
     },
     {
@@ -1074,14 +2532,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Gate both baselines in one command",
-        "range": {
-          "from": 3649,
-          "to": 3687
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading3",
           "headingLevel": 3,
           "headingText": "Gate both baselines in one command",
           "headingId": "gate-both-baselines-in-one-command"
+        },
+        "range": {
+          "from": 3649,
+          "to": 3687
         },
         "inline": [
           {
@@ -1097,15 +2556,17 @@
       "isFinalized": true,
       "payload": {
         "raw": "```\nnpm run perf:gate -- --candidateS2 tmp/perf-runs/<s2-run> --candidateS3 tmp/perf-runs/<s3-run> --gate\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "npm run perf:gate -- --candidateS2 tmp/perf-runs/<s2-run> --candidateS3 tmp/perf-runs/<s3-run> --gate",
+          "info": "",
+          "highlightLang": "text"
+        },
         "range": {
           "from": 3689,
           "to": 3798
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>npm run perf:gate -- --candidateS2 tmp/perf-runs/&#x3C;s2-run> --candidateS3 tmp/perf-runs/&#x3C;s3-run> --gate</span></span></code></pre>",
-        "meta": {
-          "lang": "text",
-          "code": "npm run perf:gate -- --candidateS2 tmp/perf-runs/<s2-run> --candidateS3 tmp/perf-runs/<s3-run> --gate"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code><span class=\"line\" data-line=\"1\"><span>npm run perf:gate -- --candidateS2 tmp/perf-runs/&#x3C;s2-run> --candidateS3 tmp/perf-runs/&#x3C;s3-run> --gate</span></span></code></pre>"
       }
     },
     {
@@ -1114,14 +2575,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Optional edge-like long-run gate",
-        "range": {
-          "from": 3800,
-          "to": 3836
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading3",
           "headingLevel": 3,
           "headingText": "Optional edge-like long-run gate",
           "headingId": "optional-edge-like-long-run-gate"
+        },
+        "range": {
+          "from": 3800,
+          "to": 3836
         },
         "inline": [
           {
@@ -1137,6 +2599,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "To include an edge-like stress scenario in the same gate command, pass `--candidateEdge`\n(alias: `--candidateS6`) and provide a matching baseline path:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 3838,
           "to": 3989
@@ -1171,15 +2636,17 @@
       "isFinalized": true,
       "payload": {
         "raw": "```\nnpm run perf:gate -- \\\n  --candidateS2 tmp/perf-runs/<s2-run> \\\n  --candidateS3 tmp/perf-runs/<s3-run> \\\n  --candidateEdge tmp/perf-runs/<table-large-s6-run> \\\n  --baseEdge tmp/perf-baselines/S6_extreme_edge_like \\\n  --gate\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "npm run perf:gate -- \\\n  --candidateS2 tmp/perf-runs/<s2-run> \\\n  --candidateS3 tmp/perf-runs/<s3-run> \\\n  --candidateEdge tmp/perf-runs/<table-large-s6-run> \\\n  --baseEdge tmp/perf-baselines/S6_extreme_edge_like \\\n  --gate",
+          "info": "",
+          "highlightLang": "text"
+        },
         "range": {
           "from": 3991,
           "to": 4222
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>npm run perf:gate -- \\</span></span>\n<span class=\"line\" data-line=\"2\"><span>  --candidateS2 tmp/perf-runs/&#x3C;s2-run> \\</span></span>\n<span class=\"line\" data-line=\"3\"><span>  --candidateS3 tmp/perf-runs/&#x3C;s3-run> \\</span></span>\n<span class=\"line\" data-line=\"4\"><span>  --candidateEdge tmp/perf-runs/&#x3C;table-large-s6-run> \\</span></span>\n<span class=\"line\" data-line=\"5\"><span>  --baseEdge tmp/perf-baselines/S6_extreme_edge_like \\</span></span>\n<span class=\"line\" data-line=\"6\"><span>  --gate</span></span></code></pre>",
-        "meta": {
-          "lang": "text",
-          "code": "npm run perf:gate -- \\\n  --candidateS2 tmp/perf-runs/<s2-run> \\\n  --candidateS3 tmp/perf-runs/<s3-run> \\\n  --candidateEdge tmp/perf-runs/<table-large-s6-run> \\\n  --baseEdge tmp/perf-baselines/S6_extreme_edge_like \\\n  --gate"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code><span class=\"line\" data-line=\"1\"><span>npm run perf:gate -- \\</span></span>\n<span class=\"line\" data-line=\"2\"><span>  --candidateS2 tmp/perf-runs/&#x3C;s2-run> \\</span></span>\n<span class=\"line\" data-line=\"3\"><span>  --candidateS3 tmp/perf-runs/&#x3C;s3-run> \\</span></span>\n<span class=\"line\" data-line=\"4\"><span>  --candidateEdge tmp/perf-runs/&#x3C;table-large-s6-run> \\</span></span>\n<span class=\"line\" data-line=\"5\"><span>  --baseEdge tmp/perf-baselines/S6_extreme_edge_like \\</span></span>\n<span class=\"line\" data-line=\"6\"><span>  --gate</span></span></code></pre>"
       }
     },
     {
@@ -1188,6 +2655,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "If `candidateEdge` is omitted, the edge-like gate is skipped.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 4224,
           "to": 4285
@@ -1214,14 +2684,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Baselines",
-        "range": {
-          "from": 4287,
-          "to": 4299
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Baselines",
           "headingId": "baselines"
+        },
+        "range": {
+          "from": 4287,
+          "to": 4299
         },
         "inline": [
           {
@@ -1237,6 +2708,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "Canonical baselines live under:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 4301,
           "to": 4332
@@ -1255,15 +2729,17 @@
       "isFinalized": true,
       "payload": {
         "raw": "```\ntmp/perf-baselines/S2_typical\ntmp/perf-baselines/S3_fast_reasonable\ntmp/perf-baselines/S6_extreme_edge_like (optional edge-like stress baseline)\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "tmp/perf-baselines/S2_typical\ntmp/perf-baselines/S3_fast_reasonable\ntmp/perf-baselines/S6_extreme_edge_like (optional edge-like stress baseline)",
+          "info": "",
+          "highlightLang": "text"
+        },
         "range": {
           "from": 4334,
           "to": 4486
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>tmp/perf-baselines/S2_typical</span></span>\n<span class=\"line\" data-line=\"2\"><span>tmp/perf-baselines/S3_fast_reasonable</span></span>\n<span class=\"line\" data-line=\"3\"><span>tmp/perf-baselines/S6_extreme_edge_like (optional edge-like stress baseline)</span></span></code></pre>",
-        "meta": {
-          "lang": "text",
-          "code": "tmp/perf-baselines/S2_typical\ntmp/perf-baselines/S3_fast_reasonable\ntmp/perf-baselines/S6_extreme_edge_like (optional edge-like stress baseline)"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code><span class=\"line\" data-line=\"1\"><span>tmp/perf-baselines/S2_typical</span></span>\n<span class=\"line\" data-line=\"2\"><span>tmp/perf-baselines/S3_fast_reasonable</span></span>\n<span class=\"line\" data-line=\"3\"><span>tmp/perf-baselines/S6_extreme_edge_like (optional edge-like stress baseline)</span></span></code></pre>"
       }
     },
     {
@@ -1272,14 +2748,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Notes",
-        "range": {
-          "from": 4488,
-          "to": 4496
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Notes",
           "headingId": "notes"
+        },
+        "range": {
+          "from": 4488,
+          "to": 4496
         },
         "inline": [
           {
@@ -1295,12 +2772,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- Memory sampling is only available in Chromium (`performance.memory`).\n- CDP metrics and DOM counters come from `Performance.getMetrics` and `Memory.getDOMCounters` (Chromium only).\n- This harness uses the docs worker (`/workers/markdown-worker.js`) and demo registry.\n- `perf:demo` targets the `/demo` page and is separate from this harness.\n- Treat shipped client bundle, hosted worker asset, runtime loaded code, and peak memory as different cost categories.",
-        "range": {
-          "from": 4498,
-          "to": 4960
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -1377,7 +2861,445 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "3bc51a43::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 4498,
+                  "to": 4569
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "3bc51a43::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Memory sampling is only available in Chromium (`performance.memory`).",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Memory sampling is only available in Chromium ("
+                        },
+                        {
+                          "kind": "code",
+                          "text": "performance.memory"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ")."
+                        }
+                      ],
+                      "range": {
+                        "from": 4498,
+                        "to": 4569
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Memory sampling is only available in Chromium ("
+                              },
+                              {
+                                "kind": "code",
+                                "text": "performance.memory"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ")."
+                              }
+                            ],
+                            "text": "Memory sampling is only available in Chromium (performance.memory).",
+                            "raw": "- Memory sampling is only available in Chromium (`performance.memory`)."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Memory sampling is only available in Chromium ("
+                    },
+                    {
+                      "kind": "code",
+                      "text": "performance.memory"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ")."
+                    }
+                  ],
+                  "text": "Memory sampling is only available in Chromium (performance.memory).",
+                  "raw": "- Memory sampling is only available in Chromium (`performance.memory`)."
+                },
+                "children": []
+              },
+              {
+                "id": "3bc51a43::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 4570,
+                  "to": 4680
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "3bc51a43::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- CDP metrics and DOM counters come from `Performance.getMetrics` and `Memory.getDOMCounters` (Chromium only).",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "CDP metrics and DOM counters come from "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "Performance.getMetrics"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " and "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "Memory.getDOMCounters"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " (Chromium only)."
+                        }
+                      ],
+                      "range": {
+                        "from": 4570,
+                        "to": 4680
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "CDP metrics and DOM counters come from "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "Performance.getMetrics"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " and "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "Memory.getDOMCounters"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " (Chromium only)."
+                              }
+                            ],
+                            "text": "CDP metrics and DOM counters come from Performance.getMetrics and Memory.getDOMCounters (Chromium only).",
+                            "raw": "- CDP metrics and DOM counters come from `Performance.getMetrics` and `Memory.getDOMCounters` (Chromium only)."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "CDP metrics and DOM counters come from "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "Performance.getMetrics"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " and "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "Memory.getDOMCounters"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " (Chromium only)."
+                    }
+                  ],
+                  "text": "CDP metrics and DOM counters come from Performance.getMetrics and Memory.getDOMCounters (Chromium only).",
+                  "raw": "- CDP metrics and DOM counters come from `Performance.getMetrics` and `Memory.getDOMCounters` (Chromium only)."
+                },
+                "children": []
+              },
+              {
+                "id": "3bc51a43::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 4681,
+                  "to": 4767
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "3bc51a43::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- This harness uses the docs worker (`/workers/markdown-worker.js`) and demo registry.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "This harness uses the docs worker ("
+                        },
+                        {
+                          "kind": "code",
+                          "text": "/workers/markdown-worker.js"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ") and demo registry."
+                        }
+                      ],
+                      "range": {
+                        "from": 4681,
+                        "to": 4767
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "This harness uses the docs worker ("
+                              },
+                              {
+                                "kind": "code",
+                                "text": "/workers/markdown-worker.js"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ") and demo registry."
+                              }
+                            ],
+                            "text": "This harness uses the docs worker (/workers/markdown-worker.js) and demo registry.",
+                            "raw": "- This harness uses the docs worker (`/workers/markdown-worker.js`) and demo registry."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "This harness uses the docs worker ("
+                    },
+                    {
+                      "kind": "code",
+                      "text": "/workers/markdown-worker.js"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ") and demo registry."
+                    }
+                  ],
+                  "text": "This harness uses the docs worker (/workers/markdown-worker.js) and demo registry.",
+                  "raw": "- This harness uses the docs worker (`/workers/markdown-worker.js`) and demo registry."
+                },
+                "children": []
+              },
+              {
+                "id": "3bc51a43::item:3",
+                "type": "list-item",
+                "range": {
+                  "from": 4768,
+                  "to": 4841
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "3bc51a43::item:3",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `perf:demo` targets the `/demo` page and is separate from this harness.",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "perf:demo"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " targets the "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "/demo"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " page and is separate from this harness."
+                        }
+                      ],
+                      "range": {
+                        "from": 4768,
+                        "to": 4841
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 3,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "perf:demo"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " targets the "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "/demo"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " page and is separate from this harness."
+                              }
+                            ],
+                            "text": "perf:demo targets the /demo page and is separate from this harness.",
+                            "raw": "- `perf:demo` targets the `/demo` page and is separate from this harness."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 3,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "perf:demo"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " targets the "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "/demo"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " page and is separate from this harness."
+                    }
+                  ],
+                  "text": "perf:demo targets the /demo page and is separate from this harness.",
+                  "raw": "- `perf:demo` targets the `/demo` page and is separate from this harness."
+                },
+                "children": []
+              },
+              {
+                "id": "3bc51a43::item:4",
+                "type": "list-item",
+                "range": {
+                  "from": 4842,
+                  "to": 4960
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "3bc51a43::item:4",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Treat shipped client bundle, hosted worker asset, runtime loaded code, and peak memory as different cost categories.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Treat shipped client bundle, hosted worker asset, runtime loaded code, and peak memory as different cost categories."
+                        }
+                      ],
+                      "range": {
+                        "from": 4842,
+                        "to": 4960
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 4,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Treat shipped client bundle, hosted worker asset, runtime loaded code, and peak memory as different cost categories."
+                              }
+                            ],
+                            "text": "Treat shipped client bundle, hosted worker asset, runtime loaded code, and peak memory as different cost categories.",
+                            "raw": "- Treat shipped client bundle, hosted worker asset, runtime loaded code, and peak memory as different cost categories."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 4,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Treat shipped client bundle, hosted worker asset, runtime loaded code, and peak memory as different cost categories."
+                    }
+                  ],
+                  "text": "Treat shipped client bundle, hosted worker asset, runtime loaded code, and peak memory as different cost categories.",
+                  "raw": "- Treat shipped client bundle, hosted worker asset, runtime loaded code, and peak memory as different cost categories."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 4498,
+          "to": 4960
         }
       }
     }
@@ -1385,75 +3307,75 @@
   "tocHeadings": [
     {
       "id": "streammdx-perf-harness",
-      "text": "StreamMDX Perf Harness",
+      "blockId": "db082c0",
       "level": 1,
-      "blockId": "db082c0"
+      "text": "StreamMDX Perf Harness"
     },
     {
       "id": "prereqs",
-      "text": "Prereqs",
+      "blockId": "8960444",
       "level": 2,
-      "blockId": "8960444"
+      "text": "Prereqs"
     },
     {
       "id": "run-the-harness",
-      "text": "Run the harness",
+      "blockId": "7d2f1df6",
       "level": 2,
-      "blockId": "7d2f1df6"
+      "text": "Run the harness"
     },
     {
       "id": "fixtures-and-scenarios",
-      "text": "Fixtures and scenarios",
+      "blockId": "4df817d9",
       "level": 2,
-      "blockId": "4df817d9"
+      "text": "Fixtures and scenarios"
     },
     {
       "id": "scheduling-presets",
-      "text": "Scheduling presets",
+      "blockId": "17379bf6",
       "level": 2,
-      "blockId": "17379bf6"
+      "text": "Scheduling presets"
     },
     {
       "id": "optional-react-profiler",
-      "text": "Optional React profiler",
+      "blockId": "73fb8af7",
       "level": 2,
-      "blockId": "73fb8af7"
+      "text": "Optional React profiler"
     },
     {
       "id": "optional-cpu-throttling",
-      "text": "Optional CPU throttling",
+      "blockId": "3fda222",
       "level": 2,
-      "blockId": "3fda222"
+      "text": "Optional CPU throttling"
     },
     {
       "id": "compare-gate-perf-runs",
-      "text": "Compare / gate perf runs",
+      "blockId": "2a121d9b",
       "level": 2,
-      "blockId": "2a121d9b"
+      "text": "Compare / gate perf runs"
     },
     {
       "id": "gate-both-baselines-in-one-command",
-      "text": "Gate both baselines in one command",
+      "blockId": "6e2ab0d8",
       "level": 3,
-      "blockId": "6e2ab0d8"
+      "text": "Gate both baselines in one command"
     },
     {
       "id": "optional-edge-like-long-run-gate",
-      "text": "Optional edge-like long-run gate",
+      "blockId": "4beef6db",
       "level": 3,
-      "blockId": "4beef6db"
+      "text": "Optional edge-like long-run gate"
     },
     {
       "id": "baselines",
-      "text": "Baselines",
+      "blockId": "116ef003",
       "level": 2,
-      "blockId": "116ef003"
+      "text": "Baselines"
     },
     {
       "id": "notes",
-      "text": "Notes",
+      "blockId": "53611b80",
       "level": 2,
-      "blockId": "53611b80"
+      "text": "Notes"
     }
   ],
   "init": {

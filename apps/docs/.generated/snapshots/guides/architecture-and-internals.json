@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-02-11T20:25:57.525Z",
-  "hash": "76bd78e3df118d66ed23fafa80dad95488e43f362759fe6535c878706ef53933",
+  "createdAt": "2026-10-08T19:49:00.974Z",
+  "hash": "72c827ef46c9589b525805641b60954d4cc9380446da42130504ca750f58e9d5",
   "contentHash": "00afb1c7c4a688a0be1139d5cf44d0cd516274b488713c4766eb3598f0f6f9bb",
-  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
-  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "configHash": "a274f269183e8eac42eeb12b1ae0dc7fea9398cc27792626c9ca0c17911fb0b4",
+  "hashSalt": "docs-snapshots-v2:9417117db4c19b323c5bd2a5c7754c6e0d46bf7c962c13c422b86e6485aac7c0",
   "blocks": [
     {
       "id": "db082c0",
@@ -13,14 +13,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Architecture and Internals",
-        "range": {
-          "from": 0,
-          "to": 28
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading1",
           "headingLevel": 1,
           "headingText": "Architecture and Internals",
           "headingId": "architecture-and-internals"
+        },
+        "range": {
+          "from": 0,
+          "to": 28
         },
         "inline": [
           {
@@ -36,6 +37,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "This is a high-level map of the StreamMDX pipeline and the decisions that keep streaming fast while preserving output correctness.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 30,
           "to": 160
@@ -54,14 +58,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Pipeline overview",
-        "range": {
-          "from": 162,
-          "to": 182
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Pipeline overview",
           "headingId": "pipeline-overview"
+        },
+        "range": {
+          "from": 162,
+          "to": 182
         },
         "inline": [
           {
@@ -77,12 +82,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "1. **Worker ingestion**: content arrives in chunks; the worker parses and emits patches.\n2. **Block enrichment**: inline parsing, math detection, and HTML/MDX detection happen at block level.\n3. **Patch coalescing**: patches are merged into minimal operations.\n4. **React render**: patches update the renderer store, then the React tree.",
-        "range": {
-          "from": 184,
-          "to": 521
-        },
         "meta": {
+          "lezerNodeType": "OrderedList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": true,
+          "loose": false,
           "items": [
             [
               {
@@ -145,7 +157,362 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": true,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "3cc12799::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 184,
+                  "to": 272
+                },
+                "props": {
+                  "ordered": true,
+                  "loose": false,
+                  "block": {
+                    "id": "3cc12799::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "1. **Worker ingestion**: content arrives in chunks; the worker parses and emits patches.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Worker ingestion"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": content arrives in chunks; the worker parses and emits patches."
+                        }
+                      ],
+                      "range": {
+                        "from": 184,
+                        "to": 272
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": true,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Worker ingestion"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": content arrives in chunks; the worker parses and emits patches."
+                              }
+                            ],
+                            "text": "Worker ingestion: content arrives in chunks; the worker parses and emits patches.",
+                            "raw": "1. **Worker ingestion**: content arrives in chunks; the worker parses and emits patches."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Worker ingestion"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": content arrives in chunks; the worker parses and emits patches."
+                    }
+                  ],
+                  "text": "Worker ingestion: content arrives in chunks; the worker parses and emits patches.",
+                  "raw": "1. **Worker ingestion**: content arrives in chunks; the worker parses and emits patches."
+                },
+                "children": []
+              },
+              {
+                "id": "3cc12799::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 273,
+                  "to": 375
+                },
+                "props": {
+                  "ordered": true,
+                  "loose": false,
+                  "block": {
+                    "id": "3cc12799::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "2. **Block enrichment**: inline parsing, math detection, and HTML/MDX detection happen at block level.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Block enrichment"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": inline parsing, math detection, and HTML/MDX detection happen at block level."
+                        }
+                      ],
+                      "range": {
+                        "from": 273,
+                        "to": 375
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": true,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Block enrichment"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": inline parsing, math detection, and HTML/MDX detection happen at block level."
+                              }
+                            ],
+                            "text": "Block enrichment: inline parsing, math detection, and HTML/MDX detection happen at block level.",
+                            "raw": "2. **Block enrichment**: inline parsing, math detection, and HTML/MDX detection happen at block level."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Block enrichment"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": inline parsing, math detection, and HTML/MDX detection happen at block level."
+                    }
+                  ],
+                  "text": "Block enrichment: inline parsing, math detection, and HTML/MDX detection happen at block level.",
+                  "raw": "2. **Block enrichment**: inline parsing, math detection, and HTML/MDX detection happen at block level."
+                },
+                "children": []
+              },
+              {
+                "id": "3cc12799::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 376,
+                  "to": 444
+                },
+                "props": {
+                  "ordered": true,
+                  "loose": false,
+                  "block": {
+                    "id": "3cc12799::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "3. **Patch coalescing**: patches are merged into minimal operations.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Patch coalescing"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": patches are merged into minimal operations."
+                        }
+                      ],
+                      "range": {
+                        "from": 376,
+                        "to": 444
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": true,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Patch coalescing"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": patches are merged into minimal operations."
+                              }
+                            ],
+                            "text": "Patch coalescing: patches are merged into minimal operations.",
+                            "raw": "3. **Patch coalescing**: patches are merged into minimal operations."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Patch coalescing"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": patches are merged into minimal operations."
+                    }
+                  ],
+                  "text": "Patch coalescing: patches are merged into minimal operations.",
+                  "raw": "3. **Patch coalescing**: patches are merged into minimal operations."
+                },
+                "children": []
+              },
+              {
+                "id": "3cc12799::item:3",
+                "type": "list-item",
+                "range": {
+                  "from": 445,
+                  "to": 521
+                },
+                "props": {
+                  "ordered": true,
+                  "loose": false,
+                  "block": {
+                    "id": "3cc12799::item:3",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "4. **React render**: patches update the renderer store, then the React tree.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "React render"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": patches update the renderer store, then the React tree."
+                        }
+                      ],
+                      "range": {
+                        "from": 445,
+                        "to": 521
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": true,
+                            "loose": false,
+                            "index": 3,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "React render"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": patches update the renderer store, then the React tree."
+                              }
+                            ],
+                            "text": "React render: patches update the renderer store, then the React tree.",
+                            "raw": "4. **React render**: patches update the renderer store, then the React tree."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 3,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "React render"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": patches update the renderer store, then the React tree."
+                    }
+                  ],
+                  "text": "React render: patches update the renderer store, then the React tree.",
+                  "raw": "4. **React render**: patches update the renderer store, then the React tree."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 184,
+          "to": 521
         }
       }
     },
@@ -155,14 +522,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Patch coalescing",
-        "range": {
-          "from": 523,
-          "to": 542
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Patch coalescing",
           "headingId": "patch-coalescing"
+        },
+        "range": {
+          "from": 523,
+          "to": 542
         },
         "inline": [
           {
@@ -178,6 +546,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "StreamMDX consolidates patch operations to reduce DOM work per tick. The goal is to keep queue depth low and avoid re-rendering stable nodes.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 544,
           "to": 685
@@ -196,14 +567,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Renderer store",
-        "range": {
-          "from": 687,
-          "to": 704
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Renderer store",
           "headingId": "renderer-store"
+        },
+        "range": {
+          "from": 687,
+          "to": 704
         },
         "inline": [
           {
@@ -219,6 +591,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "The renderer store holds a normalized tree of nodes (blocks + children). It supports:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 706,
           "to": 791
@@ -237,12 +612,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- Deterministic patch application\n- List depth normalization\n- Snapshot caching for React rendering",
-        "range": {
-          "from": 793,
-          "to": 892
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -263,7 +645,195 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "65b74843::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 793,
+                  "to": 826
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "65b74843::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Deterministic patch application",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Deterministic patch application"
+                        }
+                      ],
+                      "range": {
+                        "from": 793,
+                        "to": 826
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Deterministic patch application"
+                              }
+                            ],
+                            "text": "Deterministic patch application",
+                            "raw": "- Deterministic patch application"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Deterministic patch application"
+                    }
+                  ],
+                  "text": "Deterministic patch application",
+                  "raw": "- Deterministic patch application"
+                },
+                "children": []
+              },
+              {
+                "id": "65b74843::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 827,
+                  "to": 853
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "65b74843::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- List depth normalization",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "List depth normalization"
+                        }
+                      ],
+                      "range": {
+                        "from": 827,
+                        "to": 853
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "List depth normalization"
+                              }
+                            ],
+                            "text": "List depth normalization",
+                            "raw": "- List depth normalization"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "List depth normalization"
+                    }
+                  ],
+                  "text": "List depth normalization",
+                  "raw": "- List depth normalization"
+                },
+                "children": []
+              },
+              {
+                "id": "65b74843::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 854,
+                  "to": 892
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "65b74843::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Snapshot caching for React rendering",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Snapshot caching for React rendering"
+                        }
+                      ],
+                      "range": {
+                        "from": 854,
+                        "to": 892
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Snapshot caching for React rendering"
+                              }
+                            ],
+                            "text": "Snapshot caching for React rendering",
+                            "raw": "- Snapshot caching for React rendering"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Snapshot caching for React rendering"
+                    }
+                  ],
+                  "text": "Snapshot caching for React rendering",
+                  "raw": "- Snapshot caching for React rendering"
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 793,
+          "to": 892
         }
       }
     },
@@ -273,14 +843,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Streaming invariants",
-        "range": {
-          "from": 894,
-          "to": 917
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Streaming invariants",
           "headingId": "streaming-invariants"
+        },
+        "range": {
+          "from": 894,
+          "to": 917
         },
         "inline": [
           {
@@ -296,6 +867,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "The regression harness enforces invariants that catch drift:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 919,
           "to": 979
@@ -314,12 +888,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- **Root child count** should never decrease during streaming.\n- **Final HTML** should not contain raw math or raw backticks.\n- **Sanitization** removes script handlers and unsafe tags.",
-        "range": {
-          "from": 981,
-          "to": 1166
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -367,7 +948,276 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "2d64a7e::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 981,
+                  "to": 1043
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "2d64a7e::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **Root child count** should never decrease during streaming.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Root child count"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": " should never decrease during streaming."
+                        }
+                      ],
+                      "range": {
+                        "from": 981,
+                        "to": 1043
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Root child count"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": " should never decrease during streaming."
+                              }
+                            ],
+                            "text": "Root child count should never decrease during streaming.",
+                            "raw": "- **Root child count** should never decrease during streaming."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Root child count"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": " should never decrease during streaming."
+                    }
+                  ],
+                  "text": "Root child count should never decrease during streaming.",
+                  "raw": "- **Root child count** should never decrease during streaming."
+                },
+                "children": []
+              },
+              {
+                "id": "2d64a7e::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 1044,
+                  "to": 1106
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "2d64a7e::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **Final HTML** should not contain raw math or raw backticks.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Final HTML"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": " should not contain raw math or raw backticks."
+                        }
+                      ],
+                      "range": {
+                        "from": 1044,
+                        "to": 1106
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Final HTML"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": " should not contain raw math or raw backticks."
+                              }
+                            ],
+                            "text": "Final HTML should not contain raw math or raw backticks.",
+                            "raw": "- **Final HTML** should not contain raw math or raw backticks."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Final HTML"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": " should not contain raw math or raw backticks."
+                    }
+                  ],
+                  "text": "Final HTML should not contain raw math or raw backticks.",
+                  "raw": "- **Final HTML** should not contain raw math or raw backticks."
+                },
+                "children": []
+              },
+              {
+                "id": "2d64a7e::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 1107,
+                  "to": 1166
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "2d64a7e::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **Sanitization** removes script handlers and unsafe tags.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Sanitization"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": " removes script handlers and unsafe tags."
+                        }
+                      ],
+                      "range": {
+                        "from": 1107,
+                        "to": 1166
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Sanitization"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": " removes script handlers and unsafe tags."
+                              }
+                            ],
+                            "text": "Sanitization removes script handlers and unsafe tags.",
+                            "raw": "- **Sanitization** removes script handlers and unsafe tags."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Sanitization"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": " removes script handlers and unsafe tags."
+                    }
+                  ],
+                  "text": "Sanitization removes script handlers and unsafe tags.",
+                  "raw": "- **Sanitization** removes script handlers and unsafe tags."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 981,
+          "to": 1166
         }
       }
     },
@@ -377,14 +1227,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "MDX and HTML boundaries",
-        "range": {
-          "from": 1168,
-          "to": 1194
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "MDX and HTML boundaries",
           "headingId": "mdx-and-html-boundaries"
+        },
+        "range": {
+          "from": 1168,
+          "to": 1194
         },
         "inline": [
           {
@@ -400,6 +1251,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "MDX compilation is decoupled from core markdown parsing:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 1196,
           "to": 1252
@@ -418,12 +1272,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- HTML/MDX is segmented into mixed content blocks.\n- MDX blocks can be compiled in the worker or server.\n- Inline protected ranges prevent false MDX detection inside code/math.",
-        "range": {
-          "from": 1254,
-          "to": 1430
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -444,7 +1305,195 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "5d3eef7c::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 1254,
+                  "to": 1304
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "5d3eef7c::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- HTML/MDX is segmented into mixed content blocks.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "HTML/MDX is segmented into mixed content blocks."
+                        }
+                      ],
+                      "range": {
+                        "from": 1254,
+                        "to": 1304
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "HTML/MDX is segmented into mixed content blocks."
+                              }
+                            ],
+                            "text": "HTML/MDX is segmented into mixed content blocks.",
+                            "raw": "- HTML/MDX is segmented into mixed content blocks."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "HTML/MDX is segmented into mixed content blocks."
+                    }
+                  ],
+                  "text": "HTML/MDX is segmented into mixed content blocks.",
+                  "raw": "- HTML/MDX is segmented into mixed content blocks."
+                },
+                "children": []
+              },
+              {
+                "id": "5d3eef7c::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 1305,
+                  "to": 1358
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "5d3eef7c::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- MDX blocks can be compiled in the worker or server.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "MDX blocks can be compiled in the worker or server."
+                        }
+                      ],
+                      "range": {
+                        "from": 1305,
+                        "to": 1358
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "MDX blocks can be compiled in the worker or server."
+                              }
+                            ],
+                            "text": "MDX blocks can be compiled in the worker or server.",
+                            "raw": "- MDX blocks can be compiled in the worker or server."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "MDX blocks can be compiled in the worker or server."
+                    }
+                  ],
+                  "text": "MDX blocks can be compiled in the worker or server.",
+                  "raw": "- MDX blocks can be compiled in the worker or server."
+                },
+                "children": []
+              },
+              {
+                "id": "5d3eef7c::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 1359,
+                  "to": 1430
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "5d3eef7c::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Inline protected ranges prevent false MDX detection inside code/math.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Inline protected ranges prevent false MDX detection inside code/math."
+                        }
+                      ],
+                      "range": {
+                        "from": 1359,
+                        "to": 1430
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Inline protected ranges prevent false MDX detection inside code/math."
+                              }
+                            ],
+                            "text": "Inline protected ranges prevent false MDX detection inside code/math.",
+                            "raw": "- Inline protected ranges prevent false MDX detection inside code/math."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Inline protected ranges prevent false MDX detection inside code/math."
+                    }
+                  ],
+                  "text": "Inline protected ranges prevent false MDX detection inside code/math.",
+                  "raw": "- Inline protected ranges prevent false MDX detection inside code/math."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 1254,
+          "to": 1430
         }
       }
     },
@@ -454,14 +1503,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Scheduling and backpressure",
-        "range": {
-          "from": 1432,
-          "to": 1462
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Scheduling and backpressure",
           "headingId": "scheduling-and-backpressure"
+        },
+        "range": {
+          "from": 1432,
+          "to": 1462
         },
         "inline": [
           {
@@ -477,6 +1527,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "The scheduler controls when patches flush:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 1464,
           "to": 1506
@@ -495,12 +1548,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- **Aggressive**: prioritizes low latency.\n- **Smooth**: prioritizes frame pacing.",
-        "range": {
-          "from": 1508,
-          "to": 1590
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -533,7 +1593,190 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "6cc94fb0::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 1508,
+                  "to": 1550
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "6cc94fb0::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **Aggressive**: prioritizes low latency.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Aggressive"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": prioritizes low latency."
+                        }
+                      ],
+                      "range": {
+                        "from": 1508,
+                        "to": 1550
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Aggressive"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": prioritizes low latency."
+                              }
+                            ],
+                            "text": "Aggressive: prioritizes low latency.",
+                            "raw": "- **Aggressive**: prioritizes low latency."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Aggressive"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": prioritizes low latency."
+                    }
+                  ],
+                  "text": "Aggressive: prioritizes low latency.",
+                  "raw": "- **Aggressive**: prioritizes low latency."
+                },
+                "children": []
+              },
+              {
+                "id": "6cc94fb0::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 1551,
+                  "to": 1590
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "6cc94fb0::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **Smooth**: prioritizes frame pacing.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Smooth"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": prioritizes frame pacing."
+                        }
+                      ],
+                      "range": {
+                        "from": 1551,
+                        "to": 1590
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Smooth"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": prioritizes frame pacing."
+                              }
+                            ],
+                            "text": "Smooth: prioritizes frame pacing.",
+                            "raw": "- **Smooth**: prioritizes frame pacing."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Smooth"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": prioritizes frame pacing."
+                    }
+                  ],
+                  "text": "Smooth: prioritizes frame pacing.",
+                  "raw": "- **Smooth**: prioritizes frame pacing."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 1508,
+          "to": 1590
         }
       }
     },
@@ -543,6 +1786,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "Backpressure is exposed via metrics and can be tuned for high-volume streams.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 1592,
           "to": 1669
@@ -559,45 +1805,45 @@
   "tocHeadings": [
     {
       "id": "architecture-and-internals",
-      "text": "Architecture and Internals",
+      "blockId": "db082c0",
       "level": 1,
-      "blockId": "db082c0"
+      "text": "Architecture and Internals"
     },
     {
       "id": "pipeline-overview",
-      "text": "Pipeline overview",
+      "blockId": "1a6d6cbd",
       "level": 2,
-      "blockId": "1a6d6cbd"
+      "text": "Pipeline overview"
     },
     {
       "id": "patch-coalescing",
-      "text": "Patch coalescing",
+      "blockId": "311ee246",
       "level": 2,
-      "blockId": "311ee246"
+      "text": "Patch coalescing"
     },
     {
       "id": "renderer-store",
-      "text": "Renderer store",
+      "blockId": "2f32083b",
       "level": 2,
-      "blockId": "2f32083b"
+      "text": "Renderer store"
     },
     {
       "id": "streaming-invariants",
-      "text": "Streaming invariants",
+      "blockId": "32138163",
       "level": 2,
-      "blockId": "32138163"
+      "text": "Streaming invariants"
     },
     {
       "id": "mdx-and-html-boundaries",
-      "text": "MDX and HTML boundaries",
+      "blockId": "11b7061e",
       "level": 2,
-      "blockId": "11b7061e"
+      "text": "MDX and HTML boundaries"
     },
     {
       "id": "scheduling-and-backpressure",
-      "text": "Scheduling and backpressure",
+      "blockId": "568024c2",
       "level": 2,
-      "blockId": "568024c2"
+      "text": "Scheduling and backpressure"
     }
   ],
   "init": {

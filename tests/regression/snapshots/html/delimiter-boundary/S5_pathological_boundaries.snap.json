@@ -235,7 +235,7 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 2,
-        "lastPatchToDomMs": 0,
+        "lastPatchToDomMs": 0.10000000149011612,
         "lastDurationMs": 0,
         "meta": {
           "fixtureId": "delimiter-boundary",
@@ -301,8 +301,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 6,
-        "lastPatchToDomMs": 15.300000004470348,
-        "lastDurationMs": 0,
+        "lastPatchToDomMs": 13.800000004470348,
+        "lastDurationMs": 0.10000000149011612,
         "meta": {
           "fixtureId": "delimiter-boundary",
           "scenarioId": "S5_pathological_boundaries",
@@ -367,8 +367,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 9,
-        "lastPatchToDomMs": 15.899999998509884,
-        "lastDurationMs": 0,
+        "lastPatchToDomMs": 15.299999997019768,
+        "lastDurationMs": 0.20000000298023224,
         "meta": {
           "fixtureId": "delimiter-boundary",
           "scenarioId": "S5_pathological_boundaries",
@@ -433,8 +433,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 10,
-        "lastPatchToDomMs": 14.300000004470348,
-        "lastDurationMs": 0.5,
+        "lastPatchToDomMs": 12.099999994039536,
+        "lastDurationMs": 0.6999999955296516,
         "meta": {
           "fixtureId": "delimiter-boundary",
           "scenarioId": "S5_pathological_boundaries",
@@ -504,8 +504,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 11,
-        "lastPatchToDomMs": 13.5,
-        "lastDurationMs": 0.3999999985098839,
+        "lastPatchToDomMs": 13.599999994039536,
+        "lastDurationMs": 0.6999999955296516,
         "meta": {
           "fixtureId": "delimiter-boundary",
           "scenarioId": "S5_pathological_boundaries",
@@ -537,7 +537,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Delimiter Boundary Splitter\">Delimiter Boundary Splitter</h3><p class=\"markdown-paragraph\">*Italic start</p><p class=\"markdown-paragraph\">then end*</p><p class=\"markdown-paragraph\">**Bold start</p><p class=\"markdown-paragraph\">then end**</p><p class=\"markdown-paragraph\">~~Strike start</p><p class=\"markdown-paragraph\">then end~~</p><p class=\"markdown-paragraph\">`Inline code</p><p class=\"markdown-paragraph\">end`</p><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>code fence</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>line two</span></span></code></pre></div></div></div></div></div></div></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Delimiter Boundary Splitter\">Delimiter Boundary Splitter</h3><p class=\"markdown-paragraph\">*Italic start</p><p class=\"markdown-paragraph\">then end*</p><p class=\"markdown-paragraph\">**Bold start</p><p class=\"markdown-paragraph\">then end**</p><p class=\"markdown-paragraph\">~~Strike start</p><p class=\"markdown-paragraph\">then end~~</p><p class=\"markdown-paragraph\">`Inline code</p><p class=\"markdown-paragraph\">end`</p><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code><span class=\"line\" data-line=\"1\"><span>code fence</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>line two</span></span></code></pre></div></div></div></div></div></div></div>",
       "textSample": "Delimiter Boundary Splitter*Italic startthen end***Bold startthen end**~~Strike startthen end~~`Inline codeend`[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-ov",
       "structure": {
         "topLevelTags": [
@@ -575,7 +575,7 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 14,
-        "lastPatchToDomMs": 15.5,
+        "lastPatchToDomMs": 13.800000004470348,
         "lastDurationMs": 0.10000000149011612,
         "meta": {
           "fixtureId": "delimiter-boundary",
@@ -608,7 +608,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Delimiter Boundary Splitter\">Delimiter Boundary Splitter</h3><p class=\"markdown-paragraph\">*Italic start</p><p class=\"markdown-paragraph\">then end*</p><p class=\"markdown-paragraph\">**Bold start</p><p class=\"markdown-paragraph\">then end**</p><p class=\"markdown-paragraph\">~~Strike start</p><p class=\"markdown-paragraph\">then end~~</p><p class=\"markdown-paragraph\">`Inline code</p><p class=\"markdown-paragraph\">end`</p><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>code fence</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>line two</span></span></code></pre></div></div></div></div></div></div><p class=\"markdown-paragraph\">$</p><p class=\"markdown-paragraph\">x + y</p><p class=\"markdown-paragraph\">$$</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Delimiter Boundary Splitter\">Delimiter Boundary Splitter</h3><p class=\"markdown-paragraph\">*Italic start</p><p class=\"markdown-paragraph\">then end*</p><p class=\"markdown-paragraph\">**Bold start</p><p class=\"markdown-paragraph\">then end**</p><p class=\"markdown-paragraph\">~~Strike start</p><p class=\"markdown-paragraph\">then end~~</p><p class=\"markdown-paragraph\">`Inline code</p><p class=\"markdown-paragraph\">end`</p><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code><span class=\"line\" data-line=\"1\"><span>code fence</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>line two</span></span></code></pre></div></div></div></div></div></div><p class=\"markdown-paragraph\">$</p><p class=\"markdown-paragraph\">x + y</p><p class=\"markdown-paragraph\">$$</p></div>",
       "textSample": "Delimiter Boundary Splitter*Italic startthen end***Bold startthen end**~~Strike startthen end~~`Inline codeend`[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-ov",
       "structure": {
         "topLevelTags": [
@@ -650,15 +650,15 @@
       "hasBlockquote": false,
       "hasMath": false
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Delimiter Boundary Splitter\">Delimiter Boundary Splitter</h3><p class=\"markdown-paragraph\">*Italic start</p><p class=\"markdown-paragraph\">then end*</p><p class=\"markdown-paragraph\">**Bold start</p><p class=\"markdown-paragraph\">then end**</p><p class=\"markdown-paragraph\">~~Strike start</p><p class=\"markdown-paragraph\">then end~~</p><p class=\"markdown-paragraph\">`Inline code</p><p class=\"markdown-paragraph\">end`</p><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>code fence</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>line two</span></span></code></pre></div></div></div></div></div></div><p class=\"markdown-paragraph\">$</p><p class=\"markdown-paragraph\">x + y</p><p class=\"markdown-paragraph\">$</p></div>",
+    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Delimiter Boundary Splitter\">Delimiter Boundary Splitter</h3><p class=\"markdown-paragraph\">*Italic start</p><p class=\"markdown-paragraph\">then end*</p><p class=\"markdown-paragraph\">**Bold start</p><p class=\"markdown-paragraph\">then end**</p><p class=\"markdown-paragraph\">~~Strike start</p><p class=\"markdown-paragraph\">then end~~</p><p class=\"markdown-paragraph\">`Inline code</p><p class=\"markdown-paragraph\">end`</p><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code><span class=\"line\" data-line=\"1\"><span>code fence</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>line two</span></span></code></pre></div></div></div></div></div></div><p class=\"markdown-paragraph\">$</p><p class=\"markdown-paragraph\">x + y</p><p class=\"markdown-paragraph\">$</p></div>",
     "runtimeState": {
       "rendererVersion": 19,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
       "lastTx": 16,
-      "lastPatchToDomMs": 13.300000004470348,
-      "lastDurationMs": 0.5,
+      "lastPatchToDomMs": 15,
+      "lastDurationMs": 0.3999999985098839,
       "meta": {
         "fixtureId": "delimiter-boundary",
         "scenarioId": "S5_pathological_boundaries",
@@ -690,7 +690,7 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "abbb4a353e376d6e44236e9bbc345f7da66b47d856f729c13ce51d1d64cbcfde",
+        "hash": "3fd7332a0c837dd9586b04f20861213d054d199a3601461f5a65284921db5e42",
         "textSample": "Delimiter Boundary Splitter*Italic startthen end***Bold startthen end**~~Strike startthen end~~`Inline codeend`[data-rad"
       }
     ],

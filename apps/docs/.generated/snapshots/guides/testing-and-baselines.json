@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-02-18T18:24:35.609Z",
-  "hash": "34f42cf5bbd5d5d66328a2c21e4aec193cc0a20cfa236bc0f536c7f94b967352",
+  "createdAt": "2026-10-08T19:49:00.711Z",
+  "hash": "edc2b9abbb91617fd0351beb5eda17335a6fc692dd6f2b4c02153b6c4a3ef948",
   "contentHash": "76920229f2ecd40a57239a680bfc4fc31a36fe9f9608eeabcd5808f585a1ce5a",
-  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
-  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "configHash": "a274f269183e8eac42eeb12b1ae0dc7fea9398cc27792626c9ca0c17911fb0b4",
+  "hashSalt": "docs-snapshots-v2:9417117db4c19b323c5bd2a5c7754c6e0d46bf7c962c13c422b86e6485aac7c0",
   "blocks": [
     {
       "id": "db082c0",
@@ -13,14 +13,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Testing and Baselines",
-        "range": {
-          "from": 0,
-          "to": 23
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading1",
           "headingLevel": 1,
           "headingText": "Testing and Baselines",
           "headingId": "testing-and-baselines"
+        },
+        "range": {
+          "from": 0,
+          "to": 23
         },
         "inline": [
           {
@@ -36,6 +37,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "StreamMDX uses layered validation so rendering quality remains deterministic across releases.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 25,
           "to": 118
@@ -54,14 +58,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Test layers",
-        "range": {
-          "from": 120,
-          "to": 134
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Test layers",
           "headingId": "test-layers"
+        },
+        "range": {
+          "from": 120,
+          "to": 134
         },
         "inline": [
           {
@@ -77,12 +82,8 @@
       "isFinalized": true,
       "payload": {
         "raw": "| Layer | Goal | Command |\n| --- | --- | --- |\n| Unit tests | Parser/renderer logic correctness | `npm test` |\n| HTML regression | Lock final rendered markup | `npm run test:regression:html` |\n| Style regression | Lock key computed styles | `npm run test:regression:styles` |\n| Perf baseline | Detect latency/jank regressions | `npm run perf:demo -- ...` |",
-        "range": {
-          "from": 136,
-          "to": 492
-        },
-        "inline": [],
         "meta": {
+          "lezerNodeType": "Table",
           "header": [
             [
               {
@@ -102,6 +103,11 @@
                 "text": "Command"
               }
             ]
+          ],
+          "align": [
+            null,
+            null,
+            null
           ],
           "rows": [
             [
@@ -184,13 +190,13 @@
                 }
               ]
             ]
-          ],
-          "align": [
-            null,
-            null,
-            null
           ]
-        }
+        },
+        "range": {
+          "from": 136,
+          "to": 492
+        },
+        "inline": []
       }
     },
     {
@@ -199,14 +205,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Regression snapshot workflow",
-        "range": {
-          "from": 494,
-          "to": 525
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Regression snapshot workflow",
           "headingId": "regression-snapshot-workflow"
+        },
+        "range": {
+          "from": 494,
+          "to": 525
         },
         "inline": [
           {
@@ -222,6 +229,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "Update snapshots only when output changes are intentional.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 527,
           "to": 585
@@ -240,15 +250,18 @@
       "isFinalized": true,
       "payload": {
         "raw": "```bash\nnpm run test:regression:html:update\nnpm run test:regression:styles:update\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "npm run test:regression:html:update\nnpm run test:regression:styles:update",
+          "info": "bash",
+          "lang": "bash",
+          "highlightLang": "bash"
+        },
         "range": {
           "from": 587,
           "to": 672
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> test:regression:html:update</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> test:regression:styles:update</span></span></code></pre>",
-        "meta": {
-          "lang": "bash",
-          "code": "npm run test:regression:html:update\nnpm run test:regression:styles:update"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-bash\" data-language=\"bash\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> test:regression:html:update</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> test:regression:styles:update</span></span></code></pre>"
       }
     },
     {
@@ -257,6 +270,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "Verify no unexpected diff remains:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 674,
           "to": 708
@@ -275,15 +291,18 @@
       "isFinalized": true,
       "payload": {
         "raw": "```bash\nnpm run test:regression:html\nnpm run test:regression:styles\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "npm run test:regression:html\nnpm run test:regression:styles",
+          "info": "bash",
+          "lang": "bash",
+          "highlightLang": "bash"
+        },
         "range": {
           "from": 710,
           "to": 781
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> test:regression:html</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> test:regression:styles</span></span></code></pre>",
-        "meta": {
-          "lang": "bash",
-          "code": "npm run test:regression:html\nnpm run test:regression:styles"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-bash\" data-language=\"bash\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> test:regression:html</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> test:regression:styles</span></span></code></pre>"
       }
     },
     {
@@ -292,6 +311,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "Artifacts for failures are emitted to `tests/regression/artifacts/`.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 783,
           "to": 851
@@ -318,14 +340,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Perf baseline workflow",
-        "range": {
-          "from": 853,
-          "to": 878
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Perf baseline workflow",
           "headingId": "perf-baseline-workflow"
+        },
+        "range": {
+          "from": 853,
+          "to": 878
         },
         "inline": [
           {
@@ -341,6 +364,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "Start docs with automation API enabled:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 880,
           "to": 919
@@ -359,15 +385,18 @@
       "isFinalized": true,
       "payload": {
         "raw": "```bash\nNEXT_PUBLIC_STREAMING_DEMO_API=true npm run docs:dev\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "NEXT_PUBLIC_STREAMING_DEMO_API=true npm run docs:dev",
+          "info": "bash",
+          "lang": "bash",
+          "highlightLang": "bash"
+        },
         "range": {
           "from": 921,
           "to": 985
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">NEXT_PUBLIC_STREAMING_DEMO_API</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">true</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> docs:dev</span></span></code></pre>",
-        "meta": {
-          "lang": "bash",
-          "code": "NEXT_PUBLIC_STREAMING_DEMO_API=true npm run docs:dev"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-bash\" data-language=\"bash\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">NEXT_PUBLIC_STREAMING_DEMO_API</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">true</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> docs:dev</span></span></code></pre>"
       }
     },
     {
@@ -376,6 +405,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "Capture baseline and candidate runs:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 987,
           "to": 1023
@@ -394,15 +426,18 @@
       "isFinalized": true,
       "payload": {
         "raw": "```bash\nnpm run perf:demo -- --rate 12000 --tick 5 --runs 3 --out tmp/perf-baseline/main.json\nnpm run perf:demo -- --rate 12000 --tick 5 --runs 3 --out tmp/perf-baseline/candidate.json\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "npm run perf:demo -- --rate 12000 --tick 5 --runs 3 --out tmp/perf-baseline/main.json\nnpm run perf:demo -- --rate 12000 --tick 5 --runs 3 --out tmp/perf-baseline/candidate.json",
+          "info": "bash",
+          "lang": "bash",
+          "highlightLang": "bash"
+        },
         "range": {
           "from": 1025,
           "to": 1213
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:demo</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --rate</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 12000</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --tick</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 5</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --runs</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 3</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --out</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/perf-baseline/main.json</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:demo</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --rate</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 12000</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --tick</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 5</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --runs</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 3</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --out</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/perf-baseline/candidate.json</span></span></code></pre>",
-        "meta": {
-          "lang": "bash",
-          "code": "npm run perf:demo -- --rate 12000 --tick 5 --runs 3 --out tmp/perf-baseline/main.json\nnpm run perf:demo -- --rate 12000 --tick 5 --runs 3 --out tmp/perf-baseline/candidate.json"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-bash\" data-language=\"bash\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:demo</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --rate</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 12000</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --tick</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 5</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --runs</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 3</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --out</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/perf-baseline/main.json</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> run</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> perf:demo</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --rate</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 12000</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --tick</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 5</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --runs</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 3</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> --out</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> tmp/perf-baseline/candidate.json</span></span></code></pre>"
       }
     },
     {
@@ -411,6 +446,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "Compare key metrics:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 1215,
           "to": 1235
@@ -429,12 +467,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- first flush\n- patch p95\n- long tasks\n- memory peak\n- coalescing rate",
-        "range": {
-          "from": 1237,
-          "to": 1307
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -467,7 +512,313 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "76efd29::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 1237,
+                  "to": 1250
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "76efd29::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- first flush",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "first flush"
+                        }
+                      ],
+                      "range": {
+                        "from": 1237,
+                        "to": 1250
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "first flush"
+                              }
+                            ],
+                            "text": "first flush",
+                            "raw": "- first flush"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "first flush"
+                    }
+                  ],
+                  "text": "first flush",
+                  "raw": "- first flush"
+                },
+                "children": []
+              },
+              {
+                "id": "76efd29::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 1251,
+                  "to": 1262
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "76efd29::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- patch p95",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "patch p95"
+                        }
+                      ],
+                      "range": {
+                        "from": 1251,
+                        "to": 1262
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "patch p95"
+                              }
+                            ],
+                            "text": "patch p95",
+                            "raw": "- patch p95"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "patch p95"
+                    }
+                  ],
+                  "text": "patch p95",
+                  "raw": "- patch p95"
+                },
+                "children": []
+              },
+              {
+                "id": "76efd29::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 1263,
+                  "to": 1275
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "76efd29::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- long tasks",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "long tasks"
+                        }
+                      ],
+                      "range": {
+                        "from": 1263,
+                        "to": 1275
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "long tasks"
+                              }
+                            ],
+                            "text": "long tasks",
+                            "raw": "- long tasks"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "long tasks"
+                    }
+                  ],
+                  "text": "long tasks",
+                  "raw": "- long tasks"
+                },
+                "children": []
+              },
+              {
+                "id": "76efd29::item:3",
+                "type": "list-item",
+                "range": {
+                  "from": 1276,
+                  "to": 1289
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "76efd29::item:3",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- memory peak",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "memory peak"
+                        }
+                      ],
+                      "range": {
+                        "from": 1276,
+                        "to": 1289
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 3,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "memory peak"
+                              }
+                            ],
+                            "text": "memory peak",
+                            "raw": "- memory peak"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 3,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "memory peak"
+                    }
+                  ],
+                  "text": "memory peak",
+                  "raw": "- memory peak"
+                },
+                "children": []
+              },
+              {
+                "id": "76efd29::item:4",
+                "type": "list-item",
+                "range": {
+                  "from": 1290,
+                  "to": 1307
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "76efd29::item:4",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- coalescing rate",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "coalescing rate"
+                        }
+                      ],
+                      "range": {
+                        "from": 1290,
+                        "to": 1307
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 4,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "coalescing rate"
+                              }
+                            ],
+                            "text": "coalescing rate",
+                            "raw": "- coalescing rate"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 4,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "coalescing rate"
+                    }
+                  ],
+                  "text": "coalescing rate",
+                  "raw": "- coalescing rate"
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 1237,
+          "to": 1307
         }
       }
     },
@@ -477,14 +828,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "CI gate strategy",
-        "range": {
-          "from": 1309,
-          "to": 1328
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "CI gate strategy",
           "headingId": "ci-gate-strategy"
+        },
+        "range": {
+          "from": 1309,
+          "to": 1328
         },
         "inline": [
           {
@@ -500,6 +852,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "A practical gate strategy:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 1330,
           "to": 1356
@@ -518,12 +873,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- Always run regression snapshots on docs/site changes.\n- Run perf baseline when `packages/*`, demo renderer, or worker changes.\n- Fail PRs when thresholds exceed agreed limits.",
-        "range": {
-          "from": 1358,
-          "to": 1535
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -552,7 +914,219 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "340c8129::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 1358,
+                  "to": 1413
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "340c8129::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Always run regression snapshots on docs/site changes.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Always run regression snapshots on docs/site changes."
+                        }
+                      ],
+                      "range": {
+                        "from": 1358,
+                        "to": 1413
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Always run regression snapshots on docs/site changes."
+                              }
+                            ],
+                            "text": "Always run regression snapshots on docs/site changes.",
+                            "raw": "- Always run regression snapshots on docs/site changes."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Always run regression snapshots on docs/site changes."
+                    }
+                  ],
+                  "text": "Always run regression snapshots on docs/site changes.",
+                  "raw": "- Always run regression snapshots on docs/site changes."
+                },
+                "children": []
+              },
+              {
+                "id": "340c8129::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 1414,
+                  "to": 1486
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "340c8129::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Run perf baseline when `packages/*`, demo renderer, or worker changes.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Run perf baseline when "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "packages/*"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", demo renderer, or worker changes."
+                        }
+                      ],
+                      "range": {
+                        "from": 1414,
+                        "to": 1486
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Run perf baseline when "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "packages/*"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", demo renderer, or worker changes."
+                              }
+                            ],
+                            "text": "Run perf baseline when packages/*, demo renderer, or worker changes.",
+                            "raw": "- Run perf baseline when `packages/*`, demo renderer, or worker changes."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Run perf baseline when "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "packages/*"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", demo renderer, or worker changes."
+                    }
+                  ],
+                  "text": "Run perf baseline when packages/*, demo renderer, or worker changes.",
+                  "raw": "- Run perf baseline when `packages/*`, demo renderer, or worker changes."
+                },
+                "children": []
+              },
+              {
+                "id": "340c8129::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 1487,
+                  "to": 1535
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "340c8129::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Fail PRs when thresholds exceed agreed limits.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Fail PRs when thresholds exceed agreed limits."
+                        }
+                      ],
+                      "range": {
+                        "from": 1487,
+                        "to": 1535
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Fail PRs when thresholds exceed agreed limits."
+                              }
+                            ],
+                            "text": "Fail PRs when thresholds exceed agreed limits.",
+                            "raw": "- Fail PRs when thresholds exceed agreed limits."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Fail PRs when thresholds exceed agreed limits."
+                    }
+                  ],
+                  "text": "Fail PRs when thresholds exceed agreed limits.",
+                  "raw": "- Fail PRs when thresholds exceed agreed limits."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 1358,
+          "to": 1535
         }
       }
     },
@@ -562,6 +1136,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "Example threshold defaults:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 1537,
           "to": 1564
@@ -580,12 +1157,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- first flush regression > 15% => fail\n- patch p95 regression > 20% => fail\n- long tasks > 2x baseline => fail",
-        "range": {
-          "from": 1566,
-          "to": 1676
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -606,7 +1190,195 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "32cd9d68::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 1566,
+                  "to": 1604
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "32cd9d68::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- first flush regression > 15% => fail",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "first flush regression > 15% => fail"
+                        }
+                      ],
+                      "range": {
+                        "from": 1566,
+                        "to": 1604
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "first flush regression > 15% => fail"
+                              }
+                            ],
+                            "text": "first flush regression > 15% => fail",
+                            "raw": "- first flush regression > 15% => fail"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "first flush regression > 15% => fail"
+                    }
+                  ],
+                  "text": "first flush regression > 15% => fail",
+                  "raw": "- first flush regression > 15% => fail"
+                },
+                "children": []
+              },
+              {
+                "id": "32cd9d68::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 1605,
+                  "to": 1641
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "32cd9d68::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- patch p95 regression > 20% => fail",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "patch p95 regression > 20% => fail"
+                        }
+                      ],
+                      "range": {
+                        "from": 1605,
+                        "to": 1641
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "patch p95 regression > 20% => fail"
+                              }
+                            ],
+                            "text": "patch p95 regression > 20% => fail",
+                            "raw": "- patch p95 regression > 20% => fail"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "patch p95 regression > 20% => fail"
+                    }
+                  ],
+                  "text": "patch p95 regression > 20% => fail",
+                  "raw": "- patch p95 regression > 20% => fail"
+                },
+                "children": []
+              },
+              {
+                "id": "32cd9d68::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 1642,
+                  "to": 1676
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "32cd9d68::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- long tasks > 2x baseline => fail",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "long tasks > 2x baseline => fail"
+                        }
+                      ],
+                      "range": {
+                        "from": 1642,
+                        "to": 1676
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "long tasks > 2x baseline => fail"
+                              }
+                            ],
+                            "text": "long tasks > 2x baseline => fail",
+                            "raw": "- long tasks > 2x baseline => fail"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "long tasks > 2x baseline => fail"
+                    }
+                  ],
+                  "text": "long tasks > 2x baseline => fail",
+                  "raw": "- long tasks > 2x baseline => fail"
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 1566,
+          "to": 1676
         }
       }
     },
@@ -616,14 +1388,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "How to triage failures",
-        "range": {
-          "from": 1678,
-          "to": 1703
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "How to triage failures",
           "headingId": "how-to-triage-failures"
+        },
+        "range": {
+          "from": 1678,
+          "to": 1703
         },
         "inline": [
           {
@@ -639,12 +1412,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "1. Confirm fixture and run settings are unchanged.\n2. Re-run to exclude one-off noise.\n3. Diff snapshot artifacts for exact semantic/style changes.\n4. Bisect feature flags (`html`, `mdx`, `math`) to isolate subsystem.\n5. If intentional, update snapshot + changelog entry.",
-        "range": {
-          "from": 1705,
-          "to": 1976
-        },
         "meta": {
+          "lezerNodeType": "OrderedList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": true,
+          "loose": false,
           "items": [
             [
               {
@@ -701,7 +1481,385 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": true,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "5dda8031::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 1705,
+                  "to": 1755
+                },
+                "props": {
+                  "ordered": true,
+                  "loose": false,
+                  "block": {
+                    "id": "5dda8031::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "1. Confirm fixture and run settings are unchanged.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Confirm fixture and run settings are unchanged."
+                        }
+                      ],
+                      "range": {
+                        "from": 1705,
+                        "to": 1755
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": true,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Confirm fixture and run settings are unchanged."
+                              }
+                            ],
+                            "text": "Confirm fixture and run settings are unchanged.",
+                            "raw": "1. Confirm fixture and run settings are unchanged."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Confirm fixture and run settings are unchanged."
+                    }
+                  ],
+                  "text": "Confirm fixture and run settings are unchanged.",
+                  "raw": "1. Confirm fixture and run settings are unchanged."
+                },
+                "children": []
+              },
+              {
+                "id": "5dda8031::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 1756,
+                  "to": 1791
+                },
+                "props": {
+                  "ordered": true,
+                  "loose": false,
+                  "block": {
+                    "id": "5dda8031::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "2. Re-run to exclude one-off noise.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Re-run to exclude one-off noise."
+                        }
+                      ],
+                      "range": {
+                        "from": 1756,
+                        "to": 1791
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": true,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Re-run to exclude one-off noise."
+                              }
+                            ],
+                            "text": "Re-run to exclude one-off noise.",
+                            "raw": "2. Re-run to exclude one-off noise."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Re-run to exclude one-off noise."
+                    }
+                  ],
+                  "text": "Re-run to exclude one-off noise.",
+                  "raw": "2. Re-run to exclude one-off noise."
+                },
+                "children": []
+              },
+              {
+                "id": "5dda8031::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 1792,
+                  "to": 1852
+                },
+                "props": {
+                  "ordered": true,
+                  "loose": false,
+                  "block": {
+                    "id": "5dda8031::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "3. Diff snapshot artifacts for exact semantic/style changes.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Diff snapshot artifacts for exact semantic/style changes."
+                        }
+                      ],
+                      "range": {
+                        "from": 1792,
+                        "to": 1852
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": true,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Diff snapshot artifacts for exact semantic/style changes."
+                              }
+                            ],
+                            "text": "Diff snapshot artifacts for exact semantic/style changes.",
+                            "raw": "3. Diff snapshot artifacts for exact semantic/style changes."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Diff snapshot artifacts for exact semantic/style changes."
+                    }
+                  ],
+                  "text": "Diff snapshot artifacts for exact semantic/style changes.",
+                  "raw": "3. Diff snapshot artifacts for exact semantic/style changes."
+                },
+                "children": []
+              },
+              {
+                "id": "5dda8031::item:3",
+                "type": "list-item",
+                "range": {
+                  "from": 1853,
+                  "to": 1922
+                },
+                "props": {
+                  "ordered": true,
+                  "loose": false,
+                  "block": {
+                    "id": "5dda8031::item:3",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "4. Bisect feature flags (`html`, `mdx`, `math`) to isolate subsystem.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Bisect feature flags ("
+                        },
+                        {
+                          "kind": "code",
+                          "text": "html"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "mdx"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "math"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ") to isolate subsystem."
+                        }
+                      ],
+                      "range": {
+                        "from": 1853,
+                        "to": 1922
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": true,
+                            "loose": false,
+                            "index": 3,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Bisect feature flags ("
+                              },
+                              {
+                                "kind": "code",
+                                "text": "html"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "mdx"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "math"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ") to isolate subsystem."
+                              }
+                            ],
+                            "text": "Bisect feature flags (html, mdx, math) to isolate subsystem.",
+                            "raw": "4. Bisect feature flags (`html`, `mdx`, `math`) to isolate subsystem."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 3,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Bisect feature flags ("
+                    },
+                    {
+                      "kind": "code",
+                      "text": "html"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "mdx"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "math"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ") to isolate subsystem."
+                    }
+                  ],
+                  "text": "Bisect feature flags (html, mdx, math) to isolate subsystem.",
+                  "raw": "4. Bisect feature flags (`html`, `mdx`, `math`) to isolate subsystem."
+                },
+                "children": []
+              },
+              {
+                "id": "5dda8031::item:4",
+                "type": "list-item",
+                "range": {
+                  "from": 1923,
+                  "to": 1976
+                },
+                "props": {
+                  "ordered": true,
+                  "loose": false,
+                  "block": {
+                    "id": "5dda8031::item:4",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "5. If intentional, update snapshot + changelog entry.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "If intentional, update snapshot + changelog entry."
+                        }
+                      ],
+                      "range": {
+                        "from": 1923,
+                        "to": 1976
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": true,
+                            "loose": false,
+                            "index": 4,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "If intentional, update snapshot + changelog entry."
+                              }
+                            ],
+                            "text": "If intentional, update snapshot + changelog entry.",
+                            "raw": "5. If intentional, update snapshot + changelog entry."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 4,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "If intentional, update snapshot + changelog entry."
+                    }
+                  ],
+                  "text": "If intentional, update snapshot + changelog entry.",
+                  "raw": "5. If intentional, update snapshot + changelog entry."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 1705,
+          "to": 1976
         }
       }
     },
@@ -711,14 +1869,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Release checklist",
-        "range": {
-          "from": 1978,
-          "to": 1998
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Release checklist",
           "headingId": "release-checklist"
+        },
+        "range": {
+          "from": 1978,
+          "to": 1998
         },
         "inline": [
           {
@@ -734,39 +1893,309 @@
       "isFinalized": true,
       "payload": {
         "raw": "- [ ] Regression snapshots pass with clean diff review.\n- [ ] Perf run attached for changed renderer/worker behavior.\n- [ ] Docs routes build + export successfully.\n- [ ] Worker bundle regenerated and copied to static assets.",
-        "range": {
-          "from": 2000,
-          "to": 2225
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
                 "kind": "text",
-                "text": "[ ] Regression snapshots pass with clean diff review."
+                "text": "Regression snapshots pass with clean diff review."
               }
             ],
             [
               {
                 "kind": "text",
-                "text": "[ ] Perf run attached for changed renderer/worker behavior."
+                "text": "Perf run attached for changed renderer/worker behavior."
               }
             ],
             [
               {
                 "kind": "text",
-                "text": "[ ] Docs routes build + export successfully."
+                "text": "Docs routes build + export successfully."
               }
             ],
             [
               {
                 "kind": "text",
-                "text": "[ ] Worker bundle regenerated and copied to static assets."
+                "text": "Worker bundle regenerated and copied to static assets."
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "126e79fe::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 2000,
+                  "to": 2055
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "126e79fe::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- [ ] Regression snapshots pass with clean diff review.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Regression snapshots pass with clean diff review."
+                        }
+                      ],
+                      "range": {
+                        "from": 2000,
+                        "to": 2055
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Regression snapshots pass with clean diff review."
+                              }
+                            ],
+                            "text": "Regression snapshots pass with clean diff review.",
+                            "raw": "- [ ] Regression snapshots pass with clean diff review.",
+                            "task": true,
+                            "checked": false
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Regression snapshots pass with clean diff review."
+                    }
+                  ],
+                  "text": "Regression snapshots pass with clean diff review.",
+                  "raw": "- [ ] Regression snapshots pass with clean diff review.",
+                  "task": true,
+                  "checked": false
+                },
+                "children": []
+              },
+              {
+                "id": "126e79fe::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 2056,
+                  "to": 2117
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "126e79fe::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- [ ] Perf run attached for changed renderer/worker behavior.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Perf run attached for changed renderer/worker behavior."
+                        }
+                      ],
+                      "range": {
+                        "from": 2056,
+                        "to": 2117
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Perf run attached for changed renderer/worker behavior."
+                              }
+                            ],
+                            "text": "Perf run attached for changed renderer/worker behavior.",
+                            "raw": "- [ ] Perf run attached for changed renderer/worker behavior.",
+                            "task": true,
+                            "checked": false
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Perf run attached for changed renderer/worker behavior."
+                    }
+                  ],
+                  "text": "Perf run attached for changed renderer/worker behavior.",
+                  "raw": "- [ ] Perf run attached for changed renderer/worker behavior.",
+                  "task": true,
+                  "checked": false
+                },
+                "children": []
+              },
+              {
+                "id": "126e79fe::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 2118,
+                  "to": 2164
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "126e79fe::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- [ ] Docs routes build + export successfully.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Docs routes build + export successfully."
+                        }
+                      ],
+                      "range": {
+                        "from": 2118,
+                        "to": 2164
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Docs routes build + export successfully."
+                              }
+                            ],
+                            "text": "Docs routes build + export successfully.",
+                            "raw": "- [ ] Docs routes build + export successfully.",
+                            "task": true,
+                            "checked": false
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Docs routes build + export successfully."
+                    }
+                  ],
+                  "text": "Docs routes build + export successfully.",
+                  "raw": "- [ ] Docs routes build + export successfully.",
+                  "task": true,
+                  "checked": false
+                },
+                "children": []
+              },
+              {
+                "id": "126e79fe::item:3",
+                "type": "list-item",
+                "range": {
+                  "from": 2165,
+                  "to": 2225
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "126e79fe::item:3",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- [ ] Worker bundle regenerated and copied to static assets.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Worker bundle regenerated and copied to static assets."
+                        }
+                      ],
+                      "range": {
+                        "from": 2165,
+                        "to": 2225
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 3,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Worker bundle regenerated and copied to static assets."
+                              }
+                            ],
+                            "text": "Worker bundle regenerated and copied to static assets.",
+                            "raw": "- [ ] Worker bundle regenerated and copied to static assets.",
+                            "task": true,
+                            "checked": false
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 3,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Worker bundle regenerated and copied to static assets."
+                    }
+                  ],
+                  "text": "Worker bundle regenerated and copied to static assets.",
+                  "raw": "- [ ] Worker bundle regenerated and copied to static assets.",
+                  "task": true,
+                  "checked": false
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 2000,
+          "to": 2225
         }
       }
     },
@@ -776,14 +2205,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Related docs",
-        "range": {
-          "from": 2227,
-          "to": 2242
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Related docs",
           "headingId": "related-docs"
+        },
+        "range": {
+          "from": 2227,
+          "to": 2242
         },
         "inline": [
           {
@@ -799,12 +2229,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- [Perf harness](/docs/perf-harness)\n- [Perf quality changelog](/docs/perf-quality-changelog)\n- [Release checklist](/docs/release-checklist)",
-        "range": {
-          "from": 2244,
-          "to": 2384
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -843,7 +2280,249 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "4362dcc4::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 2244,
+                  "to": 2280
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "4362dcc4::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- [Perf harness](/docs/perf-harness)",
+                      "inline": [
+                        {
+                          "kind": "link",
+                          "href": "/docs/perf-harness",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Perf harness"
+                            }
+                          ]
+                        }
+                      ],
+                      "range": {
+                        "from": 2244,
+                        "to": 2280
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "link",
+                                "href": "/docs/perf-harness",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Perf harness"
+                                  }
+                                ]
+                              }
+                            ],
+                            "text": "Perf harness",
+                            "raw": "- [Perf harness](/docs/perf-harness)"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "link",
+                      "href": "/docs/perf-harness",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Perf harness"
+                        }
+                      ]
+                    }
+                  ],
+                  "text": "Perf harness",
+                  "raw": "- [Perf harness](/docs/perf-harness)"
+                },
+                "children": []
+              },
+              {
+                "id": "4362dcc4::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 2281,
+                  "to": 2337
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "4362dcc4::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- [Perf quality changelog](/docs/perf-quality-changelog)",
+                      "inline": [
+                        {
+                          "kind": "link",
+                          "href": "/docs/perf-quality-changelog",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Perf quality changelog"
+                            }
+                          ]
+                        }
+                      ],
+                      "range": {
+                        "from": 2281,
+                        "to": 2337
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "link",
+                                "href": "/docs/perf-quality-changelog",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Perf quality changelog"
+                                  }
+                                ]
+                              }
+                            ],
+                            "text": "Perf quality changelog",
+                            "raw": "- [Perf quality changelog](/docs/perf-quality-changelog)"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "link",
+                      "href": "/docs/perf-quality-changelog",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Perf quality changelog"
+                        }
+                      ]
+                    }
+                  ],
+                  "text": "Perf quality changelog",
+                  "raw": "- [Perf quality changelog](/docs/perf-quality-changelog)"
+                },
+                "children": []
+              },
+              {
+                "id": "4362dcc4::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 2338,
+                  "to": 2384
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "4362dcc4::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- [Release checklist](/docs/release-checklist)",
+                      "inline": [
+                        {
+                          "kind": "link",
+                          "href": "/docs/release-checklist",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Release checklist"
+                            }
+                          ]
+                        }
+                      ],
+                      "range": {
+                        "from": 2338,
+                        "to": 2384
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "link",
+                                "href": "/docs/release-checklist",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Release checklist"
+                                  }
+                                ]
+                              }
+                            ],
+                            "text": "Release checklist",
+                            "raw": "- [Release checklist](/docs/release-checklist)"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "link",
+                      "href": "/docs/release-checklist",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Release checklist"
+                        }
+                      ]
+                    }
+                  ],
+                  "text": "Release checklist",
+                  "raw": "- [Release checklist](/docs/release-checklist)"
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 2244,
+          "to": 2384
         }
       }
     }
@@ -851,51 +2530,51 @@
   "tocHeadings": [
     {
       "id": "testing-and-baselines",
-      "text": "Testing and Baselines",
+      "blockId": "db082c0",
       "level": 1,
-      "blockId": "db082c0"
+      "text": "Testing and Baselines"
     },
     {
       "id": "test-layers",
-      "text": "Test layers",
+      "blockId": "20beca3f",
       "level": 2,
-      "blockId": "20beca3f"
+      "text": "Test layers"
     },
     {
       "id": "regression-snapshot-workflow",
-      "text": "Regression snapshot workflow",
+      "blockId": "217f49a1",
       "level": 2,
-      "blockId": "217f49a1"
+      "text": "Regression snapshot workflow"
     },
     {
       "id": "perf-baseline-workflow",
-      "text": "Perf baseline workflow",
+      "blockId": "3356b21a",
       "level": 2,
-      "blockId": "3356b21a"
+      "text": "Perf baseline workflow"
     },
     {
       "id": "ci-gate-strategy",
-      "text": "CI gate strategy",
+      "blockId": "d61d855",
       "level": 2,
-      "blockId": "d61d855"
+      "text": "CI gate strategy"
     },
     {
       "id": "how-to-triage-failures",
-      "text": "How to triage failures",
+      "blockId": "34f6173a",
       "level": 2,
-      "blockId": "34f6173a"
+      "text": "How to triage failures"
     },
     {
       "id": "release-checklist",
-      "text": "Release checklist",
+      "blockId": "7647fef7",
       "level": 2,
-      "blockId": "7647fef7"
+      "text": "Release checklist"
     },
     {
       "id": "related-docs",
-      "text": "Related docs",
+      "blockId": "25751e85",
       "level": 2,
-      "blockId": "25751e85"
+      "text": "Related docs"
     }
   ],
   "init": {

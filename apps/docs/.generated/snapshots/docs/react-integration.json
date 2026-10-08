@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-08T11:21:07.127Z",
-  "hash": "72cc5b2e6e9a467e037df95245e0a306e5c5db64b37a242bd4f196a99975c74e",
+  "createdAt": "2026-10-08T19:48:56.776Z",
+  "hash": "ff79c41ef55ce17dd4501bca3a4a14e149b6485fd1a39e90ed8e9689a332ffe0",
   "contentHash": "353f2ee44548aa2530348ff4dbf45c4267bd94d19b8bf4799444e0103b663a4e",
-  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
-  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "configHash": "a274f269183e8eac42eeb12b1ae0dc7fea9398cc27792626c9ca0c17911fb0b4",
+  "hashSalt": "docs-snapshots-v2:9417117db4c19b323c5bd2a5c7754c6e0d46bf7c962c13c422b86e6485aac7c0",
   "blocks": [
     {
       "id": "db082c0",
@@ -3640,14 +3640,13 @@
           "lezerNodeType": "FencedCode",
           "code": "[LLM Stream] → [Web Worker] → [React Component] → [DOM]\n     │              │                │              │\n  append()      parse()         <StreamingMarkdown>  render",
           "info": "",
-          "lang": "text",
           "highlightLang": "text"
         },
         "range": {
           "from": 5188,
           "to": 5365
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>[LLM Stream] → [Web Worker] → [React Component] → [DOM]</span></span>\n<span class=\"line\" data-line=\"2\"><span>     │              │                │              │</span></span>\n<span class=\"line\" data-line=\"3\"><span>  append()      parse()         &#x3C;StreamingMarkdown>  render</span></span></code></pre>"
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code><span class=\"line\" data-line=\"1\"><span>[LLM Stream] → [Web Worker] → [React Component] → [DOM]</span></span>\n<span class=\"line\" data-line=\"2\"><span>     │              │                │              │</span></span>\n<span class=\"line\" data-line=\"3\"><span>  append()      parse()         &#x3C;StreamingMarkdown>  render</span></span></code></pre>"
       }
     },
     {

@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-08T03:57:48.405Z",
-  "hash": "fe82cad32cf02d7c4b9f83d29df2dbfedb61202d090f47c8669fc132a36bd2e3",
-  "contentHash": "c5ec4c3efc27187e3f9a3c865549594eadc60dfb27088ce611f55b52eccab591",
-  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
-  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "createdAt": "2026-10-08T19:49:01.713Z",
+  "hash": "a52a77e11253a521f723cda60aa6cd80d61f82fb17d42fb0b226b92f01b4a1e4",
+  "contentHash": "cd99889e7c1bdd5757cf78eb1a5ad0a5022535a846fa30ddc9263406626ccfc2",
+  "configHash": "a274f269183e8eac42eeb12b1ae0dc7fea9398cc27792626c9ca0c17911fb0b4",
+  "hashSalt": "docs-snapshots-v2:9417117db4c19b323c5bd2a5c7754c6e0d46bf7c962c13c422b86e6485aac7c0",
   "blocks": [
     {
       "id": "db082c0",
@@ -13,14 +13,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Mermaid Diagrams",
-        "range": {
-          "from": 0,
-          "to": 18
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading1",
           "headingLevel": 1,
           "headingText": "Mermaid Diagrams",
           "headingId": "mermaid-diagrams"
+        },
+        "range": {
+          "from": 0,
+          "to": 18
         },
         "inline": [
           {
@@ -36,6 +37,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "Mermaid is available as an optional addon so teams can opt in only when diagram rendering is needed.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 20,
           "to": 120
@@ -54,14 +58,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Why Mermaid is optional",
-        "range": {
-          "from": 122,
-          "to": 148
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Why Mermaid is optional",
           "headingId": "why-mermaid-is-optional"
+        },
+        "range": {
+          "from": 122,
+          "to": 148
         },
         "inline": [
           {
@@ -77,12 +82,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- Keeps default bundle size lower.\n- Avoids extra parsing/rendering cost in apps that do not use diagrams.\n- Lets teams feature-flag diagram support by route or audience.",
-        "range": {
-          "from": 150,
-          "to": 320
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -103,7 +115,195 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "1db8c428::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 150,
+                  "to": 184
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "1db8c428::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Keeps default bundle size lower.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Keeps default bundle size lower."
+                        }
+                      ],
+                      "range": {
+                        "from": 150,
+                        "to": 184
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Keeps default bundle size lower."
+                              }
+                            ],
+                            "text": "Keeps default bundle size lower.",
+                            "raw": "- Keeps default bundle size lower."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Keeps default bundle size lower."
+                    }
+                  ],
+                  "text": "Keeps default bundle size lower.",
+                  "raw": "- Keeps default bundle size lower."
+                },
+                "children": []
+              },
+              {
+                "id": "1db8c428::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 185,
+                  "to": 256
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "1db8c428::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Avoids extra parsing/rendering cost in apps that do not use diagrams.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Avoids extra parsing/rendering cost in apps that do not use diagrams."
+                        }
+                      ],
+                      "range": {
+                        "from": 185,
+                        "to": 256
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Avoids extra parsing/rendering cost in apps that do not use diagrams."
+                              }
+                            ],
+                            "text": "Avoids extra parsing/rendering cost in apps that do not use diagrams.",
+                            "raw": "- Avoids extra parsing/rendering cost in apps that do not use diagrams."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Avoids extra parsing/rendering cost in apps that do not use diagrams."
+                    }
+                  ],
+                  "text": "Avoids extra parsing/rendering cost in apps that do not use diagrams.",
+                  "raw": "- Avoids extra parsing/rendering cost in apps that do not use diagrams."
+                },
+                "children": []
+              },
+              {
+                "id": "1db8c428::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 257,
+                  "to": 320
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "1db8c428::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Lets teams feature-flag diagram support by route or audience.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Lets teams feature-flag diagram support by route or audience."
+                        }
+                      ],
+                      "range": {
+                        "from": 257,
+                        "to": 320
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Lets teams feature-flag diagram support by route or audience."
+                              }
+                            ],
+                            "text": "Lets teams feature-flag diagram support by route or audience.",
+                            "raw": "- Lets teams feature-flag diagram support by route or audience."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Lets teams feature-flag diagram support by route or audience."
+                    }
+                  ],
+                  "text": "Lets teams feature-flag diagram support by route or audience.",
+                  "raw": "- Lets teams feature-flag diagram support by route or audience."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 150,
+          "to": 320
         }
       }
     },
@@ -113,14 +313,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Install",
-        "range": {
-          "from": 322,
-          "to": 332
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Install",
           "headingId": "install"
+        },
+        "range": {
+          "from": 322,
+          "to": 332
         },
         "inline": [
           {
@@ -136,15 +337,18 @@
       "isFinalized": true,
       "payload": {
         "raw": "```bash\nnpm install @stream-mdx/mermaid\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "npm install @stream-mdx/mermaid",
+          "info": "bash",
+          "lang": "bash",
+          "highlightLang": "bash"
+        },
         "range": {
           "from": 334,
           "to": 377
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-bash\" data-language=\"bash\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> install</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> @stream-mdx/mermaid</span></span></code></pre>",
-        "meta": {
-          "lang": "bash",
-          "code": "npm install @stream-mdx/mermaid"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-bash\" data-language=\"bash\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> install</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> @stream-mdx/mermaid</span></span></code></pre>"
       }
     },
     {
@@ -153,14 +357,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Register the component",
-        "range": {
-          "from": 379,
-          "to": 404
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Register the component",
           "headingId": "register-the-component"
+        },
+        "range": {
+          "from": 379,
+          "to": 404
         },
         "inline": [
           {
@@ -176,6 +381,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "Mermaid rendering is provided via a code fence renderer mapped to `mermaid` code fences.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 406,
           "to": 494
@@ -202,15 +410,18 @@
       "isFinalized": true,
       "payload": {
         "raw": "```tsx\nimport { StreamingMarkdown } from \"stream-mdx\";\nimport { MermaidBlock } from \"@stream-mdx/mermaid\";\n\n<StreamingMarkdown\n  text={content}\n  worker=\"/workers/markdown-worker.js\"\n  codeRenderers={{\n    mermaid: MermaidBlock,\n  }}\n  features={{\n    html: true,\n    tables: true,\n    math: true,\n    mdx: true,\n  }}\n/>;\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "import { StreamingMarkdown } from \"stream-mdx\";\nimport { MermaidBlock } from \"@stream-mdx/mermaid\";\n\n<StreamingMarkdown\n  text={content}\n  worker=\"/workers/markdown-worker.js\"\n  codeRenderers={{\n    mermaid: MermaidBlock,\n  }}\n  features={{\n    html: true,\n    tables: true,\n    math: true,\n    mdx: true,\n  }}\n/>;",
+          "info": "tsx",
+          "lang": "tsx",
+          "highlightLang": "tsx"
+        },
         "range": {
           "from": 496,
           "to": 821
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { StreamingMarkdown } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { MermaidBlock } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/mermaid\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content}</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  codeRenderers</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    mermaid: MermaidBlock,</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }}</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    tables: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    math: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"15\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }}</span></span>\n<span class=\"line\" data-line=\"16\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/>;</span></span></code></pre>",
-        "meta": {
-          "lang": "tsx",
-          "code": "import { StreamingMarkdown } from \"stream-mdx\";\nimport { MermaidBlock } from \"@stream-mdx/mermaid\";\n\n<StreamingMarkdown\n  text={content}\n  worker=\"/workers/markdown-worker.js\"\n  codeRenderers={{\n    mermaid: MermaidBlock,\n  }}\n  features={{\n    html: true,\n    tables: true,\n    math: true,\n    mdx: true,\n  }}\n/>;"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { StreamingMarkdown } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { MermaidBlock } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/mermaid\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content}</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  codeRenderers</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    mermaid: MermaidBlock,</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }}</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    tables: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    math: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"15\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }}</span></span>\n<span class=\"line\" data-line=\"16\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/>;</span></span></code></pre>"
       }
     },
     {
@@ -219,14 +430,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Authoring example",
-        "range": {
-          "from": 823,
-          "to": 843
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Authoring example",
           "headingId": "authoring-example"
+        },
+        "range": {
+          "from": 823,
+          "to": 843
         },
         "inline": [
           {
@@ -242,15 +454,18 @@
       "isFinalized": true,
       "payload": {
         "raw": "````md\n```mermaid\ngraph TD\n  A[User] --> B[StreamMDX]\n  B --> C[Worker]\n  C --> D[Renderer]\n```\n````",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "```mermaid\ngraph TD\n  A[User] --> B[StreamMDX]\n  B --> C[Worker]\n  C --> D[Renderer]\n```",
+          "info": "md",
+          "lang": "md",
+          "highlightLang": "md"
+        },
         "range": {
           "from": 845,
           "to": 945
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>```mermaid</span></span>\n<span class=\"line\" data-line=\"2\"><span>graph TD</span></span>\n<span class=\"line\" data-line=\"3\"><span>  A[User] --> B[StreamMDX]</span></span>\n<span class=\"line\" data-line=\"4\"><span>  B --> C[Worker]</span></span>\n<span class=\"line\" data-line=\"5\"><span>  C --> D[Renderer]</span></span>\n<span class=\"line\" data-line=\"6\"><span>```</span></span></code></pre>",
-        "meta": {
-          "lang": "text",
-          "code": "```mermaid\ngraph TD\n  A[User] --> B[StreamMDX]\n  B --> C[Worker]\n  C --> D[Renderer]\n```"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-md\" data-language=\"md\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">```mermaid</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">graph TD</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  A[User] --> B[StreamMDX]</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  B --> C[Worker]</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  C --> D[Renderer]</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">```</span></span></code></pre>"
       }
     },
     {
@@ -259,14 +474,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Rendered example",
-        "range": {
-          "from": 947,
-          "to": 966
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Rendered example",
           "headingId": "rendered-example"
+        },
+        "range": {
+          "from": 947,
+          "to": 966
         },
         "inline": [
           {
@@ -282,15 +498,18 @@
       "isFinalized": true,
       "payload": {
         "raw": "```mermaid\ngraph TD\n  A[User] --> B[StreamMDX]\n  B --> C[Worker]\n  C --> D[Renderer]\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "graph TD\n  A[User] --> B[StreamMDX]\n  B --> C[Worker]\n  C --> D[Renderer]",
+          "info": "mermaid",
+          "lang": "mermaid",
+          "highlightLang": "mermaid"
+        },
         "range": {
           "from": 968,
           "to": 1056
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-mermaid\" data-language=\"mermaid\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">graph TD</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  A[User] --> B[StreamMDX]</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  B --> C[Worker]</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  C --> D[Renderer]</span></span></code></pre>",
-        "meta": {
-          "lang": "mermaid",
-          "code": "graph TD\n  A[User] --> B[StreamMDX]\n  B --> C[Worker]\n  C --> D[Renderer]"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-mermaid\" data-language=\"mermaid\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">graph TD</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  A[User] --> B[StreamMDX]</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  B --> C[Worker]</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  C --> D[Renderer]</span></span></code></pre>"
       }
     },
     {
@@ -299,14 +518,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "UX details",
-        "range": {
-          "from": 1058,
-          "to": 1071
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "UX details",
           "headingId": "ux-details"
+        },
+        "range": {
+          "from": 1058,
+          "to": 1071
         },
         "inline": [
           {
@@ -322,6 +542,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "The Mermaid block renderer includes a code/diagram toggle by default.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 1073,
           "to": 1142
@@ -340,6 +563,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "Use `defaultView` to control first render mode:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 1144,
           "to": 1191
@@ -366,26 +592,105 @@
       "isFinalized": true,
       "payload": {
         "raw": "```tsx\ncodeRenderers={{\n  mermaid: (props) => <MermaidBlock {...props} defaultView=\"diagram\" />,\n}}\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "codeRenderers={{\n  mermaid: (props) => <MermaidBlock {...props} defaultView=\"diagram\" />,\n}}",
+          "info": "tsx",
+          "lang": "tsx",
+          "highlightLang": "tsx"
+        },
         "range": {
           "from": 1193,
           "to": 1296
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">codeRenderers</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  mermaid</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: (</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">props</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">MermaidBlock</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">...</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">props} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">defaultView</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"diagram\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> />,</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}}</span></span></code></pre>",
-        "meta": {
-          "lang": "tsx",
-          "code": "codeRenderers={{\n  mermaid: (props) => <MermaidBlock {...props} defaultView=\"diagram\" />,\n}}"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">codeRenderers</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  mermaid</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: (</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">props</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">MermaidBlock</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">...</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">props} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">defaultView</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"diagram\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> />,</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}}</span></span></code></pre>"
       }
     },
     {
-      "id": "7dfbb300",
+      "id": "600a0000",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Custom configuration and error handling",
+        "meta": {
+          "lezerNodeType": "ATXHeading3",
+          "headingLevel": 3,
+          "headingText": "Custom configuration and error handling",
+          "headingId": "custom-configuration-and-error-handling"
+        },
+        "range": {
+          "from": 1298,
+          "to": 1341
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Custom configuration and error handling"
+          }
+        ]
+      }
+    },
+    {
+      "id": "5d8f00e1",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Use `createMermaidBlock` to configure global Mermaid options, default views, debounce intervals, a custom/pinned Mermaid module or async loader, or a custom error component with retry capability:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
+        "range": {
+          "from": 1343,
+          "to": 1538
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Use "
+          },
+          {
+            "kind": "code",
+            "text": "createMermaidBlock"
+          },
+          {
+            "kind": "text",
+            "text": " to configure global Mermaid options, default views, debounce intervals, a custom/pinned Mermaid module or async loader, or a custom error component with retry capability:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "2d6443c6",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```tsx\nimport { createMermaidBlock } from \"@stream-mdx/mermaid\";\nimport { StreamingMarkdown } from \"stream-mdx\";\n\nconst CustomMermaidBlock = createMermaidBlock({\n  config: { theme: \"neutral\" },\n  defaultView: \"diagram\",\n  debounceMs: 150,\n  mermaid: () => import(\"mermaid\"), // optional custom instance or custom loader\n  errorComponent: ({ error, retry }) => (\n    <div className=\"rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm\">\n      <p className=\"font-medium text-red-700 dark:text-red-300\">Diagram rendering failed: {error}</p>\n      <button type=\"button\" onClick={retry} className=\"mt-2 text-xs underline\">\n        Retry diagram\n      </button>\n    </div>\n  ),\n});\n\n<StreamingMarkdown\n  text={content}\n  codeRenderers={{\n    mermaid: CustomMermaidBlock,\n  }}\n/>;\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "import { createMermaidBlock } from \"@stream-mdx/mermaid\";\nimport { StreamingMarkdown } from \"stream-mdx\";\n\nconst CustomMermaidBlock = createMermaidBlock({\n  config: { theme: \"neutral\" },\n  defaultView: \"diagram\",\n  debounceMs: 150,\n  mermaid: () => import(\"mermaid\"), // optional custom instance or custom loader\n  errorComponent: ({ error, retry }) => (\n    <div className=\"rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm\">\n      <p className=\"font-medium text-red-700 dark:text-red-300\">Diagram rendering failed: {error}</p>\n      <button type=\"button\" onClick={retry} className=\"mt-2 text-xs underline\">\n        Retry diagram\n      </button>\n    </div>\n  ),\n});\n\n<StreamingMarkdown\n  text={content}\n  codeRenderers={{\n    mermaid: CustomMermaidBlock,\n  }}\n/>;",
+          "info": "tsx",
+          "lang": "tsx",
+          "highlightLang": "tsx"
+        },
+        "range": {
+          "from": 1540,
+          "to": 2327
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { createMermaidBlock } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/mermaid\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { StreamingMarkdown } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> CustomMermaidBlock</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> createMermaidBlock</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">({</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  config: { theme: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"neutral\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> },</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  defaultView: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"diagram\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  debounceMs: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">150</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  mermaid</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: () </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"mermaid\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">), </span><span style=\"--shiki-dark:#6A737D;--shiki-light:#6A737D\">// optional custom instance or custom loader</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  errorComponent</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: ({ </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">error</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">retry</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> (</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    &#x3C;</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> className</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      &#x3C;</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">p</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> className</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"font-medium text-red-700 dark:text-red-300\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>Diagram rendering failed: {error}&#x3C;/</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">p</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      &#x3C;</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">button</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> type</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"button\"</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> onClick</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{retry} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">className</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"mt-2 text-xs underline\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">        Retry diagram</span></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      &#x3C;/</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">button</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"15\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    &#x3C;/</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"16\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  ),</span></span>\n<span class=\"line\" data-line=\"17\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">});</span></span>\n<span class=\"line\" data-line=\"18\"></span>\n<span class=\"line\" data-line=\"19\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"20\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content}</span></span>\n<span class=\"line\" data-line=\"21\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  codeRenderers</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"22\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    mermaid: CustomMermaidBlock,</span></span>\n<span class=\"line\" data-line=\"23\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }}</span></span>\n<span class=\"line\" data-line=\"24\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/>;</span></span></code></pre>"
+      }
+    },
+    {
+      "id": "529a4fb8",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Recommendations:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
-          "from": 1298,
-          "to": 1314
+          "from": 2329,
+          "to": 2345
         },
         "inline": [
           {
@@ -396,17 +701,24 @@
       }
     },
     {
-      "id": "b0f1f6b",
+      "id": "299cd9f8",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- Keep source code view available for debugging and copy/paste.\n- Use overflow-safe wrappers on narrow screens.\n- Prefer diagram view only for docs pages where the diagram is primary content.",
-        "range": {
-          "from": 1316,
-          "to": 1507
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -427,24 +739,213 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "299cd9f8::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 2347,
+                  "to": 2410
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "299cd9f8::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Keep source code view available for debugging and copy/paste.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Keep source code view available for debugging and copy/paste."
+                        }
+                      ],
+                      "range": {
+                        "from": 2347,
+                        "to": 2410
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Keep source code view available for debugging and copy/paste."
+                              }
+                            ],
+                            "text": "Keep source code view available for debugging and copy/paste.",
+                            "raw": "- Keep source code view available for debugging and copy/paste."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Keep source code view available for debugging and copy/paste."
+                    }
+                  ],
+                  "text": "Keep source code view available for debugging and copy/paste.",
+                  "raw": "- Keep source code view available for debugging and copy/paste."
+                },
+                "children": []
+              },
+              {
+                "id": "299cd9f8::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 2411,
+                  "to": 2458
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "299cd9f8::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Use overflow-safe wrappers on narrow screens.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Use overflow-safe wrappers on narrow screens."
+                        }
+                      ],
+                      "range": {
+                        "from": 2411,
+                        "to": 2458
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Use overflow-safe wrappers on narrow screens."
+                              }
+                            ],
+                            "text": "Use overflow-safe wrappers on narrow screens.",
+                            "raw": "- Use overflow-safe wrappers on narrow screens."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Use overflow-safe wrappers on narrow screens."
+                    }
+                  ],
+                  "text": "Use overflow-safe wrappers on narrow screens.",
+                  "raw": "- Use overflow-safe wrappers on narrow screens."
+                },
+                "children": []
+              },
+              {
+                "id": "299cd9f8::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 2459,
+                  "to": 2538
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "299cd9f8::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Prefer diagram view only for docs pages where the diagram is primary content.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Prefer diagram view only for docs pages where the diagram is primary content."
+                        }
+                      ],
+                      "range": {
+                        "from": 2459,
+                        "to": 2538
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Prefer diagram view only for docs pages where the diagram is primary content."
+                              }
+                            ],
+                            "text": "Prefer diagram view only for docs pages where the diagram is primary content.",
+                            "raw": "- Prefer diagram view only for docs pages where the diagram is primary content."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Prefer diagram view only for docs pages where the diagram is primary content."
+                    }
+                  ],
+                  "text": "Prefer diagram view only for docs pages where the diagram is primary content.",
+                  "raw": "- Prefer diagram view only for docs pages where the diagram is primary content."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 2347,
+          "to": 2538
         }
       }
     },
     {
-      "id": "1c678d2d",
+      "id": "4128f001",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Performance and safety notes",
-        "range": {
-          "from": 1509,
-          "to": 1540
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Performance and safety notes",
           "headingId": "performance-and-safety-notes"
+        },
+        "range": {
+          "from": 2540,
+          "to": 2571
         },
         "inline": [
           {
@@ -455,17 +956,24 @@
       }
     },
     {
-      "id": "5c92899a",
+      "id": "6ec17d03",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- Mermaid rendering should remain opt-in and behind a feature toggle in user-facing apps.\n- Keep sanitization enabled for surrounding HTML content.\n- Include one regression snapshot for a representative Mermaid page.",
-        "range": {
-          "from": 1542,
-          "to": 1758
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -486,24 +994,213 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "6ec17d03::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 2573,
+                  "to": 2662
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "6ec17d03::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Mermaid rendering should remain opt-in and behind a feature toggle in user-facing apps.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Mermaid rendering should remain opt-in and behind a feature toggle in user-facing apps."
+                        }
+                      ],
+                      "range": {
+                        "from": 2573,
+                        "to": 2662
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Mermaid rendering should remain opt-in and behind a feature toggle in user-facing apps."
+                              }
+                            ],
+                            "text": "Mermaid rendering should remain opt-in and behind a feature toggle in user-facing apps.",
+                            "raw": "- Mermaid rendering should remain opt-in and behind a feature toggle in user-facing apps."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Mermaid rendering should remain opt-in and behind a feature toggle in user-facing apps."
+                    }
+                  ],
+                  "text": "Mermaid rendering should remain opt-in and behind a feature toggle in user-facing apps.",
+                  "raw": "- Mermaid rendering should remain opt-in and behind a feature toggle in user-facing apps."
+                },
+                "children": []
+              },
+              {
+                "id": "6ec17d03::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 2663,
+                  "to": 2720
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "6ec17d03::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Keep sanitization enabled for surrounding HTML content.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Keep sanitization enabled for surrounding HTML content."
+                        }
+                      ],
+                      "range": {
+                        "from": 2663,
+                        "to": 2720
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Keep sanitization enabled for surrounding HTML content."
+                              }
+                            ],
+                            "text": "Keep sanitization enabled for surrounding HTML content.",
+                            "raw": "- Keep sanitization enabled for surrounding HTML content."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Keep sanitization enabled for surrounding HTML content."
+                    }
+                  ],
+                  "text": "Keep sanitization enabled for surrounding HTML content.",
+                  "raw": "- Keep sanitization enabled for surrounding HTML content."
+                },
+                "children": []
+              },
+              {
+                "id": "6ec17d03::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 2721,
+                  "to": 2789
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "6ec17d03::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Include one regression snapshot for a representative Mermaid page.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Include one regression snapshot for a representative Mermaid page."
+                        }
+                      ],
+                      "range": {
+                        "from": 2721,
+                        "to": 2789
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Include one regression snapshot for a representative Mermaid page."
+                              }
+                            ],
+                            "text": "Include one regression snapshot for a representative Mermaid page.",
+                            "raw": "- Include one regression snapshot for a representative Mermaid page."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Include one regression snapshot for a representative Mermaid page."
+                    }
+                  ],
+                  "text": "Include one regression snapshot for a representative Mermaid page.",
+                  "raw": "- Include one regression snapshot for a representative Mermaid page."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 2573,
+          "to": 2789
         }
       }
     },
     {
-      "id": "367e4da0",
+      "id": "42541a1d",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Troubleshooting",
-        "range": {
-          "from": 1760,
-          "to": 1778
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Troubleshooting",
           "headingId": "troubleshooting"
+        },
+        "range": {
+          "from": 2791,
+          "to": 2809
         },
         "inline": [
           {
@@ -514,17 +1211,24 @@
       }
     },
     {
-      "id": "37be0e2",
+      "id": "77ed0b2a",
       "type": "list",
       "isFinalized": true,
       "payload": {
-        "raw": "- **No diagram appears**: verify `@stream-mdx/mermaid` is installed and registered in `components`.\n- **Hydration mismatch**: ensure wrappers/components around Mermaid are deterministic.\n- **Layout overflow**: add responsive container styles around the diagram block.",
-        "range": {
-          "from": 1780,
-          "to": 2047
-        },
+        "raw": "- **No diagram appears**: verify `@stream-mdx/mermaid` is installed and registered in `codeRenderers={{ mermaid: MermaidBlock }}`.\n- **Hydration mismatch**: ensure wrappers/components around Mermaid are deterministic.\n- **Layout overflow**: add responsive container styles around the diagram block.",
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -550,7 +1254,7 @@
               },
               {
                 "kind": "code",
-                "text": "components"
+                "text": "codeRenderers={{ mermaid: MermaidBlock }}"
               },
               {
                 "kind": "text",
@@ -588,24 +1292,452 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "77ed0b2a::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 2811,
+                  "to": 2941
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "77ed0b2a::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **No diagram appears**: verify `@stream-mdx/mermaid` is installed and registered in `codeRenderers={{ mermaid: MermaidBlock }}`.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "No diagram appears"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": verify "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "@stream-mdx/mermaid"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " is installed and registered in "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "codeRenderers={{ mermaid: MermaidBlock }}"
+                        },
+                        {
+                          "kind": "text",
+                          "text": "."
+                        }
+                      ],
+                      "range": {
+                        "from": 2811,
+                        "to": 2941
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "No diagram appears"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": verify "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "@stream-mdx/mermaid"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " is installed and registered in "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "codeRenderers={{ mermaid: MermaidBlock }}"
+                              },
+                              {
+                                "kind": "text",
+                                "text": "."
+                              }
+                            ],
+                            "text": "No diagram appears: verify @stream-mdx/mermaid is installed and registered in codeRenderers={{ mermaid: MermaidBlock }}.",
+                            "raw": "- **No diagram appears**: verify `@stream-mdx/mermaid` is installed and registered in `codeRenderers={{ mermaid: MermaidBlock }}`."
+                          },
+                          "children": [
+                            {
+                              "id": "77ed0b2a::item:0::list-item:segment:0",
+                              "type": "list-item-text",
+                              "props": {
+                                "inline": [
+                                  {
+                                    "kind": "strong",
+                                    "children": [
+                                      {
+                                        "kind": "text",
+                                        "text": "No diagram appears"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "kind": "text",
+                                    "text": ": verify "
+                                  },
+                                  {
+                                    "kind": "code",
+                                    "text": "@stream-mdx/mermaid"
+                                  },
+                                  {
+                                    "kind": "text",
+                                    "text": " is installed and registered in `codeRenderers={"
+                                  }
+                                ],
+                                "text": "**No diagram appears**: verify `@stream-mdx/mermaid` is installed and registered in `codeRenderers={"
+                              },
+                              "children": []
+                            },
+                            {
+                              "id": "77ed0b2a::item:0::list-item:segment:1",
+                              "type": "list-item-mdx",
+                              "props": {
+                                "raw": "{ mermaid: MermaidBlock }",
+                                "status": "pending"
+                              },
+                              "children": []
+                            },
+                            {
+                              "id": "77ed0b2a::item:0::list-item:segment:2",
+                              "type": "list-item-text",
+                              "props": {
+                                "inline": [
+                                  {
+                                    "kind": "text",
+                                    "text": "}`."
+                                  }
+                                ],
+                                "text": "}`."
+                              },
+                              "children": []
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "No diagram appears"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": verify "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "@stream-mdx/mermaid"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " is installed and registered in "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "codeRenderers={{ mermaid: MermaidBlock }}"
+                    },
+                    {
+                      "kind": "text",
+                      "text": "."
+                    }
+                  ],
+                  "text": "No diagram appears: verify @stream-mdx/mermaid is installed and registered in codeRenderers={{ mermaid: MermaidBlock }}.",
+                  "raw": "- **No diagram appears**: verify `@stream-mdx/mermaid` is installed and registered in `codeRenderers={{ mermaid: MermaidBlock }}`."
+                },
+                "children": [
+                  {
+                    "id": "77ed0b2a::item:0::list-item:segment:0",
+                    "type": "list-item-text",
+                    "props": {
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "No diagram appears"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": verify "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "@stream-mdx/mermaid"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " is installed and registered in `codeRenderers={"
+                        }
+                      ],
+                      "text": "**No diagram appears**: verify `@stream-mdx/mermaid` is installed and registered in `codeRenderers={"
+                    },
+                    "children": []
+                  },
+                  {
+                    "id": "77ed0b2a::item:0::list-item:segment:1",
+                    "type": "list-item-mdx",
+                    "props": {
+                      "raw": "{ mermaid: MermaidBlock }",
+                      "status": "pending"
+                    },
+                    "children": []
+                  },
+                  {
+                    "id": "77ed0b2a::item:0::list-item:segment:2",
+                    "type": "list-item-text",
+                    "props": {
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "}`."
+                        }
+                      ],
+                      "text": "}`."
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "id": "77ed0b2a::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 2942,
+                  "to": 3028
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "77ed0b2a::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **Hydration mismatch**: ensure wrappers/components around Mermaid are deterministic.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Hydration mismatch"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": ensure wrappers/components around Mermaid are deterministic."
+                        }
+                      ],
+                      "range": {
+                        "from": 2942,
+                        "to": 3028
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Hydration mismatch"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": ensure wrappers/components around Mermaid are deterministic."
+                              }
+                            ],
+                            "text": "Hydration mismatch: ensure wrappers/components around Mermaid are deterministic.",
+                            "raw": "- **Hydration mismatch**: ensure wrappers/components around Mermaid are deterministic."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Hydration mismatch"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": ensure wrappers/components around Mermaid are deterministic."
+                    }
+                  ],
+                  "text": "Hydration mismatch: ensure wrappers/components around Mermaid are deterministic.",
+                  "raw": "- **Hydration mismatch**: ensure wrappers/components around Mermaid are deterministic."
+                },
+                "children": []
+              },
+              {
+                "id": "77ed0b2a::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 3029,
+                  "to": 3109
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "77ed0b2a::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **Layout overflow**: add responsive container styles around the diagram block.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Layout overflow"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": add responsive container styles around the diagram block."
+                        }
+                      ],
+                      "range": {
+                        "from": 3029,
+                        "to": 3109
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Layout overflow"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": add responsive container styles around the diagram block."
+                              }
+                            ],
+                            "text": "Layout overflow: add responsive container styles around the diagram block.",
+                            "raw": "- **Layout overflow**: add responsive container styles around the diagram block."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Layout overflow"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": add responsive container styles around the diagram block."
+                    }
+                  ],
+                  "text": "Layout overflow: add responsive container styles around the diagram block.",
+                  "raw": "- **Layout overflow**: add responsive container styles around the diagram block."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 2811,
+          "to": 3109
         }
       }
     },
     {
-      "id": "cc77943",
+      "id": "2a5e05fe",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Next steps",
-        "range": {
-          "from": 2049,
-          "to": 2062
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Next steps",
           "headingId": "next-steps"
+        },
+        "range": {
+          "from": 3111,
+          "to": 3124
         },
         "inline": [
           {
@@ -616,17 +1748,24 @@
       }
     },
     {
-      "id": "56a74000",
+      "id": "7d625fe6",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- [MDX and HTML in StreamMDX](/docs/guides/mdx-and-html)\n- [Testing and baselines](/docs/guides/testing-and-baselines)\n- [Performance and backpressure](/docs/guides/performance-and-backpressure)",
-        "range": {
-          "from": 2064,
-          "to": 2258
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -665,7 +1804,249 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "7d625fe6::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 3126,
+                  "to": 3182
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "7d625fe6::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- [MDX and HTML in StreamMDX](/docs/guides/mdx-and-html)",
+                      "inline": [
+                        {
+                          "kind": "link",
+                          "href": "/docs/guides/mdx-and-html",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "MDX and HTML in StreamMDX"
+                            }
+                          ]
+                        }
+                      ],
+                      "range": {
+                        "from": 3126,
+                        "to": 3182
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "link",
+                                "href": "/docs/guides/mdx-and-html",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "MDX and HTML in StreamMDX"
+                                  }
+                                ]
+                              }
+                            ],
+                            "text": "MDX and HTML in StreamMDX",
+                            "raw": "- [MDX and HTML in StreamMDX](/docs/guides/mdx-and-html)"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "link",
+                      "href": "/docs/guides/mdx-and-html",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "MDX and HTML in StreamMDX"
+                        }
+                      ]
+                    }
+                  ],
+                  "text": "MDX and HTML in StreamMDX",
+                  "raw": "- [MDX and HTML in StreamMDX](/docs/guides/mdx-and-html)"
+                },
+                "children": []
+              },
+              {
+                "id": "7d625fe6::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 3183,
+                  "to": 3244
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "7d625fe6::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- [Testing and baselines](/docs/guides/testing-and-baselines)",
+                      "inline": [
+                        {
+                          "kind": "link",
+                          "href": "/docs/guides/testing-and-baselines",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Testing and baselines"
+                            }
+                          ]
+                        }
+                      ],
+                      "range": {
+                        "from": 3183,
+                        "to": 3244
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "link",
+                                "href": "/docs/guides/testing-and-baselines",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Testing and baselines"
+                                  }
+                                ]
+                              }
+                            ],
+                            "text": "Testing and baselines",
+                            "raw": "- [Testing and baselines](/docs/guides/testing-and-baselines)"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "link",
+                      "href": "/docs/guides/testing-and-baselines",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Testing and baselines"
+                        }
+                      ]
+                    }
+                  ],
+                  "text": "Testing and baselines",
+                  "raw": "- [Testing and baselines](/docs/guides/testing-and-baselines)"
+                },
+                "children": []
+              },
+              {
+                "id": "7d625fe6::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 3245,
+                  "to": 3320
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "7d625fe6::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- [Performance and backpressure](/docs/guides/performance-and-backpressure)",
+                      "inline": [
+                        {
+                          "kind": "link",
+                          "href": "/docs/guides/performance-and-backpressure",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Performance and backpressure"
+                            }
+                          ]
+                        }
+                      ],
+                      "range": {
+                        "from": 3245,
+                        "to": 3320
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "link",
+                                "href": "/docs/guides/performance-and-backpressure",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Performance and backpressure"
+                                  }
+                                ]
+                              }
+                            ],
+                            "text": "Performance and backpressure",
+                            "raw": "- [Performance and backpressure](/docs/guides/performance-and-backpressure)"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "link",
+                      "href": "/docs/guides/performance-and-backpressure",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Performance and backpressure"
+                        }
+                      ]
+                    }
+                  ],
+                  "text": "Performance and backpressure",
+                  "raw": "- [Performance and backpressure](/docs/guides/performance-and-backpressure)"
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 3126,
+          "to": 3320
         }
       }
     }
@@ -673,51 +2054,67 @@
   "tocHeadings": [
     {
       "id": "mermaid-diagrams",
+      "blockId": "db082c0",
       "level": 1,
       "text": "Mermaid Diagrams"
     },
     {
       "id": "why-mermaid-is-optional",
+      "blockId": "4947a841",
       "level": 2,
       "text": "Why Mermaid is optional"
     },
     {
       "id": "install",
+      "blockId": "73110dc3",
       "level": 2,
       "text": "Install"
     },
     {
       "id": "register-the-component",
+      "blockId": "465f4c65",
       "level": 2,
       "text": "Register the component"
     },
     {
       "id": "authoring-example",
+      "blockId": "10330577",
       "level": 2,
       "text": "Authoring example"
     },
     {
       "id": "rendered-example",
+      "blockId": "41a9b474",
       "level": 2,
       "text": "Rendered example"
     },
     {
       "id": "ux-details",
+      "blockId": "651ad602",
       "level": 2,
       "text": "UX details"
     },
     {
+      "id": "custom-configuration-and-error-handling",
+      "blockId": "600a0000",
+      "level": 3,
+      "text": "Custom configuration and error handling"
+    },
+    {
       "id": "performance-and-safety-notes",
+      "blockId": "4128f001",
       "level": 2,
       "text": "Performance and safety notes"
     },
     {
       "id": "troubleshooting",
+      "blockId": "42541a1d",
       "level": 2,
       "text": "Troubleshooting"
     },
     {
       "id": "next-steps",
+      "blockId": "2a5e05fe",
       "level": 2,
       "text": "Next steps"
     }

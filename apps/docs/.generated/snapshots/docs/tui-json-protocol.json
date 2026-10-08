@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-08T08:12:49.479Z",
-  "hash": "fb40739888b80323a9df2fa9daff53a917ff8084853dada4d89fcf60666935ad",
+  "createdAt": "2026-10-08T19:48:59.109Z",
+  "hash": "4514a80cc5db2946aa03995661ee114cc5a21ec31c256040b3907d1351093ef0",
   "contentHash": "b54c6faf1103077df423d7602859b724df3fb61f0323b9879e7de759a7294e7d",
-  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
-  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "configHash": "a274f269183e8eac42eeb12b1ae0dc7fea9398cc27792626c9ca0c17911fb0b4",
+  "hashSalt": "docs-snapshots-v2:9417117db4c19b323c5bd2a5c7754c6e0d46bf7c962c13c422b86e6485aac7c0",
   "blocks": [
     {
       "id": "db082c0",
@@ -9513,256 +9513,307 @@
   "tocHeadings": [
     {
       "id": "streammdx-json-tui-protocol-diff-highlighting-spec",
+      "blockId": "db082c0",
       "level": 1,
       "text": "StreamMDX JSON/TUI Protocol + Diff Highlighting Spec"
     },
     {
       "id": "1-purpose",
+      "blockId": "391ef55f",
       "level": 2,
       "text": "1) Purpose"
     },
     {
       "id": "2-goals",
+      "blockId": "58af855a",
       "level": 2,
       "text": "2) Goals"
     },
     {
       "id": "3-non-goals",
+      "blockId": "11bf755a",
       "level": 2,
       "text": "3) Non-Goals"
     },
     {
       "id": "4-current-state-summary",
+      "blockId": "c05ec5c",
       "level": 2,
       "text": "4) Current State (Summary)"
     },
     {
       "id": "5-requirements",
+      "blockId": "3b9bd019",
       "level": 2,
       "text": "5) Requirements"
     },
     {
       "id": "functional",
+      "blockId": "18b2a324",
       "level": 3,
       "text": "Functional"
     },
     {
       "id": "non-functional",
+      "blockId": "75333f23",
       "level": 3,
       "text": "Non-Functional"
     },
     {
       "id": "6-protocol-v1",
+      "blockId": "1ee89c2d",
       "level": 2,
       "text": "6) Protocol v1"
     },
     {
       "id": "6-1-event-envelope",
+      "blockId": "210d5f97",
       "level": 3,
       "text": "6.1 Event Envelope"
     },
     {
       "id": "6-2-init-event",
+      "blockId": "147b6820",
       "level": 3,
       "text": "6.2 Init Event"
     },
     {
       "id": "6-3-done-event",
+      "blockId": "44b18f9d",
       "level": 3,
       "text": "6.3 Done Event"
     },
     {
       "id": "6-4-compatibility-rules",
+      "blockId": "1a436eeb",
       "level": 3,
       "text": "6.4 Compatibility Rules"
     },
     {
       "id": "7-node-taxonomy-and-props",
+      "blockId": "5246a040",
       "level": 2,
       "text": "7) Node Taxonomy and Props"
     },
     {
       "id": "7-1-root",
+      "blockId": "2f22f39d",
       "level": 3,
       "text": "7.1 Root"
     },
     {
       "id": "7-2-core-block-types-minimum",
+      "blockId": "4d1419e2",
       "level": 3,
       "text": "7.2 Core Block Types (Minimum)"
     },
     {
       "id": "7-3-list-props",
+      "blockId": "69920da6",
       "level": 3,
       "text": "7.3 List Props"
     },
     {
       "id": "7-4-inline-segment-props",
+      "blockId": "11e957a0",
       "level": 3,
       "text": "7.4 Inline Segment Props"
     },
     {
       "id": "7-5-code-block-props",
+      "blockId": "5a117c26",
       "level": 3,
       "text": "7.5 Code Block Props"
     },
     {
       "id": "7-6-code-line-props",
+      "blockId": "38b5643c",
       "level": 3,
       "text": "7.6 Code Line Props"
     },
     {
       "id": "7-7-mdx-and-html-blocks",
+      "blockId": "f8e24c3",
       "level": 3,
       "text": "7.7 MDX and HTML Blocks"
     },
     {
       "id": "7-8-extension-nodes",
+      "blockId": "7c055dfb",
       "level": 3,
       "text": "7.8 Extension Nodes"
     },
     {
       "id": "8-token-schema-v1",
+      "blockId": "159007d",
       "level": 2,
       "text": "8) Token Schema v1"
     },
     {
       "id": "8-1-inline-style-encoding-v1",
+      "blockId": "4618235d",
       "level": 3,
       "text": "8.1 Inline Style Encoding (v1)"
     },
     {
       "id": "8-2-optional-style-table-encoding-v2-candidate",
+      "blockId": "1b472d3f",
       "level": 3,
       "text": "8.2 Optional Style Table Encoding (v2 candidate)"
     },
     {
       "id": "9-diff-model",
+      "blockId": "2f4ce6d6",
       "level": 2,
       "text": "9) Diff Model"
     },
     {
       "id": "9-1-diff-line-semantics",
+      "blockId": "387519b",
       "level": 3,
       "text": "9.1 Diff Line Semantics"
     },
     {
       "id": "9-2-diff-line-numbers",
+      "blockId": "2e0c5f56",
       "level": 3,
       "text": "9.2 Diff Line Numbers"
     },
     {
       "id": "9-3-tokenization-strategy-unified-diff",
+      "blockId": "6ec0c1bc",
       "level": 3,
       "text": "9.3 Tokenization Strategy (Unified Diff)"
     },
     {
       "id": "9-4-line-diff-mode",
+      "blockId": "3296281f",
       "level": 3,
       "text": "9.4 Line-Diff Mode"
     },
     {
       "id": "10-patch-extensions",
+      "blockId": "19e882dd",
       "level": 2,
       "text": "10) Patch Extensions"
     },
     {
       "id": "11-transport",
+      "blockId": "9886ad6",
       "level": 2,
       "text": "11) Transport"
     },
     {
       "id": "11-1-default-transport",
+      "blockId": "223d2a65",
       "level": 3,
       "text": "11.1 Default Transport"
     },
     {
       "id": "11-2-snapshot-events",
+      "blockId": "311739f8",
       "level": 3,
       "text": "11.2 Snapshot Events"
     },
     {
       "id": "12-api-surface",
+      "blockId": "2dd4234",
       "level": 2,
       "text": "12) API Surface"
     },
     {
       "id": "12-1-worker-init-options",
+      "blockId": "572bb571",
       "level": 3,
       "text": "12.1 Worker Init Options"
     },
     {
       "id": "12-2-public-exports",
+      "blockId": "58d29221",
       "level": 3,
       "text": "12.2 Public Exports"
     },
     {
       "id": "13-implementation-notes",
+      "blockId": "32be16a8",
       "level": 2,
       "text": "13) Implementation Notes"
     },
     {
       "id": "13-1-worker",
+      "blockId": "57f8439e",
       "level": 3,
       "text": "13.1 Worker"
     },
     {
       "id": "13-2-react-store",
+      "blockId": "37a18e5e",
       "level": 3,
       "text": "13.2 React Store"
     },
     {
       "id": "13-3-tui-snapshot-store",
+      "blockId": "759b5a69",
       "level": 3,
       "text": "13.3 TUI Snapshot Store"
     },
     {
       "id": "14-tests-and-validation",
+      "blockId": "d034a1c",
       "level": 2,
       "text": "14) Tests and Validation"
     },
     {
       "id": "14-1-schema-validation",
+      "blockId": "3ea94089",
       "level": 3,
       "text": "14.1 Schema Validation"
     },
     {
       "id": "14-2-deterministic-replay",
+      "blockId": "18bcd600",
       "level": 3,
       "text": "14.2 Deterministic Replay"
     },
     {
       "id": "14-3-token-invariants",
+      "blockId": "36ccaf9e",
       "level": 3,
       "text": "14.3 Token Invariants"
     },
     {
       "id": "14-4-diff-tests",
+      "blockId": "7ffb2846",
       "level": 3,
       "text": "14.4 Diff Tests"
     },
     {
       "id": "14-5-performance",
+      "blockId": "e982cf9",
       "level": 3,
       "text": "14.5 Performance"
     },
     {
       "id": "15-migration-and-compatibility",
+      "blockId": "2d972fbd",
       "level": 2,
       "text": "15) Migration and Compatibility"
     },
     {
       "id": "16-milestones-phased",
+      "blockId": "687c557f",
       "level": 2,
       "text": "16) Milestones (Phased)"
     },
     {
       "id": "17-open-questions",
+      "blockId": "3d48f8ac",
       "level": 2,
       "text": "17) Open Questions"
     },
     {
       "id": "18-default-decisions-unless-overridden",
+      "blockId": "3ed8a98",
       "level": 2,
       "text": "18) Default Decisions (Unless Overridden)"
     }
