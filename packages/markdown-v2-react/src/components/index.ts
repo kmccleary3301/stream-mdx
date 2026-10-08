@@ -717,7 +717,7 @@ export class ComponentRegistry {
     this.blockRenderer = renderer;
   }
 
-  /** Finalized blocks go through the `blockRenderer` override (e.g. `@stream-mdx/unified`); streaming blocks never do. */
+  /** Finalized blocks go through the `blockRenderer` override (e.g. block transform adapters); streaming blocks never do. */
   renderFinalizedBlock(block: Block, defaultElement: React.ReactElement): React.ReactNode {
     if (this.blockRenderer && block.isFinalized) {
       return this.blockRenderer({

@@ -1,26 +1,26 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { jsx, jsxs, Fragment } from "react/jsx-runtime";
-import { unified } from "unified";
+import { unified, type Processor } from "unified";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import remarkRehype from "remark-rehype";
 import { toJsxRuntime } from "hast-util-to-jsx-runtime";
-import type { Block } from "@stream-mdx/core";
+import type { Root as MdastRoot } from "mdast";
+import type { Root as HastRoot } from "hast";
+import type { Block, BlockResolvedLinkReference } from "@stream-mdx/core";
 import type { FinalizedBlockRenderProps } from "@stream-mdx/react";
 import type { UnifiedRenderer, UnifiedRendererOptions } from "./types";
 
-type HastNode = Parameters<typeof toJsxRuntime>[0];
+export type UnifiedProcessor = Processor<MdastRoot, MdastRoot, HastRoot, HastRoot, string>;
 
-export interface UnifiedBlockProcessor {
-  parse(input: string): unknown;
-  runSync(tree: unknown): unknown;
-}
+export type JobOutcome =
+  | { readonly kind: "success"; readonly node: React.ReactNode }
+  | { readonly kind: "error"; readonly error: Error };
 
-export interface ResolvedLinkReference {
-  label: string;
-  href: string;
-  title?: string;
+export interface UnifiedJob {
+  readonly promise: Promise<JobOutcome>;
+  outcome?: JobOutcome;
 }
 
 const DEFAULT_ROUTED_BLOCK_TYPES: Record<string, true> = {
@@ -71,7 +71,7 @@ export class BoundedLruCache<K, V> {
   }
 }
 
-export function formatLinkDefinitions(refs: readonly ResolvedLinkReference[]): string {
+export function formatLinkDefinitions(refs: readonly BlockResolvedLinkReference[]): string {
   const lines: string[] = [];
   for (const ref of refs) {
     if (!ref.label || !ref.href) continue;
@@ -86,7 +86,7 @@ export function formatLinkDefinitions(refs: readonly ResolvedLinkReference[]): s
   return lines.join("\n");
 }
 
-function buildProcessor(options: UnifiedRendererOptions): UnifiedBlockProcessor {
+function buildProcessor(options: UnifiedRendererOptions): UnifiedProcessor {
   const p = unified().use(remarkParse);
 
   if (options.gfm !== false) {
@@ -107,15 +107,121 @@ function buildProcessor(options: UnifiedRendererOptions): UnifiedBlockProcessor 
     p.use(options.rehypePlugins);
   }
 
-  return p.freeze() as unknown as UnifiedBlockProcessor;
+  return p.freeze() as unknown as UnifiedProcessor;
+}
+interface PromiseWithResolvers<T> {
+  promise: Promise<T>;
+  resolve: (value: T | PromiseLike<T>) => void;
+  reject: (reason?: unknown) => void;
+}
+
+function createResolvers<T>(): PromiseWithResolvers<T> {
+  const p = Promise as unknown as { withResolvers?: <R>() => PromiseWithResolvers<R> };
+  if (typeof p.withResolvers === "function") {
+    return p.withResolvers<T>();
+  }
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
+export function getOrCreateJob(
+  cacheKey: string,
+  input: string,
+  block: Block,
+  processor: UnifiedProcessor,
+  options: UnifiedRendererOptions,
+  cache: BoundedLruCache<string, React.ReactNode>,
+  inflightJobs: Map<string, UnifiedJob>,
+): UnifiedJob {
+  const existing = inflightJobs.get(cacheKey);
+  if (existing) {
+    return existing;
+  }
+
+  const { promise, resolve } = createResolvers<JobOutcome>();
+  promise.catch(() => {});
+
+  const job: UnifiedJob = { promise };
+  inflightJobs.set(cacheKey, job);
+
+  let mdast: MdastRoot;
+  try {
+    mdast = processor.parse(input);
+  } catch (parseError) {
+    const error = parseError instanceof Error ? parseError : new Error(String(parseError));
+    const outcome: JobOutcome = { kind: "error", error };
+    job.outcome = outcome;
+    inflightJobs.delete(cacheKey);
+    resolve(outcome);
+    if (options.onError) {
+      options.onError(error, block);
+    } else {
+      console.error("Unified markdown parse failed:", error);
+    }
+    return job;
+  }
+
+  // Exactly one processor.run invocation per cache key.
+  // Unified calls the callback synchronously for sync transformers, and asynchronously for async ones.
+  processor.run(mdast, (runError, hast) => {
+    if (runError || !hast) {
+      const error =
+        runError instanceof Error
+          ? runError
+          : new Error(String(runError ?? "Unified block transformation failed"));
+      const outcome: JobOutcome = { kind: "error", error };
+      job.outcome = outcome;
+      inflightJobs.delete(cacheKey);
+      resolve(outcome);
+      if (options.onError) {
+        options.onError(error, block);
+      } else {
+        console.error("Unified block transformation failed:", error);
+      }
+      return;
+    }
+
+    try {
+      const node = toJsxRuntime(hast, {
+        Fragment,
+        jsx,
+        jsxs,
+        components: options.components,
+      });
+      const outcome: JobOutcome = { kind: "success", node };
+      job.outcome = outcome;
+      cache.set(cacheKey, node);
+      inflightJobs.delete(cacheKey);
+      resolve(outcome);
+    } catch (renderError) {
+      const error = renderError instanceof Error ? renderError : new Error(String(renderError));
+      const outcome: JobOutcome = { kind: "error", error };
+      job.outcome = outcome;
+      inflightJobs.delete(cacheKey);
+      resolve(outcome);
+      if (options.onError) {
+        options.onError(error, block);
+      } else {
+        console.error("Unified JSX runtime conversion failed:", error);
+      }
+    }
+  });
+
+  return job;
 }
 
 interface UnifiedBlockItemProps {
   block: Block;
   element: React.ReactElement;
-  processor: UnifiedBlockProcessor;
+  processor: UnifiedProcessor;
   options: UnifiedRendererOptions;
   cache: BoundedLruCache<string, React.ReactNode>;
+  inflightJobs: Map<string, UnifiedJob>;
 }
 
 export const UnifiedBlockItem: React.FC<UnifiedBlockItemProps> = ({
@@ -124,51 +230,76 @@ export const UnifiedBlockItem: React.FC<UnifiedBlockItemProps> = ({
   processor,
   options,
   cache,
+  inflightJobs,
 }) => {
   const raw = typeof block.payload.raw === "string" ? block.payload.raw : "";
   const metaRefs = Array.isArray(block.payload.meta?.linkReferences)
-    ? (block.payload.meta.linkReferences as ResolvedLinkReference[])
+    ? (block.payload.meta.linkReferences as readonly BlockResolvedLinkReference[])
     : undefined;
   const serializedRefs = metaRefs && metaRefs.length > 0 ? JSON.stringify(metaRefs) : "";
   const cacheKey = `${block.id}::${raw}::${serializedRefs}`;
 
-  // Note: processor, options, and cache are immutable per createUnifiedRenderer instance
-  // and created once upon initialization; all read variables are listed in the dependency array.
-  const rendered = useMemo(() => {
-    const cached = cache.get(cacheKey);
+  const cached = cache.get(cacheKey);
+
+  // Retrieve or create the single processing job for this exact cacheKey
+  const job = useMemo(() => {
     if (cached !== undefined) {
-      return cached;
+      return undefined;
+    }
+    const linkDefs = metaRefs && metaRefs.length > 0 ? formatLinkDefinitions(metaRefs) : "";
+    const input = linkDefs ? `${linkDefs}\n\n${raw}` : raw;
+    return getOrCreateJob(cacheKey, input, block, processor, options, cache, inflightJobs);
+  }, [cacheKey, cached, block, processor, options, cache, inflightJobs, metaRefs, raw]);
+
+  // Keyed async state: if cacheKey changes while an async job is pending,
+  // asyncState.key !== cacheKey, so it immediately displays the new default element!
+  const [asyncState, setAsyncState] = useState<{
+    readonly key: string;
+    readonly node: React.ReactNode;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!job || job.outcome !== undefined) {
+      return;
     }
 
-    try {
-      const linkDefs = metaRefs && metaRefs.length > 0 ? formatLinkDefinitions(metaRefs) : "";
-      const input = linkDefs ? `${linkDefs}\n\n${raw}` : raw;
-      const mdast = processor.parse(input);
-      const hast = processor.runSync(mdast);
+    let cancelled = false;
+    job.promise.then((outcome) => {
+      if (!cancelled && outcome.kind === "success") {
+        setAsyncState({ key: cacheKey, node: outcome.node });
+      }
+    });
 
-      const result = toJsxRuntime(hast as HastNode, {
-        Fragment,
-        jsx,
-        jsxs,
-        components: options.components,
-      });
+    return () => {
+      cancelled = true;
+    };
+  }, [cacheKey, job]);
 
-      cache.set(cacheKey, result);
-      return result;
-    } catch (error) {
-      console.warn("Unified block rendering failed, falling back to default:", error);
-      return element;
+  // Determine what to render based on:
+  // 1. Cached result
+  // 2. Synchronous job outcome (for sync plugins / sync SSR)
+  // 3. Key-matched async completed result
+  // 4. Default element (while pending async or on error)
+  let output: React.ReactNode = element;
+  if (cached !== undefined) {
+    output = cached;
+  } else if (job?.outcome !== undefined) {
+    if (job.outcome.kind === "success") {
+      output = job.outcome.node;
     }
-  }, [cacheKey, element, cache, processor, options, metaRefs, raw]);
-
-  if (React.isValidElement(rendered)) {
-    return rendered;
+  } else if (asyncState !== null && asyncState.key === cacheKey) {
+    output = asyncState.node;
   }
-  return <>{rendered}</>;
+
+  if (React.isValidElement(output)) {
+    return output;
+  }
+  return <>{output}</>;
 };
 
 export function createUnifiedRenderer(options: UnifiedRendererOptions = {}): UnifiedRenderer {
   const cache = new BoundedLruCache<string, React.ReactNode>(options.cacheSize ?? 500);
+  const inflightJobs = new Map<string, UnifiedJob>();
   const processor = buildProcessor(options);
   const routedTypeMap: Record<string, true> = options.blockTypes
     ? Object.fromEntries(options.blockTypes.map((type) => [type, true]))
@@ -188,12 +319,14 @@ export function createUnifiedRenderer(options: UnifiedRendererOptions = {}): Uni
         processor={processor}
         options={options}
         cache={cache}
+        inflightJobs={inflightJobs}
       />
     );
   };
 
   renderer.clearCache = () => {
     cache.clear();
+    inflightJobs.clear();
   };
   renderer.options = options;
 
