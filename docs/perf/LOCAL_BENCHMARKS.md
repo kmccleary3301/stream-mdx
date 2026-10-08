@@ -178,4 +178,10 @@ After the paired source proof above, the canonical collector now uses standard `
 
 No new production build or performance sample is claimed for this collector-only follow-up. The parent owns the final integrated production build and comparison; the missing source footnote anchor remains a real preserved difference.
 
+### Native control and navigation attributes
+
+The ordered collector also retains effective live checked/disabled state for every native checkbox, including inputs outside lists and additional inputs within one item. It records anchor target, rel and download semantics. Standard target keywords are case-normalized; rel tokens are case-normalized, deduplicated and sorted. Different navigation contexts, rel behaviors, download filenames and checkbox states remain distinct. Initial checkbox attributes cannot hide a later live checked-state change.
+`npm exec -- tsx scripts/perf/check-completion-guards.ts` passed after these additions, including outside-list, multiple-checkbox and live-property counterexamples plus target/rel/download behavior. This remains collector-only proof; no new production or performance claim.
+
+
 

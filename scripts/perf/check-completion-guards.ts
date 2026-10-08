@@ -27,6 +27,16 @@ assert.notDeepEqual(collect('<a href="https://example.com/one?q=1#first">same</a
 assert.notDeepEqual(collect('<a href="https://example.com/one?q=1#first">same</a>'), collect('<a href="https://example.com/one?q=1#second">same</a>'), "different fragments cannot normalize together");
 assert.equal(collect('<a href="../one?q=1#first">same</a>').links[0].url, "../one?q=1#first", "relative URL records cannot depend on the current page");
 assert.notDeepEqual(collect('<a href="#fnref:1">same</a>'), collect('<a href="#user-content-fnref-1">same</a>'), "distinct footnote targets remain distinct");
+assert.notDeepEqual(collect('<p><input type="checkbox" disabled checked></p>'), collect('<p><input type="checkbox" disabled></p>'), "checkbox state outside lists is visible semantics");
+assert.notDeepEqual(collect('<p><input type="checkbox" disabled></p>'), collect('<p><input type="checkbox"></p>'), "disabled checkbox behavior is preserved");
+assert.notDeepEqual(collect('<ul><li><input type="checkbox"><input type="checkbox" checked>A</li></ul>'), collect('<ul><li><input type="checkbox"><input type="checkbox">A</li></ul>'), "every checkbox inside an item is captured");
+const checkboxRoot = new JSDOM('<main><p><input type="checkbox" disabled checked></p></main>').window.document.querySelector("main")!;
+checkboxRoot.querySelector<HTMLInputElement>("input")!.checked = false;
+assert.deepEqual(collectSemanticDom(checkboxRoot), collect('<p><input type="checkbox" disabled></p>'), "effective live checked state wins over the initial attribute");
+assert.notDeepEqual(collect('<a href="/x" target="_blank">A</a>'), collect('<a href="/x" target="_self">A</a>'), "anchor navigation target is semantic");
+assert.notDeepEqual(collect('<a href="/x" rel="noreferrer">A</a>'), collect('<a href="/x" rel="noopener">A</a>'), "distinct anchor rel behavior is retained");
+assert.deepEqual(collect('<a href="/x" target="_BLANK" rel="NOOPENER noreferrer noopener">A</a>'), collect('<a href="/x" target="_blank" rel="noreferrer noopener">A</a>'), "equivalent target keywords and rel token sets canonicalize");
+assert.notDeepEqual(collect('<a href="/x" download="one.txt">A</a>'), collect('<a href="/x" download="two.txt">A</a>'), "download filenames cannot be dropped");
 assert.notDeepEqual(collect('<details open><summary>same</summary></details>'), collect('<details><summary>same</summary></details>'));
 assert.equal(collect('<div>Hello</div><section>Done</section>').text, 'Hello\n\nDone');
 assert.notDeepEqual(collect('<p><code>a  b</code></p>'), collect('<p><code>a b</code></p>'));

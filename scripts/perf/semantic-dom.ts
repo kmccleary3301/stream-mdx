@@ -99,12 +99,28 @@ export function collectSemanticDom(root: HTMLElement): SemanticDomRecords {
   const outsideCode = (element: Element): boolean => !element.closest("pre,.markdown-code-block,[data-streamdown='code-block']") && !element.closest(CONTROL_SELECTOR) && !isGeneratedFootnoteLabel(element);
 
   const semanticTag = (element: Element): string => element.matches('[data-streamdown="strong"]') ? "strong" : element.tagName.toLowerCase();
-  const semanticAttributes = (element: Element): Array<[string, string]> => Array.from(element.attributes)
-    .filter((attribute) => /^(href|src|alt|title|open|datetime|cite|lang|dir|role|aria-)/.test(attribute.name))
-    .map((attribute): [string, string] => [attribute.name, attribute.name === "href" ? canonicalLinkUrl(attribute.value) : attribute.value])
-    .sort(([left], [right]) => left.localeCompare(right));
+  const semanticAttributes = (element: Element): Array<[string, string]> => {
+    const checkbox = element.matches("input[type='checkbox']");
+    const attributes = Array.from(element.attributes)
+      .filter((attribute) => /^(href|src|alt|title|open|datetime|cite|lang|dir|role|target|rel|download|type|checked|disabled|aria-)/.test(attribute.name) &&
+        !(checkbox && (attribute.name === "checked" || attribute.name === "disabled" || attribute.name === "type")))
+      .map((attribute): [string, string] => {
+        let value = attribute.value;
+        if (attribute.name === "href") value = canonicalLinkUrl(value);
+        if (attribute.name === "rel") value = Array.from(new Set(value.toLowerCase().split(/\s+/).filter(Boolean))).sort().join(" ");
+        if (attribute.name === "target" && /^_(blank|self|parent|top)$/i.test(value)) value = value.toLowerCase();
+        if (attribute.name === "checked" || attribute.name === "disabled") value = "true";
+        return [attribute.name, value];
+      });
+    if (checkbox) {
+      // The selector establishes this HTMLInputElement DOM boundary.
+      const input = element as HTMLInputElement;
+      attributes.push(["type", input.type], ["checked", String(input.checked)], ["disabled", String(input.disabled)]);
+    }
+    return attributes.sort(([left], [right]) => left.localeCompare(right));
+  };
   const semanticHtml = (element: Element): boolean => element.matches("details,summary,abbr,mark,time,img,video,audio,iframe,blockquote,hr,strong,em,b,u,s,button,del,ins,kbd,sup,sub,[data-streamdown='strong']") ||
-    semanticAttributes(element).some(([name]) => /^(alt|title|open|datetime|cite|lang|dir|role|aria-)/.test(name));
+    semanticAttributes(element).some(([name]) => /^(alt|title|open|datetime|cite|lang|dir|role|target|rel|download|type|checked|disabled|aria-)/.test(name));
   // Enter/exit events associate repeated text with its inline semantics. Plain
   // styling spans contribute text but no events, including Shiki token wrappers.
   const inlineOrder: SemanticDomRecords["inlineOrder"] = [];
