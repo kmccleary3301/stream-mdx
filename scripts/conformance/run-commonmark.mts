@@ -94,6 +94,17 @@ function restoreConsole(): void {
   console.error = originalError;
 }
 
+/**
+ * CommonMark examples whose expected output the GFM autolink-literal extension changes.
+ * StreamMDX targets GFM, so these are scored against the GFM result (GFM spec §6.9).
+ */
+const GFM_EXPECTED_OVERRIDES: Record<string, string> = {
+  cm_602: '<p>&lt;<a href="https://foo.bar/baz">https://foo.bar/baz</a> bim&gt;</p>',
+  cm_608: '<p>&lt; <a href="https://foo.bar">https://foo.bar</a> &gt;</p>',
+  cm_611: '<p><a href="https://example.com">https://example.com</a></p>',
+  cm_612: '<p><a href="mailto:foo@bar.example.com">foo@bar.example.com</a></p>',
+};
+
 async function loadExamples(): Promise<ConformanceExample[]> {
   const cmPath = path.join(ROOT, "tests/conformance/fixtures/commonmark-spec-0.31.2.json");
   const gfmPath = path.join(ROOT, "tests/conformance/fixtures/gfm-spec-extensions.json");
@@ -113,7 +124,7 @@ async function loadExamples(): Promise<ConformanceExample[]> {
       section: t.section,
       number: t.number,
       markdown: t.markdown,
-      expectedHtml: t.html,
+      expectedHtml: GFM_EXPECTED_OVERRIDES[`cm_${t.number}`] ?? t.html,
     });
   }
   for (const t of gfmTests) {
@@ -205,6 +216,7 @@ async function main(): Promise<void> {
       extensions: [gfm()],
       htmlExtensions: [gfmHtml()],
       allowDangerousHtml: true,
+      allowDangerousProtocol: true,
     });
     const oracleNormalized = specNormalized;
     const micromarkPass = normalizeHtmlSemantics(oracleRaw) === specNormalized;
