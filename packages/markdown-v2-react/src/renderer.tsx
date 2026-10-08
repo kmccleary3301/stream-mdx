@@ -63,6 +63,19 @@ interface WorkerInitializationQueue {
   acknowledgements: WeakMap<MessageEvent<WorkerOut>, OwnedInitialization>;
 }
 
+function extractWorkerError(event: Event): Error {
+  if (event && "error" in event) {
+    const candidate = event.error;
+    if (candidate instanceof Error) {
+      return candidate;
+    }
+  }
+  if (event && "message" in event && typeof event.message === "string") {
+    return new Error(event.message);
+  }
+  return new Error("Worker error");
+}
+
 // A borrowed worker can outlive its renderer. Keep cancelled FIFO slots until
 // their native responses arrive, including while no renderer is attached.
 const workerInitializations = new WeakMap<Worker, WorkerInitializationQueue>();
@@ -81,6 +94,12 @@ function getWorkerInitializations(worker: Worker): WorkerInitializationQueue {
       }
     } else if (message.type === "ERROR" && message.phase === "INIT" && typeof message.meta?.rule !== "string") {
       queue.pending.shift()?.reject?.(new Error(message.error.message));
+    }
+  });
+  worker.addEventListener("error", (event: Event) => {
+    const error = extractWorkerError(event);
+    while (queue.pending.length > 0) {
+      queue.pending.shift()?.reject?.(error);
     }
   });
   return queue;
@@ -104,6 +123,7 @@ export class MarkdownRenderer implements Renderer {
   private lastWorkerError: Extract<WorkerOut, { type: "ERROR" }> | null = null;
   private flushListeners = new Set<(result: PatchFlushResult) => void>();
   private workerMessageListener: ((event: MessageEvent<WorkerOut>) => void) | null = null;
+  private workerErrorListener: ((event: Event) => void) | null = null;
 
   constructor(config: RendererConfig = {}) {
     this.config = config;
@@ -116,11 +136,9 @@ export class MarkdownRenderer implements Renderer {
         mathRenderer: this.config.mathRenderer,
         tableVirtualization: this.config.tableVirtualization,
         urlTransform: this.config.urlTransform,
+        blockRenderer: this.config.blockRenderer,
       },
     );
-    if (this.config.urlTransform) {
-      this.componentRegistry.setUrlTransform(this.config.urlTransform);
-    }
     if (this.config.html?.literalTagContent) {
       this.componentRegistry.setLiteralTagContent(this.config.html.literalTagContent);
     }
@@ -165,7 +183,8 @@ export class MarkdownRenderer implements Renderer {
     this.initializationQueue = getWorkerInitializations(worker);
     this.workerMessageListener = this.handleWorkerMessage.bind(this);
     this.worker.addEventListener("message", this.workerMessageListener);
-
+    this.workerErrorListener = this.handleWorkerError.bind(this);
+    this.worker.addEventListener("error", this.workerErrorListener);
     if (!this.skipWorkerInit) this.initializeWorker();
   }
 
@@ -212,6 +231,7 @@ export class MarkdownRenderer implements Renderer {
   }
 
   detachWorker(options: { terminate?: boolean } = {}): void {
+    this.patchScheduler.clear();
     if (!this.worker) return;
     const shouldTerminate = options.terminate ?? false;
     for (const initialization of this.initializationQueue?.pending ?? []) {
@@ -225,6 +245,9 @@ export class MarkdownRenderer implements Renderer {
       if (this.workerMessageListener) {
         this.worker.removeEventListener("message", this.workerMessageListener);
       }
+      if (this.workerErrorListener) {
+        this.worker.removeEventListener("error", this.workerErrorListener);
+      }
       if (shouldTerminate && typeof this.worker.terminate === "function") {
         this.worker.terminate();
       }
@@ -233,10 +256,31 @@ export class MarkdownRenderer implements Renderer {
     } finally {
       this.worker = null;
       this.workerMessageListener = null;
+      this.workerErrorListener = null;
       this.workerHasContent = false;
       this.initializationQueue = null;
     }
   }
+  private handleWorkerError(event: Event): void {
+    const error = extractWorkerError(event);
+    this.lastWorkerError = {
+      type: "ERROR",
+      phase: "UNKNOWN",
+      error: {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+      },
+    };
+    for (const initialization of this.initializationQueue?.pending ?? []) {
+      if (initialization.owner !== this) continue;
+      initialization.reject?.(error);
+      initialization.owner = undefined;
+      initialization.resolve = undefined;
+      initialization.reject = undefined;
+    }
+  }
+
 
   /**
    * Append text chunk for streaming

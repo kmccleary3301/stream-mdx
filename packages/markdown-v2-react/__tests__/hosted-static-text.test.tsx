@@ -113,7 +113,7 @@ try {
   }
 
   const hosted = new HostedWorker();
-  const factory = () => hosted.asBrowserWorker();
+  const factory = hosted.asBrowserWorker();
   const container = document.createElement("div");
   document.body.append(container);
   const root = createRoot(container);

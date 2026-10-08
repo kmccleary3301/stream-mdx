@@ -160,10 +160,10 @@ cp node_modules/@stream-mdx/worker/dist/hosted/markdown-worker.js public/workers
 
 Worker ownership semantics:
 
-- `worker="/.../markdown-worker.js"` or `worker={new URL(...)}`
-  - StreamMDX creates + terminates the Worker instance for you.
-- `worker={existingWorker}` or `worker={() => existingWorker}`
-  - StreamMDX treats the Worker as externally managed and will not terminate it.
+- `worker="/.../markdown-worker.js"`, `worker={new URL(...)}`, or `worker={() => createWorker()}`
+  - StreamMDX creates + terminates the Worker instance for you. Factory-created workers are owned by the component.
+- `worker={existingWorker}`
+  - StreamMDX treats an existing Worker instance as externally managed and will not terminate it.
 - `worker={undefined}`
   - StreamMDX uses the default worker strategy and falls back to `/workers/markdown-worker.js`.
 

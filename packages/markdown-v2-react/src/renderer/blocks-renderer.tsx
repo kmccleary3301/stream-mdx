@@ -1,5 +1,5 @@
 import type { Block, UrlTransform } from "@stream-mdx/core";
-import React, { useMemo } from "react";
+import React, { useMemo, useRef } from "react";
 
 import { PATCH_ROOT_ID } from "@stream-mdx/core";
 import { ComponentRegistry } from "../components";
@@ -24,17 +24,22 @@ export interface MarkdownBlocksRendererProps {
 
 export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
   ({ blocks, componentRegistry, codeRenderers, blockRenderer, urlTransform, className = "markdown-renderer", style, store }) => {
+    // Props override the registry; a prop removed after being set reverts the registry,
+    // while overrides configured directly on a caller-provided registry stay untouched.
+    const appliedOverrides = useRef<{ blockRenderer?: BlockRendererOverride; urlTransform?: UrlTransform }>({});
     const resolvedRegistry = useMemo(() => {
       const reg = componentRegistry ?? new ComponentRegistry();
       if (codeRenderers) {
         reg.setCodeRenderers(codeRenderers);
       }
-      if (blockRenderer) {
+      const applied = appliedOverrides.current;
+      if (blockRenderer !== undefined || applied.blockRenderer !== undefined) {
         reg.setBlockRenderer(blockRenderer);
       }
-      if (urlTransform) {
+      if (urlTransform !== undefined || applied.urlTransform !== undefined) {
         reg.setUrlTransform(urlTransform);
       }
+      appliedOverrides.current = { blockRenderer, urlTransform };
       return reg;
     }, [componentRegistry, codeRenderers, blockRenderer, urlTransform]);
     const effectiveStore = useMemo(() => {
@@ -47,18 +52,25 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
         className,
         style: { contain: "content", ...(style ?? {}) }, // CSS containment for performance
       },
-      React.createElement(StoreBackedBlocks, { store: effectiveStore, componentRegistry: resolvedRegistry }),
+      React.createElement(StoreBackedBlocks, { store: effectiveStore, componentRegistry: resolvedRegistry, blockRenderer }),
     );
   },
 );
 
-const StoreBackedBlocks = React.memo<{ store: RendererStore; componentRegistry: ComponentRegistry }>(
-  ({ store, componentRegistry }) => {
+const StoreBackedBlocks = React.memo<{ store: RendererStore; componentRegistry: ComponentRegistry; blockRenderer?: BlockRendererOverride }>(
+  ({ store, componentRegistry, blockRenderer }) => {
     const blockIds = useRendererChildren(store, PATCH_ROOT_ID);
     return React.createElement(
       React.Fragment,
       null,
-      blockIds.map((blockId) => React.createElement(BlockNodeRenderer, { key: blockId, store, blockId, registry: componentRegistry })),
+      blockIds.map((blockId) =>
+        React.createElement(BlockNodeRenderer, {
+          key: `${blockId}:${blockRenderer ? "custom" : "default"}`,
+          store,
+          blockId,
+          registry: componentRegistry,
+        }),
+      ),
     );
   },
 );
