@@ -48,7 +48,7 @@ Operational policy:
 - Prefer render-layer overrides (`htmlElements`) over sanitizer allowlist expansion.
 - Review any allowlist changes as security-sensitive changes.
 
-Code-row HTML emitted by the syntax highlighter (per-line `span.line` markup with Shiki theme variables) uses one shared allowlist on every runtime: `pre`/`code`/`span`/`div`/`br` with `class`, `data-*`, and `style` attributes. The browser path runs that allowlist through DOMPurify; the Node/SSR path (snapshot prerender, `MarkdownBlocksRenderer`) runs it through the DOM-free rehype pipeline, so no `window`/jsdom shim is required. URL/script-bearing style values (`url(...)`, `javascript:`, `expression(...)`) are dropped on both paths while theme foreground colors and CSS variables are preserved.
+Code-row HTML emitted by the syntax highlighter (per-line `span.line` markup with Shiki theme variables) uses one shared allowlist on every runtime: `pre`/`code`/`span`/`div`/`br` with `class`, `data-*`, and `style` attributes. The browser path runs that allowlist through DOMPurify; the Node/SSR path (snapshot prerender, `MarkdownBlocksRenderer`) runs it through the DOM-free rehype pipeline, so no `window`/jsdom shim is required. Surviving style declarations must use an allowed presentational property (theme foreground/background colors, font emphasis, `--shiki-*` variables) and an ASCII value from a conservative charset, so CSS backslash escapes, comment-splitting tricks, and function values such as `url(...)`/`expression(...)` are dropped on both paths while theme foreground colors and CSS variables are preserved.
 
 ## MDX policy
 

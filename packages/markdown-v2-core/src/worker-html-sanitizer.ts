@@ -49,11 +49,33 @@ export const CODE_ROW_ALLOWED_ATTRS = ["class", "data-*", "style"] as const;
 const CODE_ROW_HAST_ATTRS = ["className", "style", "data*"] as const;
 
 /**
- * url()/script-bearing CSS is rejected outright: code rows never emit it.
- * Applied to both paths (rehype tree walk on the DOM-free path, template scrub
- * after DOMPurify in the browser) so browser and Node drop the same styles.
+ * Code-row style policy: only theme wiring survives. Properties must be
+ * `--custom-properties` or a small presentational allowlist, and values must
+ * stay inside a conservative charset. This rejects CSS backslash escapes
+ * (for example a `\75` escape spelling `u`), comment-splitting tricks, and
+ * function values such as `url(`/`expression(` by construction instead of
+ * pattern-matching raw text. Applied to both paths (rehype tree walk on the
+ * DOM-free path, template scrub after DOMPurify in the browser) so browser
+ * and Node keep and drop the same styles.
  */
-export const CODE_ROW_UNSAFE_STYLE = /javascript:|vbscript:|expression\s*\(|behavior\s*:|@import|url\s*\(/i;
+const CODE_ROW_STYLE_PROPS =
+  /^(?:--[a-z0-9_-]+|color|background-color|font-synthesis|font-style|font-weight|text-decoration|text-decoration-color|text-decoration-line|text-decoration-style|text-decoration-thickness|display|white-space)$/i;
+const CODE_ROW_STYLE_VALUE = /^[a-z0-9#%.,\s_+-]+$/i;
+
+export function isSafeCodeRowStyle(style: string): boolean {
+  for (const declaration of style.split(";")) {
+    const trimmed = declaration.trim();
+    if (trimmed.length === 0) continue;
+    const separator = trimmed.indexOf(":");
+    if (separator <= 0) return false;
+    const property = trimmed.slice(0, separator).trim();
+    const value = trimmed.slice(separator + 1).trim();
+    if (!CODE_ROW_STYLE_PROPS.test(property) || !CODE_ROW_STYLE_VALUE.test(value)) {
+      return false;
+    }
+  }
+  return true;
+}
 
 function createCodeRowSchema(): Schema {
   const base = JSON.parse(JSON.stringify(defaultSchema)) as Schema;
@@ -76,7 +98,7 @@ function stripUnsafeCodeRowStyles(node: unknown): void {
   if (record.type === "element" && record.properties && typeof record.properties === "object") {
     const properties = record.properties as Record<string, unknown>;
     const style = properties.style;
-    if (typeof style === "string" && CODE_ROW_UNSAFE_STYLE.test(style)) {
+    if (typeof style === "string" && !isSafeCodeRowStyle(style)) {
       delete properties.style;
     }
   }

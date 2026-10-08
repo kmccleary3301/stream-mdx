@@ -3,7 +3,7 @@
 
 import createDOMPurify, { type Config as DOMPurifyConfig } from "dompurify";
 
-import { CODE_ROW_ALLOWED_ATTRS, CODE_ROW_ALLOWED_TAGS, CODE_ROW_UNSAFE_STYLE, sanitizeCodeHtmlInWorker } from "./worker-html-sanitizer";
+import { CODE_ROW_ALLOWED_ATTRS, CODE_ROW_ALLOWED_TAGS, isSafeCodeRowStyle, sanitizeCodeHtmlInWorker } from "./worker-html-sanitizer";
 
 type DOMPurifyInstance = {
   sanitize: (html: string, config: DOMPurifyConfig) => unknown;
@@ -404,9 +404,10 @@ export function sanitizeCodeHTML(html: string): string {
     RETURN_DOM: false,
   });
   const sanitized = typeof out === "string" ? out : String(out);
-  // DOMPurify keeps style attribute values verbatim; drop URL/script-bearing
-  // ones so the browser path applies the same CSS filter as the DOM-free path.
-  return CODE_ROW_UNSAFE_STYLE.test(sanitized) ? stripUnsafeCodeRowStylesInDom(sanitized) : sanitized;
+  // DOMPurify keeps style attribute values verbatim; apply the shared code-row
+  // style policy on the sanitized DOM so the browser path drops exactly what
+  // the DOM-free path drops.
+  return sanitized.includes("style=") ? stripUnsafeCodeRowStylesInDom(sanitized) : sanitized;
 }
 
 function stripUnsafeCodeRowStylesInDom(html: string): string {
@@ -418,7 +419,7 @@ function stripUnsafeCodeRowStylesInDom(html: string): string {
   template.innerHTML = html;
   for (const element of Array.from(template.content.querySelectorAll("[style]"))) {
     const style = element.getAttribute("style") ?? "";
-    if (CODE_ROW_UNSAFE_STYLE.test(style)) {
+    if (!isSafeCodeRowStyle(style)) {
       element.removeAttribute("style");
     }
   }

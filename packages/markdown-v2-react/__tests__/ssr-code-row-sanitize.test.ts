@@ -83,7 +83,25 @@ const ALIGNMENT_MATRIX = [
   '<span class="line"><!-- note -->kept</span>',
   '<span class="line"><script>alert(1)</script>after</span>',
   '<span aria-hidden="true" id="x" tabindex="0" class="line" data-line="4">attrs</span>',
+  '<span class="line" style="background-image:\\75rl(https://attacker.example/pixel)">escaped</span>',
+  '<span class="line" style="background-image:u/**/rl(https://attacker.example/pixel)">commented</span>',
+  '<span class="line" style="background-image:url(https://attacker.example/pixel)">urled</span>',
+  '<span class="line" style="position:fixed;color:#24292e">mixed</span>',
 ];
+
+const CSS_ESCAPE_BYPASSES = [
+  '<span class="line" style="background-image:\\75rl(https://attacker.example/pixel)">escaped</span>',
+  '<span class="line" style="background-image:u/**/rl(https://attacker.example/pixel)">commented</span>',
+  '<span class="line" style="background-image:url(https://attacker.example/pixel)">urled</span>',
+];
+
+function restoreWindow(): void {
+  if (typeof previousWindow === "undefined") {
+    delete globalScope.window;
+  } else {
+    globalScope.window = previousWindow;
+  }
+}
 
 async function main(): Promise<void> {
   assert.strictEqual(typeof globalScope.window, "undefined", "SSR phase requires no global window");
@@ -123,6 +141,14 @@ async function main(): Promise<void> {
     .join("\n");
   assert.ok(codeText.includes(REAL_SHIKI_FENCE_SOURCE), `SSR code text must retain the source: ${codeText}`);
 
+  // 3b. CSS backslash-escape / comment bypass attempts lose their styles DOM-free.
+  for (const input of CSS_ESCAPE_BYPASSES) {
+    const out = sanitizeCodeHTML(input);
+    assert.ok(!/background-image/i.test(out), `DOM-free path must drop hostile styles: ${out}`);
+    assert.ok(!/\\75|url\s*\(|u\/\*\*\/rl/.test(out), `DOM-free path must not keep escaped url(): ${out}`);
+    assert.ok(/escaped|commented|urled/.test(out), `DOM-free path must keep row content: ${out}`);
+  }
+
   // 4. Browser path (DOMPurify + template scrub) and Node path must agree per DOM semantics.
   const nodeOutputs = ALIGNMENT_MATRIX.map((input) => normalizeHtml(sanitizeCodeHTML(input)));
   const dom = new JSDOM("<!doctype html><html><body></body></html>");
@@ -140,18 +166,23 @@ async function main(): Promise<void> {
     assert.ok(!/onerror/i.test(browserHostile), "browser path must drop event handlers");
     assert.ok(!/javascript:/i.test(browserHostile), "browser path must drop javascript: payloads");
     assert.ok(browserHostile.includes("color:#24292e"), "browser path must keep benign theme styles");
+    const benignCustomProps = sanitizeCodeHTML(
+      '<span class="line"><span style="--shiki-dark:#e1e4e8;--shiki-light:#24292e">alpha</span></span>',
+    );
+    assert.ok(
+      benignCustomProps.includes("--shiki-dark:#e1e4e8"),
+      `browser path must keep benign theme variables: ${benignCustomProps}`,
+    );
   } finally {
-    if (typeof previousWindow === "undefined") {
-      delete globalScope.window;
-    } else {
-      globalScope.window = previousWindow;
-    }
+    restoreWindow();
   }
 
   console.log("ssr-code-row-sanitize test passed");
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+main()
+  .catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  })
+  .finally(restoreWindow);
