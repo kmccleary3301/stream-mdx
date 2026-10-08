@@ -1,5 +1,4 @@
 import type {
-  Block,
   DiffKind,
   NodeSnapshot,
   Patch,

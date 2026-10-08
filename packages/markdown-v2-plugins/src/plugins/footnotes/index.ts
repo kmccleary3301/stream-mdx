@@ -1,4 +1,4 @@
-import type { Block, InlineNode, NodeSnapshot, PreparedNestedSnapshot } from "@stream-mdx/core";
+import type { Block, HtmlTreeNode, InlineNode, NodeSnapshot, PreparedNestedSnapshot } from "@stream-mdx/core";
 import { generateBlockId } from "@stream-mdx/core";
 import type { DocumentPlugin, DocumentPluginRegistry } from "../document";
 
@@ -179,14 +179,18 @@ function assignNumbersFromReferencesInBlocks(blocks: Block[], state: FootnoteSta
 }
 
 function numberInlineReferences(blocks: Block[], state: FootnoteState) {
-  const applyNumbers = (inline: InlineNode[] | undefined): InlineNode[] | undefined => {
-    if (!inline || inline.length === 0) return inline;
-    return mapInline(inline, (node) => {
-      if (node.kind !== "footnote-ref") return node;
-      const number = state.labelToNumber.get(node.label);
-      return node.number === number ? node : { ...node, number };
-    });
+  const numberInlineNode = (node: InlineNode): InlineNode => {
+    let result = node;
+    if (hasInlineChildren(node)) {
+      const children = mapChanged(node.children, numberInlineNode);
+      if (children !== node.children) result = { ...node, children } as InlineNode;
+    }
+    if (result.kind !== "footnote-ref") return result;
+    const number = state.labelToNumber.get(result.label);
+    return result.number === number ? result : { ...result, number };
   };
+  const applyNumbers = (inline: InlineNode[] | undefined): InlineNode[] | undefined =>
+    inline ? mapChanged(inline, numberInlineNode) : inline;
   const numbered = new WeakMap<object, object>();
   const numberProps = (props: Record<string, unknown>): Record<string, unknown> => {
     const inline = Array.isArray(props.inline) ? applyNumbers(props.inline as InlineNode[]) : props.inline;
@@ -201,8 +205,28 @@ function numberInlineReferences(blocks: Block[], state: FootnoteState) {
     const meta = snapshot.meta ? numberMeta(snapshot.meta) : snapshot.meta;
     const children = snapshot.children ? mapChanged(snapshot.children, numberSnapshot) : snapshot.children;
     const result = props === snapshot.props && meta === snapshot.meta && children === snapshot.children
-      ? snapshot : { ...snapshot, props, meta, children };
+      ? snapshot : { ...snapshot, ...(props !== snapshot.props ? { props } : {}), ...(meta !== snapshot.meta ? { meta } : {}), ...(children !== snapshot.children ? { children } : {}) };
     numbered.set(snapshot, result);
+    return result;
+  };
+  const numberHtmlNode = (node: HtmlTreeNode): HtmlTreeNode => {
+    const cached = numbered.get(node) as HtmlTreeNode | undefined;
+    if (cached) return cached;
+    let result = node;
+    if (node.kind === "text") {
+      const inline = applyNumbers(node.inline);
+      if (inline !== node.inline) result = { ...node, inline };
+    } else if (node.kind === "element") {
+      const children = mapChanged(node.children, numberHtmlNode);
+      const inlineNode = node.inlineNode ? numberInlineNode(node.inlineNode) : node.inlineNode;
+      if (children !== node.children || inlineNode !== node.inlineNode) {
+        result = { ...node, children, ...(inlineNode !== node.inlineNode ? { inlineNode } : {}) };
+      }
+    } else {
+      const block = numberBlock(node.block);
+      if (block !== node.block) result = { ...node, block };
+    }
+    numbered.set(node, result);
     return result;
   };
   const numberMeta = (meta: Record<string, unknown>): Record<string, unknown> => {
@@ -232,6 +256,10 @@ function numberInlineReferences(blocks: Block[], state: FootnoteState) {
     if (Array.isArray(meta.rows) && meta.rows.every((row) => Array.isArray(row))) {
       set("rows", mapChanged(meta.rows as InlineNode[][][], (row) => mapChanged(row, (cell) => applyNumbers(cell) ?? cell)));
     }
+    for (const key of ["htmlTree", "htmlParagraphTree"]) {
+      const tree = meta[key];
+      if (Array.isArray(tree)) set(key, mapChanged(tree as HtmlTreeNode[], numberHtmlNode));
+    }
     const prepared = meta.preparedNested as PreparedNestedSnapshot | undefined;
     if (prepared) {
       const props = numberProps(prepared.props);
@@ -253,7 +281,7 @@ function numberInlineReferences(blocks: Block[], state: FootnoteState) {
       inline = collected;
     }
     const result = inline === block.payload.inline && meta === block.payload.meta
-      ? block : { ...block, payload: { ...block.payload, inline, meta } };
+      ? block : { ...block, payload: { ...block.payload, ...(inline !== block.payload.inline ? { inline } : {}), ...(meta !== block.payload.meta ? { meta } : {}) } };
     numbered.set(block, result);
     return result;
   };
@@ -275,16 +303,6 @@ function visitPreparedInline(children: NodeSnapshot[], visit: (nodes: InlineNode
   }
 }
 
-function mapInline(nodes: InlineNode[], f: (n: InlineNode) => InlineNode): InlineNode[] {
-  return mapChanged(nodes, (node) => {
-    let mapped = node;
-    if (hasInlineChildren(node)) {
-      const children = mapInline(node.children, f);
-      if (children !== node.children) mapped = { ...node, children } as InlineNode;
-    }
-    return f(mapped);
-  });
-}
 
 /** Copy only a changed array, leaving unrelated prepared code/HTML artifacts shared. */
 function mapChanged<T>(values: T[], map: (value: T) => T): T[] {

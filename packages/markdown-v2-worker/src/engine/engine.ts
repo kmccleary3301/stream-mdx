@@ -8,12 +8,14 @@ import type {
   DiffKind,
   FormatAnticipationConfig,
   HtmlOptions,
+  HtmlTreeNode,
   InlineNode,
   SyntaxRuleSpec,
   NormalizedFormatAnticipation,
   LinkReferenceDefinition,
   Patch,
   NodeSnapshot,
+  PreparedNestedSnapshot,
   PatchMetrics,
   PerformanceMetrics,
   ProtectedRange,
@@ -41,7 +43,6 @@ import {
   extractCodeLines,
   extractMixedContentSegments,
   generateBlockId,
-  normalizeBlockquoteText,
   normalizeFormatAnticipation,
   parseCodeFenceInfo,
   prepareInlineStreamingContent,
@@ -132,6 +133,7 @@ import type {
   CodeHighlightingMode,
   ContentChangeRange,
   DiffCursorState,
+  DiffLineInfo,
   EngineExtensions,
   IncrementalHighlightState,
   LazyTokenizationState,
@@ -196,6 +198,7 @@ export class MarkdownEngine {
   private currentLinkReferences = new Map<string, LinkReferenceDefinition>();
   private blockAttemptedReferences = new Map<string, Set<string>>();
   private currentContent = "";
+  private documentGeneration = 0;
 
   private txCounter = 0;
   private parseEpochCounter = 0;
@@ -289,6 +292,9 @@ export class MarkdownEngine {
 
   public dispose(): void {
     this.disposed = true;
+    this.documentGeneration += 1;
+    this.lazyTokenizationScheduled = false;
+    this.lazyTokenizationProcessing = false;
     this.lazyTokenizationQueue.clear();
     this.lazyTokenizationStates.clear();
     this.deferredPatchQueue = [];
@@ -514,6 +520,7 @@ export class MarkdownEngine {
     syntax?: SyntaxRuleSpec[],
     html?: HtmlOptions,
   ): Promise<void> {
+    this.documentGeneration += 1;
     this.performanceTimer = new PerformanceTimer();
     this.blocks = [];
     this.lastTree = null;
@@ -789,6 +796,7 @@ export class MarkdownEngine {
       this.headingIdCounts = new Map<string, number>();
       const extracted: Block[] = [];
       const cursor = tree.cursor();
+      const footnotesEnabled = this.documentPluginRegistry.getAll().some((plugin) => plugin.name === "footnotes");
       let hasRecognizedNodes = false;
       const reusableBlockMap =
         options.firstChangedPos !== undefined && options.previousBlocks
@@ -803,10 +811,6 @@ export class MarkdownEngine {
       if (cursor.firstChild()) {
         do {
           const nodeType = cursor.type.name;
-          if (nodeType === "LinkReference") {
-            hasRecognizedNodes = true;
-            continue;
-          }
           let from = cursor.from;
           const to = cursor.to;
           if (nodeType === "CodeBlock") {
@@ -814,9 +818,14 @@ export class MarkdownEngine {
             from = lineStart;
           }
           const raw = content.slice(from, to);
-          if (isBlockLevelNode(nodeType)) {
+          const footnoteDefinition = nodeType === "LinkReference" && footnotesEnabled && /^\[\^[A-Za-z0-9_-]+\]:/.test(raw);
+          if (nodeType === "LinkReference" && !footnoteDefinition) {
             hasRecognizedNodes = true;
-            const blockType = mapLezerNodeToBlockType(nodeType);
+            continue;
+          }
+          if (isBlockLevelNode(nodeType) || footnoteDefinition) {
+            hasRecognizedNodes = true;
+            const blockType = footnoteDefinition ? "paragraph" : mapLezerNodeToBlockType(nodeType);
             let block: Block | null = null;
             if (reusableBlockMap && to <= options.firstChangedPos!) {
               const prev = reusableBlockMap.get(`${from}:${to}:${raw}`);
@@ -1292,6 +1301,19 @@ export class MarkdownEngine {
     metrics?.recordBlockEnrich(block.type, enrichDuration);
   }
 
+  private canonicalizePreparedSnapshot(value: unknown): void {
+    if (!value || typeof value !== "object") return;
+    if (Array.isArray(value)) {
+      for (const child of value) this.canonicalizePreparedSnapshot(child);
+    } else {
+      const record = value as Record<string, unknown>;
+      for (const key of Object.keys(record)) {
+        if (record[key] === undefined) delete record[key];
+        else this.canonicalizePreparedSnapshot(record[key]);
+      }
+    }
+  }
+
   private async prepareNestedChildren(block: Block): Promise<void> {
     block.payload.meta = { ...block.payload.meta, mathEnabled: this.enableMath, formatAnticipation: this.formatAnticipationConfig };
     const prepared = prepareNestedBlockSnapshot(block, this.inlineParser, this.mdParser, (text) => this.parseInlineStreaming(text).inline);
@@ -1336,19 +1358,7 @@ export class MarkdownEngine {
     };
     for (const child of prepared.children) await enrich(child);
     prepared.children = groupChildren(prepared.children);
-    const canonicalize = (value: unknown): void => {
-      if (!value || typeof value !== "object") return;
-      if (Array.isArray(value)) {
-        for (const child of value) canonicalize(child);
-      } else {
-        const record = value as Record<string, unknown>;
-        for (const key of Object.keys(record)) {
-          if (record[key] === undefined) delete record[key];
-          else canonicalize(record[key]);
-        }
-      }
-    };
-    canonicalize(prepared);
+    this.canonicalizePreparedSnapshot(prepared);
     block.payload.meta = {
       ...block.payload.meta,
       ...prepared.props,
@@ -2192,7 +2202,9 @@ export class MarkdownEngine {
   private scheduleLazyTokenizationProcessing(): void {
     if (this.lazyTokenizationScheduled) return;
     this.lazyTokenizationScheduled = true;
+    const generation = this.documentGeneration;
     queueMicrotask(async () => {
+      if (this.disposed || generation !== this.documentGeneration) return;
       this.lazyTokenizationScheduled = false;
       await this.processLazyTokenizationQueue();
     });
@@ -2201,30 +2213,176 @@ export class MarkdownEngine {
   private async processLazyTokenizationQueue(): Promise<void> {
     if (this.lazyTokenizationProcessing) return;
     this.lazyTokenizationProcessing = true;
+    const generation = this.documentGeneration;
     try {
-      while (this.lazyTokenizationQueue.size > 0) {
+      while (!this.disposed && generation === this.documentGeneration && this.lazyTokenizationQueue.size > 0) {
         const next = selectNextLazyRequest(this.lazyTokenizationQueue);
         if (!next) break;
         this.lazyTokenizationQueue.delete(next.blockId);
         await this.handleLazyTokenizationRequest(next);
       }
     } finally {
-      this.lazyTokenizationProcessing = false;
+      if (generation === this.documentGeneration) this.lazyTokenizationProcessing = false;
     }
+  }
+
+  private findPreparedCode(blockId: string): { rootIndex: number; block: Block } | undefined {
+    const seen = new WeakSet<object>();
+    const findTree = (tree: HtmlTreeNode[]): Block | undefined => {
+      for (const node of tree) {
+        const block = node.kind === "block" ? findBlock(node.block)
+          : node.kind === "element" ? findTree(node.children) : undefined;
+        if (block) return block;
+      }
+      return undefined;
+    };
+    const findSnapshots = (children: NodeSnapshot[]): Block | undefined => {
+      for (const snapshot of children) {
+        if (seen.has(snapshot)) continue;
+        seen.add(snapshot);
+        const block = snapshot.props?.block as Block | undefined;
+        const found = block ? findBlock(block) : undefined;
+        if (found) return found;
+        if (snapshot.type === "code") continue;
+        const nested = findSnapshots(snapshot.children ?? []);
+        if (nested) return nested;
+      }
+      return undefined;
+    };
+    const findBlock = (block: Block): Block | undefined => {
+      if (block.id === blockId && block.type === "code") return block;
+      if (seen.has(block)) return undefined;
+      seen.add(block);
+      const meta = block.payload.meta;
+      const prepared = meta?.preparedNested as PreparedNestedSnapshot | undefined;
+      const nested = prepared ? findSnapshots(prepared.children) : undefined;
+      if (nested) return nested;
+      for (const key of ["htmlTree", "htmlParagraphTree"]) {
+        const tree = meta?.[key] as HtmlTreeNode[] | undefined;
+        const owned = tree ? findTree(tree) : undefined;
+        if (owned) return owned;
+      }
+      return undefined;
+    };
+    for (let rootIndex = 0; rootIndex < this.blocks.length; rootIndex++) {
+      const block = findBlock(this.blocks[rootIndex]);
+      if (block) return { rootIndex, block };
+    }
+    return undefined;
+  }
+
+  private replacePreparedCode(root: Block, updated: Block): Block {
+    if (root.id === updated.id) return updated;
+    const codeSnapshot = createBlockSnapshot(updated);
+    this.canonicalizePreparedSnapshot(codeSnapshot);
+    const codeBlock = codeSnapshot.props?.block as Block;
+    const replaced = new WeakMap<object, object>();
+    const mapChanged = <T>(values: T[], map: (value: T) => T): T[] => {
+      let result: T[] | undefined;
+      for (let index = 0; index < values.length; index++) {
+        const value = map(values[index]);
+        if (value === values[index]) continue;
+        if (!result) result = values.slice();
+        result[index] = value;
+      }
+      return result ?? values;
+    };
+    const replaceTreeNode = (node: HtmlTreeNode): HtmlTreeNode => {
+      const cached = replaced.get(node) as HtmlTreeNode | undefined;
+      if (cached) return cached;
+      let result = node;
+      if (node.kind === "block") {
+        const block = replaceBlock(node.block);
+        if (block !== node.block) result = { ...node, block };
+      } else if (node.kind === "element") {
+        const children = mapChanged(node.children, replaceTreeNode);
+        if (children !== node.children) result = { ...node, children };
+      }
+      replaced.set(node, result);
+      return result;
+    };
+    const replaceMeta = (meta: Record<string, unknown>): Record<string, unknown> => {
+      const cached = replaced.get(meta) as Record<string, unknown> | undefined;
+      if (cached) return cached;
+      let result = meta;
+      const set = (key: string, value: unknown) => {
+        if (value === meta[key]) return;
+        if (result === meta) result = { ...meta };
+        result[key] = value;
+      };
+      const prepared = meta.preparedNested as PreparedNestedSnapshot | undefined;
+      if (prepared) {
+        const children = mapChanged(prepared.children, replaceSnapshot);
+        set("preparedNested", children === prepared.children ? prepared : { ...prepared, children });
+      }
+      for (const key of ["htmlTree", "htmlParagraphTree"]) {
+        const tree = meta[key] as HtmlTreeNode[] | undefined;
+        if (tree) set(key, mapChanged(tree, replaceTreeNode));
+      }
+      replaced.set(meta, result);
+      return result;
+    };
+    const replaceBlock = (block: Block): Block => {
+      if (block.id === updated.id) return codeBlock;
+      const cached = replaced.get(block) as Block | undefined;
+      if (cached) return cached;
+      const meta = block.payload.meta ? replaceMeta(block.payload.meta) : block.payload.meta;
+      const result = meta === block.payload.meta ? block : { ...block, payload: { ...block.payload, meta } };
+      replaced.set(block, result);
+      return result;
+    };
+    const replaceSnapshot = (snapshot: NodeSnapshot): NodeSnapshot => {
+      if (snapshot.id === updated.id) return { ...codeSnapshot, props: { ...snapshot.props, ...codeSnapshot.props } };
+      if (snapshot.type === "code") return snapshot;
+      const cached = replaced.get(snapshot) as NodeSnapshot | undefined;
+      if (cached) return cached;
+      const block = snapshot.props?.block as Block | undefined;
+      const nextBlock = block ? replaceBlock(block) : undefined;
+      const meta = snapshot.meta ? replaceMeta(snapshot.meta) : snapshot.meta;
+      const children = snapshot.children ? mapChanged(snapshot.children, replaceSnapshot) : snapshot.children;
+      const result = nextBlock === block && meta === snapshot.meta && children === snapshot.children ? snapshot : {
+        ...snapshot,
+        ...(nextBlock !== block ? { props: { ...snapshot.props, block: nextBlock } } : {}),
+        ...(meta !== snapshot.meta ? { meta } : {}),
+        ...(children !== snapshot.children ? { children } : {}),
+      };
+      replaced.set(snapshot, result);
+      return result;
+    };
+    return replaceBlock(root);
   }
 
   private async handleLazyTokenizationRequest(request: LazyTokenizationRequest): Promise<void> {
     if (!this.lazyTokenizationEnabled || !this.highlighter) return;
-    const index = this.blocks.findIndex((block) => block.id === request.blockId);
-    if (index === -1) return;
-    const block = this.blocks[index];
+    const generation = this.documentGeneration;
+    const target = this.findPreparedCode(request.blockId);
+    if (!target) return;
+    const { block } = target;
     if (block.type !== "code" || !block.isFinalized) return;
+    const sourceRaw = block.payload.raw;
+    const sourceCode = block.payload.meta?.code;
+    const sourceInfo = block.payload.meta?.info;
+    const sourceLanguage = block.payload.meta?.lang;
+    const sourceHighlightLanguage = block.payload.meta?.highlightLang;
+    const themeDark = CODE_HIGHLIGHT_THEMES.dark;
+    const themeLight = CODE_HIGHLIGHT_THEMES.light;
+    const currentTarget = () => {
+      if (this.disposed || generation !== this.documentGeneration) return undefined;
+      const current = this.findPreparedCode(block.id);
+      const leaf = current?.block;
+      return leaf?.type === "code" && leaf.isFinalized && leaf.payload.raw === sourceRaw
+        && leaf.payload.meta?.code === sourceCode && leaf.payload.meta?.info === sourceInfo
+        && leaf.payload.meta?.lang === sourceLanguage && leaf.payload.meta?.highlightLang === sourceHighlightLanguage
+        && CODE_HIGHLIGHT_THEMES.dark === themeDark && CODE_HIGHLIGHT_THEMES.light === themeLight ? current : undefined;
+    };
 
     const raw = block.payload.raw ?? "";
-    const { code, info, hadFence } = stripCodeFence(raw);
+    const extracted = stripCodeFence(raw);
+    const info = typeof block.payload.meta?.info === "string" ? block.payload.meta.info : extracted.info;
     const { lang, meta } = parseCodeFenceInfo(info);
-    const codeBody = hadFence ? dedentFencedCodeByClosingIndent(raw, code) : dedentIndentedCode(raw);
-    const codeLines = extractCodeLines(raw);
+    const codeBody = typeof block.payload.meta?.code === "string" ? block.payload.meta.code
+      : extracted.hadFence ? dedentFencedCodeByClosingIndent(raw, extracted.code) : dedentIndentedCode(raw);
+    const codeLines = codeBody.replace(/\r\n?/g, "\n").split("\n");
     let diffInfo = detectDiffLanguage(lang, meta);
     if (!diffInfo.isDiff && this.emitDiffBlocks && looksLikeUnifiedDiff(codeLines)) {
       diffInfo = {
@@ -2252,9 +2410,11 @@ export class MarkdownEngine {
     let resolvedTokenLanguage = tokenLanguage;
     if (wantsHtml) {
       resolvedLanguage = await resolveHighlightLanguage(this.highlighter, requestedLanguage);
+      if (!currentTarget()) return;
     }
     if (wantsTokens) {
       resolvedTokenLanguage = await resolveHighlightLanguage(this.highlighter, tokenLanguage);
+      if (!currentTarget()) return;
     }
 
     const signature = makeLazySignature(codeBody, resolvedLanguage, resolvedTokenLanguage, diffEnabled);
@@ -2271,11 +2431,14 @@ export class MarkdownEngine {
     const metricsCollector = new WorkerMetricsCollector(this.workerGrammarEngine);
     this.activeMetricsCollector = metricsCollector;
     metricsCollector.setBlocksProduced(this.blocks.length);
-    
-    const prevSnapshot = createBlockSnapshot(block);
 
     const tokenizationStart = now();
     const segmentLines = codeLines.slice(state.processedLines, targetEnd);
+    let nextGrammarState = state.grammarState;
+    let highlightedSegment: Array<string | null> | undefined;
+    let tokenizedSegment: Array<TokenLineV1 | null> | undefined;
+    let nextDiffCursor: DiffCursorState | undefined;
+    let diffSegment: DiffLineInfo[] | undefined;
 
     if (segmentLines.length > 0) {
       if (wantsHtml || (wantsTokens && !diffEnabled)) {
@@ -2284,56 +2447,62 @@ export class MarkdownEngine {
           const tokens = this.highlighter.codeToTokensWithThemes(segmentLines.join("\n"), {
             lang: sharedLanguage as never,
             themes: CODE_HIGHLIGHT_THEMES,
-            grammarState: state.grammarState as never,
+            grammarState: nextGrammarState as never,
           } as never) as ShikiThemedToken[][];
-          if (wantsHtml) {
-            const htmlLines = renderShikiLines(tokens);
-            for (let i = 0; i < htmlLines.length; i += 1) {
-              state.highlightedLines[state.processedLines + i] = htmlLines[i] ?? null;
-            }
-          }
-          if (wantsTokens && !diffEnabled) {
-            const tokenLines = renderTokenLines(tokens);
-            for (let i = 0; i < tokenLines.length; i += 1) {
-              state.tokenLines[state.processedLines + i] = tokenLines[i] ?? null;
-            }
-          }
-          state.grammarState = this.highlighter.getLastGrammarState(tokens as never);
+          if (wantsHtml) highlightedSegment = renderShikiLines(tokens);
+          if (wantsTokens && !diffEnabled) tokenizedSegment = renderTokenLines(tokens);
+          nextGrammarState = this.highlighter.getLastGrammarState(tokens as never);
         } catch (error) {
           console.warn("Lazy tokenization failed for", requestedLanguage, error);
         }
       }
 
       if (wantsTokens && diffEnabled) {
-        const cursor = state.diffCursor ?? { oldLine: null, newLine: null };
+        const cursor = { oldLine: state.diffCursor?.oldLine ?? null, newLine: state.diffCursor?.newLine ?? null };
         const diffLines = segmentLines.map((line) => parseUnifiedDiffLine(line, cursor));
-        state.diffCursor = cursor;
-
-        const grammarObj = { context: state.grammarState };
+        const grammarObj = { context: nextGrammarState };
         const { tokenLines, grammarState: nextState } = await buildDiffTokenLines(
           diffLines,
           resolvedTokenLanguage,
           grammarObj,
           this.highlighter,
         );
-        state.grammarState = nextState.context;
-
-        for (let i = 0; i < diffLines.length; i += 1) {
-          const idx = state.processedLines + i;
-          state.diffKind[idx] = toDiffLineKind(diffLines[i].kind);
-          state.oldNo[idx] = diffLines[i].oldNo ?? null;
-          state.newNo[idx] = diffLines[i].newNo ?? null;
-          state.tokenLines[idx] = tokenLines[i] ?? null;
+        if (!currentTarget()) {
+          if (this.activeMetricsCollector === metricsCollector) this.activeMetricsCollector = null;
+          return;
         }
+        nextGrammarState = nextState.context;
+        nextDiffCursor = cursor;
+        diffSegment = diffLines;
+        tokenizedSegment = tokenLines;
       }
-      state.processedLines = targetEnd;
     }
 
+    const commitTarget = currentTarget();
+    if (!commitTarget) {
+      if (this.activeMetricsCollector === metricsCollector) this.activeMetricsCollector = null;
+      return;
+    }
+    const root = this.blocks[commitTarget.rootIndex];
+    const prevSnapshot = createBlockSnapshot(root);
+    for (let i = 0; i < segmentLines.length; i++) {
+      const index = state.processedLines + i;
+      if (highlightedSegment) state.highlightedLines[index] = highlightedSegment[i] ?? null;
+      if (tokenizedSegment) state.tokenLines[index] = tokenizedSegment[i] ?? null;
+      if (diffSegment) {
+        state.diffKind[index] = toDiffLineKind(diffSegment[i].kind);
+        state.oldNo[index] = diffSegment[i].oldNo ?? null;
+        state.newNo[index] = diffSegment[i].newNo ?? null;
+      }
+    }
+    state.grammarState = nextGrammarState;
+    if (nextDiffCursor) state.diffCursor = nextDiffCursor;
+    state.processedLines = targetEnd;
     const tokenizationDuration = now() - tokenizationStart;
     metricsCollector.recordLazyTokenization(targetEnd - startLine, tokenizationDuration, this.lazyTokenizationQueue.size);
 
-    const updated = cloneBlock(block);
-    updated.payload.highlightedHtml = undefined;
+    const updated = cloneBlock(commitTarget.block);
+    delete updated.payload.highlightedHtml;
     const effectiveLang = wantsHtml ? resolvedLanguage : resolvedTokenLanguage;
     const nextMeta = { ...(updated.payload.meta ?? {}), ...meta, lang: requestedLanguage, highlightLang: effectiveLang } as Record<string, unknown>;
     nextMeta.lazyTokenization = true;
@@ -2368,12 +2537,12 @@ export class MarkdownEngine {
       delete nextMeta.diffBlocks;
     }
     updated.payload.meta = nextMeta;
-    this.blocks[index] = updated;
-
-    const nextSnapshot = createBlockSnapshot(updated);
+    const updatedRoot = this.replacePreparedCode(root, updated);
+    this.blocks[commitTarget.rootIndex] = updatedRoot;
+    const nextSnapshot = createBlockSnapshot(updatedRoot);
 
     const patches: Patch[] = [];
-    diffNodeSnapshot(updated.id, prevSnapshot, nextSnapshot, patches, metricsCollector);
+    diffNodeSnapshot(updatedRoot.id, prevSnapshot, nextSnapshot, patches, metricsCollector);
     if (patches.length > 0) {
       this.dispatchPatchBatch(withPatchKindBatch(patches, "enrichment"), metricsCollector);
     } else {
