@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { createElement } from "react";
+import { createElement, Fragment } from "react";
 
 import type { InlineNode } from "@stream-mdx/core";
 import {
@@ -169,38 +169,6 @@ export function configureDemoRegistry(options: {
     blockquote: ({ inlines, renderedContent }: { inlines: InlineNode[]; renderedContent?: ReactNode }) => (
       <blockquote className="markdown-blockquote">{renderedContent ?? renderWithInline(inlines)}</blockquote>
     ),
-    list: ({ ordered, items }: { ordered: boolean; items: InlineNode[][] }) => {
-      const Tag = ordered ? "ol" : "ul";
-      return (
-        <Tag className={`markdown-list ${ordered ? "ordered" : "unordered"}`}>
-          {items.map((item, index) => {
-            const synthesizedKey = item
-              .map((node) => {
-                switch (node.kind) {
-                  case "text":
-                  case "code":
-                    return `${node.kind}:${node.text}`;
-                  case "link":
-                    return `${node.kind}:${node.href ?? ""}:${node.title ?? ""}`;
-                  case "image":
-                    return `${node.kind}:${node.src}`;
-                  case "mention":
-                    return `${node.kind}:${node.handle}`;
-                  default:
-                    return node.kind;
-                }
-              })
-              .join("|");
-            const key = synthesizedKey.length > 0 ? synthesizedKey : `list-item-${index}`;
-            return (
-              <li key={key} className="markdown-list-item">
-                {renderWithInline(item)}
-              </li>
-            );
-          })}
-        </Tag>
-      );
-    },
     code: ({
       html,
       raw,
@@ -254,18 +222,20 @@ export function configureDemoRegistry(options: {
                 <pre className="m-0" {...attrsToProps(preAttrs)}>
                   <code {...attrsToProps(codeAttrs)}>
                     {effectiveLines.map((text, idx) => (
-                      <span
-                        key={`line-${idx}`}
-                        className="line"
-                        dangerouslySetInnerHTML={{
-                          __html: text
-                            .replace(/&/g, "&amp;")
-                            .replace(/</g, "&lt;")
-                            .replace(/>/g, "&gt;")
-                            .replace(/\"/g, "&quot;")
-                            .replace(/'/g, "&#39;"),
-                        }}
-                      />
+                      <Fragment key={`line-${idx}`}>
+                        {idx > 0 ? "\n" : null}
+                        <span
+                          className="line"
+                          dangerouslySetInnerHTML={{
+                            __html: text
+                              .replace(/&/g, "&amp;")
+                              .replace(/</g, "&lt;")
+                              .replace(/>/g, "&gt;")
+                              .replace(/\"/g, "&quot;")
+                              .replace(/'/g, "&#39;"),
+                          }}
+                        />
+                      </Fragment>
                     ))}
                   </code>
                 </pre>

@@ -3,6 +3,8 @@
 
 import createDOMPurify, { type Config as DOMPurifyConfig } from "dompurify";
 
+import { CODE_ROW_ALLOWED_ATTRS, CODE_ROW_ALLOWED_TAGS, CODE_ROW_UNSAFE_STYLE, sanitizeCodeHtmlInWorker } from "./worker-html-sanitizer";
+
 type DOMPurifyInstance = {
   sanitize: (html: string, config: DOMPurifyConfig) => unknown;
   addHook?: (name: string, hook: (node: unknown) => unknown) => void;
@@ -24,20 +26,38 @@ type TrustedTypePolicyFactoryLike = {
 };
 
 let domPurifyInstance: DOMPurifyInstance | null = null;
+let domPurifyBoundWindow: Window | null = null;
 
 function resolveDOMPurify(): DOMPurifyInstance {
+  if (typeof window === "undefined") {
+    const maybeInstance = createDOMPurify as unknown as DOMPurifyInstance;
+    if (maybeInstance && typeof maybeInstance.sanitize === "function") {
+      return maybeInstance;
+    }
+    if (domPurifyInstance && typeof domPurifyInstance.sanitize === "function") {
+      return domPurifyInstance;
+    }
+    throw new Error("[markdown-v2] DOMPurify requires a DOM `window` to sanitize HTML. Provide a DOM (e.g. via jsdom) before calling sanitize helpers.");
+  }
+  // Rebind whenever the current window changed: an instance captured against a
+  // replaced/closed window silently sanitizes to "" instead of failing loudly.
+  if (domPurifyInstance && domPurifyBoundWindow === window && typeof domPurifyInstance.sanitize === "function") {
+    return domPurifyInstance;
+  }
+  if (typeof createDOMPurify === "function") {
+    const rebind = createDOMPurify as unknown as (win: Window) => DOMPurifyInstance;
+    const created = rebind(window);
+    if (created && typeof created.sanitize === "function") {
+      domPurifyInstance = created;
+      domPurifyBoundWindow = window;
+      return created;
+    }
+  }
   const maybeInstance = createDOMPurify as unknown as DOMPurifyInstance;
   if (maybeInstance && typeof maybeInstance.sanitize === "function") {
     return maybeInstance;
   }
-  if (domPurifyInstance && typeof domPurifyInstance.sanitize === "function") {
-    return domPurifyInstance;
-  }
-  if (typeof window === "undefined") {
-    throw new Error("[markdown-v2] DOMPurify requires a DOM `window` to sanitize HTML. Provide a DOM (e.g. via jsdom) before calling sanitize helpers.");
-  }
-  domPurifyInstance = (createDOMPurify as unknown as (win: Window) => DOMPurifyInstance)(window);
-  return domPurifyInstance;
+  throw new Error("[markdown-v2] DOMPurify could not bind to the available DOM `window` to sanitize HTML.");
 }
 
 /**
@@ -363,16 +383,46 @@ export function createSanitizationConfig(policy: SanitizationPolicy): DOMPurifyC
 }
 
 /**
- * Sanitize code block HTML from syntax highlighters
+ * Sanitize code block HTML from syntax highlighters.
+ *
+ * Node/SSR consumers have no DOM `window`, so they reuse the shared DOM-free
+ * code-row pipeline instead of DOMPurify. Both paths apply the same allowlist
+ * (`CODE_ROW_ALLOWED_TAGS`/`CODE_ROW_ALLOWED_ATTRS`) and the same CSS filter.
  */
 export function sanitizeCodeHTML(html: string): string {
+  if (typeof window === "undefined") {
+    return sanitizeCodeHtmlInWorker(html);
+  }
   const out = resolveDOMPurify().sanitize(html, {
-    ALLOWED_TAGS: ["pre", "code", "span", "div", "br"],
-    ALLOWED_ATTR: ["class", "data-*", "style"],
+    ALLOWED_TAGS: [...CODE_ROW_ALLOWED_TAGS],
+    ALLOWED_ATTR: [...CODE_ROW_ALLOWED_ATTRS],
+    // Mirror the declared allowlist exactly: DOMPurify would otherwise keep
+    // `aria-*` by default and widen the code-row contract.
+    ALLOW_ARIA_ATTR: false,
+    ALLOW_DATA_ATTR: true,
     KEEP_CONTENT: true,
     RETURN_DOM: false,
   });
-  return typeof out === "string" ? out : String(out);
+  const sanitized = typeof out === "string" ? out : String(out);
+  // DOMPurify keeps style attribute values verbatim; drop URL/script-bearing
+  // ones so the browser path applies the same CSS filter as the DOM-free path.
+  return CODE_ROW_UNSAFE_STYLE.test(sanitized) ? stripUnsafeCodeRowStylesInDom(sanitized) : sanitized;
+}
+
+function stripUnsafeCodeRowStylesInDom(html: string): string {
+  const documentRef = typeof window === "undefined" ? null : window.document;
+  if (!documentRef || !html) {
+    return html;
+  }
+  const template = documentRef.createElement("template");
+  template.innerHTML = html;
+  for (const element of Array.from(template.content.querySelectorAll("[style]"))) {
+    const style = element.getAttribute("style") ?? "";
+    if (CODE_ROW_UNSAFE_STYLE.test(style)) {
+      element.removeAttribute("style");
+    }
+  }
+  return template.innerHTML;
 }
 
 /**
