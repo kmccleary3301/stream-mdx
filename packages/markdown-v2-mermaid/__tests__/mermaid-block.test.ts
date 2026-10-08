@@ -4,7 +4,6 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import {
   MermaidBlock,
-  __setMermaidModuleForTesting,
   createMermaidBlock,
 } from "../src";
 import type {
@@ -55,18 +54,23 @@ async function testDefaultMermaidBlockUnchanged() {
       svg: `<svg id="${id}"><text>${code}</text></svg>`,
     }),
   };
-  __setMermaidModuleForTesting(mockMermaid);
+
+  // Block created with default options plus test mermaid provider
+  const DefaultConfiguredBlock = createMermaidBlock({
+    mermaid: mockMermaid,
+    debounceMs: 0,
+  });
+  assert.strictEqual(DefaultConfiguredBlock.defer, true, "defer must be true");
 
   const container = window.document.getElementById("root");
   assert.ok(container, "root element required");
   const root = createRoot(container);
 
   root.render(
-    React.createElement(MermaidBlock, {
+    React.createElement(DefaultConfiguredBlock, {
       code: "graph TD; A-->B;",
       renderCode: React.createElement("pre", { id: "code-view" }, "graph TD; A-->B;"),
       language: "mermaid",
-      debounceMs: 0,
     }),
   );
 
@@ -112,11 +116,10 @@ async function testDefaultMermaidBlockUnchanged() {
 
   const errorRoot = createRoot(container);
   errorRoot.render(
-    React.createElement(MermaidBlock, {
+    React.createElement(DefaultConfiguredBlock, {
       code: "graph TD; syntax_error!!!",
       renderCode: React.createElement("pre", null, "syntax_error"),
       language: "mermaid",
-      debounceMs: 0,
     }),
   );
 
@@ -154,14 +157,15 @@ async function testTwoFactoriesWithDifferentConfigs() {
       };
     },
   };
-  __setMermaidModuleForTesting(mockMermaid);
 
   const FactoryDark = createMermaidBlock({
+    mermaid: () => Promise.resolve(mockMermaid), // exercises function loader
     config: { theme: "dark" },
     debounceMs: 0,
   });
 
   const FactoryForest = createMermaidBlock({
+    mermaid: mockMermaid, // exercises direct module object
     config: { theme: "forest", securityLevel: "loose" },
     debounceMs: 0,
   });
@@ -189,8 +193,11 @@ async function testTwoFactoriesWithDifferentConfigs() {
   );
 
   await waitFor(() => initHistory.length === 2);
-
   await waitFor(() => container.querySelectorAll("svg").length === 2);
+
+  // Check that both rendered with their respective configurations
+  assert.strictEqual(initHistory.length, 2, "both blocks must execute through render queue");
+
   const darkExecution = initHistory.find((entry) => entry.code.includes("DarkNode"));
   const forestExecution = initHistory.find((entry) => entry.code.includes("ForestNode"));
 
@@ -250,7 +257,6 @@ async function testCustomErrorComponentAndRetry() {
       };
     },
   };
-  __setMermaidModuleForTesting(mockMermaid);
 
   let lastProps: MermaidErrorComponentProps | null = null;
   const CustomError: React.FC<MermaidErrorComponentProps> = (props) => {
@@ -265,6 +271,7 @@ async function testCustomErrorComponentAndRetry() {
   };
 
   const CustomBlock = createMermaidBlock({
+    mermaid: mockMermaid,
     errorComponent: CustomError,
     debounceMs: 0,
   });
@@ -354,8 +361,6 @@ async function main() {
 
   await testCustomErrorComponentAndRetry();
   console.log("✓ custom errorComponent and retry passed");
-
-  __setMermaidModuleForTesting(null);
 }
 
 await main();

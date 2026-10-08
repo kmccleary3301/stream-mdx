@@ -1,7 +1,6 @@
 export {
   MermaidBlock,
   createMermaidBlock,
-  __setMermaidModuleForTesting,
 } from "./mermaid-block";
 export type {
   CreateMermaidBlockOptions,
@@ -10,4 +9,5 @@ export type {
   MermaidConfig,
   MermaidErrorComponentProps,
   MermaidModule,
+  MermaidModuleLoader,
 } from "./mermaid-block";

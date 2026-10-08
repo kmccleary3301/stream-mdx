@@ -15,6 +15,8 @@ export type MermaidModule = {
   >;
 };
 
+export type MermaidModuleLoader = MermaidModule | (() => Promise<MermaidModule>);
+
 export type MermaidConfig = Record<string, unknown>;
 
 export type MermaidErrorComponentProps = {
@@ -29,6 +31,7 @@ export type CreateMermaidBlockOptions = {
   errorComponent?: ComponentType<MermaidErrorComponentProps>;
   defaultView?: "diagram" | "code";
   debounceMs?: number;
+  mermaid?: MermaidModuleLoader;
 };
 
 export type MermaidBlockProps = {
@@ -49,33 +52,17 @@ export interface MermaidBlockComponent extends FC<MermaidBlockProps> {
 
 type MermaidExport = MermaidModule & { default?: MermaidModule };
 
-type GlobalWithMermaidMock = typeof globalThis & {
-  __STREAM_MDX_MERMAID_MOCK__?: MermaidModule;
-};
-
-let mermaidPromise: Promise<MermaidModule> | null = null;
-let customMermaidModule: MermaidModule | null = null;
+let defaultMermaidPromise: Promise<MermaidModule> | null = null;
 let mermaidIdCounter = 0;
 let renderQueue: Promise<unknown> = Promise.resolve();
 
-export function __setMermaidModuleForTesting(mock: MermaidModule | null): void {
-  customMermaidModule = mock;
-  mermaidPromise = mock ? Promise.resolve(mock) : null;
-}
-
-async function loadMermaid(): Promise<MermaidModule> {
-  if (customMermaidModule) {
-    return customMermaidModule;
+async function loadDefaultMermaid(): Promise<MermaidModule> {
+  if (!defaultMermaidPromise) {
+    defaultMermaidPromise = import("mermaid").then(
+      (mod: MermaidExport) => mod.default ?? mod,
+    );
   }
-  const globalScope = globalThis as GlobalWithMermaidMock;
-  const globalMock = globalScope.__STREAM_MDX_MERMAID_MOCK__;
-  if (globalMock) {
-    return globalMock;
-  }
-  if (!mermaidPromise) {
-    mermaidPromise = import("mermaid").then((mod: MermaidExport) => mod.default ?? mod);
-  }
-  return mermaidPromise;
+  return defaultMermaidPromise;
 }
 
 function cleanupLeakedErrorElement(id: string): void {
@@ -103,6 +90,17 @@ function enqueueRender<T>(task: () => Promise<T>): Promise<T> {
 }
 
 export function createMermaidBlock(options: CreateMermaidBlockOptions = {}): MermaidBlockComponent {
+  const resolveMermaid = async (): Promise<MermaidModule> => {
+    const provider = options.mermaid;
+    if (provider) {
+      if (typeof provider === "function") {
+        return await provider();
+      }
+      return provider;
+    }
+    return await loadDefaultMermaid();
+  };
+
   const MermaidBlockInstance: MermaidBlockComponent = ({
     code,
     renderCode,
@@ -150,7 +148,7 @@ export function createMermaidBlock(options: CreateMermaidBlockOptions = {}): Mer
       const timeout = setTimeout(async () => {
         try {
           const result = await enqueueRender(async () => {
-            const mermaid = await loadMermaid();
+            const mermaid = await resolveMermaid();
             if (typeof mermaid.initialize === "function") {
               mermaid.initialize({
                 securityLevel: "strict",

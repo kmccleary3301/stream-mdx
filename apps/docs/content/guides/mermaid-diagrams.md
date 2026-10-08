@@ -71,7 +71,7 @@ codeRenderers={{
 
 ### Custom configuration and error handling
 
-Use `createMermaidBlock` to configure global Mermaid options, default views, debounce intervals, or a custom error component with retry capability:
+Use `createMermaidBlock` to configure global Mermaid options, default views, debounce intervals, a custom/pinned Mermaid module or async loader, or a custom error component with retry capability:
 
 ```tsx
 import { createMermaidBlock } from "@stream-mdx/mermaid";
@@ -81,6 +81,7 @@ const CustomMermaidBlock = createMermaidBlock({
   config: { theme: "neutral" },
   defaultView: "diagram",
   debounceMs: 150,
+  mermaid: () => import("mermaid"), // optional custom instance or custom loader
   errorComponent: ({ error, retry }) => (
     <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm">
       <p className="font-medium text-red-700 dark:text-red-300">Diagram rendering failed: {error}</p>

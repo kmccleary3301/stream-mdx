@@ -259,7 +259,7 @@ When registered, fenced `mermaid` code blocks render as diagrams (with a Diagram
 
 ### `createMermaidBlock(options?)`
 
-Creates a customized Mermaid code fence renderer with isolated configuration, default views, debounce settings, and custom error components:
+Creates a customized Mermaid code fence renderer with isolated configuration, default views, debounce settings, custom error components, and custom Mermaid module instances or loaders:
 
 ```tsx
 import { createMermaidBlock } from "@stream-mdx/mermaid";
@@ -268,6 +268,7 @@ const CustomMermaidBlock = createMermaidBlock({
   config: { theme: "neutral" },
   defaultView: "diagram", // "diagram" | "code"
   debounceMs: 150,
+  mermaid: () => import("mermaid"), // optional custom/pinned instance or async loader
   errorComponent: ({ error, code, retry }) => (
     <div className="mermaid-error">
       <p>Error rendering diagram: {error}</p>
@@ -277,7 +278,7 @@ const CustomMermaidBlock = createMermaidBlock({
 });
 ```
 
-Mermaid renders are serialized through an internal module queue so concurrent blocks with different factory configs do not interleave. Default `securityLevel: 'strict'` is preserved unless explicitly overridden in `config`.
+Mermaid renders are serialized through an internal module queue so concurrent blocks with different factory configs do not interleave. Default `securityLevel: 'strict'` is preserved unless explicitly overridden in `config`. If `mermaid` is omitted, the block lazily imports `mermaid` on first diagram render.
 ## 3.2) Code Fence Renderers (`codeRenderers`)
 
 Custom code fence rendering is registered via `codeRenderers` on `<StreamingMarkdown />` or `<MarkdownBlocksRenderer />`:
