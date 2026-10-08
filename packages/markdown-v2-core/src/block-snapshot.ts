@@ -12,7 +12,7 @@ import { prepareNestedBlockSnapshot, type PreparedNestedSnapshot } from "./neste
 import { createBlockCompatibilityExtension } from "./block-compatibility";
 import type {
   Block,
-  DiffKind,
+  DiffLineKind,
   InlineNode,
   MixedContentSegment,
   NodeSnapshot,
@@ -235,7 +235,7 @@ function enrichCodeSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot 
         highlightedLines?: HighlightedLine[];
         lang?: string;
         tokenLines?: Array<TokenLineV1 | null>;
-        diffKind?: Array<DiffKind | null>;
+        diffKind?: Array<DiffLineKind | null>;
         oldNo?: Array<number | null>;
         newNo?: Array<number | null>;
       }
@@ -247,7 +247,7 @@ function enrichCodeSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot 
     : extractHighlightedLines(highlightedHtml, lines.length);
   const metaTokenLines = Array.isArray(meta?.tokenLines) ? (meta?.tokenLines as Array<TokenLineV1 | null>) : null;
   const tokenLines = metaTokenLines ? normalizeTokenLines(metaTokenLines, lines.length) : null;
-  const metaDiffKind = Array.isArray(meta?.diffKind) ? (meta?.diffKind as Array<DiffKind | null>) : null;
+  const metaDiffKind = Array.isArray(meta?.diffKind) ? (meta?.diffKind as Array<DiffLineKind | null>) : null;
   const diffKindLines = metaDiffKind ? normalizeOptionalArray(metaDiffKind, lines.length) : null;
   const metaOldNo = Array.isArray(meta?.oldNo) ? (meta?.oldNo as Array<number | null>) : null;
   const oldNoLines = metaOldNo ? normalizeOptionalArray(metaOldNo, lines.length) : null;
@@ -681,7 +681,7 @@ function appendLinesToCodeNode(
   lines: string[],
   highlights: Array<string | null>,
   tokens?: Array<TokenLineV1 | null>,
-  diffKind?: Array<DiffKind | null>,
+  diffKind?: Array<DiffLineKind | null>,
   oldNo?: Array<number | null>,
   newNo?: Array<number | null>,
 ) {

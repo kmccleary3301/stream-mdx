@@ -436,8 +436,19 @@ async function runCanonicalFootnoteOrderTest(): Promise<void> {
   }
 }
 
-await runFootnotesFinalizeTest();
-await runPreparedFootnoteConsumerTest();
-await runRepeatedReferenceTargetsTest();
-await runCanonicalFootnoteOrderTest();
-console.log("worker-footnotes-finalize test passed");
+const consumerDom = new JSDOM("<!doctype html><html><body></body></html>");
+const consumerGlobals = new Map(["window", "document", "HTMLElement", "Node", "MutationObserver"].map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
+for (const key of consumerGlobals.keys()) Object.defineProperty(globalThis, key, { configurable: true, writable: true, value: (consumerDom.window as unknown as Record<string, unknown>)[key] });
+try {
+  await runFootnotesFinalizeTest();
+  await runPreparedFootnoteConsumerTest();
+  await runRepeatedReferenceTargetsTest();
+  await runCanonicalFootnoteOrderTest();
+  console.log("worker-footnotes-finalize test passed");
+} finally {
+  consumerDom.window.close();
+  for (const [key, descriptor] of consumerGlobals) {
+    if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+    else Reflect.deleteProperty(globalThis, key);
+  }
+}
