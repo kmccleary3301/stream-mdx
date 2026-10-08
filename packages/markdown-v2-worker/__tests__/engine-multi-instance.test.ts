@@ -33,14 +33,14 @@ async function runMultiInstanceEngineTest(): Promise<void> {
     type: "INIT",
     initialContent: "",
     prewarmLangs: [],
-    docPlugins: ["footnotes"],
+    docPlugins: { footnotes: true },
   });
 
   await engine2.handle({
     type: "INIT",
     initialContent: "",
     prewarmLangs: [],
-    docPlugins: [],
+    docPlugins: { footnotes: false },
   });
 
   // Interleave chunks to verify state isolation
@@ -48,8 +48,7 @@ async function runMultiInstanceEngineTest(): Promise<void> {
   await engine2.handle({ type: "APPEND", text: "# Engine 2 Header\n\n" });
 
   await engine1.handle({ type: "APPEND", text: "[^1]: Footnote description.\n" });
-  await engine2.handle({ type: "APPEND", text: "- Item A\n- Item B\n\n| H1 | H2 |\n| --- | --- |\n| D1 | D2 |\n" });
-
+  await engine2.handle({ type: "APPEND", text: "- Item A\n- Item B[^1]\n\n[^1]: Footnote note.\n\n| H1 | H2 |\n| --- | --- |\n| D1 | D2 |\n" });
   await engine1.handle({ type: "FINALIZE" });
   await engine2.handle({ type: "FINALIZE" });
 
@@ -58,8 +57,6 @@ async function runMultiInstanceEngineTest(): Promise<void> {
 
   const blocks1 = store1.getBlocks();
   const blocks2 = store2.getBlocks();
-
-  // Assert engine 1 output has footnotes and no header
   const hasFootnotes1 = blocks1.some((b) => b.type === "footnotes");
   assert.strictEqual(hasFootnotes1, true, "engine1 should have synthesized a footnotes block");
   const hasHeader1 = blocks1.some((b) => b.type === "heading");

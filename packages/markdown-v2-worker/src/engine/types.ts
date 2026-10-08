@@ -6,8 +6,8 @@ import type {
   DiffLine,
   DiffLineKind,
   FormatAnticipationConfig,
+  InlineExtension,
   InlineNode,
-  MixedContentSegment,
   NodeSnapshot,
   Patch,
   ProtectedRange,
@@ -20,14 +20,11 @@ import type {
 } from "@stream-mdx/core";
 import type { DocumentPlugin } from "@stream-mdx/plugins";
 
-export interface InlineExtension {
-  name: string;
-  [key: string]: unknown;
-}
+export type { InlineExtension } from "@stream-mdx/core";
 
 export interface EngineExtensions {
   markdown?: MarkdownConfig[];
-  inline?: unknown[];
+  inline?: InlineExtension[];
   documentPlugins?: DocumentPlugin[];
 }
 

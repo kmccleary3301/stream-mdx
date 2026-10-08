@@ -563,8 +563,8 @@ export class MarkdownEngine {
     } else {
       this.mdxComponentAllowlist = null;
     }
-
     this.buildInlineParser();
+    this.documentPluginState.inlineParser = this.inlineParser;
 
     if (enable.footnotes) registerFootnotesPlugin(this.documentPluginRegistry);
     if (enable.tables) this.documentPluginRegistry.register(TablesPlugin);
@@ -649,9 +649,9 @@ export class MarkdownEngine {
     const tree = this.mdParser.parse(content);
     this.inlineParser.setReferences(collectLinkReferences(tree, content));
     let extractedBlocks = await this.extractBlocks(tree, content, options);
+    extractedBlocks = this.runDocumentPlugins(extractedBlocks, content);
 
     this.performanceTimer.measure("parse-all");
-    metrics?.markParseEnd();
     metrics?.setBlocksProduced(extractedBlocks.length);
 
     return {
@@ -673,6 +673,7 @@ export class MarkdownEngine {
     this.inlineParser.setReferences(collectLinkReferences(newTree, newContent));
 
     let changedBlocks = await this.extractBlocks(newTree, newContent);
+    changedBlocks = this.runDocumentPlugins(changedBlocks, newContent);
     const lastRange = changedBlocks.length > 0 ? changedBlocks[changedBlocks.length - 1]?.payload?.range : undefined;
     const lastTo = typeof lastRange?.to === "number" ? lastRange.to : 0;
     if (lastTo < newContent.length - 1) {
@@ -1018,7 +1019,7 @@ export class MarkdownEngine {
       }
 
       case "list":
-        enrichListBlock(block);
+        enrichListBlock(block, this.inlineParser, this.enableMath, this.formatAnticipationConfig);
         break;
     }
 

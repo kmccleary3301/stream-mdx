@@ -1,5 +1,8 @@
 import type {
   Block,
+  FormatAnticipationConfig,
+  InlineNode,
+  InlineParser,
   MixedContentSegment,
   Patch,
   ProtectedRange,
@@ -145,31 +148,33 @@ export function collectHtmlProtectedRangesFromSegments(
   return ranges;
 }
 
-export function enrichListBlock(block: Block): void {
+export function enrichListBlock(
+  block: Block,
+  inlineParser: InlineParser,
+  enableMath = true,
+  formatAnticipationConfig?: FormatAnticipationConfig,
+): void {
   const lines = (block.payload.raw ?? "").split("\n");
   const itemsRaw: string[] = [];
   let current: string[] | null = null;
-  let ordered = false;
-  let orderedDetected = false;
+
+  const bulletRe = /^[-*+]\s+(.*)$/;
+  const orderedRe = /^\d+\.\s+(.*)$/;
 
   for (const line of lines) {
-    const trimmed = line.trimStart();
-    const unorderedMatch = trimmed.match(/^[-*+]\s+/);
-    const orderedMatch = trimmed.match(/^(\d+)\.\s+/);
+    const trimmed = line.trimEnd();
+    const bare = trimmed.trimStart();
+    const bulletMatch = bare.match(bulletRe);
+    const orderedMatch = bare.match(orderedRe);
 
-    if (unorderedMatch || orderedMatch) {
-      if (!orderedDetected) {
-        ordered = Boolean(orderedMatch);
-        orderedDetected = true;
-      }
+    if (bulletMatch || orderedMatch) {
       if (current) {
         itemsRaw.push(current.join("\n"));
       }
-      current = [line];
+      const content = (bulletMatch ? bulletMatch[1] : orderedMatch?.[1]) ?? "";
+      current = [content];
     } else if (current) {
-      current.push(line);
-    } else if (trimmed) {
-      current = [line];
+      current.push(bare);
     }
   }
 
@@ -177,14 +182,18 @@ export function enrichListBlock(block: Block): void {
     itemsRaw.push(current.join("\n"));
   }
 
+  const items: InlineNode[][] = itemsRaw.map((raw) => inlineParser.parse(raw));
+  const isOrdered = /^\d+\./.test(lines[0]?.trimStart() || "");
   const existingMeta = (block.payload.meta ?? {}) as Record<string, unknown>;
-  const listItemsMeta = existingMeta.items && typeof existingMeta.items === "object" ? existingMeta.items : undefined;
   block.payload.meta = {
     ...existingMeta,
-    ordered,
-    itemsRaw,
-    ...(listItemsMeta ? { items: listItemsMeta } : {}),
+    ordered: isOrdered,
+    items,
+    mathEnabled: enableMath,
   };
+  if (!block.isFinalized && formatAnticipationConfig) {
+    (block.payload.meta as Record<string, unknown>).formatAnticipation = formatAnticipationConfig;
+  }
 }
 
 export function collectWorkerStructuralInvariantViolations(nextBlocks: ReadonlyArray<Block>): string[] {
