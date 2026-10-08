@@ -27,9 +27,7 @@ import type {
   CodeFenceRenderer,
   CodeFenceRendererConfig,
   CodeFenceRendererProps,
-  CodeRenderersConfig,
-  ComponentRegistryOptions,
-  CustomCodeRenderer,
+  ElementFilterOptions,
   ElementFilterContext,
   ElementFilterDescriptor,
   HtmlElements,
@@ -38,7 +36,7 @@ import type {
   MathRenderer,
   TableElements,
 } from "../types";
-export type { CodeFenceRendererConfig, CodeFenceRendererProps, CodeRenderersConfig, ComponentRegistryOptions, CustomCodeRenderer };
+export type { CodeFenceRendererConfig, CodeFenceRendererProps };
 import { ArtifactFrame } from "./artifact-frame";
 import { DefaultDiffRenderer } from "./diff-renderer";
 import { KaTeXBlockMath, KaTeXInlineMath } from "./katex-math";
@@ -864,99 +862,48 @@ export class ComponentRegistry {
   private urlTransform?: UrlTransform;
   private allowedElements?: ReadonlySet<string>;
   private disallowedElements?: ReadonlySet<string>;
-  private rawAllowedElements?: string[];
-  private rawDisallowedElements?: string[];
   private allowElement?: AllowElementFn;
   private unwrapDisallowed?: boolean;
   private disableAutolinkProtocols?: ReadonlySet<string>;
   private hasFilterConfig = false;
 
-  constructor(options?: ComponentRegistryOptions);
   constructor(
-    blockComponents?: Partial<BlockComponents>,
-    inlineComponents?: Partial<InlineComponents>,
-    codeRenderers?: CodeRenderersConfig,
-    options?: ComponentRegistryOptions,
-  );
-  constructor(
-    blockComponentsOrOptions: Partial<BlockComponents> | ComponentRegistryOptions = {},
+    blockComponents: Partial<BlockComponents> = {},
     inlineComponents: Partial<InlineComponents> = {},
-    codeRenderers: CodeRenderersConfig = {},
-    options?: ComponentRegistryOptions,
+    codeRenderers: Record<string, CodeFenceRenderer> = {},
+    options?: {
+      artifactHtml?: boolean;
+      mathRenderer?: MathRenderer;
+      blockRenderer?: BlockRendererOverride;
+      tableVirtualization?: TableVirtualizationOptions;
+      urlTransform?: UrlTransform;
+    } & ElementFilterOptions,
   ) {
-    let resolvedBlockComponents: Partial<BlockComponents> = {};
-    let resolvedInlineComponents: Partial<InlineComponents> = inlineComponents;
-    let resolvedCodeRenderers: CodeRenderersConfig = codeRenderers;
-    let resolvedOptions = options;
-
-    const isConfig =
-      blockComponentsOrOptions &&
-      typeof blockComponentsOrOptions === "object" &&
-      !Array.isArray(blockComponentsOrOptions) &&
-      ("allowedElements" in blockComponentsOrOptions ||
-        "disallowedElements" in blockComponentsOrOptions ||
-        "allowElement" in blockComponentsOrOptions ||
-        "unwrapDisallowed" in blockComponentsOrOptions ||
-        "disableAutolinkProtocols" in blockComponentsOrOptions ||
-        "codeRenderers" in blockComponentsOrOptions ||
-        "mathRenderer" in blockComponentsOrOptions ||
-        "tableVirtualization" in blockComponentsOrOptions ||
-        "blockRenderer" in blockComponentsOrOptions);
-
-    if (isConfig) {
-      const cfg = blockComponentsOrOptions as ComponentRegistryOptions;
-      resolvedOptions = { ...cfg, ...options };
-      resolvedBlockComponents = (cfg.blockComponents ?? cfg.components ?? {}) as Partial<BlockComponents>;
-      resolvedInlineComponents = (cfg.inlineComponents ?? inlineComponents) as Partial<InlineComponents>;
-      resolvedCodeRenderers = (cfg.codeRenderers ?? codeRenderers) as CodeRenderersConfig;
-    } else {
-      resolvedBlockComponents = blockComponentsOrOptions as Partial<BlockComponents>;
-    }
-
-    const effectiveOptions = resolvedOptions;
-
-    this.blockComponents = { ...defaultBlockComponents, ...resolvedBlockComponents } as BlockComponents;
-    this.inlineComponents = { ...defaultInlineComponents, ...resolvedInlineComponents } as InlineComponents;
+    this.blockComponents = { ...defaultBlockComponents, ...blockComponents } as BlockComponents;
+    this.inlineComponents = { ...defaultInlineComponents, ...inlineComponents } as InlineComponents;
     this.htmlElements = getDefaultHtmlElements();
-    if (effectiveOptions?.urlTransform) {
-      this.urlTransform = effectiveOptions.urlTransform;
+    if (options?.urlTransform) {
+      this.urlTransform = options.urlTransform;
     }
-    if (!resolvedInlineComponents.html) {
+    if (!inlineComponents.html) {
       this.inlineComponents.html = (node: Omit<Extract<InlineNode, { kind: "html" }>, "children"> & { children?: React.ReactNode; textValue?: string }) =>
         renderHtmlInlineNode(node, node.children, this.htmlElements, undefined, node.textValue, this.urlTransform);
     }
     this.tableElements = getDefaultTableElements();
-    if (resolvedCodeRenderers) {
-      this.setCodeRenderers(resolvedCodeRenderers);
+    if (codeRenderers) {
+      this.setCodeRenderers(codeRenderers);
     }
-    if (effectiveOptions?.mathRenderer) {
-      this.setMathRenderer(effectiveOptions.mathRenderer);
+    if (options?.mathRenderer) {
+      this.setMathRenderer(options.mathRenderer);
     }
-    if (effectiveOptions?.blockRenderer) {
-      this.setBlockRenderer(effectiveOptions.blockRenderer);
+    if (options?.blockRenderer) {
+      this.setBlockRenderer(options.blockRenderer);
     }
-    if (effectiveOptions?.tableVirtualization !== undefined) {
-      this.setTableVirtualization(effectiveOptions.tableVirtualization);
+    if (options?.tableVirtualization !== undefined) {
+      this.setTableVirtualization(options.tableVirtualization);
     }
-    if (effectiveOptions?.allowedElements !== undefined && effectiveOptions?.disallowedElements !== undefined) {
-      if (typeof process === "undefined" || process.env?.NODE_ENV !== "production") {
-        throw new Error("Cannot specify both allowedElements and disallowedElements; expected one or the other");
-      }
-    }
-    if (effectiveOptions?.allowedElements !== undefined) {
-      this.setAllowedElements(effectiveOptions.allowedElements);
-    }
-    if (effectiveOptions?.disallowedElements !== undefined) {
-      this.setDisallowedElements(effectiveOptions.disallowedElements);
-    }
-    if (effectiveOptions?.allowElement !== undefined) {
-      this.setAllowElement(effectiveOptions.allowElement);
-    }
-    if (effectiveOptions?.unwrapDisallowed !== undefined) {
-      this.setUnwrapDisallowed(effectiveOptions.unwrapDisallowed);
-    }
-    if (effectiveOptions?.disableAutolinkProtocols !== undefined) {
-      this.setDisableAutolinkProtocols(effectiveOptions.disableAutolinkProtocols);
+    if (options) {
+      this.setElementFilters(options);
     }
   }
 
@@ -964,41 +911,21 @@ export class ComponentRegistry {
     return this.hasFilterConfig;
   }
 
-  setAllowedElements(elements?: string[]): void {
-    if (elements !== undefined && this.rawDisallowedElements !== undefined) {
-      if (typeof process === "undefined" || process.env?.NODE_ENV !== "production") {
-        throw new Error("Cannot specify both allowedElements and disallowedElements; expected one or the other");
-      }
+  /** Replaces the whole filter configuration at once so prop swaps (allowed -> disallowed) never trip the exclusivity check. */
+  setElementFilters(options: ElementFilterOptions): void {
+    const { allowedElements, disallowedElements, allowElement, unwrapDisallowed, disableAutolinkProtocols } = options;
+    if (allowedElements && disallowedElements) {
+      throw new Error("Cannot specify both allowedElements and disallowedElements; expected one or the other");
     }
-    this.rawAllowedElements = elements;
-    this.allowedElements = elements ? new Set(elements.map((e) => e.trim().toLowerCase())) : undefined;
-    this.hasFilterConfig = Boolean(this.allowedElements || this.disallowedElements || this.allowElement);
-  }
-
-  setDisallowedElements(elements?: string[]): void {
-    if (elements !== undefined && this.rawAllowedElements !== undefined) {
-      if (typeof process === "undefined" || process.env?.NODE_ENV !== "production") {
-        throw new Error("Cannot specify both allowedElements and disallowedElements; expected one or the other");
-      }
-    }
-    this.rawDisallowedElements = elements;
-    this.disallowedElements = elements ? new Set(elements.map((e) => e.trim().toLowerCase())) : undefined;
-    this.hasFilterConfig = Boolean(this.allowedElements || this.disallowedElements || this.allowElement);
-  }
-
-  setAllowElement(fn?: AllowElementFn): void {
-    this.allowElement = fn;
-    this.hasFilterConfig = Boolean(this.allowedElements || this.disallowedElements || this.allowElement);
-  }
-
-  setUnwrapDisallowed(unwrap?: boolean): void {
-    this.unwrapDisallowed = unwrap;
-  }
-
-  setDisableAutolinkProtocols(protocols?: string[]): void {
-    this.disableAutolinkProtocols = protocols
-      ? new Set(protocols.map((p) => p.trim().toLowerCase().replace(/:$/, "")))
+    const toTagSet = (tags?: string[]) => (tags ? new Set(tags.map((tag) => tag.trim().toLowerCase())) : undefined);
+    this.allowedElements = toTagSet(allowedElements);
+    this.disallowedElements = toTagSet(disallowedElements);
+    this.allowElement = allowElement;
+    this.unwrapDisallowed = unwrapDisallowed;
+    this.disableAutolinkProtocols = disableAutolinkProtocols
+      ? new Set(disableAutolinkProtocols.map((protocol) => protocol.trim().toLowerCase().replace(/:$/, "")))
       : undefined;
+    this.hasFilterConfig = Boolean(this.allowedElements || this.disallowedElements || this.allowElement);
   }
 
   isAutolinkProtocolDisabled(href?: string): boolean {
@@ -1052,42 +979,19 @@ export class ComponentRegistry {
     return null;
   }
 
-  setCodeRenderers(renderers: CodeRenderersConfig): void {
+  setCodeRenderers(renderers: Record<string, CodeFenceRenderer>): void {
     const next: Record<string, CodeFenceRenderer> = { ...this.codeRenderers };
-    if (Array.isArray(renderers)) {
-      for (const entry of renderers) {
-        if (!entry) continue;
-        const entryObj = entry as unknown as Record<string, unknown>;
-        const rawLangs = entryObj.languages ?? entryObj.language;
-        const langs = Array.isArray(rawLangs) ? rawLangs : rawLangs !== undefined ? [rawLangs] : [];
-        const fn = (entryObj.renderer ?? entryObj.component ?? entryObj) as CodeFenceRenderer;
-        for (const l of langs) {
-          if (typeof l === "string") {
-            next[l.trim().toLowerCase()] = fn;
-          }
-        }
-        if (Array.isArray(entryObj.aliases)) {
-          for (const alias of entryObj.aliases) {
-            if (typeof alias === "string") {
-              next[alias.trim().toLowerCase()] = fn;
-            }
-          }
-        }
-      }
-    } else if (renderers && typeof renderers === "object") {
-      for (const [lang, renderer] of Object.entries(renderers)) {
-        next[lang.trim().toLowerCase()] = renderer;
-        if (typeof renderer === "object" && renderer !== null && Array.isArray(renderer.aliases)) {
-          for (const alias of renderer.aliases) {
-            if (typeof alias === "string") {
-              next[alias.trim().toLowerCase()] = renderer;
-            }
-          }
+    for (const [lang, renderer] of Object.entries(renderers)) {
+      next[lang.trim().toLowerCase()] = renderer;
+      if (typeof renderer === "object" && renderer.aliases) {
+        for (const alias of renderer.aliases) {
+          next[alias.trim().toLowerCase()] = renderer;
         }
       }
     }
     this.codeRenderers = next;
   }
+
   setArtifactHtml(enabled: boolean): void {
     this.artifactHtml = enabled;
   }

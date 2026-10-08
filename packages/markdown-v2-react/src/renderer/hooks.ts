@@ -1,6 +1,13 @@
 import type { Block } from "@stream-mdx/core";
-import { useMemo, useSyncExternalStore } from "react";
+import { createContext, useContext, useMemo, useSyncExternalStore } from "react";
 import type { NodeRecord, RendererStore } from "./store";
+
+/**
+ * Bumped when render-time registry config (filters, URL policy, block overrides) changes.
+ * Node views are memoized on (store, id, registry); consuming this in the shared node hooks
+ * re-renders every mounted view on a config change without remounting it.
+ */
+export const RenderConfigVersionContext = createContext(0);
 
 export function useRendererBlocks(store: RendererStore): ReadonlyArray<Block> {
   return useSyncExternalStore(
@@ -11,6 +18,7 @@ export function useRendererBlocks(store: RendererStore): ReadonlyArray<Block> {
 }
 
 export function useRendererNode(store: RendererStore, id: string): NodeRecord | undefined {
+  useContext(RenderConfigVersionContext);
   const selector = useMemo(() => {
     return () => store.getNodeWithVersion(id);
   }, [store, id]);
@@ -20,6 +28,7 @@ export function useRendererNode(store: RendererStore, id: string): NodeRecord | 
 }
 
 export function useRendererChildren(store: RendererStore, id: string): ReadonlyArray<string> {
+  useContext(RenderConfigVersionContext);
   const selector = useMemo(() => {
     return () => store.getChildrenWithVersion(id);
   }, [store, id]);

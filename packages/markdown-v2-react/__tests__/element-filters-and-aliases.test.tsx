@@ -64,7 +64,7 @@ async function testDisallowedElementsRemovesImages(): Promise<void> {
   const window = await setupDom();
   const rootEl = window.document.getElementById("root")!;
   const store = createRendererStore(blocks);
-  const registry = new ComponentRegistry({ disallowedElements: ["img"] });
+  const registry = new ComponentRegistry({}, {}, {}, { disallowedElements: ["img"] });
 
   const root = createRoot(rootEl);
   await act(async () => {
@@ -130,7 +130,7 @@ async function testAllowedElementsWithUnwrapDisallowed(): Promise<void> {
   const window = await setupDom();
   const rootEl = window.document.getElementById("root")!;
   const store = createRendererStore(blocks);
-  const registry = new ComponentRegistry({ allowedElements: ["p"], unwrapDisallowed: true });
+  const registry = new ComponentRegistry({}, {}, {}, { allowedElements: ["p"], unwrapDisallowed: true });
 
   const root = createRoot(rootEl);
   await act(async () => {
@@ -239,24 +239,13 @@ async function testCodeRenderersAliases(): Promise<void> {
     return React.createElement("div", { id: "custom-js-alias" }, code);
   };
 
-  // Test array form: { languages: ["js", "javascript"], renderer: CustomJsRenderer }
-  const registry = new ComponentRegistry({
-    codeRenderers: [
-      {
-        languages: ["js", "javascript"],
-        renderer: CustomJsRenderer,
-      },
-    ],
-  });
+  const jsRenderer = { component: CustomJsRenderer, aliases: ["JS", "mjs"] };
+  const registry = new ComponentRegistry({}, {}, { javascript: jsRenderer });
 
-  const resolved = registry.getCodeRenderer("JS");
-  assert.strictEqual(resolved, CustomJsRenderer, "Expected registry to resolve 'JS' to CustomJsRenderer via alias array");
-
-  const resolvedLower = registry.getCodeRenderer("js");
-  assert.strictEqual(resolvedLower, CustomJsRenderer, "Expected registry to resolve 'js' to CustomJsRenderer via alias array");
-
-  const resolvedJavascript = registry.getCodeRenderer("JAVASCRIPT");
-  assert.strictEqual(resolvedJavascript, CustomJsRenderer, "Expected registry to resolve 'JAVASCRIPT' to CustomJsRenderer");
+  for (const lang of ["JS", "js", "MJS", "JavaScript"]) {
+    assert.strictEqual(registry.getCodeRenderer(lang.toLowerCase()), jsRenderer, `Expected '${lang}' to resolve to the javascript renderer`);
+  }
+  assert.strictEqual(registry.getCodeRenderer("py"), undefined, "Unaliased languages keep the default renderer");
 
   // SSR test
   const ssrHtml = renderToStaticMarkup(
@@ -327,18 +316,36 @@ async function testDisableAutolinkProtocolsMailto(): Promise<void> {
   );
 }
 
-// 6. Mutually exclusive allowedElements and disallowedElements error
-async function testMutuallyExclusiveElementsError(): Promise<void> {
+// 6. allowedElements and disallowedElements are mutually exclusive, but swapping between them across renders works
+async function testMutuallyExclusiveElements(): Promise<void> {
   assert.throws(
-    () => {
-      new ComponentRegistry({
-        allowedElements: ["p"],
-        disallowedElements: ["img"],
-      });
-    },
+    () => new ComponentRegistry({}, {}, {}, { allowedElements: ["p"], disallowedElements: ["img"] }),
     /Cannot specify both allowedElements and disallowedElements/,
-    "Expected dev error when both allowedElements and disallowedElements are provided to ComponentRegistry",
   );
+
+  const { blocks } = await compileMarkdownSnapshotDirect({
+    text: "Text with *em* and ![alt](https://example.com/a.png)",
+    init: { docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true } },
+  });
+  const window = await setupDom();
+  const rootEl = window.document.getElementById("root")!;
+  const registry = new ComponentRegistry();
+  const root = createRoot(rootEl);
+  await act(async () => {
+    root.render(React.createElement(MarkdownBlocksRenderer, { blocks, componentRegistry: registry, allowedElements: ["p", "img"] }));
+  });
+  assert.ok(rootEl.innerHTML.includes("<img") && !rootEl.innerHTML.includes("<em"), `allow list applied: ${rootEl.innerHTML}`);
+  await act(async () => {
+    root.render(React.createElement(MarkdownBlocksRenderer, { blocks, componentRegistry: registry, disallowedElements: ["img"] }));
+  });
+  assert.ok(!rootEl.innerHTML.includes("<img") && rootEl.innerHTML.includes("<em"), `swap to deny list applied: ${rootEl.innerHTML}`);
+  await act(async () => {
+    root.render(React.createElement(MarkdownBlocksRenderer, { blocks, componentRegistry: registry }));
+  });
+  assert.ok(rootEl.innerHTML.includes("<img") && rootEl.innerHTML.includes("<em"), `removing filter props restores output: ${rootEl.innerHTML}`);
+  act(() => {
+    root.unmount();
+  });
 }
 
 async function runAllTests(): Promise<void> {
@@ -348,7 +355,7 @@ async function runAllTests(): Promise<void> {
   await testAllowElementCallbackSeesRawHtml();
   await testCodeRenderersAliases();
   await testDisableAutolinkProtocolsMailto();
-  await testMutuallyExclusiveElementsError();
+  await testMutuallyExclusiveElements();
   console.log("All element filtering and code alias tests passed successfully!");
 }
 

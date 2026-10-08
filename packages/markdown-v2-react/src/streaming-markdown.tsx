@@ -16,7 +16,7 @@ import { useRendererBlocks } from "./renderer/hooks";
 import { StreamingActivityContext } from "./renderer/streaming-activity-context";
 import type { RendererStore } from "./renderer/store";
 import { createDefaultWorker, releaseDefaultWorker } from "@stream-mdx/worker";
-import { defaultUrlTransform, type AllowElementFn, type BlockComponents, type BlockRendererOverride, type CodeRenderersConfig, type HtmlElements, type HtmlOptions, type InlineComponents, type MathRenderer, type RendererConfig, type SyntaxRuleSpec, type TableElements, type TableVirtualizationOptions, type UrlTransform } from "./types";
+import { defaultUrlTransform, type BlockComponents, type BlockRendererOverride, type CodeFenceRenderer, type ElementFilterOptions, type HtmlElements, type HtmlOptions, type InlineComponents, type MathRenderer, type RendererConfig, type SyntaxRuleSpec, type TableElements, type TableVirtualizationOptions, type UrlTransform } from "./types";
 const EMPTY_BLOCKS: ReadonlyArray<Block> = [];
 
 function createConfigSignature(input: StreamingMarkdownConfigSignature): string {
@@ -127,7 +127,7 @@ export type LinkSafetyConfig = {
 
 export type MarkdownEngineMode = "worker" | "main-thread" | "auto";
 
-export interface StreamingMarkdownProps {
+export interface StreamingMarkdownProps extends ElementFilterOptions {
   text?: string;
   stream?: AsyncIterable<string>;
   worker?: Worker | URL | (() => Worker) | string;
@@ -150,12 +150,7 @@ export interface StreamingMarkdownProps {
   style?: React.CSSProperties;
   caret?: StreamingCaret;
   linkSafety?: LinkSafetyConfig;
-  codeRenderers?: CodeRenderersConfig;
-  allowedElements?: string[];
-  disallowedElements?: string[];
-  allowElement?: AllowElementFn;
-  unwrapDisallowed?: boolean;
-  disableAutolinkProtocols?: string[];
+  codeRenderers?: Record<string, CodeFenceRenderer>;
   mathRenderer?: MathRenderer;
   artifactHtml?: boolean;
   deferHeavyBlocks?: boolean | DeferredRenderConfig;
@@ -332,11 +327,6 @@ function StreamingMarkdownComponent(
 ) {
   if (text !== undefined && stream !== undefined) {
     throw new Error("StreamingMarkdown expects either `text` or `stream`, not both.");
-  }
-  if (allowedElements !== undefined && disallowedElements !== undefined) {
-    if (typeof process === "undefined" || process.env?.NODE_ENV !== "production") {
-      throw new Error("Unexpected combined `allowedElements` and `disallowedElements`, expected one or the other");
-    }
   }
 
   const effectiveScheduling = scheduling ?? DEFAULT_SCHEDULING;
@@ -655,21 +645,6 @@ function StreamingMarkdownComponent(
       renderer.setCodeRenderers(codeRenderers);
     }
     const reg = renderer.getComponentRegistry();
-    if (allowedElements !== undefined) {
-      reg.setAllowedElements(allowedElements);
-    }
-    if (disallowedElements !== undefined) {
-      reg.setDisallowedElements(disallowedElements);
-    }
-    if (allowElement !== undefined) {
-      reg.setAllowElement(allowElement);
-    }
-    if (unwrapDisallowed !== undefined) {
-      reg.setUnwrapDisallowed(unwrapDisallowed);
-    }
-    if (disableAutolinkProtocols !== undefined) {
-      reg.setDisableAutolinkProtocols(disableAutolinkProtocols);
-    }
     if (mathRenderer) {
       renderer.setMathRenderer(mathRenderer);
     }
@@ -677,7 +652,7 @@ function StreamingMarkdownComponent(
       reg.setArtifactHtml(artifactHtml);
     }
     reg.setTableVirtualization(tableVirtualization);
-  }, [renderer, components, mdxComponents, inlineComponents, resolvedInlineComponents, tableElements, htmlElements, codeRenderers, allowedElements, disallowedElements, allowElement, unwrapDisallowed, disableAutolinkProtocols, mathRenderer, artifactHtml, tableVirtualization]);
+  }, [renderer, components, mdxComponents, inlineComponents, resolvedInlineComponents, tableElements, htmlElements, codeRenderers, mathRenderer, artifactHtml, tableVirtualization]);
 
   useEffect(() => {
     const removeListener = renderer.addFlushListener((result) => {

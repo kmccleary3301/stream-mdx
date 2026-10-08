@@ -41,7 +41,7 @@ To render MDX blocks:
 - `inlineComponents`: override inline renders (strong/em/link/code/etc).
 - `tableElements`: override table tags (Shadcn table wrappers).
 - `htmlElements`: override HTML tag renders (when HTML is enabled).
-- `codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `artifact`, `diff`, custom languages) via record or array of language alias objects, resolved case-insensitively.
+- `codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `artifact`, `diff`, custom languages) keyed by language; `{ component, aliases }` entries add alias languages, resolved case-insensitively.
 - `allowedElements`: whitelist of permitted HTML tag names (mutually exclusive with `disallowedElements`).
 - `disallowedElements`: blacklist of HTML tag names to drop (mutually exclusive with `allowedElements`).
 - `unwrapDisallowed`: when `true`, render children of disallowed tags instead of dropping the subtree.

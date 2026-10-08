@@ -12,7 +12,6 @@ import type {
   LazyTokenizationPriority,
   SyntaxRuleSpec,
   TokenLineV1,
-  UrlTransform,
 } from "@stream-mdx/core";
 import type { ComponentRegistry } from "./components";
 
@@ -39,27 +38,13 @@ export interface CodeFenceRendererProps {
 export interface CodeFenceRendererConfig {
   component: React.ComponentType<CodeFenceRendererProps>;
   defer?: boolean;
-  language?: string | string[];
-  languages?: string[];
+  /** Extra fence languages (case-insensitive) that resolve to this renderer. */
   aliases?: string[];
-}
-
-export interface CustomCodeRenderer {
-  component?: React.ComponentType<CodeFenceRendererProps>;
-  renderer?: React.ComponentType<CodeFenceRendererProps>;
-  language?: string | string[];
-  languages?: string[];
-  defer?: boolean;
-  artifact?: boolean;
 }
 
 export type CodeFenceRenderer =
   | React.ComponentType<CodeFenceRendererProps>
   | CodeFenceRendererConfig;
-
-export type CodeRenderersConfig =
-  | Record<string, CodeFenceRenderer>
-  | Array<CustomCodeRenderer>;
 
 export interface ElementFilterDescriptor {
   tagName: string;
@@ -76,6 +61,20 @@ export type AllowElementFn = (
   element: ElementFilterDescriptor,
   context: ElementFilterContext,
 ) => boolean;
+
+/** Render-time element filtering, matching react-markdown / Streamdown semantics. */
+export interface ElementFilterOptions {
+  /** Only these tag names render. Mutually exclusive with `disallowedElements`. */
+  allowedElements?: string[];
+  /** These tag names never render. Mutually exclusive with `allowedElements`. */
+  disallowedElements?: string[];
+  /** Final per-element predicate; runs after the allow/deny lists. */
+  allowElement?: AllowElementFn;
+  /** Render the children of removed elements in place instead of dropping the subtree. */
+  unwrapDisallowed?: boolean;
+  /** Autolink protocols (e.g. `["mailto"]`) whose bare/angle autolinks render as plain text. Explicit links are unaffected. */
+  disableAutolinkProtocols?: string[];
+}
 
 export interface MathRendererProps {
   tex: string;
@@ -157,23 +156,7 @@ export interface FinalizedBlockRenderProps {
 
 export type BlockRendererOverride = (props: FinalizedBlockRenderProps) => React.ReactNode;
 
-export interface ComponentRegistryOptions {
-  allowedElements?: string[];
-  disallowedElements?: string[];
-  allowElement?: AllowElementFn;
-  unwrapDisallowed?: boolean;
-  disableAutolinkProtocols?: string[];
-  codeRenderers?: CodeRenderersConfig;
-  artifactHtml?: boolean;
-  mathRenderer?: MathRenderer;
-  blockRenderer?: BlockRendererOverride;
-  tableVirtualization?: TableVirtualizationOptions;
-  urlTransform?: UrlTransform;
-  blockComponents?: Partial<BlockComponents>;
-  components?: Partial<BlockComponents>;
-  inlineComponents?: Partial<InlineComponents>;
-}
-export interface RendererConfig {
+export interface RendererConfig extends ElementFilterOptions {
   themes?: { light: string; dark: string };
   highlight?: {
     browserEngine?: "js" | "wasm";
@@ -204,12 +187,7 @@ export interface RendererConfig {
     emitHighlightTokens?: boolean;
     emitDiffBlocks?: boolean;
   };
-  codeRenderers?: CodeRenderersConfig;
-  allowedElements?: string[];
-  disallowedElements?: string[];
-  allowElement?: AllowElementFn;
-  unwrapDisallowed?: boolean;
-  disableAutolinkProtocols?: string[];
+  codeRenderers?: Record<string, CodeFenceRenderer>;
   mathRenderer?: MathRenderer;
   artifactHtml?: boolean;
   blockRenderer?: BlockRendererOverride;
@@ -253,7 +231,7 @@ export interface Renderer {
   setBlockComponents(map: Partial<BlockComponents>): void;
   setInlineComponents(map: Partial<InlineComponents>): void;
   setMdxComponents(map: Record<string, GenericComponent>): void;
-  setCodeRenderers(map: CodeRenderersConfig): void;
+  setCodeRenderers(map: Record<string, CodeFenceRenderer>): void;
   setMathRenderer(renderer: MathRenderer): void;
   setTableVirtualization(options: TableVirtualizationOptions): void;
   getComponentRegistry(): ComponentRegistry;

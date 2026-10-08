@@ -92,7 +92,7 @@ export function Example() {
 | `linkSafety` | `{ enabled?, onLinkCheck?, renderModal? }` | Intercept links and require confirmation before navigation. Rejected URLs never navigate. |
 | `urlTransform` | `UrlTransform` | Custom URL transformation callback `(url, attribute, context) => string \| null \| undefined`. Defaults to `defaultUrlTransform` from `@stream-mdx/core`. |
 | `deferHeavyBlocks` | `DeferHeavyBlocks` | Defer heavy blocks (e.g. Mermaid) until in view/idle. |
-| `codeRenderers` | `CodeRenderersConfig` | Language-keyed code fence components, `{ component, defer? }`, or array of `{ language: string | string[], component }` / `{ languages: string[], renderer }` alias entries (resolved case-insensitively). |
+| `codeRenderers` | `Record<string, CodeFenceRenderer>` | Language-keyed code fence components or `{ component, defer?, aliases? }`. Keys and aliases resolve case-insensitively. |
 | `allowedElements` | `string[]` | Whitelist HTML tag names to allow (mutually exclusive with `disallowedElements`). Filtered at render time across markdown and raw HTML tags. |
 | `disallowedElements` | `string[]` | Tag names to disallow (mutually exclusive with `allowedElements`). Removed tags drop subtrees unless `unwrapDisallowed` is enabled. |
 | `allowElement` | `(element, context) => boolean` | Custom element filter callback. Receives `{ tagName, properties, blockType? }` and `{ source: "markdown" | "html", parentTagName? }`. |
@@ -315,9 +315,7 @@ export function CodeExample({ text }: { text: string }) {
 ```
 
 ### Code fence renderer contract
-Language keys are trimmed and lowercased. Entries accept a component, `{ component: Component, defer?: boolean }`, or an array of alias entries:
-- `{ language: string | string[], component: Component }` (Streamdown compatibility)
-- `{ languages: string[], renderer: Component }`
+Language keys are trimmed and lowercased. Entries accept a component or `{ component: Component, defer?: boolean, aliases?: string[] }`; each alias resolves to the same renderer.
 
 Language matching is case-insensitive (e.g. `JS` resolves to the `js` renderer). `defer: true` opts that renderer into viewport/idle deferral when `deferHeavyBlocks` is enabled.
 
@@ -463,7 +461,7 @@ To override or use MathJax:
 
 StreamMDX mirrors Streamdown / react-markdown element filtering semantics:
 
-- `allowedElements`: Whitelist tag names to render (e.g. `["p", "a", "strong"]`). Mutually exclusive with `disallowedElements` (throws in development if both are supplied).
+- `allowedElements`: Whitelist tag names to render (e.g. `["p", "a", "strong"]`). Mutually exclusive with `disallowedElements` (throws if both are supplied).
 - `disallowedElements`: Blacklist tag names to remove (e.g. `["img", "script"]`). Removed tags drop their entire subtree by default.
 - `unwrapDisallowed`: When `true`, disallowed elements render their children in place rather than dropping the subtree (e.g. `<em>text</em>` renders as `text`).
 - `allowElement`: Fine-grained predicate `(element: ElementFilterDescriptor, context: ElementFilterContext) => boolean`. Receives `{ tagName, properties, blockType? }` and `{ source: "markdown" | "html", parentTagName? }`. Returning `false` disallows the element.

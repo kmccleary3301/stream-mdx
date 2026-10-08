@@ -2,7 +2,7 @@ import type { Block, PatchMetrics, WorkerIn, WorkerOut } from "@stream-mdx/core"
 // Main V2 Markdown Renderer
 // Client-side renderer with component registry and worker integration
 import type { PatchCommitSchedulerOptions, PatchFlushResult } from "./renderer/patch-commit-scheduler";
-import type { BlockComponents, CodeHighlightRangeRequest, CodeRenderersConfig, InlineComponents, MathRenderer, Renderer, RendererConfig, TableVirtualizationOptions } from "./types";
+import type { BlockComponents, CodeFenceRenderer, CodeHighlightRangeRequest, InlineComponents, MathRenderer, Renderer, RendererConfig, TableVirtualizationOptions } from "./types";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import { createDefaultWorker, releaseDefaultWorker } from "@stream-mdx/worker";
@@ -356,7 +356,7 @@ export class MarkdownRenderer implements Renderer {
     }
     registerMDXComponents(map);
   }
-  setCodeRenderers(map: CodeRenderersConfig): void {
+  setCodeRenderers(map: Record<string, CodeFenceRenderer>): void {
     this.componentRegistry.setCodeRenderers(map);
   }
 
