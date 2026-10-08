@@ -91,6 +91,14 @@ anchor is `fnref:n`, subsequent anchors are `fnref:n:2`, `fnref:n:3`, and so on.
 Footer items carry their actual `refCount`; each backlink targets its own
 occurrence. Missing references remain literal and create no empty footer item.
 
+While a dirty tail suppresses the footer, `defined` is false and references render
+literally even in finalized earlier blocks. Intermediate fidelity checks compare
+that one footer-dependent flag against current publication, preserving label,
+number, occurrence, raw content, and all child metadata. Earlier public snapshots
+remain unchanged through copy-on-write. After `FINALIZE`, full IR and footnote SSR
+must match complete compilation; every rendered link must resolve to its own
+definition or occurrence, with no premature or duplicate anchors.
+
 ### Block packet verification, October 2026
 
 The saved pre-packet report counted 622/675 client-static and SSR passes,
