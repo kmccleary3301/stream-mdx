@@ -22,7 +22,7 @@ It does **not** claim universal latency or memory superiority across every brows
 
 | Category | Streamdown | StreamMDX |
 | --- | --- | --- |
-| Execution model | Main-thread React rendering | Worker-first parse pipeline with incremental patch application |
+| Execution model | Main-thread React rendering | Instance-scoped engine; worker, main-thread, or automatic execution |
 | Rendering surface | React component, close to `react-markdown` ergonomics | Dedicated `StreamingMarkdown` renderer plus lower-level packages |
 | Incremental model | Incomplete-markdown resilience + memoized rerendering | Explicit semantic/enrichment patch batches committed to a stable render tree |
 | Long-document posture | Main-thread work scales with content updates | Worker offload, queueing, and patch scheduling intended to reduce main-thread pressure |
@@ -34,7 +34,7 @@ It does **not** claim universal latency or memory superiority across every brows
 | --- | --- | --- |
 | Install / adopt | Lower friction for existing `react-markdown` users | Higher setup cost because worker/runtime configuration matters |
 | CSP / hosting | No worker hosting requirement | Hosted worker strongly recommended for production CSP clarity |
-| Custom syntax | remark/rehype ecosystem, plus Streamdown behavior | Worker/plugin model, custom matcher paths, and more explicit runtime composition |
+| Custom syntax | remark/rehype ecosystem, plus Streamdown behavior | Native Lezer/document plugins, serialized inline rules, optional finalized-block remark/rehype adapter |
 | Terminal / protocol use | React-first surface | Dedicated TUI / protocol path exists |
 | Operational visibility | Mostly renderer-level behavior | More moving parts, but more instrumentation and runtime controls |
 
@@ -82,6 +82,28 @@ When you look at StreamMDX vs Streamdown numbers on the benchmark page, keep the
 - Separate **live incremental** results from **static render** results.
 - Treat first visible render and final convergence as different metrics.
 - Treat memory, bundle cost, and CSP/runtime shape as adjacent tradeoffs, not as interchangeable latency claims.
+
+### Engine-v2 production comparison, 2026-10-08
+
+The locked quiet-AC run attempted preserved runtime `4350a2a`, engine-v2 runtime
+`342b378`, and Streamdown `2.7.0` on `naive-bayes` in S2, S3, and S6. Each set
+requested one unreported warmup and three measured streams. All six engine-v2
+and Streamdown sets completed, producing 18 measured streams. All three
+preserved-runtime warmups failed the final-DOM/highlighting completion guard;
+there are no baseline measurements.
+
+The strict comparison rejected the completed pair: canonical semantic records
+differ in display/inline math placement, paragraph boundaries, footnote
+navigation and ARIA, and the native footer separator. These are retained
+behavior differences, not normalization targets. No valid speedup, slowdown,
+or before/after performance claim follows from this run.
+
+The primary metric is main-thread CDP `TaskDuration`, not total process CPU.
+Raw samples, median/spread, frame p95, peak JS heap, first committed content,
+duration, live attached DOM, failed attempts, and semantic evidence are retained
+in the isolated consumer worktree's
+`.codex-optimization/runs/20261007-211411-engine-v2-comparison/` directory
+(`results.md`, `summary.json`, and `final-quiet/`).
 
 ## Related references
 

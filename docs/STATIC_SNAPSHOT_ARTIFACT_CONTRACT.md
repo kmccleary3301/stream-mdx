@@ -222,8 +222,16 @@ On Node 20.20.2, the preserved Vite production consumer also passed after
 installing only a newly packed worker tarball; its Vite config and application
 source were unchanged. Fresh ESM and CJS subprocesses against that installed
 package passed the public import, direct/physical-worker MDX parity, and SSR
-global-descriptor checks. Full fresh-pack and real-browser application gates
-remain the integration owner's checks.
+global-descriptor checks.
+
+The final integration gates subsequently passed on Node 20.20.2: fresh packed
+ESM/CJS runtime imports, real remark/rehype mutations, and production Next/Vite
+builds. Both freshly installed applications also rendered the public main-thread
+consumer in an actual browser, including the transformed heading/text and
+Mermaid SVG, without page errors. Final integrated test suites passed 20 core,
+50 worker, 42 React, and one unified test file. The configured conformance corpus
+passed all 675 static/streaming/SSR cases with zero divergence and retained all
+427 baseline IDs. The final non-update production HTML run passed 120 scenarios.
 
 ## Runtime fallback
 

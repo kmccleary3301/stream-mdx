@@ -1,6 +1,6 @@
 # StreamMDX Handbook
 
-_Last updated: 2025-12-17_
+_Last updated: 2026-10-08_
 
 This handbook is the “current state” reference for StreamMDX: architecture, key decisions, and the workflows we expect contributors and maintainers to use.
 
@@ -15,7 +15,7 @@ If you’re looking for the consumer API first, start with:
 
 StreamMDX is a streaming-first Markdown/MDX renderer for React built around:
 
-- **Worker-first parsing** (keeps heavy work off the main thread)
+- **Instance-scoped parsing** with worker, main-thread, and automatic execution modes
 - **Incremental patching** (updates are applied to an existing render)
 - **Backpressure guardrails** (prevents UI lockups on large documents/high update rates)
 - **Modular feature flags** (tables/html/mdx/math/footnotes/callouts)
@@ -31,6 +31,8 @@ StreamMDX is a streaming-first Markdown/MDX renderer for React built around:
 | `@stream-mdx/worker` | Worker client utilities + hosted worker bundle (`dist/hosted/markdown-worker.js`). |
 | `@stream-mdx/core` | Types, snapshot helpers, sanitization primitives, perf helpers. |
 | `@stream-mdx/plugins/*` | Worker/plugin primitives and built-in domain helpers. |
+| `@stream-mdx/unified` | Optional remark/rehype adapter for finalized blocks. |
+| `@stream-mdx/mermaid` | Optional Mermaid fence renderer. |
 
 ---
 
@@ -44,13 +46,14 @@ StreamMDX is a streaming-first Markdown/MDX renderer for React built around:
   - Parse Markdown incrementally.
   - Enrich blocks (e.g., syntax highlighting, MDX detection).
   - Emit patch batches + optional worker-side metrics.
+  - Own an isolated `MarkdownEngine`; custom worker entries configure native Lezer extensions and document plugins through `@stream-mdx/worker/engine`.
 
 ### 3.2 React renderer
 
 - Source: `packages/markdown-v2-react/src/streaming-markdown.tsx`
 - Responsibilities:
   - Own the renderer store + patch scheduler.
-  - Attach/detach the worker and forward text/stream updates.
+  - Attach/detach the selected transport and forward text/stream updates.
   - Apply patches incrementally and render blocks with stable keys.
   - Emit flush metrics via `onMetrics`.
 
@@ -115,10 +118,13 @@ This builds the hosted worker bundle and copies it into:
 
 ---
 
-## 7) Tabled / Future Work
+## 7) Engine-v2 delivery evidence
 
-The following are intentionally out-of-scope for the current “quality bridge” sprint:
+- Node 20 integrated suites: 20 core, 50 worker, 42 React, and one unified test file passed.
+- CommonMark/GFM corpus: 675/675 static, streaming, and SSR cases; zero divergences; all 427 previously passing IDs retained. This is the configured corpus, not universal conformance.
+- Final production HTML regressions: 120/120 scenarios passed in a non-update run.
+- Fresh packed ESM/CJS consumers and production Next/Vite builds passed on Node 20. Real main-thread browser consumers rendered remark/rehype output and Mermaid SVGs.
+- Physical browser workers exercised native Lezer grammar/inline extensions, document plugins, and serialized syntax rules. Finalized table virtualization retained the last row through streaming replacement and rendered every row when disabled.
+- Consumer API, renderer replacements, artifacts, chat example, and optional unified integration are documented in `docs/PUBLIC_API.md` and `docs/REACT_INTEGRATION_GUIDE.md`.
 
-- Deep benchmark harnesses and standardized perf reporting.
-- Expanded plugin ecosystems (`presets`, `themes`, `highlighters`) beyond documentation and packaging boundaries.
-- Marketing surfaces (domain/branding site) beyond a minimal docs portal.
+Performance results require completed measurements and equivalent rendered semantics. Do not infer a speed claim from correctness scores or invalid comparisons; see `docs/STREAMDOWN_COMPARISON.md`.

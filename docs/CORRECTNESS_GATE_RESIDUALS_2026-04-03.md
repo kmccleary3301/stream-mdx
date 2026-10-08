@@ -1,6 +1,10 @@
 # Correctness Gate Residuals (2026-04-10)
 
-This note records the residual failures observed after the latest correctness tranche.
+Historical tranche record. The engine-v2 integration on 2026-10-08 supersedes the
+HTML snapshot residuals below: all 120 production HTML scenarios passed in the
+final non-update run. Node 20 core/worker/React/unified suites and the 675-case
+static/streaming/SSR conformance corpus also passed. The earlier observations
+remain below as historical evidence, not current release blockers.
 
 ## What Passed
 

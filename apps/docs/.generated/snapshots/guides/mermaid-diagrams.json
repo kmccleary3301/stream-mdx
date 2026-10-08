@@ -1,9 +1,9 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-02-18T18:24:37.089Z",
-  "hash": "85071972d2461272f3b9353f9335940ba4c299dee2b5d8762f8b40342ffaf644",
-  "contentHash": "f6d52f423918aa47431d463a3aa3b527eb49db852b06772b44e58f5276a62178",
+  "createdAt": "2026-10-08T03:57:48.405Z",
+  "hash": "fe82cad32cf02d7c4b9f83d29df2dbfedb61202d090f47c8669fc132a36bd2e3",
+  "contentHash": "c5ec4c3efc27187e3f9a3c865549594eadc60dfb27088ce611f55b52eccab591",
   "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
   "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
   "blocks": [
@@ -140,7 +140,7 @@
           "from": 334,
           "to": 377
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> install</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> @stream-mdx/mermaid</span></span></code></pre>",
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-bash\" data-language=\"bash\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> install</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> @stream-mdx/mermaid</span></span></code></pre>",
         "meta": {
           "lang": "bash",
           "code": "npm install @stream-mdx/mermaid"
@@ -175,15 +175,15 @@
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "Mermaid rendering is provided via a block component mapped to `mermaid` code fences.",
+        "raw": "Mermaid rendering is provided via a code fence renderer mapped to `mermaid` code fences.",
         "range": {
           "from": 406,
-          "to": 490
+          "to": 494
         },
         "inline": [
           {
             "kind": "text",
-            "text": "Mermaid rendering is provided via a block component mapped to "
+            "text": "Mermaid rendering is provided via a code fence renderer mapped to "
           },
           {
             "kind": "code",
@@ -197,31 +197,31 @@
       }
     },
     {
-      "id": "11ca8e19",
+      "id": "af72b9d",
       "type": "code",
       "isFinalized": true,
       "payload": {
-        "raw": "```tsx\nimport { StreamingMarkdown } from \"stream-mdx\";\nimport { MermaidBlock } from \"@stream-mdx/mermaid\";\n\n<StreamingMarkdown\n  text={content}\n  worker=\"/workers/markdown-worker.js\"\n  components={{\n    mermaid: MermaidBlock,\n  }}\n  features={{\n    html: true,\n    tables: true,\n    math: true,\n    mdx: true,\n  }}\n/>;\n```",
+        "raw": "```tsx\nimport { StreamingMarkdown } from \"stream-mdx\";\nimport { MermaidBlock } from \"@stream-mdx/mermaid\";\n\n<StreamingMarkdown\n  text={content}\n  worker=\"/workers/markdown-worker.js\"\n  codeRenderers={{\n    mermaid: MermaidBlock,\n  }}\n  features={{\n    html: true,\n    tables: true,\n    math: true,\n    mdx: true,\n  }}\n/>;\n```",
         "range": {
-          "from": 492,
-          "to": 814
+          "from": 496,
+          "to": 821
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { StreamingMarkdown } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { MermaidBlock } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/mermaid\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content}</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  components</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    mermaid: MermaidBlock,</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }}</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    tables: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    math: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"15\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }}</span></span>\n<span class=\"line\" data-line=\"16\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/>;</span></span></code></pre>",
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { StreamingMarkdown } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { MermaidBlock } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/mermaid\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content}</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  codeRenderers</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    mermaid: MermaidBlock,</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }}</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    tables: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    math: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"15\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }}</span></span>\n<span class=\"line\" data-line=\"16\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/>;</span></span></code></pre>",
         "meta": {
           "lang": "tsx",
-          "code": "import { StreamingMarkdown } from \"stream-mdx\";\nimport { MermaidBlock } from \"@stream-mdx/mermaid\";\n\n<StreamingMarkdown\n  text={content}\n  worker=\"/workers/markdown-worker.js\"\n  components={{\n    mermaid: MermaidBlock,\n  }}\n  features={{\n    html: true,\n    tables: true,\n    math: true,\n    mdx: true,\n  }}\n/>;"
+          "code": "import { StreamingMarkdown } from \"stream-mdx\";\nimport { MermaidBlock } from \"@stream-mdx/mermaid\";\n\n<StreamingMarkdown\n  text={content}\n  worker=\"/workers/markdown-worker.js\"\n  codeRenderers={{\n    mermaid: MermaidBlock,\n  }}\n  features={{\n    html: true,\n    tables: true,\n    math: true,\n    mdx: true,\n  }}\n/>;"
         }
       }
     },
     {
-      "id": "47af2993",
+      "id": "10330577",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Authoring example",
         "range": {
-          "from": 816,
-          "to": 836
+          "from": 823,
+          "to": 843
         },
         "meta": {
           "headingLevel": 2,
@@ -237,31 +237,31 @@
       }
     },
     {
-      "id": "5a91d597",
+      "id": "75a67905",
       "type": "code",
       "isFinalized": true,
       "payload": {
         "raw": "````md\n```mermaid\ngraph TD\n  A[User] --> B[StreamMDX]\n  B --> C[Worker]\n  C --> D[Renderer]\n```\n````",
         "range": {
-          "from": 838,
-          "to": 938
+          "from": 845,
+          "to": 945
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>```mermaid</span></span>\n<span class=\"line\" data-line=\"2\"><span>graph TD</span></span>\n<span class=\"line\" data-line=\"3\"><span>  A[User] --> B[StreamMDX]</span></span>\n<span class=\"line\" data-line=\"4\"><span>  B --> C[Worker]</span></span>\n<span class=\"line\" data-line=\"5\"><span>  C --> D[Renderer]</span></span>\n<span class=\"line\" data-line=\"6\"><span>```</span></span></code></pre>",
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>```mermaid</span></span>\n<span class=\"line\" data-line=\"2\"><span>graph TD</span></span>\n<span class=\"line\" data-line=\"3\"><span>  A[User] --> B[StreamMDX]</span></span>\n<span class=\"line\" data-line=\"4\"><span>  B --> C[Worker]</span></span>\n<span class=\"line\" data-line=\"5\"><span>  C --> D[Renderer]</span></span>\n<span class=\"line\" data-line=\"6\"><span>```</span></span></code></pre>",
         "meta": {
-          "lang": "`md",
+          "lang": "text",
           "code": "```mermaid\ngraph TD\n  A[User] --> B[StreamMDX]\n  B --> C[Worker]\n  C --> D[Renderer]\n```"
         }
       }
     },
     {
-      "id": "4f88bd7b",
+      "id": "41a9b474",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Rendered example",
         "range": {
-          "from": 940,
-          "to": 959
+          "from": 947,
+          "to": 966
         },
         "meta": {
           "headingLevel": 2,
@@ -277,16 +277,16 @@
       }
     },
     {
-      "id": "5533c7e0",
+      "id": "6125b439",
       "type": "code",
       "isFinalized": true,
       "payload": {
         "raw": "```mermaid\ngraph TD\n  A[User] --> B[StreamMDX]\n  B --> C[Worker]\n  C --> D[Renderer]\n```",
         "range": {
-          "from": 961,
-          "to": 1049
+          "from": 968,
+          "to": 1056
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"mermaid\"><code data-language=\"mermaid\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">graph TD</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  A[User] --> B[StreamMDX]</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  B --> C[Worker]</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  C --> D[Renderer]</span></span></code></pre>",
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-mermaid\" data-language=\"mermaid\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">graph TD</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  A[User] --> B[StreamMDX]</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  B --> C[Worker]</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  C --> D[Renderer]</span></span></code></pre>",
         "meta": {
           "lang": "mermaid",
           "code": "graph TD\n  A[User] --> B[StreamMDX]\n  B --> C[Worker]\n  C --> D[Renderer]"
@@ -294,14 +294,14 @@
       }
     },
     {
-      "id": "573bccfb",
+      "id": "651ad602",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "UX details",
         "range": {
-          "from": 1051,
-          "to": 1064
+          "from": 1058,
+          "to": 1071
         },
         "meta": {
           "headingLevel": 2,
@@ -317,14 +317,14 @@
       }
     },
     {
-      "id": "6017505f",
+      "id": "56e52285",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "The Mermaid block renderer includes a code/diagram toggle by default.",
         "range": {
-          "from": 1066,
-          "to": 1135
+          "from": 1073,
+          "to": 1142
         },
         "inline": [
           {
@@ -335,14 +335,14 @@
       }
     },
     {
-      "id": "3395e67c",
+      "id": "156da6a0",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Use `defaultView` to control first render mode:",
         "range": {
-          "from": 1137,
-          "to": 1184
+          "from": 1144,
+          "to": 1191
         },
         "inline": [
           {
@@ -361,31 +361,31 @@
       }
     },
     {
-      "id": "10ed097c",
+      "id": "40b4bae0",
       "type": "code",
       "isFinalized": true,
       "payload": {
-        "raw": "```tsx\ncomponents={{\n  mermaid: (props) => <MermaidBlock {...props} defaultView=\"diagram\" />,\n}}\n```",
+        "raw": "```tsx\ncodeRenderers={{\n  mermaid: (props) => <MermaidBlock {...props} defaultView=\"diagram\" />,\n}}\n```",
         "range": {
-          "from": 1186,
-          "to": 1286
+          "from": 1193,
+          "to": 1296
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">components</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  mermaid</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: (</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">props</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">MermaidBlock</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">...</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">props} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">defaultView</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"diagram\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> />,</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}}</span></span></code></pre>",
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">codeRenderers</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  mermaid</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: (</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">props</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">MermaidBlock</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">...</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">props} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">defaultView</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"diagram\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> />,</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}}</span></span></code></pre>",
         "meta": {
           "lang": "tsx",
-          "code": "components={{\n  mermaid: (props) => <MermaidBlock {...props} defaultView=\"diagram\" />,\n}}"
+          "code": "codeRenderers={{\n  mermaid: (props) => <MermaidBlock {...props} defaultView=\"diagram\" />,\n}}"
         }
       }
     },
     {
-      "id": "764a0da1",
+      "id": "7dfbb300",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Recommendations:",
         "range": {
-          "from": 1288,
-          "to": 1304
+          "from": 1298,
+          "to": 1314
         },
         "inline": [
           {
@@ -396,14 +396,14 @@
       }
     },
     {
-      "id": "3ff55aac",
+      "id": "b0f1f6b",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- Keep source code view available for debugging and copy/paste.\n- Use overflow-safe wrappers on narrow screens.\n- Prefer diagram view only for docs pages where the diagram is primary content.",
         "range": {
-          "from": 1306,
-          "to": 1497
+          "from": 1316,
+          "to": 1507
         },
         "meta": {
           "ordered": false,
@@ -432,14 +432,14 @@
       }
     },
     {
-      "id": "1e17d483",
+      "id": "1c678d2d",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Performance and safety notes",
         "range": {
-          "from": 1499,
-          "to": 1530
+          "from": 1509,
+          "to": 1540
         },
         "meta": {
           "headingLevel": 2,
@@ -455,14 +455,14 @@
       }
     },
     {
-      "id": "27ac4e59",
+      "id": "5c92899a",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- Mermaid rendering should remain opt-in and behind a feature toggle in user-facing apps.\n- Keep sanitization enabled for surrounding HTML content.\n- Include one regression snapshot for a representative Mermaid page.",
         "range": {
-          "from": 1532,
-          "to": 1748
+          "from": 1542,
+          "to": 1758
         },
         "meta": {
           "ordered": false,
@@ -491,14 +491,14 @@
       }
     },
     {
-      "id": "2ac7bebf",
+      "id": "367e4da0",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Troubleshooting",
         "range": {
-          "from": 1750,
-          "to": 1768
+          "from": 1760,
+          "to": 1778
         },
         "meta": {
           "headingLevel": 2,
@@ -514,14 +514,14 @@
       }
     },
     {
-      "id": "38621c23",
+      "id": "37be0e2",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- **No diagram appears**: verify `@stream-mdx/mermaid` is installed and registered in `components`.\n- **Hydration mismatch**: ensure wrappers/components around Mermaid are deterministic.\n- **Layout overflow**: add responsive container styles around the diagram block.",
         "range": {
-          "from": 1770,
-          "to": 2037
+          "from": 1780,
+          "to": 2047
         },
         "meta": {
           "ordered": false,
@@ -593,14 +593,14 @@
       }
     },
     {
-      "id": "187e0824",
+      "id": "cc77943",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Next steps",
         "range": {
-          "from": 2039,
-          "to": 2052
+          "from": 2049,
+          "to": 2062
         },
         "meta": {
           "headingLevel": 2,
@@ -616,14 +616,14 @@
       }
     },
     {
-      "id": "21c104bf",
+      "id": "56a74000",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- [MDX and HTML in StreamMDX](/docs/guides/mdx-and-html)\n- [Testing and baselines](/docs/guides/testing-and-baselines)\n- [Performance and backpressure](/docs/guides/performance-and-backpressure)",
         "range": {
-          "from": 2054,
-          "to": 2248
+          "from": 2064,
+          "to": 2258
         },
         "meta": {
           "ordered": false,
@@ -673,63 +673,53 @@
   "tocHeadings": [
     {
       "id": "mermaid-diagrams",
-      "text": "Mermaid Diagrams",
       "level": 1,
-      "blockId": "db082c0"
+      "text": "Mermaid Diagrams"
     },
     {
       "id": "why-mermaid-is-optional",
-      "text": "Why Mermaid is optional",
       "level": 2,
-      "blockId": "4947a841"
+      "text": "Why Mermaid is optional"
     },
     {
       "id": "install",
-      "text": "Install",
       "level": 2,
-      "blockId": "73110dc3"
+      "text": "Install"
     },
     {
       "id": "register-the-component",
-      "text": "Register the component",
       "level": 2,
-      "blockId": "465f4c65"
+      "text": "Register the component"
     },
     {
       "id": "authoring-example",
-      "text": "Authoring example",
       "level": 2,
-      "blockId": "47af2993"
+      "text": "Authoring example"
     },
     {
       "id": "rendered-example",
-      "text": "Rendered example",
       "level": 2,
-      "blockId": "4f88bd7b"
+      "text": "Rendered example"
     },
     {
       "id": "ux-details",
-      "text": "UX details",
       "level": 2,
-      "blockId": "573bccfb"
+      "text": "UX details"
     },
     {
       "id": "performance-and-safety-notes",
-      "text": "Performance and safety notes",
       "level": 2,
-      "blockId": "1e17d483"
+      "text": "Performance and safety notes"
     },
     {
       "id": "troubleshooting",
-      "text": "Troubleshooting",
       "level": 2,
-      "blockId": "2ac7bebf"
+      "text": "Troubleshooting"
     },
     {
       "id": "next-steps",
-      "text": "Next steps",
       "level": 2,
-      "blockId": "187e0824"
+      "text": "Next steps"
     }
   ],
   "init": {

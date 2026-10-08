@@ -1,9 +1,9 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-04-03T23:38:46.087Z",
-  "hash": "1dc2c4cf96add666af1173b58ea29c514dca2d588a65baeee5aee4414c3b1b9d",
-  "contentHash": "ad04638bfa7fc5937f6b2d456826bbb3250089374510b421c0a6ecf7d0061e7c",
+  "createdAt": "2026-10-08T12:24:09.312Z",
+  "hash": "d47a738ffcd50dd9476338e772b4bba7f8f1bbadc8868305fb5ee34d283f81d4",
+  "contentHash": "0a4e4accee2b3f213e4ec2de115628903ca114b730c0eccccda4a89a55e37d5e",
   "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
   "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
   "blocks": [
@@ -13,14 +13,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "StreamMDX vs Streamdown",
-        "range": {
-          "from": 0,
-          "to": 25
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading1",
           "headingLevel": 1,
           "headingText": "StreamMDX vs Streamdown",
           "headingId": "streammdx-vs-streamdown"
+        },
+        "range": {
+          "from": 0,
+          "to": 25
         },
         "inline": [
           {
@@ -36,6 +37,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "This comparison is deliberately narrow. It is not a claim that one project is globally \"better\" than the other. It is a technical comparison of runtime model, integration shape, and the behaviors our current harnesses are actually built to measure.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 27,
           "to": 275
@@ -54,14 +58,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Scope of this comparison",
-        "range": {
-          "from": 277,
-          "to": 304
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Scope of this comparison",
           "headingId": "scope-of-this-comparison"
+        },
+        "range": {
+          "from": 277,
+          "to": 304
         },
         "inline": [
           {
@@ -77,6 +82,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "The current comparison is grounded in:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 306,
           "to": 344
@@ -95,12 +103,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- local browser runs\n- shared markdown fixtures\n- seeded streaming scenarios\n- one-shot static content-class runs",
-        "range": {
-          "from": 346,
-          "to": 459
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -127,7 +142,254 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "3d2e09a1::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 346,
+                  "to": 366
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "3d2e09a1::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- local browser runs",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "local browser runs"
+                        }
+                      ],
+                      "range": {
+                        "from": 346,
+                        "to": 366
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "local browser runs"
+                              }
+                            ],
+                            "text": "local browser runs",
+                            "raw": "- local browser runs"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "local browser runs"
+                    }
+                  ],
+                  "text": "local browser runs",
+                  "raw": "- local browser runs"
+                },
+                "children": []
+              },
+              {
+                "id": "3d2e09a1::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 367,
+                  "to": 393
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "3d2e09a1::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- shared markdown fixtures",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "shared markdown fixtures"
+                        }
+                      ],
+                      "range": {
+                        "from": 367,
+                        "to": 393
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "shared markdown fixtures"
+                              }
+                            ],
+                            "text": "shared markdown fixtures",
+                            "raw": "- shared markdown fixtures"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "shared markdown fixtures"
+                    }
+                  ],
+                  "text": "shared markdown fixtures",
+                  "raw": "- shared markdown fixtures"
+                },
+                "children": []
+              },
+              {
+                "id": "3d2e09a1::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 394,
+                  "to": 422
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "3d2e09a1::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- seeded streaming scenarios",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "seeded streaming scenarios"
+                        }
+                      ],
+                      "range": {
+                        "from": 394,
+                        "to": 422
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "seeded streaming scenarios"
+                              }
+                            ],
+                            "text": "seeded streaming scenarios",
+                            "raw": "- seeded streaming scenarios"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "seeded streaming scenarios"
+                    }
+                  ],
+                  "text": "seeded streaming scenarios",
+                  "raw": "- seeded streaming scenarios"
+                },
+                "children": []
+              },
+              {
+                "id": "3d2e09a1::item:3",
+                "type": "list-item",
+                "range": {
+                  "from": 423,
+                  "to": 459
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "3d2e09a1::item:3",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- one-shot static content-class runs",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "one-shot static content-class runs"
+                        }
+                      ],
+                      "range": {
+                        "from": 423,
+                        "to": 459
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 3,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "one-shot static content-class runs"
+                              }
+                            ],
+                            "text": "one-shot static content-class runs",
+                            "raw": "- one-shot static content-class runs"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 3,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "one-shot static content-class runs"
+                    }
+                  ],
+                  "text": "one-shot static content-class runs",
+                  "raw": "- one-shot static content-class runs"
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 346,
+          "to": 459
         }
       }
     },
@@ -137,6 +399,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "It does **not** claim universal latency or memory superiority across every browser, machine, or integration pattern.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 461,
           "to": 577
@@ -168,14 +433,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Short version",
-        "range": {
-          "from": 579,
-          "to": 595
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Short version",
           "headingId": "short-version"
+        },
+        "range": {
+          "from": 579,
+          "to": 595
         },
         "inline": [
           {
@@ -191,12 +457,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- **Choose Streamdown** if your priority is a minimal migration from `react-markdown` and you want streaming-tolerant formatting behavior without introducing a worker runtime.\n- **Choose StreamMDX** if your priority is worker isolation, explicit incremental patching, richer plugin/runtime control, or better guardrails for long-running / high-frequency streams.",
-        "range": {
-          "from": 597,
-          "to": 959
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -237,7 +510,214 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "6337aeff::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 597,
+                  "to": 772
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "6337aeff::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **Choose Streamdown** if your priority is a minimal migration from `react-markdown` and you want streaming-tolerant formatting behavior without introducing a worker runtime.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Choose Streamdown"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": " if your priority is a minimal migration from "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "react-markdown"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " and you want streaming-tolerant formatting behavior without introducing a worker runtime."
+                        }
+                      ],
+                      "range": {
+                        "from": 597,
+                        "to": 772
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Choose Streamdown"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": " if your priority is a minimal migration from "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "react-markdown"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " and you want streaming-tolerant formatting behavior without introducing a worker runtime."
+                              }
+                            ],
+                            "text": "Choose Streamdown if your priority is a minimal migration from react-markdown and you want streaming-tolerant formatting behavior without introducing a worker runtime.",
+                            "raw": "- **Choose Streamdown** if your priority is a minimal migration from `react-markdown` and you want streaming-tolerant formatting behavior without introducing a worker runtime."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Choose Streamdown"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": " if your priority is a minimal migration from "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "react-markdown"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " and you want streaming-tolerant formatting behavior without introducing a worker runtime."
+                    }
+                  ],
+                  "text": "Choose Streamdown if your priority is a minimal migration from react-markdown and you want streaming-tolerant formatting behavior without introducing a worker runtime.",
+                  "raw": "- **Choose Streamdown** if your priority is a minimal migration from `react-markdown` and you want streaming-tolerant formatting behavior without introducing a worker runtime."
+                },
+                "children": []
+              },
+              {
+                "id": "6337aeff::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 773,
+                  "to": 959
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "6337aeff::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **Choose StreamMDX** if your priority is worker isolation, explicit incremental patching, richer plugin/runtime control, or better guardrails for long-running / high-frequency streams.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Choose StreamMDX"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": " if your priority is worker isolation, explicit incremental patching, richer plugin/runtime control, or better guardrails for long-running / high-frequency streams."
+                        }
+                      ],
+                      "range": {
+                        "from": 773,
+                        "to": 959
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Choose StreamMDX"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": " if your priority is worker isolation, explicit incremental patching, richer plugin/runtime control, or better guardrails for long-running / high-frequency streams."
+                              }
+                            ],
+                            "text": "Choose StreamMDX if your priority is worker isolation, explicit incremental patching, richer plugin/runtime control, or better guardrails for long-running / high-frequency streams.",
+                            "raw": "- **Choose StreamMDX** if your priority is worker isolation, explicit incremental patching, richer plugin/runtime control, or better guardrails for long-running / high-frequency streams."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Choose StreamMDX"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": " if your priority is worker isolation, explicit incremental patching, richer plugin/runtime control, or better guardrails for long-running / high-frequency streams."
+                    }
+                  ],
+                  "text": "Choose StreamMDX if your priority is worker isolation, explicit incremental patching, richer plugin/runtime control, or better guardrails for long-running / high-frequency streams.",
+                  "raw": "- **Choose StreamMDX** if your priority is worker isolation, explicit incremental patching, richer plugin/runtime control, or better guardrails for long-running / high-frequency streams."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 597,
+          "to": 959
         }
       }
     },
@@ -247,14 +727,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Architecture",
-        "range": {
-          "from": 961,
-          "to": 976
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Architecture",
           "headingId": "architecture"
+        },
+        "range": {
+          "from": 961,
+          "to": 976
         },
         "inline": [
           {
@@ -269,13 +750,9 @@
       "type": "table",
       "isFinalized": true,
       "payload": {
-        "raw": "| Category | Streamdown | StreamMDX |\n| --- | --- | --- |\n| Execution model | Main-thread React rendering | Worker-first parse pipeline with incremental patch application |\n| Rendering surface | React component, close to `react-markdown` ergonomics | Dedicated `StreamingMarkdown` renderer plus lower-level packages |\n| Incremental model | Incomplete-markdown resilience + memoized rerendering | Explicit semantic/enrichment patch batches committed to a stable render tree |\n| Long-document posture | Main-thread work scales with content updates | Worker offload, queueing, and patch scheduling intended to reduce main-thread pressure |\n| Packaging | Single package | Modular packages plus `stream-mdx` convenience wrapper |",
-        "range": {
-          "from": 978,
-          "to": 1702
-        },
-        "inline": [],
+        "raw": "| Category | Streamdown | StreamMDX |\n| --- | --- | --- |\n| Execution model | Main-thread React rendering | Instance-scoped engine; worker, main-thread, or automatic execution |\n| Rendering surface | React component, close to `react-markdown` ergonomics | Dedicated `StreamingMarkdown` renderer plus lower-level packages |\n| Incremental model | Incomplete-markdown resilience + memoized rerendering | Explicit semantic/enrichment patch batches committed to a stable render tree |\n| Long-document posture | Main-thread work scales with content updates | Worker offload, queueing, and patch scheduling intended to reduce main-thread pressure |\n| Packaging | Single package | Modular packages plus `stream-mdx` convenience wrapper |",
         "meta": {
+          "lezerNodeType": "Table",
           "header": [
             [
               {
@@ -296,6 +773,11 @@
               }
             ]
           ],
+          "align": [
+            null,
+            null,
+            null
+          ],
           "rows": [
             [
               [
@@ -313,7 +795,7 @@
               [
                 {
                   "kind": "text",
-                  "text": "Worker-first parse pipeline with incremental patch application"
+                  "text": "Instance-scoped engine; worker, main-thread, or automatic execution"
                 }
               ]
             ],
@@ -421,29 +903,30 @@
                 }
               ]
             ]
-          ],
-          "align": [
-            null,
-            null,
-            null
           ]
-        }
+        },
+        "range": {
+          "from": 978,
+          "to": 1707
+        },
+        "inline": []
       }
     },
     {
-      "id": "60dac7aa",
+      "id": "4630f2af",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Integration tradeoffs",
-        "range": {
-          "from": 1704,
-          "to": 1728
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Integration tradeoffs",
           "headingId": "integration-tradeoffs"
+        },
+        "range": {
+          "from": 1709,
+          "to": 1733
         },
         "inline": [
           {
@@ -454,17 +937,13 @@
       }
     },
     {
-      "id": "3f5cac3d",
+      "id": "36dd83f8",
       "type": "table",
       "isFinalized": true,
       "payload": {
-        "raw": "| Topic | Streamdown | StreamMDX |\n| --- | --- | --- |\n| Install / adopt | Lower friction for existing `react-markdown` users | Higher setup cost because worker/runtime configuration matters |\n| CSP / hosting | No worker hosting requirement | Hosted worker strongly recommended for production CSP clarity |\n| Custom syntax | remark/rehype ecosystem, plus Streamdown behavior | Worker/plugin model, custom matcher paths, and more explicit runtime composition |\n| Terminal / protocol use | React-first surface | Dedicated TUI / protocol path exists |\n| Operational visibility | Mostly renderer-level behavior | More moving parts, but more instrumentation and runtime controls |",
-        "range": {
-          "from": 1730,
-          "to": 2405
-        },
-        "inline": [],
+        "raw": "| Topic | Streamdown | StreamMDX |\n| --- | --- | --- |\n| Install / adopt | Lower friction for existing `react-markdown` users | Higher setup cost because worker/runtime configuration matters |\n| CSP / hosting | No worker hosting requirement | Hosted worker strongly recommended for production CSP clarity |\n| Custom syntax | remark/rehype ecosystem, plus Streamdown behavior | Native Lezer/document plugins, serialized inline rules, optional finalized-block remark/rehype adapter |\n| Terminal / protocol use | React-first surface | Dedicated TUI / protocol path exists |\n| Operational visibility | Mostly renderer-level behavior | More moving parts, but more instrumentation and runtime controls |",
         "meta": {
+          "lezerNodeType": "Table",
           "header": [
             [
               {
@@ -484,6 +963,11 @@
                 "text": "StreamMDX"
               }
             ]
+          ],
+          "align": [
+            null,
+            null,
+            null
           ],
           "rows": [
             [
@@ -550,7 +1034,7 @@
               [
                 {
                   "kind": "text",
-                  "text": "Worker/plugin model, custom matcher paths, and more explicit runtime composition"
+                  "text": "Native Lezer/document plugins, serialized inline rules, optional finalized-block remark/rehype adapter"
                 }
               ]
             ],
@@ -594,29 +1078,30 @@
                 }
               ]
             ]
-          ],
-          "align": [
-            null,
-            null,
-            null
           ]
-        }
+        },
+        "range": {
+          "from": 1735,
+          "to": 2432
+        },
+        "inline": []
       }
     },
     {
-      "id": "66aba1c9",
+      "id": "794557dd",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "What the current harnesses are good at measuring",
-        "range": {
-          "from": 2407,
-          "to": 2458
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "What the current harnesses are good at measuring",
           "headingId": "what-the-current-harnesses-are-good-at-measuring"
+        },
+        "range": {
+          "from": 2434,
+          "to": 2485
         },
         "inline": [
           {
@@ -627,14 +1112,17 @@
       }
     },
     {
-      "id": "7ea5037c",
+      "id": "5fb6ce7f",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "The current StreamMDX harnesses are good at comparing:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
-          "from": 2460,
-          "to": 2514
+          "from": 2487,
+          "to": 2541
         },
         "inline": [
           {
@@ -645,17 +1133,24 @@
       }
     },
     {
-      "id": "58f7a954",
+      "id": "d742ec6",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- first visible render under live incremental streaming\n- final convergence under live incremental streaming\n- patch-to-DOM latency distributions\n- static render timing across prose / tables / code / mixed markdown",
-        "range": {
-          "from": 2516,
-          "to": 2730
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -682,19 +1177,269 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "d742ec6::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 2543,
+                  "to": 2598
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "d742ec6::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- first visible render under live incremental streaming",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "first visible render under live incremental streaming"
+                        }
+                      ],
+                      "range": {
+                        "from": 2543,
+                        "to": 2598
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "first visible render under live incremental streaming"
+                              }
+                            ],
+                            "text": "first visible render under live incremental streaming",
+                            "raw": "- first visible render under live incremental streaming"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "first visible render under live incremental streaming"
+                    }
+                  ],
+                  "text": "first visible render under live incremental streaming",
+                  "raw": "- first visible render under live incremental streaming"
+                },
+                "children": []
+              },
+              {
+                "id": "d742ec6::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 2599,
+                  "to": 2651
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "d742ec6::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- final convergence under live incremental streaming",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "final convergence under live incremental streaming"
+                        }
+                      ],
+                      "range": {
+                        "from": 2599,
+                        "to": 2651
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "final convergence under live incremental streaming"
+                              }
+                            ],
+                            "text": "final convergence under live incremental streaming",
+                            "raw": "- final convergence under live incremental streaming"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "final convergence under live incremental streaming"
+                    }
+                  ],
+                  "text": "final convergence under live incremental streaming",
+                  "raw": "- final convergence under live incremental streaming"
+                },
+                "children": []
+              },
+              {
+                "id": "d742ec6::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 2652,
+                  "to": 2688
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "d742ec6::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- patch-to-DOM latency distributions",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "patch-to-DOM latency distributions"
+                        }
+                      ],
+                      "range": {
+                        "from": 2652,
+                        "to": 2688
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "patch-to-DOM latency distributions"
+                              }
+                            ],
+                            "text": "patch-to-DOM latency distributions",
+                            "raw": "- patch-to-DOM latency distributions"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "patch-to-DOM latency distributions"
+                    }
+                  ],
+                  "text": "patch-to-DOM latency distributions",
+                  "raw": "- patch-to-DOM latency distributions"
+                },
+                "children": []
+              },
+              {
+                "id": "d742ec6::item:3",
+                "type": "list-item",
+                "range": {
+                  "from": 2689,
+                  "to": 2757
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "d742ec6::item:3",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- static render timing across prose / tables / code / mixed markdown",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "static render timing across prose / tables / code / mixed markdown"
+                        }
+                      ],
+                      "range": {
+                        "from": 2689,
+                        "to": 2757
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 3,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "static render timing across prose / tables / code / mixed markdown"
+                              }
+                            ],
+                            "text": "static render timing across prose / tables / code / mixed markdown",
+                            "raw": "- static render timing across prose / tables / code / mixed markdown"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 3,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "static render timing across prose / tables / code / mixed markdown"
+                    }
+                  ],
+                  "text": "static render timing across prose / tables / code / mixed markdown",
+                  "raw": "- static render timing across prose / tables / code / mixed markdown"
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 2543,
+          "to": 2757
         }
       }
     },
     {
-      "id": "5ce28c64",
+      "id": "7e86ba69",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "The harnesses are **not** yet a definitive public source for:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
-          "from": 2732,
-          "to": 2793
+          "from": 2759,
+          "to": 2820
         },
         "inline": [
           {
@@ -718,17 +1463,24 @@
       }
     },
     {
-      "id": "31c8fb85",
+      "id": "4151f74a",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- absolute bundle-cost comparisons across all deployment shapes\n- absolute memory superiority claims across all browsers\n- every edge of incomplete-markdown recovery semantics",
-        "range": {
-          "from": 2795,
-          "to": 2970
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -749,24 +1501,213 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "4151f74a::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 2822,
+                  "to": 2885
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "4151f74a::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- absolute bundle-cost comparisons across all deployment shapes",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "absolute bundle-cost comparisons across all deployment shapes"
+                        }
+                      ],
+                      "range": {
+                        "from": 2822,
+                        "to": 2885
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "absolute bundle-cost comparisons across all deployment shapes"
+                              }
+                            ],
+                            "text": "absolute bundle-cost comparisons across all deployment shapes",
+                            "raw": "- absolute bundle-cost comparisons across all deployment shapes"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "absolute bundle-cost comparisons across all deployment shapes"
+                    }
+                  ],
+                  "text": "absolute bundle-cost comparisons across all deployment shapes",
+                  "raw": "- absolute bundle-cost comparisons across all deployment shapes"
+                },
+                "children": []
+              },
+              {
+                "id": "4151f74a::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 2886,
+                  "to": 2942
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "4151f74a::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- absolute memory superiority claims across all browsers",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "absolute memory superiority claims across all browsers"
+                        }
+                      ],
+                      "range": {
+                        "from": 2886,
+                        "to": 2942
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "absolute memory superiority claims across all browsers"
+                              }
+                            ],
+                            "text": "absolute memory superiority claims across all browsers",
+                            "raw": "- absolute memory superiority claims across all browsers"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "absolute memory superiority claims across all browsers"
+                    }
+                  ],
+                  "text": "absolute memory superiority claims across all browsers",
+                  "raw": "- absolute memory superiority claims across all browsers"
+                },
+                "children": []
+              },
+              {
+                "id": "4151f74a::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 2943,
+                  "to": 2997
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "4151f74a::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- every edge of incomplete-markdown recovery semantics",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "every edge of incomplete-markdown recovery semantics"
+                        }
+                      ],
+                      "range": {
+                        "from": 2943,
+                        "to": 2997
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "every edge of incomplete-markdown recovery semantics"
+                              }
+                            ],
+                            "text": "every edge of incomplete-markdown recovery semantics",
+                            "raw": "- every edge of incomplete-markdown recovery semantics"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "every edge of incomplete-markdown recovery semantics"
+                    }
+                  ],
+                  "text": "every edge of incomplete-markdown recovery semantics",
+                  "raw": "- every edge of incomplete-markdown recovery semantics"
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 2822,
+          "to": 2997
         }
       }
     },
     {
-      "id": "17cf0c62",
+      "id": "e40f7a7",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Security and isolation",
-        "range": {
-          "from": 2972,
-          "to": 2997
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Security and isolation",
           "headingId": "security-and-isolation"
+        },
+        "range": {
+          "from": 2999,
+          "to": 3024
         },
         "inline": [
           {
@@ -777,17 +1718,13 @@
       }
     },
     {
-      "id": "28d4c567",
+      "id": "70db63a1",
       "type": "table",
       "isFinalized": true,
       "payload": {
         "raw": "| Topic | Streamdown | StreamMDX |\n| --- | --- | --- |\n| HTML / pipeline posture | Main-thread rehype/remark pipeline | HTML sanitization plus worker isolation options |\n| Security operational model | Simpler runtime surface | Stronger isolation story when the worker is hosted deliberately |\n| CSP implications | Simpler by default | Requires intentional worker policy (`blob:` vs hosted worker asset) |",
-        "range": {
-          "from": 2999,
-          "to": 3403
-        },
-        "inline": [],
         "meta": {
+          "lezerNodeType": "Table",
           "header": [
             [
               {
@@ -807,6 +1744,11 @@
                 "text": "StreamMDX"
               }
             ]
+          ],
+          "align": [
+            null,
+            null,
+            null
           ],
           "rows": [
             [
@@ -877,29 +1819,30 @@
                 }
               ]
             ]
-          ],
-          "align": [
-            null,
-            null,
-            null
           ]
-        }
+        },
+        "range": {
+          "from": 3026,
+          "to": 3430
+        },
+        "inline": []
       }
     },
     {
-      "id": "45d46926",
+      "id": "65e36f80",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Where Streamdown is the better fit",
-        "range": {
-          "from": 3405,
-          "to": 3442
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Where Streamdown is the better fit",
           "headingId": "where-streamdown-is-the-better-fit"
+        },
+        "range": {
+          "from": 3432,
+          "to": 3469
         },
         "inline": [
           {
@@ -910,17 +1853,24 @@
       }
     },
     {
-      "id": "20a3ebfb",
+      "id": "45c7ec1f",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- You already use `react-markdown` and want the smallest possible change.\n- You want streaming-aware formatting behavior without adding worker infrastructure.\n- Your documents are modest in size and your throughput requirements are ordinary.",
-        "range": {
-          "from": 3444,
-          "to": 3685
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -949,24 +1899,237 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "45c7ec1f::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 3471,
+                  "to": 3544
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "45c7ec1f::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- You already use `react-markdown` and want the smallest possible change.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "You already use "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "react-markdown"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " and want the smallest possible change."
+                        }
+                      ],
+                      "range": {
+                        "from": 3471,
+                        "to": 3544
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "You already use "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "react-markdown"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " and want the smallest possible change."
+                              }
+                            ],
+                            "text": "You already use react-markdown and want the smallest possible change.",
+                            "raw": "- You already use `react-markdown` and want the smallest possible change."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "You already use "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "react-markdown"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " and want the smallest possible change."
+                    }
+                  ],
+                  "text": "You already use react-markdown and want the smallest possible change.",
+                  "raw": "- You already use `react-markdown` and want the smallest possible change."
+                },
+                "children": []
+              },
+              {
+                "id": "45c7ec1f::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 3545,
+                  "to": 3629
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "45c7ec1f::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- You want streaming-aware formatting behavior without adding worker infrastructure.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "You want streaming-aware formatting behavior without adding worker infrastructure."
+                        }
+                      ],
+                      "range": {
+                        "from": 3545,
+                        "to": 3629
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "You want streaming-aware formatting behavior without adding worker infrastructure."
+                              }
+                            ],
+                            "text": "You want streaming-aware formatting behavior without adding worker infrastructure.",
+                            "raw": "- You want streaming-aware formatting behavior without adding worker infrastructure."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "You want streaming-aware formatting behavior without adding worker infrastructure."
+                    }
+                  ],
+                  "text": "You want streaming-aware formatting behavior without adding worker infrastructure.",
+                  "raw": "- You want streaming-aware formatting behavior without adding worker infrastructure."
+                },
+                "children": []
+              },
+              {
+                "id": "45c7ec1f::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 3630,
+                  "to": 3712
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "45c7ec1f::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Your documents are modest in size and your throughput requirements are ordinary.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Your documents are modest in size and your throughput requirements are ordinary."
+                        }
+                      ],
+                      "range": {
+                        "from": 3630,
+                        "to": 3712
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Your documents are modest in size and your throughput requirements are ordinary."
+                              }
+                            ],
+                            "text": "Your documents are modest in size and your throughput requirements are ordinary.",
+                            "raw": "- Your documents are modest in size and your throughput requirements are ordinary."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Your documents are modest in size and your throughput requirements are ordinary."
+                    }
+                  ],
+                  "text": "Your documents are modest in size and your throughput requirements are ordinary.",
+                  "raw": "- Your documents are modest in size and your throughput requirements are ordinary."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 3471,
+          "to": 3712
         }
       }
     },
     {
-      "id": "3a7235a2",
+      "id": "64878387",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Where StreamMDX is the better fit",
-        "range": {
-          "from": 3687,
-          "to": 3723
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Where StreamMDX is the better fit",
           "headingId": "where-streammdx-is-the-better-fit"
+        },
+        "range": {
+          "from": 3714,
+          "to": 3750
         },
         "inline": [
           {
@@ -977,17 +2140,24 @@
       }
     },
     {
-      "id": "fd02b4b",
+      "id": "763c0365",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- You care about main-thread isolation during frequent streaming updates.\n- You need explicit control over incremental behavior, batching, and queueing.\n- You want the same project to cover React rendering, worker composition, and TUI/protocol consumers.\n- You are willing to pay a slightly more complex setup cost to get those controls.",
-        "range": {
-          "from": 3725,
-          "to": 4062
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -1014,24 +2184,272 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "763c0365::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 3752,
+                  "to": 3825
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "763c0365::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- You care about main-thread isolation during frequent streaming updates.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "You care about main-thread isolation during frequent streaming updates."
+                        }
+                      ],
+                      "range": {
+                        "from": 3752,
+                        "to": 3825
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "You care about main-thread isolation during frequent streaming updates."
+                              }
+                            ],
+                            "text": "You care about main-thread isolation during frequent streaming updates.",
+                            "raw": "- You care about main-thread isolation during frequent streaming updates."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "You care about main-thread isolation during frequent streaming updates."
+                    }
+                  ],
+                  "text": "You care about main-thread isolation during frequent streaming updates.",
+                  "raw": "- You care about main-thread isolation during frequent streaming updates."
+                },
+                "children": []
+              },
+              {
+                "id": "763c0365::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 3826,
+                  "to": 3904
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "763c0365::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- You need explicit control over incremental behavior, batching, and queueing.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "You need explicit control over incremental behavior, batching, and queueing."
+                        }
+                      ],
+                      "range": {
+                        "from": 3826,
+                        "to": 3904
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "You need explicit control over incremental behavior, batching, and queueing."
+                              }
+                            ],
+                            "text": "You need explicit control over incremental behavior, batching, and queueing.",
+                            "raw": "- You need explicit control over incremental behavior, batching, and queueing."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "You need explicit control over incremental behavior, batching, and queueing."
+                    }
+                  ],
+                  "text": "You need explicit control over incremental behavior, batching, and queueing.",
+                  "raw": "- You need explicit control over incremental behavior, batching, and queueing."
+                },
+                "children": []
+              },
+              {
+                "id": "763c0365::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 3905,
+                  "to": 4006
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "763c0365::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- You want the same project to cover React rendering, worker composition, and TUI/protocol consumers.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "You want the same project to cover React rendering, worker composition, and TUI/protocol consumers."
+                        }
+                      ],
+                      "range": {
+                        "from": 3905,
+                        "to": 4006
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "You want the same project to cover React rendering, worker composition, and TUI/protocol consumers."
+                              }
+                            ],
+                            "text": "You want the same project to cover React rendering, worker composition, and TUI/protocol consumers.",
+                            "raw": "- You want the same project to cover React rendering, worker composition, and TUI/protocol consumers."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "You want the same project to cover React rendering, worker composition, and TUI/protocol consumers."
+                    }
+                  ],
+                  "text": "You want the same project to cover React rendering, worker composition, and TUI/protocol consumers.",
+                  "raw": "- You want the same project to cover React rendering, worker composition, and TUI/protocol consumers."
+                },
+                "children": []
+              },
+              {
+                "id": "763c0365::item:3",
+                "type": "list-item",
+                "range": {
+                  "from": 4007,
+                  "to": 4089
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "763c0365::item:3",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- You are willing to pay a slightly more complex setup cost to get those controls.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "You are willing to pay a slightly more complex setup cost to get those controls."
+                        }
+                      ],
+                      "range": {
+                        "from": 4007,
+                        "to": 4089
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 3,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "You are willing to pay a slightly more complex setup cost to get those controls."
+                              }
+                            ],
+                            "text": "You are willing to pay a slightly more complex setup cost to get those controls.",
+                            "raw": "- You are willing to pay a slightly more complex setup cost to get those controls."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 3,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "You are willing to pay a slightly more complex setup cost to get those controls."
+                    }
+                  ],
+                  "text": "You are willing to pay a slightly more complex setup cost to get those controls.",
+                  "raw": "- You are willing to pay a slightly more complex setup cost to get those controls."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 3752,
+          "to": 4089
         }
       }
     },
     {
-      "id": "1f677b3a",
+      "id": "3f768194",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Benchmark reading guidance",
-        "range": {
-          "from": 4064,
-          "to": 4093
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Benchmark reading guidance",
           "headingId": "benchmark-reading-guidance"
+        },
+        "range": {
+          "from": 4091,
+          "to": 4120
         },
         "inline": [
           {
@@ -1042,14 +2460,17 @@
       }
     },
     {
-      "id": "781f1568",
+      "id": "7e25acc3",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "When you look at StreamMDX vs Streamdown numbers on the benchmark page, keep the interpretation disciplined:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
-          "from": 4095,
-          "to": 4203
+          "from": 4122,
+          "to": 4230
         },
         "inline": [
           {
@@ -1060,17 +2481,24 @@
       }
     },
     {
-      "id": "1341ecd9",
+      "id": "5329eb41",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- Compare engines under the same fixture and scenario.\n- Separate **live incremental** results from **static render** results.\n- Treat first visible render and final convergence as different metrics.\n- Treat memory, bundle cost, and CSP/runtime shape as adjacent tradeoffs, not as interchangeable latency claims.",
-        "range": {
-          "from": 4205,
-          "to": 4517
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -1123,24 +2551,509 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "5329eb41::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 4232,
+                  "to": 4286
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "5329eb41::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Compare engines under the same fixture and scenario.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Compare engines under the same fixture and scenario."
+                        }
+                      ],
+                      "range": {
+                        "from": 4232,
+                        "to": 4286
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Compare engines under the same fixture and scenario."
+                              }
+                            ],
+                            "text": "Compare engines under the same fixture and scenario.",
+                            "raw": "- Compare engines under the same fixture and scenario."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Compare engines under the same fixture and scenario."
+                    }
+                  ],
+                  "text": "Compare engines under the same fixture and scenario.",
+                  "raw": "- Compare engines under the same fixture and scenario."
+                },
+                "children": []
+              },
+              {
+                "id": "5329eb41::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 4287,
+                  "to": 4358
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "5329eb41::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Separate **live incremental** results from **static render** results.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Separate "
+                        },
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "live incremental"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": " results from "
+                        },
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "static render"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": " results."
+                        }
+                      ],
+                      "range": {
+                        "from": 4287,
+                        "to": 4358
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Separate "
+                              },
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "live incremental"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": " results from "
+                              },
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "static render"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": " results."
+                              }
+                            ],
+                            "text": "Separate live incremental results from static render results.",
+                            "raw": "- Separate **live incremental** results from **static render** results."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Separate "
+                    },
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "live incremental"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": " results from "
+                    },
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "static render"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": " results."
+                    }
+                  ],
+                  "text": "Separate live incremental results from static render results.",
+                  "raw": "- Separate **live incremental** results from **static render** results."
+                },
+                "children": []
+              },
+              {
+                "id": "5329eb41::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 4359,
+                  "to": 4431
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "5329eb41::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Treat first visible render and final convergence as different metrics.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Treat first visible render and final convergence as different metrics."
+                        }
+                      ],
+                      "range": {
+                        "from": 4359,
+                        "to": 4431
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Treat first visible render and final convergence as different metrics."
+                              }
+                            ],
+                            "text": "Treat first visible render and final convergence as different metrics.",
+                            "raw": "- Treat first visible render and final convergence as different metrics."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Treat first visible render and final convergence as different metrics."
+                    }
+                  ],
+                  "text": "Treat first visible render and final convergence as different metrics.",
+                  "raw": "- Treat first visible render and final convergence as different metrics."
+                },
+                "children": []
+              },
+              {
+                "id": "5329eb41::item:3",
+                "type": "list-item",
+                "range": {
+                  "from": 4432,
+                  "to": 4544
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "5329eb41::item:3",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Treat memory, bundle cost, and CSP/runtime shape as adjacent tradeoffs, not as interchangeable latency claims.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Treat memory, bundle cost, and CSP/runtime shape as adjacent tradeoffs, not as interchangeable latency claims."
+                        }
+                      ],
+                      "range": {
+                        "from": 4432,
+                        "to": 4544
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 3,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Treat memory, bundle cost, and CSP/runtime shape as adjacent tradeoffs, not as interchangeable latency claims."
+                              }
+                            ],
+                            "text": "Treat memory, bundle cost, and CSP/runtime shape as adjacent tradeoffs, not as interchangeable latency claims.",
+                            "raw": "- Treat memory, bundle cost, and CSP/runtime shape as adjacent tradeoffs, not as interchangeable latency claims."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 3,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Treat memory, bundle cost, and CSP/runtime shape as adjacent tradeoffs, not as interchangeable latency claims."
+                    }
+                  ],
+                  "text": "Treat memory, bundle cost, and CSP/runtime shape as adjacent tradeoffs, not as interchangeable latency claims.",
+                  "raw": "- Treat memory, bundle cost, and CSP/runtime shape as adjacent tradeoffs, not as interchangeable latency claims."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 4232,
+          "to": 4544
         }
       }
     },
     {
-      "id": "27c5ee69",
+      "id": "47d4f4c3",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Engine-v2 production comparison, 2026-10-08",
+        "meta": {
+          "lezerNodeType": "ATXHeading3",
+          "headingLevel": 3,
+          "headingText": "Engine-v2 production comparison, 2026-10-08",
+          "headingId": "engine-v2-production-comparison-2026-10-08"
+        },
+        "range": {
+          "from": 4546,
+          "to": 4593
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Engine-v2 production comparison, 2026-10-08"
+          }
+        ]
+      }
+    },
+    {
+      "id": "30700b1d",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "The locked quiet-AC run attempted preserved runtime `4350a2a`, engine-v2 runtime\n`342b378`, and Streamdown `2.7.0` on `naive-bayes` in S2, S3, and S6. Each set\nrequested one unreported warmup and three measured streams. All six engine-v2\nand Streamdown sets completed, producing 18 measured streams. All three\npreserved-runtime warmups failed the final-DOM/highlighting completion guard;\nthere are no baseline measurements.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
+        "range": {
+          "from": 4595,
+          "to": 5018
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "The locked quiet-AC run attempted preserved runtime "
+          },
+          {
+            "kind": "code",
+            "text": "4350a2a"
+          },
+          {
+            "kind": "text",
+            "text": ", engine-v2 runtime\n"
+          },
+          {
+            "kind": "code",
+            "text": "342b378"
+          },
+          {
+            "kind": "text",
+            "text": ", and Streamdown "
+          },
+          {
+            "kind": "code",
+            "text": "2.7.0"
+          },
+          {
+            "kind": "text",
+            "text": " on "
+          },
+          {
+            "kind": "code",
+            "text": "naive-bayes"
+          },
+          {
+            "kind": "text",
+            "text": " in S2, S3, and S6. Each set\nrequested one unreported warmup and three measured streams. All six engine-v2\nand Streamdown sets completed, producing 18 measured streams. All three\npreserved-runtime warmups failed the final-DOM/highlighting completion guard;\nthere are no baseline measurements."
+          }
+        ]
+      }
+    },
+    {
+      "id": "4b6bb0d9",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "The strict comparison rejected the completed pair: canonical semantic records\ndiffer in display/inline math placement, paragraph boundaries, footnote\nnavigation and ARIA, and the native footer separator. These are retained\nbehavior differences, not normalization targets. No valid speedup, slowdown,\nor before/after performance claim follows from this run.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
+        "range": {
+          "from": 5020,
+          "to": 5376
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "The strict comparison rejected the completed pair: canonical semantic records\ndiffer in display/inline math placement, paragraph boundaries, footnote\nnavigation and ARIA, and the native footer separator. These are retained\nbehavior differences, not normalization targets. No valid speedup, slowdown,\nor before/after performance claim follows from this run."
+          }
+        ]
+      }
+    },
+    {
+      "id": "1b6d6ac1",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "The primary metric is main-thread CDP `TaskDuration`, not total process CPU.\nRaw samples, median/spread, frame p95, peak JS heap, first committed content,\nduration, live attached DOM, failed attempts, and semantic evidence are retained\nin the isolated consumer worktree's\n`.codex-optimization/runs/20261007-211411-engine-v2-comparison/` directory\n(`results.md`, `summary.json`, and `final-quiet/`).",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
+        "range": {
+          "from": 5378,
+          "to": 5776
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "The primary metric is main-thread CDP "
+          },
+          {
+            "kind": "code",
+            "text": "TaskDuration"
+          },
+          {
+            "kind": "text",
+            "text": ", not total process CPU.\nRaw samples, median/spread, frame p95, peak JS heap, first committed content,\nduration, live attached DOM, failed attempts, and semantic evidence are retained\nin the isolated consumer worktree's\n"
+          },
+          {
+            "kind": "code",
+            "text": ".codex-optimization/runs/20261007-211411-engine-v2-comparison/"
+          },
+          {
+            "kind": "text",
+            "text": " directory\n("
+          },
+          {
+            "kind": "code",
+            "text": "results.md"
+          },
+          {
+            "kind": "text",
+            "text": ", "
+          },
+          {
+            "kind": "code",
+            "text": "summary.json"
+          },
+          {
+            "kind": "text",
+            "text": ", and "
+          },
+          {
+            "kind": "code",
+            "text": "final-quiet/"
+          },
+          {
+            "kind": "text",
+            "text": ")."
+          }
+        ]
+      }
+    },
+    {
+      "id": "7eb53103",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Related references",
-        "range": {
-          "from": 4519,
-          "to": 4540
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Related references",
           "headingId": "related-references"
+        },
+        "range": {
+          "from": 5778,
+          "to": 5799
         },
         "inline": [
           {
@@ -1151,68 +3064,410 @@
       }
     },
     {
-      "id": "195fd69d",
+      "id": "ffa0698",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- [`PERF_HARNESS.md`](./PERF_HARNESS.md)\n- [`PERFORMANCE_GUIDE.md`](./PERFORMANCE_GUIDE.md)\n- [`STREAMING_CORRECTNESS_CONTRACT.md`](./STREAMING_CORRECTNESS_CONTRACT.md)\n- Public benchmark route: <https://stream-mdx.vercel.app/benchmarks>",
-        "range": {
-          "from": 4542,
-          "to": 4779
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
-                "kind": "text",
-                "text": "["
-              },
+                "kind": "link",
+                "href": "./PERF_HARNESS.md",
+                "children": [
+                  {
+                    "kind": "code",
+                    "text": "PERF_HARNESS.md"
+                  }
+                ]
+              }
+            ],
+            [
               {
-                "kind": "code",
-                "text": "PERF_HARNESS.md"
-              },
+                "kind": "link",
+                "href": "./PERFORMANCE_GUIDE.md",
+                "children": [
+                  {
+                    "kind": "code",
+                    "text": "PERFORMANCE_GUIDE.md"
+                  }
+                ]
+              }
+            ],
+            [
               {
-                "kind": "text",
-                "text": "](./PERF_HARNESS.md)"
+                "kind": "link",
+                "href": "./STREAMING_CORRECTNESS_CONTRACT.md",
+                "children": [
+                  {
+                    "kind": "code",
+                    "text": "STREAMING_CORRECTNESS_CONTRACT.md"
+                  }
+                ]
               }
             ],
             [
               {
                 "kind": "text",
-                "text": "["
+                "text": "Public benchmark route: "
               },
               {
-                "kind": "code",
-                "text": "PERFORMANCE_GUIDE.md"
-              },
-              {
-                "kind": "text",
-                "text": "](./PERFORMANCE_GUIDE.md)"
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "["
-              },
-              {
-                "kind": "code",
-                "text": "STREAMING_CORRECTNESS_CONTRACT.md"
-              },
-              {
-                "kind": "text",
-                "text": "](./STREAMING_CORRECTNESS_CONTRACT.md)"
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "Public benchmark route: <https://stream-mdx.vercel.app/benchmarks>"
+                "kind": "link",
+                "href": "https://stream-mdx.vercel.app/benchmarks",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "https://stream-mdx.vercel.app/benchmarks"
+                  }
+                ]
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "ffa0698::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 5801,
+                  "to": 5841
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "ffa0698::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- [`PERF_HARNESS.md`](./PERF_HARNESS.md)",
+                      "inline": [
+                        {
+                          "kind": "link",
+                          "href": "./PERF_HARNESS.md",
+                          "children": [
+                            {
+                              "kind": "code",
+                              "text": "PERF_HARNESS.md"
+                            }
+                          ]
+                        }
+                      ],
+                      "range": {
+                        "from": 5801,
+                        "to": 5841
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "link",
+                                "href": "./PERF_HARNESS.md",
+                                "children": [
+                                  {
+                                    "kind": "code",
+                                    "text": "PERF_HARNESS.md"
+                                  }
+                                ]
+                              }
+                            ],
+                            "text": "PERF_HARNESS.md",
+                            "raw": "- [`PERF_HARNESS.md`](./PERF_HARNESS.md)"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "link",
+                      "href": "./PERF_HARNESS.md",
+                      "children": [
+                        {
+                          "kind": "code",
+                          "text": "PERF_HARNESS.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "text": "PERF_HARNESS.md",
+                  "raw": "- [`PERF_HARNESS.md`](./PERF_HARNESS.md)"
+                },
+                "children": []
+              },
+              {
+                "id": "ffa0698::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 5842,
+                  "to": 5892
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "ffa0698::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- [`PERFORMANCE_GUIDE.md`](./PERFORMANCE_GUIDE.md)",
+                      "inline": [
+                        {
+                          "kind": "link",
+                          "href": "./PERFORMANCE_GUIDE.md",
+                          "children": [
+                            {
+                              "kind": "code",
+                              "text": "PERFORMANCE_GUIDE.md"
+                            }
+                          ]
+                        }
+                      ],
+                      "range": {
+                        "from": 5842,
+                        "to": 5892
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "link",
+                                "href": "./PERFORMANCE_GUIDE.md",
+                                "children": [
+                                  {
+                                    "kind": "code",
+                                    "text": "PERFORMANCE_GUIDE.md"
+                                  }
+                                ]
+                              }
+                            ],
+                            "text": "PERFORMANCE_GUIDE.md",
+                            "raw": "- [`PERFORMANCE_GUIDE.md`](./PERFORMANCE_GUIDE.md)"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "link",
+                      "href": "./PERFORMANCE_GUIDE.md",
+                      "children": [
+                        {
+                          "kind": "code",
+                          "text": "PERFORMANCE_GUIDE.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "text": "PERFORMANCE_GUIDE.md",
+                  "raw": "- [`PERFORMANCE_GUIDE.md`](./PERFORMANCE_GUIDE.md)"
+                },
+                "children": []
+              },
+              {
+                "id": "ffa0698::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 5893,
+                  "to": 5969
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "ffa0698::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- [`STREAMING_CORRECTNESS_CONTRACT.md`](./STREAMING_CORRECTNESS_CONTRACT.md)",
+                      "inline": [
+                        {
+                          "kind": "link",
+                          "href": "./STREAMING_CORRECTNESS_CONTRACT.md",
+                          "children": [
+                            {
+                              "kind": "code",
+                              "text": "STREAMING_CORRECTNESS_CONTRACT.md"
+                            }
+                          ]
+                        }
+                      ],
+                      "range": {
+                        "from": 5893,
+                        "to": 5969
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "link",
+                                "href": "./STREAMING_CORRECTNESS_CONTRACT.md",
+                                "children": [
+                                  {
+                                    "kind": "code",
+                                    "text": "STREAMING_CORRECTNESS_CONTRACT.md"
+                                  }
+                                ]
+                              }
+                            ],
+                            "text": "STREAMING_CORRECTNESS_CONTRACT.md",
+                            "raw": "- [`STREAMING_CORRECTNESS_CONTRACT.md`](./STREAMING_CORRECTNESS_CONTRACT.md)"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "link",
+                      "href": "./STREAMING_CORRECTNESS_CONTRACT.md",
+                      "children": [
+                        {
+                          "kind": "code",
+                          "text": "STREAMING_CORRECTNESS_CONTRACT.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "text": "STREAMING_CORRECTNESS_CONTRACT.md",
+                  "raw": "- [`STREAMING_CORRECTNESS_CONTRACT.md`](./STREAMING_CORRECTNESS_CONTRACT.md)"
+                },
+                "children": []
+              },
+              {
+                "id": "ffa0698::item:3",
+                "type": "list-item",
+                "range": {
+                  "from": 5970,
+                  "to": 6038
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "ffa0698::item:3",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Public benchmark route: <https://stream-mdx.vercel.app/benchmarks>",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Public benchmark route: "
+                        },
+                        {
+                          "kind": "link",
+                          "href": "https://stream-mdx.vercel.app/benchmarks",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "https://stream-mdx.vercel.app/benchmarks"
+                            }
+                          ]
+                        }
+                      ],
+                      "range": {
+                        "from": 5970,
+                        "to": 6038
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 3,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Public benchmark route: "
+                              },
+                              {
+                                "kind": "link",
+                                "href": "https://stream-mdx.vercel.app/benchmarks",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "https://stream-mdx.vercel.app/benchmarks"
+                                  }
+                                ]
+                              }
+                            ],
+                            "text": "Public benchmark route: https://stream-mdx.vercel.app/benchmarks",
+                            "raw": "- Public benchmark route: <https://stream-mdx.vercel.app/benchmarks>"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 3,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Public benchmark route: "
+                    },
+                    {
+                      "kind": "link",
+                      "href": "https://stream-mdx.vercel.app/benchmarks",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "https://stream-mdx.vercel.app/benchmarks"
+                        }
+                      ]
+                    }
+                  ],
+                  "text": "Public benchmark route: https://stream-mdx.vercel.app/benchmarks",
+                  "raw": "- Public benchmark route: <https://stream-mdx.vercel.app/benchmarks>"
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 5801,
+          "to": 6038
         }
       }
     }
@@ -1220,69 +3475,75 @@
   "tocHeadings": [
     {
       "id": "streammdx-vs-streamdown",
-      "text": "StreamMDX vs Streamdown",
+      "blockId": "db082c0",
       "level": 1,
-      "blockId": "db082c0"
+      "text": "StreamMDX vs Streamdown"
     },
     {
       "id": "scope-of-this-comparison",
-      "text": "Scope of this comparison",
+      "blockId": "770e445e",
       "level": 2,
-      "blockId": "770e445e"
+      "text": "Scope of this comparison"
     },
     {
       "id": "short-version",
-      "text": "Short version",
+      "blockId": "7028b1e7",
       "level": 2,
-      "blockId": "7028b1e7"
+      "text": "Short version"
     },
     {
       "id": "architecture",
-      "text": "Architecture",
+      "blockId": "2d4e93c4",
       "level": 2,
-      "blockId": "2d4e93c4"
+      "text": "Architecture"
     },
     {
       "id": "integration-tradeoffs",
-      "text": "Integration tradeoffs",
+      "blockId": "4630f2af",
       "level": 2,
-      "blockId": "60dac7aa"
+      "text": "Integration tradeoffs"
     },
     {
       "id": "what-the-current-harnesses-are-good-at-measuring",
-      "text": "What the current harnesses are good at measuring",
+      "blockId": "794557dd",
       "level": 2,
-      "blockId": "66aba1c9"
+      "text": "What the current harnesses are good at measuring"
     },
     {
       "id": "security-and-isolation",
-      "text": "Security and isolation",
+      "blockId": "e40f7a7",
       "level": 2,
-      "blockId": "17cf0c62"
+      "text": "Security and isolation"
     },
     {
       "id": "where-streamdown-is-the-better-fit",
-      "text": "Where Streamdown is the better fit",
+      "blockId": "65e36f80",
       "level": 2,
-      "blockId": "45d46926"
+      "text": "Where Streamdown is the better fit"
     },
     {
       "id": "where-streammdx-is-the-better-fit",
-      "text": "Where StreamMDX is the better fit",
+      "blockId": "64878387",
       "level": 2,
-      "blockId": "3a7235a2"
+      "text": "Where StreamMDX is the better fit"
     },
     {
       "id": "benchmark-reading-guidance",
-      "text": "Benchmark reading guidance",
+      "blockId": "3f768194",
       "level": 2,
-      "blockId": "1f677b3a"
+      "text": "Benchmark reading guidance"
+    },
+    {
+      "id": "engine-v2-production-comparison-2026-10-08",
+      "blockId": "47d4f4c3",
+      "level": 3,
+      "text": "Engine-v2 production comparison, 2026-10-08"
     },
     {
       "id": "related-references",
-      "text": "Related references",
+      "blockId": "7eb53103",
       "level": 2,
-      "blockId": "27c5ee69"
+      "text": "Related references"
     }
   ],
   "init": {

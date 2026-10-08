@@ -203,3 +203,24 @@ The final DOM checker passed after these corrections. Reprojecting the parent's 
 
 
 
+## Final locked engine-v2 run, 2026-10-08
+
+All nine baseline/native/Streamdown sets were attempted under the saved quiet-AC
+protocol on `naive-bayes`, S2/S3/S6, aggressive scheduling, and the parity feature
+profile. Six sets completed with three measured streams each; all three
+preserved-runtime `4350a2a` warmups failed the final DOM/highlighting guard.
+No baseline samples were invented or substituted.
+
+The completed engine-v2 runtime `342b378` and Streamdown `2.7.0` records fail
+strict semantic equivalence. Both retain 19 code elements, 27 math expressions,
+and two tables, but display-math paragraph placement and meaningful footnote
+navigation/ARIA differ. Matching counts do not establish equivalent output.
+No speed claim or before/after improvement is established.
+
+The isolated root consumer worktree retains the protocol, runner, all attempted
+jobs, successful raw streams, strict comparison evidence, and derived metrics at
+`.codex-optimization/runs/20261007-211411-engine-v2-comparison/`.
+`results.md` and `summary.json` distinguish main-thread CDP TaskDuration from
+total CPU, live attached DOM from total heap-node counters, and unavailable
+baseline metrics from measured values. This run supersedes the pending parent
+measurement notes above without rewriting their historical source-pinned proofs.
