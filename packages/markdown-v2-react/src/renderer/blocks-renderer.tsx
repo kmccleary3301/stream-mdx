@@ -3,7 +3,7 @@ import React, { useMemo } from "react";
 
 import { PATCH_ROOT_ID } from "@stream-mdx/core";
 import { ComponentRegistry } from "../components";
-import type { CodeFenceRenderer } from "../types";
+import type { BlockRendererOverride, CodeFenceRenderer } from "../types";
 import { useRendererChildren } from "./hooks";
 import { BlockNodeRenderer } from "./node-views";
 import { createRendererStore, type RendererStore } from "./store";
@@ -18,22 +18,25 @@ export interface MarkdownBlocksRendererProps {
   className?: string;
   style?: React.CSSProperties;
   store?: RendererStore;
+  blockRenderer?: BlockRendererOverride;
 }
 
 export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
-  ({ blocks, componentRegistry, codeRenderers, className = "markdown-renderer", style, store }) => {
+  ({ blocks, componentRegistry, codeRenderers, blockRenderer, className = "markdown-renderer", style, store }) => {
     const resolvedRegistry = useMemo(() => {
       const reg = componentRegistry ?? new ComponentRegistry();
       if (codeRenderers) {
         reg.setCodeRenderers(codeRenderers);
       }
+      if (blockRenderer) {
+        reg.setBlockRenderer(blockRenderer);
+      }
       return reg;
-    }, [componentRegistry, codeRenderers]);
+    }, [componentRegistry, codeRenderers, blockRenderer]);
     const effectiveStore = useMemo(() => {
       if (store) return store;
       return createRendererStore(blocks as Block[]);
     }, [store, blocks]);
-
     return React.createElement(
       "div",
       {
@@ -57,4 +60,5 @@ const StoreBackedBlocks = React.memo<{ store: RendererStore; componentRegistry: 
 );
 
 StoreBackedBlocks.displayName = "StoreBackedBlocks";
+
 

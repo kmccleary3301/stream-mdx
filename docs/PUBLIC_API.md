@@ -13,6 +13,7 @@ StreamMDX is published as both scoped packages and an unscoped convenience wrapp
 | `@stream-mdx/worker` | You want the worker client + hosted worker bundle (browser + Node). |
 | `@stream-mdx/core` | You want types + perf/sanitization helpers (no React). |
 | `@stream-mdx/mermaid` | You want optional Mermaid diagrams for fenced `mermaid` code blocks. |
+| `@stream-mdx/unified` | You want remark/rehype plugins (runs on finalized blocks). |
 | `@stream-mdx/plugins/*` | You are building/customizing a worker bundle or need plugin primitives. |
 
 When you install `stream-mdx`, you can also import:
@@ -180,6 +181,7 @@ See `docs/CLI_USAGE.md` for an example that consumes `PATCH` messages into a `Do
 | `footnotes` | Yes | Yes | Preview |
 | `callouts` | Yes | Yes | Preview |
 | Mermaid addon (`@stream-mdx/mermaid`) | Yes (renderer component) | Yes (renderer component) | Preview (renderer component) |
+| Unified adapter (`@stream-mdx/unified`) | Yes (blockRenderer) | Yes (blockRenderer) | Yes (blockRenderer) |
 
 ---
 
@@ -220,7 +222,44 @@ import { MermaidBlock } from "@stream-mdx/mermaid";
     },
   }}
 />
+
+## 3.3) Remark & Rehype Adapter (`@stream-mdx/unified`)
+
+`@stream-mdx/unified` provides an adapter for existing `remarkPlugins` and `rehypePlugins`.
+
+```bash
+npm install @stream-mdx/unified
 ```
+
+Unified plugins execute **only on finalized blocks** (blocks that will not receive further streaming input). While a block is streaming, the high-performance Lezer-native StreamMDX engine renders it without blocking.
+
+```tsx
+import { StreamingMarkdown } from "@stream-mdx/react";
+import { createUnifiedRenderer } from "@stream-mdx/unified";
+import rehypeSlug from "rehype-slug";
+import rehypeAutolinkHeadings from "rehype-autolink-headings";
+
+const unifiedRenderer = createUnifiedRenderer({
+  rehypePlugins: [rehypeSlug, rehypeAutolinkHeadings],
+  components: {
+    a: (props) => <a {...props} className="external-link" />,
+  },
+});
+
+export function Article({ markdown }: { markdown: string }) {
+  return <StreamingMarkdown text={markdown} blockRenderer={unifiedRenderer} />;
+}
+```
+
+### Options
+
+- `remarkPlugins`: List of remark plugins or tuples `[plugin, options]`
+- `rehypePlugins`: List of rehype plugins or tuples `[plugin, options]`
+- `components`: Custom React component mapping passed to `hast-util-to-jsx-runtime`
+- `blockTypes`: Block types to route through unified (defaults to all standard blocks: paragraph, heading, blockquote, list, table, code, hr)
+- `cacheSize`: Maximum number of rendered blocks to retain in LRU cache (default: `500`)
+- `math`: Enable math syntax (`remark-math`)
+- `gfm`: Enable GitHub Flavored Markdown (`remark-gfm`, default: `true`)
 
 ### CodeFenceRenderer contract
 - **Language lookup**: Case-insensitive and trimmed (`"ts"`, `"TS"`, `"python"`).

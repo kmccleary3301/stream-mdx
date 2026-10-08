@@ -11,6 +11,7 @@ export interface MarkdownElement {
 export interface LinkReferenceDefinition {
   href: string;
   title?: string;
+  label?: string; // label as written in the source definition
 }
 
 export type LinkReferenceMap = Map<string, LinkReferenceDefinition> | Record<string, LinkReferenceDefinition>;
@@ -61,4 +62,9 @@ export interface InlineParseOptions {
    * When provided, merges with or overrides parser-level references.
    */
   references?: LinkReferenceMap;
+
+  /**
+   * Callback invoked whenever a link reference label candidate is evaluated during inline parsing.
+   */
+  onAttemptedReference?: (label: string) => void;
 }

@@ -18,27 +18,38 @@ export const BlockNodeRenderer: React.FC<{ store: RendererStore; blockId: string
   if (!node || !block) return null;
 
   if (registry.hasCustomBlockComponent(block.type)) {
-    return registry.renderBlock(block);
+    return <>{registry.renderFinalizedBlock(block, registry.renderBlock(block))}</>;
   }
 
+  let element: React.ReactElement;
   switch (block.type) {
     case "paragraph":
-      return <ParagraphBlockView store={store} blockId={block.id} registry={registry} />;
+      element = <ParagraphBlockView store={store} blockId={block.id} registry={registry} />;
+      break;
     case "blockquote":
-      return <BlockquoteBlockView store={store} blockId={block.id} registry={registry} />;
+      element = <BlockquoteBlockView store={store} blockId={block.id} registry={registry} />;
+      break;
     case "list":
-      return <ListBlockView store={store} blockId={block.id} registry={registry} depth={0} />;
+      element = <ListBlockView store={store} blockId={block.id} registry={registry} depth={0} />;
+      break;
     case "table":
-      return <TableBlockView store={store} blockId={block.id} registry={registry} />;
+      element = <TableBlockView store={store} blockId={block.id} registry={registry} />;
+      break;
     case "code":
-      return <CodeBlockView store={store} blockId={block.id} registry={registry} />;
+      element = <CodeBlockView store={store} blockId={block.id} registry={registry} />;
+      break;
     case "html":
-      return <HtmlBlockView store={store} blockId={block.id} registry={registry} />;
+      element = <HtmlBlockView store={store} blockId={block.id} registry={registry} />;
+      break;
     case "mdx":
-      return <MdxBlockView store={store} blockId={block.id} registry={registry} />;
+      element = <MdxBlockView store={store} blockId={block.id} registry={registry} />;
+      break;
     default:
-      return registry.renderBlock(block);
+      element = registry.renderBlock(block);
+      break;
   }
+
+  return <>{registry.renderFinalizedBlock(block, element)}</>;
 };
 
 const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
