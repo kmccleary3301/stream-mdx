@@ -16,6 +16,7 @@ import {
   isSplitScenario,
   firstDiffIndex,
   diffContext,
+  findMissingRequiredTextFragments,
 } from "./utils";
 import type { RegressionScenario } from "./utils";
 
@@ -856,7 +857,15 @@ async function run(): Promise<void> {
           }
         }
         if (fixture.requiredTextFragments?.length) {
-          const missingFragments = fixture.requiredTextFragments.filter((fragment) => !finalHtmlValue.includes(fragment));
+          // Fragments describe rendered *text*; syntax highlighting splits source across <span>
+          // tokens, so matching the serialized HTML string is incidental to the highlighter markup.
+          // Validate against the DOM text of the regression root instead - verbatim, so meaningful
+          // characters, newlines and protocols are not normalized away.
+          const renderedText = await page.evaluate(() => {
+            const root = document.getElementById("regression-root");
+            return root ? (root.textContent ?? "") : null;
+          });
+          const missingFragments = findMissingRequiredTextFragments(fixture.requiredTextFragments, renderedText);
           if (missingFragments.length > 0) {
             htmlInvariantFailures.push(`missing required text fragments: ${missingFragments.join(", ")}.`);
           }

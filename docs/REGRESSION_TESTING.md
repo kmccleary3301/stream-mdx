@@ -58,6 +58,7 @@ npm run test:regression:html -- --scenario S6_extreme
 - HTML failures report the **first diff index** and show a small context slice for expected vs received.
 - Style failures list the first handful of computed property changes.
 - Invariant failures list the offending blocks or state values after finalize.
+- `requiredTextFragments` are validated against the **rendered DOM text** of `#regression-root`, not the serialized HTML string. Syntax highlighting splits source lines into per-token `<span>`s, so an HTML substring match is incidental to the highlighter markup. Matching stays verbatim (meaningful characters, newlines and protocols are not normalized away), so a fragment that is genuinely missing from the rendered text still fails. Add fragments as the text a reader sees, not as HTML markup.
 - Full expected/received payloads are written under `tests/regression/artifacts/<timestamp>/...`.
 
 ## Shut down the dev server
