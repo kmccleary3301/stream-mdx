@@ -191,5 +191,15 @@ ARIA ID references normalize only when they uniquely resolve to the actual gener
 
 `npm exec -- tsx scripts/perf/check-completion-guards.ts` passed after the resolved-graph change, including the real public Streamdown footnote DOM. No new production sample is claimed; the earlier paired artifacts remain pinned to their recorded source.
 
+### Parent paired-smoke collector corrections
+
+The parent's `canonical-footnote-smoke` raw DOM exposed a generated native outer PRE frame around the highlighted fence. The collector now recognizes that exact public ownership structure and atomizes it once. An outer PRE with authored sibling text does not qualify; authored whitespace/content guards remain. Only generated fence highlighting normalizes an omitted language to the public plain-text default. Distinct language labels and authored code annotations remain significant.
+
+Generated footnote identities now independently qualify for HTML diagnostic records, without suppressing meaningful ARIA, navigation target or rel attributes. UL/OL contribute explicit structural separators to flat text; ordered list events remain unchanged. Image-associated literal fence-like text is not weakened.
+
+The actual paired evidence also contains true incompatibilities: native same-paragraph `$$` math is display math and splits paragraph structure, whereas Streamdown renders it inline. Streamdown's generated reference has `_blank`/`noopener noreferrer` navigation and generated-label ARIA; native references retain same-page navigation. These differences remain semantic gate failures, not normalization targets. No content-compatible timing or speed claim follows from the pair.
+
+The final DOM checker passed after these corrections. Reprojecting the parent's actual saved DOM with the corrected collector yields matching code blocks (12), authored preformatted blocks (0), inline code (7), headings (36), tables (2) and links (4). Canonical records still differ: display/paragraph math events, reference/backreference ARIA and navigation attributes, the native footer HR, and retained text/paragraph boundaries. This reprojection is not a new browser sample or timing measurement.
+
 
 
