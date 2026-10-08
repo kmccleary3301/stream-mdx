@@ -40,17 +40,25 @@ export function renderedCodeSource(body: Element): string {
 
 export function collectSemanticDom(root: HTMLElement): SemanticDomRecords {
   const codeBodies = Array.from(root.querySelectorAll("pre code"));
+  const preformatted = Array.from(root.querySelectorAll<Element>("pre")).filter((element) => {
+    if (element.closest(CONTROL_SELECTOR)) return false;
+    const code = element.querySelector("code");
+    if (!code) return true;
+    // Renderer-owned fences replace their whole wrapper with the code source.
+    // Authored PRE siblings, including whitespace, are visible source too.
+    return !element.closest(".markdown-code-block,[data-streamdown='code-block']") &&
+      (element.childNodes.length !== 1 || element.firstChild !== code);
+  });
   const outerCode = new Map<Element, { body: Element; index: number }>();
   for (const body of codeBodies) {
     const pre = body.closest("pre");
-    if (!pre) continue;
+    if (!pre || preformatted.includes(pre)) continue;
     const wrapper = body.closest(".markdown-code-block,[data-streamdown='code-block']") ?? pre;
     outerCode.set(wrapper, { body, index: codeBodies.indexOf(body) });
   }
 
   const mathRoots = Array.from(root.querySelectorAll(".katex"));
   const inlineCode = Array.from(root.querySelectorAll<Element>("code")).filter((element) => !element.closest("pre"));
-  const preformatted = Array.from(root.querySelectorAll<Element>("pre")).filter((element) => !element.querySelector("code") && !element.closest(CONTROL_SELECTOR));
   const mathSource = (element: Element): string => element.querySelector("annotation[encoding='application/x-tex']")?.textContent ?? element.closest("[data-tex]")?.getAttribute("data-tex") ?? "";
   const textOf = (node: Node): string => {
     if (node.nodeType === 3) return (node.textContent ?? "").replace(/\s+/g, " ");
@@ -108,7 +116,7 @@ export function collectSemanticDom(root: HTMLElement): SemanticDomRecords {
       inlineOrder.push({ kind: "open", tag, attributes }, { kind: "text", text: contentOf(element) }, { kind: "close", tag, attributes });
       return;
     }
-    const marked = element !== root && (element.matches("a[href]") || semanticHtml(element));
+    const marked = element !== root && (element.matches("a[href],h1,h2,h3,h4,h5,h6,ol,ul,li,table,thead,tbody,tfoot,tr,th,td,input[type='checkbox']") || semanticHtml(element));
     const tag = semanticTag(element);
     const attributes = semanticAttributes(element);
     if (marked) {

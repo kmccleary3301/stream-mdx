@@ -31,6 +31,11 @@ assert.notDeepEqual(collect('<ol reversed type="a"><li>item</li></ol>'), collect
 assert.equal(collect("<pre>  a  b\n\n c </pre>").text, "  a  b\n\n c ", "authored pre whitespace is verbatim");
 assert.notDeepEqual(collect("<pre>a  b</pre>"), collect("<pre>a b</pre>"));
 assert.notDeepEqual(collect("<pre>a\nb</pre>"), collect("<pre>a b</pre>"));
+assert.notDeepEqual(collect("<pre>A<code>x</code></pre>"), collect("<pre>B<code>x</code></pre>"), "authored PRE siblings cannot disappear behind a code child");
+assert.equal(collect("<pre> A <code>x</code>\n </pre>").text, " A x\n ");
+assert.notDeepEqual(collect("<ol><li>A</li></ol><p>A</p>"), collect("<p>A</p><ol><li>A</li></ol>"), "ordered-list occurrence must retain its document position");
+assert.notDeepEqual(collect("<h1>A</h1><p>A</p>"), collect("<p>A</p><h1>A</h1>"), "heading occurrence must retain its document position");
+assert.deepEqual(collect("<ul><li><p>A</p></li></ul>"), collect("<ul><li>A</li></ul>"), "flattened list paragraph wrappers are cosmetic");
 assert.notDeepEqual(collect('<p>A<a href="/x">A</a></p>'), collect('<p><a href="/x">A</a>A</p>'), "link occurrence must be associated with its position");
 assert.notDeepEqual(collect("<p>A<code>A</code></p>"), collect("<p><code>A</code>A</p>"), "inline code occurrence must retain its position");
 assert.notDeepEqual(collect("<p>A<em>A</em></p>"), collect("<p><em>A</em>A</p>"), "emphasis occurrence must be associated with its position");
