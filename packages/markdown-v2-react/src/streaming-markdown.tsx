@@ -617,10 +617,7 @@ function StreamingMarkdownComponent(
     if (artifactHtml !== undefined) {
       renderer.getComponentRegistry().setArtifactHtml(artifactHtml);
     }
-    if (blockRenderer) {
-      renderer.getComponentRegistry().setBlockRenderer(blockRenderer);
-    }
-  }, [renderer, components, mdxComponents, inlineComponents, resolvedInlineComponents, tableElements, htmlElements, codeRenderers, mathRenderer, artifactHtml, blockRenderer]);
+  }, [renderer, components, mdxComponents, inlineComponents, resolvedInlineComponents, tableElements, htmlElements, codeRenderers, mathRenderer, artifactHtml]);
 
   useEffect(() => {
     const removeListener = renderer.addFlushListener((result) => {
@@ -929,7 +926,6 @@ function StreamingMarkdownComponent(
         onCopy: handleLinkCopy,
       })
     : null;
-
 
   return (
     <MdxHydrationContext.Provider value={mdxHydrationContextValue}>

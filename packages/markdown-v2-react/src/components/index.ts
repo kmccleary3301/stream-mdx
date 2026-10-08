@@ -707,13 +707,12 @@ export class ComponentRegistry {
   getLinkHandler(): ((url: string) => void) | undefined {
     return this.linkHandler;
   }
+
   setBlockRenderer(renderer?: BlockRendererOverride): void {
     this.blockRenderer = renderer;
   }
 
-  getBlockRenderer(): BlockRendererOverride | undefined {
-    return this.blockRenderer;
-  }
+  /** Finalized blocks go through the `blockRenderer` override (e.g. `@stream-mdx/unified`); streaming blocks never do. */
   renderFinalizedBlock(block: Block, defaultElement: React.ReactElement): React.ReactNode {
     if (this.blockRenderer && block.isFinalized) {
       return this.blockRenderer({
@@ -723,7 +722,6 @@ export class ComponentRegistry {
     }
     return defaultElement;
   }
-
 
   setMathRenderer(mathRenderer: MathRenderer): void {
     if (typeof mathRenderer === "function") {
