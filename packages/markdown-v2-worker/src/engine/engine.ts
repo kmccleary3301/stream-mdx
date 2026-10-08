@@ -47,6 +47,7 @@ import {
   prepareInlineStreamingContent,
   removeHeadingMarkers,
   sanitizeHtmlInWorker,
+  sanitizeHtmlTreeInWorker,
   stripCodeFence,
 } from "@stream-mdx/core";
 import {
@@ -59,6 +60,8 @@ import {
   registerFootnotesPlugin,
 } from "@stream-mdx/plugins";
 import { isBlockLevelNode, mapLezerNodeToBlockType } from "../parser/block-types";
+import { HtmlContinuationExtension } from "../parser/html-extension";
+import { groupHtmlOwnership } from "./html-ownership";
 import { computeParagraphPatchLimit } from "../perf/patch-heuristics";
 import {
   clampLazyRange,
@@ -265,13 +268,14 @@ export class MarkdownEngine {
 
   private buildMarkdownParser(tables: boolean): void {
     const gfm = tables ? GFM : GFM.filter((extension) => extension !== Table);
-    this.mdParser = mdParser.configure([gfm, createBlockCompatibilityExtension(), ...(this.extensions?.markdown ?? [])]);
+    this.mdParser = mdParser.configure([gfm, createBlockCompatibilityExtension(), HtmlContinuationExtension, ...(this.extensions?.markdown ?? [])]);
   }
 
   private buildInlineParser(): void {
     const inlineExt = this.extensions?.inline;
     this.inlineParser = new InlineParser({
       enableMath: this.enableMath,
+      html: this.htmlConfig,
       ...(inlineExt ? { extensions: inlineExt } : {}),
       ...(this.syntaxRules.length > 0 ? { syntax: this.syntaxRules } : {}),
     });
@@ -842,7 +846,7 @@ export class MarkdownEngine {
         return await this.extractBlocksSimple(content, options);
       }
 
-      return extracted;
+      return groupHtmlOwnership(extracted, this.mdParser, content, this.htmlConfig, 0, (text) => this.inlineParser.parse(text));
     } catch (error) {
       console.warn("Lezer parsing failed, falling back to simple parsing:", error);
       return await this.extractBlocksSimple(content, options);
@@ -1134,7 +1138,7 @@ export class MarkdownEngine {
           };
           const inlineFn = block.isFinalized ? (v: string) => this.inlineParser.parse(v) : (v: string) => this.parseInlineStreaming(v).inline;
           const segments = extractMixedContentSegments(rawParagraph, baseOffset, inlineFn, mixedSegmentOptions);
-          const hasStructuredSegments = segments.some((segment) => segment.kind !== "text");
+          const hasStructuredSegments = segments.some((segment) => segment.kind === "mdx");
           const htmlRanges = collectHtmlProtectedRangesFromSegments(segments, baseOffset);
           if (htmlRanges.length > 0) {
             protectedRanges.push(...htmlRanges);
@@ -1195,6 +1199,9 @@ export class MarkdownEngine {
         const sanitized = sanitizeHtmlInWorker(rawHtml, this.htmlConfig);
         block.payload.sanitizedHtml = sanitized;
         const nextMeta: Record<string, unknown> = { ...(block.payload.meta || {}), sanitized: true };
+        if (this.htmlConfig?.literalTagContent !== undefined && !nextMeta.htmlOwnership) {
+          nextMeta.htmlTree = sanitizeHtmlTreeInWorker(rawHtml, this.htmlConfig, undefined, (text) => this.inlineParser.parse(text));
+        }
         if (rawHtml) {
           nextMeta.protectedRanges = [{ from: 0, to: rawHtml.length, kind: "html-block" }];
         }
@@ -1281,8 +1288,31 @@ export class MarkdownEngine {
   private async prepareNestedChildren(block: Block): Promise<void> {
     block.payload.meta = { ...block.payload.meta, mathEnabled: this.enableMath, formatAnticipation: this.formatAnticipationConfig };
     const prepared = prepareNestedBlockSnapshot(block, this.inlineParser, this.mdParser, (text) => this.parseInlineStreaming(text).inline);
+    const groupChildren = (children: NodeSnapshot[]): NodeSnapshot[] => {
+      const grouped: NodeSnapshot[] = [];
+      let sequence: NodeSnapshot[] = [];
+      const flush = () => {
+        const blocks = sequence.map((child) => child.props?.block as Block);
+        const owned = groupHtmlOwnership(blocks, this.mdParser, block.payload.raw, this.htmlConfig, block.payload.range?.from ?? 0, (text) => this.inlineParser.parse(text));
+        for (const child of owned) {
+          const original = sequence.find((candidate) => candidate.props?.block === child);
+          grouped.push(original ?? createBlockSnapshot(child));
+        }
+        sequence = [];
+      };
+      for (const child of children) {
+        if (child.props?.block) sequence.push(child);
+        else {
+          flush();
+          grouped.push(child);
+        }
+      }
+      flush();
+      return grouped;
+    };
     const enrich = async (snapshot: NodeSnapshot): Promise<void> => {
       for (const child of snapshot.children ?? []) await enrich(child);
+      snapshot.children = groupChildren(snapshot.children ?? []);
       const nested = snapshot.props?.block as Block | undefined;
       if (!nested) return;
       if (nested.type === "list" || nested.type === "blockquote" || nested.type === "list-item") {
@@ -1298,6 +1328,7 @@ export class MarkdownEngine {
       }
     };
     for (const child of prepared.children) await enrich(child);
+    prepared.children = groupChildren(prepared.children);
     block.payload.meta = {
       ...block.payload.meta,
       ...prepared.props,

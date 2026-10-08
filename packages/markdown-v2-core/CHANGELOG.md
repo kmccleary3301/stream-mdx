@@ -1,5 +1,10 @@
 # @stream-mdx/core
 
+## Unreleased
+
+- Convert Lezer HTML tags, comments, and processing instructions to typed inline nodes. Keep parsed markdown children inside allowed inline tags and apply the configured attribute policy.
+- Keep HTML containers open across markdown block boundaries using a sanitized ownership tree with prepared markdown children. Add textarea Type 1 continuation through blank lines and strip script/style contents.
+
 ## 0.1.0
 
 ### Minor Changes

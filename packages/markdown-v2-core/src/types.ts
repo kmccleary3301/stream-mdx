@@ -35,6 +35,12 @@ export interface Block {
   };
 }
 
+/** Sanitized HTML ownership tree. Block leaves retain the engine's prepared markdown. */
+export type HtmlTreeNode =
+  | { kind: "text"; text: string; inline?: InlineNode[] }
+  | { kind: "element"; tagName: string; attributes: Record<string, string>; children: HtmlTreeNode[] }
+  | { kind: "block"; block: Block };
+
 export interface CompiledMdxModule {
   id: string;
   code: string;
@@ -96,6 +102,16 @@ export type InlineNode =
   | { kind: "link"; href?: string; title?: string; children: InlineNode[] }
   | { kind: "image"; src: string; alt?: string; title?: string }
   | { kind: "br" }
+  | {
+      kind: "html";
+      raw: string;
+      sanitized?: string;
+      tagName?: string;
+      isClose?: boolean;
+      isSelfClosing?: boolean;
+      attributes?: Record<string, string>;
+      children?: InlineNode[];
+    }
   // extensible:
   | { kind: "mention"; handle: string }
   | { kind: "citation"; id: string }

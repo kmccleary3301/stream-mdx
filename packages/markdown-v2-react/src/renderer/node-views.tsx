@@ -1,14 +1,14 @@
-import { dedentIndentedCode, getDefaultCodeWrapperAttributes, normalizeBlockquoteText, stripCodeFence, type Block, type InlineNode, type MixedContentSegment, type TokenLineV1 } from "@stream-mdx/core";
+import { dedentIndentedCode, getDefaultCodeWrapperAttributes, normalizeBlockquoteText, stripCodeFence, type Block, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type TokenLineV1 } from "@stream-mdx/core";
 import React from "react";
 import { DefaultDiffRenderer } from "../components/diff-renderer";
 import type { CodeFenceRendererProps } from "../types";
 import { renderInlineNodes, renderParagraphMixedSegments } from "../components";
 import type { ComponentRegistry } from "../components";
-import { DEFAULT_INLINE_HTML_RENDERERS, renderInlineHtmlSegment } from "../utils/inline-html";
+import { DEFAULT_INLINE_HTML_RENDERERS, renderHtmlOwnershipTree, renderInlineHtmlSegment } from "../utils/inline-html";
 import { useRendererChildren, useRendererNode } from "./hooks";
 import { useCodeHighlightRequester } from "./code-highlight-context";
 import { DeferredRenderContext } from "./deferred-render-context";
-import { isListPatchDebugEnabled, type RendererStore } from "./store";
+import { createRendererStore, isListPatchDebugEnabled, type RendererStore } from "./store";
 import { useDeferredRender } from "./use-deferred-render";
 import { DEFAULT_VIRTUALIZED_CODE_CONFIG, type VirtualizedLine, useVirtualizedCode } from "./virtualized-code";
 
@@ -419,10 +419,21 @@ MixedSegmentView.displayName = "MixedSegmentView";
 const HtmlBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
   const node = useRendererNode(store, blockId);
   if (!node || !node.block) return null;
+  const tree = node.block.payload.meta?.htmlTree as HtmlTreeNode[] | undefined;
+  if (tree) {
+    return <>{renderHtmlOwnershipTree(tree, registry.getHtmlElements(), (block) =>
+      <OwnedHtmlBlock key={block.id} block={block} registry={registry} />,
+      (nodes) => renderInlineNodes(nodes, registry.getInlineComponents()))}</>;
+  }
   return registry.renderBlock(node.block);
 });
 
 HtmlBlockView.displayName = "HtmlBlockView";
+
+const OwnedHtmlBlock: React.FC<{ block: Block; registry: ComponentRegistry }> = ({ block, registry }) => {
+  const store = React.useMemo(() => createRendererStore([block]), [block]);
+  return <BlockNodeRenderer store={store} blockId={block.id} registry={registry} />;
+};
 
 const MdxBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
   const node = useRendererNode(store, blockId);
