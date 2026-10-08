@@ -64,6 +64,35 @@ assert.notDeepEqual(collect("<p><strong><em>A</em></strong>A</p>"), collect("<p>
 assert.deepEqual(collect('<p>A<span class="visual"><a href="/x"><span>A</span></a></span></p>'), collect('<p>A<a href="/x">A</a></p>'), "styling wrappers must not change association");
 assert.deepEqual(collect("<p><strong>A</strong></p>"), collect('<p><span data-streamdown="strong">A</span></p>'), "public Streamdown strong wrapper has the same semantics");
 
+const footnoteGraphDom = (renderer: "native" | "streamdown", count = 2): string => {
+  const native = renderer === "native";
+  const itemId = native ? "fn:1" : "user-content-fn-one";
+  const referenceId = (index: number) => native ? `fnref:1${index ? `:${index + 1}` : ""}` : `user-content-fnref-one${index ? `-${index + 1}` : ""}`;
+  const references = Array.from({ length: count }, (_, index) =>
+    `<sup${native ? ' class="footnote-ref"' : ""}><a id="${referenceId(index)}" href="#${itemId}"${native ? "" : " data-footnote-ref"}>1</a></sup>`).join("");
+  const backrefs = Array.from({ length: count }, (_, index) =>
+    `<a href="#${referenceId(index)}" ${native ? 'class="footnote-backref"' : "data-footnote-backref"}>↩</a>`).join("");
+  return `<p>A${references}.</p><section ${native ? 'class="footnotes"' : "data-footnotes"}><hr><ol><li id="${itemId}">Body ${backrefs}</li></ol></section>`;
+};
+const nativeFootnotes = footnoteGraphDom("native");
+const streamdownFootnotes = footnoteGraphDom("streamdown");
+assert.deepEqual(collect(nativeFootnotes), collect(streamdownFootnotes), "uniquely resolved generated target graphs canonicalize across renderer ID namespaces");
+assert.deepEqual(collect(footnoteGraphDom("native", 12)), collect(footnoteGraphDom("streamdown", 12)), "occurrence IDs beyond nine remain operable equivalent targets");
+assert.notDeepEqual(collect(nativeFootnotes), collect(nativeFootnotes.replace('href="#fn:1"', 'href="#missing"')), "dangling references remain visible");
+assert.notDeepEqual(collect(nativeFootnotes), collect(nativeFootnotes.replace('href="#fnref:1:2"', 'href="#missing"')), "dangling backrefs remain visible");
+assert.notDeepEqual(collect(nativeFootnotes), collect(nativeFootnotes.replace('id="fnref:1:2"', 'id="fnref:1"')), "duplicate reference IDs cannot look like unique occurrence targets");
+assert.notDeepEqual(collect(nativeFootnotes), collect(`${nativeFootnotes}<span id="fn:1"></span>`), "nonunique definition targets cannot be normalized as operable");
+assert.notDeepEqual(collect(nativeFootnotes), collect(nativeFootnotes.replace('id="fn:1"', "")), "missing target identity remains visible");
+assert.notDeepEqual(collect(nativeFootnotes), collect(footnoteGraphDom("native", 1)), "reference and backreference counts are preserved");
+assert.notDeepEqual(collect(nativeFootnotes), collect(nativeFootnotes.replace(/<a href="#fnref:1:2" class="footnote-backref">↩<\/a>/, "")), "dropping one backreference cannot disappear behind canonical target names");
+assert.notDeepEqual(collect(nativeFootnotes), collect(nativeFootnotes.replace("Body ", "Other ")), "footnote body remains significant");
+assert.notDeepEqual(collect(nativeFootnotes), collect(nativeFootnotes.replace(/href="#fnref:1(:2)?"/g, (_, second: string) => second ? 'href="#fnref:1"' : 'href="#fnref:1:2"')), "backreference occurrence order is retained");
+assert.equal(collect(`${nativeFootnotes}<a href="#fn:1">authored</a>`).links.at(-1)?.url, "#fn:1", "ordinary authored links are not rewritten solely by a generated-looking fragment");
+const generatedLabelDom = '<section data-footnotes><h2 class="sr-only" id="footnote-label">Footnotes</h2><p aria-describedby="footnote-label">Body</p></section>';
+assert.equal(collect(generatedLabelDom).html.find((element) => element.tag === "p")?.attributes[0][1], "generated-footnote-label", "ARIA normalization resolves the actual generated label");
+assert.equal(collect(generatedLabelDom.replace('class="sr-only"', "")).html.find((element) => element.tag === "p")?.attributes[0][1], "footnote-label", "authored heading ARIA remains literal");
+assert.notDeepEqual(collect(generatedLabelDom), collect(`${generatedLabelDom}<span id="footnote-label"></span>`), "ambiguous label IDs remain distinguishable");
+
 async function checkPublicStreamdownDom(): Promise<void> {
   // Streamdown exports ESM only; this existing tsx checker runs as CommonJS.
   // Exercise its real public module boundary instead of requiring a private file.
@@ -77,7 +106,7 @@ async function checkPublicStreamdownDom(): Promise<void> {
   assert.equal(collectGeneratedFootnoteLabels(footnoteDom).length, 1, "classify the real generated sr-only label");
   assert.equal(collectSemanticDom(footnoteDom).headings.length, 0);
   assert.ok(collectSemanticDom(footnoteDom).text.includes("Body."));
-  assert.ok(collectSemanticDom(footnoteDom).links.some((link) => link.url.startsWith("#user-content-fnref")), "backreferences cannot be dropped");
+  assert.ok(collectSemanticDom(footnoteDom).links.some((link) => link.url.includes(":reference:")), "resolved backreferences cannot be dropped");
 }
 assert.equal(collect('<h2 class="sr-only" id="footnote-label">Authored heading</h2>').headings[0].text, "Authored heading");
 assert.notDeepEqual(collect("<h2>Footnotes</h2><p>Body</p>"), collect("<p>Body</p>"));
