@@ -7,9 +7,6 @@ import {
   ArtifactFrame,
   buildArtifactSrcDoc,
   ComponentRegistry,
-  DefaultDiffRenderer,
-  KaTeXBlockMath,
-  KaTeXInlineMath,
   type CodeFenceRendererProps,
 } from "../src/components";
 import { BlockNodeRenderer } from "../src/renderer/node-views";
@@ -20,6 +17,14 @@ function sleep(ms: number): Promise<void> {
   const { promise, resolve } = Promise.withResolvers<void>();
   setTimeout(resolve, ms);
   return promise;
+}
+
+async function waitFor(container: Element, predicate: () => boolean, message: string): Promise<void> {
+  const deadline = Date.now() + 5000;
+  while (!predicate()) {
+    assert.ok(Date.now() < deadline, `${message}\n${container.innerHTML}`);
+    await sleep(10);
+  }
 }
 
 async function setupDom() {
@@ -193,16 +198,22 @@ async function testDiffRendererRowsAndTokens(): Promise<void> {
   assert.ok(addRow.className.includes("diff-line-add"));
   assert.strictEqual(addRow.querySelector(".stream-mdx-diff-old-no")?.textContent?.trim(), "");
   assert.strictEqual(addRow.querySelector(".stream-mdx-diff-new-no")?.textContent?.trim(), "1");
-  // Also test direct DefaultDiffRenderer fallback when diffBlocks is absent
-  root.render(
-    React.createElement(DefaultDiffRenderer, {
-      code: "raw code",
-      language: "diff",
-      renderCode: React.createElement("pre", { id: "direct-fallback" }, "raw code"),
-    }),
-  );
-  await sleep(20);
-  assert.ok(container.querySelector("#direct-fallback"), "plain path when diffBlocks absent");
+  // A diff fence without structured metadata must retain its actual code view.
+  const fallbackBlock: Block = {
+    id: "diff-without-metadata",
+    type: "code",
+    isFinalized: true,
+    payload: {
+      raw: "```diff\n-const x = 1;\n+const x = 2;\n```",
+      meta: { lang: "diff" },
+    },
+  };
+  const fallbackStore = createRendererStore([fallbackBlock]);
+  root.render(React.createElement(BlockNodeRenderer, { store: fallbackStore, blockId: fallbackBlock.id, registry }));
+  await waitFor(container, () => Boolean(container.querySelector("pre code")), "diff fallback code view did not render");
+  assert.strictEqual(container.querySelector("pre code")?.textContent?.trim(), "-const x = 1;\n+const x = 2;");
+  assert.strictEqual(container.querySelector(".stream-mdx-diff-container"), null, "missing diff metadata must not render structured diff");
+  assert.strictEqual(container.querySelector(".stream-mdx-diff-row"), null, "fallback must not render structured diff rows");
   root.unmount();
 }
 
@@ -268,17 +279,29 @@ async function testArtifactFrameLifecycleAndSecurity(): Promise<void> {
     "CSP must precede every byte of artifact markup",
   );
 
-  // Phase C: Foreign-source size message ignored
-  const initialIframeHeight = iframe.style.height;
-  // Dispatch a message whose event.source is NOT the iframe's contentWindow
-  const foreignEvent = new window.MessageEvent("message", {
-    data: { type: "stream-mdx:artifact-size", height: 999 },
-    source: window, // foreign source!
-  });
-  window.dispatchEvent(foreignEvent);
-  await sleep(20);
+  // Phase C: Accept the iframe's resize, reject foreign messages, and clamp small heights.
+  const source = iframe.contentWindow;
+  assert.ok(source, "iframe window available for resize messages");
+  window.dispatchEvent(new window.MessageEvent("message", {
+    data: { type: "stream-mdx:artifact-size", height: 420 },
+    source,
+  }));
+  await waitFor(container, () => iframe.style.height === "420px", "valid iframe resize did not update its height");
+  assert.strictEqual(iframe.style.height, "420px");
 
-  assert.strictEqual(iframe.style.height, initialIframeHeight, "foreign-source size messages must be ignored");
+  window.dispatchEvent(new window.MessageEvent("message", {
+    data: { type: "stream-mdx:artifact-size", height: 999 },
+    source: window,
+  }));
+  await sleep(20);
+  assert.strictEqual(iframe.style.height, "420px", "foreign-source size messages must preserve the accepted height");
+
+  window.dispatchEvent(new window.MessageEvent("message", {
+    data: { type: "stream-mdx:artifact-size", height: 1 },
+    source,
+  }));
+  await waitFor(container, () => iframe.style.height === "50px", "valid small resize must clamp to the minimum height");
+  assert.strictEqual(iframe.style.height, "50px");
 
   // Phase D: link messages from the frame route through openLink; non-http(s)/mailto URLs are dropped.
   const opened: string[] = [];
@@ -308,53 +331,52 @@ async function testArtifactFrameLifecycleAndSecurity(): Promise<void> {
 // Test 4: KaTeX math rendering and custom mathRenderer override
 async function testKaTeXMathAndOverride(): Promise<void> {
   const window = await setupDom();
-
-  // Test KaTeXInlineMath component directly
   const container = window.document.getElementById("root");
   assert.ok(container);
-  const root = createRoot(container);
-
-  root.render(React.createElement(KaTeXInlineMath, { tex: "E = mc^2" }));
-  await sleep(30);
-
-  // In Node/jsdom, KaTeX renders synchronously or via loadKaTeX
-  const inlineEl = container.querySelector(".math-inline");
-  assert.ok(inlineEl, "inline math element rendered");
-  assert.ok(
-    inlineEl.textContent?.includes("E = mc^2") || inlineEl.querySelector(".katex"),
-    "math content or KaTeX markup should be present",
-  );
-  // Test KaTeXBlockMath component directly
-  root.render(React.createElement(KaTeXBlockMath, { tex: "\\int x dx" }));
-  await sleep(30);
-  const blockEl = container.querySelector(".math-display");
-  assert.ok(blockEl, "block math element rendered");
-
-  root.unmount();
-
-  // Test mathRenderer override via ComponentRegistry
-  const window2 = await setupDom();
-  const container2 = window2.document.getElementById("root");
-  assert.ok(container2);
-  const root2 = createRoot(container2);
-
-  const registry = new ComponentRegistry();
-  registry.setMathRenderer({
-    inline: ({ tex }) => React.createElement("span", { id: "mathjax-inline" }, `[MathJax: ${tex}]`),
-    display: ({ tex }) => React.createElement("div", { id: "mathjax-display" }, `[MathJax Display: ${tex}]`),
+  const result = await compileMarkdownSnapshotDirect({
+    text: "Energy $E = mc^2$.\n\n$$\\int x dx$$",
   });
+  const store = createRendererStore(result.blocks);
+  const root = createRoot(container);
+  const renderMath = (registry: ComponentRegistry) => {
+    root.render(
+      React.createElement(
+        React.Fragment,
+        null,
+        result.blocks.map((block) => React.createElement(BlockNodeRenderer, { key: block.id, store, blockId: block.id, registry })),
+      ),
+    );
+  };
 
-  const inlineComp = registry.getInlineComponents()["math-inline"];
-  assert.ok(inlineComp, "custom math-inline registered");
+  try {
+    renderMath(new ComponentRegistry());
+    await waitFor(
+      container,
+      () => Boolean(container.querySelector(".math-inline .katex") && container.querySelector(".math-display .katex-display .katex")),
+      "compiled inline and display math must render actual KaTeX markup",
+    );
+    assert.strictEqual(container.querySelector(".math-inline")?.getAttribute("data-tex"), "E = mc^2");
+    assert.strictEqual(container.querySelector(".math-display")?.getAttribute("data-tex"), "\\int x dx");
+    assert.ok(container.querySelector(".math-inline .katex .katex-mathml"), "inline math must contain KaTeX MathML");
+    assert.ok(container.querySelector(".math-display .katex .katex-mathml"), "display math must contain KaTeX MathML");
 
-  root2.render(React.createElement(inlineComp, { tex: "\\alpha + \\beta" }));
-  await sleep(20);
-
-  const customMath = container2.querySelector("#mathjax-inline");
-  assert.ok(customMath, "custom mathRenderer must override default KaTeX inline math");
-  assert.strictEqual(customMath.textContent, "[MathJax: \\alpha + \\beta]");
-
-  root2.unmount();
+    const registry = new ComponentRegistry();
+    registry.setMathRenderer({
+      inline: ({ tex }) => React.createElement("span", { id: "mathjax-inline" }, `[MathJax: ${tex}]`),
+      display: ({ tex }) => React.createElement("div", { id: "mathjax-display" }, `[MathJax Display: ${tex}]`),
+    });
+    renderMath(registry);
+    await waitFor(
+      container,
+      () => Boolean(container.querySelector("#mathjax-inline") && container.querySelector("#mathjax-display")),
+      "compiled math must use both registry overrides through the store-backed renderer",
+    );
+    assert.strictEqual(container.querySelector("#mathjax-inline")?.textContent, "[MathJax: E = mc^2]");
+    assert.strictEqual(container.querySelector("#mathjax-display")?.textContent, "[MathJax Display: \\int x dx]");
+    assert.strictEqual(container.querySelector(".katex"), null, "custom math renderers must replace the defaults");
+  } finally {
+    root.unmount();
+  }
 }
 async function testHtmlArtifactAndMetricRoutingFromCompile(): Promise<void> {
   const window = await setupDom();
