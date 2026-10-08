@@ -13,7 +13,6 @@ const clientEntries = [
   "src/renderer/patch-batching.ts",
   "src/renderer/patch-coalescing.ts",
   "src/renderer/store.ts",
-  "src/renderer/node-views.tsx",
   "src/renderer/virtualized-code.tsx",
   "src/components/index.ts",
   "src/components/bottom-stick-scroll-area.tsx",

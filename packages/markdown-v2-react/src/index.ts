@@ -13,6 +13,7 @@ export * from "./renderer/patch-commit-scheduler";
 export * from "./renderer/store";
 export * from "./renderer/use-deferred-render";
 export * from "./renderer/virtualized-code";
+export { DEFAULT_TABLE_VIRTUALIZATION_CONFIG } from "./renderer/virtualized-table";
 export * from "./streaming-markdown";
 export type { RendererMetrics } from "./streaming-markdown";
 export type { AdaptiveBudgetState } from "./renderer/patch-commit-scheduler";
@@ -32,4 +33,6 @@ export type {
   Renderer,
   RendererConfig,
   TableElements,
+  TableVirtualizationConfig,
+  TableVirtualizationOptions,
 } from "./types";
