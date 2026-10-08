@@ -1,5 +1,4 @@
-import type React from "react";
-import type { AnimatedAnimationName, AnimatedOptions, AnimatedProp } from "./types";
+import type { AnimatedAnimationName, AnimatedProp } from "./types";
 
 const BUILTIN_ANIMATION_NAMES: Record<string, string> = {
   fadeIn: "stream-mdx-fade-in",

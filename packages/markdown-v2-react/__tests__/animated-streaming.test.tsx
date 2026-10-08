@@ -1,16 +1,13 @@
 import assert from "node:assert/strict";
 import type { Block, InlineNode } from "@stream-mdx/core";
 import { JSDOM } from "jsdom";
-import React, { act } from "react";
+import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { ComponentRegistry } from "../src/components";
 import { MarkdownBlocksRenderer } from "../src/renderer/blocks-renderer";
-import { BlockNodeRenderer } from "../src/renderer/node-views";
 import { createRendererStore } from "../src/renderer/store";
 import { MarkdownBlocksRenderer as ServerMarkdownBlocksRenderer } from "../src/server";
-import { StreamingMarkdown } from "../src/streaming-markdown";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
