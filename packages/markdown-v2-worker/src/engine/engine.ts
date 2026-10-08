@@ -691,7 +691,10 @@ export class MarkdownEngine {
     this.currentLinkReferences = newReferences;
     this.inlineParser.setReferences(newReferences);
 
-    let changedBlocks = await this.extractBlocks(newTree, newContent);
+    let changedBlocks = await this.extractBlocks(newTree, newContent, {
+      firstChangedPos: oldLen,
+      previousBlocks: this.blocks,
+    });
     changedBlocks = this.runDocumentPlugins(changedBlocks, newContent);
     const lastRange = changedBlocks.length > 0 ? changedBlocks[changedBlocks.length - 1]?.payload?.range : undefined;
     const lastTo = typeof lastRange?.to === "number" ? lastRange.to : 0;
@@ -753,6 +756,15 @@ export class MarkdownEngine {
       this.headingIdCounts = new Map<string, number>();
       const extracted: Block[] = [];
       const cursor = tree.cursor();
+      const reusableBlockMap =
+        options.firstChangedPos !== undefined && options.previousBlocks
+          ? new Map(
+              options.previousBlocks.map((b) => [
+                `${b.payload.range?.from ?? -1}:${b.payload.range?.to ?? -1}:${b.payload.raw ?? ""}`,
+                b,
+              ]),
+            )
+          : null;
 
       if (cursor.firstChild()) {
         do {
@@ -763,7 +775,24 @@ export class MarkdownEngine {
 
           if (isBlockLevelNode(nodeType)) {
             const blockType = mapLezerNodeToBlockType(nodeType);
-            const block = await this.createBlock(blockType, raw, from, to, content, options);
+            let block: Block | null = null;
+            if (reusableBlockMap && to <= options.firstChangedPos!) {
+              const prev = reusableBlockMap.get(`${from}:${to}:${raw}`);
+              if (prev && prev.isFinalized && prev.type === blockType) {
+                block = prev;
+                if (blockType === "heading") {
+                  const headingMeta = prev.payload.meta as { headingText?: string } | undefined;
+                  const headingText = headingMeta?.headingText ?? raw;
+                  const baseSlug = slugifyHeading(headingText);
+                  const nextCount = (this.headingIdCounts.get(baseSlug) ?? 0) + 1;
+                  this.headingIdCounts.set(baseSlug, nextCount);
+                }
+              }
+            }
+
+            if (!block) {
+              block = await this.createBlock(blockType, raw, from, to, content, options);
+            }
 
             if (block && raw.trim()) {
               extracted.push(block);
