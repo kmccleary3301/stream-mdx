@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { JSDOM } from "jsdom";
 import { applyPatchBatch, createBlockSnapshot, createInitialSnapshot, PATCH_ROOT_ID, type Block, type InlineExtension, type InlineNode, type NodeSnapshot, type PreparedNestedSnapshot, type WorkerOut } from "@stream-mdx/core";
 import { ComponentRegistry, MarkdownBlocksRenderer } from "@stream-mdx/react/server";
 import { createRendererStore } from "@stream-mdx/react/renderer/store";
@@ -115,7 +116,7 @@ async function run(): Promise<void> {
   other.length = 0;
   await second.handle({ type: "INIT", initialContent: "> <pre>\n>     literal\n> </pre>\n", prewarmLangs: [], docPlugins: { mdx: false, callouts: false } });
   const literalHtml = renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: other }));
-  assert.ok(literalHtml.includes("\n    literal\n"), "nested literal HTML indentation must survive the React consumer");
+  assert.equal(new JSDOM(literalHtml).window.document.querySelector("pre")?.textContent, "    literal\n", "native pre consumes only the first source LF and preserves nested indentation");
   second.dispose();
 }
 

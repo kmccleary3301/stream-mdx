@@ -242,7 +242,6 @@ export const defaultInlineComponents: InlineComponents = {
  */
 export const defaultBlockComponents: BlockComponents = {
   paragraph: ({ inlines, raw, meta, children }) => {
-    if (meta?.htmlParagraphTree && children !== undefined) return React.createElement(React.Fragment, {}, children);
     if (children !== undefined) {
       return React.createElement(
         "p",
@@ -871,15 +870,22 @@ export class ComponentRegistry {
     return this.inlineComponents;
   }
 
-  renderHtmlTree(tree: HtmlTreeNode[], renderBlock: (block: Block) => React.ReactNode = (block) => this.renderBlock(block)): React.ReactNode {
+  renderHtmlTree(tree: HtmlTreeNode[], renderBlock: (block: Block) => React.ReactNode = (block) => this.renderBlock(block), paragraph?: Block): React.ReactNode {
     return renderHtmlOwnershipTree(tree, this.htmlElements, renderBlock,
       (nodes) => renderInlineNodes(nodes, this.inlineComponents),
       (node, children) => {
         if (node.kind === "strong" || node.kind === "em" || node.kind === "strike" || node.kind === "link") {
-          return React.createElement(this.inlineComponents[node.kind], { ...node, children });
+          const component = this.inlineComponents[node.kind];
+          return component ? React.createElement(component, { ...node, children }) : React.createElement("del", {}, children);
+        }
+        if (node.kind === "plugin") {
+          const component = this.inlineComponents[node.name] ?? this.inlineComponents.plugin;
+          return component ? React.createElement(component, { ...node.attrs, name: node.name, attrs: node.attrs, raw: node.raw, children }) : node.raw;
         }
         return renderInlineNodes([node], this.inlineComponents);
-      });
+      }, paragraph ? (children) => React.createElement(this.getBlockComponent("paragraph"), {
+        ...this.getBlockProps(paragraph), children,
+      }) : undefined);
   }
 
   getBlockComponentMap(): BlockComponents {
@@ -922,6 +928,9 @@ export class ComponentRegistry {
    * Render a block
    */
   renderBlock(block: Block): React.ReactElement {
+    if (block.type === "paragraph" && block.payload.meta?.htmlParagraphTree) {
+      return React.createElement(React.Fragment, {}, this.renderHtmlTree(block.payload.meta.htmlParagraphTree, undefined, block));
+    }
     const Component = this.getBlockComponent(block.type);
     const props = this.getBlockProps(block);
     const element = React.createElement(Component, {
@@ -1001,9 +1010,7 @@ export class ComponentRegistry {
           inlines: block.payload.inline || [],
           raw: block.payload.raw,
           meta: block.payload.meta,
-          children: block.payload.meta?.htmlParagraphTree
-            ? this.renderHtmlTree(block.payload.meta.htmlParagraphTree)
-            : renderInlineNodes(block.payload.inline ?? [], this.inlineComponents),
+          children: renderInlineNodes(block.payload.inline ?? [], this.inlineComponents),
         };
       case "blockquote":
         return {

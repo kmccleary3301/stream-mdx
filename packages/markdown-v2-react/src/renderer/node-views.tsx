@@ -65,7 +65,7 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
   const htmlElements = registry.getHtmlElements();
   const literalTagContent = registry.getLiteralTagContent();
   if (block.payload.meta?.htmlParagraphTree) {
-    return <>{registry.renderHtmlTree(block.payload.meta.htmlParagraphTree)}</>;
+    return <>{registry.renderHtmlTree(block.payload.meta.htmlParagraphTree, undefined, block)}</>;
   }
 
   if (!block.isFinalized) {
