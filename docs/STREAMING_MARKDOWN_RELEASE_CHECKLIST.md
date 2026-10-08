@@ -1,6 +1,6 @@
 # StreamMDX — Release Checklist
 
-_Last updated: 2025-12-17_
+_Last updated: 2026-10-07_
 
 Use this checklist when cutting releases from the `stream-mdx/` repo. It assumes the current workspace scripts in `package.json`.
 
@@ -71,13 +71,20 @@ This is the most reliable “will npm users succeed?” gate.
 ### 2.1 CI-equivalent smoke test (recommended)
 
 Runs a fully automated pack+install smoke test across Node sandbox, Next.js starter, and Vite:
-- Packs all monorepo tarballs including optional packages `@stream-mdx/mermaid` and `@stream-mdx/unified`.
-- Installs them as explicit optional dependencies with dependency overrides in a clean sandbox.
-- Verifies installed ESM public imports and advertised CJS entries on declared supported Node (>=20), testing callable behaviors (`createUnifiedRenderer`, `MarkdownEngine`, `createInlineEngineWorker`, `MermaidBlock`).
-- Builds Next.js and Vite applications exercising `codeRenderers` (Mermaid), `blockRenderer=createUnifiedRenderer` with remark/rehype plugins, and `engine="main-thread"` dynamic import bundling.
+- Packs `stream-mdx`, core, plugins, worker, React, theme, and the optional `@stream-mdx/mermaid` and `@stream-mdx/unified` packages.
+- Installs the optional packages explicitly alongside the worker engine, with the local package graph resolved through tarball dependencies and overrides. The temporary apps use no workspace links, source imports, or compatibility shims.
+- Loads every advertised ESM and CJS JavaScript export on the running supported Node version, which must be >=20. This checks that runtime, not every version in the supported range.
+- Executes `MermaidBlock` through React SSR in code view. Executes `createUnifiedRenderer` with `remark-gfm` and `rehype-slug`, asserting transformed HTML. Direct and inline engines parse and finalize a heading and paragraph through both public engine entries.
+- Builds Next.js and Vite apps using Mermaid `codeRenderers`, the unified `blockRenderer` with those plugins, and `engine="main-thread"`. These are production bundling checks, not browser runtime proof. Mermaid SVG generation and hydrated main-thread rendering need a separate real-browser smoke.
 
 ```bash
 npm run ci:pack-smoke
+# Select one target:
+# npm run ci:pack-smoke -- --only node
+# npm run ci:pack-smoke -- --only next
+# npm run ci:pack-smoke -- --only vite
+# Keep successful sandboxes for browser inspection:
+# KEEP_PACK_SMOKE_TMP=1 npm run ci:pack-smoke
 ```
 
 ### 2.2 Manual pack (optional)
