@@ -1,20 +1,50 @@
 "use client";
 
 import type { RendererMetrics, StreamingMarkdownProps, StreamingSchedulerOptions } from "@stream-mdx/react";
+import type { WorkerOut } from "@stream-mdx/core";
 import React, { Profiler, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Streamdown, type PluginConfig } from "streamdown";
-import { code } from "@streamdown/code";
+import { code, type CodeHighlighterPlugin } from "@streamdown/code";
 import { createMathPlugin } from "@streamdown/math";
 
 import { ComponentRegistry, StreamingMarkdown, type StreamingMarkdownHandle } from "@stream-mdx/react";
 
 import { components as mdxComponents } from "@/mdx-components";
 import { configureDemoRegistry, createDemoHtmlElements, createDemoTableElements } from "@/lib/streaming-demo-registry";
-const streamdownPlugins = {
-  code,
-  math: createMathPlugin({ singleDollarTextMath: true }),
-};
+const streamdownMath = createMathPlugin({ singleDollarTextMath: true });
+
+class BenchmarkHighlighting {
+  pending = 0;
+  readonly completed = new Set<string>();
+  readonly plugin: CodeHighlighterPlugin = {
+    ...code,
+    highlight: (options, callback) => {
+      const key = JSON.stringify([options.language, options.code]);
+      this.pending += 1;
+      const result = code.highlight(options, (highlighted) => {
+        this.pending -= 1;
+        this.completed.add(key);
+        callback?.(highlighted);
+      });
+      if (result) {
+        this.pending -= 1;
+        this.completed.add(key);
+      }
+      return result;
+    },
+  };
+
+  isComplete(root: HTMLElement): boolean {
+    if (this.pending > 0) return false;
+    return Array.from(root.querySelectorAll<HTMLElement>('[data-streamdown="code-block"]')).every((block) => {
+      const body = block.querySelector("code");
+      if (!body) return false;
+      const source = (body.textContent ?? "").replace(/\n+$/, "");
+      return this.completed.has(JSON.stringify([block.dataset.language, source]));
+    });
+  }
+}
 
 
 export type BenchmarkProfile = "parity" | "rich";
@@ -219,52 +249,119 @@ function expectedLazyCodeLineCount(block: { raw: string; meta?: Record<string, u
   return Math.max(highlightedLines, tokenLines, sourceLineCount);
 }
 
+// The public worker factory leaves ownership with the caller on both runtimes.
+class BenchmarkWorker {
+  private worker: Worker | null = null;
+  finalized = false;
+  error: Error | null = null;
+
+  readonly onError = (error: Error): void => {
+    this.error = error;
+  };
+
+  private readonly onMessage = (event: MessageEvent<WorkerOut>): void => {
+    if (event.data.type === "FINALIZED") this.finalized = true;
+    if (event.data.type === "ERROR") this.onError(new Error(event.data.error.message));
+  };
+
+  private readonly onWorkerError = (event: ErrorEvent): void => {
+    this.onError(new Error(event.message || "Benchmark worker failed."));
+  };
+
+  private readonly onMessageError = (): void => {
+    this.onError(new Error("Benchmark worker message could not be decoded."));
+  };
+
+  readonly create = (): Worker => {
+    this.dispose();
+    this.finalized = false;
+    this.error = null;
+    const worker = new Worker(`${BASE_PATH}/workers/markdown-worker.js`, { type: "module", name: "markdown-v2" });
+    worker.addEventListener("message", this.onMessage);
+    worker.addEventListener("error", this.onWorkerError);
+    worker.addEventListener("messageerror", this.onMessageError);
+    this.worker = worker;
+    return worker;
+  };
+
+  assertHealthy(): void {
+    if (this.error) throw this.error;
+    if (!this.worker) throw new Error("Benchmark worker is unavailable.");
+  }
+
+  dispose(): void {
+    if (!this.worker) return;
+    this.worker.removeEventListener("message", this.onMessage);
+    this.worker.removeEventListener("error", this.onWorkerError);
+    this.worker.removeEventListener("messageerror", this.onMessageError);
+    this.worker.terminate();
+    this.worker = null;
+  }
+}
+
+function waitForCompletionStep<T>(step: Promise<T>, deadline: number, signal: AbortSignal, phase: string): Promise<T> {
+  if (performance.now() >= deadline) throw new Error(`Incomplete measurement: timed out waiting for ${phase}.`);
+  const { promise, resolve, reject } = Promise.withResolvers<T>();
+  const abort = () => reject(new Error("Benchmark navigation cancelled."));
+  const timer = window.setTimeout(() => reject(new Error(`Incomplete measurement: timed out waiting for ${phase}.`)), Math.max(0, deadline - performance.now()));
+  signal.addEventListener("abort", abort, { once: true });
+  step.then(resolve, reject);
+  if (signal.aborted) abort();
+  return promise.finally(() => {
+    clearTimeout(timer);
+    signal.removeEventListener("abort", abort);
+  });
+}
+
 async function waitForStreamMdxCompletion(
   handle: StreamingMarkdownHandle | null,
-  options: { timeoutMs?: number } = {},
+  worker: BenchmarkWorker,
+  root: HTMLElement | null,
+  signal: AbortSignal,
+  timeoutMs = 10000,
 ): Promise<void> {
-  if (!handle) return;
-  const timeoutMs = options.timeoutMs ?? 10000;
-  const start = performance.now();
-
+  if (!handle || !root) throw new Error("Incomplete measurement: StreamMDX did not mount.");
+  const deadline = performance.now() + timeoutMs;
+  worker.assertHealthy();
+  worker.finalized = false;
   handle.finalize();
-  handle.flushPending();
-  await handle.waitForIdle();
-
-  while (performance.now() - start <= timeoutMs) {
-    const state = handle.getState();
-    const blocks = state.blocks;
-    const allFinalized = blocks.length > 0 && blocks.every((b) => b.isFinalized);
-    const pendingLazyCode = blocks.some((block) => {
-      if (block.type !== "code" || !block.isFinalized) return false;
-      const meta = (block.payload.meta as Record<string, unknown> | undefined) ?? undefined;
-      if (!meta?.lazyTokenization) return false;
-      const expected = expectedLazyCodeLineCount({
-        raw: typeof block.payload.raw === "string" ? block.payload.raw : "",
-        meta,
-      });
-      if (expected <= 0) return false;
-      const tokenizedUntil = typeof meta.lazyTokenizedUntil === "number" ? (meta.lazyTokenizedUntil as number) : 0;
-      return tokenizedUntil < expected;
-    });
-
-    if (allFinalized && !pendingLazyCode) {
-      break;
-    }
-    await nextFrame();
+  while (!worker.finalized) {
+    worker.assertHealthy();
+    await waitForCompletionStep(nextFrame(), deadline, signal, "worker FINALIZED");
   }
+  // FINALIZED follows the canonical snapshot, but its patches still need to commit.
+  handle.flushPending();
+  await waitForCompletionStep(handle.waitForIdle(), deadline, signal, "StreamMDX scheduler idle");
 
   let stableCount = 0;
   let lastVersion = handle.getState().rendererVersion;
-  while (stableCount < 3 && performance.now() - start <= timeoutMs) {
-    await nextFrame();
-    const nextVersion = handle.getState().rendererVersion;
-    if (nextVersion === lastVersion) {
-      stableCount += 1;
-    } else {
-      stableCount = 0;
-      lastVersion = nextVersion;
+  let hasMutations = false;
+  const observer = new MutationObserver(() => { hasMutations = true; });
+  observer.observe(root, { childList: true, subtree: true, characterData: true, attributes: true });
+  try {
+    while (stableCount < 3) {
+      hasMutations = false;
+      await waitForCompletionStep(nextFrame(), deadline, signal, "StreamMDX final DOM and highlighting");
+      worker.assertHealthy();
+      const state = handle.getState();
+      const allFinalized = state.blocks.length > 0 && state.blocks.every((block) => block.isFinalized);
+      const pendingLazyCode = state.blocks.some((block) => {
+        if (block.type !== "code" || !block.isFinalized) return false;
+        const meta = block.payload.meta;
+        if (!meta?.lazyTokenization) return false;
+        const expected = expectedLazyCodeLineCount({ raw: block.payload.raw, meta });
+        const tokenizedUntil = typeof meta.lazyTokenizedUntil === "number" ? meta.lazyTokenizedUntil : 0;
+        return tokenizedUntil < expected;
+      });
+      if (allFinalized && !pendingLazyCode && !hasMutations && state.rendererVersion === lastVersion) {
+        stableCount += 1;
+      } else {
+        stableCount = 0;
+      }
+      lastVersion = state.rendererVersion;
     }
+  } finally {
+    observer.disconnect();
   }
 }
 
@@ -272,13 +369,14 @@ async function waitForStreamdownCompletion(
   root: HTMLElement | null,
   committedRef: React.MutableRefObject<number>,
   expectedLength: number,
-  isCancelled: () => boolean,
+  highlighting: BenchmarkHighlighting,
+  signal: AbortSignal,
   timeoutMs = 10000,
 ): Promise<void> {
-  const start = performance.now();
-  while ((committedRef.current ?? 0) < expectedLength && !isCancelled()) {
-    if (performance.now() - start > timeoutMs) break;
-    await nextFrame();
+  if (!root) throw new Error("Incomplete measurement: Streamdown did not mount.");
+  const deadline = performance.now() + timeoutMs;
+  while (committedRef.current < expectedLength) {
+    await waitForCompletionStep(nextFrame(), deadline, signal, "Streamdown final React commit");
   }
 
   let stableFrames = 0;
@@ -288,15 +386,15 @@ async function waitForStreamdownCompletion(
     observer = new MutationObserver(() => {
       hasMutations = true;
     });
-    observer.observe(root, { childList: true, subtree: true, characterData: true });
+    observer.observe(root, { childList: true, subtree: true, characterData: true, attributes: true });
   }
 
   try {
-    while (stableFrames < 3 && !isCancelled() && performance.now() - start <= timeoutMs) {
+    while (stableFrames < 3) {
       hasMutations = false;
-      await nextFrame();
-      const hasSkeleton = root ? root.querySelector(".streamdown-code-skeleton") !== null : false;
-      if (!hasMutations && !hasSkeleton) {
+      await waitForCompletionStep(nextFrame(), deadline, signal, "Streamdown highlighting and skeleton-free DOM");
+      const hasSkeleton = root.querySelector(".streamdown-code-skeleton") !== null;
+      if (!hasMutations && !hasSkeleton && highlighting.isComplete(root)) {
         stableFrames += 1;
       } else {
         stableFrames = 0;
@@ -408,10 +506,11 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function waitForHandle(ref: React.RefObject<StreamingMarkdownHandle | null>): Promise<StreamingMarkdownHandle> {
+async function waitForHandle(ref: React.RefObject<StreamingMarkdownHandle | null>, signal: AbortSignal): Promise<StreamingMarkdownHandle> {
   const timeoutMs = 10000;
   const start = Date.now();
   while (true) {
+    if (signal.aborted) throw new Error("Benchmark navigation cancelled.");
     if (ref.current) return ref.current;
     if (Date.now() - start > timeoutMs) {
       throw new Error("StreamingMarkdown handle did not initialize in time.");
@@ -468,11 +567,12 @@ async function fetchScenario(id: string): Promise<ScenarioConfig> {
   return response.json() as Promise<ScenarioConfig>;
 }
 
-async function waitForWorker(handle: StreamingMarkdownHandle | null): Promise<void> {
-  if (!handle) return;
+async function waitForWorker(handle: StreamingMarkdownHandle, worker: BenchmarkWorker, signal: AbortSignal): Promise<void> {
   const timeoutMs = 15000;
   const start = Date.now();
   while (true) {
+    if (signal.aborted) throw new Error("Benchmark navigation cancelled.");
+    worker.assertHealthy();
     if (handle.getState().workerReady) return;
     if (Date.now() - start > timeoutMs) throw new Error("Worker did not initialize in time.");
     await nextFrame();
@@ -490,13 +590,16 @@ export function PerfHarness(): JSX.Element {
   const profilerEnabled = parseBoolean(searchParams.get("profiler")) ?? false;
   const queryKey = searchParams.toString();
   const scheduling = useMemo(() => buildScheduling(schedulingPreset, new URLSearchParams(queryKey)), [schedulingPreset, queryKey]);
+  const benchmarkWorker = useMemo(() => new BenchmarkWorker(), [queryKey]);
+  const highlighting = useMemo(() => new BenchmarkHighlighting(), [queryKey]);
+  const streamdownPlugins = useMemo(() => ({ code: highlighting.plugin, math: streamdownMath }), [highlighting]);
+  const rendererVersion = searchParams.get("rendererVersion") ?? (renderer === "streamdown" ? "2.7.0" : "streammdx (version not supplied)");
   const [streamdownText, setStreamdownText] = useState("");
   const [streamdownIsAnimating, setStreamdownIsAnimating] = useState(false);
   const streamdownCommittedRef = useRef(0);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const handleRef = useRef<StreamingMarkdownHandle | null>(null);
   const runTokenRef = useRef(0);
-  const doneResolveRef = useRef<(() => void) | null>(null);
 
   const flushesRef = useRef<RendererMetrics[]>([]);
   const firstFlushAtRef = useRef<number | null>(null);
@@ -524,17 +627,10 @@ export function PerfHarness(): JSX.Element {
 
   const onMetrics = useCallback((metrics: RendererMetrics) => {
     flushesRef.current.push(metrics);
-    if (firstFlushAtRef.current === null) {
-      firstFlushAtRef.current = metrics.committedAt;
-    }
   }, []);
 
   const onStreamdownCommit = useCallback((textLength: number) => {
-    const now = performance.now();
     streamdownCommittedRef.current = textLength;
-    if (firstFlushAtRef.current === null && textLength > 0) {
-      firstFlushAtRef.current = now;
-    }
   }, []);
 
   const onProfile = useCallback(
@@ -559,25 +655,19 @@ export function PerfHarness(): JSX.Element {
     [profilerEnabled],
   );
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.__streammdxPerfReport = undefined;
-    window.__streammdxPerfDone = new Promise((resolve) => {
-      doneResolveRef.current = resolve;
-    });
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
     const token = (runTokenRef.current += 1);
+    const controller = new AbortController();
+    let firstContentObserver: MutationObserver | null = null;
+    const { promise: done, resolve: resolveDone } = Promise.withResolvers<void>();
 
     if (typeof window !== "undefined") {
       window.__streammdxPerfReport = undefined;
       window.__streammdxPerfError = undefined;
       window.__streammdxPerfRunStart = undefined;
-      window.__streammdxPerfDone = new Promise((resolve) => {
-        doneResolveRef.current = resolve;
-      });
+      window.__streammdxPerfDone = done;
     }
 
     const startLongTasks = () => {
@@ -657,8 +747,9 @@ export function PerfHarness(): JSX.Element {
         profilerSamplesRef.current = [];
 
         if (renderer === "streammdx") {
-          const handle = await waitForHandle(handleRef);
-          await waitForWorker(handle);
+          const handle = await waitForCompletionStep(waitForHandle(handleRef, controller.signal), performance.now() + 10000, controller.signal, "StreamMDX handle");
+          await waitForCompletionStep(waitForWorker(handle, benchmarkWorker, controller.signal), performance.now() + 15000, controller.signal, "worker initialization");
+          benchmarkWorker.assertHealthy();
           handle.resume();
           await nextFrame();
         } else {
@@ -671,12 +762,26 @@ export function PerfHarness(): JSX.Element {
           streamdownCommittedRef.current = 0;
           await nextFrame();
         }
+        if (cancelled || token !== runTokenRef.current) return;
         startLongTasks();
         startRaf();
         startMemory();
 
         const runStart = performance.now();
         window.__streammdxPerfRunStart = runStart;
+        // Same post-start committed-content policy for both renderers. INIT flushes do not count.
+        const observeFirstContent = () => {
+          const root = rootRef.current;
+          if (!root || firstFlushAtRef.current !== null) return;
+          const hasContent = Array.from(root.querySelectorAll("h1,h2,h3,h4,h5,h6,p,li,pre,table,math,.katex")).some((element) => (element.textContent ?? "").trim().length > 0);
+          if (hasContent) {
+            firstFlushAtRef.current = performance.now();
+            firstContentObserver?.disconnect();
+          }
+        };
+        firstContentObserver = new MutationObserver(observeFirstContent);
+        if (!rootRef.current) throw new Error("Incomplete measurement: content root did not mount.");
+        firstContentObserver.observe(rootRef.current, { childList: true, subtree: true, characterData: true });
         let idx = 0;
         let buffered = 0;
         let lastTick = performance.now();
@@ -685,6 +790,7 @@ export function PerfHarness(): JSX.Element {
         let accumulated = "";
         while (idx < fixture.length) {
           if (cancelled || token !== runTokenRef.current) return;
+          if (renderer === "streammdx") benchmarkWorker.assertHealthy();
           const now = performance.now();
           const elapsed = Math.max(0, now - lastTick);
           lastTick = now;
@@ -708,16 +814,19 @@ export function PerfHarness(): JSX.Element {
         }
 
         if (renderer === "streammdx") {
-          await waitForStreamMdxCompletion(handleRef.current);
+          await waitForStreamMdxCompletion(handleRef.current, benchmarkWorker, rootRef.current, controller.signal);
         } else {
           await waitForStreamdownCompletion(
             rootRef.current,
             streamdownCommittedRef,
             fixture.length,
-            () => cancelled,
+            highlighting,
+            controller.signal,
           );
           setStreamdownIsAnimating(false);
         }
+        if (cancelled || token !== runTokenRef.current) return;
+        if (firstFlushAtRef.current === null) throw new Error("Incomplete measurement: no post-start committed content observed.");
 
         // Final completion timestamp reflects all rendering, finalization, and highlighting work
         const runEnd = performance.now();
@@ -725,11 +834,12 @@ export function PerfHarness(): JSX.Element {
         stopRaf();
         stopMemory();
         const liveDom = await collectLiveDomMetrics(rootRef.current);
+        if (cancelled || token !== runTokenRef.current) return;
 
         const report: PerfReport = {
           meta: {
             renderer,
-            rendererVersion: renderer === "streamdown" ? "2.7.0" : "engine-v2",
+            rendererVersion,
             fixtureId,
             scenarioId,
             schedulingPreset,
@@ -758,11 +868,19 @@ export function PerfHarness(): JSX.Element {
 
         window.__streammdxPerfReport = report;
       } catch (error) {
+        if (cancelled || token !== runTokenRef.current) return;
         const message = error instanceof Error ? error.message : String(error);
         console.error("perf harness failed", error);
         window.__streammdxPerfError = message;
       } finally {
-        doneResolveRef.current?.();
+        firstContentObserver?.disconnect();
+        if (token === runTokenRef.current) {
+          stopLongTasks();
+          stopRaf();
+          stopMemory();
+        }
+        benchmarkWorker.dispose();
+        resolveDone();
       }
     };
 
@@ -770,11 +888,15 @@ export function PerfHarness(): JSX.Element {
 
     return () => {
       cancelled = true;
+      firstContentObserver?.disconnect();
+      controller.abort();
+      benchmarkWorker.dispose();
+      resolveDone();
       stopLongTasks();
       stopRaf();
       stopMemory();
     };
-  }, [renderer, fixtureId, scenarioId, schedulingPreset, scheduling, profile, policy]);
+  }, [renderer, fixtureId, scenarioId, schedulingPreset, scheduling, profile, policy, benchmarkWorker, rendererVersion, highlighting]);
 
   return (
     <div className="prose">
@@ -804,7 +926,9 @@ export function PerfHarness(): JSX.Element {
             <Profiler id="StreamingMarkdown" onRender={onProfile}>
               <StreamingMarkdown
                 ref={handleRef}
-                worker="/workers/markdown-worker.js"
+                key={queryKey}
+                worker={benchmarkWorker.create}
+                onError={benchmarkWorker.onError}
                 className="markdown-v2-output"
                 features={PARITY_FEATURES}
                 scheduling={scheduling}
@@ -815,7 +939,9 @@ export function PerfHarness(): JSX.Element {
           ) : (
             <StreamingMarkdown
               ref={handleRef}
-              worker="/workers/markdown-worker.js"
+              key={queryKey}
+              worker={benchmarkWorker.create}
+              onError={benchmarkWorker.onError}
               className="markdown-v2-output"
               features={PARITY_FEATURES}
               scheduling={scheduling}
@@ -827,7 +953,9 @@ export function PerfHarness(): JSX.Element {
           <Profiler id="StreamingMarkdown" onRender={onProfile}>
             <StreamingMarkdown
               ref={handleRef}
-              worker="/workers/markdown-worker.js"
+              key={queryKey}
+              worker={benchmarkWorker.create}
+              onError={benchmarkWorker.onError}
               className="markdown-v2-output"
               features={DEFAULT_FEATURES}
               scheduling={scheduling}
@@ -844,7 +972,9 @@ export function PerfHarness(): JSX.Element {
         ) : (
           <StreamingMarkdown
             ref={handleRef}
-            worker="/workers/markdown-worker.js"
+            key={queryKey}
+            worker={benchmarkWorker.create}
+            onError={benchmarkWorker.onError}
             className="markdown-v2-output"
             features={DEFAULT_FEATURES}
             scheduling={scheduling}

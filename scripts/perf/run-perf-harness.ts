@@ -364,9 +364,9 @@ function getRendererVersion(renderer: string, targetWorktree: string): string {
   try {
     const pkgPath = path.resolve(targetWorktree, "packages/markdown-v2-react/package.json");
     const pkg = JSON.parse(fsSync.readFileSync(pkgPath, "utf8")) as { version?: string };
-    return pkg.version ?? "engine-v2";
+    return pkg.version ?? "streammdx (package version unavailable)";
   } catch {
-    return "engine-v2";
+    return "streammdx (package version unavailable)";
   }
 }
 
@@ -374,6 +374,7 @@ function getRendererVersion(renderer: string, targetWorktree: string): string {
 function buildUrl(): string {
   const url = new URL("/perf/harness/", BASE_URL);
   url.searchParams.set("renderer", RENDERER);
+  url.searchParams.set("rendererVersion", getRendererVersion(RENDERER, WORKTREE));
   url.searchParams.set("profile", PROFILE);
   url.searchParams.set("fixture", FIXTURE);
   url.searchParams.set("scenario", SCENARIO);
@@ -407,18 +408,26 @@ async function runOnce(pageId: number, page: Awaited<ReturnType<ReturnType<typeo
   }
   const target = buildUrl();
   await page.goto(target, { waitUntil: "domcontentloaded", timeout: TIMEOUT_MS });
-  try {
-    await page.waitForFunction(() => typeof window.__streammdxPerfRunStart === "number", { timeout: TIMEOUT_MS });
-  } catch {
-    // Ignore if the run start signal is missing.
+  await page.waitForFunction(
+    () => typeof window.__streammdxPerfRunStart === "number" || Boolean(window.__streammdxPerfError),
+    null,
+    { timeout: TIMEOUT_MS },
+  );
+  const runStart = await page.evaluate(() => window.__streammdxPerfRunStart ?? null);
+  if (runStart === null || !Number.isFinite(runStart)) {
+    const errorMessage = await page.evaluate(() => window.__streammdxPerfError ?? null);
+    throw new Error(`Incomplete measurement: run start missing${errorMessage ? `: ${errorMessage}` : "."}`);
   }
   const startMetrics = await client
     .send("Performance.getMetrics")
     .then((response) => metricMap(response.metrics))
     .catch(() => null);
   const startDom = await client.send("Memory.getDOMCounters").catch(() => null);
-  await page.waitForFunction(() => Boolean(window.__streammdxPerfDone), { timeout: TIMEOUT_MS });
-  await page.evaluate(() => window.__streammdxPerfDone);
+  await page.waitForFunction(
+    () => Boolean(window.__streammdxPerfReport || window.__streammdxPerfError),
+    null,
+    { timeout: TIMEOUT_MS },
+  );
   const report = await page.evaluate(() => window.__streammdxPerfReport ?? null);
   if (!report) {
     const errorMessage = await page.evaluate(() => window.__streammdxPerfError ?? null);
@@ -616,23 +625,25 @@ async function run(): Promise<void> {
 
   const browser = await chromium.launch({ headless: HEADLESS, executablePath });
   const context = await browser.newContext();
-
-  for (let i = 0; i < WARMUP; i += 1) {
-    const page = await context.newPage();
-    await runOnce(i + 1, page);
-    await page.close();
-  }
-
   const outputs: PerfRun[] = [];
-  for (let i = 0; i < RUNS; i += 1) {
-    const page = await context.newPage();
-    const result = await runOnce(i + 1, page);
-    outputs.push(result);
-    await page.close();
-  }
+  try {
+    for (let i = 0; i < WARMUP; i += 1) {
+      const page = await context.newPage();
+      await runOnce(i + 1, page);
+      await page.close();
+    }
 
-  await context.close();
-  await browser.close();
+    for (let i = 0; i < RUNS; i += 1) {
+      const page = await context.newPage();
+      const result = await runOnce(i + 1, page);
+      outputs.push(result);
+      await page.close();
+    }
+
+  } finally {
+    await context.close();
+    await browser.close();
+  }
 
   const runSummaries = outputs.map(summarizeRun);
   let gitSha = "unknown";

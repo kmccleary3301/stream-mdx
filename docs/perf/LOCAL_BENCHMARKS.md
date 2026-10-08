@@ -52,7 +52,9 @@ The perf harness supports two configuration profiles:
 5. **HTML, GFM & Footnotes**: MUST be enabled equally across both renderers.
 6. **Streaming Incomplete Markdown Repair**: Enabled equally on both renderers. Streamdown runs `parseIncompleteMarkdown: true`. StreamMDX runs `formatAnticipation` enabled for inline, mathInline, mathBlock, html, with MDX anticipation disabled (`mdx: false`).
 7. **No Custom Markup Overrides**: StreamMDX in parity mode MUST NOT pass custom component wrappers (`ScrollAreaHorizontal`, custom `Table`, `TableCell`) that swallow built-in features. It renders using native built-in element nodes (`defaultBlockComponents`, `defaultInlineComponents`, `defaultTableElements`, `defaultHtmlElements`).
-8. **Deterministic Finalization & Timings**: Measurements MUST NOT capture unfinished DOM or arbitrary sleeps. StreamMDX awaits block finalization, lazy tokenization line completion, and version stability. Streamdown awaits full text commitment, absence of skeletons, and mutation quiescence. All rendering and tokenization work is included in the final run duration.
+8. **Deterministic Finalization & Timings**: Measurements MUST NOT capture unfinished DOM or arbitrary sleeps. StreamMDX uses the public `worker` factory prop to observe the real `WorkerOut.FINALIZED` response after `finalize()`, then awaits scheduler idle, finalized blocks, lazy tokenization line completion, and three frames with stable renderer version and DOM. Streamdown awaits the final React text commit, settled public highlighting-plugin callbacks for every final code body, absence of skeletons, and three mutation-free frames. Timeout, worker error, or navigation cancellation MUST invalidate the measurement, not publish a partial report. Caller-owned workers and listeners are released on success, error, and navigation.
+9. **First committed content**: The legacy `firstFlushAt` field records the first post-run-start DOM mutation containing nonempty rendered markdown content under the same policy for both renderers. Empty worker initialization and scheduler flushes do not count. A missing start signal or missing committed content invalidates the report.
+10. **Revision labels**: The runner supplies the installed package version to the page via `rendererVersion`. Package version identifies the release, while runner metadata `gitSha` identifies baseline versus candidate. Direct page visits without a version use an explicitly unknown StreamMDX label, never `engine-v2`.
 ### Metric Classification: Live Attached DOM vs CDP Heap Retained Nodes
 
 The harness and reports clearly distinguish between two fundamentally different node measurements:
@@ -108,3 +110,10 @@ STREAM_MDX_PERF_BASE_URL=http://localhost:3010 npx tsx scripts/perf/run-perf-har
   --warmup 2 \
   --out tmp/perf-baselines/baseline-4350a2a
 ```
+
+## Completion acknowledgment proof
+
+Source inspection on 2026-10-07 confirmed that baseline `4350a2a` and the candidate both emit the public `WorkerOut` message `{ type: "FINALIZED" }` after final block diffing, canonical snapshot dispatch, and deferred patch flushing. Baseline implementation is `packages/markdown-v2-worker/src/worker.ts`, `finalizeAllBlocks`; candidate implementation is `packages/markdown-v2-worker/src/engine/engine.ts`, `MarkdownEngine.finalizeAllBlocks`. Scheduler `waitForIdle()` alone is not a worker completion acknowledgment.
+
+Only the shared benchmark commit may be copied to the baseline by the parent. No runtime changes or public completion API are required. Production smoke evidence and quiet-machine comparison evidence are separate. A single S6 smoke is not a performance claim.
+
