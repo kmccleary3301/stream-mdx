@@ -15,7 +15,6 @@ const clientEntries = [
   "src/renderer/store.ts",
   "src/renderer/node-views.tsx",
   "src/renderer/virtualized-code.tsx",
-  "src/renderer/virtualized-table.ts",
   "src/components/index.ts",
   "src/components/bottom-stick-scroll-area.tsx",
   "src/components/artifact-frame.tsx",

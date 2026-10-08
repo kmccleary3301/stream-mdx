@@ -679,6 +679,12 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
   React.useEffect(() => {
     setMounted(true);
   }, []);
+  const [, setRegistryVersion] = React.useState(0);
+  React.useEffect(() => {
+    return registry.subscribeTableVirtualization(() => {
+      setRegistryVersion((v) => v + 1);
+    });
+  }, [registry]);
 
   const tbodyId = React.useMemo(() => {
     for (const childId of childIds) {

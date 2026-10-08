@@ -10,7 +10,7 @@ function showcaseRoot(): string {
 }
 
 export function getAllShowcaseSlugs(): string[] {
-  return SHOWCASE_ITEMS.map((item) => item.slug).filter((slug) => slug !== "assistant-stream");
+  return SHOWCASE_ITEMS.map((item) => item.slug).filter((slug) => slug !== "assistant-stream" && slug !== "table-virtualization");
 }
 
 export function findShowcaseBySlug(slug: string) {

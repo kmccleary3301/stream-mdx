@@ -666,6 +666,7 @@ export class ComponentRegistry {
   private blockRenderer?: BlockRendererOverride;
   private blockComponentMapCache: BlockComponents | null = null;
   private tableVirtualization: TableVirtualizationConfig = DEFAULT_TABLE_VIRTUALIZATION_CONFIG;
+  private tableVirtualizationListeners = new Set<() => void>();
   private inlineComponentMapCache: InlineComponents | null = null;
 
   constructor(
@@ -837,8 +838,18 @@ export class ComponentRegistry {
     return this.tableElements;
   }
 
+  subscribeTableVirtualization(listener: () => void): () => void {
+    this.tableVirtualizationListeners.add(listener);
+    return () => {
+      this.tableVirtualizationListeners.delete(listener);
+    };
+  }
+
   setTableVirtualization(options: TableVirtualizationOptions | undefined): void {
     this.tableVirtualization = resolveTableVirtualizationConfig(options);
+    for (const listener of this.tableVirtualizationListeners) {
+      listener();
+    }
   }
 
   getTableVirtualization(): TableVirtualizationConfig {

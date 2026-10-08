@@ -75,6 +75,7 @@ const ref = useRef<StreamingMarkdownHandle>(null);
 | `components` | `Partial<BlockComponents>` | Override block renders (wrap code/math without affecting the patch scheduler). |
 | `inlineComponents` | `Partial<InlineComponents>` | Override inline renders. |
 | `tableElements` | `Partial<TableElements>` | Override table tags (e.g. Shadcn table wrappers). |
+| `tableVirtualization` | `boolean \| TableVirtualizationConfig` | Opt-in row virtualization for large tables. Conservative default (`false`). |
 | `htmlElements` | `Partial<HtmlElements>` | Override HTML tag renders (when HTML is enabled). |
 | `mdxComponents` | `Record<string, ComponentType>` | Component registry used when hydrating MDX. |
 | `caret` | `CaretMode` | Show a streaming caret while blocks are still in-flight. |
@@ -282,6 +283,42 @@ export function Article({ markdown }: { markdown: string }) {
 ### Built-in Renderers
 1. **ArtifactFrame (P4)**: Built-in sandboxed iframe renderer for fence languages `artifact` and `html-artifact` (and `html` with `artifactHtml: true`). Displays fallback code view while streaming; once finalized, mounts an isolated `<iframe sandbox="allow-scripts" srcdoc="...">` with strict CSP meta (`connect-src 'none'`), auto-height messaging, and links routed through `onLinkClick` or `openLink` (only `http:`, `https:`, `mailto:`).
 2. **DefaultDiffRenderer**: When a code block payload includes `meta.diffBlocks` (from worker `features.emitDiffBlocks`), it automatically renders a structured git diff table with line kinds, old/new line numbers, and token colors. Overridable via `codeRenderers={{ diff: CustomDiff }}`.
+
+## 3.3) Table Row Virtualization (`tableVirtualization`)
+
+StreamMDX supports configurable row virtualization for large tables to maintain 60 FPS scrolling and low memory footprint while preserving semantic HTML tables and accessible screen-reader trees.
+
+```tsx
+<StreamingMarkdown
+  text={content}
+  tableVirtualization={{
+    enabled: true,
+    minRows: 40,
+    estimatedRowHeight: 44,
+    overscan: 8,
+    maxHeight: "600px",
+  }}
+/>
+```
+
+### Key Invariants
+
+- **Conservative Opt-In**: Disabled by default (`enabled: false`). Existing tables and SSR rendering remain completely unchanged.
+- **Mount and Finalization Guard**: Only finalized large tables virtualize on a mounted browser. SSR outputs all rows without truncation or spacers; active streaming tables render all rows progressively without windowing jumps.
+- **Semantic & Accessible**: Maintains native `<table>`, `<thead>`, `<tbody>`, `<tr>`, and `<td>` elements. Spacer rows use `aria-hidden="true"`, and the table header remains `sticky` and accessible.
+- **Variable Row Heights**: Accurately measures multiline cells and dynamic row heights via `ResizeObserver`. Resizing columns or viewport recalculates measurements without clipping content.
+- **Full Reachability**: End-row reachability ensures users can scroll to and view the very last row (`bottomSpacerHeight === 0`).
+- **Custom `tableElements` Compatible**: Works seamlessly with ShadCN or design-system table wrappers passed to `tableElements`.
+
+### Configuration Options (`TableVirtualizationConfig`)
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enabled` | `boolean` | `false` | Enable or disable table row virtualization. |
+| `minRows` | `number` | `40` | Minimum body rows required to trigger virtualization (alias: `virtualizeThreshold`). |
+| `estimatedRowHeight` | `number` | `40` | Estimated height in pixels for unmeasured rows. |
+| `overscan` | `number` | `8` | Number of buffer rows rendered above and below the viewport (bounded 1-50). |
+| `maxHeight` | `number \| string` | `"600px"` | Maximum height of the scroll container. |
 
 ## 3.3) Math Rendering (`mathRenderer`)
 
