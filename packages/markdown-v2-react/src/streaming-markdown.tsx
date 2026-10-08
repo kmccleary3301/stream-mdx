@@ -15,7 +15,7 @@ import { DeferredRenderContext, type DeferredRenderConfig } from "./renderer/def
 import { useRendererBlocks } from "./renderer/hooks";
 import type { RendererStore } from "./renderer/store";
 import { createDefaultWorker, releaseDefaultWorker } from "@stream-mdx/worker";
-import type { BlockComponents, BlockRendererOverride, CodeFenceRenderer, HtmlElements, InlineComponents, MathRenderer, RendererConfig, TableElements } from "./types";
+import type { BlockComponents, BlockRendererOverride, CodeFenceRenderer, HtmlElements, HtmlOptions, InlineComponents, MathRenderer, RendererConfig, SyntaxRuleSpec, TableElements } from "./types";
 
 const EMPTY_BLOCKS: ReadonlyArray<Block> = [];
 
@@ -30,6 +30,8 @@ interface StreamingMarkdownConfigSignature {
   mdxStrategy?: "server" | "worker";
   mdxComponentKeys: string[];
   mdxHydration?: MdxHydrationOptions;
+  syntax?: SyntaxRuleSpec[];
+  html?: HtmlOptions;
 }
 
 export interface StreamingSchedulerOptions {
@@ -150,6 +152,8 @@ export interface StreamingMarkdownProps {
   artifactHtml?: boolean;
   deferHeavyBlocks?: boolean | DeferredRenderConfig;
   blockRenderer?: BlockRendererOverride;
+  syntax?: SyntaxRuleSpec[];
+  html?: HtmlOptions;
 }
 
 const MdxCoordinatorBridge: React.FC<{ store: RendererStore; mode: "server" | "worker" }> = ({ store, mode }) => {
@@ -303,6 +307,8 @@ function StreamingMarkdownComponent(
     artifactHtml,
     deferHeavyBlocks,
     blockRenderer,
+    syntax,
+    html,
   }: StreamingMarkdownProps,
   ref: React.ForwardedRef<StreamingMarkdownHandle>,
 ) {
@@ -327,8 +333,10 @@ function StreamingMarkdownComponent(
         mdxStrategy: mdxCompileMode,
         mdxComponentKeys: mdxComponents ? Object.keys(mdxComponents).sort() : [],
         mdxHydration,
+        syntax,
+        html,
       }),
-    [features, prewarmLangs, effectiveScheduling, mdxCompileMode, mdxComponents, mdxHydration],
+    [features, prewarmLangs, effectiveScheduling, mdxCompileMode, mdxComponents, mdxHydration, syntax, html],
   );
 
   const mdxHydrationController = useMemo(() => createMdxHydrationController(mdxHydration), [mdxHydration]);
@@ -374,6 +382,8 @@ function StreamingMarkdownComponent(
         adaptiveBudgeting: effectiveScheduling.adaptiveBudgeting,
       },
       mdx: mdxConfig,
+      syntax,
+      html,
     };
     const nextRenderer = new MarkdownRenderer(rendererConfig);
     nextRenderer.getComponentRegistry().setLinkHandler((url) => {
@@ -813,6 +823,7 @@ function StreamingMarkdownComponent(
           }
         }
         if (!cancelled) {
+          renderer.finalize();
           setStreamStatus("done");
         }
       } catch (error) {

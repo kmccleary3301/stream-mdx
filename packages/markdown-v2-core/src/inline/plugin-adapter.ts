@@ -1,4 +1,4 @@
-import type { RegexInlinePlugin } from "../types";
+import type { InlineNode, RegexInlinePlugin, SyntaxRuleSpec } from "../types";
 import type { InlineExtension } from "./types";
 
 function ensureSticky(re: RegExp): RegExp {
@@ -91,4 +91,103 @@ export function createDefaultRegexPlugins(): RegexInlinePlugin[] {
       fastCheck: (text) => text.indexOf("@") !== -1,
     },
   ];
+}
+
+/**
+ * Compiles a declarative SyntaxRuleSpec into a Lezer InlineExtension.
+ */
+export function compileSyntaxRuleToExtension(rule: SyntaxRuleSpec): InlineExtension {
+  const nodeName = `Custom_Rule_${rule.name.replace(/[^A-Za-z0-9_]/g, "_")}`;
+  const rawFlags = rule.pattern.flags || "";
+  const cleanedFlags = rawFlags.replace(/[gy]/g, "");
+  let stickyRe: RegExp;
+  try {
+    stickyRe = new RegExp(rule.pattern.source, `${cleanedFlags}yd`);
+  } catch {
+    stickyRe = new RegExp(rule.pattern.source, `${cleanedFlags}y`);
+  }
+
+  const trigger = rule.trigger;
+  const before = rule.before;
+
+  return {
+    name: rule.name,
+    lezer: {
+      defineNodes: [nodeName],
+      parseInline: [
+        {
+          name: nodeName,
+          before: rule.before ?? "Link",
+          parse(cx, _next, pos) {
+            const localPos = pos - cx.offset;
+            if (localPos < 0 || localPos >= cx.text.length) {
+              return -1;
+            }
+            if (trigger && !cx.text.startsWith(trigger, localPos)) {
+              return -1;
+            }
+            stickyRe.lastIndex = localPos;
+            const match = stickyRe.exec(cx.text);
+            if (!match || match.index !== localPos || match[0].length === 0) {
+              return -1;
+            }
+            const end = pos + match[0].length;
+            if (rule.content !== undefined && match[rule.content] !== undefined) {
+              const contentText = match[rule.content];
+              let localCStart: number;
+              const indices = (match as RegExpExecArray & { indices?: Array<[number, number] | undefined> }).indices;
+              const range = indices?.[rule.content];
+              if (range) {
+                localCStart = range[0];
+              } else {
+                const offset = match[0].indexOf(contentText);
+                localCStart = localPos + (offset >= 0 ? offset : 0);
+              }
+              const docCStart = cx.offset + localCStart;
+              const innerElts = cx.parser.parseInline(contentText, docCStart);
+              return cx.addElement(cx.elt(nodeName, pos, end, innerElts));
+            }
+            return cx.addElement(cx.elt(nodeName, pos, end));
+          },
+        },
+      ],
+    },
+    toInline(element, text, convertChildren) {
+      stickyRe.lastIndex = element.from;
+      const match = stickyRe.exec(text);
+      if (!match || match.index !== element.from) {
+        return null;
+      }
+      const attrs: Record<string, string> = {};
+      if (rule.attrs) {
+        for (const [key, val] of Object.entries(rule.attrs)) {
+          if (typeof val === "number") {
+            attrs[key] = match[val] ?? "";
+          } else {
+            attrs[key] = String(val);
+          }
+        }
+      }
+      let children: InlineNode[] | undefined;
+      if (rule.content !== undefined && typeof convertChildren === "function") {
+        const contentText = match[rule.content];
+        if (contentText !== undefined) {
+          const indices = (match as RegExpExecArray & { indices?: Array<[number, number] | undefined> }).indices;
+          const range = indices?.[rule.content];
+          const contentFrom = range ? element.from + (range[0] - match.index) : element.from + Math.max(0, match[0].indexOf(contentText));
+          const contentTo = contentFrom + contentText.length;
+          children = convertChildren(element.children, contentFrom, contentTo);
+        } else {
+          children = convertChildren(element.children);
+        }
+      }
+      return {
+        kind: "plugin",
+        name: rule.name,
+        attrs,
+        children,
+        raw: match[0],
+      };
+    },
+  };
 }
