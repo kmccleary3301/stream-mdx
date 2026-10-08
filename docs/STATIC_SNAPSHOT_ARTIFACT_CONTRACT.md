@@ -203,6 +203,18 @@ Node SSR uses the actual DOM-free HTML/sanitizer paths; physical workers compile
 MDX through the existing DOM-free dependency aliases. Browser hosts retain their
 real DOM rather than receiving an incomplete replacement.
 
+Owner regression evidence at `c336251` (Node 26.3.0): both fresh public package
+formats, ESM and CJS, passed unchanged global-descriptor checks for `window`,
+`document`, `DOMParser`, `HTMLElement`, and `Node`. Direct and physical hosted
+worker compilation produced identical final blocks for balanced MDX components,
+case-sensitive `<Input>`, decoded entities, math, and quote-owned fenced code.
+All three targeted scripts passed: `worker-dom-free-public-imports`,
+`direct-compile-parity`, and `mdx-component-region-ownership`. The first also
+renders the public React component in Node SSR without installing DOM globals;
+that check establishes import/SSR safety, not rendered MDX-content parity.
+Node 20 public-package and real-browser application gates remain integration
+checks rather than evidence from this owner run.
+
 ## Runtime fallback
 
 When a snapshot file is missing or disabled by mode flag, docs routes fall back to the existing `StreamingArticle` worker render path.
