@@ -1,5 +1,6 @@
 import path from "node:path";
 import fs from "node:fs/promises";
+import { comparisonInvalidity, type ComparisonEvidence } from "./comparison-guards";
 
 type Stats = {
   count: number;
@@ -10,9 +11,10 @@ type Stats = {
   p95: number;
 };
 
-type Summary = {
+type Summary = ComparisonEvidence & {
   aggregate: {
     durationMs: Stats | null;
+    cdpTaskMs: Stats | null;
     timeToFirstFlushMs: Stats | null;
     longTaskP95: Stats | null;
     rafP95: Stats | null;
@@ -20,9 +22,10 @@ type Summary = {
   };
 };
 
-type MetricKey = keyof Summary["aggregate"];
+type MetricKey = "cdpTaskMs" | "durationMs" | "timeToFirstFlushMs" | "longTaskP95" | "rafP95" | "memoryPeakMB";
 
 const METRICS: Array<{ key: MetricKey; label: string; unit: string }> = [
+  { key: "cdpTaskMs", label: "CDP TaskDuration median (primary)", unit: "ms" },
   { key: "durationMs", label: "duration p95", unit: "ms" },
   { key: "timeToFirstFlushMs", label: "first flush p95", unit: "ms" },
   { key: "longTaskP95", label: "longtask p95 (run p95s)", unit: "ms" },
@@ -31,6 +34,7 @@ const METRICS: Array<{ key: MetricKey; label: string; unit: string }> = [
 ];
 
 const DEFAULT_THRESHOLDS: Record<MetricKey, number> = {
+  cdpTaskMs: 0.1,
   durationMs: 0.1,
   timeToFirstFlushMs: 0.1,
   longTaskP95: 0.25,
@@ -113,16 +117,21 @@ async function comparePair(
   lines.push(`base: ${resolveSummaryPath(baseInput)}`);
   lines.push(`candidate: ${resolveSummaryPath(candInput)}`);
 
-  let failures = 0;
+  const invalidity = comparisonInvalidity(base, cand);
+  let failures = invalidity.length;
+  if (invalidity.length > 0) {
+    lines.push("INVALID COMPARISON");
+    for (const reason of invalidity) lines.push(`  - ${reason}`);
+  }
   for (const metric of METRICS) {
-    const baseValue = metricValue(base.aggregate[metric.key]);
-    const candValue = metricValue(cand.aggregate[metric.key]);
+    const baseValue = metric.key === "cdpTaskMs" ? base.aggregate.cdpTaskMs?.p50 ?? null : metricValue(base.aggregate[metric.key]);
+    const candValue = metric.key === "cdpTaskMs" ? cand.aggregate.cdpTaskMs?.p50 ?? null : metricValue(cand.aggregate[metric.key]);
     const delta = baseValue === null || candValue === null ? null : candValue - baseValue;
     const pct = baseValue && candValue !== null ? delta / baseValue : null;
     const threshold = thresholds[metric.key];
     const regress = gate && pct !== null && pct > threshold;
     if (regress) failures += 1;
-    const status = regress ? "REGRESSION" : "ok";
+    const status = invalidity.length > 0 ? "INVALID COMPARISON" : regress ? "REGRESSION" : "ok";
     lines.push(
       `${metric.label}: ${formatValue(baseValue, metric.unit)} -> ${formatValue(candValue, metric.unit)} (${formatValue(delta, metric.unit)}, ${formatPct(pct)}) [${status}]`,
     );
@@ -155,6 +164,7 @@ async function run(): Promise<void> {
 
   const gate = !hasFlag("--no-gate") && process.env.STREAM_MDX_PERF_GATE !== "0";
   const thresholds: Record<MetricKey, number> = {
+    cdpTaskMs: getNumArg("--taskMedianMaxPct", "STREAM_MDX_PERF_TASK_MEDIAN_MAX_PCT") ?? DEFAULT_THRESHOLDS.cdpTaskMs,
     durationMs: getNumArg("--durationP95MaxPct", "STREAM_MDX_PERF_DURATION_P95_MAX_PCT") ?? DEFAULT_THRESHOLDS.durationMs,
     timeToFirstFlushMs:
       getNumArg("--firstFlushP95MaxPct", "STREAM_MDX_PERF_FIRST_FLUSH_P95_MAX_PCT") ?? DEFAULT_THRESHOLDS.timeToFirstFlushMs,
@@ -173,6 +183,7 @@ async function run(): Promise<void> {
   if (candidateEdge) {
     const [baseExists, candidateExists] = await Promise.all([hasSummary(baseEdge), hasSummary(candidateEdge)]);
     if (!baseExists || !candidateExists) {
+      failures += 1;
       process.stdout.write(
         `\n== S6_extreme_edge_like ==\n` +
           `skip: missing summary file(s). base=${resolveSummaryPath(baseEdge)} (${baseExists ? "ok" : "missing"}), ` +

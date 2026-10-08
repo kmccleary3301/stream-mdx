@@ -63,3 +63,20 @@ for (const [rawHtml, expectedHtml] of [
   const html = flatten(createBlockSnapshot(container)).find((node) => node.type === "html");
   assert.equal((html?.props?.block as Block).payload.raw, expectedHtml);
 }
+
+const htmlQuoteRaw = "> <div>\n> literal\n>\n> #ABC-12\n>\n> ```js\n> const x=1;\n> ```\n>\n> </div>\n";
+const htmlQuote: Block = {
+  id: "html-context",
+  type: "blockquote",
+  isFinalized: true,
+  payload: { raw: htmlQuoteRaw, range: { from: 400, to: 400 + htmlQuoteRaw.length } },
+};
+const htmlQuotePrepared = prepareNestedBlockSnapshot(htmlQuote, instance, parser.configure([GFM, createBlockCompatibilityExtension()]));
+const htmlQuoteSnapshots = htmlQuotePrepared.children.flatMap(flatten);
+const htmlQuoteCode = htmlQuoteSnapshots.find((node) => node.type === "code");
+assert.equal((htmlQuoteCode?.props?.block as Block).payload.meta?.code, "const x=1;");
+assert.equal(htmlQuoteCode?.range?.from, 400 + htmlQuoteRaw.indexOf("```js"), "native source offset survives quoted HTML boundary");
+const htmlQuoteParagraph = htmlQuoteSnapshots.find((node) => node.type === "paragraph");
+assert.ok((htmlQuoteParagraph?.props?.inline as Array<{ kind: string; name?: string }>).some((node) => node.kind === "plugin" && node.name === "ticket"), "owning inline plugin is retained after quoted HTML");
+const htmlQuoteOpening = htmlQuoteSnapshots.find((node) => node.type === "html");
+assert.equal((htmlQuoteOpening?.props?.block as Block).payload.raw, "<div>\nliteral", "native continuation QuoteMarks are removed, not parsed independently");

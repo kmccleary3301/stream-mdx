@@ -417,9 +417,12 @@ function StreamingMarkdownComponent(
   const mdxMode: "server" | "worker" = mdxCompileMode ?? "server";
   const [workerReady, setWorkerReady] = useState(false);
   const workerReadyRef = useRef(false);
+  const readyRendererRef = useRef<MarkdownRenderer | null>(null);
   const [streamStatus, setStreamStatus] = useState<"idle" | "streaming" | "done">("idle");
   const iteratorSequenceRef = useRef(0);
   const activeIteratorRef = useRef<number | null>(null);
+  const consumedIteratorsRef = useRef<WeakSet<AsyncIterator<string>>>();
+  const imperativeActivityRef = useRef(false);
   const lastMetricsRef = useRef<RendererMetrics | null>(null);
   const patchHistoryRef = useRef<RendererMetrics[]>([]);
 
@@ -684,6 +687,7 @@ function StreamingMarkdownComponent(
 
       renderer.detachWorker();
       renderer.attachWorker(activeWorker, { skipInit: managedWorker });
+      readyRendererRef.current = renderer;
       setWorkerReady(true);
       workerReadyRef.current = true;
     };
@@ -744,6 +748,7 @@ function StreamingMarkdownComponent(
       cancelled = true;
       setWorkerReady(false);
       workerReadyRef.current = false;
+      if (readyRendererRef.current === renderer) readyRendererRef.current = null;
       renderer.detachWorker();
       if (activeOwned && activeWorker) {
         try {
@@ -759,7 +764,7 @@ function StreamingMarkdownComponent(
     const restartToken = session;
     void restartToken;
     let cancelled = false;
-    if (!workerReady) {
+    if (!workerReady || readyRendererRef.current !== renderer) {
       return () => {
         cancelled = true;
       };
@@ -773,6 +778,7 @@ function StreamingMarkdownComponent(
 
     if (text !== undefined) {
       try {
+        imperativeActivityRef.current = false;
         setStreamStatus("streaming");
         renderer.restart();
         renderer.append(text);
@@ -792,14 +798,26 @@ function StreamingMarkdownComponent(
         cancelled = true;
       };
     }
+    let iterator: AsyncIterator<string>;
+    // Different iterable wrappers can return the same single-use iterator.
+    try {
+      iterator = stream[Symbol.asyncIterator]();
+      const consumedIterators = consumedIteratorsRef.current ??= new WeakSet<AsyncIterator<string>>();
+      if (consumedIterators.has(iterator)) return;
+      consumedIterators.add(iterator);
+    } catch (error) {
+      onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
+      return;
+    }
 
     const iteratorOwner = ++iteratorSequenceRef.current;
     activeIteratorRef.current = iteratorOwner;
     (async () => {
       try {
+        imperativeActivityRef.current = false;
         setStreamStatus("streaming");
         renderer.restart();
-        for await (const chunk of stream) {
+        for await (const chunk of { [Symbol.asyncIterator]: () => iterator }) {
           if (cancelled || activeIteratorRef.current !== iteratorOwner) {
             break;
           }
@@ -811,11 +829,11 @@ function StreamingMarkdownComponent(
         }
         if (!cancelled && activeIteratorRef.current === iteratorOwner) {
           renderer.finalize();
-          setStreamStatus("done");
+          setStreamStatus(imperativeActivityRef.current ? "streaming" : "done");
         }
       } catch (error) {
         if (!cancelled && activeIteratorRef.current === iteratorOwner) {
-          setStreamStatus("done");
+          setStreamStatus(imperativeActivityRef.current ? "streaming" : "done");
           onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
         }
       } finally {
@@ -825,7 +843,10 @@ function StreamingMarkdownComponent(
 
     return () => {
       cancelled = true;
-      if (activeIteratorRef.current === iteratorOwner) activeIteratorRef.current = null;
+      if (activeIteratorRef.current === iteratorOwner) {
+        activeIteratorRef.current = null;
+        setStreamStatus(imperativeActivityRef.current ? "streaming" : "idle");
+      }
     };
   }, [renderer, text, stream, workerReady, session, managedWorker]);
 
@@ -839,16 +860,19 @@ function StreamingMarkdownComponent(
         renderer.resume();
       },
       restart() {
+        imperativeActivityRef.current = false;
         activeIteratorRef.current = null;
         setStreamStatus("idle");
         setSession((prev) => prev + 1);
       },
       finalize() {
         renderer.finalize();
-        if (activeIteratorRef.current === null) setStreamStatus("done");
+        imperativeActivityRef.current = false;
+        setStreamStatus(activeIteratorRef.current === null ? "done" : "streaming");
       },
       append(text: string) {
         if (!text || !workerReadyRef.current) return;
+        imperativeActivityRef.current = true;
         setStreamStatus("streaming");
         renderer.append(text);
       },
