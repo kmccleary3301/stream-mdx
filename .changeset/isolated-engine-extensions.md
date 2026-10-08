@@ -3,7 +3,7 @@
 "@stream-mdx/core": minor
 "@stream-mdx/plugins": minor
 "@stream-mdx/worker": minor
-"@stream-mdx/react": patch
+"@stream-mdx/react": minor
 "@stream-mdx/mermaid": patch
 "@stream-mdx/unified": minor
 ---
@@ -16,4 +16,4 @@ Add code fence renderer registration, React-node code fallbacks, math renderer o
 
 Add the optional unified adapter for finalized-block remark/rehype transforms, explicit block routing, container replacement, synchronous SSR, asynchronous native fallback, error callbacks, and bounded per-renderer caches. Document public exports and replace obsolete plugin factory examples.
 
-React's minor version change for table virtualization is recorded separately in measured-table-rows. Nested block snapshot fixes are recorded in prepared-nested-blocks. This changeset records the other engine and renderer features without another React minor entry.
+React's minor version change covers public props (engine, codeRenderers, mathRenderer, blockRenderer) and renderer extension modes. Table virtualization is recorded separately in measured-table-rows, and nested block snapshot fixes are recorded in prepared-nested-blocks.
