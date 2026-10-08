@@ -19,7 +19,7 @@ export function Demo() {
     <StreamingMarkdown
       text={"```mermaid\ngraph TD; A-->B;\n```"}
       worker="/workers/markdown-worker.js"
-      components={{ mermaid: MermaidBlock }}
+      codeRenderers={{ mermaid: MermaidBlock }}
     />
   );
 }
@@ -36,7 +36,7 @@ export function Demo() {
 ## Customization
 
 ```tsx
-components={{
+codeRenderers={{
   mermaid: (props) => <MermaidBlock {...props} debounceMs={250} defaultView="diagram" />,
 }}
 ```

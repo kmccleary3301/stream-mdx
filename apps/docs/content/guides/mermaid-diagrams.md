@@ -16,7 +16,7 @@ npm install @stream-mdx/mermaid
 
 ## Register the component
 
-Mermaid rendering is provided via a block component mapped to `mermaid` code fences.
+Mermaid rendering is provided via a code fence renderer mapped to `mermaid` code fences.
 
 ```tsx
 import { StreamingMarkdown } from "stream-mdx";
@@ -25,7 +25,7 @@ import { MermaidBlock } from "@stream-mdx/mermaid";
 <StreamingMarkdown
   text={content}
   worker="/workers/markdown-worker.js"
-  components={{
+  codeRenderers={{
     mermaid: MermaidBlock,
   }}
   features={{
@@ -64,7 +64,7 @@ The Mermaid block renderer includes a code/diagram toggle by default.
 Use `defaultView` to control first render mode:
 
 ```tsx
-components={{
+codeRenderers={{
   mermaid: (props) => <MermaidBlock {...props} defaultView="diagram" />,
 }}
 ```

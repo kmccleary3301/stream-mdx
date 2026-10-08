@@ -20,9 +20,37 @@ Host the worker bundle and point StreamMDX at it:
 
 This avoids needing to allow `blob:` in `worker-src`/`script-src`.
 
-### Avoid `unsafe-eval`
+### MDX evaluation and `script-src` (`unsafe-eval`)
 
-StreamMDX does not require `unsafe-eval` for its core pipeline. If your MDX components embed third-party scripts, treat those as a separate surface and lock them down per-component.
+StreamMDX's core markdown and plugin pipeline does not require `unsafe-eval`. However, **client-side MDX evaluation** compiles and evaluates component code in the browser via `new Function(...)` (`mdx-client.ts`), which **requires `unsafe-eval`** in your host application's Content Security Policy (`script-src 'self' 'unsafe-eval'`).
+
+If your application operates under a strict CSP that forbids `unsafe-eval`:
+- Disable MDX features (`features={{ mdx: false }}`), or
+- Pre-compile MDX server-side into static components rather than evaluating dynamic MDX strings in the client.
+
+## Artifact Sandbox Model (P4)
+
+StreamMDX provides built-in sandboxing for interactive HTML artifacts (languages `artifact`, `html-artifact`, and opt-in `html` via `artifactHtml: true`):
+
+### 1. Hardened iframe isolation
+- **No `allow-same-origin`**: Finalized artifacts mount inside an `<iframe sandbox="allow-scripts" srcdoc="...">`. Because `allow-same-origin` is omitted, the artifact executes in an opaque unique origin with zero access to the host page's DOM, cookies, `localStorage`, `sessionStorage`, or auth tokens.
+- **Streaming safety**: During streaming while the block is dirty (`isFinalized === false`), the artifact displays as an inert code block. The iframe is only mounted once the code block is finalized.
+
+### 2. In-frame Content Security Policy (CSP)
+Every artifact `srcdoc` includes a strict `<meta http-equiv="Content-Security-Policy">`:
+- `default-src 'none'`
+- `connect-src 'none'` by default (prevents data exfiltration; allowlists can be configured via `csp.connectSrc`)
+- `script-src 'unsafe-inline'` + configured allowlist
+- `style-src 'unsafe-inline'` + configured allowlist
+- `img-src data: blob:` + configured allowlist
+- `font-src data:` + configured allowlist
+- `base-uri 'none'`, `form-action 'none'`
+
+The policy, theme styles, and bootstrap script are written before any artifact markup, so a full artifact document (with its own `<!doctype>`, `<html>`, `<head>`) cannot run script ahead of the policy.
+
+### 3. Secure host communication
+- **Origin and window verification**: The artifact communicates with the host window via `postMessage`. The host listener verifies that `event.source === iframeRef.current.contentWindow`. Foreign-source messages and spoofed dimensions are ignored.
+- **Safe navigation**: Navigation links clicked inside the artifact are prevented and posted to the host via `stream-mdx:artifact-link`. The host drops every URL whose protocol is not `http:`, `https:`, or `mailto:` (so `javascript:` and `data:` never reach the host), then calls the renderer's `onLinkClick`, else the `openLink` prop (which `StreamingMarkdown` wires to its `linkSafety` policy), else `window.open(url, "_blank", "noopener,noreferrer")`.
 
 ## Reporting security issues
 

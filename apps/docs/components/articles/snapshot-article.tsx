@@ -39,9 +39,11 @@ export function SnapshotArticle({ blocks }: { blocks: Block[] }) {
   const registry = useMemo(() => {
     const next = new ComponentRegistry();
     next.setBlockComponents({
-      code: SnapshotCodeBlock,
+      code: DocsCodeBlock,
+    });
+    next.setCodeRenderers({
       mermaid: MermaidBlock,
-    } as Partial<BlockComponents>);
+    });
     return next;
   }, []);
 

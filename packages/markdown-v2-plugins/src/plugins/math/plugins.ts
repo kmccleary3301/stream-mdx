@@ -1,7 +1,6 @@
 // Math plugin implementations
 
 import type { MarkdownPlugin } from "../base";
-import { MathDisplayRenderer, MathInlineRenderer } from "./renderer";
 // Use Lezer-native streaming handlers (Phase 2)
 import { LezerDisplayMathStreamingHandler, LezerInlineMathStreamingHandler } from "./streaming-v2";
 import { MathTokenizer } from "./tokenizer";
@@ -23,7 +22,6 @@ export const MathInlinePlugin: MarkdownPlugin = {
 
   tokenizer: MathTokenizer,
 
-  renderer: MathInlineRenderer as unknown as MarkdownPlugin["renderer"],
 
   streamingHandler: new LezerInlineMathStreamingHandler(),
 
@@ -57,8 +55,6 @@ export const MathDisplayPlugin: MarkdownPlugin = {
   },
 
   tokenizer: MathTokenizer,
-
-  renderer: MathDisplayRenderer as unknown as MarkdownPlugin["renderer"],
 
   streamingHandler: new LezerDisplayMathStreamingHandler(),
 

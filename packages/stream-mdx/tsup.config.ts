@@ -20,7 +20,6 @@ export default defineConfig({
     "src/plugins/footnotes.ts",
     "src/plugins/html.ts",
     "src/plugins/math.ts",
-    "src/plugins/math/renderer.ts",
     "src/plugins/mdx.ts",
     "src/plugins/registry.ts",
     "src/plugins/tables.ts",

@@ -72,7 +72,7 @@ export function Demo({ text }: { text: string }) {
 import { MermaidBlock } from "@stream-mdx/mermaid";
 import { StreamingMarkdown } from "stream-mdx";
 
-<StreamingMarkdown text={content} worker="/workers/markdown-worker.js" components={{ mermaid: MermaidBlock }} />;
+<StreamingMarkdown text={content} worker="/workers/markdown-worker.js" codeRenderers={{ mermaid: MermaidBlock }} />;
 ```
 
 > [!NOTE]

@@ -222,7 +222,7 @@ import { MermaidBlock } from "@stream-mdx/mermaid";
 import { StreamingMarkdown } from "stream-mdx";
 
 export function DiagramDoc({ text }: { text: string }) {
-  return <StreamingMarkdown text={text} worker="/workers/markdown-worker.js" components={{ mermaid: MermaidBlock }} />;
+  return <StreamingMarkdown text={text} worker="/workers/markdown-worker.js" codeRenderers={{ mermaid: MermaidBlock }} />;
 }
 ```
 
