@@ -5,8 +5,8 @@ import rehypeSlug from "rehype-slug";
 import { visit } from "unist-util-visit";
 import type { Block } from "@stream-mdx/core";
 import type { Node } from "unist";
-import { ComponentRegistry, MarkdownBlocksRenderer } from "@stream-mdx/react";
-import { createUnifiedRenderer, extractLinkDefinitions } from "../src";
+import { MarkdownBlocksRenderer } from "@stream-mdx/react";
+import { createUnifiedRenderer } from "../src";
 
 function normalizeHtml(html: string): string {
   return html.replace(/\s+/g, " ").trim();

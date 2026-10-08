@@ -51,6 +51,33 @@ import { MermaidBlock } from "@stream-mdx/mermaid";
 />
 ```
 
+## Remark and Rehype plugins (@stream-mdx/unified)
+
+If you are migrating from `react-markdown` or `Streamdown` and want to reuse existing remark or rehype plugins, install `@stream-mdx/unified`:
+
+```bash
+npm install @stream-mdx/unified
+```
+
+To maintain zero-lag streaming, unified plugins run **only on finalized blocks**. Active streaming blocks are displayed by the Lezer-native StreamMDX engine.
+
+```tsx
+import { StreamingMarkdown } from "stream-mdx";
+import { createUnifiedRenderer } from "@stream-mdx/unified";
+import rehypeSlug from "rehype-slug";
+
+const unifiedRenderer = createUnifiedRenderer({
+  rehypePlugins: [rehypeSlug],
+});
+
+<StreamingMarkdown
+  text={content}
+  blockRenderer={unifiedRenderer}
+/>
+```
+
+You can also pass custom React components via `components` to customize elements rendered by the unified pipeline.
+
 ## Custom regex patterns
 
 Regex patterns typically live in a custom worker bundle. If you only need rendering changes (no parsing), use `components` and `inlineComponents`.
