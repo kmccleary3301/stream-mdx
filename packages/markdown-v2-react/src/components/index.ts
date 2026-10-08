@@ -3,6 +3,7 @@ export * from "./bottom-stick-scroll-area";
 export * from "./artifact-frame";
 export * from "./diff-renderer";
 export * from "./katex-math";
+export * from "./controls";
 export { defaultUrlTransform, type UrlTransform, type UrlTransformContext } from "@stream-mdx/core";
 import { InlineParser, createTrustedHTML, defaultUrlTransform, isForbiddenAttribute, isSafeStyleDeclaration, sanitizeHTML, stripCodeFence } from "@stream-mdx/core";
 import type { UrlTransform } from "@stream-mdx/core";
@@ -20,11 +21,24 @@ import type {
 import { removeHeadingMarkers } from "@stream-mdx/core";
 import React from "react";
 import { DEFAULT_INLINE_HTML_RENDERERS, renderHtmlInlineNode, renderHtmlOwnershipTree, renderInlineHtmlSegment } from "../utils/inline-html";
-import type { BlockComponents, BlockRendererOverride, CodeFenceRenderer, HtmlElements, InlineComponents, InlineHtmlRendererMap, MathRenderer, TableElements } from "../types";
+import type { BlockComponents, BlockRendererOverride, CodeFenceRenderer, ControlsComponentProps, ControlsConfig, HtmlElements, InlineComponents, InlineHtmlRendererMap, MathRenderer, TableElements } from "../types";
 import { ArtifactFrame } from "./artifact-frame";
 import { DefaultDiffRenderer } from "./diff-renderer";
 import { KaTeXBlockMath, KaTeXInlineMath } from "./katex-math";
 import { DEFAULT_TABLE_VIRTUALIZATION_CONFIG, resolveTableVirtualizationConfig, type TableVirtualizationConfig, type TableVirtualizationOptions } from "../renderer/virtualized-table";
+import {
+  CodeControlsBar,
+  TableControlsBar,
+  copyToClipboard,
+  downloadFile,
+  getCodeSnippetFilename,
+  inlineToPlainText,
+  resolveCodeControls,
+  resolveTableControls,
+  tableToCsv,
+  tableToMarkdown,
+  tableToTsv,
+} from "./controls";
 export { DefaultLinkSafetyModal, type LinkSafetyModalProps } from "./link-safety-modal";
 
 class MdxRuntimeBoundary extends React.Component<
@@ -722,12 +736,22 @@ export class ComponentRegistry {
   private tableVirtualizationListeners = new Set<() => void>();
   private inlineComponentMapCache: InlineComponents | null = null;
   private urlTransform?: UrlTransform;
+  private controls: ControlsConfig = false;
+  private controlsComponent?: React.ComponentType<ControlsComponentProps>;
 
   constructor(
     blockComponents: Partial<BlockComponents> = {},
     inlineComponents: Partial<InlineComponents> = {},
     codeRenderers: Record<string, CodeFenceRenderer> = {},
-    options?: { artifactHtml?: boolean; mathRenderer?: MathRenderer; blockRenderer?: BlockRendererOverride; tableVirtualization?: TableVirtualizationOptions; urlTransform?: UrlTransform },
+    options?: {
+      artifactHtml?: boolean;
+      mathRenderer?: MathRenderer;
+      blockRenderer?: BlockRendererOverride;
+      tableVirtualization?: TableVirtualizationOptions;
+      urlTransform?: UrlTransform;
+      controls?: ControlsConfig;
+      controlsComponent?: React.ComponentType<ControlsComponentProps>;
+    },
   ) {
     this.blockComponents = { ...defaultBlockComponents, ...blockComponents } as BlockComponents;
     this.inlineComponents = { ...defaultInlineComponents, ...inlineComponents } as InlineComponents;
@@ -751,6 +775,12 @@ export class ComponentRegistry {
     }
     if (options?.tableVirtualization !== undefined) {
       this.setTableVirtualization(options.tableVirtualization);
+    }
+    if (options?.controls !== undefined) {
+      this.setControls(options.controls);
+    }
+    if (options?.controlsComponent !== undefined) {
+      this.setControlsComponent(options.controlsComponent);
     }
   }
 
@@ -896,6 +926,29 @@ export class ComponentRegistry {
     this.tableElements = { ...this.tableElements, ...map } as TableElements;
     this.setTableVirtualization(this.tableVirtualization);
   }
+  setControls(controls?: ControlsConfig): void {
+    this.controls = controls ?? false;
+  }
+
+  getControls(): ControlsConfig {
+    return this.controls;
+  }
+
+  setControlsComponent(component?: React.ComponentType<ControlsComponentProps>): void {
+    this.controlsComponent = component;
+  }
+
+  getControlsComponent(): React.ComponentType<ControlsComponentProps> | undefined {
+    if (this.controlsComponent) {
+      return this.controlsComponent;
+    }
+    const blockControls = this.blockComponents.controls;
+    if (blockControls && typeof blockControls === "function") {
+      return blockControls as unknown as React.ComponentType<ControlsComponentProps>;
+    }
+    return undefined;
+  }
+
 
   /**
    * Get block component
@@ -1001,6 +1054,7 @@ export class ComponentRegistry {
       const codeText = metaCode !== null ? metaCode.replace(/\r\n?/g, "\n") : (fenced.hadFence ? fenced.code : normalizedRaw);
       const infoText = typeof meta.info === "string" ? (meta.info as string) : lang;
 
+      const codeControls = resolveCodeControls(this.getControls());
       if (codeRenderer) {
         const RendererComponent = typeof codeRenderer === "function" ? codeRenderer : codeRenderer.component;
         return React.createElement(RendererComponent, {
@@ -1013,6 +1067,12 @@ export class ComponentRegistry {
           blockId: block.id,
           renderCode: element,
           openLink: this.linkHandler,
+          controls: {
+            copy: codeControls.copy,
+            download: codeControls.download,
+          },
+          copy: () => copyToClipboard(codeText),
+          download: () => downloadFile(codeText, getCodeSnippetFilename(lang)),
         });
       }
 
@@ -1026,10 +1086,81 @@ export class ComponentRegistry {
           isFinalized: block.isFinalized,
           blockId: block.id,
           renderCode: element,
+          controls: {
+            copy: codeControls.copy,
+            download: codeControls.download,
+          },
+          copy: () => copyToClipboard(codeText),
+          download: () => downloadFile(codeText, getCodeSnippetFilename(lang)),
         });
+      }
+
+      if (codeControls.enabled) {
+        const ControlsComponent = this.getControlsComponent();
+        const controlsElement = ControlsComponent ? (
+          React.createElement(ControlsComponent, {
+            type: "code",
+            blockId: block.id,
+            code: codeText,
+            language: lang,
+            isFinalized: block.isFinalized,
+            onCopy: () => copyToClipboard(codeText),
+            onDownload: () => downloadFile(codeText, getCodeSnippetFilename(lang)),
+            labels: codeControls.labels,
+          })
+        ) : (
+          React.createElement(CodeControlsBar, {
+            code: codeText,
+            language: lang,
+            config: codeControls,
+          })
+        );
+        return React.createElement("div", { className: "stream-mdx-code-wrapper relative", key: block.id }, controlsElement, element);
       }
     }
 
+    if (block.type === "table") {
+      const tableControls = resolveTableControls(this.getControls());
+      if (tableControls.enabled) {
+        const meta = (block.payload.meta ?? {}) as Record<string, unknown>;
+        const header = Array.isArray(meta.header) ? (meta.header as InlineNode[][]).map((cell) => inlineToPlainText(cell)) : [];
+        const rows = Array.isArray(meta.rows) ? (meta.rows as InlineNode[][][]).map((r) => r.map((cell) => inlineToPlainText(cell))) : [];
+        const align = Array.isArray(meta.align) ? (meta.align as Array<"left" | "center" | "right" | null>) : undefined;
+        const isFinalized = Boolean(block.isFinalized);
+        const ControlsComponent = this.getControlsComponent();
+        const controlsElement = ControlsComponent ? (
+          React.createElement(ControlsComponent, {
+            type: "table",
+            blockId: block.id,
+            headers: header,
+            rows,
+            align,
+            isFinalized,
+            onCopy: (format) => {
+              if (!isFinalized) return;
+              const text = format === "markdown" ? tableToMarkdown(header, rows, align) : tableToTsv(header, rows);
+              return copyToClipboard(text);
+            },
+            onDownload: (format) => {
+              if (!isFinalized) return;
+              if (format === "tsv") downloadFile(tableToTsv(header, rows), "table.tsv", "text/tab-separated-values;charset=utf-8");
+              else if (format === "markdown") downloadFile(tableToMarkdown(header, rows, align), "table.md", "text/markdown;charset=utf-8");
+              else downloadFile(tableToCsv(header, rows), "table.csv", "text/csv;charset=utf-8");
+            },
+            labels: tableControls.labels,
+          })
+        ) : (
+          React.createElement(TableControlsBar, {
+            headers: header,
+            rows,
+            align,
+            isFinalized,
+            config: tableControls,
+          })
+        );
+        return React.createElement("div", { className: "stream-mdx-table-wrapper relative", key: block.id }, controlsElement, element);
+      }
+    }
     return element;
   }
 

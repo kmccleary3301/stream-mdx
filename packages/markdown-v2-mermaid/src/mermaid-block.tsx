@@ -44,8 +44,14 @@ export type MermaidBlockProps = {
   blockId?: string;
   defaultView?: "diagram" | "code";
   debounceMs?: number;
+  controls?: {
+    copy?: boolean;
+    download?: boolean;
+    fullscreen?: boolean;
+  };
+  copy?: () => Promise<boolean>;
+  download?: () => void;
 };
-
 export interface MermaidBlockComponent extends FC<MermaidBlockProps> {
   defer?: boolean;
 }
@@ -101,12 +107,15 @@ export function createMermaidBlock(options: CreateMermaidBlockOptions = {}): Mer
     return await loadDefaultMermaid();
   };
 
-  const MermaidBlockInstance: MermaidBlockComponent = ({
-    code,
-    renderCode,
-    defaultView = options.defaultView ?? "diagram",
-    debounceMs = options.debounceMs ?? 200,
-  }) => {
+  const MermaidBlockInstance: MermaidBlockComponent = (props) => {
+    const {
+      code,
+      renderCode,
+      defaultView = options.defaultView ?? "diagram",
+      debounceMs = options.debounceMs ?? 200,
+      controls,
+      copy,
+    } = props;
     const [view, setView] = React.useState<"diagram" | "code">(defaultView);
     const [svg, setSvg] = React.useState<string>("");
     const [error, setError] = React.useState<string | null>(null);
@@ -120,6 +129,17 @@ export function createMermaidBlock(options: CreateMermaidBlockOptions = {}): Mer
     React.useEffect(() => {
       setView(defaultView);
     }, [defaultView]);
+
+    const [copied, setCopied] = React.useState(false);
+    const handleCopy = React.useCallback(async () => {
+      if (copy) {
+        const success = await copy();
+        if (success) {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        }
+      }
+    }, [copy]);
 
     const retry = React.useCallback(() => {
       setView("diagram");
@@ -226,7 +246,7 @@ export function createMermaidBlock(options: CreateMermaidBlockOptions = {}): Mer
     const toolbar = (
       <div style={toolbarStyle} className="stream-mdx-mermaid-toolbar">
         <span style={{ fontSize: 12, opacity: 0.8 }}>mermaid</span>
-        <div style={{ display: "flex", gap: 6 }}>
+        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
           <button
             type="button"
             onClick={() => setView("diagram")}
@@ -255,6 +275,27 @@ export function createMermaidBlock(options: CreateMermaidBlockOptions = {}): Mer
           >
             Code
           </button>
+          {copy && controls?.copy ? (
+            <button
+              type="button"
+              className="stream-mdx-control stream-mdx-control-copy stream-mdx-control-mermaid-copy"
+              data-stream-mdx-control="copy"
+              data-stream-mdx-target="mermaid"
+              data-stream-mdx-action="copy"
+              aria-label={copied ? "Copied!" : "Copy diagram code"}
+              onClick={handleCopy}
+              style={{
+                border: "1px solid rgba(0,0,0,0.18)",
+                borderRadius: 8,
+                padding: "3px 8px",
+                fontSize: 12,
+                background: "transparent",
+                cursor: "pointer",
+              }}
+            >
+              {copied ? "Copied!" : "Copy"}
+            </button>
+          ) : null}
         </div>
       </div>
     );

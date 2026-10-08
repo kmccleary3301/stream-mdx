@@ -350,7 +350,40 @@ Math uses KaTeX by default. `mathRenderer` accepts either a component with `{ te
 `HtmlOptions` is `{ allowedTags?: Record<string, string[]>; literalTagContent?: string[] }`. `allowedTags` adds permitted tags and replaces their tag-specific attribute lists while retaining global schema attributes. URL protocol checks still apply to `href`/`src`/`action`/`formaction`/`xlink:href`; `script`/`style` tags remain excluded. `on*` event handler attributes and `srcdoc` are strictly forbidden and always stripped regardless of `allowedTags`. Raw HTML `style` attributes are sanitized using DOM-free safe property allowlists. Custom allowlists are trusted application policy. `htmlElements` maps permitted tag names to React components and supplies sanitized attributes and typed children.
 Raw HTML block content is literal by default. Supplying `literalTagContent`, even `[]`, opts into engine-owned inline markdown parsing inside eligible HTML children. `code`, `pre`, and `textarea`, plus listed tags, stay literal. Inline syntax plugins and the engine's math flag apply to opt-in children; mapped components do not reparse strings. HTML must also be enabled via `features.html`.
 
-## 3.3) Remark & Rehype Adapter (`@stream-mdx/unified`)
+## 3.3) Block Controls (Copy & Download)
+
+StreamMDX provides opt-in, interactive block controls for code blocks, tables, and Mermaid diagrams via the `controls` prop on `<StreamingMarkdown />` and `<MarkdownBlocksRenderer />`. Controls are **disabled by default (`false`)**, guaranteeing byte-identical rendering for existing apps and baselines.
+
+```tsx
+import { StreamingMarkdown } from "@stream-mdx/react";
+
+// Enable default controls across code, tables, and mermaid
+<StreamingMarkdown text={markdown} controls />
+
+// Fine-grained configuration:
+<StreamingMarkdown
+  text={markdown}
+  controls={{
+    code: { copy: true, download: true },
+    table: { copy: true, download: ["csv", "tsv", "markdown"] },
+    mermaid: { copy: true },
+    labels: {
+      copy: "Copy code",
+      downloadCsv: "Download CSV",
+    },
+  }}
+/>
+```
+
+### Features
+
+- **Code blocks**: Copy button writes the raw authored code text directly to clipboard via `navigator.clipboard.writeText` (never highlighted HTML). Download saves `snippet.<ext>` matching the authored fence language (e.g. `.ts`, `.py`, `.rs`, `.sql`). Fully compatible with virtualized code.
+- **Tables**: Copy as TSV (ready to paste into spreadsheets) or Markdown. Download as CSV, TSV, or Markdown with strict RFC 4180 escaping (quotes, commas, newlines). Table controls are enabled only once the table block is finalized; streaming tables show disabled controls.
+- **Mermaid / Code Fences**: Exposed through `CodeFenceRendererProps` (`controls` flags and `copy()` helper). `MermaidBlock` opts in to source diagram code copying in its toolbar and code view.
+- **Accessibility & SSR**: Buttons are real `<button type="button">` with `aria-label`, `data-stream-mdx-control`, and semantic classes. Rendering is 100% SSR-safe (no `window` access during render).
+- **Replacement slot**: Fully replaceable via `controlsComponent` prop on `<StreamingMarkdown />` or `ComponentRegistry.setControlsComponent()`.
+
+## 3.4) Remark & Rehype Adapter (`@stream-mdx/unified`)
 
 `@stream-mdx/unified` provides an adapter for existing `remarkPlugins` and `rehypePlugins`.
 

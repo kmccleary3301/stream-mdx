@@ -110,6 +110,30 @@ const tableElements = {
 ```
 
 This swaps table tags without changing how the renderer schedules updates.
+## Block controls (copy and download)
+
+Enable copy and download buttons for code blocks, tables, and Mermaid diagrams using the opt-in `controls` prop:
+
+```tsx
+<StreamingMarkdown
+  text={content}
+  controls={{
+    code: { copy: true, download: true },
+    table: { copy: true, download: ["csv", "tsv", "markdown"] },
+    mermaid: { copy: true },
+    labels: {
+      copy: "Copy code",
+      downloadCsv: "Download CSV",
+    },
+  }}
+/>
+```
+
+Controls are disabled (`false`) by default so existing rendered output and snapshots remain unchanged. When enabled:
+- Code blocks provide a copy button that extracts the raw authored code text (not highlighted HTML) and a download button that saves `snippet.<ext>` matching the authored language.
+- Tables provide copy as TSV or Markdown, and download as CSV, TSV, or Markdown (enabled once the table block is finalized).
+- All buttons are real `<button type="button">` elements with accessible labels and `data-stream-mdx-control` attributes for styling.
+
 
 ## HTML overrides
 
