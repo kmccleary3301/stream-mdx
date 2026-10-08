@@ -32,12 +32,18 @@ const pkgRequire = createRequire(join(__dirname, "package.json"));
 export const universalFromHtmlIsomorphic = pkgRequire.resolve("hast-util-from-html-isomorphic");
 
 /**
- * Direct imports of the worker MDX compile pipeline whose dependency trees
- * reach a DOM-conditioned module. Bundling them keeps that resolution out of
- * the consumer's graph. `remark-math` and `rehype-slug` stay external: their
- * trees do not touch a DOM-conditioned module.
+ * The complete MDX compile pipeline imported by `src/mdx-compile.ts`. Bundling
+ * all of it keeps DOM-conditioned resolution out of the consumer's graph and
+ * avoids require() interop wrappers for these ESM-only packages in the CJS
+ * build (a wrapped namespace reaches unified as an empty preset).
  */
-export const workerMdxBundlePackages: RegExp[] = [/^@mdx-js\/mdx$/, /^remark-gfm$/, /^rehype-katex$/];
+export const workerMdxBundlePackages: RegExp[] = [
+  /^@mdx-js\/mdx$/,
+  /^remark-gfm$/,
+  /^remark-math$/,
+  /^rehype-slug$/,
+  /^rehype-katex$/,
+];
 
 export const workerRealmAliases: Record<string, string> = {
   "decode-named-character-reference": universalNamedCharacterReference,
