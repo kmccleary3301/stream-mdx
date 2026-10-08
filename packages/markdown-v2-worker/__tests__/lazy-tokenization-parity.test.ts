@@ -131,7 +131,7 @@ async function runNestedLazyConsumers(): Promise<void> {
     const document = createInitialSnapshot(blocks as Block[]);
     const node = [...document.nodes.values()].find((node) => node.type === "code");
     assert.ok(node, "prepared code must be addressable below the root container");
-    const block = node.props?.block as Block;
+    const block = node.block;
     assert.ok(block);
     return block;
   };
