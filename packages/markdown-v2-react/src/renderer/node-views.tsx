@@ -4,7 +4,7 @@ import { DefaultDiffRenderer } from "../components/diff-renderer";
 import type { CodeFenceRendererProps } from "../types";
 import { renderInlineNodes, renderParagraphMixedSegments } from "../components";
 import type { ComponentRegistry } from "../components";
-import { DEFAULT_INLINE_HTML_RENDERERS, renderHtmlOwnershipTree, renderInlineHtmlSegment } from "../utils/inline-html";
+import { DEFAULT_INLINE_HTML_RENDERERS, renderInlineHtmlSegment } from "../utils/inline-html";
 import { useRendererChildren, useRendererNode } from "./hooks";
 import { useCodeHighlightRequester } from "./code-highlight-context";
 import { DeferredRenderContext } from "./deferred-render-context";
