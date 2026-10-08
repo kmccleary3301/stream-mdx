@@ -1,4 +1,4 @@
-import type { Block } from "@stream-mdx/core";
+import type { Block, NodeSnapshot, PreparedNestedSnapshot } from "@stream-mdx/core";
 import {
   compareLazyPriority,
   mergeLazyRequests,
@@ -60,6 +60,16 @@ export function shouldLazyTokenizeBlock(
 export function pruneLazyTokenizationStates(states: Map<string, LazyTokenizationState>, nextBlocks: Block[]): void {
   if (states.size === 0) return;
   const ids = new Set(nextBlocks.map((block) => block.id));
+  const visit = (children: NodeSnapshot[]) => {
+    for (const child of children) {
+      if (child.type === "code") ids.add(child.id);
+      else visit(child.children ?? []);
+    }
+  };
+  for (const block of nextBlocks) {
+    const prepared = block.payload.meta?.preparedNested as PreparedNestedSnapshot | undefined;
+    if (prepared) visit(prepared.children);
+  }
   for (const key of states.keys()) {
     if (!ids.has(key)) {
       states.delete(key);

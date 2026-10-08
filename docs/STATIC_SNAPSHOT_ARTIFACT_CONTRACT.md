@@ -54,6 +54,19 @@ Nested code contains normalized `meta.code`, normal highlight metadata, and
 `code-line` children before patch emission. Renderers do not need to reparse code
 or repair a line-count mismatch to reconstruct a static snapshot.
 
+Nested lazy highlight requests use the code descendant ID on the existing
+`TOKENIZE_RANGE` transport. The owning engine resolves that prepared leaf and
+updates its owning root plus serialized ancestor snapshots. Incremental core and
+React consumers receive updated code-line colors, highlight metadata, and custom
+code-renderer props without a separate parser or renderer line-count repair.
+Appending content retains lazy state for prepared code descendants still present
+in the document.
+
+Footnote numbering runs over the actual prepared inline children in document
+order. It updates serialized child views and existing HTML ownership descriptors
+without changing unrelated code/HTML artifacts. Blockquote compatibility inline
+is derived from those numbered children, not reparsed from container source.
+
 ### Block packet verification, October 2026
 
 The saved pre-packet report counted 622/675 client-static and SSR passes,

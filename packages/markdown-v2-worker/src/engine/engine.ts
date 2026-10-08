@@ -14,6 +14,7 @@ import type {
   LinkReferenceDefinition,
   Patch,
   NodeSnapshot,
+  PreparedNestedSnapshot,
   PatchMetrics,
   PerformanceMetrics,
   ProtectedRange,
@@ -789,6 +790,7 @@ export class MarkdownEngine {
       this.headingIdCounts = new Map<string, number>();
       const extracted: Block[] = [];
       const cursor = tree.cursor();
+      const footnotesEnabled = this.documentPluginRegistry.getAll().some((plugin) => plugin.name === "footnotes");
       let hasRecognizedNodes = false;
       const reusableBlockMap =
         options.firstChangedPos !== undefined && options.previousBlocks
@@ -803,10 +805,6 @@ export class MarkdownEngine {
       if (cursor.firstChild()) {
         do {
           const nodeType = cursor.type.name;
-          if (nodeType === "LinkReference") {
-            hasRecognizedNodes = true;
-            continue;
-          }
           let from = cursor.from;
           const to = cursor.to;
           if (nodeType === "CodeBlock") {
@@ -814,9 +812,14 @@ export class MarkdownEngine {
             from = lineStart;
           }
           const raw = content.slice(from, to);
-          if (isBlockLevelNode(nodeType)) {
+          const footnoteDefinition = nodeType === "LinkReference" && footnotesEnabled && /^\[\^[A-Za-z0-9_-]+\]:/.test(raw);
+          if (nodeType === "LinkReference" && !footnoteDefinition) {
             hasRecognizedNodes = true;
-            const blockType = mapLezerNodeToBlockType(nodeType);
+            continue;
+          }
+          if (isBlockLevelNode(nodeType) || footnoteDefinition) {
+            hasRecognizedNodes = true;
+            const blockType = footnoteDefinition ? "paragraph" : mapLezerNodeToBlockType(nodeType);
             let block: Block | null = null;
             if (reusableBlockMap && to <= options.firstChangedPos!) {
               const prev = reusableBlockMap.get(`${from}:${to}:${raw}`);
@@ -1292,6 +1295,19 @@ export class MarkdownEngine {
     metrics?.recordBlockEnrich(block.type, enrichDuration);
   }
 
+  private canonicalizePreparedSnapshot(value: unknown): void {
+    if (!value || typeof value !== "object") return;
+    if (Array.isArray(value)) {
+      for (const child of value) this.canonicalizePreparedSnapshot(child);
+    } else {
+      const record = value as Record<string, unknown>;
+      for (const key of Object.keys(record)) {
+        if (record[key] === undefined) delete record[key];
+        else this.canonicalizePreparedSnapshot(record[key]);
+      }
+    }
+  }
+
   private async prepareNestedChildren(block: Block): Promise<void> {
     block.payload.meta = { ...block.payload.meta, mathEnabled: this.enableMath, formatAnticipation: this.formatAnticipationConfig };
     const prepared = prepareNestedBlockSnapshot(block, this.inlineParser, this.mdParser, (text) => this.parseInlineStreaming(text).inline);
@@ -1336,19 +1352,7 @@ export class MarkdownEngine {
     };
     for (const child of prepared.children) await enrich(child);
     prepared.children = groupChildren(prepared.children);
-    const canonicalize = (value: unknown): void => {
-      if (!value || typeof value !== "object") return;
-      if (Array.isArray(value)) {
-        for (const child of value) canonicalize(child);
-      } else {
-        const record = value as Record<string, unknown>;
-        for (const key of Object.keys(record)) {
-          if (record[key] === undefined) delete record[key];
-          else canonicalize(record[key]);
-        }
-      }
-    };
-    canonicalize(prepared);
+    this.canonicalizePreparedSnapshot(prepared);
     block.payload.meta = {
       ...block.payload.meta,
       ...prepared.props,
@@ -2213,18 +2217,78 @@ export class MarkdownEngine {
     }
   }
 
+  private findPreparedCode(blockId: string): { rootIndex: number; block: Block } | undefined {
+    const find = (children: NodeSnapshot[]): Block | undefined => {
+      for (const snapshot of children) {
+        const block = snapshot.props?.block as Block | undefined;
+        if (block?.id === blockId && block.type === "code") return block;
+        if (snapshot.type === "code") continue;
+        const nested = find(snapshot.children ?? []);
+        if (nested) return nested;
+      }
+      return undefined;
+    };
+    for (let rootIndex = 0; rootIndex < this.blocks.length; rootIndex++) {
+      const root = this.blocks[rootIndex];
+      if (root.id === blockId && root.type === "code") return { rootIndex, block: root };
+      const prepared = root.payload.meta?.preparedNested as PreparedNestedSnapshot | undefined;
+      const block = prepared ? find(prepared.children) : undefined;
+      if (block) return { rootIndex, block };
+    }
+    return undefined;
+  }
+
+  private replacePreparedCode(root: Block, updated: Block): Block {
+    if (root.id === updated.id) return updated;
+    const replace = (snapshot: NodeSnapshot): NodeSnapshot => {
+      if (snapshot.id === updated.id) {
+        const next = createBlockSnapshot(updated);
+        next.props = { ...snapshot.props, ...next.props };
+        this.canonicalizePreparedSnapshot(next);
+        return next;
+      }
+      if (snapshot.type === "code") return snapshot;
+      const previousChildren = snapshot.children ?? [];
+      let children: NodeSnapshot[] | undefined;
+      for (let index = 0; index < previousChildren.length; index++) {
+        const child = replace(previousChildren[index]);
+        if (child === previousChildren[index]) continue;
+        if (!children) children = previousChildren.slice();
+        children[index] = child;
+      }
+      if (!children) return snapshot;
+      const block = snapshot.props?.block as Block | undefined;
+      const prepared = block?.payload.meta?.preparedNested as PreparedNestedSnapshot | undefined;
+      if (!block || !prepared) return { ...snapshot, children };
+      const nextPrepared = { ...prepared, children };
+      const nextBlock = { ...block, payload: { ...block.payload, meta: { ...block.payload.meta, preparedNested: nextPrepared } } };
+      return {
+        ...snapshot,
+        props: { ...snapshot.props, block: nextBlock },
+        ...(snapshot.meta?.preparedNested ? { meta: { ...snapshot.meta, preparedNested: nextPrepared } } : {}),
+        children,
+      };
+    };
+    const prepared = root.payload.meta?.preparedNested as PreparedNestedSnapshot;
+    const children = prepared.children.map(replace);
+    return { ...root, payload: { ...root.payload, meta: { ...root.payload.meta, preparedNested: { ...prepared, children } } } };
+  }
+
   private async handleLazyTokenizationRequest(request: LazyTokenizationRequest): Promise<void> {
     if (!this.lazyTokenizationEnabled || !this.highlighter) return;
-    const index = this.blocks.findIndex((block) => block.id === request.blockId);
-    if (index === -1) return;
-    const block = this.blocks[index];
+    const target = this.findPreparedCode(request.blockId);
+    if (!target) return;
+    const { rootIndex, block } = target;
+    const root = this.blocks[rootIndex];
     if (block.type !== "code" || !block.isFinalized) return;
 
     const raw = block.payload.raw ?? "";
-    const { code, info, hadFence } = stripCodeFence(raw);
+    const extracted = stripCodeFence(raw);
+    const info = typeof block.payload.meta?.info === "string" ? block.payload.meta.info : extracted.info;
     const { lang, meta } = parseCodeFenceInfo(info);
-    const codeBody = hadFence ? dedentFencedCodeByClosingIndent(raw, code) : dedentIndentedCode(raw);
-    const codeLines = extractCodeLines(raw);
+    const codeBody = typeof block.payload.meta?.code === "string" ? block.payload.meta.code
+      : extracted.hadFence ? dedentFencedCodeByClosingIndent(raw, extracted.code) : dedentIndentedCode(raw);
+    const codeLines = codeBody.replace(/\r\n?/g, "\n").split("\n");
     let diffInfo = detectDiffLanguage(lang, meta);
     if (!diffInfo.isDiff && this.emitDiffBlocks && looksLikeUnifiedDiff(codeLines)) {
       diffInfo = {
@@ -2272,7 +2336,7 @@ export class MarkdownEngine {
     this.activeMetricsCollector = metricsCollector;
     metricsCollector.setBlocksProduced(this.blocks.length);
     
-    const prevSnapshot = createBlockSnapshot(block);
+    const prevSnapshot = createBlockSnapshot(root);
 
     const tokenizationStart = now();
     const segmentLines = codeLines.slice(state.processedLines, targetEnd);
@@ -2333,7 +2397,7 @@ export class MarkdownEngine {
     metricsCollector.recordLazyTokenization(targetEnd - startLine, tokenizationDuration, this.lazyTokenizationQueue.size);
 
     const updated = cloneBlock(block);
-    updated.payload.highlightedHtml = undefined;
+    delete updated.payload.highlightedHtml;
     const effectiveLang = wantsHtml ? resolvedLanguage : resolvedTokenLanguage;
     const nextMeta = { ...(updated.payload.meta ?? {}), ...meta, lang: requestedLanguage, highlightLang: effectiveLang } as Record<string, unknown>;
     nextMeta.lazyTokenization = true;
@@ -2368,12 +2432,12 @@ export class MarkdownEngine {
       delete nextMeta.diffBlocks;
     }
     updated.payload.meta = nextMeta;
-    this.blocks[index] = updated;
-
-    const nextSnapshot = createBlockSnapshot(updated);
+    const updatedRoot = this.replacePreparedCode(root, updated);
+    this.blocks[rootIndex] = updatedRoot;
+    const nextSnapshot = createBlockSnapshot(updatedRoot);
 
     const patches: Patch[] = [];
-    diffNodeSnapshot(updated.id, prevSnapshot, nextSnapshot, patches, metricsCollector);
+    diffNodeSnapshot(updatedRoot.id, prevSnapshot, nextSnapshot, patches, metricsCollector);
     if (patches.length > 0) {
       this.dispatchPatchBatch(withPatchKindBatch(patches, "enrichment"), metricsCollector);
     } else {

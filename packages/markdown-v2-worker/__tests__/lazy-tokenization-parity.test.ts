@@ -1,6 +1,8 @@
 import assert from "node:assert";
-import type { Patch, WorkerOut } from "@stream-mdx/core";
-import { extractHighlightedLines, sanitizeCodeHTML } from "@stream-mdx/core";
+import { applyPatchBatch, createInitialSnapshot, extractHighlightedLines, sanitizeCodeHTML, type Block, type CodeHighlightOutputMode, type Patch, type WorkerOut } from "@stream-mdx/core";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { ComponentRegistry, MarkdownBlocksRenderer, type CodeFenceRendererProps } from "@stream-mdx/react/server";
 import { createRendererStore } from "../../markdown-v2-react/src/renderer/store";
 import { createWorkerHarness } from "./worker-test-harness";
 import { JSDOM } from "jsdom";
@@ -33,7 +35,7 @@ function sanitizeLineInnerHtml(innerHtml: string | null, fallbackText: string): 
   return fallbackText;
 }
 
-async function renderWithWorker(snippet: string, lazyEnabled: boolean) {
+async function renderWithWorker(snippet: string, lazyEnabled: boolean, outputMode: CodeHighlightOutputMode = "html") {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
   const initMessages = await harness.send({
@@ -46,24 +48,36 @@ async function renderWithWorker(snippet: string, lazyEnabled: boolean) {
       math: false,
       tables: false,
       callouts: false,
+      outputMode,
+      emitHighlightTokens: true,
+      footnotes: false,
       lazyTokenization: { enabled: lazyEnabled, thresholdLines: 10 },
     },
   });
   const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
   assert.ok(init, "worker did not initialize");
   store.reset(init.blocks);
+  const document = createInitialSnapshot(init.blocks);
+  const consume = (messages: WorkerOut[]) => {
+    for (const message of messages) {
+      if (message.type === "PATCH") {
+        applyPatchBatch(document, message.patches);
+        store.applyPatches(message.patches, { captureMetrics: false });
+      } else if (message.type === "ERROR") {
+        throw new Error(message.error.message);
+      }
+    }
+    assert.deepStrictEqual(document.blocks, store.getBlocks(), "core and React must retain the same lazy nested artifact");
+    assert.deepStrictEqual(store.getInvariantViolations(), []);
+  };
 
   const appendMessages = await harness.send({ type: "APPEND", text: snippet });
-  appendMessages
-    .filter((msg): msg is Extract<WorkerOut, { type: "PATCH" }> => msg.type === "PATCH")
-    .forEach((msg) => store.applyPatches(msg.patches as Patch[], { captureMetrics: false }));
+  consume(appendMessages);
 
   const finalizeMessages = await harness.send({ type: "FINALIZE" });
-  finalizeMessages
-    .filter((msg): msg is Extract<WorkerOut, { type: "PATCH" }> => msg.type === "PATCH")
-    .forEach((msg) => store.applyPatches(msg.patches as Patch[], { captureMetrics: false }));
+  consume(finalizeMessages);
 
-  return { store, harness };
+  return { store, harness, document, consume };
 }
 
 async function main() {
@@ -110,4 +124,86 @@ async function main() {
   console.log("lazy tokenization parity test passed");
 }
 
+async function runNestedLazyConsumers(): Promise<void> {
+  const lines = ["/* open", ...Array.from({ length: 217 }, (_, index) => `  carried_${index}`), "*/", "const tail = 219;"];
+  const snippet = ["- outer", "", "  > ```js", ...lines.map((line) => `  > ${line}`), "  > ```"].join("\n");
+  const getCode = (blocks: readonly Block[]): Block => {
+    const document = createInitialSnapshot(blocks as Block[]);
+    const node = [...document.nodes.values()].find((node) => node.type === "code");
+    assert.ok(node, "prepared code must be addressable below the root container");
+    const block = node.props?.block as Block;
+    assert.ok(block);
+    return block;
+  };
+  for (const outputMode of ["tokens", "both"] as const) {
+    const full = await renderWithWorker(snippet, false, outputMode);
+    const fullCode = getCode(full.store.getBlocks());
+    const lazy = await renderWithWorker(snippet, true, outputMode);
+    const code = getCode(lazy.store.getBlocks());
+    assert.ok(!lazy.store.getBlocks().some((root) => root.id === code.id), "the request must target a descendant ID, not an accidental top-level code block");
+    assert.strictEqual(code.isFinalized, true);
+    assert.strictEqual(code.payload.meta?.code, lines.join("\n"), "nested container indentation must not leak into highlight input");
+    assert.strictEqual(code.payload.meta?.lazyTokenization, true);
+    assert.strictEqual(code.payload.meta?.lazyTokenizedUntil, 0);
+    assert.strictEqual(lazy.store.getChildren(code.id).length, lines.length, "producer must emit every code-line before lazy highlighting");
+    let notifications = 0;
+    const unsubscribe = lazy.store.subscribe(() => notifications++);
+    const captured: CodeFenceRendererProps[] = [];
+    const registry = new ComponentRegistry({}, {}, { js: (props: CodeFenceRendererProps) => {
+      captured.push(props);
+      return React.createElement("section", { "data-owned-code": props.blockId }, props.renderCode);
+    } });
+    const render = () => renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: lazy.store.getBlocks(), store: lazy.store, componentRegistry: registry }));
+    render();
+    const before = captured.at(-1);
+    assert.ok(before);
+    assert.strictEqual(before.code, lines.join("\n"));
+    assert.strictEqual(before.isFinalized, true);
+    assert.strictEqual(before.meta?.lazyTokenizedUntil, 0);
+    const request = async (startLine: number, endLine: number) => {
+      const messages = await lazy.harness.send({ type: "TOKENIZE_RANGE", blockId: code.id, startLine, endLine, priority: "visible" });
+      assert.ok(messages.some((message) => message.type === "PATCH"), "a descendant highlight request must emit real transport patches");
+      lazy.consume(messages);
+    };
+    await request(0, 20);
+    assert.strictEqual(getCode(lazy.store.getBlocks()).payload.meta?.lazyTokenizedUntil, 20);
+    assert.strictEqual(lazy.store.getNode(`${code.id}::line:219`)?.props?.tokens, null, "tail remains uncolored until requested");
+    await request(200, lines.length);
+    const completed = getCode(lazy.store.getBlocks());
+    assert.strictEqual(completed.payload.meta?.lazyTokenizedUntil, lines.length);
+    assert.deepStrictEqual(completed.payload.meta?.tokenLines, fullCode.payload.meta?.tokenLines, "continued grammar state and final tail colors must match a full compile");
+    for (const index of [0, 19, 20, 217, 218, 219]) {
+      const actual = lazy.store.getNode(`${code.id}::line:${index}`);
+      const expected = full.store.getNode(`${fullCode.id}::line:${index}`);
+      assert.deepStrictEqual(actual?.props?.tokens, expected?.props?.tokens);
+      assert.strictEqual(actual?.props?.html, expected?.props?.html, "canonical line HTML must match full compile in each mode");
+    }
+    const html = render();
+    const after = captured.at(-1);
+    assert.ok(after);
+    assert.strictEqual(after.meta?.lazyTokenizedUntil, lines.length, "custom code callback must receive updated descendant metadata");
+    assert.deepStrictEqual(after.meta?.tokenLines, fullCode.payload.meta?.tokenLines);
+    assert.ok(captured.length >= 2);
+    assert.ok(notifications >= 2, "React store subscribers must observe descendant request updates");
+    const dom = new JSDOM(html);
+    assert.strictEqual(dom.window.document.querySelectorAll(".line").length, lines.length, "lazy code view must render its full producer-owned line rows");
+    assert.ok(dom.window.document.body.textContent?.includes("const tail = 219;"));
+    dom.window.close();
+    const published = JSON.stringify(lazy.store.getBlocks());
+    lazy.consume(await lazy.harness.send({ type: "APPEND", text: "\n\nFollowing\n" }));
+    assert.strictEqual(getCode(lazy.store.getBlocks()).payload.meta?.lazyTokenizedUntil, lines.length, "append must retain descendant lazy state");
+    lazy.consume(await lazy.harness.send({ type: "FINALIZE" }));
+    assert.deepStrictEqual(getCode(lazy.store.getBlocks()).payload.meta?.tokenLines, fullCode.payload.meta?.tokenLines);
+    const serialized = JSON.parse(JSON.stringify(lazy.store.getBlocks())) as Block[];
+    const reset = createRendererStore(serialized);
+    assert.strictEqual(reset.getChildren(code.id).length, lines.length);
+    assert.deepStrictEqual(getCode(reset.getBlocks()).payload.meta?.tokenLines, fullCode.payload.meta?.tokenLines, "serialized nested snapshots must retain fully highlighted child metadata");
+    assert.notStrictEqual(JSON.stringify(serialized), published, "the appended paragraph remains visible beside the highlighted owning root");
+    assert.deepStrictEqual(reset.getInvariantViolations(), []);
+    unsubscribe();
+  }
+}
+
 await main();
+await runNestedLazyConsumers();
+console.log("nested lazy tokenization consumer parity passed");
