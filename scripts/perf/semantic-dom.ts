@@ -135,12 +135,18 @@ export function collectSemanticDom(root: HTMLElement): SemanticDomRecords {
     const frame = wrapper.parentElement;
     // The public native frame owns one highlighted fence, not authored PRE
     // siblings or text. Its inner PRE/CODE structure is renderer-generated.
-    const ownsNativeFrame = wrapper.matches("div.markdown-code-block") &&
-      frame?.matches("pre[data-code-block='true'][data-block-id][data-code-total-lines]") === true &&
+    const nativeFrame = wrapper.matches("div.markdown-code-block") &&
+      frame?.matches("pre[data-code-block='true'][data-block-id][data-code-total-lines]") === true;
+    const ownsNativeFrame = nativeFrame &&
       body.parentElement?.tagName === "PRE" && body.parentElement.parentElement === wrapper &&
+      body.parentElement.childNodes.length === 1 && body.parentElement.firstChild === body &&
+      Array.from(body.querySelectorAll("*")).every((child) => child.tagName === "SPAN" &&
+        !Array.from(child.attributes).some((attribute) => /^(href|src|alt|title|open|datetime|cite|lang|dir|role|target|rel|download|type|checked|disabled|aria-)/.test(attribute.name))) &&
       wrapper.children.length === 1 && wrapper.firstElementChild === body.parentElement &&
+      Array.from(wrapper.childNodes).every((child) => child === body.parentElement || (child.nodeType === 3 && !child.textContent?.trim())) &&
       frame.children.length === 1 && frame.firstElementChild === wrapper &&
       Array.from(frame.childNodes).every((child) => child === wrapper || (child.nodeType === 3 && !child.textContent?.trim()));
+    if (nativeFrame && !ownsNativeFrame) continue;
     generatedOwners.set(body, ownsNativeFrame && frame ? frame : wrapper);
   }
   const preformatted = Array.from(root.querySelectorAll<Element>("pre")).filter((element) => {
@@ -150,8 +156,7 @@ export function collectSemanticDom(root: HTMLElement): SemanticDomRecords {
     if (!code) return true;
     // Renderer-owned fences replace their whole wrapper with the code source.
     // Authored PRE siblings, including whitespace, are visible source too.
-    return !element.closest(".markdown-code-block,[data-streamdown='code-block']") &&
-      (element.childNodes.length !== 1 || element.firstChild !== code ||
+    return (element.childNodes.length !== 1 || element.firstChild !== code ||
         Array.from(code.querySelectorAll("*")).some((child) => child.tagName !== "SPAN" ||
           Array.from(child.attributes).some((attribute) => /^(href|src|alt|title|open|datetime|cite|lang|dir|role|aria-)/.test(attribute.name))));
   });

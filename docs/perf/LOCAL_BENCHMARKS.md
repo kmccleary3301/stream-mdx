@@ -193,7 +193,7 @@ ARIA ID references normalize only when they uniquely resolve to the actual gener
 
 ### Parent paired-smoke collector corrections
 
-The parent's `canonical-footnote-smoke` raw DOM exposed a generated native outer PRE frame around the highlighted fence. The collector now recognizes that exact public ownership structure and atomizes it once. An outer PRE with authored sibling text does not qualify; authored whitespace/content guards remain. Only generated fence highlighting normalizes an omitted language to the public plain-text default. Distinct language labels and authored code annotations remain significant.
+The parent's `canonical-footnote-smoke` raw DOM exposed a generated native outer PRE frame around the highlighted fence. The collector now recognizes that exact public ownership structure and atomizes it once. The inner PRE must contain only its CODE, with styling-only token descendants; the containing DIV and outer frame cannot have semantic siblings or significant text. Inner PRE whitespace is significant. Invalid marked frames cannot fall back to whole-DIV atomization. Real DOM A/B, duplicate CODE, sibling link and semantic-code-descendant counterexamples cover each structural level. Authored whitespace/content guards remain. Only generated fence highlighting normalizes an omitted language to the public plain-text default. Distinct language labels and authored code annotations remain significant.
 
 Generated footnote identities now independently qualify for HTML diagnostic records, without suppressing meaningful ARIA, navigation target or rel attributes. UL/OL contribute explicit structural separators to flat text; ordered list events remain unchanged. Image-associated literal fence-like text is not weakened.
 
