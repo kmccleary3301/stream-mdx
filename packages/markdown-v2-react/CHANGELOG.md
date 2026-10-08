@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Keep native block views when a registered block component equals the built-in default: passing the full `components` map (for example `registry.getBlockComponentMap()`) no longer disables native list/table/HTML rendering, so nested list children and nested code fences stay rendered in docs/consumer harnesses.
 - Honor explicit HTML block markdown opt-in through engine-prepared inline children and scoped component mappings, including server rendering. Native CommonMark HTML blocks remain raw by default.
 - Add consumer coverage for HTML literal precedence, native inline extensions, and streamed partial closing markers.
 
