@@ -52,7 +52,7 @@ export interface SyntaxRuleSpec {
   }
   ```
 - **React Rendering**: Rendered via `<StreamingMarkdown inlineComponents={{ [rule.name]: Component }} />`. If unmapped, falls back to rendering the raw text.
-- **Anticipation**: During streaming, an unclosed `open` delimiter at the buffer tail triggers anticipation, rendering the node with partial content until finalized.
+- **Anticipation**: During streaming, an unclosed `open` delimiter at the buffer tail triggers anticipation, rendering the node with partial content until finalized. A partial closing delimiter contributes only its missing suffix, including when `open` and `close` are identical multi-character markers.
 
 ---
 
@@ -77,8 +77,9 @@ StreamMDX provides fine-grained control over HTML tags and attributes via the `h
 ```
 
 - **`allowedTags`**: Maps allowed custom or standard HTML tag names to an allowlist of permitted attribute names. Unlisted attributes are stripped during worker sanitization.
-- **`literalTagContent`**: Array of tag names whose text contents must **not** be parsed as markdown (treated as literal raw text). For tags not in this list, inner markdown formatting (e.g. `<span>**bold**</span>`) is parsed and rendered.
+- **`literalTagContent`**: Case-insensitive tag names whose contents stay literal, including all descendants. Inline HTML normally retains parsed markdown children. Native CommonMark HTML blocks stay raw unless this option is explicitly supplied. Supplying `[]` opts block text into markdown; supplying `["span"]` opts other block text into markdown but keeps `<span>**bold**</span>` literal. The native raw tags `code`, `pre`, and `textarea` always remain literal, even with `[]`. Changing `allowedTags` or `htmlElements` alone does not opt block text into markdown.
 - **`htmlElements`**: Map of custom React components for rendering allowed HTML tags.
+- Opted-in HTML text uses the owning engine's inline parser and the current consumer's inline component mapping. Declarative syntax, native inline extensions, and the math feature setting apply without creating a second parser or reparsing text during rendering. Prepared HTML children also render through custom mappings on the server.
 
 ---
 

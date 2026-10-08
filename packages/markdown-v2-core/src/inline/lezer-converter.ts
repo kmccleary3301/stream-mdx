@@ -136,6 +136,8 @@ const VOID_TAGS: Record<string, true> = {
   base: true,
   col: true,
   embed: true,
+  param: true,
+  wbr: true,
 };
 
 

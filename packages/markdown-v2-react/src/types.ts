@@ -92,7 +92,7 @@ export interface BlockComponents {
   }>;
   blockquote: React.FC<{ inlines: InlineNode[]; renderedContent?: React.ReactNode }>;
   list: React.FC<{ ordered: boolean; items: InlineNode[][] }>;
-  html: React.FC<{ __trustedHtml: TrustedHTML | string; elements?: Record<string, GenericComponent>; isSanitized?: boolean; literalTagContent?: string[] }>;
+  html: React.FC<{ __trustedHtml: TrustedHTML | string; elements?: Record<string, GenericComponent>; isSanitized?: boolean; literalTagContent?: string[]; children?: React.ReactNode }>;
   mdx: React.FC<{
     compiledRef?: { id: string };
     compiledModule?: CompiledMdxModule | null;

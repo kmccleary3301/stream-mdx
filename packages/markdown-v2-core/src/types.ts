@@ -13,6 +13,8 @@ export interface BlockMeta {
    * Omitted when no reference definitions were used.
    */
   linkReferences?: BlockResolvedLinkReference[];
+  /** Sanitized HTML ownership with inline text prepared by the owning engine parser. */
+  htmlTree?: HtmlTreeNode[];
   [key: string]: unknown;
 }
 

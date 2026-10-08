@@ -13,6 +13,13 @@ import type { ASTInlinePlugin, HtmlOptions, InlineNode, InlinePlugin, RegexInlin
 
 export type { InlineParserOptions, InlineParseOptions, InlineExtension, LinkReferenceDefinition, LinkReferenceMap } from "./inline/types";
 
+/** Native block classification for document plugins that lack engine node metadata. */
+export function isNativeHtmlBlock(content: string): boolean {
+  const node = baseParser.parse(content).topNode.firstChild;
+  return Boolean(node && ["HTMLBlock", "CommentBlock", "ProcessingInstructionBlock"].includes(node.name) &&
+    node.to === content.trimEnd().length);
+}
+
 function ensureGlobal(pattern: RegExp): RegExp {
   if (pattern.global) return pattern;
   const flags = pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`;
@@ -345,22 +352,17 @@ export class InlineParser {
           count++;
           idx = content.indexOf(open, idx + open.length);
         }
-        if (count % 2 !== 0) {
-          return close;
-        }
-      } else {
-        if (!afterOpen.includes(close)) {
-          let needed = close;
-          for (let len = close.length - 1; len > 0; len--) {
-            const prefix = close.slice(0, len);
-            if (content.endsWith(prefix)) {
-              needed = close.slice(len);
-              break;
-            }
-          }
-          return needed;
+        if (count % 2 === 0) continue;
+      } else if (afterOpen.includes(close)) {
+        continue;
+      }
+      // Complete only the missing suffix after an unmatched opener.
+      for (let len = close.length - 1; len > 0; len--) {
+        if (afterOpen.endsWith(close.slice(0, len))) {
+          return close.slice(len);
         }
       }
+      return close;
     }
     return null;
   }

@@ -218,6 +218,8 @@ function mapAttributesToProps(attrs: Record<string, string>): HtmlAttributeProps
       if (normalized !== undefined) {
         props.tabIndex = normalized;
       }
+    } else if (/^(?:data|aria)[A-Z]/.test(key)) {
+      props[key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)] = value;
     } else {
       props[key] = value;
     }
