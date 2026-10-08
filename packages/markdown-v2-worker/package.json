@@ -63,7 +63,7 @@
     "src/worker-dom-stub.ts"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && tsup --config tsup.worker-engine.config.ts",
     "build:hosted": "tsup --config tsup.hosted-worker.config.ts",
     "test": "tsx ../../scripts/run-tests.ts __tests__",
     "clean": "rm -rf dist",

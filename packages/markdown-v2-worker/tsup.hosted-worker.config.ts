@@ -1,6 +1,8 @@
 import { join } from "node:path";
 import { defineConfig } from "tsup";
 
+import { applyWorkerRealmAliases, assertWorkerRealmBoundary } from "./tsup.worker-realm";
+
 const sourcemap = process.env.SOURCEMAP === "1" || process.env.SOURCEMAP === "true";
 
 export default defineConfig({
@@ -20,8 +22,14 @@ export default defineConfig({
   // module specifiers like `import "character-entities"`).
   noExternal: [/.*/],
   external: [],
+  esbuildOptions(options) {
+    applyWorkerRealmAliases(options);
+  },
   outExtension() {
     return { js: ".js" };
+  },
+  async onSuccess() {
+    await assertWorkerRealmBoundary([join(__dirname, "dist/hosted/markdown-worker.js")]);
   },
 });
 
