@@ -837,13 +837,16 @@ function StreamingMarkdownComponent(
         renderer.resume();
       },
       restart() {
+        setStreamStatus("idle");
         setSession((prev) => prev + 1);
       },
       finalize() {
         renderer.finalize();
+        if (!stream) setStreamStatus("done");
       },
       append(text: string) {
         if (!text || !workerReadyRef.current) return;
+        setStreamStatus("streaming");
         renderer.append(text);
       },
       setCredits(value: number) {

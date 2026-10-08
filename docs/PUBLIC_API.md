@@ -304,12 +304,13 @@ Opt in to render a viewport-sized subset of a large finalized table. Server rend
 ### Rendering behavior
 
 - Disabled by default. `true` enables the defaults; an options object enables virtualization unless `enabled` is `false`.
-- Only mounted, finalized tables at or above `minRows` virtualize. The initial browser render matches SSR, then switches to a row window after mounting.
+- Only mounted, finalized tables at or above `minRows` virtualize, and only when the surrounding streaming session is inactive. A completed table followed by an unfinished paragraph stays fully rendered. Imperative `append()` opens a session; `finalize()` closes it. An async iterator owns its session until the iterator finishes.
 - The scroll container has a native sticky `<thead>` and an accessible name. Spacer rows are `aria-hidden`. Only mounted body rows appear in the accessibility tree; disable virtualization when every row must be available to assistive technology, browser find, or printing.
-- A `ResizeObserver` measures mounted rows, including multiline cells and later content resizes. Container width changes invalidate cached heights. Unmounted rows use their last measurement or `estimatedRowHeight`.
+- The initial full table uses native automatic column sizing. Measured column widths then populate an explicit `<colgroup>` while rows are windowed. Container width changes trigger another full-table natural-layout pass and invalidate cached row heights. A `ResizeObserver` measures mounted multiline rows and later content resizes.
 - Row keys and `data-row-id` values stay stable as the window changes. Spacer heights account for omitted rows. Scrolling to the bottom mounts the final row.
-- Custom `tableElements` render the table, sections, cells, and spacers. They must forward DOM props and preserve native table tags. Avoid another scrolling wrapper around the table; it becomes the sticky header's scroll ancestor.
+- Custom `tableElements` render the table, sections, cells, and spacers. They must forward DOM props and preserve native table tags. Existing overflow-wrapped Table adapters are supported. Only scroll/clipping wrappers between the native table and the owned viewport temporarily receive `overflow: visible !important`; the outer viewport owns both scroll axes. Original overflow shorthand/longhand declarations and priorities are restored in their original order on disable/unmount. Unrelated inline styles remain untouched; inline overflow changes made by the component while managed transfer cleanup ownership to the component.
 - Changing or removing `tableVirtualization` updates the existing view without restarting the parser. `maxHeight` limits the outer scroll container and `overscan` is clamped to 1–50 rows on each side.
+- Sticky headers have an opaque background taken from the nearest opaque ancestor, or the CSS system color `Canvas`. Theme class/style changes update that fallback. Set `--stream-mdx-table-header-background` to a valid opaque CSS color to override it, not an HSL channel-only token.
 
 Try `/showcase/table-virtualization` in the docs app. It contains up to 500 rows with two- and three-line descriptions, live configuration controls, and a "Scroll to Last Row" button. The page names the expected final record.
 
