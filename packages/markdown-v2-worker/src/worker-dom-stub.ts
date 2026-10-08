@@ -1,7 +1,7 @@
 import { decodeNamedCharacterReference } from "./entities/named-character-reference";
 
 type WorkerDocument = {
-  createElement: (tag: string) => { innerHTML: string; textContent: string };
+  createElement: (tag: string) => { _inner: string; innerHTML: string; textContent: string };
   compatMode?: "CSS1Compat" | "BackCompat";
 };
 
