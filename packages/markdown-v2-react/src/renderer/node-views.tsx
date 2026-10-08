@@ -1,7 +1,7 @@
-import { dedentIndentedCode, getDefaultCodeWrapperAttributes, normalizeBlockquoteText, stripCodeFence, type Block, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type TokenLineV1 } from "@stream-mdx/core";
+import { dedentIndentedCode, getDefaultCodeWrapperAttributes, normalizeBlockquoteText, stripCodeFence, type Block, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type TokenLineV1, type UrlTransform } from "@stream-mdx/core";
 import React from "react";
 import { DefaultDiffRenderer } from "../components/diff-renderer";
-import type { CodeFenceRendererProps, TableElements } from "../types";
+import type { CodeFenceRendererProps, InlineComponents, TableElements } from "../types";
 import { renderInlineNodes, renderParagraphMixedSegments } from "../components";
 import type { ComponentRegistry } from "../components";
 import { DEFAULT_INLINE_HTML_RENDERERS, renderInlineHtmlSegment } from "../utils/inline-html";
@@ -79,7 +79,7 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
       if (!allowMixedStreaming) {
         return <p className="markdown-paragraph streaming-partial">{raw}</p>;
       }
-      const structured = renderParagraphMixedSegments(segments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS, htmlElements, literalTagContent);
+      const structured = renderParagraphMixedSegments(segments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS, htmlElements, literalTagContent, registry.getUrlTransform());
       if (structured.length === 1) {
         const [single] = structured;
         return React.isValidElement(single) ? single : single;
@@ -98,7 +98,7 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
             inline: inlineNodes,
           },
         ];
-        const structured = renderParagraphMixedSegments(derivedSegments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS, htmlElements, literalTagContent);
+        const structured = renderParagraphMixedSegments(derivedSegments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS, htmlElements, literalTagContent, registry.getUrlTransform());
         if (structured.length === 1) {
           const [single] = structured;
           return React.isValidElement(single) ? single : single;
@@ -106,7 +106,7 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
         return structured;
       }
 
-      return <p className="markdown-paragraph streaming-partial">{renderInlineNodes(inlineNodes, inlineComponents)}</p>;
+      return <p className="markdown-paragraph streaming-partial">{renderInlineNodes(inlineNodes, inlineComponents, registry.getUrlTransform())}</p>;
     }
 
     return <p className="markdown-paragraph streaming-partial">{raw}</p>;
@@ -145,7 +145,7 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
         inline: inlineNodes,
       },
     ];
-    const structured = renderParagraphMixedSegments(derivedSegments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS, htmlElements, literalTagContent);
+    const structured = renderParagraphMixedSegments(derivedSegments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS, htmlElements, literalTagContent, registry.getUrlTransform());
     if (structured.length === 1) {
       const [single] = structured;
       return React.isValidElement(single) ? single : single;
@@ -158,11 +158,11 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
     inlines: block.payload.inline ?? [],
     raw: block.payload.raw,
     meta: block.payload.meta,
-    children: renderInlineNodes(block.payload.inline ?? [], inlineComponents),
+    children: renderInlineNodes(block.payload.inline ?? [], inlineComponents, registry.getUrlTransform()),
   });
 
   if (childIds.length > 0) {
-    const renderedChildren = childIds.map((childId) => <MixedSegmentView key={childId} store={store} nodeId={childId} inlineComponents={inlineComponents} />);
+    const renderedChildren = childIds.map((childId) => <MixedSegmentView key={childId} store={store} nodeId={childId} inlineComponents={inlineComponents} urlTransform={registry.getUrlTransform()} />);
     if (React.isValidElement(baseElement)) {
       const { children: _ignored, className = "markdown-paragraph", inlines: _inlines, raw: _raw, meta: _meta, ...rest } = baseElement.props ?? {};
       return React.createElement("p", { ...rest, className }, renderedChildren);
@@ -174,7 +174,7 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
     return baseElement;
   }
 
-  return <p className="markdown-paragraph">{renderInlineNodes(block.payload.inline ?? [], inlineComponents)}</p>;
+  return <p className="markdown-paragraph">{renderInlineNodes(block.payload.inline ?? [], inlineComponents, registry.getUrlTransform())}</p>;
 });
 
 ParagraphBlockView.displayName = "ParagraphBlockView";
@@ -222,7 +222,7 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
 
   const renderInlineContent = (inline: InlineNode[] | undefined, keyPrefix: string) => {
     if (inline && inline.length > 0) {
-      return renderInlineNodes(inline, inlineComponents);
+      return renderInlineNodes(inline, inlineComponents, registry.getUrlTransform());
     }
     return null;
   };
@@ -238,6 +238,7 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
           const htmlNode = renderInlineHtmlSegment(segment.value, segment.sanitized ?? segment.value, {
             key: `blockquote-html-${block.id}-${segmentIndex}`,
             renderers: DEFAULT_INLINE_HTML_RENDERERS,
+            urlTransform: registry.getUrlTransform(),
           });
           if (htmlNode) {
             elements.push(htmlNode);
@@ -283,13 +284,13 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
   const fallbackElements = normalizedText ? renderTextWithBreaks(normalizedText, `blockquote-fallback-${block.id}-`) : null;
 
   const inlineNodes = block.payload.inline ?? [];
-  const inlineElements = inlineNodes.length > 0 ? renderInlineNodes(inlineNodes, inlineComponents) : null;
+  const inlineElements = inlineNodes.length > 0 ? renderInlineNodes(inlineNodes, inlineComponents, registry.getUrlTransform()) : null;
 
   const childContent = childIds.map((childId) => {
     const childNode = store.getNode(childId);
     if (!childNode) return null;
     if (childNode.type?.startsWith("blockquote-")) {
-      return <MixedSegmentView key={childId} store={store} nodeId={childId} inlineComponents={inlineComponents} />;
+      return <MixedSegmentView key={childId} store={store} nodeId={childId} inlineComponents={inlineComponents} urlTransform={registry.getUrlTransform()} />;
     }
     if (childNode.type === "list") {
       return <ListBlockView key={childId} store={store} blockId={childId} registry={registry} depth={0} />;
@@ -356,8 +357,9 @@ BlockquoteBlockView.displayName = "BlockquoteBlockView";
 const MixedSegmentView: React.FC<{
   store: RendererStore;
   nodeId: string;
-  inlineComponents: ReturnType<ComponentRegistry["getInlineComponents"]>;
-}> = React.memo(({ store, nodeId, inlineComponents }) => {
+  inlineComponents: InlineComponents;
+  urlTransform?: UrlTransform;
+}> = React.memo(({ store, nodeId, inlineComponents, urlTransform }) => {
   const node = useRendererNode(store, nodeId);
   if (!node) return null;
 
@@ -367,7 +369,7 @@ const MixedSegmentView: React.FC<{
     case "list-item-text": {
       const inline = (node.props?.inline as InlineNode[] | undefined) ?? [];
       if (inline.length > 0) {
-        return renderInlineNodes(inline, inlineComponents);
+        return renderInlineNodes(inline, inlineComponents, urlTransform);
       }
       const text = typeof node.props?.text === "string" ? (node.props?.text as string) : "";
       if (!text) return null;
@@ -381,6 +383,7 @@ const MixedSegmentView: React.FC<{
       const rendered = renderInlineHtmlSegment(raw, html, {
         key: node.id,
         renderers: DEFAULT_INLINE_HTML_RENDERERS,
+        urlTransform,
       });
       if (rendered) {
         return rendered;
@@ -581,14 +584,14 @@ const ListItemView: React.FC<{
   }, [childIds, store]);
 
   const segmentElements = React.useMemo(() => {
-    return segmentChildIds.map((childId) => <MixedSegmentView key={childId} store={store} nodeId={childId} inlineComponents={inlineComponents} />);
+    return segmentChildIds.map((childId) => <MixedSegmentView key={childId} store={store} nodeId={childId} inlineComponents={inlineComponents} urlTransform={registry.getUrlTransform()} />);
   }, [segmentChildIds, store, inlineComponents]);
 
   const primaryContent = React.useMemo(() => {
     if (segmentChildIds.length > 0) {
       return segmentElements;
     }
-    return renderInlineNodes(inline, inlineComponents);
+    return renderInlineNodes(inline, inlineComponents, registry.getUrlTransform());
   }, [segmentChildIds, segmentElements, inline, inlineComponents]);
 
   const trailingChildren = React.useMemo(() => {
@@ -599,10 +602,10 @@ const ListItemView: React.FC<{
         case "paragraph": {
           const childInline = childNode.block?.payload.inline ?? (childNode.props?.inline as InlineNode[] | undefined) ?? [];
           return childNode.props?.tight ? (
-            <React.Fragment key={childId}>{renderInlineNodes(childInline, inlineComponents)}</React.Fragment>
+            <React.Fragment key={childId}>{renderInlineNodes(childInline, inlineComponents, registry.getUrlTransform())}</React.Fragment>
           ) : (
             <p key={childId} className="markdown-list-item-paragraph">
-              {renderInlineNodes(childInline, inlineComponents)}
+              {renderInlineNodes(childInline, inlineComponents, registry.getUrlTransform())}
             </p>
           );
         }
@@ -940,7 +943,7 @@ const TableCellView: React.FC<{ store: RendererStore; nodeId: string; registry: 
   const Tag = node.type === "table-header-cell" ? tableElements.Th : tableElements.Td;
   const inline = (node.props?.inline as InlineNode[] | undefined) ?? [];
   const align = node.props?.align as string | undefined;
-  const content = renderInlineNodes(inline, inlineComponents);
+  const content = renderInlineNodes(inline, inlineComponents, registry.getUrlTransform());
   const alignProps = align ? { align } : undefined;
   return <Tag {...alignProps}>{content}</Tag>;
 });

@@ -16,7 +16,7 @@ import { useRendererBlocks } from "./renderer/hooks";
 import { StreamingActivityContext } from "./renderer/streaming-activity-context";
 import type { RendererStore } from "./renderer/store";
 import { createDefaultWorker, releaseDefaultWorker } from "@stream-mdx/worker";
-import type { BlockComponents, BlockRendererOverride, CodeFenceRenderer, HtmlElements, HtmlOptions, InlineComponents, MathRenderer, RendererConfig, SyntaxRuleSpec, TableElements, TableVirtualizationOptions } from "./types";
+import { defaultUrlTransform, type BlockComponents, type BlockRendererOverride, type CodeFenceRenderer, type HtmlElements, type HtmlOptions, type InlineComponents, type MathRenderer, type RendererConfig, type SyntaxRuleSpec, type TableElements, type TableVirtualizationOptions, type UrlTransform } from "./types";
 
 const EMPTY_BLOCKS: ReadonlyArray<Block> = [];
 
@@ -33,6 +33,7 @@ interface StreamingMarkdownConfigSignature {
   mdxHydration?: MdxHydrationOptions;
   syntax?: SyntaxRuleSpec[];
   html?: HtmlOptions;
+  hasUrlTransform?: boolean;
 }
 
 export interface StreamingSchedulerOptions {
@@ -156,6 +157,7 @@ export interface StreamingMarkdownProps {
   syntax?: SyntaxRuleSpec[];
   html?: HtmlOptions;
   tableVirtualization?: TableVirtualizationOptions;
+  urlTransform?: UrlTransform;
 }
 
 const MdxCoordinatorBridge: React.FC<{ store: RendererStore; mode: "server" | "worker" }> = ({ store, mode }) => {
@@ -312,6 +314,7 @@ function StreamingMarkdownComponent(
     syntax,
     html,
     tableVirtualization,
+    urlTransform,
   }: StreamingMarkdownProps,
   ref: React.ForwardedRef<StreamingMarkdownHandle>,
 ) {
@@ -338,8 +341,9 @@ function StreamingMarkdownComponent(
         mdxHydration,
         syntax,
         html,
+        hasUrlTransform: Boolean(urlTransform),
       }),
-    [features, prewarmLangs, effectiveScheduling, mdxCompileMode, mdxComponents, mdxHydration, syntax, html],
+    [features, prewarmLangs, effectiveScheduling, mdxCompileMode, mdxComponents, mdxHydration, syntax, html, urlTransform],
   );
 
   const mdxHydrationController = useMemo(() => createMdxHydrationController(mdxHydration), [mdxHydration]);
@@ -375,6 +379,7 @@ function StreamingMarkdownComponent(
       mathRenderer,
       artifactHtml,
       tableVirtualization,
+      urlTransform,
       highlight: prewarmLangs.length > 0 ? { langs: prewarmLangs } : undefined,
       plugins: features,
       performance: {
@@ -461,27 +466,33 @@ function StreamingMarkdownComponent(
   const openLink = useMemo(() => {
     return (url: string) => {
       if (typeof window === "undefined") return;
-      if (url.startsWith("http://") || url.startsWith("https://")) {
-        window.open(url, "_blank", "noopener,noreferrer");
+      const transform = urlTransform ?? defaultUrlTransform;
+      const safe = transform(url, "href", { source: "markdown" });
+      if (!safe) return;
+      if (safe.startsWith("http://") || safe.startsWith("https://")) {
+        window.open(safe, "_blank", "noopener,noreferrer");
       } else {
-        window.location.assign(url);
+        window.location.assign(safe);
       }
     };
-  }, []);
+  }, [urlTransform]);
 
   const handleLinkClick = useMemo(() => {
     return async (url: string) => {
+      const transform = urlTransform ?? defaultUrlTransform;
+      const safe = transform(url, "href", { source: "markdown" });
+      if (!safe) return;
       if (!linkSafetyEnabled) {
-        openLink(url);
+        openLink(safe);
         return;
       }
       if (linkSafety?.onLinkCheck) {
         setLinkModalState((prev) => ({ ...prev, isChecking: true }));
         try {
-          const allowed = await linkSafety.onLinkCheck(url);
+          const allowed = await linkSafety.onLinkCheck(safe);
           if (allowed) {
             setLinkModalState((prev) => ({ ...prev, isChecking: false }));
-            openLink(url);
+            openLink(safe);
             return;
           }
         } catch {
@@ -489,9 +500,9 @@ function StreamingMarkdownComponent(
         }
         setLinkModalState((prev) => ({ ...prev, isChecking: false }));
       }
-      setLinkModalState({ url, isOpen: true, isChecking: false });
+      setLinkModalState({ url: safe, isOpen: true, isChecking: false });
     };
-  }, [linkSafety, linkSafetyEnabled, openLink]);
+  }, [linkSafety, linkSafetyEnabled, openLink, urlTransform]);
   linkHandlerRef.current = handleLinkClick;
 
   const handleLinkClose = useMemo(() => {

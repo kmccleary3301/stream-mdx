@@ -115,8 +115,12 @@ export class MarkdownRenderer implements Renderer {
         artifactHtml: this.config.artifactHtml,
         mathRenderer: this.config.mathRenderer,
         tableVirtualization: this.config.tableVirtualization,
+        urlTransform: this.config.urlTransform,
       },
     );
+    if (this.config.urlTransform) {
+      this.componentRegistry.setUrlTransform(this.config.urlTransform);
+    }
     if (this.config.html?.literalTagContent) {
       this.componentRegistry.setLiteralTagContent(this.config.html.literalTagContent);
     }

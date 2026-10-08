@@ -1,4 +1,4 @@
-import type { Block } from "@stream-mdx/core";
+import type { Block, UrlTransform } from "@stream-mdx/core";
 import React, { useMemo } from "react";
 
 import { PATCH_ROOT_ID } from "@stream-mdx/core";
@@ -19,10 +19,11 @@ export interface MarkdownBlocksRendererProps {
   style?: React.CSSProperties;
   store?: RendererStore;
   blockRenderer?: BlockRendererOverride;
+  urlTransform?: UrlTransform;
 }
 
 export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
-  ({ blocks, componentRegistry, codeRenderers, blockRenderer, className = "markdown-renderer", style, store }) => {
+  ({ blocks, componentRegistry, codeRenderers, blockRenderer, urlTransform, className = "markdown-renderer", style, store }) => {
     const resolvedRegistry = useMemo(() => {
       const reg = componentRegistry ?? new ComponentRegistry();
       if (codeRenderers) {
@@ -31,8 +32,11 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
       if (blockRenderer) {
         reg.setBlockRenderer(blockRenderer);
       }
+      if (urlTransform) {
+        reg.setUrlTransform(urlTransform);
+      }
       return reg;
-    }, [componentRegistry, codeRenderers, blockRenderer]);
+    }, [componentRegistry, codeRenderers, blockRenderer, urlTransform]);
     const effectiveStore = useMemo(() => {
       if (store) return store;
       return createRendererStore(blocks as Block[]);
