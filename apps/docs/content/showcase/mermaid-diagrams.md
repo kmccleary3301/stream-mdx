@@ -60,6 +60,23 @@ codeRenderers={{
 }}
 ```
 
+For custom themes, debouncing, or error retry UI, use `createMermaidBlock`:
+
+```tsx
+import { createMermaidBlock } from "@stream-mdx/mermaid";
+
+const ConfiguredMermaidBlock = createMermaidBlock({
+  config: { theme: "neutral" },
+  defaultView: "diagram",
+  errorComponent: ({ error, retry }) => (
+    <div className="mermaid-error">
+      <span>{error}</span>
+      <button type="button" onClick={retry}>Retry</button>
+    </div>
+  ),
+});
+```
+
 ## Operational guidance
 
 - Treat Mermaid like an optional feature flag in production.

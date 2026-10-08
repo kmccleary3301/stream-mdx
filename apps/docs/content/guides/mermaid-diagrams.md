@@ -69,6 +69,36 @@ codeRenderers={{
 }}
 ```
 
+### Custom configuration and error handling
+
+Use `createMermaidBlock` to configure global Mermaid options, default views, debounce intervals, or a custom error component with retry capability:
+
+```tsx
+import { createMermaidBlock } from "@stream-mdx/mermaid";
+import { StreamingMarkdown } from "stream-mdx";
+
+const CustomMermaidBlock = createMermaidBlock({
+  config: { theme: "neutral" },
+  defaultView: "diagram",
+  debounceMs: 150,
+  errorComponent: ({ error, retry }) => (
+    <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm">
+      <p className="font-medium text-red-700 dark:text-red-300">Diagram rendering failed: {error}</p>
+      <button type="button" onClick={retry} className="mt-2 text-xs underline">
+        Retry diagram
+      </button>
+    </div>
+  ),
+});
+
+<StreamingMarkdown
+  text={content}
+  codeRenderers={{
+    mermaid: CustomMermaidBlock,
+  }}
+/>;
+```
+
 Recommendations:
 
 - Keep source code view available for debugging and copy/paste.
@@ -83,7 +113,7 @@ Recommendations:
 
 ## Troubleshooting
 
-- **No diagram appears**: verify `@stream-mdx/mermaid` is installed and registered in `components`.
+- **No diagram appears**: verify `@stream-mdx/mermaid` is installed and registered in `codeRenderers={{ mermaid: MermaidBlock }}`.
 - **Hydration mismatch**: ensure wrappers/components around Mermaid are deterministic.
 - **Layout overflow**: add responsive container styles around the diagram block.
 

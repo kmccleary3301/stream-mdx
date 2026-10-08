@@ -257,6 +257,27 @@ import { StreamingMarkdown } from "@stream-mdx/react";
 
 When registered, fenced `mermaid` code blocks render as diagrams (with a Diagram/Code toggle). All other code blocks remain unchanged.
 
+### `createMermaidBlock(options?)`
+
+Creates a customized Mermaid code fence renderer with isolated configuration, default views, debounce settings, and custom error components:
+
+```tsx
+import { createMermaidBlock } from "@stream-mdx/mermaid";
+
+const CustomMermaidBlock = createMermaidBlock({
+  config: { theme: "neutral" },
+  defaultView: "diagram", // "diagram" | "code"
+  debounceMs: 150,
+  errorComponent: ({ error, code, retry }) => (
+    <div className="mermaid-error">
+      <p>Error rendering diagram: {error}</p>
+      <button type="button" onClick={retry}>Retry</button>
+    </div>
+  ),
+});
+```
+
+Mermaid renders are serialized through an internal module queue so concurrent blocks with different factory configs do not interleave. Default `securityLevel: 'strict'` is preserved unless explicitly overridden in `config`.
 ## 3.2) Code Fence Renderers (`codeRenderers`)
 
 Custom code fence rendering is registered via `codeRenderers` on `<StreamingMarkdown />` or `<MarkdownBlocksRenderer />`:
