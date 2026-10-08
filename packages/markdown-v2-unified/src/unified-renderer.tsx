@@ -39,7 +39,7 @@ const DEFAULT_ROUTED_BLOCK_TYPES: Record<string, true> = {
   list: true,
   table: true,
   code: true,
-  hr: true,
+  thematicBreak: true,
 };
 
 export class BoundedLruCache<K, V> {
