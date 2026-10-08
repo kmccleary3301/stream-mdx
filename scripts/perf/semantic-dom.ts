@@ -1,0 +1,93 @@
+export type SemanticDomRecords = {
+  text: string;
+  codeBlocks: Array<{ language: string; code: string }>;
+  headings: Array<{ level: number; text: string }>;
+  math: Array<{ display: boolean; tex: string }>;
+  tables: Array<{ rows: Array<{ section: string; cells: Array<{ header: boolean; colspan: number; rowspan: number; align: string; text: string }> }> }>;
+  lists: Array<{ depth: number; ordered: boolean; start: number | null; items: Array<{ value: number | null; checked: boolean | null; text: string }> }>;
+  links: Array<{ url: string; title: string; text: string }>;
+  html: Array<{ tag: string; attributes: Array<[string, string]>; text: string }>;
+};
+
+const CONTROL_SELECTOR = "button,[data-control],script,style,[data-streamdown='code-block-header'],[data-streamdown='code-block-actions'],.katex-mathml";
+const BLOCK_TAGS = new Set(["P", "DIV", "SECTION", "ARTICLE", "ASIDE", "BLOCKQUOTE", "H1", "H2", "H3", "H4", "H5", "H6", "LI", "TR", "SUMMARY", "DETAILS"]);
+
+export function renderedCodeSource(body: Element): string {
+  // Streamdown uses block spans and a newline placeholder for an empty source line.
+  if (body.closest('[data-streamdown="code-block"]')) {
+    return Array.from(body.children, (line) => {
+      const text = line.textContent ?? "";
+      return text === "\n" ? "" : text;
+    }).join("\n");
+  }
+  return body.textContent ?? "";
+}
+
+export function collectSemanticDom(root: HTMLElement): SemanticDomRecords {
+  const codeBodies = Array.from(root.querySelectorAll("pre code"));
+  const outerCode = new Map<Element, { body: Element; index: number }>();
+  for (const body of codeBodies) {
+    const pre = body.closest("pre");
+    if (!pre) continue;
+    const wrapper = body.closest(".markdown-code-block,[data-streamdown='code-block']") ?? pre;
+    outerCode.set(wrapper, { body, index: codeBodies.indexOf(body) });
+  }
+
+  const mathRoots = Array.from(root.querySelectorAll(".katex"));
+  const mathSource = (element: Element): string => element.querySelector("annotation[encoding='application/x-tex']")?.textContent ?? element.closest("[data-tex]")?.getAttribute("data-tex") ?? "";
+  const textOf = (node: Node): string => {
+    if (node.nodeType === 3) return (node.textContent ?? "").replace(/\s+/g, " ");
+    if (node.nodeType !== 1) return "";
+    // nodeType establishes the DOM Element boundary in both browsers and jsdom.
+    const element = node as Element;
+    if (element.matches(CONTROL_SELECTOR)) return "";
+    const body = outerCode.get(element);
+    if (body) return `\n\n\uFFF0${body.index}\uFFF1\n\n`;
+    if (element.matches(".katex")) return ` ${mathSource(element)} `;
+    if (element.tagName === "BR") return "\n";
+    if (element.tagName === "HR") return "\n";
+    const content = Array.from(element.childNodes, textOf).join("");
+    if (element.tagName === "TD" || element.tagName === "TH") return `${content}\t`;
+    return BLOCK_TAGS.has(element.tagName) ? `\n${content}\n` : content;
+  };
+  const normalizeText = (text: string): string => text.replace(/ *\n */g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+  const contentOf = (element: Element): string => normalizeText(textOf(element)).replace(/\uFFF0(\d+)\uFFF1/g, (_, index: string) => renderedCodeSource(codeBodies[Number(index)]));
+  const outsideCode = (element: Element): boolean => !element.closest("pre,.markdown-code-block,[data-streamdown='code-block']") && !element.closest(CONTROL_SELECTOR);
+
+  return {
+    text: contentOf(root),
+    codeBlocks: codeBodies.map((body) => {
+      const wrapper = body.closest("[data-language]");
+      const languageClass = Array.from(body.classList).find((name) => name.startsWith("language-")) ?? Array.from(body.closest("pre")?.classList ?? []).find((name) => name.startsWith("language-"));
+      return { language: wrapper?.getAttribute("data-language") ?? languageClass?.slice(9) ?? "", code: renderedCodeSource(body) };
+    }),
+    headings: Array.from(root.querySelectorAll("h1,h2,h3,h4,h5,h6")).filter(outsideCode).map((heading) => ({ level: Number(heading.tagName.slice(1)), text: contentOf(heading) })),
+    math: mathRoots.filter((element) => !element.closest("pre")).map((element) => ({ display: Boolean(element.closest(".katex-display,.math-display")), tex: mathSource(element) })),
+    tables: Array.from(root.querySelectorAll("table")).filter(outsideCode).map((table) => ({
+      rows: Array.from(table.querySelectorAll("tr")).filter((row) => row.closest("table") === table).map((row) => ({
+        section: row.parentElement?.tagName.toLowerCase() ?? "",
+        cells: Array.from(row.children).filter((cell) => cell.tagName === "TD" || cell.tagName === "TH").map((cell) => ({
+          header: cell.tagName === "TH", colspan: Number(cell.getAttribute("colspan") ?? 1), rowspan: Number(cell.getAttribute("rowspan") ?? 1),
+          align: cell.getAttribute("align") ?? (cell as HTMLElement).style.textAlign, text: contentOf(cell),
+        })),
+      })),
+    })),
+    lists: Array.from(root.querySelectorAll("ol,ul")).filter(outsideCode).map((list) => {
+      let depth = 0;
+      for (let ancestor = list.parentElement; ancestor && ancestor !== root; ancestor = ancestor.parentElement) if (ancestor.matches("ol,ul")) depth += 1;
+      return {
+        depth, ordered: list.tagName === "OL", start: list.tagName === "OL" ? Number(list.getAttribute("start") ?? 1) : null,
+        items: Array.from(list.children).filter((item) => item.tagName === "LI").map((item) => {
+          const checkbox = item.querySelector<HTMLInputElement>("input[type='checkbox']");
+          return { value: item.hasAttribute("value") ? Number(item.getAttribute("value")) : null, checked: checkbox?.checked ?? null, text: contentOf(item) };
+        }),
+      };
+    }),
+    links: Array.from(root.querySelectorAll("a[href]")).filter(outsideCode).map((link) => ({ url: link.getAttribute("href") ?? "", title: link.getAttribute("title") ?? "", text: contentOf(link) })),
+    html: Array.from(root.querySelectorAll("*")).filter((element) => outsideCode(element) && !element.closest(".katex") && !element.matches(".math-inline,.math-display") && (element.matches("details,summary,abbr,mark,time,img,video,audio,iframe,blockquote,hr,strong,em,del,ins,kbd,sup,sub") || Array.from(element.attributes).some((attribute) => /^(alt|title|open|datetime|cite|lang|dir|role|aria-)/.test(attribute.name)))).map((element) => ({
+      tag: element.tagName.toLowerCase(),
+      attributes: Array.from(element.attributes).filter((attribute) => /^(href|src|alt|title|open|datetime|cite|lang|dir|role|aria-)/.test(attribute.name)).map((attribute): [string, string] => [attribute.name, attribute.value]).sort(([left], [right]) => left.localeCompare(right)),
+      text: contentOf(element),
+    })),
+  };
+}

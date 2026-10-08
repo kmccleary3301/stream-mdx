@@ -13,6 +13,12 @@ import { ComponentRegistry, StreamingMarkdown, type StreamingMarkdownHandle } fr
 
 import { components as mdxComponents } from "@/mdx-components";
 import { configureDemoRegistry, createDemoHtmlElements, createDemoTableElements } from "@/lib/streaming-demo-registry";
+import { collectSemanticDom, renderedCodeSource, type SemanticDomRecords } from "../../../../scripts/perf/semantic-dom";
+import { createChunkTrace, semanticSha256 } from "../../../../scripts/perf/chunk-trace";
+
+const PARITY_CODE_RENDERERS: NonNullable<StreamingMarkdownProps["codeRenderers"]> = {
+  diff: ({ renderCode }) => <>{renderCode}</>,
+};
 const streamdownMath = createMathPlugin({ singleDollarTextMath: true });
 
 class BenchmarkHighlighting {
@@ -41,11 +47,7 @@ class BenchmarkHighlighting {
     return Array.from(root.querySelectorAll<HTMLElement>('[data-streamdown="code-block"]')).every((block) => {
       const body = block.querySelector("code");
       if (!body) return false;
-      // Streamdown renders each source line as a block span, using "\n" for an empty line.
-      const source = Array.from(body.children, (line) => {
-        const text = line.textContent ?? "";
-        return text === "\n" ? "" : text;
-      }).join("\n").replace(/\n+$/, "");
+      const source = renderedCodeSource(body).replace(/\n+$/, "");
       return this.completed.has(JSON.stringify([block.dataset.language, source]));
     });
   }
@@ -173,18 +175,14 @@ export type SemanticContent = {
   normalizedLength: number;
   normalizedTextHash: string;
   preview: string;
+  records: SemanticDomRecords;
 };
 
 async function collectLiveDomMetrics(root: HTMLElement | null): Promise<{
   subtreeCounts: LiveSubtreeCounts;
   semanticContent: SemanticContent;
 }> {
-  if (!root) {
-    return {
-      subtreeCounts: { elements: 0, pre: 0, code: 0, codeBlocks: 0, inlineCode: 0, table: 0, tr: 0, li: 0, math: 0, katex: 0 },
-      semanticContent: { rawLength: 0, normalizedLength: 0, normalizedTextHash: "", preview: "" },
-    };
-  }
+  if (!root) throw new Error("Incomplete measurement: semantic DOM root is missing.");
 
   const elements = root.querySelectorAll("*").length;
   const pre = root.querySelectorAll("pre").length;
@@ -197,31 +195,9 @@ async function collectLiveDomMetrics(root: HTMLElement | null): Promise<{
   const math = root.querySelectorAll("math").length;
   const katex = root.querySelectorAll(".katex").length;
 
-  // Normalize semantic text: clone root, remove duplicate MathML, remove control buttons
-  const clone = root.cloneNode(true) as HTMLElement;
-  // Remove duplicate MathML in KaTeX htmlAndMathml output so math text is not duplicated
-  clone.querySelectorAll(".katex-mathml").forEach((el) => el.remove());
-  // Exclude copied control strings (button labels, copy/download controls)
-  clone.querySelectorAll("button, [data-control], [aria-label*='Copy'], [aria-label*='Download']").forEach((el) => el.remove());
-
-  const rawText = clone.innerText ?? clone.textContent ?? "";
-  const normalizedText = rawText
-    .replace(/\r\n/g, "\n")
-    .replace(/[ \t]+/g, " ")
-    .replace(/\n\s*\n/g, "\n\n")
-    .trim();
-
-  let hash = "";
-  try {
-    if (typeof crypto !== "undefined" && crypto.subtle) {
-      const msgBuffer = new TextEncoder().encode(normalizedText);
-      const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      hash = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-    }
-  } catch {
-    hash = "hash-failed";
-  }
+  const records = collectSemanticDom(root);
+  const normalizedText = records.text;
+  const hash = await semanticSha256(JSON.stringify(records));
 
   return {
     subtreeCounts: {
@@ -237,10 +213,11 @@ async function collectLiveDomMetrics(root: HTMLElement | null): Promise<{
       katex,
     },
     semanticContent: {
-      rawLength: rawText.length,
+      rawLength: (root.textContent ?? "").length,
       normalizedLength: normalizedText.length,
       normalizedTextHash: hash,
       preview: normalizedText.slice(0, 200),
+      records,
     },
   };
 }
@@ -349,15 +326,25 @@ async function waitForStreamMdxCompletion(
       await waitForCompletionStep(nextFrame(), deadline, signal, "StreamMDX final DOM and highlighting");
       worker.assertHealthy();
       const state = handle.getState();
-      const allFinalized = state.blocks.length > 0 && state.blocks.every((block) => block.isFinalized);
-      const pendingLazyCode = state.blocks.some((block) => {
-        if (block.type !== "code" || !block.isFinalized) return false;
-        const meta = block.payload.meta;
-        if (!meta?.lazyTokenization) return false;
-        const expected = expectedLazyCodeLineCount({ raw: block.payload.raw, meta });
+      let allFinalized = state.blocks.length > 0 && state.blocks.every((block) => block.isFinalized);
+      let pendingLazyCode = false;
+      const pendingNodes = state.blocks.map((block) => block.id);
+      const visited = new Set<string>();
+      while (pendingNodes.length > 0) {
+        const id = pendingNodes.pop();
+        if (!id || visited.has(id)) continue;
+        visited.add(id);
+        const node = state.store.getNode(id);
+        if (!node) throw new Error("Incomplete measurement: rendered store node is missing.");
+        if (node.block && !node.block.isFinalized) allFinalized = false;
+        pendingNodes.push(...state.store.getChildren(id));
+        if (node.type !== "code") continue;
+        const meta = node.block?.payload.meta ?? node.meta ?? node.props;
+        if (!meta.lazyTokenization) continue;
+        const expected = expectedLazyCodeLineCount({ raw: node.block?.payload.raw ?? "", meta });
         const tokenizedUntil = typeof meta.lazyTokenizedUntil === "number" ? meta.lazyTokenizedUntil : 0;
-        return tokenizedUntil < expected;
-      });
+        if (tokenizedUntil < expected) pendingLazyCode = true;
+      }
       const pendingMath = Array.from(root.querySelectorAll(".math-inline[data-tex],.math-display[data-tex]")).some((element) => !element.querySelector(".katex"));
       if (allFinalized && !pendingLazyCode && !pendingMath && !hasMutations && state.rendererVersion === lastVersion) {
         stableCount += 1;
@@ -475,6 +462,9 @@ type PerfReport = {
     updateIntervalMs: number;
     charRateCps: number;
     maxChunkChars: number;
+    fixtureHash: string;
+    chunkTraceHash: string;
+    chunkCount: number;
     runStart: number;
     runEnd: number;
     runDurationMs: number;
@@ -746,6 +736,9 @@ export function PerfHarness(): JSX.Element {
       try {
         const fixture = await fetchFixture(fixtureId);
         const scenario = await fetchScenario(scenarioId);
+        const trace = createChunkTrace(fixture, scenario);
+        const fixtureHash = await semanticSha256(fixture);
+        const chunkTraceHash = await semanticSha256(JSON.stringify(trace));
         if (cancelled || token !== runTokenRef.current) return;
 
         flushesRef.current = [];
@@ -796,35 +789,18 @@ export function PerfHarness(): JSX.Element {
         firstContentObserver = new MutationObserver(observeFirstContent);
         if (!rootRef.current) throw new Error("Incomplete measurement: content root did not mount.");
         firstContentObserver.observe(rootRef.current, { childList: true, subtree: true, characterData: true });
-        let idx = 0;
-        let buffered = 0;
-        let lastTick = performance.now();
-        const intervalMs = Math.max(1, scenario.updateIntervalMs);
-        const chunkCeiling = Math.max(1, scenario.maxChunkChars);
         let accumulated = "";
-        while (idx < fixture.length) {
+        for (const chunk of trace) {
           if (cancelled || token !== runTokenRef.current) return;
           if (renderer === "streammdx") benchmarkWorker.assertHealthy();
-          const now = performance.now();
-          const elapsed = Math.max(0, now - lastTick);
-          lastTick = now;
-          const targetChars = (scenario.charRateCps * elapsed) / 1000 + buffered;
-          const totalChars = Math.floor(targetChars);
-          buffered = targetChars - totalChars;
-          if (totalChars > 0) {
-            const size = Math.min(chunkCeiling, totalChars, fixture.length - idx);
-            if (size > 0) {
-              const chunk = fixture.slice(idx, idx + size);
-              idx += size;
-              if (renderer === "streammdx") {
-                handleRef.current?.append(chunk);
-              } else {
-                accumulated += chunk;
-                setStreamdownText(accumulated);
-              }
-            }
+          await sleep(Math.max(0, runStart + chunk.atMs - performance.now()));
+          if (cancelled || token !== runTokenRef.current) return;
+          if (renderer === "streammdx") {
+            handleRef.current?.append(chunk.text);
+          } else {
+            accumulated += chunk.text;
+            setStreamdownText(accumulated);
           }
-          await sleep(intervalMs);
         }
 
         if (renderer === "streammdx") {
@@ -863,6 +839,9 @@ export function PerfHarness(): JSX.Element {
             updateIntervalMs: scenario.updateIntervalMs,
             charRateCps: scenario.charRateCps,
             maxChunkChars: scenario.maxChunkChars,
+            fixtureHash,
+            chunkTraceHash,
+            chunkCount: trace.length,
             runStart,
             runEnd,
             runDurationMs: Math.max(0, runEnd - runStart),
@@ -945,6 +924,7 @@ export function PerfHarness(): JSX.Element {
                 onError={benchmarkWorker.onError}
                 className="markdown-v2-output"
                 features={PARITY_FEATURES}
+                codeRenderers={PARITY_CODE_RENDERERS}
                 scheduling={scheduling}
                 caret={false}
                 onMetrics={onMetrics}
@@ -958,6 +938,7 @@ export function PerfHarness(): JSX.Element {
               onError={benchmarkWorker.onError}
               className="markdown-v2-output"
               features={PARITY_FEATURES}
+              codeRenderers={PARITY_CODE_RENDERERS}
               scheduling={scheduling}
               caret={false}
               onMetrics={onMetrics}

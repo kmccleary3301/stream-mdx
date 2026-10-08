@@ -74,6 +74,9 @@ type PerfReport = {
     updateIntervalMs: number;
     charRateCps: number;
     maxChunkChars: number;
+    fixtureHash: string;
+    chunkTraceHash: string;
+    chunkCount: number;
     runStart: number;
     runEnd: number;
     runDurationMs: number;
@@ -646,6 +649,15 @@ async function run(): Promise<void> {
   }
 
   const runSummaries = outputs.map(summarizeRun);
+  // Preserve individual evidence even when cross-run correctness rejects the aggregate.
+  await fs.writeFile(path.join(outRoot, "run.json"), JSON.stringify(outputs, null, 2));
+  const canonicalHashes = outputs.map((entry) => entry.report.meta.liveDom.semanticContent.normalizedTextHash);
+  if (canonicalHashes.some((hash) => !/^[a-f0-9]{64}$/.test(hash)) || new Set(canonicalHashes).size !== 1) {
+    throw new Error("Incomplete comparison: measured canonical semantic hashes are invalid or divergent; inspect run.json.");
+  }
+  if (new Set(outputs.map((entry) => entry.report.meta.chunkTraceHash)).size !== 1 || new Set(outputs.map((entry) => entry.report.meta.fixtureHash)).size !== 1) {
+    throw new Error("Incomplete comparison: fixture or chunk trace differs across runs; inspect run.json.");
+  }
   let gitSha = "unknown";
   try {
     gitSha = execSync("git rev-parse HEAD", { cwd: WORKTREE || process.cwd(), encoding: "utf8" }).trim();

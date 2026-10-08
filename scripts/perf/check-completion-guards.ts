@@ -1,0 +1,22 @@
+import assert from "node:assert/strict";
+import { JSDOM } from "jsdom";
+import { collectSemanticDom } from "./semantic-dom";
+import { createChunkTrace } from "./chunk-trace";
+
+const collect = (html: string) => collectSemanticDom(new JSDOM(`<main>${html}</main>`).window.document.querySelector("main")!);
+const native = collect('<h2>Title</h2><pre><code class="language-js">  first\n\n  last</code></pre><p>Done</p>');
+const streamdown = collect('<h2>Title</h2><div data-streamdown="code-block" data-language="js"><div data-streamdown="code-block-header">js</div><pre><code><span>  first</span><span>\n</span><span>  last</span></code></pre></div><p>Done</p>');
+assert.deepEqual(native, streamdown, "wrapper and rendered line boundaries must canonicalize identically");
+assert.equal(native.codeBlocks[0].code, "  first\n\n  last", "code indentation and blank lines must survive");
+assert.notDeepEqual(native, collect('<h2>Title</h2><pre><code class="language-js">  first\n  last</code></pre><p>Done</p>'), "missing code lines must change records");
+assert.notDeepEqual(collect('<ol start="2"><li><input type="checkbox" checked>task</li></ol>'), collect('<ol start="3"><li><input type="checkbox">task</li></ol>'));
+assert.notDeepEqual(collect('<table><tr><td>ab</td><td>c</td></tr></table>'), collect('<table><tr><td>a</td><td>bc</td></tr></table>'));
+assert.notDeepEqual(collect('<a href="/one">same</a>'), collect('<a href="/two">same</a>'));
+assert.notDeepEqual(collect('<details open><summary>same</summary></details>'), collect('<details><summary>same</summary></details>'));
+assert.equal(collect('<div>Hello</div><section>Done</section>').text, 'Hello\n\nDone');
+const scenario = { updateIntervalMs: 1, charRateCps: 20000, maxChunkChars: 7 };
+const trace = createChunkTrace('abcdefghijklmnopqrstuvwxyz', scenario);
+assert.equal(trace.map(chunk => chunk.text).join(''), 'abcdefghijklmnopqrstuvwxyz');
+assert.deepEqual(trace.map(chunk => chunk.text.length), [7, 7, 7, 5]);
+assert.deepEqual(trace, createChunkTrace('abcdefghijklmnopqrstuvwxyz', scenario), 'trace cannot depend on renderer CPU time');
+console.log('completion guard checks passed');
