@@ -316,7 +316,9 @@ export class LezerInlineConverter {
     if (urlEl) {
       const href = cleanUrl(text.slice(urlEl.from, urlEl.to));
       const title = titleEl ? cleanTitle(text.slice(titleEl.from, titleEl.to)) : undefined;
-      return { kind: "link", href, title, children };
+      const linkNode: InlineNode = { kind: "link", href, children };
+      if (title !== undefined) linkNode.title = title;
+      return linkNode;
     }
 
     // Reference link: [text][ref] or [text][]
@@ -326,7 +328,9 @@ export class LezerInlineConverter {
       const refKey = innerLabel.length > 0 ? innerLabel : rawLinkText;
       const resolved = resolveReference(this.references, refKey);
       if (resolved) {
-        return { kind: "link", href: resolved.href, title: resolved.title, children };
+        const linkNode: InlineNode = { kind: "link", href: resolved.href, children };
+        if (resolved.title !== undefined) linkNode.title = resolved.title;
+        return linkNode;
       }
       // Undefined reference: CommonMark treats as literal text
       return this.convertRange(el.children, text, el.from, el.to);
@@ -335,7 +339,9 @@ export class LezerInlineConverter {
     // Shortcut link: [text]
     const resolved = resolveReference(this.references, rawLinkText);
     if (resolved) {
-      return { kind: "link", href: resolved.href, title: resolved.title, children };
+      const linkNode: InlineNode = { kind: "link", href: resolved.href, children };
+      if (resolved.title !== undefined) linkNode.title = resolved.title;
+      return linkNode;
     }
 
     // Undefined reference: CommonMark treats as literal text
@@ -374,7 +380,10 @@ export class LezerInlineConverter {
     if (urlEl) {
       const src = cleanUrl(text.slice(urlEl.from, urlEl.to));
       const title = titleEl ? cleanTitle(text.slice(titleEl.from, titleEl.to)) : undefined;
-      return { kind: "image", src, alt: altText, title };
+      const imgNode: InlineNode = { kind: "image", src };
+      if (altText) imgNode.alt = altText;
+      if (title !== undefined) imgNode.title = title;
+      return imgNode;
     }
 
     if (labelEl) {
@@ -383,7 +392,10 @@ export class LezerInlineConverter {
       const refKey = innerLabel.length > 0 ? innerLabel : altText;
       const resolved = resolveReference(this.references, refKey);
       if (resolved) {
-        return { kind: "image", src: resolved.href, alt: altText, title: resolved.title };
+        const imgNode: InlineNode = { kind: "image", src: resolved.href };
+        if (altText) imgNode.alt = altText;
+        if (resolved.title !== undefined) imgNode.title = resolved.title;
+        return imgNode;
       }
       return [{ kind: "text", text: text.slice(el.from, el.to) }];
     }
@@ -391,7 +403,10 @@ export class LezerInlineConverter {
     // Shortcut image: ![alt]
     const resolved = resolveReference(this.references, altText);
     if (resolved) {
-      return { kind: "image", src: resolved.href, alt: altText, title: resolved.title };
+      const imgNode: InlineNode = { kind: "image", src: resolved.href };
+      if (altText) imgNode.alt = altText;
+      if (resolved.title !== undefined) imgNode.title = resolved.title;
+      return imgNode;
     }
 
     return [{ kind: "text", text: text.slice(el.from, el.to) }];

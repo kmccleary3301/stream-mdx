@@ -26,8 +26,10 @@ export function compileRegexPluginToExtension(plugin: RegexInlinePlugin): Inline
     before = "Link";
   } else if (plugin.priority < 6) {
     before = "Emphasis";
-  } else {
+  } else if (plugin.priority < 10) {
     after = "Emphasis";
+  } else {
+    after = "Link";
   }
 
   return {
