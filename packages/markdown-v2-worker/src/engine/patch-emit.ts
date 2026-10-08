@@ -26,18 +26,12 @@ export function estimatePatchSize(patches: Patch[]): number {
 export function readPatchControlMeta(
   patch: Patch,
 ): { kind: PatchKind; streamSeq?: number; parseEpoch?: number } | null {
-  const candidate = (patch as { meta?: unknown }).meta;
-  if (!candidate || typeof candidate !== "object") return null;
-  const kind = (candidate as { kind?: unknown }).kind;
-  if (kind !== "semantic" && kind !== "transient" && kind !== "coalescing") {
-    return null;
-  }
-  const streamSeq = (candidate as { streamSeq?: unknown }).streamSeq;
-  const parseEpoch = (candidate as { parseEpoch?: unknown }).parseEpoch;
+  const candidate = patch.op === "setHTML" ? patch.patchMeta : patch.meta;
+  if (!candidate || (candidate.kind !== "semantic" && candidate.kind !== "enrichment")) return null;
   return {
-    kind,
-    streamSeq: typeof streamSeq === "number" ? streamSeq : undefined,
-    parseEpoch: typeof parseEpoch === "number" ? parseEpoch : undefined,
+    kind: candidate.kind,
+    streamSeq: candidate.streamSeq,
+    parseEpoch: candidate.parseEpoch,
   };
 }
 

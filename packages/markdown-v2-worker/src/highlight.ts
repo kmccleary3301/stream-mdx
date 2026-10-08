@@ -5,9 +5,8 @@ import { normalizeLang } from "@stream-mdx/core";
 import { createJavaScriptRegexEngine } from "@shikijs/engine-javascript";
 import { createOnigurumaEngine } from "@shikijs/engine-oniguruma";
 import { type Highlighter, createHighlighter } from "shiki";
-import type { CodeToHtmlOptions } from "shiki";
-
-type GrammarState = Record<string, unknown> | undefined;
+import type { CodeToHastOptions, GrammarState } from "shiki";
+import { resolveHighlightLanguage } from "./engine/highlight";
 
 export interface HighlightState {
   grammarState?: GrammarState;
@@ -73,8 +72,8 @@ export class IncrementalHighlighter {
 
     try {
       // Use GrammarState for incremental highlighting
-      const options: CodeToHtmlOptions & { grammarState?: GrammarState } = {
-        lang: normalizedLang,
+      const options: CodeToHastOptions = {
+        lang: await resolveHighlightLanguage(this.highlighter, normalizedLang),
         theme,
       };
 
@@ -188,8 +187,8 @@ export class IncrementalHighlighter {
     this.loadingLangs.add(normalizedLang);
 
     try {
-      await this.highlighter.loadLanguage(normalizedLang);
-      this.preloadedLangs.add(normalizedLang);
+      const resolved = await resolveHighlightLanguage(this.highlighter, normalizedLang);
+      if (resolved === normalizedLang) this.preloadedLangs.add(normalizedLang);
     } catch (error) {
       console.warn(`Failed to load language ${normalizedLang}:`, error);
     } finally {
@@ -212,18 +211,10 @@ export class IncrementalHighlighter {
     return Array.from(this.preloadedLangs);
   }
 
-  /**
-   * Get grammar state for incremental highlighting
-   * Note: This is a placeholder - actual implementation depends on Shiki's GrammarState API
-   */
+  /** Get the actual grammar continuation state from the owning Shiki instance. */
   private getGrammarState(code: string, lang: string, theme: string): GrammarState {
-    // This would use Shiki's actual GrammarState API
-    // For now, return a mock state
-    return {
-      lang,
-      theme,
-      lastLineState: null, // Would contain actual TextMate rule stack
-    };
+    if (!this.highlighter) throw new Error("Highlighter not initialized");
+    return this.highlighter.getLastGrammarState(code, { lang, theme });
   }
 
   /**
