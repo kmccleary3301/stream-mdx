@@ -813,61 +813,14 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
     </tableElements.Table>
   );
 
-  const tableData = React.useMemo(() => {
-    const rawMeta = node?.block?.payload?.meta;
-    const meta = (rawMeta && typeof rawMeta === "object" ? rawMeta : {}) as {
-      header?: InlineNode[][];
-      rows?: InlineNode[][][];
-      align?: Array<"left" | "center" | "right" | null>;
-    };
-
-    let headers: string[] = [];
-    if (Array.isArray(meta.header) && meta.header.length > 0) {
-      headers = meta.header.map((cell) => inlineToPlainText(cell));
-    } else if (theadCellIds.length > 0) {
-      headers = theadCellIds.map((cellId) => {
-        const cell = store.getNode(cellId);
-        const cellProps = cell?.props;
-        if (cellProps && typeof cellProps === "object") {
-          if ("inline" in cellProps && Array.isArray(cellProps.inline)) {
-            return inlineToPlainText(cellProps.inline as InlineNode[]);
-          }
-          if ("text" in cellProps && typeof cellProps.text === "string") {
-            return cellProps.text;
-          }
-        }
-        return "";
-      });
-    }
-
-    let rows: string[][] = [];
-    if (Array.isArray(meta.rows) && meta.rows.length > 0) {
-      rows = meta.rows.map((row) => row.map((cell) => inlineToPlainText(cell)));
-    } else if (rowIds.length > 0) {
-      rows = rowIds.map((rowId) => {
-        const cellIds = store.getChildren(rowId);
-        return cellIds.map((cellId) => {
-          const cell = store.getNode(cellId);
-          const cellProps = cell?.props;
-          if (cellProps && typeof cellProps === "object") {
-            if ("inline" in cellProps && Array.isArray(cellProps.inline)) {
-              return inlineToPlainText(cellProps.inline as InlineNode[]);
-            }
-            if ("text" in cellProps && typeof cellProps.text === "string") {
-              return cellProps.text;
-            }
-          }
-          return "";
-        });
-      });
-    }
-
-    const align = Array.isArray(meta.align) ? meta.align : undefined;
-    return { headers, rows, align };
-  }, [node?.block?.payload?.meta, theadCellIds, rowIds, store]);
-
   const resolvedTableControls = resolveTableControls(registry.getControls());
   const ControlsComponent = registry.getControlsComponent();
+  const tableMeta = node?.block?.payload?.meta;
+  // Cell text is only needed for copy/download; skip the walk on the streaming hot path when controls are off.
+  const tableData = React.useMemo(
+    () => (resolvedTableControls.enabled ? collectTableText(tableMeta, theadCellIds, rowIds, store) : null),
+    [resolvedTableControls.enabled, tableMeta, theadCellIds, rowIds, store],
+  );
 
   const renderedContent = isEligible ? (
     <div
@@ -891,7 +844,7 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
     tableElement
   );
 
-  if (resolvedTableControls.enabled) {
+  if (tableData) {
     const tableControlsElement = ControlsComponent ? (
       <ControlsComponent
         type="table"
@@ -939,6 +892,38 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
 });
 
 TableBlockView.displayName = "TableBlockView";
+
+type TableText = { headers: string[]; rows: string[][]; align?: Array<"left" | "center" | "right" | null> };
+
+function cellNodeText(store: RendererStore, cellId: string): string {
+  const cellProps = store.getNode(cellId)?.props;
+  if (cellProps && typeof cellProps === "object") {
+    if ("inline" in cellProps && Array.isArray(cellProps.inline)) {
+      return inlineToPlainText(cellProps.inline as InlineNode[]);
+    }
+    if ("text" in cellProps && typeof cellProps.text === "string") {
+      return cellProps.text;
+    }
+  }
+  return "";
+}
+
+function collectTableText(rawMeta: unknown, theadCellIds: readonly string[], rowIds: readonly string[], store: RendererStore): TableText {
+  const meta = (rawMeta && typeof rawMeta === "object" ? rawMeta : {}) as {
+    header?: InlineNode[][];
+    rows?: InlineNode[][][];
+    align?: Array<"left" | "center" | "right" | null>;
+  };
+  const headers =
+    Array.isArray(meta.header) && meta.header.length > 0
+      ? meta.header.map((cell) => inlineToPlainText(cell))
+      : theadCellIds.map((cellId) => cellNodeText(store, cellId));
+  const rows =
+    Array.isArray(meta.rows) && meta.rows.length > 0
+      ? meta.rows.map((row) => row.map((cell) => inlineToPlainText(cell)))
+      : rowIds.map((rowId) => store.getChildren(rowId).map((cellId) => cellNodeText(store, cellId)));
+  return { headers, rows, align: Array.isArray(meta.align) ? meta.align : undefined };
+}
 
 const TableSectionView: React.FC<{
   store: RendererStore;
@@ -1446,7 +1431,6 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
       const spacerBottom = (window.totalLines - window.endIndex) * lineHeight;
       return (
         <pre className={codeFrameClass} {...codeMetricsAttrs}>
-          {codeControlsElement}
           <div
             ref={containerRef}
             className="markdown-code-block-container relative"
@@ -1462,7 +1446,6 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
     })()
   ) : (
     <pre className={codeFrameClass} {...codeMetricsAttrs}>
-      {codeControlsElement}
       {rendered}
     </pre>
   );
@@ -1505,7 +1488,7 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
 
   // Structured diff fallback when meta.diffBlocks is present
   if (Array.isArray(blockMeta?.diffBlocks) && blockMeta.diffBlocks.length > 0) {
-    return React.createElement(DefaultDiffRenderer, {
+    const diffView = React.createElement(DefaultDiffRenderer, {
       code: sourceText,
       language: lang ?? "",
       meta: node.block.payload.meta,
@@ -1520,12 +1503,23 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
       copy: () => copyToClipboard(sourceText),
       download: () => downloadFile(sourceText, getCodeSnippetFilename(lang)),
     });
+    return codeControlsElement ? wrapWithCodeControls(codeControlsElement, diffView) : diffView;
   }
 
-  return codeView;
+  // Controls sit beside `<pre>`, never inside it, so selecting or copying code text excludes button labels.
+  return codeControlsElement ? wrapWithCodeControls(codeControlsElement, codeView) : codeView;
 });
 
 CodeBlockView.displayName = "CodeBlockView";
+
+function wrapWithCodeControls(controls: React.ReactNode, content: React.ReactNode): React.ReactElement {
+  return (
+    <div className="stream-mdx-code-wrapper relative">
+      {controls}
+      {content}
+    </div>
+  );
+}
 
 function composeHighlightedHtml(
   lines: ReadonlyArray<{ index: number; text: string; html?: string | null; id?: string }>,
