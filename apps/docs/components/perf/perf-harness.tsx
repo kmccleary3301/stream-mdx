@@ -102,6 +102,15 @@ const DEFAULT_FEATURES: NonNullable<StreamingMarkdownProps["features"]> = {
   liveCodeHighlighting: true,
 };
 
+const PARITY_FORMAT_ANTICIPATION = {
+  inline: true,
+  mathInline: true,
+  mathBlock: true,
+  html: true,
+  mdx: false,
+  regex: false,
+};
+
 const PARITY_FEATURES: NonNullable<StreamingMarkdownProps["features"]> = {
   html: true,
   tables: true,
@@ -109,10 +118,9 @@ const PARITY_FEATURES: NonNullable<StreamingMarkdownProps["features"]> = {
   mdx: false,
   callouts: false,
   footnotes: true,
-  formatAnticipation: false,
+  formatAnticipation: PARITY_FORMAT_ANTICIPATION,
   liveCodeHighlighting: true,
 };
-
 export type LiveSubtreeCounts = {
   elements: number;
   pre: number;
@@ -200,6 +208,103 @@ async function collectLiveDomMetrics(root: HTMLElement | null): Promise<{
       preview: normalizedText.slice(0, 200),
     },
   };
+}
+
+function expectedLazyCodeLineCount(block: { raw: string; meta?: Record<string, unknown> }): number {
+  const meta = block.meta ?? {};
+  const highlightedLines = Array.isArray(meta.highlightedLines) ? meta.highlightedLines.length : 0;
+  const tokenLines = Array.isArray(meta.tokenLines) ? meta.tokenLines.length : 0;
+  const code = typeof meta.code === "string" ? meta.code : "";
+  const sourceLineCount = code.length > 0 ? code.split("\n").length : 0;
+  return Math.max(highlightedLines, tokenLines, sourceLineCount);
+}
+
+async function waitForStreamMdxCompletion(
+  handle: StreamingMarkdownHandle | null,
+  options: { timeoutMs?: number } = {},
+): Promise<void> {
+  if (!handle) return;
+  const timeoutMs = options.timeoutMs ?? 10000;
+  const start = performance.now();
+
+  handle.finalize();
+  handle.flushPending();
+  await handle.waitForIdle();
+
+  while (performance.now() - start <= timeoutMs) {
+    const state = handle.getState();
+    const blocks = state.blocks;
+    const allFinalized = blocks.length > 0 && blocks.every((b) => b.isFinalized);
+    const pendingLazyCode = blocks.some((block) => {
+      if (block.type !== "code" || !block.isFinalized) return false;
+      const meta = (block.payload.meta as Record<string, unknown> | undefined) ?? undefined;
+      if (!meta?.lazyTokenization) return false;
+      const expected = expectedLazyCodeLineCount({
+        raw: typeof block.payload.raw === "string" ? block.payload.raw : "",
+        meta,
+      });
+      if (expected <= 0) return false;
+      const tokenizedUntil = typeof meta.lazyTokenizedUntil === "number" ? (meta.lazyTokenizedUntil as number) : 0;
+      return tokenizedUntil < expected;
+    });
+
+    if (allFinalized && !pendingLazyCode) {
+      break;
+    }
+    await nextFrame();
+  }
+
+  let stableCount = 0;
+  let lastVersion = handle.getState().rendererVersion;
+  while (stableCount < 3 && performance.now() - start <= timeoutMs) {
+    await nextFrame();
+    const nextVersion = handle.getState().rendererVersion;
+    if (nextVersion === lastVersion) {
+      stableCount += 1;
+    } else {
+      stableCount = 0;
+      lastVersion = nextVersion;
+    }
+  }
+}
+
+async function waitForStreamdownCompletion(
+  root: HTMLElement | null,
+  committedRef: React.MutableRefObject<number>,
+  expectedLength: number,
+  isCancelled: () => boolean,
+  timeoutMs = 10000,
+): Promise<void> {
+  const start = performance.now();
+  while ((committedRef.current ?? 0) < expectedLength && !isCancelled()) {
+    if (performance.now() - start > timeoutMs) break;
+    await nextFrame();
+  }
+
+  let stableFrames = 0;
+  let hasMutations = false;
+  let observer: MutationObserver | null = null;
+  if (root && typeof MutationObserver !== "undefined") {
+    observer = new MutationObserver(() => {
+      hasMutations = true;
+    });
+    observer.observe(root, { childList: true, subtree: true, characterData: true });
+  }
+
+  try {
+    while (stableFrames < 3 && !isCancelled() && performance.now() - start <= timeoutMs) {
+      hasMutations = false;
+      await nextFrame();
+      const hasSkeleton = root ? root.querySelector(".streamdown-code-skeleton") !== null : false;
+      if (!hasMutations && !hasSkeleton) {
+        stableFrames += 1;
+      } else {
+        stableFrames = 0;
+      }
+    }
+  } finally {
+    observer?.disconnect();
+  }
 }
 
 const DEFAULT_SCHEDULING: StreamingSchedulerOptions = {
@@ -603,27 +708,22 @@ export function PerfHarness(): JSX.Element {
         }
 
         if (renderer === "streammdx") {
-          const handle = handleRef.current;
-          if (handle) {
-            handle.finalize();
-            handle.flushPending();
-            await handle.waitForIdle();
-          }
+          await waitForStreamMdxCompletion(handleRef.current);
         } else {
-          while (streamdownCommittedRef.current < fixture.length && !cancelled) {
-            await nextFrame();
-          }
+          await waitForStreamdownCompletion(
+            rootRef.current,
+            streamdownCommittedRef,
+            fixture.length,
+            () => cancelled,
+          );
           setStreamdownIsAnimating(false);
         }
-        await nextFrame();
-        await nextFrame();
-        await sleep(100);
-        await nextFrame();
+
+        // Final completion timestamp reflects all rendering, finalization, and highlighting work
         const runEnd = performance.now();
         stopLongTasks();
         stopRaf();
         stopMemory();
-
         const liveDom = await collectLiveDomMetrics(rootRef.current);
 
         const report: PerfReport = {

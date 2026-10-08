@@ -47,17 +47,18 @@ The perf harness supports two configuration profiles:
 ### Parity Contract Specification (RFC 2119)
 1. **MDX & Callouts**: MUST be disabled on both StreamMDX (`features.mdx = false`, `features.callouts = false`) and Streamdown (no MDX plugin, no callouts).
 2. **Math Rendering**: MUST use identical syntax parsing (`$...$` inline math with `singleDollarTextMath: true` and `$$...$$` display math) and identical KaTeX rendering outputting `htmlAndMathml` mode.
-3. **Syntax Code & Diff Highlighting**: MUST be enabled by default on both renderers (Shiki syntax highlighter with `diff` language support enabled).
+3. **Syntax Code Highlighting & Grammar**: Shiki syntax highlighter enabled by default on both renderers with `diff` language grammar support. Qualified as `diff: "grammar_only"` to reflect grammar support without claiming custom structured diff renderer parity.
 4. **Streamdown Controls & Animation**: Streamdown MUST run with `controls={false}`, `isAnimating={false}`, and `animated={false}` to avoid mounting copy/download control dropdowns or running animation tickers.
 5. **HTML, GFM & Footnotes**: MUST be enabled equally across both renderers.
-6. **No Custom Markup Overrides**: StreamMDX in parity mode MUST NOT pass custom component wrappers (`ScrollAreaHorizontal`, custom `Table`, `TableCell`) that swallow built-in features. It renders using native built-in element nodes (`defaultBlockComponents`, `defaultInlineComponents`, `defaultTableElements`, `defaultHtmlElements`).
-
+6. **Streaming Incomplete Markdown Repair**: Enabled equally on both renderers. Streamdown runs `parseIncompleteMarkdown: true`. StreamMDX runs `formatAnticipation` enabled for inline, mathInline, mathBlock, html, with MDX anticipation disabled (`mdx: false`).
+7. **No Custom Markup Overrides**: StreamMDX in parity mode MUST NOT pass custom component wrappers (`ScrollAreaHorizontal`, custom `Table`, `TableCell`) that swallow built-in features. It renders using native built-in element nodes (`defaultBlockComponents`, `defaultInlineComponents`, `defaultTableElements`, `defaultHtmlElements`).
+8. **Deterministic Finalization & Timings**: Measurements MUST NOT capture unfinished DOM or arbitrary sleeps. StreamMDX awaits block finalization, lazy tokenization line completion, and version stability. Streamdown awaits full text commitment, absence of skeletons, and mutation quiescence. All rendering and tokenization work is included in the final run duration.
 ### Metric Classification: Live Attached DOM vs CDP Heap Retained Nodes
 
 The harness and reports clearly distinguish between two fundamentally different node measurements:
 1. **Live Document Subtree (Attached DOM Nodes)**:
    - Measured directly on the finalized live `#perf-root` container.
-   - Subtree node counts: total element nodes (`liveElements`), `<pre>` (`livePre`), `<code>` (`liveCode`), `<table>` (`liveTable`), `<tr>` (`liveTr`), `<li>` (`liveLi`), `<math>`/KaTeX (`liveMath`).
+   - Subtree node counts: total element nodes (`liveElements`), `<pre>` (`livePre`), `<code>` (`liveCode`), fenced code blocks (`liveCodeBlocks`), inline code (`liveInlineCode`), `<table>` (`liveTable`), `<tr>` (`liveTr`), `<li>` (`liveLi`), `<math>`/KaTeX (`liveMath`).
    - Visible semantic content text: normalized text length (`semanticTextLength`) and cryptographic SHA-256 hash (`semanticTextHash`).
 2. **CDP Process Heap DOM Counters (`Memory.getDOMCounters`)**:
    - Measures total DOM nodes across the entire browser renderer process heap (`cdpHeapTotalNodesEnd` and `cdpHeapTotalNodesDelta`).
