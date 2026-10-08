@@ -1,6 +1,21 @@
 // Core contracts (public types) - V2 Markdown Renderer
 // Based on final_spec.md architecture
 
+export interface BlockResolvedLinkReference {
+  label: string;
+  href: string;
+  title?: string;
+}
+
+export interface BlockMeta {
+  /**
+   * Link reference definitions resolved and referenced by this block's inline content.
+   * Omitted when no reference definitions were used.
+   */
+  linkReferences?: BlockResolvedLinkReference[];
+  [key: string]: unknown;
+}
+
 /**
  * Core Block representation for streaming markdown
  */
@@ -15,7 +30,7 @@ export interface Block {
     sanitizedHtml?: string; // sanitized HTML (html blocks)
     compiledMdxRef?: { id: string } | null; // server-compiled artifact key
     compiledMdxModule?: CompiledMdxModule | null; // inline compiled module (worker/client side)
-    meta?: Record<string, unknown>; // e.g., code fence info, table align
+    meta?: BlockMeta; // e.g., code fence info, table align, linkReferences
     range?: { from: number; to: number }; // original source offsets
   };
 }

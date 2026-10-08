@@ -1,13 +1,15 @@
-import type { Tree } from "@lezer/common";
+import { type Tree, TreeFragment } from "@lezer/common";
 import { parser as mdParser } from "@lezer/markdown";
 import type {
   Block,
+  BlockResolvedLinkReference,
   CodeHighlightOutputMode,
   CompiledMdxModule,
   DiffKind,
   FormatAnticipationConfig,
   InlineNode,
   NormalizedFormatAnticipation,
+  LinkReferenceDefinition,
   Patch,
   PatchMetrics,
   PerformanceMetrics,
@@ -26,6 +28,7 @@ import {
   blocksStructurallyEqual,
   cloneBlock,
   collectLinkReferences,
+  diffLinkReferences,
   dedentIndentedCode,
   detectMDX,
   extractCodeLines,
@@ -179,6 +182,9 @@ export class MarkdownEngine {
 
   private blocks: Block[] = [];
   private lastTree: Tree | null = null;
+  private treeFragments: readonly TreeFragment[] = [];
+  private currentLinkReferences = new Map<string, LinkReferenceDefinition>();
+  private blockAttemptedReferences = new Map<string, Set<string>>();
   private currentContent = "";
 
   private txCounter = 0;
@@ -493,6 +499,9 @@ export class MarkdownEngine {
     this.performanceTimer = new PerformanceTimer();
     this.blocks = [];
     this.lastTree = null;
+    this.treeFragments = [];
+    this.currentLinkReferences = new Map();
+    this.blockAttemptedReferences = new Map();
     this.currentContent = "";
     this.deferredPatchQueue = [];
     this.emittedBlockEpochs = new Map();
@@ -643,7 +652,9 @@ export class MarkdownEngine {
     metrics?.markParseStart();
 
     const tree = this.mdParser.parse(content);
-    this.inlineParser.setReferences(collectLinkReferences(tree, content));
+    this.treeFragments = TreeFragment.addTree(tree);
+    this.currentLinkReferences = collectLinkReferences(tree, content);
+    this.inlineParser.setReferences(this.currentLinkReferences);
     let extractedBlocks = await this.extractBlocks(tree, content, options);
     extractedBlocks = this.runDocumentPlugins(extractedBlocks, content);
 
@@ -664,11 +675,22 @@ export class MarkdownEngine {
     const newContent = this.currentContent + appendedText;
     const changeRanges = computeChangedRanges(this.currentContent, newContent);
 
-    const treeFragments = this.lastTree && "fragments" in this.lastTree ? (this.lastTree as unknown as { fragments?: unknown }).fragments as never : undefined;
-    let newTree = treeFragments ? this.mdParser.parse(newContent, treeFragments) : this.mdParser.parse(newContent);
-    this.inlineParser.setReferences(collectLinkReferences(newTree, newContent));
+    const oldLen = this.currentContent.length;
+    const newLen = oldLen + appendedText.length;
+    const updatedFragments = TreeFragment.applyChanges(this.treeFragments, [
+      { fromA: oldLen, toA: oldLen, fromB: oldLen, toB: newLen },
+    ]);
+    let newTree = this.mdParser.parse(newContent, updatedFragments);
+    this.treeFragments = TreeFragment.addTree(newTree, updatedFragments);
+    const newReferences = collectLinkReferences(newTree, newContent);
+    const changedLabels = diffLinkReferences(this.currentLinkReferences, newReferences);
+    this.currentLinkReferences = newReferences;
+    this.inlineParser.setReferences(newReferences);
 
-    let changedBlocks = await this.extractBlocks(newTree, newContent);
+    let changedBlocks = await this.extractBlocks(newTree, newContent, {
+      firstChangedPos: oldLen,
+      previousBlocks: this.blocks,
+    });
     changedBlocks = this.runDocumentPlugins(changedBlocks, newContent);
     const lastRange = changedBlocks.length > 0 ? changedBlocks[changedBlocks.length - 1]?.payload?.range : undefined;
     const lastTo = typeof lastRange?.to === "number" ? lastRange.to : 0;
@@ -676,13 +698,38 @@ export class MarkdownEngine {
       const tail = newContent.slice(lastTo).trim();
       if (tail.length > 0) {
         const fullTree = this.mdParser.parse(newContent);
-        this.inlineParser.setReferences(collectLinkReferences(fullTree, newContent));
+        this.treeFragments = TreeFragment.addTree(fullTree);
+        const fullRefs = collectLinkReferences(fullTree, newContent);
+        const fullChangedLabels = diffLinkReferences(this.currentLinkReferences, fullRefs);
+        for (const l of fullChangedLabels) changedLabels.add(l);
+        this.currentLinkReferences = fullRefs;
+        this.inlineParser.setReferences(fullRefs);
         let fullBlocks = await this.extractBlocks(fullTree, newContent);
         fullBlocks = this.runDocumentPlugins(fullBlocks, newContent);
         const fullLast = fullBlocks.length > 0 ? fullBlocks[fullBlocks.length - 1]?.payload?.range?.to ?? 0 : 0;
         if (fullLast >= newContent.length - 1 || fullBlocks.length >= changedBlocks.length) {
           newTree = fullTree;
           changedBlocks = fullBlocks;
+        }
+      }
+    }
+
+    if (changedLabels.size > 0) {
+      for (let i = 0; i < changedBlocks.length; i++) {
+        const block = changedBlocks[i];
+        const attempted = this.blockAttemptedReferences.get(block.id);
+        if (!attempted) continue;
+        let matched = false;
+        for (const label of changedLabels) {
+          if (attempted.has(label)) {
+            matched = true;
+            break;
+          }
+        }
+        if (matched) {
+          const cloned = cloneBlock(block);
+          await this.enrichBlock(cloned);
+          changedBlocks[i] = cloned;
         }
       }
     }
@@ -705,6 +752,15 @@ export class MarkdownEngine {
       this.headingIdCounts = new Map<string, number>();
       const extracted: Block[] = [];
       const cursor = tree.cursor();
+      const reusableBlockMap =
+        options.firstChangedPos !== undefined && options.previousBlocks
+          ? new Map(
+              options.previousBlocks.map((b) => [
+                `${b.payload.range?.from ?? -1}:${b.payload.range?.to ?? -1}:${b.payload.raw ?? ""}`,
+                b,
+              ]),
+            )
+          : null;
 
       if (cursor.firstChild()) {
         do {
@@ -715,7 +771,24 @@ export class MarkdownEngine {
 
           if (isBlockLevelNode(nodeType)) {
             const blockType = mapLezerNodeToBlockType(nodeType);
-            const block = await this.createBlock(blockType, raw, from, to, content, options);
+            let block: Block | null = null;
+            if (reusableBlockMap && to <= options.firstChangedPos!) {
+              const prev = reusableBlockMap.get(`${from}:${to}:${raw}`);
+              if (prev && prev.isFinalized && prev.type === blockType) {
+                block = prev;
+                if (blockType === "heading") {
+                  const headingMeta = prev.payload.meta as { headingText?: string } | undefined;
+                  const headingText = headingMeta?.headingText ?? raw;
+                  const baseSlug = slugifyHeading(headingText);
+                  const nextCount = (this.headingIdCounts.get(baseSlug) ?? 0) + 1;
+                  this.headingIdCounts.set(baseSlug, nextCount);
+                }
+              }
+            }
+
+            if (!block) {
+              block = await this.createBlock(blockType, raw, from, to, content, options);
+            }
 
             if (block && raw.trim()) {
               extracted.push(block);
@@ -831,6 +904,41 @@ export class MarkdownEngine {
   }
 
   private async enrichBlock(block: Block): Promise<void> {
+    this.inlineParser.startCollectingAttemptedReferences();
+    try {
+      await this.enrichBlockContent(block);
+    } finally {
+      this.recordLinkReferences(block, this.inlineParser.stopCollectingAttemptedReferences());
+    }
+  }
+
+  /**
+   * Remembers which reference labels a block tried to resolve (so a later definition can re-enrich it)
+   * and publishes the resolved definitions as `meta.linkReferences` for consumers that re-parse block source.
+   */
+  private recordLinkReferences(block: Block, attempted: Set<string>): void {
+    if (attempted.size === 0) {
+      this.blockAttemptedReferences.delete(block.id);
+    } else {
+      this.blockAttemptedReferences.set(block.id, attempted);
+    }
+    const resolved: BlockResolvedLinkReference[] = [];
+    for (const key of attempted) {
+      const def = this.currentLinkReferences.get(key);
+      if (def) {
+        resolved.push(def.title !== undefined ? { label: def.label ?? key, href: def.href, title: def.title } : { label: def.label ?? key, href: def.href });
+      }
+    }
+    const meta = block.payload.meta;
+    if (resolved.length > 0) {
+      block.payload.meta = { ...meta, linkReferences: resolved };
+    } else if (meta && "linkReferences" in meta) {
+      const { linkReferences: _stale, ...rest } = meta;
+      block.payload.meta = rest;
+    }
+  }
+
+  private async enrichBlockContent(block: Block): Promise<void> {
     this.performanceTimer.mark("enrich-block");
     const metrics = this.activeMetricsCollector;
     metrics?.countBlockType(block.type);
@@ -1803,6 +1911,7 @@ export class MarkdownEngine {
 
     this.blocks = reparsedBlocks;
     this.lastTree = reparsedTree;
+    this.treeFragments = TreeFragment.addTree(reparsedTree);
     metricsCollector.setBlocksProduced(this.blocks.length);
 
     const fullRange = [

@@ -1,5 +1,6 @@
 import type { MarkdownConfig } from "@lezer/markdown";
 import type {
+  Block,
   DiffKind,
   DiffLineKind,
   InlineExtension,
@@ -107,4 +108,6 @@ export interface MdxStatusUpdate {
 
 export interface ParseOptions {
   forceFinalize?: boolean;
+  firstChangedPos?: number;
+  previousBlocks?: Block[];
 }

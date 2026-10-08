@@ -56,7 +56,9 @@ export class InlineParser {
   private regexPlugins: RegexInlinePlugin[] = [];
   private astPlugins: ASTInlinePlugin[] = [];
   private extensions: InlineExtension[] = [];
-  private cache = new Map<string, InlineNode[]>();
+  private cache = new Map<string, { nodes: InlineNode[]; attemptedReferences: string[] }>();
+  private activeAttemptedReferenceCollector: Set<string> | null = null;
+  private lastAttemptedReferences = new Set<string>();
   private maxCacheEntries: number;
   private enableMath: boolean;
   private references?: LinkReferenceMap;
@@ -91,6 +93,38 @@ export class InlineParser {
     if (this.converter) {
       this.converter.setReferences(references);
     }
+  }
+
+  /**
+   * Get link reference definitions map.
+   */
+  getReferences(): LinkReferenceMap | undefined {
+    return this.references;
+  }
+
+  /**
+   * Start collecting reference labels attempted during inline parsing.
+   */
+  startCollectingAttemptedReferences(): Set<string> {
+    const set = new Set<string>();
+    this.activeAttemptedReferenceCollector = set;
+    return set;
+  }
+
+  /**
+   * Stop collecting reference labels and return the collected set.
+   */
+  stopCollectingAttemptedReferences(): Set<string> {
+    const set = this.activeAttemptedReferenceCollector ?? new Set<string>();
+    this.activeAttemptedReferenceCollector = null;
+    return set;
+  }
+
+  /**
+   * Get reference labels attempted during the most recent parse call.
+   */
+  getLastAttemptedReferences(): ReadonlySet<string> {
+    return this.lastAttemptedReferences;
   }
 
   /**
@@ -164,22 +198,38 @@ export class InlineParser {
         // Refresh LRU order
         this.cache.delete(content);
         this.cache.set(content, cached);
-        return cached;
+        this.lastAttemptedReferences = new Set(cached.attemptedReferences);
+        if (this.activeAttemptedReferenceCollector) {
+          for (const ref of cached.attemptedReferences) {
+            this.activeAttemptedReferenceCollector.add(ref);
+          }
+        }
+        if (options.onAttemptedReference) {
+          for (const ref of cached.attemptedReferences) {
+            options.onAttemptedReference(ref);
+          }
+        }
+        return cached.nodes;
       }
     }
 
     // If call-specific references provided, update converter temporarily
     const effectiveRefs = hasCustomRefs ? options.references : this.references;
     const prevPredicate = getActiveReferencePredicate();
-    if (effectiveRefs) {
-      setActiveReferencePredicate((rawLabel: string) => {
-        const key = normalizeLinkLabel(rawLabel);
-        if (effectiveRefs instanceof Map) return effectiveRefs.has(key);
-        return Object.prototype.hasOwnProperty.call(effectiveRefs, key);
-      });
-    } else {
-      setActiveReferencePredicate(null);
-    }
+    const attemptedInThisParse = new Set<string>();
+    setActiveReferencePredicate((rawLabel: string) => {
+      const key = normalizeLinkLabel(rawLabel);
+      attemptedInThisParse.add(key);
+      if (this.activeAttemptedReferenceCollector) {
+        this.activeAttemptedReferenceCollector.add(key);
+      }
+      if (options.onAttemptedReference) {
+        options.onAttemptedReference(key);
+      }
+      if (!effectiveRefs) return false;
+      if (effectiveRefs instanceof Map) return effectiveRefs.has(key);
+      return Object.prototype.hasOwnProperty.call(effectiveRefs, key);
+    });
 
     let elements: MarkdownElement[];
     let result: InlineNode[];
@@ -207,8 +257,12 @@ export class InlineParser {
       }
     }
 
+    this.lastAttemptedReferences = attemptedInThisParse;
     if (shouldCache) {
-      this.cache.set(content, result);
+      this.cache.set(content, {
+        nodes: result,
+        attemptedReferences: Array.from(attemptedInThisParse),
+      });
       while (this.cache.size > this.maxCacheEntries) {
         const oldestKey = this.cache.keys().next().value as string | undefined;
         if (oldestKey === undefined) break;

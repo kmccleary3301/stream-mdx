@@ -29,7 +29,6 @@ export type SharedHighlighter = Highlighter;
 
 let sharedHighlighterPromise: Promise<SharedHighlighter> | null = null;
 let sharedHighlighter: SharedHighlighter | null = null;
-
 export async function getSharedHighlighter(prewarmLangs: string[] = []): Promise<SharedHighlighter> {
   if (!sharedHighlighterPromise) {
     const coreLangs = ["javascript", "typescript", "json", "text", "markdown", "diff"];
