@@ -70,7 +70,11 @@ This is the most reliable “will npm users succeed?” gate.
 
 ### 2.1 CI-equivalent smoke test (recommended)
 
-Runs a fully automated pack+install+`next build` using the included starter (no workspace links):
+Runs a fully automated pack+install smoke test across Node sandbox, Next.js starter, and Vite:
+- Packs all monorepo tarballs including optional packages `@stream-mdx/mermaid` and `@stream-mdx/unified`.
+- Installs them as explicit optional dependencies with dependency overrides in a clean sandbox.
+- Verifies installed ESM public imports and advertised CJS entries on declared supported Node (>=20), testing callable behaviors (`createUnifiedRenderer`, `MarkdownEngine`, `createInlineEngineWorker`, `MermaidBlock`).
+- Builds Next.js and Vite applications exercising `codeRenderers` (Mermaid), `blockRenderer=createUnifiedRenderer` with remark/rehype plugins, and `engine="main-thread"` dynamic import bundling.
 
 ```bash
 npm run ci:pack-smoke
@@ -87,6 +91,7 @@ npm run ci:pack-smoke
      (cd packages/markdown-v2-worker && npm pack --pack-destination ../../tmp/release-packs)
      (cd packages/markdown-v2-react && npm pack --pack-destination ../../tmp/release-packs)
      (cd packages/markdown-v2-mermaid && npm pack --pack-destination ../../tmp/release-packs)
+     (cd packages/markdown-v2-unified && npm pack --pack-destination ../../tmp/release-packs)
      (cd packages/markdown-v2-tui && npm pack --pack-destination ../../tmp/release-packs)
      (cd packages/theme-tailwind && npm pack --pack-destination ../../tmp/release-packs)
      (cd packages/stream-mdx && npm pack --pack-destination ../../tmp/release-packs)
@@ -136,6 +141,7 @@ This repo is set up for Changesets.
      - `@stream-mdx/worker`
      - `@stream-mdx/react`
      - `@stream-mdx/mermaid`
+     - `@stream-mdx/unified`
      - `@stream-mdx/tui`
      - `@stream-mdx/theme-tailwind`
      - `stream-mdx`
@@ -162,6 +168,7 @@ This repo is set up for Changesets.
    - `@stream-mdx/worker`
    - `@stream-mdx/react`
    - `@stream-mdx/mermaid`
+   - `@stream-mdx/unified`
    - `@stream-mdx/tui`
    - `@stream-mdx/theme-tailwind`
    - `stream-mdx`
@@ -176,8 +183,7 @@ This repo’s CI (`.github/workflows/ci.yml`) enforces:
 - `npm run build`
 - `npm test`
 - `npm -ws --if-present pack --dry-run`
-- `npm run ci:pack-smoke` (pack+install+`next build`)
-
+- `npm run ci:pack-smoke` (pack + install sandbox + ESM/CJS verification + Next/Vite builds)
 Before publishing, run the same commands locally (plus the external install gate in §2).
 
 ---
