@@ -61,4 +61,9 @@ export interface InlineParseOptions {
    * When provided, merges with or overrides parser-level references.
    */
   references?: LinkReferenceMap;
+
+  /**
+   * Callback invoked whenever a link reference label candidate is evaluated during inline parsing.
+   */
+  onAttemptedReference?: (label: string) => void;
 }

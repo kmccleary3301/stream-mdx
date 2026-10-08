@@ -20,7 +20,7 @@ export function collectLinkReferences(tree: Tree, content: string): Map<string, 
   do {
     if (cursor.type.name === "LinkReference") {
       let label = "";
-      let href = "";
+      let href: string | undefined;
       let title: string | undefined;
 
       if (cursor.firstChild()) {
@@ -44,11 +44,35 @@ export function collectLinkReferences(tree: Tree, content: string): Map<string, 
         cursor.parent();
       }
 
-      if (label && href && !references.has(label)) {
+      if (label && href !== undefined && !references.has(label)) {
         references.set(label, { href, title });
       }
     }
   } while (cursor.nextSibling());
 
   return references;
+}
+
+/**
+ * Computes the set of link labels that were added, removed, or changed between two reference maps.
+ */
+export function diffLinkReferences(
+  prevRefs: Map<string, LinkReferenceDefinition> | undefined,
+  nextRefs: Map<string, LinkReferenceDefinition>,
+): Set<string> {
+  const changed = new Set<string>();
+  for (const [label, nextDef] of nextRefs) {
+    const prevDef = prevRefs?.get(label);
+    if (!prevDef || prevDef.href !== nextDef.href || prevDef.title !== nextDef.title) {
+      changed.add(label);
+    }
+  }
+  if (prevRefs) {
+    for (const label of prevRefs.keys()) {
+      if (!nextRefs.has(label)) {
+        changed.add(label);
+      }
+    }
+  }
+  return changed;
 }

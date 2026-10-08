@@ -56,6 +56,9 @@ export function blocksStructurallyEqual(a: Block, b: Block): boolean {
   const metaA = a.payload.meta ?? null;
   const metaB = b.payload.meta ?? null;
   if (!deepEqual(metaA, metaB)) return false;
+  const inlineA = a.payload.inline ?? null;
+  const inlineB = b.payload.inline ?? null;
+  if (!deepEqual(inlineA, inlineB)) return false;
   return true;
 }
 
