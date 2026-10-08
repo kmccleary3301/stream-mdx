@@ -1,4 +1,5 @@
 import type { NodeSet } from "@lezer/common";
+import { decodeHTML5Strict } from "entities";
 import type { HtmlOptions, InlineNode } from "../types";
 import { decodeEntity } from "./entities";
 import { sanitizeHtmlTreeInWorker } from "../worker-html-sanitizer";
@@ -135,6 +136,8 @@ const VOID_TAGS: Record<string, true> = {
   base: true,
   col: true,
   embed: true,
+  param: true,
+  wbr: true,
 };
 
 

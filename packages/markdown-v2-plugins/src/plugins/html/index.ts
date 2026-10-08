@@ -1,4 +1,4 @@
-import { parser } from "@lezer/markdown";
+import { isNativeHtmlBlock } from "@stream-mdx/core";
 import type { DocumentContext, DocumentPlugin } from "../document";
 
 const HTML_BLOCK_NAMES: Record<string, true> = { HTMLBlock: true, CommentBlock: true, ProcessingInstructionBlock: true };
@@ -11,8 +11,7 @@ export const HTMLBlockPlugin: DocumentPlugin = {
       if (block.type !== "paragraph") continue;
       const nativeType = block.payload.meta?.lezerNodeType;
       const raw = block.payload.raw;
-      const node = typeof nativeType === "string" ? null : parser.parse(raw).topNode.firstChild;
-      if (typeof nativeType === "string" ? HTML_BLOCK_NAMES[nativeType] : node && HTML_BLOCK_NAMES[node.name] && node.to === raw.trimEnd().length) {
+      if (typeof nativeType === "string" ? HTML_BLOCK_NAMES[nativeType] : isNativeHtmlBlock(raw)) {
         block.type = "html";
         block.payload.meta = { ...(block.payload.meta || {}), needsSanitization: true };
         block.payload.inline = [];
