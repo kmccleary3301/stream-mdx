@@ -641,11 +641,13 @@ export const defaultBlockComponents: BlockComponents = {
       El.Table,
       { className: "markdown-table" },
       header && header.length > 0 ? React.createElement(El.Thead, {}, React.createElement(El.Tr, {}, renderCells(header, "th", -1))) : null,
-      React.createElement(
-        El.Tbody,
-        {},
-        rows.map((row, r) => React.createElement(El.Tr, { key: r }, renderCells(row, "td", r))),
-      ),
+      rows && rows.length > 0
+        ? React.createElement(
+            El.Tbody,
+            {},
+            rows.map((row, r) => React.createElement(El.Tr, { key: r }, renderCells(row, "td", r))),
+          )
+        : null,
     );
   },
 };

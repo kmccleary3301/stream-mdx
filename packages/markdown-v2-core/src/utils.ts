@@ -1,6 +1,7 @@
 // Utility functions for V2 Markdown Renderer
 
 import { type Block, LANGUAGE_ALIASES, type ProtectedRange } from "./types";
+import { decodeHTML5Strict } from "entities";
 
 // Browser-compatible crypto import
 const createHash = (_algorithm: string) => {
@@ -164,9 +165,14 @@ function isWithinRanges(start: number, end: number, ranges: Array<{ from: number
  * Parse code fence info (language and metadata)
  */
 export function parseCodeFenceInfo(info: string): { lang: string; meta: Record<string, unknown> } {
-  const parts = info.trim().split(/\s+/);
+  let decoded = (info || "").replace(/\\([!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~])/g, "$1");
+  try {
+    decoded = decodeHTML5Strict(decoded);
+  } catch {
+    // Keep unescaped if entity decoding fails
+  }
+  const parts = decoded.trim().split(/\s+/);
   const lang = normalizeLang(parts[0]);
-
   const meta: Record<string, unknown> = {};
   for (let i = 1; i < parts.length; i++) {
     const part = parts[i];
@@ -188,8 +194,21 @@ export function parseCodeFenceInfo(info: string): { lang: string; meta: Record<s
 export function normalizeBlockquoteText(raw: string): string {
   if (!raw) return "";
   const lines = raw.replace(/\r\n/g, "\n").split("\n");
-  const normalized = lines.map((line) => line.replace(/^\s*>?\s?/, ""));
+  const normalized = lines.map((line) => line.replace(/^[ \t]*>[ \t]?/, ""));
   // Trim leading/trailing empty lines but preserve internal spacing
+  while (normalized.length > 0 && normalized[0].trim().length === 0) {
+    normalized.shift();
+  }
+  while (normalized.length > 0 && normalized[normalized.length - 1].trim().length === 0) {
+    normalized.pop();
+  }
+  return normalized.join("\n");
+}
+
+export function normalizeBlockquoteParagraphText(raw: string): string {
+  if (!raw) return "";
+  const lines = raw.replace(/\r\n/g, "\n").split("\n");
+  const normalized = lines.map((line) => line.replace(/^(?:[ \t]*>[ \t]?)+/, ""));
   while (normalized.length > 0 && normalized[0].trim().length === 0) {
     normalized.shift();
   }

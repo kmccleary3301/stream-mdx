@@ -115,7 +115,7 @@ function isListLoose(listNode: SyntaxNode, raw: string): boolean {
 
   for (let i = 0; i < items.length - 1; i++) {
     const gap = raw.slice(items[i].to, items[i + 1].from);
-    if (/\n\s*\n/.test(gap)) return true;
+    if (/\n[ >\t]*\n/.test(gap)) return true;
   }
 
   for (const item of items) {
@@ -123,7 +123,7 @@ function isListLoose(listNode: SyntaxNode, raw: string): boolean {
     const itemCursor = item.cursor();
     if (itemCursor.firstChild()) {
       do {
-        if (itemCursor.type.name !== "ListMark") {
+        if (itemCursor.type.name !== "ListMark" && itemCursor.type.name !== "QuoteMark") {
           children.push(itemCursor.node);
         }
       } while (itemCursor.nextSibling());
@@ -131,11 +131,11 @@ function isListLoose(listNode: SyntaxNode, raw: string): boolean {
 
     for (let j = 0; j < children.length - 1; j++) {
       const gap = raw.slice(children[j].to, children[j + 1].from);
-      if (/\n\s*\n/.test(gap)) return true;
+      if (/\n[ >\t]*\n/.test(gap)) return true;
     }
 
     const itemRaw = raw.slice(item.from, item.to);
-    if (/\n\s*\n\s*$/.test(itemRaw)) return true;
+    if (/\n[ >\t]*\n[ >\t]*$/.test(itemRaw)) return true;
   }
   return false;
 }
@@ -738,38 +738,21 @@ function buildBlockquoteChildren(block: Block, bqNode: SyntaxNode, idPrefix: str
         }
       } else if (name === "FencedCode" || name === "IndentedCode" || name === "CodeBlock") {
         const cId = `${idPrefix}::code:${childIndex++}`;
-        const cRaw = raw.slice(cursor.from, cursor.to);
-        const normalized = normalizeBlockquoteText(cRaw);
-        const { code, info: infoString, hadFence } = stripCodeFence(normalized);
-        const body = hadFence ? dedentFencedCodeByClosingIndent(normalized, code) : dedentIndentedCode(normalized);
-        const { lang, meta } = parseCodeFenceInfo(infoString);
-        children.push({
-          id: cId,
-          type: "code",
-          props: {
-            block: {
-              id: cId,
-              type: "code",
-              isFinalized: true,
-              payload: {
-                raw: normalized,
-                meta: { ...meta, lang: lang || "text", code: body },
-              },
-            },
-          },
-          range: createRange(baseOffset + cursor.from, baseOffset + cursor.to),
-          children: [],
-        });
+        const isFenced = name === "FencedCode";
+        const snapshot = buildCodeBlockSnapshot(block, cursor.node, cId, baseOffset, raw, isFenced);
+        if (snapshot) {
+          children.push(snapshot);
+        }
       } else if (name === "HorizontalRule") {
-        const hrId = `${idPrefix}::thematicBreak:${childIndex++}`;
+        const hrId = `${idPrefix}::hr:${childIndex++}`;
         children.push({
           id: hrId,
-          type: "thematicBreak",
+          type: "hr",
           props: {
             block: {
               id: hrId,
-              type: "thematicBreak",
-              isFinalized: true,
+              type: "hr",
+              isFinalized: Boolean(block.isFinalized),
               payload: { raw: raw.slice(cursor.from, cursor.to) },
             },
           },
@@ -1072,12 +1055,14 @@ function enrichTableSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot
     })),
   }));
 
-  children.push({
-    id: `${block.id}::tbody`,
-    type: "table-body",
-    props: { rows: rows.length },
-    children: bodyChildren,
-  });
+  if (bodyChildren.length > 0) {
+    children.push({
+      id: `${block.id}::tbody`,
+      type: "table-body",
+      props: { rows: rows.length },
+      children: bodyChildren,
+    });
+  }
 
   snapshot.children = children;
   return snapshot;
@@ -1089,7 +1074,7 @@ function enrichCodeSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot 
   // Worker-provided meta.code is already normalized code body (no fences),
   // so preserve its leading indentation verbatim instead of re-running
   // extractCodeLines() heuristics for indented markdown blocks.
-  const lines = metaCode !== null ? (source.length > 0 ? source.replace(/\r\n?/g, "\n").split("\n") : []) : extractCodeLines(source);
+  const lines = metaCode !== null ? source.replace(/\r\n?/g, "\n").split("\n") : extractCodeLines(source);
   const meta = block.payload.meta as
     | {
         highlightedLines?: HighlightedLine[];
