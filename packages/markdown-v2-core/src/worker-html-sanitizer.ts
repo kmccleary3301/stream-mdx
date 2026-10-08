@@ -49,6 +49,43 @@ export const CODE_ROW_ALLOWED_ATTRS = ["class", "data-*", "style"] as const;
 const CODE_ROW_HAST_ATTRS = ["className", "style", "data*"] as const;
 
 /**
+ * Tags whose entire subtree is removed on both paths instead of being
+ * unwrapped. Mirrors DOMPurify's `DEFAULT_FORBID_CONTENTS` (dompurify 3.4.16,
+ * the version this repo pins) so the DOM-free rehype pipeline and DOMPurify
+ * agree on `svg`/`template`/`iframe`/`thead`-style subtrees: `<svg><text>B</text></svg>`
+ * must become empty on Node exactly as it does in the browser. Tags outside
+ * this set keep their content on both paths (KEEP_CONTENT semantics).
+ */
+const CODE_ROW_STRIP_TAGS = [
+  "annotation-xml",
+  "audio",
+  "colgroup",
+  "desc",
+  "foreignobject",
+  "head",
+  "iframe",
+  "math",
+  "mi",
+  "mn",
+  "mo",
+  "ms",
+  "mtext",
+  "noembed",
+  "noframes",
+  "noscript",
+  "plaintext",
+  "script",
+  "selectedcontent",
+  "style",
+  "svg",
+  "template",
+  "thead",
+  "title",
+  "video",
+  "xmp",
+];
+
+/**
  * Code-row style policy: only theme wiring survives. Properties must be
  * `--custom-properties` or a small presentational allowlist, and values must
  * stay inside a conservative charset. This rejects CSS backslash escapes
@@ -82,7 +119,7 @@ function createCodeRowSchema(): Schema {
   base.tagNames = [...CODE_ROW_ALLOWED_TAGS];
   base.attributes = { "*": [...CODE_ROW_HAST_ATTRS] } as Schema["attributes"];
   base.protocols = {};
-  base.strip = ["script", "style"];
+  base.strip = [...CODE_ROW_STRIP_TAGS];
   return base;
 }
 

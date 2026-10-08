@@ -73,6 +73,14 @@ function normalizeHtml(html: string): string {
   return root.innerHTML;
 }
 
+// DOMPurify `DEFAULT_FORBID_CONTENTS` subtrees are removed with their content
+// on both paths; other disallowed tags are unwrapped and keep their content.
+// Tags that the HTML parser flattens outside their context (`thead`, `head`)
+// cannot be asserted this way; the table case below reaches `thead` as a real
+// element instead.
+const FORBIDDEN_SUBTREE_TAGS = ["svg", "template", "iframe", "math", "title", "xmp", "video", "noscript"];
+const UNWRAPPED_TAGS = ["textarea", "em", "h1"];
+
 const ALIGNMENT_MATRIX = [
   REAL_SHIKI_FENCE_HTML,
   HOSTILE_CODE_ROW,
@@ -87,6 +95,9 @@ const ALIGNMENT_MATRIX = [
   '<span class="line" style="background-image:u/**/rl(https://attacker.example/pixel)">commented</span>',
   '<span class="line" style="background-image:url(https://attacker.example/pixel)">urled</span>',
   '<span class="line" style="position:fixed;color:#24292e">mixed</span>',
+  ...FORBIDDEN_SUBTREE_TAGS.map((tag) => `<span class="line">pre<${tag}>hidden</${tag}>post</span>`),
+  ...UNWRAPPED_TAGS.map((tag) => `<span class="line">pre<${tag}>kept</${tag}>post</span>`),
+  '<span class="line">A<table><thead><tr><td>cell</td></tr></thead></table>B</span>',
 ];
 
 const CSS_ESCAPE_BYPASSES = [
@@ -148,6 +159,23 @@ async function main(): Promise<void> {
     assert.ok(!/\\75|url\s*\(|u\/\*\*\/rl/.test(out), `DOM-free path must not keep escaped url(): ${out}`);
     assert.ok(/escaped|commented|urled/.test(out), `DOM-free path must keep row content: ${out}`);
   }
+
+  // 3c. Forbidden-content subtrees are removed with their contents (DOMPurify
+  // DEFAULT_FORBID_CONTENTS parity); other disallowed tags stay unwrapped.
+  for (const tag of FORBIDDEN_SUBTREE_TAGS) {
+    const out = sanitizeCodeHTML(`<span class="line">pre<${tag}>hidden</${tag}>post</span>`);
+    assert.ok(!out.includes("hidden"), `forbidden subtree content must be removed (${tag}): ${out}`);
+    assert.ok(out.includes("pre") && out.includes("post"), `siblings must survive (${tag}): ${out}`);
+  }
+  for (const tag of UNWRAPPED_TAGS) {
+    const out = sanitizeCodeHTML(`<span class="line">pre<${tag}>kept</${tag}>post</span>`);
+    assert.ok(out.includes("kept"), `unwrapped tag content must survive (${tag}): ${out}`);
+    assert.ok(!out.includes(`<${tag}`), `tag itself must be removed (${tag}): ${out}`);
+  }
+  const tableSubtree = sanitizeCodeHTML(
+    '<span class="line">A<table><thead><tr><td>cell</td></tr></thead></table>B</span>',
+  );
+  assert.ok(!tableSubtree.includes("cell"), `table header subtree must be removed: ${tableSubtree}`);
 
   // 4. Browser path (DOMPurify + template scrub) and Node path must agree per DOM semantics.
   const nodeOutputs = ALIGNMENT_MATRIX.map((input) => normalizeHtml(sanitizeCodeHTML(input)));
