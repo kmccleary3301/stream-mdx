@@ -1,7 +1,6 @@
 import assert from "node:assert";
 
-import type { Patch, WorkerOut } from "@stream-mdx/core";
-import type { Block, InlineNode } from "@stream-mdx/core";
+import { applyPatchBatch, createBlockSnapshot, createInitialSnapshot, type Block, type InlineNode, type NodeSnapshot, type Patch, type WorkerOut } from "@stream-mdx/core";
 import { createRendererStore } from "@stream-mdx/react/renderer/store";
 import { createWorkerHarness } from "./worker-test-harness";
 
@@ -83,5 +82,89 @@ async function runFootnotesFinalizeTest(): Promise<void> {
   );
 }
 
+
+async function runPreparedFootnoteConsumerTest(): Promise<void> {
+  const harness = await createWorkerHarness();
+  const store = createRendererStore();
+  const document = createInitialSnapshot();
+  const consume = (messages: WorkerOut[]) => {
+    for (const message of messages) {
+      if (message.type === "INITIALIZED") {
+        store.reset(message.blocks);
+        Object.assign(document, createInitialSnapshot(message.blocks));
+      } else if (message.type === "PATCH") {
+        applyPatchBatch(document, message.patches);
+        store.applyPatches(message.patches, { captureMetrics: false });
+      } else if (message.type === "ERROR") {
+        throw new Error(message.error.message);
+      }
+    }
+    assert.deepStrictEqual(document.blocks, store.getBlocks(), "core and React must consume the same numbered prepared artifacts");
+    assert.deepStrictEqual(store.getInvariantViolations(), []);
+  };
+  const numbers = new Map([["beta", 1], ["alpha", 2], ["gamma", 3]]);
+  const assertNumbered = (blocks: Block[]) => {
+    const seen = new Set<string>();
+    const visitInline = (nodes: InlineNode[]) => {
+      for (const node of nodes) {
+        if (node.kind === "footnote-ref") {
+          assert.strictEqual(node.number, numbers.get(node.label), `number metadata for ${node.label}`);
+          seen.add(node.label);
+        }
+        if ("children" in node && Array.isArray(node.children)) visitInline(node.children);
+      }
+    };
+    const visitSnapshot = (snapshot: NodeSnapshot) => {
+      const block = snapshot.props?.block as Block | undefined;
+      if (block?.payload.inline) visitInline(block.payload.inline);
+      if (Array.isArray(snapshot.props?.inline)) visitInline(snapshot.props.inline as InlineNode[]);
+      for (const child of snapshot.children ?? []) visitSnapshot(child);
+    };
+    for (const block of blocks) visitSnapshot(createBlockSnapshot(block));
+    assert.deepStrictEqual(seen, new Set(numbers.keys()), "nested consumers must retain every reference, not just root compatibility inline");
+  };
+  const content = [
+    "- first[^beta]",
+    "",
+    "  > # Heading[^alpha]",
+    "  >",
+    "  > repeat[^beta]",
+    "  >",
+    "  > - third[^gamma]",
+    "  >",
+    "  > ```js",
+    "  > // [^ignored]",
+    "  > ```",
+    "",
+    "> quote[^alpha] and again[^beta]",
+    "",
+    "Tail",
+  ].join("\n");
+  const initialMessages = await harness.send({ type: "INIT", initialContent: content, prewarmLangs: [], docPlugins: { footnotes: true, html: false, mdx: false, tables: false, callouts: false } });
+  const initialBlocks = initialMessages.find((message): message is Extract<WorkerOut, { type: "INITIALIZED" }> => message.type === "INITIALIZED")?.blocks;
+  assert.ok(initialBlocks);
+  const initialSerialized = JSON.stringify(initialBlocks);
+  consume(initialMessages);
+  assertNumbered(store.getBlocks());
+  const beforeDefinitions = JSON.stringify(store.getBlocks());
+  consume(await harness.send({ type: "APPEND", text: "\n\n[^gamma]: Third\n\n[^beta]: First\n\n[^alpha]: Second\n" }));
+  assertNumbered(store.getBlocks());
+  assert.strictEqual(JSON.stringify(initialBlocks), initialSerialized, "document numbering must not mutate already-published root/subtree artifacts");
+  assert.notStrictEqual(JSON.stringify(store.getBlocks()), beforeDefinitions, "forward definitions must cross the real PATCH boundary");
+  consume(await harness.send({ type: "FINALIZE" }));
+  assertNumbered(store.getBlocks());
+  const blocks = JSON.parse(JSON.stringify(store.getBlocks())) as Block[];
+  const reset = createRendererStore(blocks);
+  assertNumbered(reset.getBlocks());
+  assert.deepStrictEqual(reset.getInvariantViolations(), []);
+  const items = blocks.find((block) => block.type === "footnotes")?.payload.meta?.items as Array<{ label: string; number: number; inlines: InlineNode[] }> | undefined;
+  assert.ok(items);
+  assert.deepStrictEqual(items.map(({ label, number }) => [label, number]), [...numbers.entries()], "first-reference order must survive repeated references and later definitions");
+  assert.ok(items.every((item) => item.inlines.some((node) => node.kind === "text" && /First|Second|Third/.test(node.text))), "forward definition text must populate the synthetic consumer artifact");
+  for (const quote of blocks.filter((block) => block.type === "blockquote")) {
+    assert.strictEqual(findInlineFootnoteNumber(quote.payload.inline ?? [], "alpha"), 2, "root compatibility inline must expose the actual numbered child content");
+  }
+}
 await runFootnotesFinalizeTest();
+await runPreparedFootnoteConsumerTest();
 console.log("worker-footnotes-finalize test passed");

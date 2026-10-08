@@ -1,4 +1,4 @@
-import type { Block, InlineNode } from "@stream-mdx/core";
+import type { Block, InlineNode, NodeSnapshot, PreparedNestedSnapshot } from "@stream-mdx/core";
 import { generateBlockId } from "@stream-mdx/core";
 import type { DocumentPlugin, DocumentPluginRegistry } from "../document";
 
@@ -147,19 +147,32 @@ function collectDefinitionsFromBlocks(blocks: Block[], state: FootnoteState) {
 }
 
 function assignNumbersFromReferencesInBlocks(blocks: Block[], state: FootnoteState) {
+  const reserveNumber = (label: string) => {
+    if (state.labelToNumber.has(label)) return;
+    const n = state.nextNumber++;
+    state.labelToNumber.set(label, n);
+    state.numberToLabel.set(n, label);
+  };
+  const scanInline = (nodes: InlineNode[]) => {
+    for (const node of nodes) {
+      if (node.kind === "footnote-ref") reserveNumber(node.label);
+      if (hasInlineChildren(node)) scanInline(node.children);
+    }
+  };
   const refRe = /\[\^([A-Za-z0-9_-]+)\]/g;
   for (const block of blocks) {
     // Skip non-textual blocks
     if (block.type === "code" || block.type === "html" || block.type === "footnote-def") continue;
+    const prepared = block.payload.meta?.preparedNested as PreparedNestedSnapshot | undefined;
+    if (prepared) {
+      visitPreparedInline(prepared.children, scanInline);
+      continue;
+    }
     const text = block.payload.raw;
     let m: RegExpExecArray | null = refRe.exec(text);
     while (m !== null) {
       const label = m[1];
-      if (!state.labelToNumber.has(label)) {
-        const n = state.nextNumber++;
-        state.labelToNumber.set(label, n);
-        state.numberToLabel.set(n, label);
-      }
+      reserveNumber(label);
       m = refRe.exec(text);
     }
   }
@@ -169,61 +182,120 @@ function numberInlineReferences(blocks: Block[], state: FootnoteState) {
   const applyNumbers = (inline: InlineNode[] | undefined): InlineNode[] | undefined => {
     if (!inline || inline.length === 0) return inline;
     return mapInline(inline, (node) => {
-      if (node.kind === "footnote-ref") {
-        const n = state.labelToNumber.get(node.label);
-        return { ...node, number: n } as InlineNode;
-      }
-      return node;
+      if (node.kind !== "footnote-ref") return node;
+      const number = state.labelToNumber.get(node.label);
+      return node.number === number ? node : { ...node, number };
     });
   };
-
-  for (const block of blocks) {
-    block.payload.inline = applyNumbers(block.payload.inline);
-
-    const meta = block.payload.meta as Record<string, unknown> | undefined;
-    if (!meta) continue;
-
-    // Mixed content segments (paragraph/blockquote HTML+MDX splits).
-    const mixedSegments = meta.mixedSegments;
-    if (Array.isArray(mixedSegments)) {
-      meta.mixedSegments = mixedSegments.map((segment) => {
+  const numbered = new WeakMap<object, object>();
+  const numberProps = (props: Record<string, unknown>): Record<string, unknown> => {
+    const inline = Array.isArray(props.inline) ? applyNumbers(props.inline as InlineNode[]) : props.inline;
+    const block = props.block ? numberBlock(props.block as Block) : props.block;
+    if (inline === props.inline && block === props.block) return props;
+    return { ...props, ...(inline !== props.inline ? { inline } : {}), ...(block !== props.block ? { block } : {}) };
+  };
+  const numberSnapshot = (snapshot: NodeSnapshot): NodeSnapshot => {
+    const cached = numbered.get(snapshot) as NodeSnapshot | undefined;
+    if (cached) return cached;
+    const props = snapshot.props ? numberProps(snapshot.props) : snapshot.props;
+    const meta = snapshot.meta ? numberMeta(snapshot.meta) : snapshot.meta;
+    const children = snapshot.children ? mapChanged(snapshot.children, numberSnapshot) : snapshot.children;
+    const result = props === snapshot.props && meta === snapshot.meta && children === snapshot.children
+      ? snapshot : { ...snapshot, props, meta, children };
+    numbered.set(snapshot, result);
+    return result;
+  };
+  const numberMeta = (meta: Record<string, unknown>): Record<string, unknown> => {
+    const cached = numbered.get(meta) as Record<string, unknown> | undefined;
+    if (cached) return cached;
+    let result = meta;
+    const set = (key: string, value: unknown) => {
+      if (value === meta[key]) return;
+      if (result === meta) result = { ...meta };
+      result[key] = value;
+    };
+    if (Array.isArray(meta.mixedSegments)) {
+      set("mixedSegments", mapChanged(meta.mixedSegments, (segment: unknown) => {
         if (!segment || typeof segment !== "object") return segment;
-        const seg = segment as Record<string, unknown>;
-        const inline = seg.inline;
-        if (!Array.isArray(inline)) return segment;
-        const updated = applyNumbers(inline as InlineNode[]);
-        return updated ? { ...seg, inline: updated } : segment;
-      });
+        const record = segment as Record<string, unknown>;
+        if (!Array.isArray(record.inline)) return segment;
+        const inline = applyNumbers(record.inline as InlineNode[]);
+        return inline === record.inline ? segment : { ...record, inline };
+      }));
     }
+    for (const key of ["items", "header"]) {
+      const cells = meta[key];
+      if (Array.isArray(cells) && cells.every((cell) => Array.isArray(cell))) {
+        set(key, mapChanged(cells as InlineNode[][], (cell) => applyNumbers(cell) ?? cell));
+      }
+    }
+    if (Array.isArray(meta.rows) && meta.rows.every((row) => Array.isArray(row))) {
+      set("rows", mapChanged(meta.rows as InlineNode[][][], (row) => mapChanged(row, (cell) => applyNumbers(cell) ?? cell)));
+    }
+    const prepared = meta.preparedNested as PreparedNestedSnapshot | undefined;
+    if (prepared) {
+      const props = numberProps(prepared.props);
+      const children = mapChanged(prepared.children, numberSnapshot);
+      set("preparedNested", props === prepared.props && children === prepared.children ? prepared : { ...prepared, props, children });
+    }
+    numbered.set(meta, result);
+    return result;
+  };
+  const numberBlock = (block: Block): Block => {
+    const cached = numbered.get(block) as Block | undefined;
+    if (cached) return cached;
+    let inline = applyNumbers(block.payload.inline);
+    const meta = block.payload.meta ? numberMeta(block.payload.meta) : block.payload.meta;
+    const prepared = meta?.preparedNested as PreparedNestedSnapshot | undefined;
+    if (block.type === "blockquote" && prepared && (meta !== block.payload.meta || !inline)) {
+      const collected: InlineNode[] = [];
+      visitPreparedInline(prepared.children, (nodes) => collected.push(...nodes));
+      inline = collected;
+    }
+    const result = inline === block.payload.inline && meta === block.payload.meta
+      ? block : { ...block, payload: { ...block.payload, inline, meta } };
+    numbered.set(block, result);
+    return result;
+  };
+  for (let index = 0; index < blocks.length; index++) blocks[index] = numberBlock(blocks[index]);
+}
 
-    // List items (InlineNode[][]).
-    const items = meta.items;
-    if (Array.isArray(items) && items.every((item) => Array.isArray(item))) {
-      meta.items = (items as InlineNode[][]).map((item) => applyNumbers(item) ?? item);
+/** Visit the inline nodes consumed by prepared child views, once and in source order. */
+function visitPreparedInline(children: NodeSnapshot[], visit: (nodes: InlineNode[]) => void): void {
+  for (const snapshot of children) {
+    if (snapshot.type === "code" || snapshot.type === "html") continue;
+    const nestedChildren = snapshot.children ?? [];
+    const segmented = nestedChildren.some((child) => child.type === "list-item-text" || child.type === "paragraph-text");
+    const block = snapshot.props?.block as Block | undefined;
+    if (snapshot.type !== "list" && snapshot.type !== "blockquote" && !segmented) {
+      const inline = snapshot.props?.inline ?? block?.payload.inline;
+      if (Array.isArray(inline)) visit(inline as InlineNode[]);
     }
-
-    // GFM tables (header: InlineNode[][], rows: InlineNode[][][]).
-    const header = meta.header;
-    if (Array.isArray(header) && header.every((cell) => Array.isArray(cell))) {
-      meta.header = (header as InlineNode[][]).map((cell) => applyNumbers(cell) ?? cell);
-    }
-
-    const rows = meta.rows;
-    if (Array.isArray(rows) && rows.every((row) => Array.isArray(row))) {
-      meta.rows = (rows as InlineNode[][][]).map((row) => row.map((cell) => applyNumbers(cell) ?? cell));
-    }
+    visitPreparedInline(nestedChildren, visit);
   }
 }
 
 function mapInline(nodes: InlineNode[], f: (n: InlineNode) => InlineNode): InlineNode[] {
-  return nodes.map((node) => {
+  return mapChanged(nodes, (node) => {
     let mapped = node;
     if (hasInlineChildren(node)) {
       const children = mapInline(node.children, f);
-      mapped = { ...node, children } as InlineNode;
+      if (children !== node.children) mapped = { ...node, children } as InlineNode;
     }
     return f(mapped);
   });
+}
+
+/** Copy only a changed array, leaving unrelated prepared code/HTML artifacts shared. */
+function mapChanged<T>(values: T[], map: (value: T) => T): T[] {
+  let result: T[] | undefined;
+  for (let index = 0; index < values.length; index++) {
+    const value = map(values[index]);
+    if (value === values[index]) continue;
+    if (!result) result = values.slice();
+    result[index] = value;
+  }
+  return result ?? values;
 }
 
 function hasInlineChildren(node: InlineNode): node is InlineNode & { children: InlineNode[] } {
