@@ -108,6 +108,9 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
       }
 
       const partialInline = renderInlineNodes(inlineNodes, inlineComponents, registry.getUrlTransform(), registry, "p");
+      if (!registry.hasElementFilters()) {
+        return <p className="markdown-paragraph streaming-partial">{partialInline}</p>;
+      }
       return registry.filterElement(
         { tagName: "p", properties: { className: "markdown-paragraph streaming-partial" }, blockType: "paragraph" },
         { source: "markdown" },
@@ -116,6 +119,9 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
       ) as React.ReactElement | null;
     }
 
+    if (!registry.hasElementFilters()) {
+      return <p className="markdown-paragraph streaming-partial">{raw}</p>;
+    }
     return registry.filterElement(
       { tagName: "p", properties: { className: "markdown-paragraph streaming-partial" }, blockType: "paragraph" },
       { source: "markdown" },
@@ -131,6 +137,9 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
     (node.props?.inlineStatus as string | undefined);
   if (inlineStatus && inlineStatus !== "complete") {
     const raw = typeof block.payload.raw === "string" ? block.payload.raw : "";
+    if (!registry.hasElementFilters()) {
+      return <p className="markdown-paragraph">{raw}</p>;
+    }
     return registry.filterElement(
       { tagName: "p", properties: { className: "markdown-paragraph" }, blockType: "paragraph" },
       { source: "markdown" },
@@ -193,6 +202,9 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
     }
     return <p className="markdown-paragraph">{inlines}</p>;
   };
+  if (!registry.hasElementFilters()) {
+    return renderParagraph();
+  }
   const renderChildren = () => {
     if (childIds.length > 0) {
       return childIds.map((childId) => <MixedSegmentView key={childId} store={store} nodeId={childId} inlineComponents={inlineComponents} urlTransform={registry.getUrlTransform()} registry={registry} parentTagName="p" />);
@@ -208,8 +220,6 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
   if (filtered === null || filtered === undefined) return null;
   return React.isValidElement(filtered) ? filtered : <>{filtered}</>;
 });
-
-ParagraphBlockView.displayName = "ParagraphBlockView";
 
 const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
   const node = useRendererNode(store, blockId);
@@ -331,6 +341,9 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
   });
 
   if (block.payload.meta?.preparedNested && childIds.length === 0) {
+    if (!registry.hasElementFilters()) {
+      return <blockquote className="markdown-blockquote" />;
+    }
     return registry.filterElement(
       { tagName: "blockquote", properties: { className: "markdown-blockquote" }, blockType: "blockquote" },
       { source: "markdown" },
@@ -348,6 +361,9 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
           : fallbackElements;
     const shouldShowStreaming = !block.isFinalized && (!streamingContent || (Array.isArray(streamingContent) && streamingContent.length === 0));
     const className = shouldShowStreaming ? "markdown-blockquote streaming-partial" : "markdown-blockquote";
+    if (!registry.hasElementFilters()) {
+      return <blockquote className={className}>{streamingContent}</blockquote>;
+    }
     return registry.filterElement(
       { tagName: "blockquote", properties: { className }, blockType: "blockquote" },
       { source: "markdown" },
@@ -388,6 +404,9 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
   );
 
   const base = React.isValidElement(baseElement) ? baseElement : <blockquote className="markdown-blockquote">{renderedContent}</blockquote>;
+  if (!registry.hasElementFilters()) {
+    return base;
+  }
   const filtered = registry.filterElement(
     { tagName: "blockquote", properties: { className: "markdown-blockquote" }, blockType: "blockquote" },
     { source: "markdown" },
@@ -590,6 +609,9 @@ const ListBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
         {renderChildren()}
       </Tag>
     );
+    if (!registry.hasElementFilters()) {
+      return renderElement();
+    }
     const filtered = registry.filterElement(
       { tagName: Tag, properties: { className: `markdown-list ${ordered ? "ordered" : "unordered"}` }, blockType: "list" },
       { source: "markdown" },
@@ -662,19 +684,25 @@ const ListItemView: React.FC<{
         case "paragraph": {
           const childInline = childNode.block?.payload.inline ?? (childNode.props?.inline as InlineNode[] | undefined) ?? [];
           const childInlines = renderInlineNodes(childInline, inlineComponents, registry.getUrlTransform(), registry, "p");
-          return childNode.props?.tight ? (
-            <React.Fragment key={childId}>{childInlines}</React.Fragment>
-          ) : (
-            registry.filterElement(
-              { tagName: "p", properties: { className: "markdown-list-item-paragraph" }, blockType: "paragraph" },
-              { source: "markdown", parentTagName: "li" },
-              () => (
-                <p key={childId} className="markdown-list-item-paragraph">
-                  {childInlines}
-                </p>
-              ),
-              () => childInlines,
-            )
+          if (childNode.props?.tight) {
+            return <React.Fragment key={childId}>{childInlines}</React.Fragment>;
+          }
+          if (!registry.hasElementFilters()) {
+            return (
+              <p key={childId} className="markdown-list-item-paragraph">
+                {childInlines}
+              </p>
+            );
+          }
+          return registry.filterElement(
+            { tagName: "p", properties: { className: "markdown-list-item-paragraph" }, blockType: "paragraph" },
+            { source: "markdown", parentTagName: "li" },
+            () => (
+              <p key={childId} className="markdown-list-item-paragraph">
+                {childInlines}
+              </p>
+            ),
+            () => childInlines,
           );
         }
         case "list":
@@ -760,6 +788,9 @@ const ListItemView: React.FC<{
       {renderChildren()}
     </li>
   );
+  if (!registry.hasElementFilters()) {
+    return renderElement();
+  }
   const filtered = registry.filterElement(
     { tagName: "li", properties: { className: `markdown-list-item${isTask ? " markdown-list-item-task" : ""}` } },
     { source: "markdown", parentTagName: ordered ? "ol" : "ul" },
@@ -880,26 +911,27 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
     </tableElements.Table>
   );
 
-  const renderChildren = () => (
-    <>
-      {childIds.map((sectionId) => (
-        <TableSectionView
-          key={sectionId}
-          store={store}
-          nodeId={sectionId}
-          registry={registry}
-          tableElements={tableElements}
-          virtualization={virtualizationProps}
-        />
-      ))}
-    </>
-  );
-  const filteredTable = registry.filterElement(
-    { tagName: "table", properties: { className: "markdown-table" }, blockType: "table" },
-    { source: "markdown" },
-    () => tableElement,
-    renderChildren,
-  );
+  const filteredTable = registry.hasElementFilters()
+    ? registry.filterElement(
+        { tagName: "table", properties: { className: "markdown-table" }, blockType: "table" },
+        { source: "markdown" },
+        () => tableElement,
+        () => (
+          <>
+            {childIds.map((sectionId) => (
+              <TableSectionView
+                key={sectionId}
+                store={store}
+                nodeId={sectionId}
+                registry={registry}
+                tableElements={tableElements}
+                virtualization={virtualizationProps}
+              />
+            ))}
+          </>
+        ),
+      )
+    : tableElement;
   if (filteredTable === null || filteredTable === undefined) return null;
   if (isEligible) {
     const maxHeight = typeof config.maxHeight === "number" ? `${config.maxHeight}px` : config.maxHeight;
@@ -1050,6 +1082,9 @@ const TableCellView: React.FC<{ store: RendererStore; nodeId: string; registry: 
   const content = renderInlineNodes(inline, inlineComponents, registry.getUrlTransform(), registry, tag);
   const alignProps = align ? { align } : undefined;
   const renderElement = () => <Tag {...alignProps}>{content}</Tag>;
+  if (!registry.hasElementFilters()) {
+    return renderElement();
+  }
   const filtered = registry.filterElement(
     { tagName: tag, properties: alignProps ?? {} },
     { source: "markdown", parentTagName: "tr" },
@@ -1486,6 +1521,9 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
     return codeView;
   })();
 
+  if (!registry.hasElementFilters()) {
+    return React.isValidElement(elementToFilter) ? elementToFilter : <>{elementToFilter}</>;
+  }
   const filtered = registry.filterElement(
     { tagName: "pre", properties: { className: codeFrameClass }, blockType: "code" },
     { source: "markdown" },
@@ -1496,7 +1534,6 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
   return React.isValidElement(filtered) ? filtered : <>{filtered}</>;
 });
 CodeBlockView.displayName = "CodeBlockView";
-
 function composeHighlightedHtml(
   lines: ReadonlyArray<{ index: number; text: string; html?: string | null; id?: string }>,
   preAttrs?: Record<string, string>,

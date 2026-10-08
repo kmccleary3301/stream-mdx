@@ -38,7 +38,7 @@ import type {
   MathRenderer,
   TableElements,
 } from "../types";
-export type { CodeFenceRendererProps, ComponentRegistryOptions, CustomCodeRenderer };
+export type { CodeFenceRendererConfig, CodeFenceRendererProps, CodeRenderersConfig, ComponentRegistryOptions, CustomCodeRenderer };
 import { ArtifactFrame } from "./artifact-frame";
 import { DefaultDiffRenderer } from "./diff-renderer";
 import { KaTeXBlockMath, KaTeXInlineMath } from "./katex-math";
@@ -95,72 +95,81 @@ export function renderInlineNodes(
       }
 
       case "strong": {
+        if (!registry?.hasElementFilters()) {
+          return React.createElement(components.strong, {
+            key,
+            children: renderInlineNodes(node.children, components, urlTransform, registry, "strong"),
+          });
+        }
         const renderChildren = () => renderInlineNodes(node.children, components, urlTransform, registry, "strong");
         const renderElement = () =>
           React.createElement(components.strong, {
             key,
             children: renderChildren(),
           });
-        if (registry) {
-          return registry.filterElement(
-            { tagName: "strong", properties: { key }, blockType: undefined },
-            { source: "markdown", parentTagName },
-            renderElement,
-            renderChildren,
-          );
-        }
-        return renderElement();
+        return registry.filterElement(
+          { tagName: "strong", properties: { key }, blockType: undefined },
+          { source: "markdown", parentTagName },
+          renderElement,
+          renderChildren,
+        );
       }
 
       case "em": {
+        if (!registry?.hasElementFilters()) {
+          return React.createElement(components.em, {
+            key,
+            children: renderInlineNodes(node.children, components, urlTransform, registry, "em"),
+          });
+        }
         const renderChildren = () => renderInlineNodes(node.children, components, urlTransform, registry, "em");
         const renderElement = () =>
           React.createElement(components.em, {
             key,
             children: renderChildren(),
           });
-        if (registry) {
-          return registry.filterElement(
-            { tagName: "em", properties: { key }, blockType: undefined },
-            { source: "markdown", parentTagName },
-            renderElement,
-            renderChildren,
-          );
-        }
-        return renderElement();
+        return registry.filterElement(
+          { tagName: "em", properties: { key }, blockType: undefined },
+          { source: "markdown", parentTagName },
+          renderElement,
+          renderChildren,
+        );
       }
 
       case "strike": {
         const StrikeComponent = components.strike ?? ((props: { children: React.ReactNode }) => React.createElement("del", {}, props.children));
+        if (!registry?.hasElementFilters()) {
+          return React.createElement(StrikeComponent, {
+            key,
+            children: renderInlineNodes(node.children, components, urlTransform, registry, "del"),
+          });
+        }
         const renderChildren = () => renderInlineNodes(node.children, components, urlTransform, registry, "del");
         const renderElement = () =>
           React.createElement(StrikeComponent, {
             key,
             children: renderChildren(),
           });
-        if (registry) {
-          return registry.filterElement(
-            { tagName: "del", properties: { key }, blockType: undefined },
-            { source: "markdown", parentTagName },
-            renderElement,
-            renderChildren,
-          );
-        }
-        return renderElement();
+        return registry.filterElement(
+          { tagName: "del", properties: { key }, blockType: undefined },
+          { source: "markdown", parentTagName },
+          renderElement,
+          renderChildren,
+        );
       }
 
       case "code": {
+        if (!registry?.hasElementFilters()) {
+          return React.createElement(components.code, { key, text: node.text });
+        }
         const renderChildren = () => node.text;
         const renderElement = () => React.createElement(components.code, { key, text: node.text });
-        if (registry) {
-          return registry.filterElement(
-            { tagName: "code", properties: { key, text: node.text }, blockType: undefined },
-            { source: "markdown", parentTagName },
-            renderElement,
-            renderChildren,
-          );
-        }
-        return renderElement();
+        return registry.filterElement(
+          { tagName: "code", properties: { key, text: node.text }, blockType: undefined },
+          { source: "markdown", parentTagName },
+          renderElement,
+          renderChildren,
+        );
       }
 
       case "link": {
@@ -169,6 +178,17 @@ export function renderInlineNodes(
         }
         const transform = urlTransform ?? defaultUrlTransform;
         const safeHref = transform(node.href ?? "", "href", { source: "markdown" });
+        if (!registry?.hasElementFilters()) {
+          return React.createElement(
+            components.link,
+            {
+              key,
+              ...(safeHref != null ? { href: safeHref } : {}),
+              title: node.title,
+              children: renderInlineNodes(node.children, components, urlTransform, registry, "a"),
+            },
+          );
+        }
         const renderChildren = () => renderInlineNodes(node.children, components, urlTransform, registry, "a");
         const renderElement = () =>
           React.createElement(
@@ -180,20 +200,25 @@ export function renderInlineNodes(
               children: renderChildren(),
             },
           );
-        if (registry) {
-          return registry.filterElement(
-            { tagName: "a", properties: { key, href: safeHref, title: node.title }, blockType: undefined },
-            { source: "markdown", parentTagName },
-            renderElement,
-            renderChildren,
-          );
-        }
-        return renderElement();
+        return registry.filterElement(
+          { tagName: "a", properties: { key, href: safeHref, title: node.title }, blockType: undefined },
+          { source: "markdown", parentTagName },
+          renderElement,
+          renderChildren,
+        );
       }
 
       case "image": {
         const transform = urlTransform ?? defaultUrlTransform;
         const safeSrc = transform(node.src ?? "", "src", { source: "markdown" });
+        if (!registry?.hasElementFilters()) {
+          return React.createElement(components.image, {
+            key,
+            ...(safeSrc != null ? { src: safeSrc } : {}),
+            alt: node.alt ?? "",
+            title: node.title,
+          });
+        }
         const renderElement = () =>
           React.createElement(components.image, {
             key,
@@ -201,18 +226,23 @@ export function renderInlineNodes(
             alt: node.alt ?? "",
             title: node.title,
           });
-        if (registry) {
-          return registry.filterElement(
-            { tagName: "img", properties: { key, src: safeSrc, alt: node.alt ?? "", title: node.title }, blockType: undefined },
-            { source: "markdown", parentTagName },
-            renderElement,
-            undefined,
-          );
-        }
-        return renderElement();
+        return registry.filterElement(
+          { tagName: "img", properties: { key, src: safeSrc, alt: node.alt ?? "", title: node.title }, blockType: undefined },
+          { source: "markdown", parentTagName },
+          renderElement,
+          undefined,
+        );
       }
 
       case "br": {
+        if (!registry?.hasElementFilters()) {
+          return React.createElement(
+            React.Fragment,
+            { key },
+            React.createElement(components.br, {} as Record<string, never>),
+            "\n",
+          );
+        }
         const renderElement = () =>
           React.createElement(
             React.Fragment,
@@ -220,17 +250,13 @@ export function renderInlineNodes(
             React.createElement(components.br, {} as Record<string, never>),
             "\n",
           );
-        if (registry) {
-          return registry.filterElement(
-            { tagName: "br", properties: { key }, blockType: undefined },
-            { source: "markdown", parentTagName },
-            renderElement,
-            undefined,
-          );
-        }
-        return renderElement();
+        return registry.filterElement(
+          { tagName: "br", properties: { key }, blockType: undefined },
+          { source: "markdown", parentTagName },
+          renderElement,
+          undefined,
+        );
       }
-
       case "plugin": {
         const pluginComponent = components[node.name] ?? components.plugin;
         if (pluginComponent) {
@@ -259,7 +285,7 @@ export function renderInlineNodes(
           key,
           textValue,
           urlTransform,
-          registry ? (el, ctx, rEl, rCh) => registry.filterElement(el, ctx, rEl, rCh) : undefined,
+          registry?.hasElementFilters() ? (el, ctx, rEl, rCh) => registry.filterElement(el, ctx, rEl, rCh) : undefined,
           parentTagName,
         );
       }
@@ -878,31 +904,30 @@ export class ComponentRegistry {
         "blockRenderer" in blockComponentsOrOptions);
 
     if (isConfig) {
-      const cfg = blockComponentsOrOptions as Record<string, unknown>;
+      const cfg = blockComponentsOrOptions as ComponentRegistryOptions;
       resolvedOptions = { ...cfg, ...options };
-      resolvedBlockComponents = ((cfg.blockComponents ?? cfg.components ?? {}) as Partial<BlockComponents>);
-      resolvedInlineComponents = ((cfg.inlineComponents ?? inlineComponents) as Partial<InlineComponents>);
-      resolvedCodeRenderers = ((cfg.codeRenderers ?? codeRenderers) as CodeRenderersConfig);
+      resolvedBlockComponents = (cfg.blockComponents ?? cfg.components ?? {}) as Partial<BlockComponents>;
+      resolvedInlineComponents = (cfg.inlineComponents ?? inlineComponents) as Partial<InlineComponents>;
+      resolvedCodeRenderers = (cfg.codeRenderers ?? codeRenderers) as CodeRenderersConfig;
     } else {
       resolvedBlockComponents = blockComponentsOrOptions as Partial<BlockComponents>;
     }
 
     const effectiveOptions = resolvedOptions;
-    const effectiveInline = resolvedInlineComponents;
-    const effectiveCodeRenderers = resolvedCodeRenderers;
+
     this.blockComponents = { ...defaultBlockComponents, ...resolvedBlockComponents } as BlockComponents;
-    this.inlineComponents = { ...defaultInlineComponents, ...effectiveInline } as InlineComponents;
+    this.inlineComponents = { ...defaultInlineComponents, ...resolvedInlineComponents } as InlineComponents;
     this.htmlElements = getDefaultHtmlElements();
     if (effectiveOptions?.urlTransform) {
       this.urlTransform = effectiveOptions.urlTransform;
     }
-    if (!effectiveInline.html) {
+    if (!resolvedInlineComponents.html) {
       this.inlineComponents.html = (node: Omit<Extract<InlineNode, { kind: "html" }>, "children"> & { children?: React.ReactNode; textValue?: string }) =>
         renderHtmlInlineNode(node, node.children, this.htmlElements, undefined, node.textValue, this.urlTransform);
     }
     this.tableElements = getDefaultTableElements();
-    if (effectiveCodeRenderers) {
-      this.setCodeRenderers(effectiveCodeRenderers);
+    if (resolvedCodeRenderers) {
+      this.setCodeRenderers(resolvedCodeRenderers);
     }
     if (effectiveOptions?.mathRenderer) {
       this.setMathRenderer(effectiveOptions.mathRenderer);
@@ -933,6 +958,10 @@ export class ComponentRegistry {
     if (effectiveOptions?.disableAutolinkProtocols !== undefined) {
       this.setDisableAutolinkProtocols(effectiveOptions.disableAutolinkProtocols);
     }
+  }
+
+  hasElementFilters(): boolean {
+    return this.hasFilterConfig;
   }
 
   setAllowedElements(elements?: string[]): void {
@@ -1027,41 +1056,31 @@ export class ComponentRegistry {
     const next: Record<string, CodeFenceRenderer> = { ...this.codeRenderers };
     if (Array.isArray(renderers)) {
       for (const entry of renderers) {
+        if (!entry) continue;
         const entryObj = entry as unknown as Record<string, unknown>;
         const rawLangs = entryObj.languages ?? entryObj.language;
-        const langs = Array.isArray(rawLangs) ? rawLangs : [rawLangs];
-        const actualRenderer = (entryObj.renderer ?? entryObj.component ?? entry) as CodeFenceRenderer;
+        const langs = Array.isArray(rawLangs) ? rawLangs : rawLangs !== undefined ? [rawLangs] : [];
+        const fn = (entryObj.renderer ?? entryObj.component ?? entryObj) as CodeFenceRenderer;
         for (const l of langs) {
           if (typeof l === "string") {
-            next[l.trim().toLowerCase()] = actualRenderer;
+            next[l.trim().toLowerCase()] = fn;
+          }
+        }
+        if (Array.isArray(entryObj.aliases)) {
+          for (const alias of entryObj.aliases) {
+            if (typeof alias === "string") {
+              next[alias.trim().toLowerCase()] = fn;
+            }
           }
         }
       }
     } else if (renderers && typeof renderers === "object") {
       for (const [lang, renderer] of Object.entries(renderers)) {
         next[lang.trim().toLowerCase()] = renderer;
-        if (renderer && typeof renderer === "object") {
-          const conf = renderer as CodeFenceRendererConfig;
-          if (conf.language) {
-            const langs = Array.isArray(conf.language) ? conf.language : [conf.language];
-            for (const l of langs) {
-              if (typeof l === "string") {
-                next[l.trim().toLowerCase()] = renderer;
-              }
-            }
-          }
-          if (Array.isArray(conf.languages)) {
-            for (const l of conf.languages) {
-              if (typeof l === "string") {
-                next[l.trim().toLowerCase()] = renderer;
-              }
-            }
-          }
-          if (Array.isArray(conf.aliases)) {
-            for (const a of conf.aliases) {
-              if (typeof a === "string") {
-                next[a.trim().toLowerCase()] = renderer;
-              }
+        if (typeof renderer === "object" && renderer !== null && Array.isArray(renderer.aliases)) {
+          for (const alias of renderer.aliases) {
+            if (typeof alias === "string") {
+              next[alias.trim().toLowerCase()] = renderer;
             }
           }
         }
@@ -1069,7 +1088,6 @@ export class ComponentRegistry {
     }
     this.codeRenderers = next;
   }
-
   setArtifactHtml(enabled: boolean): void {
     this.artifactHtml = enabled;
   }
@@ -1127,14 +1145,7 @@ export class ComponentRegistry {
   getCodeRenderer(language: string): CodeFenceRenderer | undefined {
     const normalized = (language ?? "").trim().toLowerCase();
     if (Object.prototype.hasOwnProperty.call(this.codeRenderers, normalized)) {
-      const entry = this.codeRenderers[normalized];
-      if (entry && typeof entry === "object") {
-        const obj = entry as unknown as Record<string, unknown>;
-        if ("renderer" in obj || "component" in obj) {
-          return (obj.renderer ?? obj.component) as CodeFenceRenderer;
-        }
-      }
-      return entry;
+      return this.codeRenderers[normalized];
     }
     if (normalized === "artifact" || normalized === "html-artifact") {
       return ArtifactFrame;
@@ -1235,24 +1246,26 @@ export class ComponentRegistry {
           if (node.kind === "link") {
             const transform = this.urlTransform ?? defaultUrlTransform;
             const safeHref = transform(node.href ?? "", "href", { source: "markdown" });
-            const renderElement = () => component ? React.createElement(component, {
+            const direct = component ? React.createElement(component, {
               ...node,
               ...(safeHref != null ? { href: safeHref } : {}),
               children,
             }) : React.createElement("a", { ...(safeHref != null ? { href: safeHref } : {}) }, children);
+            if (!this.hasElementFilters()) return direct;
             return this.filterElement(
               { tagName: "a", properties: { href: safeHref, title: node.title } },
               { source: "markdown" },
-              renderElement,
+              () => direct,
               () => children,
             );
           }
           const tag = node.kind === "strike" ? "del" : node.kind;
-          const renderElement = () => component ? React.createElement(component, { ...node, children }) : React.createElement(tag, {}, children);
+          const direct = component ? React.createElement(component, { ...node, children }) : React.createElement(tag, {}, children);
+          if (!this.hasElementFilters()) return direct;
           return this.filterElement(
             { tagName: tag, properties: {} },
             { source: "markdown" },
-            renderElement,
+            () => direct,
             () => children,
           );
         }
@@ -1265,7 +1278,7 @@ export class ComponentRegistry {
         ...this.getBlockProps(paragraph), children,
       }) : undefined,
       this.urlTransform,
-      (el, ctx, rEl, rCh) => this.filterElement(el, ctx, rEl, rCh));
+      this.hasElementFilters() ? (el, ctx, rEl, rCh) => this.filterElement(el, ctx, rEl, rCh) : undefined);
   }
 
   getBlockComponentMap(): BlockComponents {

@@ -37,6 +37,14 @@ export function renderHtmlInlineNode(
   const props = mapAttributesToProps(node.attributes ?? {}, urlTransform);
   props.key = key;
 
+  if (!filterElement) {
+    if (tag === "textarea") {
+      props.defaultValue = textValue ?? "";
+      return React.createElement(elements?.[tag] ?? tag, props);
+    }
+    return React.createElement(elements?.[tag] ?? tag, props, node.isSelfClosing ? undefined : children);
+  }
+
   const renderElement = () => {
     if (tag === "textarea") {
       props.defaultValue = textValue ?? "";
@@ -45,15 +53,12 @@ export function renderHtmlInlineNode(
     return React.createElement(elements?.[tag] ?? tag, props, node.isSelfClosing ? undefined : children);
   };
 
-  if (filterElement) {
-    return filterElement(
-      { tagName: tag, properties: props },
-      { source: "html", parentTagName },
-      renderElement,
-      () => children,
-    ) as React.ReactElement | null;
-  }
-  return renderElement();
+  return filterElement(
+    { tagName: tag, properties: props },
+    { source: "html", parentTagName },
+    renderElement,
+    () => children,
+  ) as React.ReactElement | null;
 }
 
 export function renderHtmlOwnershipTree(
@@ -85,6 +90,17 @@ export function renderHtmlOwnershipTree(
     if (node.inlineNode && renderInlineElement) {
       return React.createElement(React.Fragment, { key: index }, renderInlineElement(node.inlineNode, children));
     }
+    if (!filterElement) {
+      if (tag === "textarea") {
+        props.defaultValue = node.children.map((child) => child.kind === "text" ? child.text : "").join("");
+        return React.createElement(elements[tag] ?? tag, props);
+      }
+      const content = tag === "pre" && node.children.every((child) => child.kind === "text" && !child.inline)
+        ? node.children.map((child) => child.kind === "text" ? child.text : "").join("")
+        : children;
+      return React.createElement(elements[tag] ?? tag, props,
+        node.children.length ? content : undefined);
+    }
     const renderElement = () => {
       if (tag === "textarea") {
         props.defaultValue = node.children.map((child) => child.kind === "text" ? child.text : "").join("");
@@ -97,18 +113,14 @@ export function renderHtmlOwnershipTree(
         node.children.length ? content : undefined);
     };
 
-    if (filterElement) {
-      return filterElement(
-        { tagName: tag, properties: props },
-        { source: "html", parentTagName },
-        renderElement,
-        () => children,
-      );
-    }
-    return renderElement();
+    return filterElement(
+      { tagName: tag, properties: props },
+      { source: "html", parentTagName },
+      renderElement,
+      () => children,
+    );
   });
 }
-
 const BACKTICK_CONTENT = /^`([\s\S]+)`$/;
 
 export const DEFAULT_INLINE_HTML_RENDERERS: InlineHtmlRendererMap = {
