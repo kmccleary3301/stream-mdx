@@ -91,11 +91,6 @@
       "import": "./dist/plugins/math.mjs",
       "require": "./dist/plugins/math.cjs"
     },
-    "./plugins/math/renderer": {
-      "types": "./dist/plugins/math/renderer.d.ts",
-      "import": "./dist/plugins/math/renderer.mjs",
-      "require": "./dist/plugins/math/renderer.cjs"
-    },
     "./plugins/mdx": {
       "types": "./dist/plugins/mdx.d.ts",
       "import": "./dist/plugins/mdx.mjs",

@@ -13,7 +13,6 @@ const entries = [
   "src/plugins/footnotes/index.ts",
   "src/plugins/html/index.ts",
   "src/plugins/math/index.ts",
-  "src/plugins/math/renderer.tsx",
   "src/plugins/math/streaming.ts",
   "src/plugins/math/streaming-v2.ts",
   "src/plugins/math/tokenizer.ts",

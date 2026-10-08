@@ -56,11 +56,6 @@
       "import": "./dist/plugins/math/index.mjs",
       "require": "./dist/plugins/math/index.cjs"
     },
-    "./math/renderer": {
-      "types": "./dist/plugins/math/renderer.d.ts",
-      "import": "./dist/plugins/math/renderer.mjs",
-      "require": "./dist/plugins/math/renderer.cjs"
-    },
     "./mdx": {
       "types": "./dist/plugins/mdx/index.d.ts",
       "import": "./dist/plugins/mdx/index.mjs",
