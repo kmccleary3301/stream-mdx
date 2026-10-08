@@ -8,6 +8,8 @@ If you enable raw/inline HTML (`features.html`), treat the input as untrusted by
 - Prefer hosted workers (parsing off the main thread; clearer CSP posture).
 - Only extend allowlists/schemas for content you trust.
 
+Highlighter code-row HTML (per-line `span.line` markup with Shiki theme variables) is sanitized on every runtime with one shared allowlist: `pre`/`code`/`span`/`div`/`br` with `class`, `data-*`, and `style`. The browser path runs it through DOMPurify; the Node/SSR path (snapshot prerender, `MarkdownBlocksRenderer`) runs the same allowlist through the DOM-free rehype pipeline, so server rendering needs no `window`/jsdom shim. Scripts, event handlers, `javascript:` URLs, and `url(...)`/`expression(...)` style values are dropped on both paths while theme foreground colors and CSS variables are preserved.
+
 ## CSP recommendations
 
 ### Prefer hosted workers
