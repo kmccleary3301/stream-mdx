@@ -101,8 +101,8 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
       return structured;
     }
 
-    if (meta.inlineStatus === "complete" || meta.inlineStatus === "anticipated") {
-      const inlineNodes = block.payload.inline ?? [];
+    if (meta.inlineStatus === "complete" || meta.inlineStatus === "anticipated" || registry.getAnimatedOptions()) {
+      const inlineNodes = Array.isArray(block.payload.inline) && block.payload.inline.length > 0 ? block.payload.inline : (raw ? [{ kind: "text" as const, text: raw }] : []);
       const containsDisplayMath = inlineNodes.some((node) => node.kind === "math-display");
       if (containsDisplayMath) {
         const derivedSegments: MixedContentSegment[] = [
@@ -120,7 +120,11 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
         return structured;
       }
 
-      return <p className="markdown-paragraph streaming-partial">{renderInlineNodes(inlineNodes, inlineComponents, registry.getUrlTransform())}</p>;
+      return (
+        <p className="markdown-paragraph streaming-partial">
+          {renderInlineNodes(inlineNodes, inlineComponents, registry.getUrlTransform(), registry.getRenderInlineContext(block.isFinalized, block.id))}
+        </p>
+      );
     }
 
     return <p className="markdown-paragraph streaming-partial">{raw}</p>;

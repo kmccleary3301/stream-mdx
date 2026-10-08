@@ -3,7 +3,7 @@ import React, { useMemo, useRef } from "react";
 
 import { PATCH_ROOT_ID } from "@stream-mdx/core";
 import { ComponentRegistry } from "../components";
-import type { BlockRendererOverride, CodeFenceRenderer, ControlsComponentProps, ControlsConfig } from "../types";
+import type { AnimatedProp, BlockRendererOverride, CodeFenceRenderer, ControlsComponentProps, ControlsConfig } from "../types";
 import { useRendererChildren } from "./hooks";
 import { BlockNodeRenderer } from "./node-views";
 import { createRendererStore, type RendererStore } from "./store";
@@ -22,10 +22,11 @@ export interface MarkdownBlocksRendererProps {
   urlTransform?: UrlTransform;
   controls?: ControlsConfig;
   controlsComponent?: React.ComponentType<ControlsComponentProps>;
+  animated?: AnimatedProp;
 }
 
 export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
-  ({ blocks, componentRegistry, codeRenderers, blockRenderer, urlTransform, controls, controlsComponent, className = "markdown-renderer", style, store }) => {
+  ({ blocks, componentRegistry, codeRenderers, blockRenderer, urlTransform, controls, controlsComponent, animated, className = "markdown-renderer", style, store }) => {
     // Props override the registry; a prop removed after being set reverts the registry,
     // while overrides configured directly on a caller-provided registry stay untouched.
     const appliedOverrides = useRef<{
@@ -33,6 +34,7 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
       urlTransform?: UrlTransform;
       controls?: ControlsConfig;
       controlsComponent?: React.ComponentType<ControlsComponentProps>;
+      animated?: AnimatedProp;
     }>({});
     const resolvedRegistry = useMemo(() => {
       const reg = componentRegistry ?? new ComponentRegistry();
@@ -52,9 +54,12 @@ export const MarkdownBlocksRenderer = React.memo<MarkdownBlocksRendererProps>(
       if (controlsComponent !== undefined || applied.controlsComponent !== undefined) {
         reg.setControlsComponent(controlsComponent);
       }
-      appliedOverrides.current = { blockRenderer, urlTransform, controls, controlsComponent };
+      if (animated !== undefined || applied.animated !== undefined) {
+        reg.setAnimated(animated);
+      }
+      appliedOverrides.current = { blockRenderer, urlTransform, controls, controlsComponent, animated };
       return reg;
-    }, [componentRegistry, codeRenderers, blockRenderer, urlTransform, controls, controlsComponent]);
+    }, [componentRegistry, codeRenderers, blockRenderer, urlTransform, controls, controlsComponent, animated]);
     const effectiveStore = useMemo(() => {
       if (store) return store;
       return createRendererStore(blocks as Block[]);

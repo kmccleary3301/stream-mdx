@@ -4,6 +4,15 @@ export * from "./artifact-frame";
 export * from "./diff-renderer";
 export * from "./katex-math";
 export * from "./controls";
+export {
+  STREAM_MDX_ANIMATION_CSS,
+  DEFAULT_ANIMATED_OPTIONS,
+  AnimationTimeline,
+  splitTextSegments,
+  splitWordSegments,
+  resolveAnimatedOptions,
+  type RenderInlineAnimationContext,
+} from "../animation";
 export { defaultUrlTransform, type UrlTransform, type UrlTransformContext } from "@stream-mdx/core";
 import { InlineParser, createTrustedHTML, defaultUrlTransform, isForbiddenAttribute, isSafeStyleDeclaration, sanitizeHTML, stripCodeFence } from "@stream-mdx/core";
 import type { UrlTransform } from "@stream-mdx/core";
@@ -22,6 +31,8 @@ import { removeHeadingMarkers } from "@stream-mdx/core";
 import React from "react";
 import { DEFAULT_INLINE_HTML_RENDERERS, renderHtmlInlineNode, renderHtmlOwnershipTree, renderInlineHtmlSegment } from "../utils/inline-html";
 import type { BlockComponents, BlockRendererOverride, CodeFenceRenderer, ControlsComponentProps, ControlsConfig, HtmlElements, InlineComponents, InlineHtmlRendererMap, MathRenderer, TableElements } from "../types";
+import { AnimationTimeline, resolveAnimatedOptions, splitTextSegments, type RenderInlineAnimationContext } from "../animation";
+import type { AnimatedOptions, AnimatedProp } from "../types";
 import { ArtifactFrame } from "./artifact-frame";
 import { DefaultDiffRenderer } from "./diff-renderer";
 import { KaTeXBlockMath, KaTeXInlineMath } from "./katex-math";
@@ -72,9 +83,26 @@ class MdxRuntimeBoundary extends React.Component<
 /**
  * Render inline nodes to React elements
  */
-export function renderInlineNodes(nodes: InlineNode[], components: InlineComponents, urlTransform?: UrlTransform): React.ReactNode {
+export function renderInlineNodes(
+  nodes: InlineNode[],
+  components: InlineComponents,
+  urlTransform?: UrlTransform,
+  animationContext?: RenderInlineAnimationContext,
+): React.ReactNode {
+  const childContext = animationContext
+    ? {
+        ...animationContext,
+        nodeKeyPrefix: animationContext.nodeKeyPrefix ? `${animationContext.nodeKeyPrefix}` : undefined,
+      }
+    : undefined;
   return nodes.map((node, index) => {
     const key = `${node.kind}-${index}`;
+    const itemChildContext = childContext
+      ? {
+          ...childContext,
+          nodeKeyPrefix: childContext.nodeKeyPrefix ? `${childContext.nodeKeyPrefix}:${key}` : key,
+        }
+      : undefined;
 
     switch (node.kind) {
       case "text": {
@@ -82,26 +110,72 @@ export function renderInlineNodes(nodes: InlineNode[], components: InlineCompone
         if (textComponent && textComponent !== defaultInlineComponents.text) {
           return React.createElement(textComponent, { key, text: node.text });
         }
+        if (animationContext?.animated && !animationContext.isFinalized && animationContext.timeline) {
+          const { animated, timeline, nodeKeyPrefix } = animationContext;
+          const nodeKey = nodeKeyPrefix ? `${nodeKeyPrefix}:${key}` : key;
+          const segments = splitTextSegments(node.text, animated.sep);
+          const state = timeline.getNodeState(nodeKey);
+          if (segments.length > state.count) {
+            const newCount = segments.length - state.count;
+            const newDelays = timeline.schedule(newCount, animated.stagger);
+            state.delays.push(...newDelays);
+            state.count = segments.length;
+          } else if (segments.length < state.count) {
+            state.count = segments.length;
+            state.delays.length = segments.length;
+          }
+          const animName =
+            animated.animation === "fadeIn"
+              ? "stream-mdx-fade-in"
+              : animated.animation === "blurIn"
+                ? "stream-mdx-blur-in"
+                : animated.animation === "slideUp"
+                  ? "stream-mdx-slide-up"
+                  : animated.animation;
+          const durationStr = `${animated.duration}ms`;
+          const spans = segments.map((segment, segmentIndex) => {
+            const delay = state.delays[segmentIndex] ?? 0;
+            const animStyle: React.CSSProperties & Record<string, string | number> = {
+              "--sm-anim-duration": durationStr,
+              "--sm-anim-easing": animated.easing,
+              "--sm-anim-delay": `${delay}ms`,
+            };
+            if (animName) {
+              animStyle["--sm-anim-name"] = animName;
+              animStyle.animationName = animName;
+            }
+            return React.createElement(
+              "span",
+              {
+                key: segmentIndex,
+                className: "stream-mdx-anim",
+                style: animStyle,
+              },
+              segment,
+            );
+          });
+          return React.createElement(React.Fragment, { key }, ...spans);
+        }
         return React.createElement(React.Fragment, { key, children: node.text });
       }
 
       case "strong":
         return React.createElement(components.strong, {
           key,
-          children: renderInlineNodes(node.children, components, urlTransform),
+          children: renderInlineNodes(node.children, components, urlTransform, itemChildContext),
         });
 
       case "em":
         return React.createElement(components.em, {
           key,
-          children: renderInlineNodes(node.children, components, urlTransform),
+          children: renderInlineNodes(node.children, components, urlTransform, itemChildContext),
         });
 
       case "strike": {
         const StrikeComponent = components.strike ?? ((props: { children: React.ReactNode }) => React.createElement("del", {}, props.children));
         return React.createElement(StrikeComponent, {
           key,
-          children: renderInlineNodes(node.children, components, urlTransform),
+          children: renderInlineNodes(node.children, components, urlTransform, itemChildContext),
         });
       }
 
@@ -117,7 +191,7 @@ export function renderInlineNodes(nodes: InlineNode[], components: InlineCompone
             key,
             ...(safeHref != null ? { href: safeHref } : {}),
             title: node.title,
-            children: renderInlineNodes(node.children, components, urlTransform),
+            children: renderInlineNodes(node.children, components, urlTransform, itemChildContext),
           },
         );
       }
@@ -148,7 +222,7 @@ export function renderInlineNodes(nodes: InlineNode[], components: InlineCompone
             ...node.attrs,
             name: node.name,
             attrs: node.attrs,
-            children: node.children ? renderInlineNodes(node.children, components, urlTransform) : undefined,
+            children: node.children ? renderInlineNodes(node.children, components, urlTransform, itemChildContext) : undefined,
             raw: node.raw,
           });
         }
@@ -156,7 +230,7 @@ export function renderInlineNodes(nodes: InlineNode[], components: InlineCompone
       }
 
       case "html": {
-        const children = node.children ? renderInlineNodes(node.children, components, urlTransform) : undefined;
+        const children = node.children ? renderInlineNodes(node.children, components, urlTransform, itemChildContext) : undefined;
         const textValue = node.children?.map((child) => child.kind === "text" ? child.text : "").join("");
         if (components.html) {
           return React.createElement(components.html, { key, ...node, children, textValue });
@@ -738,6 +812,9 @@ export class ComponentRegistry {
   private urlTransform?: UrlTransform;
   private controls: ControlsConfig = false;
   private controlsComponent?: React.ComponentType<ControlsComponentProps>;
+  private animated?: AnimatedProp;
+  private animatedOptions: Required<AnimatedOptions> | null = null;
+  private animationTimeline: AnimationTimeline | null = null;
 
   constructor(
     blockComponents: Partial<BlockComponents> = {},
@@ -751,6 +828,7 @@ export class ComponentRegistry {
       urlTransform?: UrlTransform;
       controls?: ControlsConfig;
       controlsComponent?: React.ComponentType<ControlsComponentProps>;
+      animated?: AnimatedProp;
     },
   ) {
     this.blockComponents = { ...defaultBlockComponents, ...blockComponents } as BlockComponents;
@@ -782,6 +860,9 @@ export class ComponentRegistry {
     if (options?.controlsComponent !== undefined) {
       this.setControlsComponent(options.controlsComponent);
     }
+    if (options?.animated !== undefined) {
+      this.setAnimated(options.animated);
+    }
   }
 
   setCodeRenderers(renderers: Record<string, CodeFenceRenderer>): void {
@@ -802,6 +883,53 @@ export class ComponentRegistry {
   }
   setUrlTransform(transform?: UrlTransform): void {
     this.urlTransform = transform;
+  }
+
+  setAnimated(animated?: AnimatedProp): void {
+    this.animated = animated;
+    this.animatedOptions = resolveAnimatedOptions(animated);
+    if (this.animatedOptions) {
+      if (!this.animationTimeline) {
+        this.animationTimeline = new AnimationTimeline({
+          maxBacklogMs: this.animatedOptions.maxBacklogMs,
+          stagger: this.animatedOptions.stagger,
+        });
+      } else {
+        this.animationTimeline.updateOptions({
+          maxBacklogMs: this.animatedOptions.maxBacklogMs,
+          stagger: this.animatedOptions.stagger,
+        });
+      }
+    } else {
+      if (this.animationTimeline) {
+        this.animationTimeline.reset();
+      }
+      this.animationTimeline = null;
+    }
+  }
+
+  getAnimated(): AnimatedProp | undefined {
+    return this.animated;
+  }
+
+  getAnimatedOptions(): Required<AnimatedOptions> | null {
+    return this.animatedOptions;
+  }
+
+  getAnimationTimeline(): AnimationTimeline | null {
+    return this.animationTimeline;
+  }
+
+  getRenderInlineContext(isFinalized?: boolean, blockId?: string): RenderInlineAnimationContext | undefined {
+    if (isFinalized || !this.animatedOptions || !this.animationTimeline) {
+      return undefined;
+    }
+    return {
+      isFinalized: false,
+      animated: this.animatedOptions,
+      timeline: this.animationTimeline,
+      nodeKeyPrefix: blockId,
+    };
   }
 
   getUrlTransform(): UrlTransform | undefined {
@@ -1168,6 +1296,7 @@ export class ComponentRegistry {
    * Get props for a block based on its type
    */
   private getBlockProps(block: Block): Record<string, unknown> {
+    const animCtx = this.getRenderInlineContext(block.isFinalized, block.id);
     switch (block.type) {
       case "heading": {
         const meta = (block.payload.meta ?? {}) as Record<string, unknown>;
@@ -1178,7 +1307,7 @@ export class ComponentRegistry {
         const headingText =
           typeof meta.headingText === "string" && meta.headingText.trim().length > 0 ? (meta.headingText as string) : removeHeadingMarkers(rawHeading).trim();
         const level = (normalizedLevel ?? this.extractHeadingLevel(rawHeading)) as 1 | 2 | 3 | 4 | 5 | 6;
-        const renderedChildren = renderInlineNodes(inlineNodes, this.inlineComponents, this.urlTransform);
+        const renderedChildren = renderInlineNodes(inlineNodes, this.inlineComponents, this.urlTransform, animCtx);
         return {
           level,
           inlines: inlineNodes,
@@ -1192,12 +1321,12 @@ export class ComponentRegistry {
           inlines: block.payload.inline || [],
           raw: block.payload.raw,
           meta: block.payload.meta,
-          children: renderInlineNodes(block.payload.inline ?? [], this.inlineComponents, this.urlTransform),
+          children: renderInlineNodes(block.payload.inline ?? [], this.inlineComponents, this.urlTransform, animCtx),
         };
       case "blockquote":
         return {
           inlines: block.payload.inline || [],
-          renderedContent: renderInlineNodes(block.payload.inline || [], this.inlineComponents, this.urlTransform),
+          renderedContent: renderInlineNodes(block.payload.inline || [], this.inlineComponents, this.urlTransform, animCtx),
         };
 
       case "hr": {

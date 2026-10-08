@@ -16,7 +16,7 @@ import { useRendererBlocks } from "./renderer/hooks";
 import { StreamingActivityContext } from "./renderer/streaming-activity-context";
 import type { RendererStore } from "./renderer/store";
 import { createDefaultWorker, releaseDefaultWorker } from "@stream-mdx/worker";
-import { defaultUrlTransform, type BlockComponents, type BlockRendererOverride, type CodeFenceRenderer, type ControlsComponentProps, type ControlsConfig, type HtmlElements, type HtmlOptions, type InlineComponents, type MathRenderer, type RendererConfig, type SyntaxRuleSpec, type TableElements, type TableVirtualizationOptions, type UrlTransform } from "./types";
+import { defaultUrlTransform, type AnimatedProp, type BlockComponents, type BlockRendererOverride, type CodeFenceRenderer, type ControlsComponentProps, type ControlsConfig, type HtmlElements, type HtmlOptions, type InlineComponents, type MathRenderer, type RendererConfig, type SyntaxRuleSpec, type TableElements, type TableVirtualizationOptions, type UrlTransform } from "./types";
 
 const EMPTY_BLOCKS: ReadonlyArray<Block> = [];
 
@@ -162,6 +162,7 @@ export interface StreamingMarkdownProps {
   urlTransform?: UrlTransform;
   controls?: ControlsConfig;
   controlsComponent?: React.ComponentType<ControlsComponentProps>;
+  animated?: AnimatedProp;
 }
 
 const MdxCoordinatorBridge: React.FC<{ store: RendererStore; mode: "server" | "worker" }> = ({ store, mode }) => {
@@ -322,6 +323,7 @@ function StreamingMarkdownComponent(
     urlTransform,
     controls,
     controlsComponent,
+    animated,
   }: StreamingMarkdownProps,
   ref: React.ForwardedRef<StreamingMarkdownHandle>,
 ) {
@@ -1037,6 +1039,7 @@ function StreamingMarkdownComponent(
             urlTransform={urlTransform}
             controls={controls}
             controlsComponent={controlsComponent}
+            animated={animated}
             className={resolvedClassName}
             style={resolvedStyle}
             store={store}

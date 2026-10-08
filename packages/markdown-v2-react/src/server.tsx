@@ -1,7 +1,20 @@
-export { MarkdownBlocksRenderer } from "./renderer/blocks-renderer";
+import React from "react";
+import { MarkdownBlocksRenderer as BaseMarkdownBlocksRenderer, type MarkdownBlocksRendererProps } from "./renderer/blocks-renderer";
+
+export const MarkdownBlocksRenderer: React.FC<MarkdownBlocksRendererProps> = (props) => {
+  if (props.componentRegistry) {
+    props.componentRegistry.setAnimated(false);
+  }
+  return React.createElement(BaseMarkdownBlocksRenderer, {
+    ...props,
+    animated: false,
+  });
+};
+export type { MarkdownBlocksRendererProps };
 export { ComponentRegistry } from "./components";
 export { createRendererStore } from "./renderer/store";
 export { defaultUrlTransform } from "@stream-mdx/core";
+export { STREAM_MDX_ANIMATION_CSS, DEFAULT_ANIMATED_OPTIONS } from "./animation";
 export type {
   BlockComponents,
   HtmlElements,
@@ -26,6 +39,9 @@ export type {
   ControlsComponentProps,
   TableDownloadFormat,
   TableCopyFormat,
+  AnimatedAnimationName,
+  AnimatedOptions,
+  AnimatedProp,
 } from "./types";
 export {
   CodeControlsBar,

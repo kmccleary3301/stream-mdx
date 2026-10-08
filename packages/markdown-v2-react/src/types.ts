@@ -278,3 +278,16 @@ export interface Renderer {
   setControls(controls: ControlsConfig): void;
   setControlsComponent(component?: React.ComponentType<ControlsComponentProps>): void;
 }
+
+export type AnimatedAnimationName = "fadeIn" | "blurIn" | "slideUp" | (string & {});
+
+export interface AnimatedOptions {
+  animation?: AnimatedAnimationName;
+  duration?: number;
+  easing?: string;
+  sep?: "word" | "char";
+  stagger?: number;
+  maxBacklogMs?: number;
+}
+
+export type AnimatedProp = boolean | AnimatedOptions;
