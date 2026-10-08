@@ -22,10 +22,6 @@ const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></
 (globalThis as any).requestAnimationFrame = dom.window.requestAnimationFrame.bind(dom.window);
 (globalThis as any).cancelAnimationFrame = dom.window.cancelAnimationFrame.bind(dom.window);
 
-function normalizeHtml(html: string): string {
-  return html.replace(/\s+/g, " ").trim();
-}
-
 function delay(ms: number): Promise<void> {
   const { promise, resolve } = Promise.withResolvers<void>();
   setTimeout(resolve, ms);
@@ -138,6 +134,8 @@ async function runTests() {
         blockRenderer: createUnifiedRenderer(options),
       }),
     );
+    const staticContainer = document.createElement("div");
+    staticContainer.innerHTML = staticHtml;
     const store = createRendererStore();
     const worker = createInlineEngineWorker();
     const container = document.createElement("div");
@@ -190,8 +188,13 @@ async function runTests() {
       if (failure) throw failure;
       assert.ok(store.getBlocks().every((block) => block.isFinalized));
       await waitUntil(
-        () => normalizeHtml(container.innerHTML) === normalizeHtml(staticHtml),
-        "final DOM matching compiled static output",
+        () => container.querySelector(".markdown-renderer > p:last-child strong")?.textContent === "TEXT",
+        "finalized plugin output in mounted DOM",
+      );
+      assert.strictEqual(
+        container.firstElementChild?.innerHTML,
+        staticContainer.firstElementChild?.innerHTML,
+        "Terminal streamed markdown DOM must match compiled static output",
       );
       assert.strictEqual(container.querySelector("h2")?.id, "stream-title");
       assert.strictEqual(container.querySelector("h2")?.textContent, "STREAM TITLE");
