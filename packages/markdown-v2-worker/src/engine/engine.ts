@@ -1,4 +1,4 @@
-import type { Tree } from "@lezer/common";
+import { type Tree, TreeFragment } from "@lezer/common";
 import { parser as mdParser } from "@lezer/markdown";
 import type {
   Block,
@@ -179,6 +179,7 @@ export class MarkdownEngine {
 
   private blocks: Block[] = [];
   private lastTree: Tree | null = null;
+  private treeFragments: readonly TreeFragment[] = [];
   private currentContent = "";
 
   private txCounter = 0;
@@ -493,6 +494,7 @@ export class MarkdownEngine {
     this.performanceTimer = new PerformanceTimer();
     this.blocks = [];
     this.lastTree = null;
+    this.treeFragments = [];
     this.currentContent = "";
     this.deferredPatchQueue = [];
     this.emittedBlockEpochs = new Map();
@@ -643,6 +645,7 @@ export class MarkdownEngine {
     metrics?.markParseStart();
 
     const tree = this.mdParser.parse(content);
+    this.treeFragments = TreeFragment.addTree(tree);
     this.inlineParser.setReferences(collectLinkReferences(tree, content));
     let extractedBlocks = await this.extractBlocks(tree, content, options);
     extractedBlocks = this.runDocumentPlugins(extractedBlocks, content);
@@ -664,8 +667,13 @@ export class MarkdownEngine {
     const newContent = this.currentContent + appendedText;
     const changeRanges = computeChangedRanges(this.currentContent, newContent);
 
-    const treeFragments = this.lastTree && "fragments" in this.lastTree ? (this.lastTree as unknown as { fragments?: unknown }).fragments as never : undefined;
-    let newTree = treeFragments ? this.mdParser.parse(newContent, treeFragments) : this.mdParser.parse(newContent);
+    const oldLen = this.currentContent.length;
+    const newLen = oldLen + appendedText.length;
+    const updatedFragments = TreeFragment.applyChanges(this.treeFragments, [
+      { fromA: oldLen, toA: oldLen, fromB: oldLen, toB: newLen },
+    ]);
+    let newTree = this.mdParser.parse(newContent, updatedFragments);
+    this.treeFragments = TreeFragment.addTree(newTree, updatedFragments);
     this.inlineParser.setReferences(collectLinkReferences(newTree, newContent));
 
     let changedBlocks = await this.extractBlocks(newTree, newContent);
@@ -676,6 +684,7 @@ export class MarkdownEngine {
       const tail = newContent.slice(lastTo).trim();
       if (tail.length > 0) {
         const fullTree = this.mdParser.parse(newContent);
+        this.treeFragments = TreeFragment.addTree(fullTree);
         this.inlineParser.setReferences(collectLinkReferences(fullTree, newContent));
         let fullBlocks = await this.extractBlocks(fullTree, newContent);
         fullBlocks = this.runDocumentPlugins(fullBlocks, newContent);
@@ -1803,6 +1812,7 @@ export class MarkdownEngine {
 
     this.blocks = reparsedBlocks;
     this.lastTree = reparsedTree;
+    this.treeFragments = TreeFragment.addTree(reparsedTree);
     metricsCollector.setBlocksProduced(this.blocks.length);
 
     const fullRange = [
