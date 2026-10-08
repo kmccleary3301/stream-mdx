@@ -301,6 +301,20 @@ async function testArtifactFrameLifecycleAndSecurity(): Promise<void> {
   await waitFor(container, () => iframe.style.height === "50px", "valid small resize must clamp to the minimum height");
   assert.strictEqual(iframe.style.height, "50px");
 
+  window.dispatchEvent(new window.MessageEvent("message", {
+    data: { type: "stream-mdx:artifact-size", height: Number.NaN },
+    source,
+  }));
+  await sleep(20);
+  assert.strictEqual(iframe.style.height, "50px", "NaN height must be ignored");
+
+  window.dispatchEvent(new window.MessageEvent("message", {
+    data: { type: "stream-mdx:artifact-size", height: Number.POSITIVE_INFINITY },
+    source,
+  }));
+  await sleep(20);
+  assert.strictEqual(iframe.style.height, "50px", "Infinity height must be ignored");
+
   // Phase D: link messages from the frame route through openLink; non-http(s)/mailto URLs are dropped.
   const opened: string[] = [];
   root.render(
