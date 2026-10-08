@@ -19,7 +19,7 @@ export type GeneratedFootnoteLabel = { level: number; text: string; html: string
 
 function isGeneratedFootnoteLabel(element: Element): boolean {
   return element.matches("h2.sr-only#footnote-label") &&
-    element.parentElement?.matches('section[data-footnotes][aria-labelledby="footnote-label"]') === true;
+    element.parentElement?.matches("section[data-footnotes]") === true;
 }
 
 export function collectGeneratedFootnoteLabels(root: HTMLElement): GeneratedFootnoteLabel[] {
@@ -79,8 +79,7 @@ export function collectSemanticDom(root: HTMLElement): SemanticDomRecords {
 
   const semanticTag = (element: Element): string => element.matches('[data-streamdown="strong"]') ? "strong" : element.tagName.toLowerCase();
   const semanticAttributes = (element: Element): Array<[string, string]> => Array.from(element.attributes)
-    .filter((attribute) => /^(href|src|alt|title|open|datetime|cite|lang|dir|role|aria-)/.test(attribute.name) &&
-      !(attribute.name === "aria-labelledby" && attribute.value === "footnote-label" && Array.from(element.children).some(isGeneratedFootnoteLabel)))
+    .filter((attribute) => /^(href|src|alt|title|open|datetime|cite|lang|dir|role|aria-)/.test(attribute.name))
     .map((attribute): [string, string] => [attribute.name, attribute.value])
     .sort(([left], [right]) => left.localeCompare(right));
   const semanticHtml = (element: Element): boolean => element.matches("details,summary,abbr,mark,time,img,video,audio,iframe,blockquote,hr,strong,em,b,u,s,button,del,ins,kbd,sup,sub,[data-streamdown='strong']") ||
