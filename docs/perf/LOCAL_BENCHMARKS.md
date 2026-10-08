@@ -183,5 +183,13 @@ No new production build or performance sample is claimed for this collector-only
 The ordered collector also retains effective live checked/disabled state for every native checkbox, including inputs outside lists and additional inputs within one item. It records anchor target, rel and download semantics. Standard target keywords are case-normalized; rel tokens are case-normalized, deduplicated and sorted. Different navigation contexts, rel behaviors, download filenames and checkbox states remain distinct. Initial checkbox attributes cannot hide a later live checked-state change.
 `npm exec -- tsx scripts/perf/check-completion-guards.ts` passed after these additions, including outside-list, multiple-checkbox and live-property counterexamples plus target/rel/download behavior. This remains collector-only proof; no new production or performance claim.
 
+### Resolved generated footnote target graph
+
+The collector resolves generated footnote links within the measured root, requiring a unique DOM ID and the native or Streamdown generated footer/reference signature. Definition identities use footer and item ordinals; reference identities use their document occurrence within that definition. Both ordered href attributes and link records use this resolved graph. Generated ID namespaces alone are not content differences, but unresolved targets, missing IDs and duplicate IDs remain distinct. Backreference destinations must resolve to an occurrence belonging to their own definition. Counts, document locations, footnote bodies and control text remain intact.
+
+ARIA ID references normalize only when they uniquely resolve to the actual generated footnote label. Authored headings, arbitrary fragment links and authored ARIA remain literal. Raw DOM evidence retains all original IDs, hrefs and attributes. Real DOM guards cover equivalent generated graphs, twelve occurrences, dangling/missing/duplicate targets, backreference counts/order, body differences and authored lookalikes. Parent-owned runtime repairs and the final integrated paired smoke are separate from this collector change.
+
+`npm exec -- tsx scripts/perf/check-completion-guards.ts` passed after the resolved-graph change, including the real public Streamdown footnote DOM. No new production sample is claimed; the earlier paired artifacts remain pinned to their recorded source.
+
 
 

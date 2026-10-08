@@ -28,6 +28,82 @@ function canonicalLinkUrl(url: string): string {
   }
 }
 
+function generatedFootnoteGraph(root: HTMLElement) {
+  const ids = new Map<string, Element[]>();
+  for (const element of root.querySelectorAll("[id]")) {
+    const matches = ids.get(element.id) ?? [];
+    matches.push(element);
+    ids.set(element.id, matches);
+  }
+  const unique = (element: Element): boolean => Boolean(element.id) && ids.get(element.id)?.length === 1;
+  const identities = new Map<Element, string>();
+  const items = new Map<Element, { namespace: "native" | "streamdown"; label: string; ordinal: string }>();
+  const references = new Map<Element, Element>();
+  let sectionIndex = 0;
+  for (const section of root.querySelectorAll("section.footnotes,section[data-footnotes]")) {
+    sectionIndex += 1;
+    const namespace = section.matches("[data-footnotes]") ? "streamdown" : "native";
+    const list = Array.from(section.children).find((child) => child.tagName === "OL");
+    if (!list) continue;
+    let itemIndex = 0;
+    for (const item of Array.from(list.children).filter((child) => child.tagName === "LI")) {
+      itemIndex += 1;
+      const match = namespace === "native" ? /^fn:(\d+)$/.exec(item.id) : /^user-content-fn-(.+)$/.exec(item.id);
+      const ordinal = `${sectionIndex}:${itemIndex}`;
+      identities.set(item, match && unique(item) ? `footnote:${ordinal}` : `invalid:${item.id}:${ids.get(item.id)?.length ?? 0}`);
+      if (match && unique(item)) items.set(item, { namespace, label: match[1], ordinal });
+    }
+  }
+  const resolve = (value: string): Element | undefined => {
+    if (!value.startsWith("#")) return undefined;
+    let id: string;
+    try { id = decodeURIComponent(value.slice(1)); } catch { return undefined; }
+    const matches = ids.get(id);
+    return matches?.length === 1 ? matches[0] : undefined;
+  };
+  const occurrences = new Map<Element, number>();
+  for (const reference of root.querySelectorAll("sup.footnote-ref > a,a[data-footnote-ref]")) {
+    const item = resolve(reference.getAttribute("href") ?? "");
+    const info = item && items.get(item);
+    let valid = false;
+    if (info) {
+      const prefix = info.namespace === "native" ? `fnref:${info.label}` : `user-content-fnref-${info.label}`;
+      const suffix = reference.id.slice(prefix.length);
+      valid = unique(reference) && reference.id.startsWith(prefix) &&
+        (suffix === "" || (info.namespace === "native" ? /^:(?:[2-9]|[1-9]\d+)$/.test(suffix) : /^-(?:[2-9]|[1-9]\d+)$/.test(suffix))) &&
+        (info.namespace === "native" ? reference.parentElement?.matches("sup.footnote-ref") === true : reference.hasAttribute("data-footnote-ref"));
+    }
+    if (!valid || !item || !info) {
+      identities.set(reference, `invalid:${reference.id}:${ids.get(reference.id)?.length ?? 0}`);
+      continue;
+    }
+    const occurrence = (occurrences.get(item) ?? 0) + 1;
+    occurrences.set(item, occurrence);
+    identities.set(reference, `footnote:${info.ordinal}:reference:${occurrence}`);
+    references.set(reference, item);
+  }
+  const destinations = new Map<Element, string>();
+  for (const [reference, item] of references) destinations.set(reference, `#${identities.get(item)}`);
+  for (const backref of root.querySelectorAll("a.footnote-backref,a[data-footnote-backref]")) {
+    const reference = resolve(backref.getAttribute("href") ?? "");
+    const item = reference && references.get(reference);
+    if (item && backref.closest("li") === item) destinations.set(backref, `#${identities.get(reference)}`);
+  }
+  return {
+    identity: (element: Element) => identities.get(element),
+    attribute: (element: Element, name: string, value: string): string => {
+      if (name === "href") return destinations.get(element) ?? canonicalLinkUrl(value);
+      if (name === "aria-describedby" || name === "aria-labelledby") {
+        return value.split(/\s+/).map((id) => {
+          const label = resolve(`#${id}`);
+          return label && isGeneratedFootnoteLabel(label) ? "generated-footnote-label" : id;
+        }).join(" ");
+      }
+      return value;
+    },
+  };
+}
+
 function isGeneratedFootnoteLabel(element: Element): boolean {
   return element.matches("h2.sr-only#footnote-label") &&
     element.parentElement?.matches("section[data-footnotes]") === true;
@@ -50,6 +126,7 @@ export function renderedCodeSource(body: Element): string {
 }
 
 export function collectSemanticDom(root: HTMLElement): SemanticDomRecords {
+  const footnotes = generatedFootnoteGraph(root);
   const codeBodies = Array.from(root.querySelectorAll("pre code"));
   const preformatted = Array.from(root.querySelectorAll<Element>("pre")).filter((element) => {
     if (element.closest(CONTROL_SELECTOR)) return false;
@@ -105,8 +182,7 @@ export function collectSemanticDom(root: HTMLElement): SemanticDomRecords {
       .filter((attribute) => /^(href|src|alt|title|open|datetime|cite|lang|dir|role|target|rel|download|type|checked|disabled|aria-)/.test(attribute.name) &&
         !(checkbox && (attribute.name === "checked" || attribute.name === "disabled" || attribute.name === "type")))
       .map((attribute): [string, string] => {
-        let value = attribute.value;
-        if (attribute.name === "href") value = canonicalLinkUrl(value);
+        let value = footnotes.attribute(element, attribute.name, attribute.value);
         if (attribute.name === "rel") value = Array.from(new Set(value.toLowerCase().split(/\s+/).filter(Boolean))).sort().join(" ");
         if (attribute.name === "target" && /^_(blank|self|parent|top)$/i.test(value)) value = value.toLowerCase();
         if (attribute.name === "checked" || attribute.name === "disabled") value = "true";
@@ -117,6 +193,8 @@ export function collectSemanticDom(root: HTMLElement): SemanticDomRecords {
       const input = element as HTMLInputElement;
       attributes.push(["type", input.type], ["checked", String(input.checked)], ["disabled", String(input.disabled)]);
     }
+    const identity = footnotes.identity(element);
+    if (identity) attributes.push(["footnote-target", identity]);
     return attributes.sort(([left], [right]) => left.localeCompare(right));
   };
   const semanticHtml = (element: Element): boolean => element.matches("details,summary,abbr,mark,time,img,video,audio,iframe,blockquote,hr,strong,em,b,u,s,button,del,ins,kbd,sup,sub,[data-streamdown='strong']") ||
@@ -200,7 +278,7 @@ export function collectSemanticDom(root: HTMLElement): SemanticDomRecords {
         }),
       };
     }),
-    links: Array.from(root.querySelectorAll("a[href]")).filter(outsideCode).map((link) => ({ url: canonicalLinkUrl(link.getAttribute("href") ?? ""), title: link.getAttribute("title") ?? "", text: contentOf(link) })),
+    links: Array.from(root.querySelectorAll("a[href]")).filter(outsideCode).map((link) => ({ url: footnotes.attribute(link, "href", link.getAttribute("href") ?? ""), title: link.getAttribute("title") ?? "", text: contentOf(link) })),
     html: Array.from(root.querySelectorAll("*")).filter((element) => outsideCode(element) && !element.closest(".katex") && !element.matches(".math-inline,.math-display") && semanticHtml(element)).map((element) => ({
       tag: semanticTag(element),
       attributes: semanticAttributes(element),
