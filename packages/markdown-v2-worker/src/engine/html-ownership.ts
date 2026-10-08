@@ -34,7 +34,7 @@ function blockHtml(block: Block, attribute: string, index: number): string {
   const marker = ` ${attribute}="${index}"`;
   const meta = block.payload.meta ?? {};
   if (block.type === "code") {
-    const code = typeof meta.code === "string" ? meta.code : /^\s*(```|~~~)/.test(block.payload.raw) ? stripCodeFence(block.payload.raw) : dedentIndentedCode(block.payload.raw);
+    const code = typeof meta.code === "string" ? meta.code : /^\s*(```|~~~)/.test(block.payload.raw) ? stripCodeFence(block.payload.raw).code : dedentIndentedCode(block.payload.raw);
     return `<pre${marker}><code>${escape(code.replace(/\n?$/, "\n"))}</code></pre>`;
   }
   const tag = block.type === "heading" ? `h${meta.headingLevel ?? 1}` : block.type === "hr" ? "hr" : block.type === "blockquote" ? "blockquote" : block.type === "list" ? (meta.ordered ? "ol" : "ul") : "p";
