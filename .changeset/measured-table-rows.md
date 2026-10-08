@@ -9,3 +9,5 @@ Finalize async iterator tails on normal EOF and track iterator ownership indepen
 Reset renderer-owned engine documents on text or iterator replacement using the existing initialization protocol and options. Caller-initialized managed workers keep their engine document when the renderer restarts.
 
 Claim actual async iterator identities once per mounted component, including across restart and renderer/readiness changes. Restart cancels the current generation rather than re-entering a single-use iterator; fresh iterators remain supported. Removing an open stream releases only its iterator-owned activity and preserves independent imperative activity.
+
+Initialize owned static text with the complete document rather than repeatedly parsing growing append chunks. Share all existing initialization options, match FIFO acknowledgements, reject pending static renders on worker detach, and leave incremental streams and caller-managed workers unchanged.

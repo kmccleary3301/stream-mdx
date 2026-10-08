@@ -52,6 +52,11 @@ function getMdxComponentNames(config: RendererConfig): string[] | undefined {
   return names.length > 0 ? names : undefined;
 }
 
+interface OwnedInitialization {
+  resolve?: (blocks: Block[]) => void;
+  reject?: (error: Error) => void;
+}
+
 /**
  * Main renderer class
  */
@@ -59,6 +64,7 @@ export class MarkdownRenderer implements Renderer {
   private worker: Worker | null = null;
   private skipWorkerInit = false;
   private workerHasContent = false;
+  private pendingInitializations: OwnedInitialization[] = [];
   private blocks: Block[] = [];
   private updateCallbacks: Array<(blocks: ReadonlyArray<Block>) => void> = [];
   private componentRegistry: ComponentRegistry;
@@ -125,11 +131,11 @@ export class MarkdownRenderer implements Renderer {
     this.workerMessageListener = this.handleWorkerMessage.bind(this);
     this.worker.addEventListener("message", this.workerMessageListener);
 
-    this.initializeWorker();
+    if (!this.skipWorkerInit) this.initializeWorker();
   }
 
-  private initializeWorker(): void {
-    if (!this.worker || this.skipWorkerInit) return;
+  private initializeWorker(initialContent = "", completion: OwnedInitialization = {}): void {
+    if (!this.worker) throw new Error("Worker not attached");
     const mdxComponentNames = getMdxComponentNames(this.config);
     const codeHighlighting = this.config.plugins?.codeHighlighting;
     const outputMode = this.config.plugins?.outputMode;
@@ -152,20 +158,32 @@ export class MarkdownRenderer implements Renderer {
       ...(emitDiffBlocks !== undefined ? { emitDiffBlocks } : {}),
       ...(mdxComponentNames ? { mdxComponentNames } : {}),
     };
-    this.worker.postMessage({
-      type: "INIT",
-      initialContent: "",
-      prewarmLangs: this.config.highlight?.langs || [],
-      docPlugins,
-      mdx: { compileMode: this.config.mdx?.compileStrategy ?? "server" },
-      ...(this.config.syntax ? { syntax: this.config.syntax } : {}),
-      ...(this.config.html ? { html: this.config.html } : {}),
-    } as WorkerIn);
+    this.pendingInitializations.push(completion);
+    try {
+      this.worker.postMessage({
+        type: "INIT",
+        initialContent,
+        prewarmLangs: this.config.highlight?.langs || [],
+        docPlugins,
+        mdx: { compileMode: this.config.mdx?.compileStrategy ?? "server" },
+        ...(this.config.syntax ? { syntax: this.config.syntax } : {}),
+        ...(this.config.html ? { html: this.config.html } : {}),
+      } as WorkerIn);
+      this.workerHasContent = initialContent.length > 0;
+    } catch (error) {
+      this.pendingInitializations.pop();
+      throw error;
+    }
   }
 
   detachWorker(options: { terminate?: boolean } = {}): void {
     if (!this.worker) return;
     const shouldTerminate = options.terminate ?? false;
+    const pending = this.pendingInitializations;
+    this.pendingInitializations = [];
+    for (const initialization of pending) {
+      initialization.reject?.(new Error("Worker detached before initialization completed"));
+    }
     try {
       if (this.workerMessageListener) {
         this.worker.removeEventListener("message", this.workerMessageListener);
@@ -207,44 +225,11 @@ export class MarkdownRenderer implements Renderer {
         return;
       }
 
-      // One-time callback for static rendering
-      const handleMessage = (event: MessageEvent<WorkerOut>) => {
-        const message = event.data;
-        if (message.type === "INITIALIZED") {
-          this.worker?.removeEventListener("message", handleMessage);
-          resolve(message.blocks);
-        }
-      };
-
-      this.worker.addEventListener("message", handleMessage);
-
-      const mdxComponentNames = getMdxComponentNames(this.config);
-      const codeHighlighting = this.config.plugins?.codeHighlighting;
-      const docPlugins = {
-        footnotes: this.config.plugins?.footnotes ?? true,
-        html: this.config.plugins?.html ?? true,
-        mdx: this.config.plugins?.mdx ?? true,
-        tables: this.config.plugins?.tables ?? true,
-        callouts: this.config.plugins?.callouts ?? false,
-        math: this.config.plugins?.math ?? true,
-        formatAnticipation: this.config.plugins?.formatAnticipation ?? false,
-        ...(codeHighlighting !== undefined ? { codeHighlighting } : {}),
-        liveCodeHighlighting: this.config.plugins?.liveCodeHighlighting ?? false,
-        ...(mdxComponentNames ? { mdxComponentNames } : {}),
-      };
-
-      this.workerHasContent = text.length > 0;
-      this.worker.postMessage({
-        type: "INIT",
-        initialContent: text,
-        prewarmLangs: this.config.highlight?.langs || [],
-        docPlugins,
-        mdx: {
-          compileMode: this.config.mdx?.compileStrategy ?? "server",
-        },
-        ...(this.config.syntax ? { syntax: this.config.syntax } : {}),
-        ...(this.config.html ? { html: this.config.html } : {}),
-      } as WorkerIn);
+      this.patchScheduler.restart();
+      this.store.reset([]);
+      this.blocks = [];
+      if (this.updateCallbacks.length > 0) this.notifyUpdateCallbacks();
+      this.initializeWorker(text, { resolve, reject });
     });
   }
 
@@ -320,14 +305,19 @@ export class MarkdownRenderer implements Renderer {
     const message = event.data;
 
     switch (message.type) {
-      case "INITIALIZED":
-        this.patchScheduler.clear();
-        this.store.reset(message.blocks);
-        if (this.updateCallbacks.length > 0) {
-          this.blocks = this.store.getBlocks() as Block[];
-          this.notifyUpdateCallbacks();
+      case "INITIALIZED": {
+        const initialization = this.pendingInitializations.shift();
+        if (this.pendingInitializations.length === 0) {
+          this.patchScheduler.clear();
+          this.store.reset(message.blocks);
+          if (this.updateCallbacks.length > 0) {
+            this.blocks = this.store.getBlocks() as Block[];
+            this.notifyUpdateCallbacks();
+          }
         }
+        initialization?.resolve?.(message.blocks);
         break;
+      }
 
       case "METRICS":
         // Handle performance metrics
@@ -338,6 +328,7 @@ export class MarkdownRenderer implements Renderer {
         break;
 
       case "PATCH": {
+        if (this.pendingInitializations.length > 0) break;
         if (message.metrics) {
           this.lastPatchMetrics = message.metrics;
         }
@@ -367,6 +358,9 @@ export class MarkdownRenderer implements Renderer {
 
       case "ERROR":
         this.lastWorkerError = message;
+        if (message.phase === "INIT" && typeof message.meta?.rule !== "string") {
+          this.pendingInitializations.shift()?.reject?.(new Error(message.error.message));
+        }
         console.error("V2 Markdown worker reported an error", {
           phase: message.phase,
           blockId: message.blockId,
@@ -421,7 +415,7 @@ export class MarkdownRenderer implements Renderer {
       this.notifyUpdateCallbacks();
     }
     if (this.workerHasContent) {
-      this.initializeWorker();
+      if (!this.skipWorkerInit) this.initializeWorker();
       this.workerHasContent = false;
     }
   }
