@@ -197,6 +197,12 @@ reuse global `self`/`postMessage` transport bindings. Another worker runtime may
 replace those bindings without redirecting direct compilation output. Existing
 compile serialization, artifact hashes, and cache behavior remain unchanged.
 
+Public imports and direct/worker compilation also leave `document` and
+`DOMParser` unchanged. The obsolete ambient worker DOM stubs have been removed.
+Node SSR uses the actual DOM-free HTML/sanitizer paths; physical workers compile
+MDX through the existing DOM-free dependency aliases. Browser hosts retain their
+real DOM rather than receiving an incomplete replacement.
+
 ## Runtime fallback
 
 When a snapshot file is missing or disabled by mode flag, docs routes fall back to the existing `StreamingArticle` worker render path.

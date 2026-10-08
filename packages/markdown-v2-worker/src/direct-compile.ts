@@ -1,4 +1,3 @@
-import "./worker-dom-stub";
 import { MarkdownEngine } from "./engine";
 import {
   PATCH_ROOT_ID,

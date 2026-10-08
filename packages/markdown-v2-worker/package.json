@@ -59,9 +59,7 @@
     "README.md",
     "CHANGELOG.md"
   ],
-  "sideEffects": [
-    "src/worker-dom-stub.ts"
-  ],
+  "sideEffects": false,
   "scripts": {
     "build": "tsup && tsup --config tsup.worker-engine.config.ts",
     "build:hosted": "tsup --config tsup.hosted-worker.config.ts",
