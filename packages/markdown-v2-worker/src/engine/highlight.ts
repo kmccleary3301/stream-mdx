@@ -42,10 +42,16 @@ export async function getSharedHighlighter(prewarmLangs: string[] = []): Promise
       engine: createJavaScriptRegexEngine(),
       langs: initialLangs,
       themes: ["github-dark", "github-light"],
-    }).then((h) => {
-      sharedHighlighter = h;
-      return h;
-    });
+    }).then(
+      (h) => {
+        sharedHighlighter = h;
+        return h;
+      },
+      (error: unknown) => {
+        sharedHighlighterPromise = null;
+        throw error;
+      },
+    );
   }
   const highlighter = await sharedHighlighterPromise;
   if (prewarmLangs.length > 0) {

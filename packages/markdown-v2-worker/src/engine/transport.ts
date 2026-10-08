@@ -125,10 +125,18 @@ export function createInlineEngineWorker(options?: InlineEngineWorkerOptions): W
           }
 
           if (onerrorHandler) {
-            onerrorHandler(errorEvent);
+            try {
+              onerrorHandler(errorEvent);
+            } catch (handlerError) {
+              console.error("[stream-mdx:inline-worker] onerror handler threw:", handlerError);
+            }
           }
           for (const listener of errorListeners) {
-            listener(errorEvent);
+            try {
+              listener(errorEvent);
+            } catch (listenerError) {
+              console.error("[stream-mdx:inline-worker] error listener threw:", listenerError);
+            }
           }
         }
       });

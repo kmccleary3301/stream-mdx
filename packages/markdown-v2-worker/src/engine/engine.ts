@@ -302,6 +302,15 @@ export class MarkdownEngine {
     this.workerMdxCache.clear();
     this.workerMdxInflight.clear();
     this.documentPluginRegistry.clear();
+    this.blocks = [];
+    this.lastTree = null;
+    this.treeFragments = [];
+    this.currentContent = "";
+    this.currentLinkReferences.clear();
+    this.blockAttemptedReferences.clear();
+    this.emittedBlockEpochs.clear();
+    this.tocHeadings = [];
+    this.headingIdCounts.clear();
   }
 
   public handle(message: WorkerIn): Promise<void> {
@@ -2269,7 +2278,12 @@ export class MarkdownEngine {
     queueMicrotask(async () => {
       if (this.disposed || generation !== this.documentGeneration) return;
       this.lazyTokenizationScheduled = false;
-      await this.processLazyTokenizationQueue();
+      try {
+        await this.processLazyTokenizationQueue();
+      } catch (error) {
+        console.error("Lazy tokenization error:", error);
+        this.reportError(error, "TOKENIZE_RANGE", { phase: "TOKENIZE_RANGE" });
+      }
     });
   }
 
