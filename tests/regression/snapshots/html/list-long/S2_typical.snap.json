@@ -29,8 +29,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 0.5,
-        "lastDurationMs": 0.5,
+        "lastPatchToDomMs": 0.19999999552965164,
+        "lastDurationMs": 0.19999999552965164,
         "meta": {
           "fixtureId": "list-long",
           "scenarioId": "S2_typical",
@@ -95,8 +95,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 0.5,
-        "lastDurationMs": 0.5,
+        "lastPatchToDomMs": 0.19999999552965164,
+        "lastDurationMs": 0.19999999552965164,
         "meta": {
           "fixtureId": "list-long",
           "scenarioId": "S2_typical",
@@ -161,8 +161,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 2,
-        "lastPatchToDomMs": 0.4000000059604645,
-        "lastDurationMs": 0.29999999701976776,
+        "lastPatchToDomMs": 0.09999999403953552,
+        "lastDurationMs": 0.09999999403953552,
         "meta": {
           "fixtureId": "list-long",
           "scenarioId": "S2_typical",
@@ -194,8 +194,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Long Lists\">Long Lists</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second</li></ol></div>",
-      "textSample": "Long ListsFirst itemSecond",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Long Lists\">Long Lists</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">First item</li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Second </li></ol></div>",
+      "textSample": "Long ListsFirst itemSecond ",
       "structure": {
         "topLevelTags": [
           "div"
@@ -227,8 +227,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 4,
-        "lastPatchToDomMs": 9.799999997019768,
-        "lastDurationMs": 0.29999999701976776,
+        "lastPatchToDomMs": 16.799999997019768,
+        "lastDurationMs": 0.19999999552965164,
         "meta": {
           "fixtureId": "list-long",
           "scenarioId": "S2_typical",
@@ -293,8 +293,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 8,
-        "lastPatchToDomMs": 10.200000002980232,
-        "lastDurationMs": 0.30000001192092896,
+        "lastPatchToDomMs": 13.5,
+        "lastDurationMs": 0.19999999552965164,
         "meta": {
           "fixtureId": "list-long",
           "scenarioId": "S2_typical",
@@ -359,8 +359,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 12,
-        "lastPatchToDomMs": 11.200000002980232,
-        "lastDurationMs": 0.20000000298023224,
+        "lastPatchToDomMs": 15.200000002980232,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "list-long",
           "scenarioId": "S2_typical",
@@ -425,8 +425,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 14,
-        "lastPatchToDomMs": 10.299999997019768,
-        "lastDurationMs": 0.20000000298023224,
+        "lastPatchToDomMs": 15.699999995529652,
+        "lastDurationMs": 0.09999999403953552,
         "meta": {
           "fixtureId": "list-long",
           "scenarioId": "S2_typical",
@@ -491,8 +491,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 16,
-        "lastPatchToDomMs": 3.4000000059604645,
-        "lastDurationMs": 0.20000000298023224,
+        "lastPatchToDomMs": 14.399999998509884,
+        "lastDurationMs": 0.10000000149011612,
         "meta": {
           "fixtureId": "list-long",
           "scenarioId": "S2_typical",
@@ -568,8 +568,8 @@
       "pendingBatches": 0,
       "workerReady": true,
       "lastTx": 18,
-      "lastPatchToDomMs": 2,
-      "lastDurationMs": 1.7000000029802322,
+      "lastPatchToDomMs": 14.299999997019768,
+      "lastDurationMs": 0.3999999985098839,
       "meta": {
         "fixtureId": "list-long",
         "scenarioId": "S2_typical",

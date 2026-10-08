@@ -29,8 +29,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 0.5,
-        "lastDurationMs": 0.3999999910593033,
+        "lastPatchToDomMs": 0.20000000298023224,
+        "lastDurationMs": 0.20000000298023224,
         "meta": {
           "fixtureId": "mdx-components",
           "scenarioId": "S3_fast_reasonable",
@@ -62,7 +62,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Components\">MDX Components</h1><p class=\"markdown-paragraph streaming-partial\">&lt;Previ</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Components\">MDX Components</h1><p class=\"markdown-paragraph\">&lt;Previ</p></div>",
       "textSample": "MDX Components<Previ",
       "structure": {
         "topLevelTags": [
@@ -95,8 +95,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 0.5,
-        "lastDurationMs": 0.3999999910593033,
+        "lastPatchToDomMs": 0.20000000298023224,
+        "lastDurationMs": 0.20000000298023224,
         "meta": {
           "fixtureId": "mdx-components",
           "scenarioId": "S3_fast_reasonable",
@@ -128,7 +128,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Components\">MDX Components</h1><p class=\"markdown-paragraph streaming-partial\">&lt;Previ</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Components\">MDX Components</h1><p class=\"markdown-paragraph\">&lt;Previ</p></div>",
       "textSample": "MDX Components<Previ",
       "structure": {
         "topLevelTags": [
@@ -161,8 +161,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 2,
-        "lastPatchToDomMs": 0.29999999701976776,
-        "lastDurationMs": 0.29999999701976776,
+        "lastPatchToDomMs": 0.20000000298023224,
+        "lastDurationMs": 0.10000000149011612,
         "meta": {
           "fixtureId": "mdx-components",
           "scenarioId": "S3_fast_reasonable",
@@ -179,7 +179,7 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": true,
+        "hasMdxPending": false,
         "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
@@ -189,13 +189,13 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 1,
+        "mdxPending": 0,
         "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Components\">MDX Components</h1><div class=\"markdown-mdx\" data-mdx-ref=\"pending\" data-mdx-status=\"pending\" data-mdx-mode=\"server\">Compiling MDX (server)…</div></div>",
-      "textSample": "MDX ComponentsCompiling MDX (server)…",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Components\">MDX Components</h1>\n  </div>",
+      "textSample": "MDX Components\n  ",
       "structure": {
         "topLevelTags": [
           "div"
@@ -205,7 +205,7 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 1,
+          "mdxPending": 0,
           "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
@@ -213,83 +213,7 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "pending",
-            "textSample": "Compiling MDX (server)…"
-          }
-        ],
-        "codeBlocks": []
-      }
-    },
-    {
-      "id": "event-hasMdxPending",
-      "appendedChars": 48,
-      "rootChildCount": 1,
-      "runtimeState": {
-        "rendererVersion": 5,
-        "queueDepth": 0,
-        "pendingBatches": 0,
-        "workerReady": true,
-        "lastTx": 2,
-        "lastPatchToDomMs": 0.29999999701976776,
-        "lastDurationMs": 0.29999999701976776,
-        "meta": {
-          "fixtureId": "mdx-components",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
-        },
-        "storeCounters": {
-          "appendLineGuardRejected": 0,
-          "staleEpochRejected": 0,
-          "storeInvariantViolationCount": 0
-        }
-      },
-      "selectors": {
-        "hasTable": false,
-        "hasPre": false,
-        "hasFootnotes": false,
-        "hasMdxPending": true,
-        "hasMdxCompiled": false,
-        "hasBlockquote": false,
-        "hasMath": false
-      },
-      "counts": {
-        "table": 0,
-        "pre": 0,
-        "blockquote": 0,
-        "katex": 0,
-        "mdxPending": 1,
-        "mdxCompiled": 0,
-        "footnotes": 0,
-        "hr": 0
-      },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Components\">MDX Components</h1><div class=\"markdown-mdx\" data-mdx-ref=\"pending\" data-mdx-status=\"pending\" data-mdx-mode=\"server\">Compiling MDX (server)…</div></div>",
-      "textSample": "MDX ComponentsCompiling MDX (server)…",
-      "structure": {
-        "topLevelTags": [
-          "div"
-        ],
-        "counts": {
-          "table": 0,
-          "pre": 0,
-          "blockquote": 0,
-          "katex": 0,
-          "mdxPending": 1,
-          "mdxCompiled": 0,
-          "footnotes": 0,
-          "hr": 0
-        }
-      },
-      "inspection": {
-        "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "pending",
-            "textSample": "Compiling MDX (server)…"
-          }
-        ],
+        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -303,8 +227,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 3,
-        "lastPatchToDomMs": 0.5,
-        "lastDurationMs": 0.29999999701976776,
+        "lastPatchToDomMs": 7,
+        "lastDurationMs": 0.20000000298023224,
         "meta": {
           "fixtureId": "mdx-components",
           "scenarioId": "S3_fast_reasonable",
@@ -328,7 +252,7 @@
       },
       "counts": {
         "table": 0,
-        "pre": 2,
+        "pre": 1,
         "blockquote": 0,
         "katex": 0,
         "mdxPending": 0,
@@ -336,7 +260,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Components\">MDX Components</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:33f76c4f\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><div class=\"min- flex h-10 w-32 items-center justify-center rounded-lg border border-yellow-6 bg-yellow-3 text-yellow-11\"><div class=\"overflow-x-auto\"><div class=\"min-w-full\"><div class=\"min-w-full\"><div class=\"min-w-full\">Showcase</div></div></div></div></div></figure></div><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"7d1e92bf\" data-code-virtualized=\"false\" data-code-total-lines=\"1\" data-code-mounted-lines=\"1\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"text\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\">Pre</span></code></pre></div></div></div></div></div></div></pre></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Components\">MDX Components</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:33f76c4f\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><div class=\"min- flex h-10 w-32 items-center justify-center rounded-lg border border-yellow-6 bg-yellow-3 text-yellow-11\"><div class=\"overflow-x-auto\"><div class=\"min-w-full\"><div class=\"min-w-full\"><div class=\"min-w-full\">Showcase</div></div></div></div></div></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">Pre</span></code></pre></div></div></div></div></div></div>",
       "textSample": "MDX ComponentsShowcase[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none",
       "structure": {
         "topLevelTags": [
@@ -344,7 +268,7 @@
         ],
         "counts": {
           "table": 0,
-          "pre": 2,
+          "pre": 1,
           "blockquote": 0,
           "katex": 0,
           "mdxPending": 0,
@@ -379,8 +303,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 3,
-        "lastPatchToDomMs": 0.5,
-        "lastDurationMs": 0.29999999701976776,
+        "lastPatchToDomMs": 7,
+        "lastDurationMs": 0.20000000298023224,
         "meta": {
           "fixtureId": "mdx-components",
           "scenarioId": "S3_fast_reasonable",
@@ -404,7 +328,7 @@
       },
       "counts": {
         "table": 0,
-        "pre": 2,
+        "pre": 1,
         "blockquote": 0,
         "katex": 0,
         "mdxPending": 0,
@@ -412,7 +336,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Components\">MDX Components</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:33f76c4f\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><div class=\"min- flex h-10 w-32 items-center justify-center rounded-lg border border-yellow-6 bg-yellow-3 text-yellow-11\"><div class=\"overflow-x-auto\"><div class=\"min-w-full\"><div class=\"min-w-full\"><div class=\"min-w-full\">Showcase</div></div></div></div></div></figure></div><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"7d1e92bf\" data-code-virtualized=\"false\" data-code-total-lines=\"1\" data-code-mounted-lines=\"1\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"text\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\">Pre</span></code></pre></div></div></div></div></div></div></pre></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Components\">MDX Components</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:33f76c4f\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><div class=\"min- flex h-10 w-32 items-center justify-center rounded-lg border border-yellow-6 bg-yellow-3 text-yellow-11\"><div class=\"overflow-x-auto\"><div class=\"min-w-full\"><div class=\"min-w-full\"><div class=\"min-w-full\">Showcase</div></div></div></div></div></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">Pre</span></code></pre></div></div></div></div></div></div>",
       "textSample": "MDX ComponentsShowcase[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none",
       "structure": {
         "topLevelTags": [
@@ -420,7 +344,7 @@
         ],
         "counts": {
           "table": 0,
-          "pre": 2,
+          "pre": 1,
           "blockquote": 0,
           "katex": 0,
           "mdxPending": 0,
@@ -455,8 +379,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 5,
-        "lastPatchToDomMs": 9.299999997019768,
-        "lastDurationMs": 0.9000000059604645,
+        "lastPatchToDomMs": 15,
+        "lastDurationMs": 0.5,
         "meta": {
           "fixtureId": "mdx-components",
           "scenarioId": "S3_fast_reasonable",
@@ -480,7 +404,7 @@
       },
       "counts": {
         "table": 0,
-        "pre": 2,
+        "pre": 1,
         "blockquote": 0,
         "katex": 0,
         "mdxPending": 1,
@@ -488,7 +412,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Components\">MDX Components</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:33f76c4f\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><div class=\"min- flex h-10 w-32 items-center justify-center rounded-lg border border-yellow-6 bg-yellow-3 text-yellow-11\"><div class=\"overflow-x-auto\"><div class=\"min-w-full\"><div class=\"min-w-full\"><div class=\"min-w-full\">Showcase</div></div></div></div></div></figure></div><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"7d1e92bf\" data-code-virtualized=\"false\" data-code-total-lines=\"1\" data-code-mounted-lines=\"1\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"text\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\">PreviewExample should render above.</span></code></pre></div></div></div></div></div></div></pre><div class=\"markdown-mdx\" data-mdx-ref=\"pending\" data-mdx-status=\"pending\" data-mdx-mode=\"server\">Compiling MDX (server)…</div></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Components\">MDX Components</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:33f76c4f\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><div class=\"min- flex h-10 w-32 items-center justify-center rounded-lg border border-yellow-6 bg-yellow-3 text-yellow-11\"><div class=\"overflow-x-auto\"><div class=\"min-w-full\"><div class=\"min-w-full\"><div class=\"min-w-full\">Showcase</div></div></div></div></div></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>PreviewExample should render above.</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"pending\" data-mdx-status=\"pending\" data-mdx-mode=\"server\">Compiling MDX (server)…</div></div>",
       "textSample": "MDX ComponentsShowcase[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none",
       "structure": {
         "topLevelTags": [
@@ -496,7 +420,87 @@
         ],
         "counts": {
           "table": 0,
-          "pre": 2,
+          "pre": 1,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 1,
+          "mdxCompiled": 1,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [
+          {
+            "status": "compiled",
+            "textSample": "Showcase"
+          },
+          {
+            "status": "pending",
+            "textSample": "Compiling MDX (server)…"
+          }
+        ],
+        "codeBlocks": [
+          {
+            "text": "PreviewExample should render above.",
+            "lineCount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "event-hasMdxPending",
+      "appendedChars": 120,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 8,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 5,
+        "lastPatchToDomMs": 15,
+        "lastDurationMs": 0.5,
+        "meta": {
+          "fixtureId": "mdx-components",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": true,
+        "hasFootnotes": false,
+        "hasMdxPending": true,
+        "hasMdxCompiled": true,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 1,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 1,
+        "mdxCompiled": 1,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Components\">MDX Components</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:33f76c4f\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><div class=\"min- flex h-10 w-32 items-center justify-center rounded-lg border border-yellow-6 bg-yellow-3 text-yellow-11\"><div class=\"overflow-x-auto\"><div class=\"min-w-full\"><div class=\"min-w-full\"><div class=\"min-w-full\">Showcase</div></div></div></div></div></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>PreviewExample should render above.</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"pending\" data-mdx-status=\"pending\" data-mdx-mode=\"server\">Compiling MDX (server)…</div></div>",
+      "textSample": "MDX ComponentsShowcase[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 1,
           "blockquote": 0,
           "katex": 0,
           "mdxPending": 1,
@@ -535,8 +539,84 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 8,
-        "lastPatchToDomMs": 4.799999997019768,
-        "lastDurationMs": 0.20000000298023224,
+        "lastPatchToDomMs": 14.800000004470348,
+        "lastDurationMs": 0.10000000149011612,
+        "meta": {
+          "fixtureId": "mdx-components",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": true,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": true,
+        "hasBlockquote": true,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 1,
+        "blockquote": 1,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 1,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Components\">MDX Components</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:33f76c4f\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><div class=\"min- flex h-10 w-32 items-center justify-center rounded-lg border border-yellow-6 bg-yellow-3 text-yellow-11\"><div class=\"overflow-x-auto\"><div class=\"min-w-full\"><div class=\"min-w-full\"><div class=\"min-w-full\">Showcase</div></div></div></div></div></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>PreviewExample should render above.</span></span></code></pre></div></div></div></div></div></div>\n  **Bold** text in a Preview block.\n<blockquote class=\"markdown-blockquote\">Quoted text inside Pr</blockquote></div>",
+      "textSample": "MDX ComponentsShowcase[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 1,
+          "blockquote": 1,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 1,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [
+          {
+            "status": "compiled",
+            "textSample": "Showcase"
+          }
+        ],
+        "codeBlocks": [
+          {
+            "text": "PreviewExample should render above.",
+            "lineCount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "progress-221",
+      "appendedChars": 240,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 13,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 10,
+        "lastPatchToDomMs": 13.099999994039536,
+        "lastDurationMs": 0.29999999701976776,
         "meta": {
           "fixtureId": "mdx-components",
           "scenarioId": "S3_fast_reasonable",
@@ -564,11 +644,11 @@
         "blockquote": 1,
         "katex": 0,
         "mdxPending": 0,
-        "mdxCompiled": 1,
+        "mdxCompiled": 2,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Components\">MDX Components</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:33f76c4f\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><div class=\"min- flex h-10 w-32 items-center justify-center rounded-lg border border-yellow-6 bg-yellow-3 text-yellow-11\"><div class=\"overflow-x-auto\"><div class=\"min-w-full\"><div class=\"min-w-full\"><div class=\"min-w-full\">Showcase</div></div></div></div></div></figure></div><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"7d1e92bf\" data-code-virtualized=\"false\" data-code-total-lines=\"1\" data-code-mounted-lines=\"1\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"text\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\">PreviewExample should render above.</span></code></pre></div></div></div></div></div></div></pre><div class=\"markdown-mdx error\" data-mdx-ref=\"pending\" data-mdx-status=\"error\" data-mdx-mode=\"server\"><strong>MDX failed</strong><div>Expected a closing tag for `&lt;Preview&gt;` (1:1-1:20)</div></div><blockquote class=\"markdown-blockquote\">Quoted text inside Pr</blockquote></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Components\">MDX Components</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:33f76c4f\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><div class=\"min- flex h-10 w-32 items-center justify-center rounded-lg border border-yellow-6 bg-yellow-3 text-yellow-11\"><div class=\"overflow-x-auto\"><div class=\"min-w-full\"><div class=\"min-w-full\"><div class=\"min-w-full\">Showcase</div></div></div></div></div></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>PreviewExample should render above.</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:3af38a3c\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\"><strong class=\"mdx-strong\">Bold</strong> text in a Preview block.</p><blockquote class=\"mdx-blockquote\">\n<p class=\"mdx-p\">Quoted text inside Preview.</p>\n</blockquote></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">**Bold** text in a Pr</span></code></pre></div></div></div></div></div></div>",
       "textSample": "MDX ComponentsShowcase[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none",
       "structure": {
         "topLevelTags": [
@@ -580,7 +660,7 @@
           "blockquote": 1,
           "katex": 0,
           "mdxPending": 0,
-          "mdxCompiled": 1,
+          "mdxCompiled": 2,
           "footnotes": 0,
           "hr": 0
         }
@@ -593,88 +673,8 @@
             "textSample": "Showcase"
           },
           {
-            "status": "error",
-            "textSample": "MDX failedExpected a closing tag for `<Preview>` (1:1-1:20)"
-          }
-        ],
-        "codeBlocks": [
-          {
-            "text": "PreviewExample should render above.",
-            "lineCount": 1
-          }
-        ]
-      }
-    },
-    {
-      "id": "progress-221",
-      "appendedChars": 240,
-      "rootChildCount": 1,
-      "runtimeState": {
-        "rendererVersion": 13,
-        "queueDepth": 0,
-        "pendingBatches": 0,
-        "workerReady": true,
-        "lastTx": 10,
-        "lastPatchToDomMs": 4.299999997019768,
-        "lastDurationMs": 0.5,
-        "meta": {
-          "fixtureId": "mdx-components",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
-        },
-        "storeCounters": {
-          "appendLineGuardRejected": 0,
-          "staleEpochRejected": 0,
-          "storeInvariantViolationCount": 0
-        }
-      },
-      "selectors": {
-        "hasTable": false,
-        "hasPre": true,
-        "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
-        "hasBlockquote": true,
-        "hasMath": false
-      },
-      "counts": {
-        "table": 0,
-        "pre": 4,
-        "blockquote": 1,
-        "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 1,
-        "footnotes": 0,
-        "hr": 0
-      },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Components\">MDX Components</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:33f76c4f\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><div class=\"min- flex h-10 w-32 items-center justify-center rounded-lg border border-yellow-6 bg-yellow-3 text-yellow-11\"><div class=\"overflow-x-auto\"><div class=\"min-w-full\"><div class=\"min-w-full\"><div class=\"min-w-full\">Showcase</div></div></div></div></div></figure></div><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"7d1e92bf\" data-code-virtualized=\"false\" data-code-total-lines=\"1\" data-code-mounted-lines=\"1\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"text\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\">PreviewExample should render above.</span></code></pre></div></div></div></div></div></div></pre><div class=\"markdown-mdx error\" data-mdx-ref=\"pending\" data-mdx-status=\"error\" data-mdx-mode=\"server\"><strong>MDX failed</strong><div>Expected a closing tag for `&lt;Preview&gt;` (1:1-1:20)</div></div><blockquote class=\"markdown-blockquote\">Quoted text inside Preview.\n&lt;/Preview&gt;</blockquote><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"758c6582\" data-code-virtualized=\"false\" data-code-total-lines=\"1\" data-code-mounted-lines=\"1\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"text\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\">**Bold** text in a Pr</span></code></pre></div></div></div></div></div></div></pre></div>",
-      "textSample": "MDX ComponentsShowcase[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none",
-      "structure": {
-        "topLevelTags": [
-          "div"
-        ],
-        "counts": {
-          "table": 0,
-          "pre": 4,
-          "blockquote": 1,
-          "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 1,
-          "footnotes": 0,
-          "hr": 0
-        }
-      },
-      "inspection": {
-        "tables": [],
-        "mdxBlocks": [
-          {
             "status": "compiled",
-            "textSample": "Showcase"
-          },
-          {
-            "status": "error",
-            "textSample": "MDX failedExpected a closing tag for `<Preview>` (1:1-1:20)"
+            "textSample": "Bold text in a Preview block.\nQuoted text inside Preview.\n"
           }
         ],
         "codeBlocks": [
@@ -699,8 +699,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 14,
-        "lastPatchToDomMs": 10.400000005960464,
-        "lastDurationMs": 0.10000000894069672,
+        "lastPatchToDomMs": 15.5,
+        "lastDurationMs": 0.10000000149011612,
         "meta": {
           "fixtureId": "mdx-components",
           "scenarioId": "S3_fast_reasonable",
@@ -724,15 +724,15 @@
       },
       "counts": {
         "table": 0,
-        "pre": 4,
+        "pre": 2,
         "blockquote": 1,
         "katex": 0,
         "mdxPending": 1,
-        "mdxCompiled": 1,
+        "mdxCompiled": 2,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Components\">MDX Components</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:33f76c4f\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><div class=\"min- flex h-10 w-32 items-center justify-center rounded-lg border border-yellow-6 bg-yellow-3 text-yellow-11\"><div class=\"overflow-x-auto\"><div class=\"min-w-full\"><div class=\"min-w-full\"><div class=\"min-w-full\">Showcase</div></div></div></div></div></figure></div><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"7d1e92bf\" data-code-virtualized=\"false\" data-code-total-lines=\"1\" data-code-mounted-lines=\"1\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"text\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\">PreviewExample should render above.</span></code></pre></div></div></div></div></div></div></pre><div class=\"markdown-mdx error\" data-mdx-ref=\"pending\" data-mdx-status=\"error\" data-mdx-mode=\"server\"><strong>MDX failed</strong><div>Expected a closing tag for `&lt;Preview&gt;` (1:1-1:20)</div></div><blockquote class=\"markdown-blockquote\">Quoted text inside Preview.\n&lt;/Preview&gt;</blockquote><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"758c6582\" data-code-virtualized=\"false\" data-code-total-lines=\"3\" data-code-mounted-lines=\"3\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"text\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\">**Bold** text in a Preview block.</span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\">&gt; Quoted text inside Preview.</span></code></pre></div></div></div></div></div></div></pre><div class=\"markdown-mdx\" data-mdx-ref=\"pending\" data-mdx-status=\"pending\" data-mdx-mode=\"server\">Compiling MDX (server)…</div></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Components\">MDX Components</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:33f76c4f\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><div class=\"min- flex h-10 w-32 items-center justify-center rounded-lg border border-yellow-6 bg-yellow-3 text-yellow-11\"><div class=\"overflow-x-auto\"><div class=\"min-w-full\"><div class=\"min-w-full\"><div class=\"min-w-full\">Showcase</div></div></div></div></div></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>PreviewExample should render above.</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:3af38a3c\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\"><strong class=\"mdx-strong\">Bold</strong> text in a Preview block.</p><blockquote class=\"mdx-blockquote\">\n<p class=\"mdx-p\">Quoted text inside Preview.</p>\n</blockquote></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>**Bold** text in a Preview block.</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>&gt; Quoted text inside Preview.</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"pending\" data-mdx-status=\"pending\" data-mdx-mode=\"server\">Compiling MDX (server)…</div></div>",
       "textSample": "MDX ComponentsShowcase[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none",
       "structure": {
         "topLevelTags": [
@@ -740,11 +740,11 @@
         ],
         "counts": {
           "table": 0,
-          "pre": 4,
+          "pre": 2,
           "blockquote": 1,
           "katex": 0,
           "mdxPending": 1,
-          "mdxCompiled": 1,
+          "mdxCompiled": 2,
           "footnotes": 0,
           "hr": 0
         }
@@ -757,8 +757,8 @@
             "textSample": "Showcase"
           },
           {
-            "status": "error",
-            "textSample": "MDX failedExpected a closing tag for `<Preview>` (1:1-1:20)"
+            "status": "compiled",
+            "textSample": "Bold text in a Preview block.\nQuoted text inside Preview.\n"
           },
           {
             "status": "pending",
@@ -787,8 +787,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 17,
-        "lastPatchToDomMs": 11.300000011920929,
-        "lastDurationMs": 0.10000000894069672,
+        "lastPatchToDomMs": 15.100000001490116,
+        "lastDurationMs": 0.10000000149011612,
         "meta": {
           "fixtureId": "mdx-components",
           "scenarioId": "S3_fast_reasonable",
@@ -812,15 +812,15 @@
       },
       "counts": {
         "table": 0,
-        "pre": 4,
+        "pre": 2,
         "blockquote": 1,
         "katex": 0,
         "mdxPending": 1,
-        "mdxCompiled": 2,
+        "mdxCompiled": 3,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Components\">MDX Components</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:33f76c4f\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><div class=\"min- flex h-10 w-32 items-center justify-center rounded-lg border border-yellow-6 bg-yellow-3 text-yellow-11\"><div class=\"overflow-x-auto\"><div class=\"min-w-full\"><div class=\"min-w-full\"><div class=\"min-w-full\">Showcase</div></div></div></div></div></figure></div><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"7d1e92bf\" data-code-virtualized=\"false\" data-code-total-lines=\"1\" data-code-mounted-lines=\"1\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"text\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\">PreviewExample should render above.</span></code></pre></div></div></div></div></div></div></pre><div class=\"markdown-mdx error\" data-mdx-ref=\"pending\" data-mdx-status=\"error\" data-mdx-mode=\"server\"><strong>MDX failed</strong><div>Expected a closing tag for `&lt;Preview&gt;` (1:1-1:20)</div></div><blockquote class=\"markdown-blockquote\">Quoted text inside Preview.\n&lt;/Preview&gt;</blockquote><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"758c6582\" data-code-virtualized=\"false\" data-code-total-lines=\"3\" data-code-mounted-lines=\"3\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"text\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\">**Bold** text in a Preview block.</span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\">&gt; Quoted text inside Preview.</span></code></pre></div></div></div></div></div></div></pre><div class=\"markdown-mdx\" data-mdx-ref=\"worker:3d16085b\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><div class=\"w-full\"><div class=\"overflow-hidden rounded-large border border-border\"><iframe title=\"Example Video\" src=\"https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" allowfullscreen=\"\" loading=\"lazy\" style=\"width: 100%; aspect-ratio: 16 / 9; border: 0px;\"></iframe></div><sub class=\"mt-2 block text-center text-muted\">Example Video</sub></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"pending\" data-mdx-status=\"pending\" data-mdx-mode=\"server\">Compiling MDX (server)…</div></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Components\">MDX Components</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:33f76c4f\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><div class=\"min- flex h-10 w-32 items-center justify-center rounded-lg border border-yellow-6 bg-yellow-3 text-yellow-11\"><div class=\"overflow-x-auto\"><div class=\"min-w-full\"><div class=\"min-w-full\"><div class=\"min-w-full\">Showcase</div></div></div></div></div></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>PreviewExample should render above.</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:3af38a3c\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\"><strong class=\"mdx-strong\">Bold</strong> text in a Preview block.</p><blockquote class=\"mdx-blockquote\">\n<p class=\"mdx-p\">Quoted text inside Preview.</p>\n</blockquote></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>**Bold** text in a Preview block.</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>&gt; Quoted text inside Preview.</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:3d16085b\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><div class=\"w-full\"><div class=\"overflow-hidden rounded-large border border-border\"><iframe title=\"Example Video\" src=\"https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" allowfullscreen=\"\" loading=\"lazy\" style=\"width: 100%; aspect-ratio: 16 / 9; border: 0px;\"></iframe></div><sub class=\"mt-2 block text-center text-muted\">Example Video</sub></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"pending\" data-mdx-status=\"pending\" data-mdx-mode=\"server\">Compiling MDX (server)…</div></div>",
       "textSample": "MDX ComponentsShowcase[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none",
       "structure": {
         "topLevelTags": [
@@ -828,11 +828,11 @@
         ],
         "counts": {
           "table": 0,
-          "pre": 4,
+          "pre": 2,
           "blockquote": 1,
           "katex": 0,
           "mdxPending": 1,
-          "mdxCompiled": 2,
+          "mdxCompiled": 3,
           "footnotes": 0,
           "hr": 0
         }
@@ -845,8 +845,8 @@
             "textSample": "Showcase"
           },
           {
-            "status": "error",
-            "textSample": "MDX failedExpected a closing tag for `<Preview>` (1:1-1:20)"
+            "status": "compiled",
+            "textSample": "Bold text in a Preview block.\nQuoted text inside Preview.\n"
           },
           {
             "status": "compiled",
@@ -879,8 +879,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 19,
-        "lastPatchToDomMs": 10.399999991059303,
-        "lastDurationMs": 0.20000000298023224,
+        "lastPatchToDomMs": 8.699999995529652,
+        "lastDurationMs": 0.10000000149011612,
         "meta": {
           "fixtureId": "mdx-components",
           "scenarioId": "S3_fast_reasonable",
@@ -904,15 +904,15 @@
       },
       "counts": {
         "table": 0,
-        "pre": 4,
+        "pre": 2,
         "blockquote": 1,
         "katex": 0,
         "mdxPending": 1,
-        "mdxCompiled": 2,
+        "mdxCompiled": 3,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Components\">MDX Components</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:33f76c4f\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><div class=\"min- flex h-10 w-32 items-center justify-center rounded-lg border border-yellow-6 bg-yellow-3 text-yellow-11\"><div class=\"overflow-x-auto\"><div class=\"min-w-full\"><div class=\"min-w-full\"><div class=\"min-w-full\">Showcase</div></div></div></div></div></figure></div><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"7d1e92bf\" data-code-virtualized=\"false\" data-code-total-lines=\"1\" data-code-mounted-lines=\"1\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"text\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\">PreviewExample should render above.</span></code></pre></div></div></div></div></div></div></pre><div class=\"markdown-mdx error\" data-mdx-ref=\"pending\" data-mdx-status=\"error\" data-mdx-mode=\"server\"><strong>MDX failed</strong><div>Expected a closing tag for `&lt;Preview&gt;` (1:1-1:20)</div></div><blockquote class=\"markdown-blockquote\">Quoted text inside Preview.\n&lt;/Preview&gt;</blockquote><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"758c6582\" data-code-virtualized=\"false\" data-code-total-lines=\"3\" data-code-mounted-lines=\"3\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"text\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\">**Bold** text in a Preview block.</span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\">&gt; Quoted text inside Preview.</span></code></pre></div></div></div></div></div></div></pre><div class=\"markdown-mdx\" data-mdx-ref=\"worker:3d16085b\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><div class=\"w-full\"><div class=\"overflow-hidden rounded-large border border-border\"><iframe title=\"Example Video\" src=\"https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" allowfullscreen=\"\" loading=\"lazy\" style=\"width: 100%; aspect-ratio: 16 / 9; border: 0px;\"></iframe></div><sub class=\"mt-2 block text-center text-muted\">Example Video</sub></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"pending\" data-mdx-status=\"pending\" data-mdx-mode=\"server\">Compiling MDX (server)…</div></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Components\">MDX Components</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:33f76c4f\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><div class=\"min- flex h-10 w-32 items-center justify-center rounded-lg border border-yellow-6 bg-yellow-3 text-yellow-11\"><div class=\"overflow-x-auto\"><div class=\"min-w-full\"><div class=\"min-w-full\"><div class=\"min-w-full\">Showcase</div></div></div></div></div></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>PreviewExample should render above.</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:3af38a3c\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\"><strong class=\"mdx-strong\">Bold</strong> text in a Preview block.</p><blockquote class=\"mdx-blockquote\">\n<p class=\"mdx-p\">Quoted text inside Preview.</p>\n</blockquote></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>**Bold** text in a Preview block.</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>&gt; Quoted text inside Preview.</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:3d16085b\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><div class=\"w-full\"><div class=\"overflow-hidden rounded-large border border-border\"><iframe title=\"Example Video\" src=\"https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" allowfullscreen=\"\" loading=\"lazy\" style=\"width: 100%; aspect-ratio: 16 / 9; border: 0px;\"></iframe></div><sub class=\"mt-2 block text-center text-muted\">Example Video</sub></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"pending\" data-mdx-status=\"pending\" data-mdx-mode=\"server\">Compiling MDX (server)…</div></div>",
       "textSample": "MDX ComponentsShowcase[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none",
       "structure": {
         "topLevelTags": [
@@ -920,11 +920,11 @@
         ],
         "counts": {
           "table": 0,
-          "pre": 4,
+          "pre": 2,
           "blockquote": 1,
           "katex": 0,
           "mdxPending": 1,
-          "mdxCompiled": 2,
+          "mdxCompiled": 3,
           "footnotes": 0,
           "hr": 0
         }
@@ -937,8 +937,8 @@
             "textSample": "Showcase"
           },
           {
-            "status": "error",
-            "textSample": "MDX failedExpected a closing tag for `<Preview>` (1:1-1:20)"
+            "status": "compiled",
+            "textSample": "Bold text in a Preview block.\nQuoted text inside Preview.\n"
           },
           {
             "status": "compiled",
@@ -975,15 +975,15 @@
       "hasBlockquote": true,
       "hasMath": false
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Components\">MDX Components</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:33f76c4f\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><div class=\"min- flex h-10 w-32 items-center justify-center rounded-lg border border-yellow-6 bg-yellow-3 text-yellow-11\"><div class=\"overflow-x-auto\"><div class=\"min-w-full\"><div class=\"min-w-full\"><div class=\"min-w-full\">Showcase</div></div></div></div></div></figure></div><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"7d1e92bf\" data-code-virtualized=\"false\" data-code-total-lines=\"1\" data-code-mounted-lines=\"1\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"text\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\">PreviewExample should render above.</span></code></pre></div></div></div></div></div></div></pre><div class=\"markdown-mdx error\" data-mdx-ref=\"pending\" data-mdx-status=\"error\" data-mdx-mode=\"server\"><strong>MDX failed</strong><div>Expected a closing tag for `&lt;Preview&gt;` (1:1-1:20)</div></div><blockquote class=\"markdown-blockquote\">Quoted text inside Preview.\n&lt;/Preview&gt;</blockquote><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"758c6582\" data-code-virtualized=\"false\" data-code-total-lines=\"3\" data-code-mounted-lines=\"3\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"text\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\">**Bold** text in a Preview block.</span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\">&gt; Quoted text inside Preview.</span></code></pre></div></div></div></div></div></div></pre><div class=\"markdown-mdx\" data-mdx-ref=\"worker:3d16085b\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><div class=\"w-full\"><div class=\"overflow-hidden rounded-large border border-border\"><iframe title=\"Example Video\" src=\"https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" allowfullscreen=\"\" loading=\"lazy\" style=\"width: 100%; aspect-ratio: 16 / 9; border: 0px;\"></iframe></div><sub class=\"mt-2 block text-center text-muted\">Example Video</sub></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:77edc69f\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"my-6\"><img alt=\"Placeholder\" class=\"w-full rounded-large border border-border\" src=\"https://via.placeholder.com/300x180\"><figcaption class=\"mt-2 text-center text-muted text-sm\">Sample image</figcaption></figure></div></div>",
+    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Components\">MDX Components</h1><div class=\"markdown-mdx\" data-mdx-ref=\"worker:33f76c4f\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><div class=\"min- flex h-10 w-32 items-center justify-center rounded-lg border border-yellow-6 bg-yellow-3 text-yellow-11\"><div class=\"overflow-x-auto\"><div class=\"min-w-full\"><div class=\"min-w-full\"><div class=\"min-w-full\">Showcase</div></div></div></div></div></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>PreviewExample should render above.</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:3af38a3c\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\"><strong class=\"mdx-strong\">Bold</strong> text in a Preview block.</p><blockquote class=\"mdx-blockquote\">\n<p class=\"mdx-p\">Quoted text inside Preview.</p>\n</blockquote></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>**Bold** text in a Preview block.</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>&gt; Quoted text inside Preview.</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:3d16085b\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><div class=\"w-full\"><div class=\"overflow-hidden rounded-large border border-border\"><iframe title=\"Example Video\" src=\"https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" allowfullscreen=\"\" loading=\"lazy\" style=\"width: 100%; aspect-ratio: 16 / 9; border: 0px;\"></iframe></div><sub class=\"mt-2 block text-center text-muted\">Example Video</sub></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:77edc69f\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"my-6\"><img alt=\"Placeholder\" class=\"w-full rounded-large border border-border\" src=\"https://via.placeholder.com/300x180\"><figcaption class=\"mt-2 text-center text-muted text-sm\">Sample image</figcaption></figure></div></div>",
     "runtimeState": {
       "rendererVersion": 24,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
       "lastTx": 21,
-      "lastPatchToDomMs": 14,
-      "lastDurationMs": 0.4000000059604645,
+      "lastPatchToDomMs": 5.5,
+      "lastDurationMs": 0.5,
       "meta": {
         "fixtureId": "mdx-components",
         "scenarioId": "S3_fast_reasonable",
@@ -1002,11 +1002,11 @@
       ],
       "counts": {
         "table": 0,
-        "pre": 4,
+        "pre": 2,
         "blockquote": 1,
         "katex": 0,
         "mdxPending": 0,
-        "mdxCompiled": 3,
+        "mdxCompiled": 4,
         "footnotes": 0,
         "hr": 0
       }
@@ -1015,7 +1015,7 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "6288a942a2e8797f3816e30aebc0e18b61a354eb8c1119cc627b3db47c4c6c11",
+        "hash": "825bccff42419703ab771654a31ba98a3c0ce88aab76dc3f6b37cd1c23eb33ec",
         "textSample": "MDX ComponentsShowcase[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-sc"
       }
     ],
@@ -1027,8 +1027,8 @@
           "textSample": "Showcase"
         },
         {
-          "status": "error",
-          "textSample": "MDX failedExpected a closing tag for `<Preview>` (1:1-1:20)"
+          "status": "compiled",
+          "textSample": "Bold text in a Preview block.\nQuoted text inside Preview.\n"
         },
         {
           "status": "compiled",

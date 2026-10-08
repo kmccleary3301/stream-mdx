@@ -30,8 +30,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 0.5,
-        "lastDurationMs": 0.29999999701976776,
+        "lastPatchToDomMs": 0.09999999403953552,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "html-sanitization",
           "scenarioId": "S1_slow_small",
@@ -96,8 +96,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 2,
-        "lastPatchToDomMs": 0.3999999910593033,
-        "lastDurationMs": 0.29999999701976776,
+        "lastPatchToDomMs": 0.10000000149011612,
+        "lastDurationMs": 0.10000000149011612,
         "meta": {
           "fixtureId": "html-sanitization",
           "scenarioId": "S1_slow_small",
@@ -162,8 +162,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 4,
-        "lastPatchToDomMs": 11.400000005960464,
-        "lastDurationMs": 0.29999999701976776,
+        "lastPatchToDomMs": 16.100000001490116,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "html-sanitization",
           "scenarioId": "S1_slow_small",
@@ -195,7 +195,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph streaming-partial\">Normal inline HTML </p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph\">Normal inline HTML </p></div>",
       "textSample": "HTML SanitizationNormal inline HTML ",
       "structure": {
         "topLevelTags": [
@@ -228,8 +228,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 10,
-        "lastPatchToDomMs": 11.799999997019768,
-        "lastDurationMs": 0.20000000298023224,
+        "lastPatchToDomMs": 15.600000001490116,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "html-sanitization",
           "scenarioId": "S1_slow_small",
@@ -261,8 +261,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph\">Normal inline HTML should render:</p><div class=\"markdown-html\"><kbd>Ctrl</kbd> + <kbd>K</kbd></div><p class=\"markdown-paragraph streaming-partial\">Disallowed H</p></div>",
-      "textSample": "HTML SanitizationNormal inline HTML should render:Ctrl + KDisallowed H",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph\">Normal inline HTML should render:</p><p class=\"markdown-paragraph\"><kbd>Ctrl</kbd> + <kbd>K</kbd></p>\n<p class=\"markdown-paragraph\">Disallowed H</p></div>",
+      "textSample": "HTML SanitizationNormal inline HTML should render:Ctrl + K\nDisallowed H",
       "structure": {
         "topLevelTags": [
           "div"
@@ -294,8 +294,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 19,
-        "lastPatchToDomMs": 8.299999997019768,
-        "lastDurationMs": 0.29999999701976776,
+        "lastPatchToDomMs": 15.5,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "html-sanitization",
           "scenarioId": "S1_slow_small",
@@ -304,8 +304,8 @@
         },
         "storeCounters": {
           "appendLineGuardRejected": 0,
-          "staleEpochRejected": 1,
-          "storeInvariantViolationCount": 3
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
         }
       },
       "selectors": {
@@ -327,8 +327,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph\">Normal inline HTML should render:</p><div class=\"markdown-html\"><kbd>Ctrl</kbd> + <kbd>K</kbd></div><p class=\"markdown-paragraph\">Disallowed HTML should be removed or escaped:</p><div class=\"markdown-html\"></div><p class=\"markdown-paragraph streaming-partial\">&lt;img src=\"data:image/gif</p></div>",
-      "textSample": "HTML SanitizationNormal inline HTML should render:Ctrl + KDisallowed HTML should be removed or escaped:<img src=\"data:image/gif",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph\">Normal inline HTML should render:</p><p class=\"markdown-paragraph\"><kbd>Ctrl</kbd> + <kbd>K</kbd></p>\n<p class=\"markdown-paragraph\">Disallowed HTML should be removed or escaped:</p><p class=\"markdown-paragraph\">&lt;img src=\"data:image/gif</p></div>",
+      "textSample": "HTML SanitizationNormal inline HTML should render:Ctrl + K\nDisallowed HTML should be removed or escaped:<img src=\"data:image/gif",
       "structure": {
         "topLevelTags": [
           "div"
@@ -360,8 +360,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 28,
-        "lastPatchToDomMs": 11,
-        "lastDurationMs": 0.29999999701976776,
+        "lastPatchToDomMs": 14.5,
+        "lastDurationMs": 0.10000000149011612,
         "meta": {
           "fixtureId": "html-sanitization",
           "scenarioId": "S1_slow_small",
@@ -370,8 +370,8 @@
         },
         "storeCounters": {
           "appendLineGuardRejected": 0,
-          "staleEpochRejected": 1,
-          "storeInvariantViolationCount": 12
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
         }
       },
       "selectors": {
@@ -393,8 +393,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph\">Normal inline HTML should render:</p><div class=\"markdown-html\"><kbd>Ctrl</kbd> + <kbd>K</kbd></div><p class=\"markdown-paragraph\">Disallowed HTML should be removed or escaped:</p><div class=\"markdown-html\"></div><div class=\"markdown-html\"><img src=\"data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=\"></div><p class=\"markdown-paragraph streaming-partial\">&lt;a href=\"https://</p></div>",
-      "textSample": "HTML SanitizationNormal inline HTML should render:Ctrl + KDisallowed HTML should be removed or escaped:<a href=\"https://",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph\">Normal inline HTML should render:</p><p class=\"markdown-paragraph\"><kbd>Ctrl</kbd> + <kbd>K</kbd></p>\n<p class=\"markdown-paragraph\">Disallowed HTML should be removed or escaped:</p><p class=\"markdown-paragraph\"><img src=\"data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=\"></p>\n<p class=\"markdown-paragraph\">&lt;a href=\"https://</p></div>",
+      "textSample": "HTML SanitizationNormal inline HTML should render:Ctrl + K\nDisallowed HTML should be removed or escaped:\n<a href=\"https://",
       "structure": {
         "topLevelTags": [
           "div"
@@ -426,8 +426,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 34,
-        "lastPatchToDomMs": 11,
-        "lastDurationMs": 0.20000000298023224,
+        "lastPatchToDomMs": 14.100000001490116,
+        "lastDurationMs": 0.10000000149011612,
         "meta": {
           "fixtureId": "html-sanitization",
           "scenarioId": "S1_slow_small",
@@ -436,8 +436,8 @@
         },
         "storeCounters": {
           "appendLineGuardRejected": 0,
-          "staleEpochRejected": 2,
-          "storeInvariantViolationCount": 19
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
         }
       },
       "selectors": {
@@ -459,8 +459,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph\">Normal inline HTML should render:</p><div class=\"markdown-html\"><kbd>Ctrl</kbd> + <kbd>K</kbd></div><p class=\"markdown-paragraph\">Disallowed HTML should be removed or escaped:</p><div class=\"markdown-html\"></div><div class=\"markdown-html\"><img src=\"data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=\"></div><div class=\"markdown-html\"><a href=\"https://example.com\">safe link</a></div><div class=\"markdown-html\"></div></div>",
-      "textSample": "HTML SanitizationNormal inline HTML should render:Ctrl + KDisallowed HTML should be removed or escaped:safe link",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph\">Normal inline HTML should render:</p><p class=\"markdown-paragraph\"><kbd>Ctrl</kbd> + <kbd>K</kbd></p>\n<p class=\"markdown-paragraph\">Disallowed HTML should be removed or escaped:</p><p class=\"markdown-paragraph\"><img src=\"data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=\"></p>\n<p class=\"markdown-paragraph\"><a href=\"https://example.com\">safe link</a></p>\n</div>",
+      "textSample": "HTML SanitizationNormal inline HTML should render:Ctrl + K\nDisallowed HTML should be removed or escaped:\nsafe link\n",
       "structure": {
         "topLevelTags": [
           "div"
@@ -487,13 +487,13 @@
       "appendedChars": 372,
       "rootChildCount": 1,
       "runtimeState": {
-        "rendererVersion": 38,
+        "rendererVersion": 41,
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 38,
-        "lastPatchToDomMs": 8.5,
-        "lastDurationMs": 0.10000000894069672,
+        "lastPatchToDomMs": 16.399999998509884,
+        "lastDurationMs": 0.10000000149011612,
         "meta": {
           "fixtureId": "html-sanitization",
           "scenarioId": "S1_slow_small",
@@ -502,8 +502,8 @@
         },
         "storeCounters": {
           "appendLineGuardRejected": 0,
-          "staleEpochRejected": 5,
-          "storeInvariantViolationCount": 33
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
         }
       },
       "selectors": {
@@ -525,8 +525,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph\">Normal inline HTML should render:</p><div class=\"markdown-html\"><kbd>Ctrl</kbd> + <kbd>K</kbd></div><p class=\"markdown-paragraph\">Disallowed HTML should be removed or escaped:</p><div class=\"markdown-html\"></div><div class=\"markdown-html\"><img src=\"data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=\"></div><div class=\"markdown-html\"><a href=\"https://example.com\">safe link</a></div><div class=\"markdown-html\"></div></div>",
-      "textSample": "HTML SanitizationNormal inline HTML should render:Ctrl + KDisallowed HTML should be removed or escaped:safe link",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph\">Normal inline HTML should render:</p><p class=\"markdown-paragraph\"><kbd>Ctrl</kbd> + <kbd>K</kbd></p>\n<p class=\"markdown-paragraph\">Disallowed HTML should be removed or escaped:</p><p class=\"markdown-paragraph\"><img src=\"data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=\"></p>\n<p class=\"markdown-paragraph\"><a href=\"https://example.com\">safe link</a></p>\n<div>Styled div</div></div>",
+      "textSample": "HTML SanitizationNormal inline HTML should render:Ctrl + K\nDisallowed HTML should be removed or escaped:\nsafe link\nStyled div",
       "structure": {
         "topLevelTags": [
           "div"
@@ -562,15 +562,15 @@
       "hasBlockquote": false,
       "hasMath": false
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph\">Normal inline HTML should render:</p><div class=\"markdown-html\"><kbd>Ctrl</kbd> + <kbd>K</kbd></div><p class=\"markdown-paragraph\">Disallowed HTML should be removed or escaped:</p><div class=\"markdown-html\"></div><div class=\"markdown-html\"><img src=\"data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=\"></div><div class=\"markdown-html\"><a href=\"https://example.com\">safe link</a></div><div class=\"markdown-html\"></div></div>",
+    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"HTML Sanitization\">HTML Sanitization</h1><p class=\"markdown-paragraph\">Normal inline HTML should render:</p><p class=\"markdown-paragraph\"><kbd>Ctrl</kbd> + <kbd>K</kbd></p>\n<p class=\"markdown-paragraph\">Disallowed HTML should be removed or escaped:</p><p class=\"markdown-paragraph\"><img src=\"data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=\"></p>\n<p class=\"markdown-paragraph\"><a href=\"https://example.com\">safe link</a></p>\n<div>Styled div</div></div>",
     "runtimeState": {
-      "rendererVersion": 39,
+      "rendererVersion": 43,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
       "lastTx": 40,
-      "lastPatchToDomMs": 3.5999999940395355,
-      "lastDurationMs": 0.29999999701976776,
+      "lastPatchToDomMs": 12.600000001490116,
+      "lastDurationMs": 0.20000000298023224,
       "meta": {
         "fixtureId": "html-sanitization",
         "scenarioId": "S1_slow_small",
@@ -579,8 +579,8 @@
       },
       "storeCounters": {
         "appendLineGuardRejected": 0,
-        "staleEpochRejected": 14,
-        "storeInvariantViolationCount": 56
+        "staleEpochRejected": 0,
+        "storeInvariantViolationCount": 0
       }
     },
     "structure": {
@@ -602,8 +602,8 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "f71ce53067c8522b39229fd91cc4daefb31379ee0a6908cbb91365e705fc4b47",
-        "textSample": "HTML SanitizationNormal inline HTML should render:Ctrl + KDisallowed HTML should be removed or escaped:safe link"
+        "hash": "d42b97ab7aa3ba92f0411ba146d5ca122f183a343a6386c4f0cfacc1e962858e",
+        "textSample": "HTML SanitizationNormal inline HTML should render:Ctrl + K\nDisallowed HTML should be removed or escaped:\nsafe link\nStyle"
       }
     ],
     "inspection": {
