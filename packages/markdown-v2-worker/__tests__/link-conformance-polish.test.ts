@@ -19,8 +19,22 @@ function findLinkNodes(nodes: InlineNode[]): Array<{ href: string; title?: strin
   return links;
 }
 
+/**
+ * File-local deferred (Node 20 has no `Promise.withResolvers`) with the same resolve/reject
+ * surface, so worker handlers settle this promise exactly as before.
+ */
+function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void; reject: (error: Error) => void } {
+  let resolve!: (value: T) => void;
+  let reject!: (error: Error) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+}
+
 function compileDirect(text: string): Promise<RendererStore> {
-  const { promise, resolve, reject } = Promise.withResolvers<RendererStore>();
+  const { promise, resolve, reject } = deferred<RendererStore>();
   const worker = createInlineEngineWorker();
   const store = createRendererStore();
 
@@ -51,7 +65,7 @@ function compileDirect(text: string): Promise<RendererStore> {
 }
 
 function compileStreamed(text: string, chunkSize = 5): Promise<RendererStore> {
-  const { promise, resolve, reject } = Promise.withResolvers<RendererStore>();
+  const { promise, resolve, reject } = deferred<RendererStore>();
   const worker = createInlineEngineWorker();
   const store = createRendererStore();
 
