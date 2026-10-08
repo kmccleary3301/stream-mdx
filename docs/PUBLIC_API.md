@@ -88,7 +88,8 @@ export function Example() {
 | `syntax` | `SyntaxRuleSpec[]` | Serializable regex rules for inline plugin nodes. Map rule names in `inlineComponents`. |
 | `mdxComponents` | `Record<string, ComponentType>` | Component registry used when hydrating MDX. |
 | `caret` | `CaretMode` | Show a streaming caret while blocks are still in-flight. |
-| `linkSafety` | `{ enabled?, onLinkCheck?, renderModal? }` | Intercept links and require confirmation before navigation. |
+| `linkSafety` | `{ enabled?, onLinkCheck?, renderModal? }` | Intercept links and require confirmation before navigation. Rejected URLs never navigate. |
+| `urlTransform` | `UrlTransform` | Custom URL transformation callback `(url, attribute, context) => string \| null \| undefined`. Defaults to `defaultUrlTransform` from `@stream-mdx/core`. |
 | `deferHeavyBlocks` | `DeferHeavyBlocks` | Defer heavy blocks (e.g. Mermaid) until in view/idle. |
 | `codeRenderers` | `Record<string, CodeFenceRenderer>` | Language-keyed code fence components or `{ component, defer? }` entries. |
 | `mathRenderer` | `MathRenderer` | Replace inline/display KaTeX rendering without changing math parsing. |
@@ -318,8 +319,7 @@ Math uses KaTeX by default. `mathRenderer` accepts either a component with `{ te
 
 `syntax` accepts `SyntaxRuleSpec[]` from `@stream-mdx/core`. Each rule emits a `"plugin"` inline node with a name, string attributes, optional parsed children, and raw matched text. Public `inlineComponents` maps that name to a React component receiving `{ name, attrs, children, raw }`. Unmapped rules use `inlineComponents.plugin` when present, otherwise raw matched text. Standard map keys include `text`, `strong`, `em`, `strike`, `code`, `link`, `image`, and `br`. See [PLUGIN_ABI.md](./PLUGIN_ABI.md) for capture, lookahead, anticipation, and invalid-`INIT` behavior.
 
-`HtmlOptions` is `{ allowedTags?: Record<string, string[]>; literalTagContent?: string[] }`. `allowedTags` adds permitted tags and replaces their tag-specific attribute lists while retaining global schema attributes. URL protocol checks still apply to `href`/`src`; `script`/`style` tags remain excluded. Custom allowlists are trusted application policy. Do not allow event-handler attributes. `htmlElements` maps permitted tag names to React components and supplies sanitized attributes and typed children.
-
+`HtmlOptions` is `{ allowedTags?: Record<string, string[]>; literalTagContent?: string[] }`. `allowedTags` adds permitted tags and replaces their tag-specific attribute lists while retaining global schema attributes. URL protocol checks still apply to `href`/`src`/`action`/`formaction`/`xlink:href`; `script`/`style` tags remain excluded. `on*` event handler attributes and `srcdoc` are strictly forbidden and always stripped regardless of `allowedTags`. Raw HTML `style` attributes are sanitized using DOM-free safe property allowlists. Custom allowlists are trusted application policy. `htmlElements` maps permitted tag names to React components and supplies sanitized attributes and typed children.
 Raw HTML block content is literal by default. Supplying `literalTagContent`, even `[]`, opts into engine-owned inline markdown parsing inside eligible HTML children. `code`, `pre`, and `textarea`, plus listed tags, stay literal. Inline syntax plugins and the engine's math flag apply to opt-in children; mapped components do not reparse strings. HTML must also be enabled via `features.html`.
 
 ## 3.3) Remark & Rehype Adapter (`@stream-mdx/unified`)
@@ -363,6 +363,7 @@ Explicit `blockTypes` replaces the default routing list. Routed lists and blockq
 - `math`: Enable math syntax (`remark-math`)
 - `gfm`: Enable GitHub Flavored Markdown (`remark-gfm`, default: `true`)
 - `onError`: Explicit error callback `(error: Error, block: Block) => void` for plugin failures (prevents unhandled rejections and falls back to default rendered element)
+- `urlTransform`: Custom URL transformation callback `(url: string, attribute: "href" | "src", context: { source: "markdown" | "html" }) => string | null | undefined`. Applied during a final HAST post-processing pass after all user rehype plugins without stripping classes. Defaults to `defaultUrlTransform`.
 
 ### Sync vs. Async Behavior & SSR
 - **Sync Plugins**: Executed synchronously in `useMemo`. Produces immediate markup in SSR (`renderToStaticMarkup`, `renderToString`) with zero duplicated execution.
