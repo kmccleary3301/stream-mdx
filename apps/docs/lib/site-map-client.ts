@@ -113,6 +113,12 @@ export const SEARCH_ENTRIES: SiteLink[] = [
     kind: "guide",
   },
   {
+    href: "/showcase/assistant-stream",
+    label: "Streaming Assistant & Sandboxed Artifacts",
+    summary: "Executable chat thread showcasing dual-engine streaming, math, Mermaid, and sandboxed ArtifactFrame visualizations.",
+    kind: "showcase",
+  },
+  {
     href: "/showcase/stream-mdx-devx-catalog",
     label: "DevX catalog showcase",
     summary: "Feature-rich showcase of StreamMDX rendering capabilities.",
