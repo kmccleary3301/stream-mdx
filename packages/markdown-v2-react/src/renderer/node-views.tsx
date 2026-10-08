@@ -1180,9 +1180,10 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
     const sourceEndsWithNewline = sourceText.endsWith("\n");
     const sourceLines = sourceText.length > 0 ? sourceText.split("\n") : [];
     const rawFallbackLines = buildCodeFallbackLines(raw);
-    const deterministicWrapperAttrs = getDefaultCodeWrapperAttributes(lang);
-    const composedPreAttrs = deterministicWrapperAttrs.preAttrs;
-    const composedCodeAttrs = deterministicWrapperAttrs.codeAttrs;
+    const storeThemes = store.getThemes?.();
+    const deterministicWrapperAttrs = getDefaultCodeWrapperAttributes(lang, storeThemes);
+    const composedPreAttrs = preAttrs ?? deterministicWrapperAttrs.preAttrs;
+    const composedCodeAttrs = codeAttrs ?? deterministicWrapperAttrs.codeAttrs;
     const shouldAppendTerminalNewline = (
       renderedLines: ReadonlyArray<{ index: number; text: string; html?: string | null; id?: string }>,
     ) => {
@@ -1259,7 +1260,7 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
       );
     }
     return blockHtml;
-  }, [blockIsFinalized, shouldVirtualize, node.block?.payload.highlightedHtml, node.block?.payload.meta, lines, lang, virtualization.window.visibleLines, node.block?.payload.raw]);
+  }, [blockIsFinalized, shouldVirtualize, node.block?.payload.highlightedHtml, node.block?.payload.meta, lines, lang, preAttrs, codeAttrs, store, virtualization.window.visibleLines, node.block?.payload.raw]);
 
   const rendered = (
     <CodeComponent

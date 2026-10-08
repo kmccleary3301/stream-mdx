@@ -13,7 +13,7 @@ import { getMDXComponentFactory, registerMDXComponents } from "./mdx-client";
 import { CodeHighlightRequestContext } from "./renderer/code-highlight-context";
 import { getPatchKind, isHeavyPatch, splitPatchBatch } from "./renderer/patch-batching";
 import { PatchCommitScheduler } from "./renderer/patch-commit-scheduler";
-import { createRendererStore } from "./renderer/store";
+import { createRendererStore, type RendererStore } from "./renderer/store";
 import { MarkdownBlocksRenderer } from "./renderer/blocks-renderer";
 
 export { MarkdownBlocksRenderer } from "./renderer/blocks-renderer";
@@ -98,7 +98,7 @@ export class MarkdownRenderer implements Renderer {
   private updateCallbacks: Array<(blocks: ReadonlyArray<Block>) => void> = [];
   private componentRegistry: ComponentRegistry;
   private config: RendererConfig;
-  private store = createRendererStore();
+  private store: RendererStore;
   private patchScheduler: PatchCommitScheduler;
   private lastPatchMetrics: PatchMetrics | null = null;
   private lastWorkerError: Extract<WorkerOut, { type: "ERROR" }> | null = null;
@@ -107,6 +107,7 @@ export class MarkdownRenderer implements Renderer {
 
   constructor(config: RendererConfig = {}) {
     this.config = config;
+    this.store = createRendererStore([], { themes: config.themes });
     this.componentRegistry = new ComponentRegistry(
       {},
       {},
@@ -167,6 +168,7 @@ export class MarkdownRenderer implements Renderer {
 
   private initializeWorker(initialContent = "", completion: OwnedInitialization = {}): void {
     if (!this.worker) throw new Error("Worker not attached");
+    this.store.setThemes(this.config.themes);
     const mdxComponentNames = getMdxComponentNames(this.config);
     const codeHighlighting = this.config.plugins?.codeHighlighting;
     const outputMode = this.config.plugins?.outputMode;

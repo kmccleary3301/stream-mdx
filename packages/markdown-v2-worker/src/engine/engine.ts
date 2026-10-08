@@ -213,8 +213,8 @@ export class MarkdownEngine {
   private workerCredits = 1;
   private deferredPatchQueue: Patch[] = [];
   private codeThemes: CodeThemePair = {
-    light: DEFAULT_CODE_HIGHLIGHT_THEMES.light,
     dark: DEFAULT_CODE_HIGHLIGHT_THEMES.dark,
+    light: DEFAULT_CODE_HIGHLIGHT_THEMES.light,
   };
   private readonly incrementalHighlightStates = new Map<string, IncrementalHighlightState>();
 

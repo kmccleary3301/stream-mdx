@@ -78,6 +78,7 @@ export function Example() {
 | `managedWorker` | `boolean` | When `true`, the component attaches the worker but does not auto-`restart/append/finalize` for you (use the ref handle). |
 | `prewarmLangs` | `string[]` | Shiki languages to load inside the worker. |
 | `features` | `StreamingFeatureFlags` | Built-in parsing/highlighting flags, including `emitDiffBlocks`, `outputMode`, and `lazyTokenization`. |
+| `themes` | `{ light: string; dark: string }` | Configures light and dark Shiki theme IDs (e.g. `{ light: "min-light", dark: "nord" }`). Changing themes re-initializes the engine. Unknown themes report an INIT error and fall back to GitHub light/dark. |
 | `mdxCompileMode` | `MdxCompileMode` | Enables MDX compilation/hydration and selects the compile strategy. |
 | `components` | `Partial<BlockComponents>` | Override block renders (wrap code/math without affecting the patch scheduler). |
 | `inlineComponents` | `Partial<InlineComponents>` | Override inline renders. |
@@ -224,7 +225,11 @@ The constructor accepts only `{ post, extensions? }`. `extensions` has `markdown
   - `"final"` (default): highlight only after the block finalizes.
   - `"incremental"`: highlight completed lines as they arrive (fast enough for streaming).
   - `"live"`: re-highlight on every update (slowest, highest fidelity).
-
+- `themes`: optional `{ light: string; dark: string }` pair specifying Shiki bundled theme names.
+  - Used across all highlight strategies (static, incremental, live, lazy, diff).
+  - Loaded on demand into the shared worker highlighter singleton.
+  - Shared highlighter caches are partitioned by theme pair to prevent cross-contamination between engines.
+  - Invalid/unknown theme IDs report an error through the worker error pipeline and fall back to default GitHub light/dark themes.
 ### Context support table
 
 | Feature | Browser worker streaming | Node snapshot compile | Edge/no-worker compile |
@@ -235,6 +240,7 @@ The constructor accepts only `{ post, extensions? }`. `extensions` has `markdown
 | `mdx` | Yes (`server` or `worker` mode) | Yes (`server` compile mode) | Preview (`server` compile mode) |
 | `footnotes` | Yes | Yes | Preview |
 | `callouts` | Yes | Yes | Preview |
+| Code themes (`themes`) | Yes | Yes | Preview |
 | Mermaid addon (`@stream-mdx/mermaid`) | Yes (renderer component) | Yes (renderer component) | Preview (renderer component) |
 | Unified adapter (`@stream-mdx/unified`) | Yes (blockRenderer) | Yes (blockRenderer) | Yes (blockRenderer) |
 

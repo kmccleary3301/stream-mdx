@@ -18,10 +18,10 @@ import type {
   ShikiTokenStyle,
 } from "./types";
 
-export type CodeThemePair = { light: BundledTheme; dark: BundledTheme };
+export type CodeThemePair = { dark: BundledTheme; light: BundledTheme };
 export const DEFAULT_CODE_HIGHLIGHT_THEMES: CodeThemePair = {
-  light: "github-light",
   dark: "github-dark",
+  light: "github-light",
 };
 export const CODE_HIGHLIGHT_THEMES = DEFAULT_CODE_HIGHLIGHT_THEMES;
 
@@ -90,7 +90,7 @@ export async function resolveHighlightThemes(
   }
 
   return {
-    themes: { light, dark },
+    themes: { dark, light },
     errors,
   };
 }
