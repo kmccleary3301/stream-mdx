@@ -1200,6 +1200,7 @@ export function inlineNodesToPlainText(nodes: InlineNode[]): string {
         result += node.text;
         break;
       case "link":
+      case "html":
       case "strong":
       case "em":
       case "mention":

@@ -79,4 +79,16 @@ const safeDocument = new JSDOM(render([], undefined, unsafe)).window.document;
 assert.equal(safeDocument.querySelector("script,style"), null);
 assert.equal(safeDocument.body.textContent?.includes("unsafe"), false);
 assert.ok(safeDocument.body.textContent?.includes("safe"));
+
+const voidStore = await streamed('before <wbr>tail <input disabled checked aria-hidden="false"> end', {
+  html: { allowedTags: { wbr: [], input: ["disabled", "checked", "aria-hidden"] } },
+});
+const voidDocument = new JSDOM(render([], undefined, voidStore)).window.document;
+assert.ok(voidDocument.querySelector("wbr"));
+assert.ok(voidDocument.body.textContent?.includes("tail"));
+const input = voidDocument.querySelector("input");
+assert.ok(input);
+assert.equal(input.disabled, true);
+assert.equal(input.checked, true);
+assert.equal(input.getAttribute("aria-hidden"), "false");
 console.log("HTML public consumer ownership, scoped plugins, sanitizer and literal content tests passed");

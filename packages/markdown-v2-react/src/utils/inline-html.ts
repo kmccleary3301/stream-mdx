@@ -206,6 +206,14 @@ function parseAttributes(input: string): Record<string, string> {
 
 type HtmlAttributeProps = React.HTMLAttributes<HTMLElement> & Record<string, unknown>;
 
+const BOOLEAN_HTML_PROPS: Record<string, true> = {
+  allowFullScreen: true, async: true, autoFocus: true, autoPlay: true, checked: true,
+  controls: true, default: true, defer: true, disabled: true, formNoValidate: true,
+  hidden: true, inert: true, loop: true, multiple: true, muted: true, noModule: true,
+  noValidate: true, open: true, playsInline: true, readOnly: true, required: true,
+  reversed: true, selected: true, itemScope: true,
+};
+
 function mapAttributesToProps(attrs: Record<string, string>): HtmlAttributeProps & { key?: React.Key } {
   const props: HtmlAttributeProps = {};
   for (const [key, value] of Object.entries(attrs)) {
@@ -220,6 +228,8 @@ function mapAttributesToProps(attrs: Record<string, string>): HtmlAttributeProps
       }
     } else if (/^(?:data|aria)[A-Z]/.test(key)) {
       props[key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)] = value;
+    } else if (BOOLEAN_HTML_PROPS[key]) {
+      props[key] = true;
     } else {
       props[key] = value;
     }

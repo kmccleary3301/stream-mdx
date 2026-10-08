@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { InlineParser } from "../src/inline-parser";
+import { inlineNodesToPlainText } from "../src/block-snapshot";
 import { compileSyntaxRuleToExtension } from "../src/inline/plugin-adapter";
 import { sanitizeHtmlInWorker } from "../src/worker-html-sanitizer";
 
@@ -32,3 +33,4 @@ assert.equal(parser.parse("foo <!-- comment --> bar").filter((node) => node.kind
 assert.equal(parser.parse("foo <?php echo 1; ?> bar").filter((node) => node.kind === "html").length, 1);
 assert.equal(sanitizeHtmlInWorker('<script>secret()</script><style>secret-style</style><b>safe</b>', { allowedTags: { script: [], style: [], b: [] } }), "<b>safe</b>");
 console.log("typed inline HTML AST tests passed");
+assert.equal(inlineNodesToPlainText(parser.parse("before <span>*visible*</span> after <!-- hidden -->")), "before visible after ");
