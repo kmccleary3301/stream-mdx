@@ -23,9 +23,9 @@ const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></
 (globalThis as any).cancelAnimationFrame = dom.window.cancelAnimationFrame.bind(dom.window);
 
 function delay(ms: number): Promise<void> {
-  const { promise, resolve } = Promise.withResolvers<void>();
-  setTimeout(resolve, ms);
-  return promise;
+  return new Promise<void>((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 async function compileBlocks(text: string): Promise<ReadonlyArray<Block>> {
@@ -257,14 +257,14 @@ async function runTests() {
       // Regular non-async function returning Promise
       return (tree: unknown) => {
         promiseCalls += 1;
-        const { promise, resolve } = Promise.withResolvers<void>();
-        setTimeout(() => {
-          visit(tree as Node, "text", (node: { value: string }) => {
-            node.value = node.value + " [PROMISE TRANSFORMED]";
-          });
-          resolve();
-        }, 20);
-        return promise;
+        return new Promise<void>((resolve) => {
+          setTimeout(() => {
+            visit(tree as Node, "text", (node: { value: string }) => {
+              node.value = node.value + " [PROMISE TRANSFORMED]";
+            });
+            resolve();
+          }, 20);
+        });
       };
     }
 
@@ -362,14 +362,14 @@ async function runTests() {
     function singleInvocationPlugin() {
       return (tree: unknown) => {
         pluginRuns += 1;
-        const { promise, resolve } = Promise.withResolvers<void>();
-        setTimeout(() => {
-          visit(tree as Node, "text", (node: { value: string }) => {
-            node.value = node.value + " [ONE SHOT]";
-          });
-          resolve();
-        }, 25);
-        return promise;
+        return new Promise<void>((resolve) => {
+          setTimeout(() => {
+            visit(tree as Node, "text", (node: { value: string }) => {
+              node.value = node.value + " [ONE SHOT]";
+            });
+            resolve();
+          }, 25);
+        });
       };
     }
 
@@ -427,11 +427,11 @@ async function runTests() {
     function failingAsyncPlugin() {
       return () => {
         failureInvocations += 1;
-        const { promise, reject } = Promise.withResolvers<void>();
-        setTimeout(() => {
-          reject(new Error("async failed"));
-        }, 20);
-        return promise;
+        return new Promise<void>((_resolve, reject) => {
+          setTimeout(() => {
+            reject(new Error("async failed"));
+          }, 20);
+        });
       };
     }
 
@@ -482,14 +482,14 @@ async function runTests() {
     console.log("Test 11: Key change while pending immediately shows new default...");
     function slowKeyPlugin() {
       return (tree: unknown) => {
-        const { promise, resolve } = Promise.withResolvers<void>();
-        setTimeout(() => {
-          visit(tree as Node, "text", (node: { value: string }) => {
-            node.value = node.value + " [TRANSFORMED]";
-          });
-          resolve();
-        }, 50);
-        return promise;
+        return new Promise<void>((resolve) => {
+          setTimeout(() => {
+            visit(tree as Node, "text", (node: { value: string }) => {
+              node.value = node.value + " [TRANSFORMED]";
+            });
+            resolve();
+          }, 50);
+        });
       };
     }
 
@@ -559,10 +559,10 @@ async function runTests() {
             isSlow = true;
           }
         });
-        const { promise, resolve } = Promise.withResolvers<void>();
         const waitMs = isSlow ? 60 : 10;
-        setTimeout(resolve, waitMs);
-        return promise;
+        return new Promise<void>((resolve) => {
+          setTimeout(resolve, waitMs);
+        });
       };
     }
 
