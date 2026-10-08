@@ -5,7 +5,6 @@ import {
   extractHighlightedLines,
   getDefaultCodeWrapperAttributes,
   normalizeHighlightedLines,
-  stripCodeFence,
   type HighlightedLine,
 } from "./code-highlighting";
 import { InlineParser } from "./inline-parser";
