@@ -3,6 +3,7 @@ export * from "./bottom-stick-scroll-area";
 export * from "./artifact-frame";
 export * from "./diff-renderer";
 export * from "./katex-math";
+export * from "./controls";
 export { defaultUrlTransform, type UrlTransform, type UrlTransformContext } from "@stream-mdx/core";
 import { InlineParser, createTrustedHTML, defaultUrlTransform, isForbiddenAttribute, isSafeStyleDeclaration, sanitizeHTML, stripCodeFence } from "@stream-mdx/core";
 import type { UrlTransform } from "@stream-mdx/core";
@@ -20,7 +21,7 @@ import type {
 import { removeHeadingMarkers } from "@stream-mdx/core";
 import React from "react";
 import { DEFAULT_INLINE_HTML_RENDERERS, renderHtmlInlineNode, renderHtmlOwnershipTree, renderInlineHtmlSegment } from "../utils/inline-html";
-import type { BlockComponents, BlockRendererOverride, CodeFenceRenderer, HtmlElements, InlineComponents, InlineHtmlRendererMap, MathRenderer, TableElements } from "../types";
+import type { BlockComponents, BlockRendererOverride, CodeFenceRenderer, ControlsComponentProps, ControlsConfig, HtmlElements, InlineComponents, InlineHtmlRendererMap, MathRenderer, TableElements } from "../types";
 import { ArtifactFrame } from "./artifact-frame";
 import { DefaultDiffRenderer } from "./diff-renderer";
 import { KaTeXBlockMath, KaTeXInlineMath } from "./katex-math";
@@ -722,12 +723,22 @@ export class ComponentRegistry {
   private tableVirtualizationListeners = new Set<() => void>();
   private inlineComponentMapCache: InlineComponents | null = null;
   private urlTransform?: UrlTransform;
+  private controls: ControlsConfig = false;
+  private controlsComponent?: React.ComponentType<ControlsComponentProps>;
 
   constructor(
     blockComponents: Partial<BlockComponents> = {},
     inlineComponents: Partial<InlineComponents> = {},
     codeRenderers: Record<string, CodeFenceRenderer> = {},
-    options?: { artifactHtml?: boolean; mathRenderer?: MathRenderer; blockRenderer?: BlockRendererOverride; tableVirtualization?: TableVirtualizationOptions; urlTransform?: UrlTransform },
+    options?: {
+      artifactHtml?: boolean;
+      mathRenderer?: MathRenderer;
+      blockRenderer?: BlockRendererOverride;
+      tableVirtualization?: TableVirtualizationOptions;
+      urlTransform?: UrlTransform;
+      controls?: ControlsConfig;
+      controlsComponent?: React.ComponentType<ControlsComponentProps>;
+    },
   ) {
     this.blockComponents = { ...defaultBlockComponents, ...blockComponents } as BlockComponents;
     this.inlineComponents = { ...defaultInlineComponents, ...inlineComponents } as InlineComponents;
@@ -751,6 +762,12 @@ export class ComponentRegistry {
     }
     if (options?.tableVirtualization !== undefined) {
       this.setTableVirtualization(options.tableVirtualization);
+    }
+    if (options?.controls !== undefined) {
+      this.setControls(options.controls);
+    }
+    if (options?.controlsComponent !== undefined) {
+      this.setControlsComponent(options.controlsComponent);
     }
   }
 
@@ -896,6 +913,29 @@ export class ComponentRegistry {
     this.tableElements = { ...this.tableElements, ...map } as TableElements;
     this.setTableVirtualization(this.tableVirtualization);
   }
+  setControls(controls?: ControlsConfig): void {
+    this.controls = controls ?? false;
+  }
+
+  getControls(): ControlsConfig {
+    return this.controls;
+  }
+
+  setControlsComponent(component?: React.ComponentType<ControlsComponentProps>): void {
+    this.controlsComponent = component;
+  }
+
+  getControlsComponent(): React.ComponentType<ControlsComponentProps> | undefined {
+    if (this.controlsComponent) {
+      return this.controlsComponent;
+    }
+    const blockControls = this.blockComponents.controls;
+    if (blockControls && typeof blockControls === "function") {
+      return blockControls as unknown as React.ComponentType<ControlsComponentProps>;
+    }
+    return undefined;
+  }
+
 
   /**
    * Get block component

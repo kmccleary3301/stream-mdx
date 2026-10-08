@@ -23,6 +23,64 @@ import type {
 } from "./renderer/virtualized-table";
 export type { TableVirtualizationConfig, TableVirtualizationOptions };
 
+export type TableDownloadFormat = "csv" | "tsv" | "markdown";
+export type TableCopyFormat = "tsv" | "markdown";
+
+export interface CodeControlsConfig {
+  copy?: boolean;
+  download?: boolean;
+}
+
+export interface TableControlsConfig {
+  copy?: boolean | TableCopyFormat[];
+  download?: boolean | TableDownloadFormat[];
+}
+
+export interface MermaidControlsConfig {
+  copy?: boolean;
+  fullscreen?: boolean;
+}
+
+export interface ControlsLabels {
+  copy?: string;
+  copied?: string;
+  copyError?: string;
+  download?: string;
+  downloadCsv?: string;
+  downloadTsv?: string;
+  downloadMarkdown?: string;
+  copyTsv?: string;
+  copyMarkdown?: string;
+  copyTable?: string;
+  fullscreen?: string;
+  exitFullscreen?: string;
+  [key: string]: string | undefined;
+}
+
+export interface ControlsOptions {
+  code?: boolean | CodeControlsConfig;
+  table?: boolean | TableControlsConfig;
+  mermaid?: boolean | MermaidControlsConfig;
+  labels?: ControlsLabels;
+}
+
+export type ControlsConfig = boolean | ControlsOptions;
+
+export interface ControlsComponentProps {
+  type: "code" | "table" | "mermaid";
+  blockId?: string;
+  isFinalized?: boolean;
+  code?: string;
+  language?: string;
+  headers?: string[];
+  rows?: string[][];
+  align?: Array<"left" | "center" | "right" | null>;
+  onCopy?: (format?: "raw" | "tsv" | "markdown") => Promise<boolean> | boolean | void;
+  onDownload?: (format?: "code" | "csv" | "tsv" | "markdown") => void;
+  labels?: ControlsLabels;
+  children?: React.ReactNode;
+}
+
 export interface CodeFenceRendererProps {
   code: string;
   language: string;
@@ -33,6 +91,16 @@ export interface CodeFenceRendererProps {
   renderCode: React.ReactNode;
   /** Host link handler (honors `linkSafety`). Renderers that surface links, such as artifacts, route clicks through it. */
   openLink?: (url: string) => void;
+  /** Controls configuration exposed to fence renderers (e.g. copy, download flags) */
+  controls?: {
+    copy?: boolean;
+    download?: boolean;
+    fullscreen?: boolean;
+  };
+  /** Helper to copy the fence raw source code to clipboard */
+  copy?: () => Promise<boolean>;
+  /** Helper to download the fence source code snippet */
+  download?: () => void;
 }
 
 export interface CodeFenceRendererConfig {
@@ -175,6 +243,8 @@ export interface RendererConfig {
     startupMicrotaskFlushes?: number;
     adaptiveBudgeting?: boolean;
   };
+  controls?: ControlsConfig;
+  controlsComponent?: React.ComponentType<ControlsComponentProps>;
 }
 
 export interface RendererStore {
@@ -205,4 +275,6 @@ export interface Renderer {
   getComponentRegistry(): ComponentRegistry;
   getStore(): RendererStore;
   requestCodeHighlightRange(request: CodeHighlightRangeRequest): void;
+  setControls(controls: ControlsConfig): void;
+  setControlsComponent(component?: React.ComponentType<ControlsComponentProps>): void;
 }

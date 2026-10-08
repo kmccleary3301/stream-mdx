@@ -16,7 +16,7 @@ import { useRendererBlocks } from "./renderer/hooks";
 import { StreamingActivityContext } from "./renderer/streaming-activity-context";
 import type { RendererStore } from "./renderer/store";
 import { createDefaultWorker, releaseDefaultWorker } from "@stream-mdx/worker";
-import { defaultUrlTransform, type BlockComponents, type BlockRendererOverride, type CodeFenceRenderer, type HtmlElements, type HtmlOptions, type InlineComponents, type MathRenderer, type RendererConfig, type SyntaxRuleSpec, type TableElements, type TableVirtualizationOptions, type UrlTransform } from "./types";
+import { defaultUrlTransform, type BlockComponents, type BlockRendererOverride, type CodeFenceRenderer, type ControlsComponentProps, type ControlsConfig, type HtmlElements, type HtmlOptions, type InlineComponents, type MathRenderer, type RendererConfig, type SyntaxRuleSpec, type TableElements, type TableVirtualizationOptions, type UrlTransform } from "./types";
 
 const EMPTY_BLOCKS: ReadonlyArray<Block> = [];
 
@@ -160,6 +160,8 @@ export interface StreamingMarkdownProps {
   html?: HtmlOptions;
   tableVirtualization?: TableVirtualizationOptions;
   urlTransform?: UrlTransform;
+  controls?: ControlsConfig;
+  controlsComponent?: React.ComponentType<ControlsComponentProps>;
 }
 
 const MdxCoordinatorBridge: React.FC<{ store: RendererStore; mode: "server" | "worker" }> = ({ store, mode }) => {
@@ -318,6 +320,8 @@ function StreamingMarkdownComponent(
     html,
     tableVirtualization,
     urlTransform,
+    controls,
+    controlsComponent,
   }: StreamingMarkdownProps,
   ref: React.ForwardedRef<StreamingMarkdownHandle>,
 ) {
@@ -386,6 +390,8 @@ function StreamingMarkdownComponent(
       tableVirtualization,
       urlTransform,
       blockRenderer,
+      controls,
+      controlsComponent,
       highlight: prewarmLangs.length > 0 ? { langs: prewarmLangs } : undefined,
       plugins: features,
       performance: {
@@ -642,7 +648,13 @@ function StreamingMarkdownComponent(
       renderer.getComponentRegistry().setArtifactHtml(artifactHtml);
     }
     renderer.getComponentRegistry().setTableVirtualization(tableVirtualization);
-  }, [renderer, components, mdxComponents, inlineComponents, resolvedInlineComponents, tableElements, htmlElements, codeRenderers, mathRenderer, artifactHtml, tableVirtualization]);
+    if (controls !== undefined) {
+      renderer.setControls(controls);
+    }
+    if (controlsComponent !== undefined) {
+      renderer.setControlsComponent(controlsComponent);
+    }
+  }, [renderer, components, mdxComponents, inlineComponents, resolvedInlineComponents, tableElements, htmlElements, codeRenderers, mathRenderer, artifactHtml, tableVirtualization, controls, controlsComponent]);
 
   useEffect(() => {
     const removeListener = renderer.addFlushListener((result) => {
@@ -1023,6 +1035,8 @@ function StreamingMarkdownComponent(
             codeRenderers={codeRenderers}
             blockRenderer={blockRenderer}
             urlTransform={urlTransform}
+            controls={controls}
+            controlsComponent={controlsComponent}
             className={resolvedClassName}
             style={resolvedStyle}
             store={store}
