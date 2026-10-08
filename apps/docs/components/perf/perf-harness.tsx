@@ -491,6 +491,9 @@ declare global {
     __streammdxPerfDone?: Promise<void>;
     __streammdxPerfError?: string;
     __streammdxPerfRunStart?: number;
+    __streammdxPerfRunEnd?: number;
+    __streammdxPerfStart?: () => void;
+    __streammdxPerfCollect?: () => void;
   }
 }
 
@@ -663,6 +666,9 @@ export function PerfHarness(): JSX.Element {
       window.__streammdxPerfReport = undefined;
       window.__streammdxPerfError = undefined;
       window.__streammdxPerfRunStart = undefined;
+      window.__streammdxPerfRunEnd = undefined;
+      window.__streammdxPerfStart = undefined;
+      window.__streammdxPerfCollect = undefined;
       window.__streammdxPerfDone = done;
     }
 
@@ -762,6 +768,13 @@ export function PerfHarness(): JSX.Element {
           await nextFrame();
         }
         if (cancelled || token !== runTokenRef.current) return;
+        const cdpControlled = new URLSearchParams(window.location.search).get("cdp") === "1";
+        if (cdpControlled) {
+          const { promise, resolve } = Promise.withResolvers<void>();
+          window.__streammdxPerfStart = resolve;
+          await waitForCompletionStep(promise, performance.now() + 15000, controller.signal, "CDP start acknowledgment");
+          window.__streammdxPerfStart = undefined;
+        }
         startLongTasks();
         startRaf();
         startMemory();
@@ -823,6 +836,13 @@ export function PerfHarness(): JSX.Element {
         stopLongTasks();
         stopRaf();
         stopMemory();
+        window.__streammdxPerfRunEnd = runEnd;
+        if (cdpControlled) {
+          const { promise, resolve } = Promise.withResolvers<void>();
+          window.__streammdxPerfCollect = resolve;
+          await waitForCompletionStep(promise, performance.now() + 15000, controller.signal, "CDP end acknowledgment");
+          window.__streammdxPerfCollect = undefined;
+        }
         const liveDom = await collectLiveDomMetrics(rootRef.current);
         if (cancelled || token !== runTokenRef.current) return;
 
@@ -868,6 +888,8 @@ export function PerfHarness(): JSX.Element {
       } finally {
         firstContentObserver?.disconnect();
         if (token === runTokenRef.current) {
+          window.__streammdxPerfStart = undefined;
+          window.__streammdxPerfCollect = undefined;
           stopLongTasks();
           stopRaf();
           stopMemory();

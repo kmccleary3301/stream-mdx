@@ -385,6 +385,7 @@ function buildUrl(): string {
   const url = new URL("/perf/harness/", BASE_URL);
   url.searchParams.set("renderer", RENDERER);
   url.searchParams.set("rendererVersion", getRendererVersion(RENDERER, WORKTREE));
+  url.searchParams.set("cdp", "1");
   url.searchParams.set("profile", PROFILE);
   url.searchParams.set("fixture", FIXTURE);
   url.searchParams.set("scenario", SCENARIO);
@@ -419,35 +420,42 @@ async function runOnce(pageId: number, page: Awaited<ReturnType<ReturnType<typeo
   const target = buildUrl();
   await page.goto(target, { waitUntil: "domcontentloaded", timeout: TIMEOUT_MS });
   await page.waitForFunction(
-    () => typeof window.__streammdxPerfRunStart === "number" || Boolean(window.__streammdxPerfError),
+    () => Boolean(window.__streammdxPerfStart || window.__streammdxPerfError),
     null,
     { timeout: TIMEOUT_MS },
   );
-  const runStart = await page.evaluate(() => window.__streammdxPerfRunStart ?? null);
-  if (runStart === null || !Number.isFinite(runStart)) {
-    const errorMessage = await page.evaluate(() => window.__streammdxPerfError ?? null);
-    throw new Error(`Incomplete measurement: run start missing${errorMessage ? `: ${errorMessage}` : "."}`);
-  }
   const startMetrics = await client
     .send("Performance.getMetrics")
     .then((response) => metricMap(response.metrics))
     .catch(() => null);
   const startDom = await client.send("Memory.getDOMCounters").catch(() => null);
+  await page.evaluate(() => {
+    if (!window.__streammdxPerfStart) throw new Error(window.__streammdxPerfError ?? "Incomplete measurement: CDP start handshake missing.");
+    window.__streammdxPerfStart();
+  });
   await page.waitForFunction(
-    () => Boolean(window.__streammdxPerfReport || window.__streammdxPerfError),
+    () => typeof window.__streammdxPerfRunEnd === "number" || Boolean(window.__streammdxPerfError),
     null,
     { timeout: TIMEOUT_MS },
   );
-  const report = await page.evaluate(() => window.__streammdxPerfReport ?? null);
-  if (!report) {
-    const errorMessage = await page.evaluate(() => window.__streammdxPerfError ?? null);
-    throw new Error(errorMessage ? `Perf report missing: ${errorMessage}` : "Perf report missing.");
-  }
   const endMetrics = await client
     .send("Performance.getMetrics")
     .then((response) => metricMap(response.metrics))
     .catch(() => null);
   const endDom = await client.send("Memory.getDOMCounters").catch(() => null);
+  await page.evaluate(() => {
+    if (!window.__streammdxPerfCollect) throw new Error(window.__streammdxPerfError ?? "Incomplete measurement: CDP end handshake missing.");
+    window.__streammdxPerfCollect();
+  });
+  await page.waitForFunction(() => Boolean(window.__streammdxPerfReport || window.__streammdxPerfError), null, { timeout: TIMEOUT_MS });
+  const report = await page.evaluate(() => window.__streammdxPerfReport ?? null);
+  if (!report) {
+    const errorMessage = await page.evaluate(() => window.__streammdxPerfError ?? null);
+    throw new Error(errorMessage ? `Perf report missing: ${errorMessage}` : "Perf report missing.");
+  }
+  if (!Number.isFinite(report.meta.runStart) || !Number.isFinite(report.meta.runEnd) || report.meta.runEnd < report.meta.runStart) {
+    throw new Error("Incomplete measurement: valid browser run boundaries are missing.");
+  }
   const cdpMetrics = buildCdpMetrics(startMetrics, endMetrics);
   const domStart = startDom ?? null;
   const domEnd = endDom ?? null;

@@ -47,7 +47,9 @@ export function collectSemanticDom(root: HTMLElement): SemanticDomRecords {
     // Renderer-owned fences replace their whole wrapper with the code source.
     // Authored PRE siblings, including whitespace, are visible source too.
     return !element.closest(".markdown-code-block,[data-streamdown='code-block']") &&
-      (element.childNodes.length !== 1 || element.firstChild !== code);
+      (element.childNodes.length !== 1 || element.firstChild !== code ||
+        Array.from(code.querySelectorAll("*")).some((child) => child.tagName !== "SPAN" ||
+          Array.from(child.attributes).some((attribute) => /^(href|src|alt|title|open|datetime|cite|lang|dir|role|aria-)/.test(attribute.name))));
   });
   const outerCode = new Map<Element, { body: Element; index: number }>();
   for (const body of codeBodies) {
@@ -96,39 +98,42 @@ export function collectSemanticDom(root: HTMLElement): SemanticDomRecords {
   // styling spans contribute text but no events, including Shiki token wrappers.
   const inlineOrder: SemanticDomRecords["inlineOrder"] = [];
   let plainText = "";
-  const flushText = (): void => {
-    const text = normalizeText(plainText);
+  const flushText = (literal = false): void => {
+    const text = literal ? plainText : normalizeText(plainText);
     if (text) inlineOrder.push({ kind: "text", text });
     plainText = "";
   };
-  const visitInline = (node: Node): void => {
+  const visitInline = (node: Node, literal = false): void => {
     if (node.nodeType === 3) {
-      plainText += (node.textContent ?? "").replace(/\s+/g, " ");
+      plainText += literal ? node.textContent ?? "" : (node.textContent ?? "").replace(/\s+/g, " ");
       return;
     }
     if (node.nodeType !== 1) return;
     const element = node as Element;
     if (element.matches(CONTROL_SELECTOR) || isGeneratedFootnoteLabel(element)) return;
-    if (outerCode.has(element) || element.tagName === "PRE" || element.tagName === "CODE" || element.matches(".katex")) {
-      flushText();
-      const tag = element.matches(".katex") ? "math" : outerCode.has(element) || element.tagName === "PRE" ? "pre" : "code";
+    if (outerCode.has(element) || element.matches(".katex")) {
+      flushText(literal);
+      const tag = element.matches(".katex") ? "math" : "pre";
       const attributes: Array<[string, string]> = element.matches(".katex") ? [["display", String(Boolean(element.closest(".katex-display,.math-display")))]] : [];
       inlineOrder.push({ kind: "open", tag, attributes }, { kind: "text", text: contentOf(element) }, { kind: "close", tag, attributes });
       return;
     }
-    const marked = element !== root && (element.matches("a[href],h1,h2,h3,h4,h5,h6,ol,ul,li,table,thead,tbody,tfoot,tr,th,td,input[type='checkbox']") || semanticHtml(element));
     const tag = semanticTag(element);
+    const soleListParagraph = element.tagName === "P" && element.parentElement?.tagName === "LI" && element.parentElement.children.length === 1;
+    const cosmeticWrapper = (element.tagName === "DIV" || element.tagName === "SPAN") && !semanticHtml(element);
+    const marked = element !== root && !soleListParagraph && !cosmeticWrapper;
+    const childLiteral = literal || element.tagName === "PRE" || element.tagName === "CODE";
     const attributes = semanticAttributes(element);
     if (marked) {
-      flushText();
+      flushText(literal);
       inlineOrder.push({ kind: "open", tag, attributes });
     }
-    if (BLOCK_TAGS[element.tagName]) plainText += "\n";
+    if (!childLiteral && BLOCK_TAGS[element.tagName]) plainText += "\n";
     if (element.matches("br,hr")) plainText += "\n";
-    for (const child of element.childNodes) visitInline(child);
-    if (BLOCK_TAGS[element.tagName]) plainText += "\n";
+    for (const child of element.childNodes) visitInline(child, childLiteral);
+    if (!childLiteral && BLOCK_TAGS[element.tagName]) plainText += "\n";
     if (marked) {
-      flushText();
+      flushText(childLiteral);
       inlineOrder.push({ kind: "close", tag, attributes });
     }
   };
