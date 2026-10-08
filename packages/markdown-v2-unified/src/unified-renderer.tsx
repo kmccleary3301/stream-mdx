@@ -203,9 +203,14 @@ export const UnifiedBlockItem: React.FC<UnifiedBlockItemProps> = ({
   const raw = typeof block.payload.raw === "string" ? block.payload.raw : "";
   // Finalized engine headings contain inline markdown, not their original markers.
   const headingLevel = block.type === "heading" ? block.payload.meta?.headingLevel : undefined;
-  const source = typeof headingLevel === "number" && Number.isFinite(headingLevel)
-    ? `${"#".repeat(Math.min(6, Math.max(1, Math.floor(headingLevel))))} ${raw}`
-    : raw;
+  let source = raw;
+  if (typeof headingLevel === "number" && Number.isFinite(headingLevel)) {
+    const level = Math.min(6, Math.max(1, Math.floor(headingLevel)));
+    // Setext syntax keeps multiline inline content and soft breaks in one heading.
+    source = level <= 2 && /[\r\n]/.test(raw)
+      ? `${raw}\n${level === 1 ? "===" : "---"}`
+      : `${"#".repeat(level)} ${raw}`;
+  }
   const metaRefs = block.payload.meta?.linkReferences;
   const serializedRefs = metaRefs && metaRefs.length > 0 ? JSON.stringify(metaRefs) : "";
   const cacheKey = `${block.id}::${block.type}::${source}::${serializedRefs}`;

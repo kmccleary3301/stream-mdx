@@ -68,7 +68,9 @@ async function runTests() {
       rehypePlugins: [rehypeSlug],
     });
 
-    const blocks = await compileBlocks("## Quick Start Guide\n\nSetext **heading**\n===\n\n###### *emphasis*");
+    const blocks = await compileBlocks(
+      "## Quick Start Guide\n\nSetext **heading**\n===\n\n###### *emphasis*\n\nFoo **bold**\nbar *soft*\n===\n\nSecond *heading*\nwith **continuation**\n---\n\n## # literal **heading**\n\n\\# literal *start*\ncontinued **body**\n---",
+    );
     const heading = blocks.find((block) => block.type === "heading");
     assert.strictEqual(heading?.payload.raw, "Quick Start Guide");
     assert.strictEqual(heading?.payload.meta?.headingLevel, 2);
@@ -79,6 +81,22 @@ async function runTests() {
     assert.match(html, />Quick Start Guide<\/h2>/, "Heading text should match");
     assert.match(html, /<h1 id="setext-heading">Setext <strong>heading<\/strong><\/h1>/);
     assert.match(html, /<h6 id="emphasis"><em>emphasis<\/em><\/h6>/);
+    const renderedDocument = new JSDOM(html).window.document;
+    const multilineH1 = renderedDocument.querySelectorAll("h1")[1];
+    assert.strictEqual(multilineH1?.innerHTML, "Foo <strong>bold</strong>\nbar <em>soft</em>",
+      "Multiline Setext h1 must retain all inline content and its soft break");
+    assert.strictEqual(multilineH1?.id, "foo-boldbar-soft");
+    const multilineH2 = renderedDocument.querySelectorAll("h2")[1];
+    assert.strictEqual(multilineH2?.innerHTML, "Second <em>heading</em>\nwith <strong>continuation</strong>",
+      "Multiline Setext h2 must retain all inline content and its soft break");
+    assert.strictEqual(multilineH2?.id, "second-headingwith-continuation");
+    assert.strictEqual(renderedDocument.querySelectorAll("h2")[2]?.innerHTML, "# literal <strong>heading</strong>",
+      "Normalized heading text beginning with a literal marker must remain heading content");
+    assert.strictEqual(renderedDocument.querySelectorAll("h2")[3]?.innerHTML,
+      "# literal <em>start</em>\ncontinued <strong>body</strong>",
+      "Multiline heading reconstruction must preserve escaped literal markers and inline emphasis");
+    assert.strictEqual(renderedDocument.querySelectorAll("p").length, 0,
+      "A heading must not split into an extra paragraph");
     console.log("✓ Test 1 passed: Finalized heading received id attribute from rehype-slug synchronously");
   }
 
