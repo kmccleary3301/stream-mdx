@@ -6,14 +6,7 @@ import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ComponentRegistry } from "../src/components";
 import {
-  DEFAULT_CONTROLS_LABELS,
   escapeCsvCell,
-  escapeTsvCell,
-  getCodeSnippetFilename,
-  getExtensionForLanguage,
-  resolveCodeControls,
-  resolveControlsConfig,
-  resolveTableControls,
   tableToCsv,
   tableToMarkdown,
   tableToTsv,
