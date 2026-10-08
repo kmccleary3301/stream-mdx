@@ -197,27 +197,37 @@ async function runCurrencyDoesNotTriggerStreamingMathTest(): Promise<void> {
 }
 
 async function runFinalizedMdxStateTest(): Promise<void> {
-  const blocks = await streamFixture(await loadFixture("mdx-transitions.mdx"), 31, { mdxCompileMode: "worker" });
-  const mdxBlocks = blocks.filter((block) => block.type === "mdx");
-  assert.strictEqual(mdxBlocks.length, 3, "expected finalized mdx block count");
+  const cases: Array<{ fixture: string; chunkSize: number; minMdxCount: number }> = [
+    { fixture: "mdx-transitions.mdx", chunkSize: 31, minMdxCount: 3 },
+    { fixture: "mdx-transitions.mdx", chunkSize: 5, minMdxCount: 3 },
+    { fixture: "mdx-multi-status.mdx", chunkSize: 10, minMdxCount: 2 },
+    { fixture: "mdx-multi-status.mdx", chunkSize: 24, minMdxCount: 2 },
+  ];
 
-  for (const block of mdxBlocks) {
-    assert.ok(block.isFinalized, `mdx block must be finalized: ${block.id}`);
-    const meta = (block.payload.meta ?? {}) as { mdxStatus?: unknown };
-    const status = typeof meta.mdxStatus === "string" ? meta.mdxStatus : undefined;
-    assert.notStrictEqual(status, "pending", `finalized mdx block remained pending: ${block.id}`);
-    if (status === "compiled") {
-      assert.ok(block.payload.compiledMdxRef || block.payload.compiledMdxModule, `compiled mdx block missing artifact: ${block.id}`);
-    }
-    if (status === "error") {
-      assert.ok(!block.payload.compiledMdxRef && !block.payload.compiledMdxModule, `errored mdx block retained artifact: ${block.id}`);
-    }
-    if (block.payload.compiledMdxRef && block.payload.compiledMdxModule) {
-      assert.strictEqual(
-        block.payload.compiledMdxRef.id,
-        block.payload.compiledMdxModule.id,
-        `compiled mdx ids must agree for ${block.id}`,
-      );
+  for (const { fixture, chunkSize, minMdxCount } of cases) {
+    const blocks = await streamFixture(await loadFixture(fixture), chunkSize, { mdxCompileMode: "worker" });
+    const mdxBlocks = blocks.filter((block) => block.type === "mdx");
+    assert.ok(mdxBlocks.length >= minMdxCount, `expected at least ${minMdxCount} mdx blocks for ${fixture} @${chunkSize}, got ${mdxBlocks.length}`);
+
+    for (const block of mdxBlocks) {
+      assert.ok(block.isFinalized, `mdx block must be finalized: ${block.id}`);
+      const meta = block.payload.meta;
+      const status = meta && typeof meta === "object" && "mdxStatus" in meta && typeof meta.mdxStatus === "string" ? meta.mdxStatus : undefined;
+      assert.notStrictEqual(status, "pending", `finalized mdx block remained pending: ${block.id}`);
+      if (status === "compiled") {
+        assert.ok(block.payload.compiledMdxRef || block.payload.compiledMdxModule, `compiled mdx block missing artifact: ${block.id}`);
+      }
+      if (status === "error") {
+        assert.strictEqual(block.payload.compiledMdxRef, undefined, `errored mdx block retained compiledMdxRef: ${block.id}`);
+        assert.strictEqual(block.payload.compiledMdxModule, undefined, `errored mdx block retained compiledMdxModule: ${block.id}`);
+      }
+      if (block.payload.compiledMdxRef && block.payload.compiledMdxModule) {
+        assert.strictEqual(
+          block.payload.compiledMdxRef.id,
+          block.payload.compiledMdxModule.id,
+          `compiled mdx ids must agree for ${block.id}`,
+        );
+      }
     }
   }
 }
@@ -283,6 +293,119 @@ async function runMdxTransitionsRendererStoreInvariantTest(): Promise<void> {
     .filter((message) => message.includes("appendLines guard rejected"));
   assert.deepStrictEqual(finalViolations, [], "renderer store rejected appendLines during mdx-transitions finalize");
 }
+async function runMdxErrorTransitionArtifactInvariantTest(): Promise<void> {
+  const loggedErrors: string[] = [];
+  const originalConsoleError = console.error;
+  console.error = (...args: unknown[]) => {
+    loggedErrors.push(args.map(String).join(" "));
+    originalConsoleError(...args);
+  };
+
+  const getMdxStatus = (block: Block): string | undefined => {
+    const meta = block.payload.meta;
+    if (meta && typeof meta === "object" && "mdxStatus" in meta && typeof meta.mdxStatus === "string") {
+      return meta.mdxStatus;
+    }
+    return undefined;
+  };
+
+  const assertBlockPayloadNoArtifactsOnError = (candidate: unknown, source: string) => {
+    if (!candidate || typeof candidate !== "object") return;
+    if (!("type" in candidate) || candidate.type !== "mdx" || !("payload" in candidate)) return;
+    const block = candidate as Block;
+    const status = getMdxStatus(block);
+    if (status === "error") {
+      assert.strictEqual(
+        block.payload.compiledMdxRef,
+        undefined,
+        `${source} errored mdx block must not retain compiledMdxRef: ${block.id}`,
+      );
+      assert.strictEqual(
+        block.payload.compiledMdxModule,
+        undefined,
+        `${source} errored mdx block must not retain compiledMdxModule: ${block.id}`,
+      );
+    }
+  };
+
+  try {
+    const cases: Array<{ fixture: string; chunkSize: number }> = [
+      { fixture: "mdx-multi-status.mdx", chunkSize: 10 },
+      { fixture: "mdx-transitions.mdx", chunkSize: 5 },
+    ];
+
+    for (const { fixture, chunkSize } of cases) {
+      const content = await loadFixture(fixture);
+      const harness = await createWorkerHarness();
+      const store = createRendererStore();
+
+      const initMessages = await harness.send({
+        type: "INIT",
+        initialContent: "",
+        prewarmLangs: [],
+        docPlugins: DOC_PLUGINS,
+        mdx: { compileMode: "worker" },
+      });
+      const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
+      assert.ok(init, "worker failed to initialize");
+      store.reset(init.blocks);
+
+      for (let index = 0; index < content.length; index += chunkSize) {
+        const chunk = content.slice(index, index + chunkSize);
+        const appendMessages = await harness.send({ type: "APPEND", text: chunk });
+        for (const message of appendMessages) {
+          if (message.type !== "PATCH") continue;
+          const patches = message.patches as Patch[];
+          for (const patch of patches) {
+            if (patch.op === "setProps" && patch.props && typeof patch.props === "object" && "block" in patch.props) {
+              assertBlockPayloadNoArtifactsOnError(patch.props.block, `patch setProps @${index}`);
+            } else if ((patch.op === "insertChild" || patch.op === "replaceChild") && patch.node?.props && typeof patch.node.props === "object" && "block" in patch.node.props) {
+              assertBlockPayloadNoArtifactsOnError(patch.node.props.block, `patch ${patch.op} @${index}`);
+            }
+          }
+          store.applyPatches(patches, { captureMetrics: false });
+        }
+      }
+
+      const finalizeMessages = await harness.send({ type: "FINALIZE" });
+      for (const message of finalizeMessages) {
+        if (message.type !== "PATCH") continue;
+        const patches = message.patches as Patch[];
+        for (const patch of patches) {
+          if (patch.op === "setProps" && patch.props && typeof patch.props === "object" && "block" in patch.props) {
+            assertBlockPayloadNoArtifactsOnError(patch.props.block, "finalize patch setProps");
+          } else if ((patch.op === "insertChild" || patch.op === "replaceChild") && patch.node?.props && typeof patch.node.props === "object" && "block" in patch.node.props) {
+            assertBlockPayloadNoArtifactsOnError(patch.node.props.block, `finalize patch ${patch.op}`);
+          }
+        }
+        store.applyPatches(patches, { captureMetrics: false });
+      }
+
+      const consumerBlocks = store.getBlocks();
+      const erroredMdxBlocks = consumerBlocks.filter(
+        (b) => b.type === "mdx" && getMdxStatus(b) === "error",
+      );
+      assert.ok(erroredMdxBlocks.length > 0, `expected at least one errored mdx block in ${fixture}`);
+      for (const errorBlock of erroredMdxBlocks) {
+        assert.strictEqual(
+          errorBlock.payload.compiledMdxRef,
+          undefined,
+          `consumer store errored block must not retain compiledMdxRef: ${errorBlock.id}`,
+        );
+        assert.strictEqual(
+          errorBlock.payload.compiledMdxModule,
+          undefined,
+          `consumer store errored block must not retain compiledMdxModule: ${errorBlock.id}`,
+        );
+      }
+    }
+
+    const invariantViolations = loggedErrors.filter((msg) => msg.includes("Structural invariant violation"));
+    assert.deepStrictEqual(invariantViolations, [], "worker emitted structural invariant violation during MDX error transitions");
+  } finally {
+    console.error = originalConsoleError;
+  }
+}
 
 await runAppendLinesTailGuardTest();
 await runStreamingTableDeferralTest();
@@ -290,4 +413,5 @@ await runCurrencyDoesNotTriggerStreamingMathTest();
 await runFinalizedTableShapeTest();
 await runFinalizedMdxStateTest();
 await runMdxTransitionsRendererStoreInvariantTest();
+await runMdxErrorTransitionArtifactInvariantTest();
 console.log("worker structural regressions test passed");
