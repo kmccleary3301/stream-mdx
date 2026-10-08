@@ -132,6 +132,14 @@ the hosted-worker build passed. Targeted tests passed:
 - Three canonical footnote fixtures across all-at-once, interleaved finalization,
   and one-character appends: exact final IR/SSR, mounted DOM target identity,
   unique anchors/backlinks, and paragraph/table HTML-owned quote compatibility.
+- All 17 streaming-fidelity scenarios with publication-aware intermediate checks,
+  unchanged final structural/SSR comparisons, actual anchor target identity, and
+  copy-on-write preservation of earlier consumer snapshots.
+- Public direct compilation before and after another worker transport replaced
+  global bindings: exact output retained, globals unchanged. Worker/public-engine
+  ESM/CJS/declaration builds and hosted build passed; Node 20.20.2 public ESM and
+  CJS direct/engine probes both passed. The targeted direct-parity and footnote
+  consumer tests also passed after the direct runtime ownership repair.
 
 The earlier 401-line alternating-run lifecycle fixture exhausted the Node heap;
 the bounded replacement retains the lifecycle boundary but is not a memory
