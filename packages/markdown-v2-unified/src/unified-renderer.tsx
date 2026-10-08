@@ -1,18 +1,27 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { jsx, jsxs, Fragment } from "react/jsx-runtime";
-import { unified, type Processor } from "unified";
+import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import remarkRehype from "remark-rehype";
 import { toJsxRuntime } from "hast-util-to-jsx-runtime";
-import type { Root as MdastRoot } from "mdast";
-import type { Root as HastRoot } from "hast";
 import type { Block, BlockResolvedLinkReference } from "@stream-mdx/core";
 import type { FinalizedBlockRenderProps } from "@stream-mdx/react";
 import type { UnifiedRenderer, UnifiedRendererOptions } from "./types";
 
-export type UnifiedProcessor = Processor<MdastRoot, MdastRoot, HastRoot, HastRoot, string>;
+function buildProcessor(options: UnifiedRendererOptions) {
+  return unified()
+    .use(remarkParse)
+    .use(options.gfm === false ? [] : [remarkGfm])
+    .use(options.math ? [remarkMath] : [])
+    .use(options.remarkPlugins ?? [])
+    .use(remarkRehype)
+    .use(options.rehypePlugins ?? [])
+    .freeze();
+}
+
+export type UnifiedProcessor = ReturnType<typeof buildProcessor>;
 
 export type JobOutcome =
   | { readonly kind: "success"; readonly node: React.ReactNode }
@@ -30,7 +39,7 @@ const DEFAULT_ROUTED_BLOCK_TYPES: Record<string, true> = {
   list: true,
   table: true,
   code: true,
-  hr: true,
+  thematicBreak: true,
 };
 
 export class BoundedLruCache<K, V> {
@@ -86,49 +95,6 @@ export function formatLinkDefinitions(refs: readonly BlockResolvedLinkReference[
   return lines.join("\n");
 }
 
-function buildProcessor(options: UnifiedRendererOptions): UnifiedProcessor {
-  const p = unified().use(remarkParse);
-
-  if (options.gfm !== false) {
-    p.use(remarkGfm);
-  }
-
-  if (options.math) {
-    p.use(remarkMath);
-  }
-
-  if (options.remarkPlugins && options.remarkPlugins.length > 0) {
-    p.use(options.remarkPlugins);
-  }
-
-  p.use(remarkRehype);
-
-  if (options.rehypePlugins && options.rehypePlugins.length > 0) {
-    p.use(options.rehypePlugins);
-  }
-
-  return p.freeze() as unknown as UnifiedProcessor;
-}
-interface PromiseWithResolvers<T> {
-  promise: Promise<T>;
-  resolve: (value: T | PromiseLike<T>) => void;
-  reject: (reason?: unknown) => void;
-}
-
-function createResolvers<T>(): PromiseWithResolvers<T> {
-  const p = Promise as unknown as { withResolvers?: <R>() => PromiseWithResolvers<R> };
-  if (typeof p.withResolvers === "function") {
-    return p.withResolvers<T>();
-  }
-  let resolve!: (value: T | PromiseLike<T>) => void;
-  let reject!: (reason?: unknown) => void;
-  const promise = new Promise<T>((res, rej) => {
-    resolve = res;
-    reject = rej;
-  });
-  return { promise, resolve, reject };
-}
-
 export function getOrCreateJob(
   cacheKey: string,
   input: string,
@@ -143,13 +109,15 @@ export function getOrCreateJob(
     return existing;
   }
 
-  const { promise, resolve } = createResolvers<JobOutcome>();
-  promise.catch(() => {});
+  let resolve!: (outcome: JobOutcome) => void;
+  const promise = new Promise<JobOutcome>((res) => {
+    resolve = res;
+  });
 
   const job: UnifiedJob = { promise };
   inflightJobs.set(cacheKey, job);
 
-  let mdast: MdastRoot;
+  let mdast: ReturnType<typeof processor.parse>;
   try {
     mdast = processor.parse(input);
   } catch (parseError) {
@@ -233,9 +201,7 @@ export const UnifiedBlockItem: React.FC<UnifiedBlockItemProps> = ({
   inflightJobs,
 }) => {
   const raw = typeof block.payload.raw === "string" ? block.payload.raw : "";
-  const metaRefs = Array.isArray(block.payload.meta?.linkReferences)
-    ? (block.payload.meta.linkReferences as readonly BlockResolvedLinkReference[])
-    : undefined;
+  const metaRefs = block.payload.meta?.linkReferences;
   const serializedRefs = metaRefs && metaRefs.length > 0 ? JSON.stringify(metaRefs) : "";
   const cacheKey = `${block.id}::${raw}::${serializedRefs}`;
 

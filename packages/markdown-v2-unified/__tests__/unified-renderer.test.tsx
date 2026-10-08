@@ -759,6 +759,29 @@ async function runTests() {
     console.log("✓ Test 13 passed: Streaming blocks stay completely normal and bypass unified");
   }
 
+  // Test 14: thematicBreak block routes through unified by default
+  {
+    console.log("Test 14: thematicBreak block routes through unified by default...");
+    const unifiedRenderer = createUnifiedRenderer({
+      components: {
+        hr: (props) => React.createElement("hr", { ...props, className: "custom-divider" }),
+      },
+    });
+
+    const hrBlock: Block = {
+      id: "tb-1",
+      type: "thematicBreak",
+      isFinalized: true,
+      payload: { raw: "---" },
+    };
+
+    const defaultElement = React.createElement("hr", { className: "default-hr" });
+    const rendered = unifiedRenderer({ block: hrBlock, element: defaultElement });
+    const html = ReactDOMServer.renderToStaticMarkup(rendered as React.ReactElement);
+    assert.match(html, /class="custom-divider"/, "thematicBreak must be routed to unified components");
+    console.log("✓ Test 14 passed: thematicBreak block routes through unified by default");
+  }
+
   console.log("All @stream-mdx/unified tests passed successfully!");
 }
 

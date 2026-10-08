@@ -9,7 +9,7 @@ export interface UnifiedRendererOptions {
   components?: Record<string, React.ComponentType<Record<string, unknown>>>;
   /**
    * Block types to route through the unified pipeline.
-   * Defaults to: ["paragraph", "heading", "blockquote", "list", "table", "code", "hr"]
+   * Defaults to: ["paragraph", "heading", "blockquote", "list", "table", "code", "thematicBreak"]
    */
   blockTypes?: string[];
   /**
