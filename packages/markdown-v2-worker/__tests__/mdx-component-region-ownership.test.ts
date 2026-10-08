@@ -33,7 +33,14 @@ async function waitForDom(container: Element, predicate: () => boolean, message:
   assert.ok(ownerWindow, "mounted MDX consumer requires its actual DOM window");
   // This is only a failure deadline. Success waits for real consumer DOM mutations.
   const signal = AbortSignal.timeout(10_000);
-  const { promise, resolve, reject } = Promise.withResolvers<void>();
+  // A typed executor keeps this observer wait compatible with the Node 20 CI runtime
+  // (`Promise.withResolvers` only exists from Node 22).
+  let resolve!: () => void;
+  let reject!: (error: unknown) => void;
+  const promise = new Promise<void>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
   const observer = new ownerWindow.MutationObserver(() => {
     if (predicate()) settle();
   });
@@ -286,6 +293,127 @@ async function testNestedRegionDomRender(): Promise<void> {
   }
 }
 
+const QUOTED_FENCED_COMPONENT = ["> <SmokeBox>", ">", "> ```js", "> x", "> ```", ">", "> </SmokeBox>", ""].join("\n");
+const QUOTED_OPEN_COMPONENT = ["> <SmokeBox>", ">", "> native mdx $x$", ""].join("\n");
+const LIST_OPEN_COMPONENT = ["- <SmokeBox>", "", "  native mdx $x$", ""].join("\n");
+const CAPITALIZED_COMPONENT = ["<Input>", "", "inside", "", "</Input>", ""].join("\n");
+
+/** Every block reachable through prepared nested children, containers included. */
+function nestedBlocks(block: Block): Block[] {
+  const nested = block.payload.meta?.preparedNested as { children?: Array<{ props?: { block?: Block } }> } | undefined;
+  const children = (nested?.children ?? [])
+    .map((child) => child.props?.block)
+    .filter((child): child is Block => Boolean(child));
+  return [block, ...children.flatMap((child) => nestedBlocks(child))];
+}
+
+async function testQuotedComponentWithFencedCode(): Promise<void> {
+  const harness = await createWorkerHarness();
+  const blocks = await finalBlocks(harness, initMessage(QUOTED_FENCED_COMPONENT));
+  assert.strictEqual(blocks.length, 1, "a quoted component with a fenced block must stay one blockquote root");
+  const [root] = blocks;
+  assert.ok(root, "the blockquote root must exist");
+  assert.strictEqual(root.type, "blockquote", "the quoted component must not escape its blockquote");
+  const owner = nestedBlocks(root).find((candidate) => candidate.type === "mdx");
+  assert.ok(owner, "the quoted component must become one nested MDX owning root");
+  assert.strictEqual(
+    owner.payload.raw,
+    "<SmokeBox>\n\n```js\nx\n```\n\n</SmokeBox>",
+    "the nested owner source must be container-stripped markdown, not a fence carrying quote markers",
+  );
+  assert.strictEqual(owner.payload.meta?.mdxStatus, "compiled", "a closed quoted component containing a fence must compile");
+  assert.ok(owner.payload.compiledMdxModule?.code.includes("_jsx(SmokeBox"), "the compiled module must render the component as its root");
+  assert.ok(!owner.payload.compiledMdxModule?.code.includes("</SmokeBox>"), "the compiled module must not retain the raw closing tag");
+
+  const streamed = await finalBlocks(harness, initMessage(""), Array.from(QUOTED_FENCED_COMPONENT));
+  assert.deepStrictEqual(streamed, blocks, "character streaming must reach the same final IR for a quoted component with a fence");
+}
+
+async function testUnclosedNestedComponentsErrorAtFinalize(): Promise<void> {
+  const harness = await createWorkerHarness();
+  const streaming = await harness.send(initMessage(QUOTED_OPEN_COMPONENT));
+  assertNoErrors(streaming, "INIT");
+  const initialized = findMessage(streaming, "INITIALIZED");
+  assert.ok(initialized, "worker must initialize");
+  const pendingRoot = initialized.blocks[0];
+  assert.ok(pendingRoot, "an open quoted component must keep its blockquote root");
+  const pendingOwner = nestedBlocks(pendingRoot).find((candidate) => candidate.type === "html");
+  assert.ok(pendingOwner, "an open quoted component must stay a native html owner while streaming");
+  assert.strictEqual(pendingOwner.isFinalized, false, "an open quoted component must not finalize mid-stream");
+  assert.strictEqual(pendingOwner.payload.compiledMdxModule, undefined, "an open quoted component must not compile eagerly");
+
+  const quoted = await finalBlocks(harness, initMessage(QUOTED_OPEN_COMPONENT));
+  const quotedOwner = nestedBlocks(quoted[0]!).find((candidate) => candidate.type === "mdx");
+  assert.ok(quotedOwner, "finalization must retag the unclosed quoted component as MDX");
+  assert.strictEqual(quotedOwner.isFinalized, true, "FINALIZE must finalize the unclosed nested component");
+  assert.strictEqual(quotedOwner.payload.meta?.mdxStatus, "error", "an unclosed quoted component must report the native compile error");
+  assert.match(String(quotedOwner.payload.meta?.mdxError ?? ""), /closing tag/, "the error must be the native compiler's closing-tag message");
+
+  const listed = await finalBlocks(harness, initMessage(LIST_OPEN_COMPONENT));
+  const listOwner = nestedBlocks(listed[0]!).find((candidate) => candidate.type === "mdx");
+  assert.ok(listOwner, "finalization must retag an unclosed list component as MDX");
+  assert.strictEqual(listOwner.isFinalized, true, "FINALIZE must finalize the unclosed list component");
+  assert.strictEqual(listOwner.payload.meta?.mdxStatus, "error", "an unclosed list component must report the native compile error");
+
+  registerMDXComponents({ SmokeBox: SmokeSection }, { replace: true });
+  const { container, unmount } = await renderBlocks(quoted);
+  try {
+    await waitForDom(
+      container,
+      () => Boolean(container.querySelector('blockquote [data-mdx-status="error"]')),
+      "the finalized unclosed quoted component must render its error state",
+    );
+    const errorNode = container.querySelector('blockquote [data-mdx-status="error"]');
+    assert.ok(errorNode?.textContent?.includes("MDX failed"), "the rendered error view must announce the MDX failure");
+    assert.ok(errorNode?.textContent?.includes("closing tag"), "the rendered error view must carry the native compiler message");
+  } finally {
+    unmount();
+  }
+}
+
+async function testCapitalizedComponentNames(): Promise<void> {
+  const harness = await createWorkerHarness();
+  const input = await finalBlocks(harness, initMessage(CAPITALIZED_COMPONENT));
+  assert.strictEqual(input.length, 1, "a multiline <Input> component must be one owning root");
+  assert.strictEqual(input[0]?.type, "mdx", "<Input> must compile as an MDX component");
+  assert.strictEqual(input[0]?.payload.meta?.mdxStatus, "compiled", "<Input> is a component, not the void html element");
+  assert.ok(input[0]?.payload.compiledMdxModule?.code.includes("_jsx(Input"), "the compiled module must render the Input component");
+
+  const link = await finalBlocks(harness, initMessage(["<Link href=\"/x\">", "", "inside", "", "</Link>", ""].join("\n")));
+  assert.strictEqual(link.length, 1, "a multiline <Link> component must be one owning root");
+  assert.strictEqual(link[0]?.payload.meta?.mdxStatus, "compiled", "<Link> is a component, not the void html element");
+  assert.ok(link[0]?.payload.compiledMdxModule?.code.includes("_jsx(Link"), "the compiled module must render the Link component");
+
+  const commonmark = await finalBlocks(harness, initMessage(CAPITALIZED_COMPONENT, false));
+  assert.deepStrictEqual(commonmark.map((block) => block.type), ["html", "paragraph", "html"], "mdx:false must keep CommonMark's blank-line termination for a capitalized tag");
+  assert.deepStrictEqual(commonmark.map((block) => block.payload.raw), ["<Input>", "inside", "</Input>"], "mdx:false must keep the raw html fragments untouched");
+}
+
+async function testQuotedTextareaCommonMark(): Promise<void> {
+  const harness = await createWorkerHarness();
+  const doc = ["> <textarea>", ">literal", "> </textarea>", ""].join("\n");
+  const quoted = await finalBlocks(harness, initMessage(doc, false));
+  assert.strictEqual(quoted.length, 1, "a quoted textarea must stay one blockquote root");
+  assert.strictEqual(quoted[0]?.payload.raw, doc.trimEnd(), "the blockquote must own the complete quoted textarea");
+  const textarea = nestedBlocks(quoted[0]!).find((block) => block.type === "html");
+  assert.ok(textarea, "the textarea must stay a nested html block in CommonMark mode");
+  assert.ok(textarea.payload.raw.includes("literal"), "a same-quote continuation line must remain inside the textarea");
+
+  const escapedDoc = ["> <textarea>", ">literal", "outside", ""].join("\n");
+  const escaped = await finalBlocks(harness, initMessage(escapedDoc, false));
+  assert.strictEqual(escaped.length, 2, "a line outside the quote must end the quoted textarea");
+  assert.strictEqual(escaped[0]?.payload.raw, "> <textarea>\n>literal", "the textarea must stop at the blockquote boundary");
+  assert.strictEqual(escaped[1]?.payload.raw, "outside", "the outside line must parse as its own paragraph");
+
+  const mdxQuoted = await finalBlocks(harness, initMessage(doc));
+  assert.strictEqual(mdxQuoted.length, 1, "mdx:true must keep the same CommonMark textarea shape");
+  assert.strictEqual(
+    nestedBlocks(mdxQuoted[0]!).find((block) => block.type === "html")?.payload.raw.includes("literal"),
+    true,
+    "a lowercase textarea must not become MDX",
+  );
+}
+
 await testMultilineComponentOwnership();
 await testCharacterStreamingMatchesStatic();
 await testIncompleteComponentStaysPending();
@@ -294,4 +422,8 @@ await testNestedContainerOwnership();
 await testMdxDisabledAndRawHtmlUnchanged();
 await testMdxDomRender();
 await testNestedRegionDomRender();
+await testQuotedComponentWithFencedCode();
+await testUnclosedNestedComponentsErrorAtFinalize();
+await testCapitalizedComponentNames();
+await testQuotedTextareaCommonMark();
 console.log("mdx component region ownership test passed");

@@ -854,7 +854,7 @@ export class MarkdownEngine {
         return await this.extractBlocksSimple(content, options);
       }
 
-      const grouped = groupHtmlOwnership(extracted, this.mdParser, content, this.htmlConfig, 0, (text) => this.inlineParser.parse(text));
+      const grouped = groupHtmlOwnership(extracted, this.mdParser, content, this.htmlConfig, 0, (text) => this.inlineParser.parse(text), { mdxComponents: this.mdxEnabled });
       return await this.refreshOwnedMdxRegions(grouped, options);
     } catch (error) {
       console.warn("Lezer parsing failed, falling back to simple parsing:", error);
@@ -956,7 +956,7 @@ export class MarkdownEngine {
       },
     };
 
-    await this.enrichBlock(block);
+    await this.enrichBlock(block, options);
     return block;
   }
 
@@ -986,10 +986,10 @@ export class MarkdownEngine {
     };
   }
 
-  private async enrichBlock(block: Block): Promise<void> {
+  private async enrichBlock(block: Block, options?: ParseOptions): Promise<void> {
     this.inlineParser.startCollectingAttemptedReferences();
     try {
-      await this.enrichBlockContent(block);
+      await this.enrichBlockContent(block, options);
     } finally {
       this.recordLinkReferences(block, this.inlineParser.stopCollectingAttemptedReferences());
     }
@@ -1008,7 +1008,7 @@ export class MarkdownEngine {
   private leavesOpenContainer(raw: string): boolean {
     if (!raw) return false;
     const stack: string[] = [];
-    applyHtmlTagBalance(raw, this.mdParser, stack);
+    applyHtmlTagBalance(raw, this.mdParser, stack, this.mdxEnabled);
     return stack.length > 0;
   }
 
@@ -1119,7 +1119,7 @@ export class MarkdownEngine {
     }
   }
 
-  private async enrichBlockContent(block: Block): Promise<void> {
+  private async enrichBlockContent(block: Block, options?: ParseOptions): Promise<void> {
     this.performanceTimer.mark("enrich-block");
     const metrics = this.activeMetricsCollector;
     metrics?.countBlockType(block.type);
@@ -1180,7 +1180,7 @@ export class MarkdownEngine {
       }
 
       case "blockquote":
-        await this.prepareNestedChildren(block);
+        await this.prepareNestedChildren(block, options);
         break;
 
       case "paragraph": {
@@ -1324,7 +1324,7 @@ export class MarkdownEngine {
       }
 
       case "list":
-        await this.prepareNestedChildren(block);
+        await this.prepareNestedChildren(block, options);
         break;
 
       case "table": {
@@ -1369,7 +1369,7 @@ export class MarkdownEngine {
     }
   }
 
-  private async prepareNestedChildren(block: Block): Promise<void> {
+  private async prepareNestedChildren(block: Block, options?: ParseOptions): Promise<void> {
     block.payload.meta = { ...block.payload.meta, mathEnabled: this.enableMath, formatAnticipation: this.formatAnticipationConfig };
     const prepared = prepareNestedBlockSnapshot(block, this.inlineParser, this.mdParser, (text) => this.parseInlineStreaming(text).inline);
     const groupChildren = async (children: NodeSnapshot[]): Promise<NodeSnapshot[]> => {
@@ -1377,11 +1377,18 @@ export class MarkdownEngine {
       let sequence: NodeSnapshot[] = [];
       const flush = async () => {
         const blocks = sequence.map((child) => child.props?.block as Block);
-        const owned = groupHtmlOwnership(blocks, this.mdParser, block.payload.raw, this.htmlConfig, block.payload.range?.from ?? 0, (text) => this.inlineParser.parse(text), { joinLeafRaws: true });
+        const owned = groupHtmlOwnership(blocks, this.mdParser, block.payload.raw, this.htmlConfig, block.payload.range?.from ?? 0, (text) => this.inlineParser.parse(text), { joinLeafRaws: true, forceFinalize: options?.forceFinalize, mdxComponents: this.mdxEnabled });
+        const retained = new Set<Block>(owned);
+        // Markdown leaves absorbed into an owner keep their consumer metadata (code highlighting,
+        // inline segments): the owner owns their source, their tree slots still reference them.
+        for (const leaf of blocks) {
+          if (retained.has(leaf) || leaf.type === "html") continue;
+          await this.enrichBlockContent(leaf, options);
+        }
         for (const child of owned) {
           const original = sequence.find((candidate) => candidate.props?.block === child);
           if (!original) {
-            await this.refreshOwnedMdxRegions([child], {});
+            await this.refreshOwnedMdxRegions([child], options ?? {});
           }
           grouped.push(original ?? createBlockSnapshot(child));
         }
@@ -1398,16 +1405,18 @@ export class MarkdownEngine {
       return grouped;
     };
     const enrich = async (snapshot: NodeSnapshot): Promise<void> => {
-      for (const child of snapshot.children ?? []) await enrich(child);
+      // Group ownership on the native leaves before enrichment: enrichment retags open html leaves
+      // as `mdx`, which would hide their native identity from the ownership stack.
       snapshot.children = await groupChildren(snapshot.children ?? []);
+      for (const child of snapshot.children ?? []) await enrich(child);
       const nested = snapshot.props?.block as Block | undefined;
       if (!nested) return;
       if (nested.type === "list" || nested.type === "blockquote" || nested.type === "list-item") {
         const { block: _block, ...props } = snapshot.props ?? {};
         nested.payload.meta = { ...nested.payload.meta, preparedNested: { props, children: snapshot.children ?? [] } };
       } else {
-        await this.enrichBlockContent(nested);
-        await this.refreshOwnedMdxRegions([nested], {});
+        await this.enrichBlockContent(nested, options);
+        await this.refreshOwnedMdxRegions([nested], options ?? {});
         const updated = createBlockSnapshot(nested);
         snapshot.type = updated.type;
         snapshot.props = { ...snapshot.props, ...updated.props, inline: nested.payload.inline };
@@ -1415,8 +1424,8 @@ export class MarkdownEngine {
         snapshot.children = updated.children;
       }
     };
-    for (const child of prepared.children) await enrich(child);
     prepared.children = await groupChildren(prepared.children);
+    for (const child of prepared.children) await enrich(child);
     this.canonicalizePreparedSnapshot(prepared);
     block.payload.meta = {
       ...block.payload.meta,

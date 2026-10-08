@@ -53,18 +53,26 @@ interface InlineElementView {
   readonly children?: readonly InlineElementView[];
 }
 
-/** Apply one raw fragment's Lezer HTMLTag open/close effects to an open-container stack. */
-export function applyHtmlTagBalance(raw: string, parser: MarkdownParser, stack: string[]): void {
+/**
+ * Apply one raw fragment's Lezer HTMLTag open/close effects to an open-container stack.
+ *
+ * MDX component names are case-sensitive: `<Input>` and `<Link>` are components, while `<input>` and
+ * `<link>` are the HTML void elements. `mdxComponents` is the caller's MDX mode; without it, names
+ * take their HTML identity case-insensitively, matching CommonMark's tag handling.
+ */
+export function applyHtmlTagBalance(raw: string, parser: MarkdownParser, stack: string[], mdxComponents = false): void {
   const visit = (elements: readonly InlineElementView[]) => {
     for (const element of elements) {
       if (parser.nodeSet.types[element.type].name === "HTMLTag") {
         const tag = raw.slice(element.from, element.to);
-        const name = /^<\/?([a-zA-Z][^\s/>]*)/.exec(tag)?.[1]?.toLowerCase();
-        if (!name) continue;
+        const written = /^<\/?([a-zA-Z][^\s/>]*)/.exec(tag)?.[1];
+        if (!written) continue;
+        const component = /^[A-Z]/.test(written);
+        const name = component && mdxComponents ? written : written.toLowerCase();
         if (tag.startsWith("</")) {
           const at = stack.lastIndexOf(name);
           if (at >= 0) stack.length = at;
-        } else if (!VOID[name] && !tag.endsWith("/>")) {
+        } else if ((component && mdxComponents || !VOID[name]) && !tag.endsWith("/>")) {
           stack.push(name);
         }
       }
@@ -74,8 +82,25 @@ export function applyHtmlTagBalance(raw: string, parser: MarkdownParser, stack: 
   visit(parser.parseInline(raw, 0));
 }
 
+/**
+ * Nested snapshots keep a code leaf's raw as a verbatim source slice, which retains the enclosing
+ * container markers (`> x`) for quoted components. Rebuild the joined owner's source from the leaf's
+ * native code text and info string so the MDX compiler receives a valid fence; the leaf's own
+ * payload and metadata stay untouched.
+ */
+function codeCompileSource(block: Block): string {
+  const meta = block.payload.meta ?? {};
+  const code = typeof meta.code === "string" ? meta.code : undefined;
+  if (code === undefined) return (block.payload.raw ?? "").replace(/\n$/, "");
+  const info = typeof meta.info === "string" ? meta.info : "";
+  const content = code.replace(/\n$/, "");
+  const longestFence = content.split("\n").reduce((max, line) => Math.max(max, /^`+/.exec(line)?.[0].length ?? 0), 0);
+  const fence = "`".repeat(Math.max(3, longestFence + 1));
+  return `${fence}${info}\n${content}\n${fence}`;
+}
+
 /** Own an open HTML container across Lezer block boundaries, retaining markdown leaves. */
-export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, content: string, options?: HtmlOptions, sourceOffset = 0, parseInline?: (text: string) => InlineNode[], regionSource?: { joinLeafRaws?: boolean }): Block[] {
+export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, content: string, options?: HtmlOptions, sourceOffset = 0, parseInline?: (text: string) => InlineNode[], regionOptions?: { joinLeafRaws?: boolean; forceFinalize?: boolean; mdxComponents?: boolean }): Block[] {
   const result: Block[] = [];
   let region: Block[] = [];
   let stack: string[] = [];
@@ -93,12 +118,12 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
         return blockHtml(block, attribute, index);
       }).join("\n");
       const last = region[region.length - 1];
-      const raw = regionSource?.joinLeafRaws
-        ? region.map((block) => (block.payload.raw ?? "").replace(/\n$/, "")).join("\n\n")
+      const raw = regionOptions?.joinLeafRaws
+        ? region.map((block) => (block.type === "code" ? codeCompileSource(block) : (block.payload.raw ?? "").replace(/\n$/, ""))).join("\n\n")
         : content.slice((first.payload.range?.from ?? sourceOffset) - sourceOffset, (last.payload.range?.to ?? content.length + sourceOffset) - sourceOffset);
       result.push({
         ...first,
-        isFinalized: stack.length === 0 && last.isFinalized,
+        isFinalized: (stack.length === 0 || regionOptions?.forceFinalize === true) && last.isFinalized,
         payload: {
           ...first.payload,
           raw,
@@ -115,7 +140,7 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
       result.push(block);
       continue;
     }
-    applyHtmlTagBalance(block.payload.raw, parser, stack);
+    applyHtmlTagBalance(block.payload.raw, parser, stack, regionOptions?.mdxComponents === true);
     if (region.length === 0 && stack.length === 0) {
       result.push(block);
       continue;
