@@ -117,6 +117,20 @@ export function renderInlineNodes(nodes: InlineNode[], components: InlineCompone
           "\n",
         );
 
+      case "html": {
+        const component = components.html;
+        if (component) {
+          return React.createElement(component, { key, ...node });
+        }
+        if (node.sanitized) {
+          return React.createElement("span", {
+            key,
+            className: "markdown-inline-html",
+            dangerouslySetInnerHTML: { __html: node.sanitized },
+          });
+        }
+        return null;
+      }
       default: {
         // Handle custom/extensible nodes
         const component = components[node.kind];
@@ -1275,6 +1289,14 @@ export function renderParagraphMixedSegments(
           }
         } else if (element) {
           inlineBuffer.push(element);
+        } else if (html) {
+          inlineBuffer.push(
+            React.createElement("span", {
+              key,
+              className: "markdown-inline-html",
+              dangerouslySetInnerHTML: { __html: html },
+            }),
+          );
         }
         break;
       }

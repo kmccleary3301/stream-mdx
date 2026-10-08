@@ -131,6 +131,8 @@ function createSchema(): Schema {
     src: ["http", "https", "data"],
   };
 
+  base.strip = ["script", "style"];
+
   return base;
 }
 

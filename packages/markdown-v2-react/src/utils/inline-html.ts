@@ -91,12 +91,26 @@ function parseInlineHtmlDescriptor(raw: string | undefined, sanitized: string | 
     return null;
   }
 
-  const match = normalizedSanitized.match(/^<([A-Za-z][\w:-]*)(\s[^>]*)?>([\s\S]*)<\/\1>$/);
-  if (!match) {
-    return null;
-  }
+  const pairedMatch = normalizedSanitized.match(/^<([A-Za-z][\w:-]*)((?:\s+[^>]*)?)>([\s\S]*)<\/\1>$/);
+  let tagNameRaw: string;
+  let attrString = "";
+  let sanitizedInner = "";
 
-  const [, tagNameRaw, attrString = "", sanitizedInner = ""] = match;
+  if (pairedMatch) {
+    tagNameRaw = pairedMatch[1];
+    attrString = pairedMatch[2] ?? "";
+    sanitizedInner = pairedMatch[3] ?? "";
+  } else {
+    const selfClosingMatch =
+      normalizedSanitized.match(/^<([A-Za-z][\w:-]*)((?:\s+[^>]*)?)\s*(?:\/?>|>)$/) ||
+      normalizedRaw.match(/^<([A-Za-z][\w:-]*)((?:\s+[^>]*)?)\s*(?:\/?>|>)$/);
+    if (!selfClosingMatch) {
+      return null;
+    }
+    tagNameRaw = selfClosingMatch[1];
+    attrString = selfClosingMatch[2] ?? "";
+    sanitizedInner = "";
+  }
   const tagName = tagNameRaw.toLowerCase();
   const attributes = parseAttributes(attrString);
 
@@ -275,6 +289,11 @@ const INLINE_ELEMENTS = new Set([
   "bdi",
   "bdo",
   "br",
+  "img",
+  "input",
+  "picture",
+  "del",
+  "ins",
   "cite",
   "code",
   "data",

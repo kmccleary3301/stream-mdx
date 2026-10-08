@@ -1,7 +1,7 @@
 import type { NodeSet } from "@lezer/common";
 import type { InlineNode } from "../types";
 import { decodeEntity } from "./entities";
-import { decodeHTML5Strict } from "entities";
+import { sanitizeHtmlInWorker } from "../worker-html-sanitizer";
 import { normalizeLinkLabel } from "./reference-collector";
 import type { InlineExtension, LinkReferenceDefinition, LinkReferenceMap, MarkdownElement } from "./types";
 
@@ -99,6 +99,48 @@ export function mergeAdjacentTextNodes(nodes: InlineNode[]): InlineNode[] {
     }
   }
   return result;
+}
+
+const attrName = "[a-zA-Z_:][a-zA-Z0-9_.:-]*";
+const unquotedVal = "[^\\s\"'=<>`]+";
+const singleQuotedVal = "'[^']*'";
+const doubleQuotedVal = '"[^"]*"';
+const attrVal = `(?:${unquotedVal}|${singleQuotedVal}|${doubleQuotedVal})`;
+const attr = `(?:\\s+${attrName}(?:\\s*=\\s*${attrVal})?)`;
+const openTagRe = new RegExp(`^<([a-zA-Z][a-zA-Z0-9-]*)(?:${attr})*\\s*(?:/)?>(?![\\s\\S])`);
+const closeTagRe = /^<\/([a-zA-Z][a-zA-Z0-9-]*)\s*>$/;
+const commentRe = /^<!--[\s\S]*?-->$/;
+const procInstRe = /^<\?[\s\S]*?\?>$/;
+const declRe = /^<![a-zA-Z][\s\S]*?>$/;
+const cdataRe = /^<!\[CDATA\[[\s\S]*?\]\]>$/;
+
+const VOID_TAGS: Record<string, true> = {
+  br: true,
+  hr: true,
+  img: true,
+  meta: true,
+  input: true,
+  link: true,
+  source: true,
+  track: true,
+  area: true,
+  base: true,
+  col: true,
+  embed: true,
+};
+
+function parseAttributes(raw: string): Record<string, string> {
+  const attrs: Record<string, string> = {};
+  const attrPattern = /([a-zA-Z_:][a-zA-Z0-9_.:-]*)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g;
+  let match: RegExpExecArray | null = attrPattern.exec(raw);
+  while (match !== null) {
+    const name = match[1];
+    if (name && !name.startsWith("<")) {
+      attrs[name] = match[2] ?? match[3] ?? match[4] ?? "";
+    }
+    match = attrPattern.exec(raw);
+  }
+  return attrs;
 }
 
 export class LezerInlineConverter {
@@ -234,11 +276,51 @@ export class LezerInlineConverter {
 
       case "Entity":
         return { kind: "text", text: decodeEntity(text.slice(el.from, el.to)) };
+      case "Comment": {
+        const raw = text.slice(el.from, el.to);
+        return { kind: "html", raw, tagName: "!--", sanitized: "" };
+      }
 
-      case "HTMLTag":
-        // Preserve HTML tag verbatim as text so downstream mixed-content / react handle it
-        return { kind: "text", text: text.slice(el.from, el.to) };
+      case "ProcessingInstruction": {
+        const raw = text.slice(el.from, el.to);
+        return { kind: "html", raw, tagName: "?", sanitized: "" };
+      }
 
+      case "HTMLTag": {
+        const raw = text.slice(el.from, el.to);
+        if (commentRe.test(raw)) {
+          return { kind: "html", raw, tagName: "!--", sanitized: "" };
+        }
+        if (procInstRe.test(raw)) {
+          return { kind: "html", raw, tagName: "?", sanitized: "" };
+        }
+        if (declRe.test(raw)) {
+          return { kind: "html", raw, tagName: "!", sanitized: "" };
+        }
+        if (cdataRe.test(raw)) {
+          return { kind: "html", raw, tagName: "![cdata[", sanitized: sanitizeHtmlInWorker(raw) };
+        }
+        if (closeTagRe.test(raw)) {
+          const match = closeTagRe.exec(raw);
+          return { kind: "html", raw, tagName: match![1].toLowerCase(), isClose: true, sanitized: "" };
+        }
+        if (openTagRe.test(raw)) {
+          const match = openTagRe.exec(raw);
+          const tagName = match![1].toLowerCase();
+          const isSelfClosing = raw.endsWith("/>") || Boolean(VOID_TAGS[tagName]);
+          const attributes = parseAttributes(raw);
+          return {
+            kind: "html",
+            raw,
+            tagName,
+            isSelfClosing,
+            attributes,
+            sanitized: sanitizeHtmlInWorker(raw),
+          };
+        }
+        // Malformed HTML tag snippet - MUST remain literal text
+        return { kind: "text", text: raw };
+      }
       case "InlineMath": {
         const tex = text.slice(el.from + 1, el.to - 1).trim();
         return { kind: "math-inline", tex };
