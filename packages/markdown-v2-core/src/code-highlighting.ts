@@ -4,10 +4,7 @@ function normalizeNewlines(input: string): string {
   return input.replace(/\r\n?/g, "\n");
 }
 
-function isFenceLine(line: string): boolean {
-  return /^```/.test(line.trim());
-}
-
+const OPEN_FENCE_REGEX = /^( *)(`{3,}|~{3,})(.*)$/;
 export function stripCodeFence(raw: string): { code: string; info: string; hadFence: boolean } {
   if (!raw) {
     return { code: "", info: "", hadFence: false };
@@ -19,24 +16,66 @@ export function stripCodeFence(raw: string): { code: string; info: string; hadFe
   }
 
   const firstLine = lines[0];
-  if (!isFenceLine(firstLine)) {
+  const openMatch = firstLine.match(OPEN_FENCE_REGEX);
+  if (!openMatch) {
     return { code: normalized, info: "", hadFence: false };
   }
 
-  const info = firstLine.slice(3).trim();
-  let endIndex = lines.length - 1;
-  while (endIndex > 0 && lines[endIndex].trim().length === 0) {
-    endIndex--;
-  }
-  if (endIndex > 0 && isFenceLine(lines[endIndex])) {
-    const codeLines = lines.slice(1, endIndex);
-    return { code: codeLines.join("\n"), info, hadFence: true };
+  const indentCount = openMatch[1].length;
+  const fenceChar = openMatch[2][0];
+  const fenceLen = openMatch[2].length;
+  const info = openMatch[3].trim();
+
+  let endIndex = -1;
+  const closeRegex = new RegExp(`^\\s*${fenceChar === "`" ? "\\`" : "~"}{${fenceLen},}\\s*$`);
+  for (let i = lines.length - 1; i > 0; i--) {
+    if (closeRegex.test(lines[i])) {
+      endIndex = i;
+      break;
+    }
   }
 
-  // During streaming, code block may not have closing fence yet
-  // Still extract and return the info from the opening fence
-  const codeLines = lines.slice(1);
+  const rawCodeLines = endIndex > 0 ? lines.slice(1, endIndex) : lines.slice(1);
+  const codeLines = indentCount > 0
+    ? rawCodeLines.map((line) => {
+        let spaces = 0;
+        while (spaces < indentCount && line[spaces] === " ") {
+          spaces++;
+        }
+        return line.slice(spaces);
+      })
+    : rawCodeLines;
+
   return { code: codeLines.join("\n"), info, hadFence: true };
+}
+
+export function dedentIndentedCode(raw: string): string {
+  if (!raw) return "";
+  const lines = normalizeNewlines(raw).split("\n");
+  const dedentedLines = lines.map((line) => {
+    let cols = 0;
+    let i = 0;
+    while (i < line.length && cols < 4) {
+      const ch = line[i];
+      if (ch === " ") {
+        cols += 1;
+        i += 1;
+      } else if (ch === "\t") {
+        const nextCol = (cols + 4) - (cols % 4);
+        if (nextCol <= 4) {
+          cols = nextCol;
+          i += 1;
+        } else {
+          const remainingSpaces = nextCol - 4;
+          return " ".repeat(remainingSpaces) + line.slice(i + 1);
+        }
+      } else {
+        break;
+      }
+    }
+    return line.slice(i);
+  });
+  return dedentedLines.join("\n");
 }
 
 function getDomParser(): DOMParser | null {
@@ -163,22 +202,6 @@ export function getDefaultCodeWrapperAttributes(
       style: "display: grid;",
     },
   };
-}
-
-export function dedentIndentedCode(raw: string): string {
-  if (!raw) return "";
-  const normalized = normalizeNewlines(raw);
-  const lines = normalized.split("\n");
-  let minIndent = Number.POSITIVE_INFINITY;
-  for (const line of lines) {
-    const match = line.match(/^\s+/);
-    if (!match) continue;
-    minIndent = Math.min(minIndent, match[0].length);
-  }
-  if (!Number.isFinite(minIndent) || minIndent === 0) {
-    return normalized;
-  }
-  return lines.map((line) => (line.startsWith(" ".repeat(minIndent)) ? line.slice(minIndent) : line)).join("\n");
 }
 
 export function extractCodeLines(raw: string): string[] {

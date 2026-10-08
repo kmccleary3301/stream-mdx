@@ -1,4 +1,5 @@
-import { parser as mdParser } from "@lezer/markdown";
+import { parser as baseMdParser, GFM } from "@lezer/markdown";
+import type { SyntaxNode } from "@lezer/common";
 import {
   extractCodeLines,
   extractCodeWrapperAttributes,
@@ -24,8 +25,9 @@ import type {
   TokenLineV1,
 } from "./types";
 import { PATCH_ROOT_ID } from "./types";
-import { normalizeBlockquoteText, parseCodeFenceInfo } from "./utils";
+import { normalizeBlockquoteText, parseCodeFenceInfo, removeHeadingMarkers } from "./utils";
 
+const mdParser = baseMdParser.configure([GFM]);
 export function cloneBlock(block: Block): Block {
   return {
     ...block,
@@ -99,6 +101,73 @@ const LIST_STREAMING_ANTICIPATION = {
   regex: true,
 } as const;
 
+function isListLoose(listNode: SyntaxNode, raw: string): boolean {
+  const items: SyntaxNode[] = [];
+  const cursor = listNode.cursor();
+  if (cursor.firstChild()) {
+    do {
+      if (cursor.type.name === "ListItem") {
+        items.push(cursor.node);
+      }
+    } while (cursor.nextSibling());
+  }
+  if (items.length === 0) return false;
+
+  for (let i = 0; i < items.length - 1; i++) {
+    const gap = raw.slice(items[i].to, items[i + 1].from);
+    if (/\n\s*\n/.test(gap)) return true;
+  }
+
+  for (const item of items) {
+    const children: SyntaxNode[] = [];
+    const itemCursor = item.cursor();
+    if (itemCursor.firstChild()) {
+      do {
+        if (itemCursor.type.name !== "ListMark") {
+          children.push(itemCursor.node);
+        }
+      } while (itemCursor.nextSibling());
+    }
+
+    for (let j = 0; j < children.length - 1; j++) {
+      const gap = raw.slice(children[j].to, children[j + 1].from);
+      if (/\n\s*\n/.test(gap)) return true;
+    }
+
+    const itemRaw = raw.slice(item.from, item.to);
+    if (/\n\s*\n\s*$/.test(itemRaw)) return true;
+  }
+  return false;
+}
+
+function extractListStart(listNode: SyntaxNode, raw: string): number | undefined {
+  const cursor = listNode.cursor();
+  if (cursor.firstChild()) {
+    do {
+      if (cursor.type.name === "ListItem") {
+        const itemCursor = cursor.node.cursor();
+        if (itemCursor.firstChild()) {
+          do {
+            if (itemCursor.type.name === "ListMark") {
+              const mark = raw.slice(itemCursor.from, itemCursor.to);
+              const match = mark.match(/^(\d+)[.)]/);
+              if (match) {
+                const num = parseInt(match[1], 10);
+                if (!Number.isNaN(num) && num !== 1) {
+                  return num;
+                }
+              }
+              return undefined;
+            }
+          } while (itemCursor.nextSibling());
+        }
+        return undefined;
+      }
+    } while (cursor.nextSibling());
+  }
+  return undefined;
+}
+
 function enrichListSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot {
   const raw = block.payload.raw ?? "";
   const baseOffset = block.payload.range?.from ?? 0;
@@ -109,12 +178,17 @@ function enrichListSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot 
   }
 
   const ordered = listNode.type.name === "OrderedList" || Boolean((block.payload.meta as { ordered?: boolean } | undefined)?.ordered);
-  snapshot.props = { ...(snapshot.props ?? {}), ordered, items: undefined };
-  snapshot.children = buildListItemSnapshots(block, listNode, ordered, block.id, baseOffset, raw);
+  const loose = isListLoose(listNode, raw);
+  let start: number | undefined;
+  if (ordered) {
+    start = extractListStart(listNode, raw);
+  }
+  snapshot.props = { ...(snapshot.props ?? {}), ordered, loose, start, items: undefined };
+  snapshot.children = buildListItemSnapshots(block, listNode, ordered, loose, start, block.id, baseOffset, raw);
   return snapshot;
 }
 
-function findListNode(node: any | null | undefined): any | null {
+function findListNode(node: SyntaxNode | null | undefined): SyntaxNode | null {
   if (!node) return null;
   const name = node.type.name;
   if (name === "BulletList" || name === "OrderedList") {
@@ -132,7 +206,16 @@ function findListNode(node: any | null | undefined): any | null {
   return null;
 }
 
-function buildListItemSnapshots(block: Block, listNode: any, ordered: boolean, idPrefix: string, baseOffset: number, raw: string): NodeSnapshot[] {
+function buildListItemSnapshots(
+  block: Block,
+  listNode: SyntaxNode,
+  ordered: boolean,
+  loose: boolean,
+  start: number | undefined,
+  idPrefix: string,
+  baseOffset: number,
+  raw: string,
+): NodeSnapshot[] {
   const items: NodeSnapshot[] = [];
   const cursor = listNode.cursor();
   let index = 0;
@@ -140,7 +223,7 @@ function buildListItemSnapshots(block: Block, listNode: any, ordered: boolean, i
     do {
       if (cursor.type.name === "ListItem") {
         const itemId = `${idPrefix}::item:${index}`;
-        items.push(buildListItemSnapshot(block, cursor.node, ordered, index, itemId, baseOffset, raw));
+        items.push(buildListItemSnapshot(block, cursor.node, ordered, loose, start, index, itemId, baseOffset, raw));
         index++;
       }
     } while (cursor.nextSibling());
@@ -150,8 +233,10 @@ function buildListItemSnapshots(block: Block, listNode: any, ordered: boolean, i
 
 function buildListItemSnapshot(
   block: Block,
-  listItemNode: any,
+  listItemNode: SyntaxNode,
   ordered: boolean,
+  loose: boolean,
+  start: number | undefined,
   index: number,
   id: string,
   baseOffset: number,
@@ -168,14 +253,38 @@ function buildListItemSnapshot(
   let codeIndex = 0;
   let htmlIndex = 0;
   let headingIndex = 0;
+  let hrIndex = 0;
   let isTask = false;
   let taskChecked: boolean | undefined;
-
   const cursor = listItemNode.cursor();
   if (cursor.firstChild()) {
     do {
       const name = cursor.type.name;
       if (name === "ListMark") {
+        continue;
+      }
+      if (name === "Task") {
+        const taskRaw = raw.slice(cursor.from, cursor.to);
+        const taskMatch = taskRaw.match(/^(\[[ xX]\])\s*(.*)/s);
+        if (taskMatch) {
+          isTask = true;
+          taskChecked = /\[[xX]\]/.test(taskMatch[1]);
+          const taskContent = taskMatch[2] ?? "";
+          const meta = (block.payload.meta ?? {}) as { formatAnticipation?: FormatAnticipationConfig; mathEnabled?: boolean };
+          const paragraphData = processListItemParagraph(taskContent, {
+            formatAnticipation: meta.formatAnticipation,
+            math: meta.mathEnabled,
+            streaming: !block.isFinalized,
+          });
+          inlineNodes = paragraphData.inline;
+          plainText = inlineNodesToPlainText(paragraphData.inline);
+          if (paragraphData.segments.length > 0) {
+            paragraphData.segments.forEach((segment, segmentIndex) => {
+              segmentSnapshots.push(createSegmentSnapshot(id, segment, segmentIndex, "list-item"));
+            });
+          }
+          paragraphHandled = true;
+        }
         continue;
       }
       if (name === "Paragraph") {
@@ -209,6 +318,15 @@ function buildListItemSnapshot(
             props: {
               inline: cloneInlineNodes(parsedInline),
               text: inlineNodesToPlainText(parsedInline),
+              block: {
+                id: paraId,
+                type: "paragraph",
+                isFinalized: true,
+                payload: {
+                  raw: paragraphRaw,
+                  inline: cloneInlineNodes(parsedInline),
+                },
+              },
             },
             range: createRange(baseOffset + cursor.from, baseOffset + cursor.to),
             children: nestedSegments.map((segment, segmentIndex) => createSegmentSnapshot(paraId, segment, segmentIndex, "paragraph")),
@@ -224,7 +342,7 @@ function buildListItemSnapshot(
       } else if (name === "Blockquote") {
         const quoteId = `${id}::blockquote:${blockquoteIndex++}`;
         childSnapshots.push(buildBlockquoteSnapshot(block, cursor.node, quoteId, baseOffset, raw));
-      } else if (name === "FencedCode" || name === "IndentedCode") {
+      } else if (name === "FencedCode" || name === "IndentedCode" || name === "CodeBlock") {
         const codeId = `${id}::code:${codeIndex++}`;
         const isFenced = name === "FencedCode";
         const snapshot = buildCodeBlockSnapshot(block, cursor.node, codeId, baseOffset, raw, isFenced);
@@ -234,25 +352,42 @@ function buildListItemSnapshot(
       } else if (name === "HTMLBlock") {
         const htmlId = `${id}::html:${htmlIndex++}`;
         childSnapshots.push(buildHtmlSnapshot(block, cursor.node, htmlId, baseOffset, raw));
-      } else if (name === "ATXHeading" || name === "SetextHeading") {
+      } else if (name.startsWith("ATXHeading") || name.startsWith("SetextHeading")) {
         const headingId = `${id}::heading:${headingIndex++}`;
         childSnapshots.push(buildHeadingSnapshot(block, cursor.node, headingId, baseOffset, raw));
+      } else if (name === "HorizontalRule") {
+        const hrId = `${id}::thematic-break:${hrIndex++}`;
+        childSnapshots.push({
+          id: hrId,
+          type: "thematic-break",
+          props: {
+            block: {
+              id: hrId,
+              type: "thematic-break",
+              isFinalized: true,
+              payload: { raw: raw.slice(cursor.from, cursor.to) },
+            },
+          },
+          range: createRange(baseOffset + cursor.from, baseOffset + cursor.to),
+          children: [],
+        });
       }
     } while (cursor.nextSibling());
   }
-
   const itemSnapshot: NodeSnapshot = {
     id,
     type: "list-item",
     props: {
-      index,
       ordered,
-      inline: cloneInlineNodes(inlineNodes),
-      text: plainText,
-      task: isTask,
+      loose,
+      start,
+      index,
+      task: isTask ? true : undefined,
       checked: isTask ? Boolean(taskChecked) : undefined,
+      inline: inlineNodes,
+      text: plainText,
+      raw: raw.slice(listItemNode.from, listItemNode.to),
     },
-    range: createRange(baseOffset + listItemNode.from, baseOffset + listItemNode.to),
     children: [...segmentSnapshots, ...childSnapshots],
   };
 
@@ -318,51 +453,68 @@ function stripTaskMarker(input: string): { content: string; task?: { checked: bo
   };
 }
 
-function buildBlockquoteSnapshot(block: Block, quoteNode: any, id: string, baseOffset: number, raw: string): NodeSnapshot {
-  const quoteRaw = raw.slice(quoteNode.from, quoteNode.to);
-  const normalized = normalizeBlockquoteText(quoteRaw);
-  const inline = listInlineParser.parse(normalized);
-  const segments = extractMixedContentSegments(normalized, undefined, (value) => listInlineParser.parse(value));
-
-  const quoteBlock: Block = {
-    id,
-    type: "blockquote",
-    isFinalized: true,
-    payload: {
-      raw: normalized,
-      inline: cloneInlineNodes(inline),
-      meta: segments.some((segment) => segment.kind !== "text")
-        ? {
-            mixedSegments: segments,
-          }
-        : undefined,
-      range: createRange(baseOffset + quoteNode.from, baseOffset + quoteNode.to),
-    },
-  };
-
-  return createBlockSnapshot(quoteBlock);
+function buildBlockquoteSnapshot(block: Block, quoteNode: SyntaxNode, id: string, baseOffset: number, raw: string): NodeSnapshot {
+  return buildBlockquoteNodeSnapshot(block, quoteNode, id, baseOffset, raw);
 }
 
-function buildCodeBlockSnapshot(block: Block, codeNode: any, id: string, baseOffset: number, raw: string, _isFenced: boolean): NodeSnapshot | null {
-  const segment = raw.slice(codeNode.from, codeNode.to);
-  const normalized = stripListIndentation(segment);
-  const { code, info: infoString, hadFence } = stripCodeFence(normalized);
-  const body = hadFence ? dedentFencedCodeByClosingIndent(normalized, code) : dedentIndentedCode(normalized);
+function extractFencedCodeFromLezer(codeNode: SyntaxNode, raw: string): { code: string; info: string; hadFence: boolean } {
+  let info = "";
+  const lineStart = raw.lastIndexOf("\n", codeNode.from) + 1;
+  const leading = raw.slice(lineStart, codeNode.from);
+  const openingFenceIndent = /^ {1,3}$/.test(leading) ? leading.length : 0;
+
+  const codeParts: string[] = [];
+  const cursor = codeNode.cursor();
+  if (cursor.firstChild()) {
+    do {
+      const name = cursor.type.name;
+      if (name === "CodeInfo") {
+        info = raw.slice(cursor.from, cursor.to).trim();
+      } else if (name === "CodeText") {
+        codeParts.push(raw.slice(cursor.from, cursor.to));
+      }
+    } while (cursor.nextSibling());
+  }
+
+  const rawCode = codeParts.join("");
+  const codeLines = openingFenceIndent > 0
+    ? rawCode.split("\n").map((line) => {
+        let spaces = 0;
+        while (spaces < openingFenceIndent && line[spaces] === " ") {
+          spaces++;
+        }
+        return line.slice(spaces);
+      })
+    : rawCode.split("\n");
+
+  return { code: codeLines.join("\n"), info, hadFence: true };
+}
+
+function buildCodeBlockSnapshot(block: Block, codeNode: SyntaxNode, id: string, baseOffset: number, raw: string, _isFenced: boolean): NodeSnapshot | null {
+  const isFenced = _isFenced || codeNode.type.name === "FencedCode";
+  let body = "";
+  let infoString = "";
+  if (isFenced) {
+    const extracted = extractFencedCodeFromLezer(codeNode, raw);
+    body = extracted.code;
+    infoString = extracted.info;
+  } else {
+    body = dedentIndentedCode(raw.slice(codeNode.from, codeNode.to));
+  }
   const { lang, meta } = parseCodeFenceInfo(infoString);
   const codeBlock: Block = {
     id,
     type: "code",
     isFinalized: true,
     payload: {
-      raw: normalized,
+      raw: raw.slice(codeNode.from, codeNode.to),
       meta: { ...meta, lang: lang || "text", code: body },
       range: createRange(baseOffset + codeNode.from, baseOffset + codeNode.to),
     },
   };
   return createBlockSnapshot(codeBlock);
 }
-
-function buildHtmlSnapshot(block: Block, htmlNode: any, id: string, baseOffset: number, raw: string): NodeSnapshot {
+function buildHtmlSnapshot(block: Block, htmlNode: SyntaxNode, id: string, baseOffset: number, raw: string): NodeSnapshot {
   const htmlRaw = stripListIndentation(raw.slice(htmlNode.from, htmlNode.to));
   const htmlBlock: Block = {
     id,
@@ -378,8 +530,15 @@ function buildHtmlSnapshot(block: Block, htmlNode: any, id: string, baseOffset: 
   return createBlockSnapshot(htmlBlock);
 }
 
-function buildHeadingSnapshot(block: Block, headingNode: any, id: string, baseOffset: number, raw: string): NodeSnapshot {
+function buildHeadingSnapshot(block: Block, headingNode: SyntaxNode, id: string, baseOffset: number, raw: string): NodeSnapshot {
   const headingRaw = stripListIndentation(raw.slice(headingNode.from, headingNode.to));
+  const nodeName = headingNode.type.name;
+  let headingLevel = 1;
+  if (nodeName.startsWith("ATXHeading")) {
+    headingLevel = parseInt(nodeName.slice(10), 10) || 1;
+  } else if (nodeName === "SetextHeading2") {
+    headingLevel = 2;
+  }
   const inline = listInlineParser.parse(removeHeadingMarkers(headingRaw));
   const headingBlock: Block = {
     id,
@@ -388,14 +547,20 @@ function buildHeadingSnapshot(block: Block, headingNode: any, id: string, baseOf
     payload: {
       raw: headingRaw,
       inline: cloneInlineNodes(inline),
+      meta: { headingLevel },
       range: createRange(baseOffset + headingNode.from, baseOffset + headingNode.to),
     },
   };
   return createBlockSnapshot(headingBlock);
 }
 
-function buildListNodeSnapshot(block: Block, listNode: any, ordered: boolean, id: string, baseOffset: number, raw: string): NodeSnapshot | null {
-  const children = buildListItemSnapshots(block, listNode, ordered, id, baseOffset, raw);
+function buildListNodeSnapshot(block: Block, listNode: SyntaxNode, ordered: boolean, id: string, baseOffset: number, raw: string): NodeSnapshot | null {
+  const loose = isListLoose(listNode, raw);
+  let start: number | undefined;
+  if (ordered) {
+    start = extractListStart(listNode, raw);
+  }
+  const children = buildListItemSnapshots(block, listNode, ordered, loose, start, id, baseOffset, raw);
   if (children.length === 0) {
     return null;
   }
@@ -404,6 +569,17 @@ function buildListNodeSnapshot(block: Block, listNode: any, ordered: boolean, id
     type: "list",
     props: {
       ordered,
+      loose,
+      start,
+      block: {
+        id,
+        type: "list",
+        isFinalized: true,
+        payload: {
+          raw: raw.slice(listNode.from, listNode.to),
+          meta: { ordered, loose, start },
+        },
+      },
     },
     range: createRange(baseOffset + listNode.from, baseOffset + listNode.to),
     children,
@@ -422,14 +598,205 @@ function enrichParagraphSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnap
 }
 
 function enrichBlockquoteSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot {
-  const meta = block.payload.meta as { mixedSegments?: MixedContentSegment[] } | undefined;
-  const segments = Array.isArray(meta?.mixedSegments) ? (meta?.mixedSegments ?? []) : [];
-  if (!segments.length) {
+  const raw = block.payload.raw ?? "";
+  const baseOffset = block.payload.range?.from ?? 0;
+  const tree = mdParser.parse(raw);
+  const bqNodes: SyntaxNode[] = [];
+  const cursor = tree.topNode.cursor();
+  if (cursor.firstChild()) {
+    do {
+      if (cursor.type.name === "Blockquote") {
+        bqNodes.push(cursor.node);
+      }
+    } while (cursor.nextSibling());
+  }
+  if (bqNodes.length > 0) {
+    snapshot.children = bqNodes.flatMap((bq, i) =>
+      buildBlockquoteChildren(block, bq, bqNodes.length > 1 ? `${block.id}::bq:${i}` : block.id, baseOffset, raw),
+    );
     return snapshot;
   }
 
-  snapshot.children = segments.map((segment, index) => createSegmentSnapshot(block.id, segment, index, "blockquote"));
+  const fallbackChildren = buildBlockquoteChildren(block, tree.topNode, block.id, baseOffset, raw);
+  if (fallbackChildren.length > 0) {
+    snapshot.children = fallbackChildren;
+    return snapshot;
+  }
+
+  const meta = block.payload.meta as { mixedSegments?: MixedContentSegment[] } | undefined;
+  const segments = Array.isArray(meta?.mixedSegments) ? (meta?.mixedSegments ?? []) : [];
+  if (segments.length > 0) {
+    snapshot.children = segments.map((segment, index) => createSegmentSnapshot(block.id, segment, index, "blockquote"));
+    return snapshot;
+  }
+
   return snapshot;
+}
+
+function buildBlockquoteNodeSnapshot(block: Block, bqNode: SyntaxNode, id: string, baseOffset: number, raw: string): NodeSnapshot {
+  const children = buildBlockquoteChildren(block, bqNode, id, baseOffset, raw);
+  return {
+    id,
+    type: "blockquote",
+    props: {
+      block: {
+        id,
+        type: "blockquote",
+        isFinalized: true,
+        payload: {
+          raw: raw.slice(bqNode.from, bqNode.to),
+        },
+      },
+    },
+    range: createRange(baseOffset + bqNode.from, baseOffset + bqNode.to),
+    children,
+  };
+}
+
+function buildBlockquoteChildren(block: Block, bqNode: SyntaxNode, idPrefix: string, baseOffset: number, raw: string): NodeSnapshot[] {
+  const children: NodeSnapshot[] = [];
+  let childIndex = 0;
+  const cursor = bqNode.cursor();
+  if (cursor.firstChild()) {
+    do {
+      const name = cursor.type.name;
+      if (name === "QuoteMark") {
+        continue;
+      }
+      if (name === "Paragraph") {
+        const pRaw = raw.slice(cursor.from, cursor.to);
+        const normalized = normalizeBlockquoteText(pRaw);
+        if (!normalized.trim()) {
+          continue;
+        }
+        const inline = listInlineParser.parse(normalized);
+        const pId = `${idPrefix}::paragraph:${childIndex++}`;
+        children.push({
+          id: pId,
+          type: "paragraph",
+          props: {
+            inline: cloneInlineNodes(inline),
+            text: inlineNodesToPlainText(inline),
+            block: {
+              id: pId,
+              type: "paragraph",
+              isFinalized: true,
+              payload: {
+                raw: normalized,
+                inline: cloneInlineNodes(inline),
+              },
+            },
+          },
+          range: createRange(baseOffset + cursor.from, baseOffset + cursor.to),
+          children: [],
+        });
+      } else if (name.startsWith("ATXHeading") || name.startsWith("SetextHeading")) {
+        let level = 1;
+        if (name.startsWith("ATXHeading")) {
+          level = parseInt(name.slice(10), 10) || 1;
+        } else if (name === "SetextHeading2") {
+          level = 2;
+        }
+        const hRaw = raw.slice(cursor.from, cursor.to);
+        const normalized = normalizeBlockquoteText(hRaw);
+        const cleanHeading = removeHeadingMarkers(normalized);
+        const inline = listInlineParser.parse(cleanHeading);
+        const hId = `${idPrefix}::heading:${childIndex++}`;
+        children.push({
+          id: hId,
+          type: "heading",
+          props: {
+            level,
+            inline: cloneInlineNodes(inline),
+            text: cleanHeading,
+            block: {
+              id: hId,
+              type: "heading",
+              isFinalized: true,
+              payload: {
+                raw: normalized,
+                inline: cloneInlineNodes(inline),
+                meta: { headingLevel: level },
+              },
+            },
+          },
+          range: createRange(baseOffset + cursor.from, baseOffset + cursor.to),
+          children: [],
+        });
+      } else if (name === "BulletList" || name === "OrderedList") {
+        const lId = `${idPrefix}::list:${childIndex++}`;
+        const ordered = name === "OrderedList";
+        const listSnap = buildListNodeSnapshot(block, cursor.node, ordered, lId, baseOffset, raw);
+        if (listSnap) {
+          children.push(listSnap);
+        }
+      } else if (name === "Blockquote") {
+        const bqId = `${idPrefix}::blockquote:${childIndex++}`;
+        const nestedSnap = buildBlockquoteNodeSnapshot(block, cursor.node, bqId, baseOffset, raw);
+        if (nestedSnap) {
+          children.push(nestedSnap);
+        }
+      } else if (name === "FencedCode" || name === "IndentedCode" || name === "CodeBlock") {
+        const cId = `${idPrefix}::code:${childIndex++}`;
+        const cRaw = raw.slice(cursor.from, cursor.to);
+        const normalized = normalizeBlockquoteText(cRaw);
+        const { code, info: infoString, hadFence } = stripCodeFence(normalized);
+        const body = hadFence ? dedentFencedCodeByClosingIndent(normalized, code) : dedentIndentedCode(normalized);
+        const { lang, meta } = parseCodeFenceInfo(infoString);
+        children.push({
+          id: cId,
+          type: "code",
+          props: {
+            block: {
+              id: cId,
+              type: "code",
+              isFinalized: true,
+              payload: {
+                raw: normalized,
+                meta: { ...meta, lang: lang || "text", code: body },
+              },
+            },
+          },
+          range: createRange(baseOffset + cursor.from, baseOffset + cursor.to),
+          children: [],
+        });
+      } else if (name === "HorizontalRule") {
+        const hrId = `${idPrefix}::thematicBreak:${childIndex++}`;
+        children.push({
+          id: hrId,
+          type: "thematicBreak",
+          props: {
+            block: {
+              id: hrId,
+              type: "thematicBreak",
+              isFinalized: true,
+              payload: { raw: raw.slice(cursor.from, cursor.to) },
+            },
+          },
+          range: createRange(baseOffset + cursor.from, baseOffset + cursor.to),
+          children: [],
+        });
+      } else if (name === "HTMLBlock") {
+        const htmlId = `${idPrefix}::html:${childIndex++}`;
+        const htmlRaw = normalizeBlockquoteText(raw.slice(cursor.from, cursor.to));
+        children.push({
+          id: htmlId,
+          type: "html",
+          props: {
+            block: {
+              id: htmlId,
+              type: "html",
+              isFinalized: true,
+              payload: { raw: htmlRaw },
+            },
+          },
+          range: createRange(baseOffset + cursor.from, baseOffset + cursor.to),
+          children: [],
+        });
+      }
+    } while (cursor.nextSibling());
+  }
+  return children;
 }
 
 function createSegmentSnapshot(
@@ -646,12 +1013,6 @@ function measureIndentColumns(value: string): number {
   return columns;
 }
 
-function removeHeadingMarkers(input: string): string {
-  return input
-    .replace(/^#{1,6}\s+/, "")
-    .replace(/\s+={2,}\s*$|\s+-{2,}\s*$/m, "")
-    .trim();
-}
 
 function createRange(from: number, to: number): { from: number; to: number } | undefined {
   if (!Number.isFinite(from) || !Number.isFinite(to) || to < from) {

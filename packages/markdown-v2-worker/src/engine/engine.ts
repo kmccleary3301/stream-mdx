@@ -1,5 +1,5 @@
 import { type Tree, TreeFragment } from "@lezer/common";
-import { parser as mdParser } from "@lezer/markdown";
+import { GFM, parser as mdParser } from "@lezer/markdown";
 import type {
   Block,
   BlockResolvedLinkReference,
@@ -105,6 +105,7 @@ import {
   computeChangedRanges,
   enrichListBlock,
   maybeBuildTocPatch,
+  parseGfmTableFromTree,
   reportWorkerStructuralInvariantViolations,
   slugifyHeading,
 } from "./parse-extract";
@@ -205,7 +206,7 @@ export class MarkdownEngine {
   private lazyTokenizationProcessing = false;
   private lazyTokenizationThresholdLines = DEFAULT_LAZY_TOKENIZATION_THRESHOLD;
   private lazyTokenizationEnabled = true;
-
+  private mdxEnabled = true;
   private readonly workerMdxCache = new Map<string, CompiledMdxModule>();
   private readonly workerMdxInflight = new Map<string, Promise<CompiledMdxModule>>();
   private mdxCompileMode: WorkerMdxMode = "server";
@@ -241,11 +242,8 @@ export class MarkdownEngine {
     this.postFn = options.post;
     this.extensions = options.extensions;
 
-    if (this.extensions?.markdown && this.extensions.markdown.length > 0) {
-      this.mdParser = mdParser.configure(this.extensions.markdown);
-    } else {
-      this.mdParser = mdParser;
-    }
+    const markdownExtensions = [GFM, ...(this.extensions?.markdown ?? [])];
+    this.mdParser = mdParser.configure(markdownExtensions);
 
     this.documentPluginRegistry = new DocumentPluginRegistry();
     if (this.extensions?.documentPlugins) {
@@ -540,6 +538,7 @@ export class MarkdownEngine {
       emitDiffBlocks: docPlugins?.emitDiffBlocks ?? false,
     };
 
+    this.mdxEnabled = enable.mdx;
     this.enableMath = enable.math;
     this.formatAnticipationConfig = normalizeFormatAnticipation(enable.formatAnticipation);
     if (enable.codeHighlighting === "incremental" || enable.codeHighlighting === "live" || enable.codeHighlighting === "final") {
@@ -752,6 +751,7 @@ export class MarkdownEngine {
       this.headingIdCounts = new Map<string, number>();
       const extracted: Block[] = [];
       const cursor = tree.cursor();
+      let hasRecognizedNodes = false;
       const reusableBlockMap =
         options.firstChangedPos !== undefined && options.previousBlocks
           ? new Map(
@@ -765,11 +765,19 @@ export class MarkdownEngine {
       if (cursor.firstChild()) {
         do {
           const nodeType = cursor.type.name;
-          const from = cursor.from;
+          if (nodeType === "LinkReference") {
+            hasRecognizedNodes = true;
+            continue;
+          }
+          let from = cursor.from;
           const to = cursor.to;
+          if (nodeType === "CodeBlock") {
+            const lineStart = content.lastIndexOf("\n", from - 1) + 1;
+            from = lineStart;
+          }
           const raw = content.slice(from, to);
-
           if (isBlockLevelNode(nodeType)) {
+            hasRecognizedNodes = true;
             const blockType = mapLezerNodeToBlockType(nodeType);
             let block: Block | null = null;
             if (reusableBlockMap && to <= options.firstChangedPos!) {
@@ -787,9 +795,8 @@ export class MarkdownEngine {
             }
 
             if (!block) {
-              block = await this.createBlock(blockType, raw, from, to, content, options);
+              block = await this.createBlock(blockType, raw, from, to, content, options, nodeType);
             }
-
             if (block && raw.trim()) {
               extracted.push(block);
             }
@@ -797,7 +804,7 @@ export class MarkdownEngine {
         } while (cursor.nextSibling());
       }
 
-      if (extracted.length === 0) {
+      if (extracted.length === 0 && !hasRecognizedNodes) {
         return await this.extractBlocksSimple(content, options);
       }
 
@@ -843,6 +850,8 @@ export class MarkdownEngine {
       currentPos += line.length + 1;
       if (line.trim() === "") {
         await finalizeParagraph();
+      } else if (line.trim().match(/^\[[^\]]+\]:\s*\S+/)) {
+        await finalizeParagraph();
       } else {
         currentParagraph.push(line);
       }
@@ -859,18 +868,37 @@ export class MarkdownEngine {
     to: number,
     fullContent: string,
     options: ParseOptions = {},
+    nodeType?: string,
   ): Promise<Block | null> {
     if (!raw.trim()) return null;
 
-    const id = generateBlockId(`${from}:${type}`, type);
     const isFinalized = options.forceFinalize ? true : to < fullContent.length - 1;
+    let blockType = type;
+    if (blockType === "table" && !isFinalized) {
+      blockType = "paragraph";
+    }
+
+    const id = generateBlockId(`${from}:${blockType}`, blockType);
+
+    const initialMeta: Record<string, unknown> = {};
+    if (nodeType === "SetextHeading1") {
+      initialMeta.headingLevel = 1;
+    } else if (nodeType === "SetextHeading2") {
+      initialMeta.headingLevel = 2;
+    } else if (nodeType && nodeType.startsWith("ATXHeading")) {
+      const lvl = parseInt(nodeType.slice(10), 10);
+      if (!Number.isNaN(lvl)) {
+        initialMeta.headingLevel = lvl;
+      }
+    }
 
     const block: Block = {
       id,
-      type,
+      type: blockType,
       isFinalized,
       payload: {
         raw,
+        meta: Object.keys(initialMeta).length > 0 ? initialMeta : undefined,
         range: { from, to },
       },
     };
@@ -952,7 +980,21 @@ export class MarkdownEngine {
       case "heading": {
         const rawHeading = typeof block.payload.raw === "string" ? block.payload.raw : "";
         const normalizedHeading = removeHeadingMarkers(rawHeading);
-        const headingLevel = Math.min(Math.max(rawHeading.match(/^#{1,6}/)?.[0].length ?? 1, 1), 6);
+        const metaLevel = (block.payload.meta as { headingLevel?: number } | undefined)?.headingLevel;
+        let headingLevel = metaLevel;
+        if (typeof headingLevel !== "number") {
+          const atxMatch = rawHeading.match(/^#{1,6}/);
+          if (atxMatch) {
+            headingLevel = atxMatch[0].length;
+          } else if (/(?:\r?\n)\s*=+\s*$/.test(rawHeading)) {
+            headingLevel = 1;
+          } else if (/(?:\r?\n)\s*-+\s*$/.test(rawHeading)) {
+            headingLevel = 2;
+          } else {
+            headingLevel = 1;
+          }
+        }
+        headingLevel = Math.min(Math.max(headingLevel, 1), 6);
         const baseSlug = slugifyHeading(normalizedHeading) || "heading";
         const nextCount = (this.headingIdCounts.get(baseSlug) ?? 0) + 1;
         this.headingIdCounts.set(baseSlug, nextCount);
@@ -981,7 +1023,6 @@ export class MarkdownEngine {
 
       case "blockquote": {
         const normalized = normalizeBlockquoteText(block.payload.raw ?? "");
-        block.payload.raw = normalized;
         const streamingParsed = !block.isFinalized ? this.parseInlineStreaming(normalized) : null;
         if (block.isFinalized) {
           block.payload.inline = this.inlineParser.parse(normalized);
@@ -1125,9 +1166,22 @@ export class MarkdownEngine {
       case "list":
         enrichListBlock(block, this.inlineParser, this.enableMath, this.formatAnticipationConfig);
         break;
-    }
 
-    if (block.type === "paragraph" || block.type === "html") {
+      case "table": {
+        const tableData = parseGfmTableFromTree(block.payload.raw ?? "", this.inlineParser);
+        if (tableData) {
+          block.payload.inline = [];
+          block.payload.meta = {
+            ...(block.payload.meta ?? {}),
+            header: tableData.header,
+            align: tableData.align,
+            rows: tableData.rows,
+          };
+        }
+        break;
+      }
+    }
+    if (this.mdxEnabled && (block.type === "paragraph" || block.type === "html")) {
       const maybeMeta = block.payload.meta as Record<string, unknown> | undefined;
       const protectedRanges = Array.isArray(maybeMeta?.protectedRanges) ? (maybeMeta?.protectedRanges as ProtectedRange[]) : undefined;
       const blockRange = block.payload.range;
@@ -1217,7 +1271,7 @@ export class MarkdownEngine {
       if (this.codeHighlightingMode === "final" || !hasHighlighter || !hasHighlightableContent) {
         this.incrementalHighlightStates.delete(block.id);
         block.payload.highlightedHtml = undefined;
-        const nextMeta = { ...baseMeta, ...meta, lang: resolvedLanguage } as Record<string, unknown>;
+        const nextMeta = { ...baseMeta, ...meta, lang: requestedLanguage, highlightLang: resolvedLanguage } as Record<string, unknown>;
         nextMeta.code = codeBody;
         delete nextMeta.highlightedLines;
         delete nextMeta.tokenLines;
@@ -1323,7 +1377,8 @@ export class MarkdownEngine {
         const nextMeta: Record<string, unknown> = {
           ...baseMeta,
           ...meta,
-          lang: resolvedLanguage,
+          lang: requestedLanguage,
+          highlightLang: resolvedLanguage,
           code: codeBody,
         };
         if (wantsHtml) {
@@ -1394,7 +1449,7 @@ export class MarkdownEngine {
         diffEnabled,
       );
       const effectiveLang = wantsHtml ? resolvedLanguage : resolvedTokenLanguage;
-      const nextMeta = { ...baseMeta, ...meta, lang: effectiveLang } as Record<string, unknown>;
+      const nextMeta = { ...baseMeta, ...meta, lang: requestedLanguage, highlightLang: effectiveLang } as Record<string, unknown>;
       nextMeta.code = codeBody;
       nextMeta.lazyTokenization = true;
       nextMeta.lazyTokenizedUntil = state.processedLines;
@@ -1444,7 +1499,8 @@ export class MarkdownEngine {
     const nextMeta: Record<string, unknown> = {
       ...baseMeta,
       ...meta,
-      lang: resolvedLanguage,
+      lang: requestedLanguage,
+      highlightLang: resolvedLanguage,
       code: codeBody,
     };
 
@@ -2158,7 +2214,7 @@ export class MarkdownEngine {
     const updated = cloneBlock(block);
     updated.payload.highlightedHtml = undefined;
     const effectiveLang = wantsHtml ? resolvedLanguage : resolvedTokenLanguage;
-    const nextMeta = { ...(updated.payload.meta ?? {}), ...meta, lang: effectiveLang } as Record<string, unknown>;
+    const nextMeta = { ...(updated.payload.meta ?? {}), ...meta, lang: requestedLanguage, highlightLang: effectiveLang } as Record<string, unknown>;
     nextMeta.lazyTokenization = true;
     nextMeta.lazyTokenizedUntil = state.processedLines;
     if (wantsHtml) {

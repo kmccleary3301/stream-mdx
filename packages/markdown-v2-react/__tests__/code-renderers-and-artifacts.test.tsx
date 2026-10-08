@@ -13,6 +13,7 @@ import {
   type CodeFenceRendererProps,
 } from "../src/components";
 import { BlockNodeRenderer } from "../src/renderer/node-views";
+import { compileMarkdownSnapshotDirect } from "@stream-mdx/worker/direct";
 import { createRendererStore } from "../src/renderer/store";
 
 function sleep(ms: number): Promise<void> {
@@ -355,9 +356,53 @@ async function testKaTeXMathAndOverride(): Promise<void> {
 
   root2.unmount();
 }
+async function testHtmlArtifactAndMetricRoutingFromCompile(): Promise<void> {
+  const window = await setupDom();
+  const container = window.document.getElementById("root");
+  assert.ok(container);
+  const root = createRoot(container);
+
+  const markdown = "```html-artifact\n<div class=\"viz\">Artifact View</div>\n```\n\n```metric\n42\n```";
+  const result = await compileMarkdownSnapshotDirect({ text: markdown });
+
+  assert.strictEqual(result.blocks.length, 2);
+  assert.strictEqual(result.blocks[0].payload.meta?.lang, "html-artifact");
+  assert.strictEqual(result.blocks[1].payload.meta?.lang, "metric");
+
+  const registry = new ComponentRegistry();
+  registry.setCodeRenderers({
+    "html-artifact": (props: CodeFenceRendererProps) => {
+      return React.createElement("div", { id: "custom-artifact-frame" }, props.code.trim());
+    },
+    metric: (props: CodeFenceRendererProps) => {
+      return React.createElement("div", { id: "custom-metric-badge" }, `Metric: ${props.code.trim()}`);
+    },
+  });
+
+  const store = createRendererStore(result.blocks);
+  root.render(
+    React.createElement(
+      React.Fragment,
+      null,
+      result.blocks.map((block) => React.createElement(BlockNodeRenderer, { key: block.id, store, blockId: block.id, registry })),
+    ),
+  );
+  await sleep(30);
+
+  const artifactEl = container.querySelector("#custom-artifact-frame");
+  assert.ok(artifactEl, "custom html-artifact codeRenderer must be matched");
+  assert.strictEqual(artifactEl.textContent, '<div class="viz">Artifact View</div>');
+
+  const metricEl = container.querySelector("#custom-metric-badge");
+  assert.ok(metricEl, "custom metric codeRenderer must be matched");
+  assert.strictEqual(metricEl.textContent, "Metric: 42");
+
+  root.unmount();
+}
 
 await testCodeRenderersNormalizationAndPrecedence();
 await testDiffRendererRowsAndTokens();
 await testArtifactFrameLifecycleAndSecurity();
 await testKaTeXMathAndOverride();
+await testHtmlArtifactAndMetricRoutingFromCompile();
 console.log("All codeRenderers, diff, artifact, and math tests passed successfully.");

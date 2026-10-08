@@ -10,6 +10,10 @@ import type {
 } from "@stream-mdx/core";
 import { PATCH_ROOT_ID } from "@stream-mdx/core";
 import type { ContentChangeRange } from "./types";
+import { parser as baseMdParser, GFM } from "@lezer/markdown";
+import type { SyntaxNode } from "@lezer/common";
+
+const listWorkerParser = baseMdParser.configure([GFM]);
 
 export function slugifyHeading(text: string): string {
   const normalized = text
@@ -154,42 +158,99 @@ export function enrichListBlock(
   enableMath = true,
   formatAnticipationConfig?: FormatAnticipationConfig,
 ): void {
-  const lines = (block.payload.raw ?? "").split("\n");
-  const itemsRaw: string[] = [];
-  let current: string[] | null = null;
+  const raw = block.payload.raw ?? "";
+  const tree = listWorkerParser.parse(raw);
+  const items: InlineNode[][] = [];
+  let isOrdered = false;
+  let startNumber: number | undefined;
 
-  const bulletRe = /^[-*+]\s+(.*)$/;
-  const orderedRe = /^\d+\.\s+(.*)$/;
-
-  for (const line of lines) {
-    const trimmed = line.trimEnd();
-    const bare = trimmed.trimStart();
-    const bulletMatch = bare.match(bulletRe);
-    const orderedMatch = bare.match(orderedRe);
-
-    if (bulletMatch || orderedMatch) {
-      if (current) {
-        itemsRaw.push(current.join("\n"));
+  let listNode: SyntaxNode | null = null;
+  const cursor = tree.topNode.cursor();
+  if (cursor.firstChild()) {
+    do {
+      if (cursor.type.name === "BulletList" || cursor.type.name === "OrderedList") {
+        listNode = cursor.node;
+        isOrdered = cursor.type.name === "OrderedList";
+        break;
       }
-      const content = (bulletMatch ? bulletMatch[1] : orderedMatch?.[1]) ?? "";
-      current = [content];
-    } else if (current) {
-      current.push(bare);
+    } while (cursor.nextSibling());
+  }
+
+  if (listNode) {
+    const itemCursor = listNode.cursor();
+    if (itemCursor.firstChild()) {
+      do {
+        if (itemCursor.type.name === "ListItem") {
+          let itemText = "";
+          const childCursor = itemCursor.node.cursor();
+          if (childCursor.firstChild()) {
+            do {
+              const name = childCursor.type.name;
+              if (name === "ListMark") {
+                if (isOrdered && startNumber === undefined) {
+                  const markText = raw.slice(childCursor.from, childCursor.to);
+                  const numMatch = markText.match(/^(\d+)/);
+                  if (numMatch) {
+                    startNumber = parseInt(numMatch[1], 10);
+                  }
+                }
+                continue;
+              }
+              if (name === "Task") {
+                const taskRaw = raw.slice(childCursor.from, childCursor.to);
+                const taskMatch = taskRaw.match(/^(\[[ xX]\])\s*(.*)/s);
+                itemText = taskMatch ? (taskMatch[2] ?? "") : taskRaw;
+                break;
+              }
+              if (name === "Paragraph") {
+                itemText = raw.slice(childCursor.from, childCursor.to);
+                break;
+              }
+            } while (childCursor.nextSibling());
+          }
+          items.push(inlineParser.parse(itemText));
+        }
+      } while (itemCursor.nextSibling());
     }
+  } else {
+    const lines = raw.split("\n");
+    const itemsRaw: string[] = [];
+    let current: string[] | null = null;
+    const bulletRe = /^[-*+]\s+(.*)$/;
+    const orderedRe = /^\d+[.)]\s+(.*)$/;
+
+    for (const line of lines) {
+      const trimmed = line.trimEnd();
+      const bare = trimmed.trimStart();
+      const bulletMatch = bare.match(bulletRe);
+      const orderedMatch = bare.match(orderedRe);
+
+      if (bulletMatch || orderedMatch) {
+        if (current) {
+          itemsRaw.push(current.join("\n"));
+        }
+        const content = (bulletMatch ? bulletMatch[1] : orderedMatch?.[1]) ?? "";
+        current = [content];
+      } else if (current) {
+        current.push(bare);
+      }
+    }
+
+    if (current) {
+      itemsRaw.push(current.join("\n"));
+    }
+
+    items.push(...itemsRaw.map((r) => inlineParser.parse(r)));
+    isOrdered = /^\d+[.)]/.test(lines[0]?.trimStart() || "");
   }
 
-  if (current) {
-    itemsRaw.push(current.join("\n"));
-  }
-
-  const items: InlineNode[][] = itemsRaw.map((raw) => inlineParser.parse(raw));
-  const isOrdered = /^\d+\./.test(lines[0]?.trimStart() || "");
   const existingMeta = (block.payload.meta ?? {}) as Record<string, unknown>;
   block.payload.meta = {
     ...existingMeta,
     ordered: isOrdered,
     items,
     mathEnabled: enableMath,
+    ...(startNumber !== undefined && startNumber !== 1 ? { start: startNumber } : {}),
   };
   if (!block.isFinalized && formatAnticipationConfig) {
     (block.payload.meta as Record<string, unknown>).formatAnticipation = formatAnticipationConfig;
@@ -326,4 +387,77 @@ export function collectChangedBlockIds(previousBlocks: Block[], nextBlocks: Bloc
     addIntersectingBlocks(ids, nextBlocks, range.fromB, range.toB);
   }
   return ids;
+}
+
+export function parseGfmTableFromTree(
+  raw: string,
+  inlineParser: InlineParser,
+): { header: InlineNode[][]; align: ("left" | "center" | "right" | null)[]; rows: InlineNode[][][] } | null {
+  const lines = raw.split("\n").filter((l) => l.trim().length > 0);
+  if (lines.length < 2) return null;
+  const headerLine = lines[0];
+  const delimLine = lines[1];
+  const bodyLines = lines.slice(2);
+
+  const splitCells = (line: string): string[] => {
+    let trimmed = line.trim();
+    if (trimmed.startsWith("|")) trimmed = trimmed.slice(1);
+    if (trimmed.endsWith("|")) {
+      let count = 0;
+      let j = trimmed.length - 2;
+      while (j >= 0 && trimmed[j] === "\\") {
+        count++;
+        j--;
+      }
+      if (count % 2 === 0) {
+        trimmed = trimmed.slice(0, -1);
+      }
+    }
+    const cells: string[] = [];
+    let cur = "";
+    let inCode = false;
+    for (let i = 0; i < trimmed.length; i++) {
+      const ch = trimmed[i];
+      if (ch === "`") {
+        inCode = !inCode;
+        cur += ch;
+      } else if (ch === "\\" && i + 1 < trimmed.length) {
+        cur += ch + trimmed[i + 1];
+        i++;
+      } else if (ch === "|" && !inCode) {
+        cells.push(cur.trim());
+        cur = "";
+      } else {
+        cur += ch;
+      }
+    }
+    cells.push(cur.trim());
+    return cells;
+  };
+
+  const headerCells = splitCells(headerLine);
+  const delimCells = splitCells(delimLine);
+  if (headerCells.length === 0 || delimCells.length === 0) return null;
+
+  const align: ("left" | "center" | "right" | null)[] = delimCells.map((cell) => {
+    const left = cell.startsWith(":");
+    const right = cell.endsWith(":");
+    if (left && right) return "center";
+    if (left) return "left";
+    if (right) return "right";
+    return null;
+  });
+
+  const header = headerCells.map((c) => inlineParser.parse(c.replace(/\\\|/g, "|")));
+  const colCount = header.length;
+
+  const rows: InlineNode[][][] = bodyLines.map((line) => {
+    const rowCells = splitCells(line);
+    while (rowCells.length < colCount) {
+      rowCells.push("");
+    }
+    return rowCells.slice(0, colCount).map((c) => inlineParser.parse(c.replace(/\\\|/g, "|")));
+  });
+
+  return { header, align: align.slice(0, colCount), rows };
 }

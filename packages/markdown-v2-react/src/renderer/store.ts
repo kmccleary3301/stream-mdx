@@ -57,6 +57,18 @@ function snapshotToBlock(node: NodeSnapshot): Block | null {
   if (candidate && typeof candidate === "object") {
     return cloneBlock(candidate as Block);
   }
+  if (node.type && node.id) {
+    return {
+      id: node.id,
+      type: node.type as Block["type"],
+      isFinalized: true,
+      payload: {
+        raw: typeof node.props?.raw === "string" ? node.props.raw : typeof node.props?.text === "string" ? node.props.text : "",
+        inline: Array.isArray(node.props?.inline) ? (node.props.inline as any) : undefined,
+        meta: node.props ?? {},
+      },
+    };
+  }
   return null;
 }
 
