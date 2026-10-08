@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Build the public worker entry for the worker realm: bundle the MDX compile pipeline with DOM-free `decode-named-character-reference` and `hast-util-from-html-isomorphic` variants. Custom worker entries bundled with a browser-targeted bundler boot in a Worker without `document` or `DOMParser` and emit `INITIALIZED`/`PATCH`/`FINALIZED` for native and serializable sources, including worker-mode MDX compilation. No consumer alias or DOM shim is required; the hosted worker bundle uses the same aliases instead of decoding entities through the worker DOM stub.
+- Build the public worker entry for the worker realm: bundle the MDX compile pipeline with DOM-free `decode-named-character-reference` and `hast-util-from-html-isomorphic` variants. Custom worker entries bundled with a browser-targeted bundler boot in a Worker without `document` or `DOMParser` and emit `INITIALIZED`/`PATCH`/`FINALIZED` for native and serializable sources, including worker-mode MDX compilation. No consumer alias or DOM shim is required; the hosted worker bundle uses the same aliases instead of decoding entities through the worker DOM stub. MDX development-mode selection reads `process.env.NODE_ENV` at runtime instead of a build-time browser substitution.
 
 ## 0.1.0
 
