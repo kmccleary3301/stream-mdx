@@ -176,6 +176,11 @@ Notes:
 - `npm run docs:build` and `npm run docs:dev` run `docs:snapshots:build`.
 - Pages default to snapshot render mode unless `STREAM_MDX_DOCS_ARTICLE_MODE=streaming`.
 
+Direct compilation owns a private engine and output queue. It does not install or
+reuse global `self`/`postMessage` transport bindings. Another worker runtime may
+replace those bindings without redirecting direct compilation output. Existing
+compile serialization, artifact hashes, and cache behavior remain unchanged.
+
 ## Runtime fallback
 
 When a snapshot file is missing or disabled by mode flag, docs routes fall back to the existing `StreamingArticle` worker render path.
