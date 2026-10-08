@@ -53,3 +53,21 @@ Whitespace normalization follows the official CommonMark test normalization spec
 - Whitespace immediately adjacent to block-level boundaries (leading/trailing inside blocks, or between block elements) is stripped.
 - HTML entities are decoded to standard Unicode characters (e.g. `&amp;` -> `&`, `&quot;` -> `"`, `&lt;` -> `<`, `&gt;` -> `>`).
 - Inside `<pre>` blocks, literal code text and newlines are preserved verbatim.
+
+## Residual standards boundaries
+
+`packages/markdown-v2-worker/__tests__/residual-standards-boundaries.test.ts` exercises direct compilation through the client store, SSR, and the hosted worker through `FINALIZED`, with chunk sizes 1, 7, and 64. It covers root and nested indented-code whitespace, invisible list definitions, FTP punctuation, balanced parentheses, entities, and native code/heading/list contexts.
+
+The three observed failures at `ac1eae7` were:
+
+| Case | Input as a JSON string | Before | Expected after |
+| --- | --- | --- | --- |
+| `cm_112` | `"    chunk1\n      \n      chunk2\n"` | Code text `"chunk1\n\n  chunk2"` | Code text `"chunk1\n  \n  chunk2"` |
+| `cm_317` | `"- a\n- b\n\n  [ref]: /url\n- d\n"` | `<ul><li>a</li><li>b</li><li>d</li></ul>` | `<ul><li><p>a</p></li><li><p>b</p></li><li><p>d</p></li></ul>` |
+| `gfm_628` FTP paragraph | `"Anonymous FTP is available at ftp://foo.bar.baz.\n"` | Literal FTP text | `<p>Anonymous FTP is available at <a href="ftp://foo.bar.baz">ftp://foo.bar.baz</a>.</p>` |
+
+FTP is required by the pinned `0.29.0.gfm.13` example, even though the current published GFM specification and micromark no longer include that FTP example. The native Lezer extension produces the existing `URL` node and follows Lezer's GFM domain and trailing-punctuation rules.
+
+No security policy changed. Existing explicit Markdown destinations and angle autolinks already retain FTP through `inline/lezer-converter.ts` and React's `renderInlineNodes`. The existing DOMPurify `ALLOWED_URI_REGEXP` in `security.ts` explicitly includes FTP via `(?:f|ht)tps?`. The separate exported `sanitizeURL` utility and raw-HTML worker sanitizer have narrower policies; neither is broadened by this change.
+
+The isolated residual-standards gate passed all 675 cases on client static, SSR, and hosted-worker streaming paths, with zero streaming divergences and all 427 baseline IDs retained. Core's 20 test files, React's 38 test files, package builds, and the hosted bundle build passed. The worker suite stopped at the independently owned `worker-footnotes-finalize.test.ts:79` assertion, where the finalized blockquote footnote number was `undefined` instead of `1`; this packet does not change footnote ownership or claim that suite is green.
