@@ -4,7 +4,7 @@ import { TableVirtualizationClient } from "@/components/screens/showcase/table-v
 export const metadata: Metadata = {
   title: "Table Row Virtualization Showcase",
   description:
-    "Executable showcase demonstrating high-performance table row virtualization, sticky headers, variable height row measurement, multiline cells, and last-row reachability.",
+    "A large table with measured multiline rows, sticky headers, configurable overscan, and controls to reach the last row.",
 };
 
 export default function TableVirtualizationPage() {

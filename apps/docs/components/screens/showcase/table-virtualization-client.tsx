@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { StreamingMarkdown } from "@stream-mdx/react";
 import type { TableVirtualizationOptions } from "@stream-mdx/react";
 
@@ -9,7 +9,7 @@ function generateTableMarkdown(rowCount: number): string {
   lines.push("# Large Dataset: Table Row Virtualization");
   lines.push("");
   lines.push(
-    "This showcase demonstrates high-performance table virtualization with **sticky headers**, **variable-height rows**, **multiline text cells**, and **stable spacer rows**.",
+    "This table uses **sticky headers**, **measured variable-height rows**, and **multiline cells**. Scroll to the last row to inspect the final record.",
   );
   lines.push("");
   lines.push("| ID | Metric Name | Status | Detailed Description | Latency (p95) | Memory |");
@@ -75,8 +75,8 @@ export function TableVirtualizationClient() {
         </div>
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Table Row Virtualization</h1>
         <p className="max-w-3xl text-sm text-muted">
-          Render hundreds of table rows smoothly while preserving native <code>&lt;table&gt;</code> structure, accessible sticky headers,
-          variable row heights for multiline cells, accurate spacer rows, and full reachability of the final row.
+          Only the visible rows and a bounded buffer mount after the table finalizes. The table uses native elements.
+          Every fifth description has three lines. The last record is <code>PK-{String(rowCount - 1).padStart(4, "0")}</code>.
         </p>
       </header>
 
@@ -156,7 +156,7 @@ export function TableVirtualizationClient() {
       <main ref={containerRef} className="route-panel overflow-hidden p-6" id="table-showcase-render-container">
         <StreamingMarkdown
           text={markdown}
-          features={{ tables: true }}
+          features={{ tables: true, html: true }}
           tableVirtualization={virtualizationConfig}
         />
       </main>

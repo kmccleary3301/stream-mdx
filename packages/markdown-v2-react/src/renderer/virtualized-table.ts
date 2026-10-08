@@ -1,46 +1,21 @@
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-/**
- * Configuration for table row virtualization.
- */
 export interface TableVirtualizationConfig {
-  /**
-   * Whether table row virtualization is enabled.
-   * Default: false (conservative opt-in).
-   */
+  /** Disabled by default. Only mounted, finalized tables can virtualize. */
   enabled: boolean;
-  /**
-   * Minimum number of body rows required to trigger virtualization.
-   * Tables with fewer rows render all rows normally.
-   * Default: 40.
-   */
+  /** Minimum body row count. Default: 40. */
   minRows: number;
-  /**
-   * Alias for minRows to align with code virtualization threshold convention.
-   */
+  /** Alias for minRows. */
   virtualizeThreshold?: number;
-  /**
-   * Initial estimated row height in pixels before concrete measurements occur.
-   * Default: 40.
-   */
+  /** Height in pixels used until a row is measured. Default: 40. */
   estimatedRowHeight: number;
-  /**
-   * Number of buffer rows rendered above and below the visible viewport.
-   * Bounded to avoid excessive DOM nodes while preventing blank flashes.
-   * Default: 8.
-   */
+  /** Buffer rows on each side of the viewport, bounded to 1–50. Default: 8. */
   overscan: number;
-  /**
-   * Maximum height of the scroll container (CSS string or pixel number).
-   * Default: "600px".
-   */
+  /** Scroll container maximum height. Default: "600px". */
   maxHeight: number | string;
 }
 
-/**
- * User-facing configuration for table virtualization: boolean or partial config.
- */
 export type TableVirtualizationOptions = boolean | Partial<TableVirtualizationConfig>;
 
 export const DEFAULT_TABLE_VIRTUALIZATION_CONFIG: TableVirtualizationConfig = Object.freeze({
@@ -52,134 +27,21 @@ export const DEFAULT_TABLE_VIRTUALIZATION_CONFIG: TableVirtualizationConfig = Ob
   maxHeight: "600px",
 });
 
-/**
- * Normalizes user options into a complete TableVirtualizationConfig.
- */
-export function resolveTableVirtualizationConfig(
-  options?: TableVirtualizationOptions,
-): TableVirtualizationConfig {
-  if (options === true) {
-    return { ...DEFAULT_TABLE_VIRTUALIZATION_CONFIG, enabled: true };
-  }
-  if (!options) {
-    return DEFAULT_TABLE_VIRTUALIZATION_CONFIG;
-  }
-  const minRows = options.minRows ?? options.virtualizeThreshold ?? DEFAULT_TABLE_VIRTUALIZATION_CONFIG.minRows;
-  // Bounded overscan: clamp between 1 and 50 rows
-  const overscan = Math.min(Math.max(1, options.overscan ?? DEFAULT_TABLE_VIRTUALIZATION_CONFIG.overscan), 50);
+export function resolveTableVirtualizationConfig(options?: TableVirtualizationOptions): TableVirtualizationConfig {
+  if (options === true) return { ...DEFAULT_TABLE_VIRTUALIZATION_CONFIG, enabled: true };
+  if (!options) return DEFAULT_TABLE_VIRTUALIZATION_CONFIG;
+  const threshold = options.minRows ?? options.virtualizeThreshold ?? 40;
+  const minRows = Number.isFinite(threshold) ? Math.max(1, Math.floor(threshold)) : 40;
+  const buffer = options.overscan ?? 8;
+  const overscan = Number.isFinite(buffer) ? Math.min(50, Math.max(1, Math.floor(buffer))) : 8;
+  const estimate = options.estimatedRowHeight ?? 40;
   return {
     enabled: options.enabled ?? true,
     minRows,
     virtualizeThreshold: minRows,
-    estimatedRowHeight: options.estimatedRowHeight ?? DEFAULT_TABLE_VIRTUALIZATION_CONFIG.estimatedRowHeight,
+    estimatedRowHeight: Number.isFinite(estimate) && estimate > 0 ? estimate : 40,
     overscan,
-    maxHeight: options.maxHeight ?? DEFAULT_TABLE_VIRTUALIZATION_CONFIG.maxHeight,
-  };
-}
-
-export interface TableVirtualWindow {
-  startIndex: number;
-  endIndex: number;
-  visibleStart: number;
-  visibleEnd: number;
-  topSpacerHeight: number;
-  bottomSpacerHeight: number;
-  totalHeight: number;
-  mountedRows: number;
-}
-
-/**
- * Calculates which table rows should be rendered based on scroll position and variable row heights.
- */
-export function calculateTableWindow(
-  rowCount: number,
-  scrollTop: number,
-  containerHeight: number,
-  getRowHeight: (index: number) => number,
-  config: TableVirtualizationConfig,
-): TableVirtualWindow {
-  if (rowCount === 0) {
-    return {
-      startIndex: 0,
-      endIndex: 0,
-      visibleStart: 0,
-      visibleEnd: 0,
-      topSpacerHeight: 0,
-      bottomSpacerHeight: 0,
-      totalHeight: 0,
-      mountedRows: 0,
-    };
-  }
-
-  // Precompute cumulative offsets: offsets[i] is the top of row i, offsets[rowCount] is total height
-  const offsets = new Float64Array(rowCount + 1);
-  offsets[0] = 0;
-  for (let i = 0; i < rowCount; i++) {
-    offsets[i + 1] = offsets[i] + getRowHeight(i);
-  }
-  const totalHeight = offsets[rowCount];
-
-  // If container height is unknown (e.g. before initial measurement), estimate from maxHeight or fallback
-  const effectiveContainerHeight =
-    containerHeight > 0
-      ? containerHeight
-      : typeof config.maxHeight === "number"
-        ? config.maxHeight
-        : 600;
-
-  // Viewport boundaries
-  const viewportTop = Math.max(0, scrollTop);
-  const viewportBottom = viewportTop + effectiveContainerHeight;
-
-  // Binary search for visibleStart: smallest row index i where offsets[i + 1] > viewportTop
-  let low = 0;
-  let high = rowCount - 1;
-  let visibleStart = 0;
-  while (low <= high) {
-    const mid = (low + high) >> 1;
-    if (offsets[mid + 1] > viewportTop) {
-      visibleStart = mid;
-      high = mid - 1;
-    } else {
-      low = mid + 1;
-    }
-  }
-
-  // Binary search for visibleEnd: largest row index i where offsets[i] < viewportBottom
-  low = visibleStart;
-  high = rowCount - 1;
-  let visibleEnd = visibleStart;
-  while (low <= high) {
-    const mid = (low + high) >> 1;
-    if (offsets[mid] < viewportBottom) {
-      visibleEnd = mid;
-      low = mid + 1;
-    } else {
-      high = mid - 1;
-    }
-  }
-
-  const visibleEndIndex = Math.min(rowCount, visibleEnd + 1);
-
-  // Apply bounded overscan
-  const overscan = Math.min(Math.max(1, config.overscan), 50);
-  const startIndex = Math.max(0, visibleStart - overscan);
-  const endIndex = Math.min(rowCount, visibleEndIndex + overscan);
-
-  // Spacer heights accurately reflect unrendered rows
-  const topSpacerHeight = offsets[startIndex];
-  const bottomSpacerHeight = offsets[rowCount] - offsets[endIndex];
-  const mountedRows = endIndex - startIndex;
-
-  return {
-    startIndex,
-    endIndex,
-    visibleStart,
-    visibleEnd: visibleEndIndex,
-    topSpacerHeight,
-    bottomSpacerHeight,
-    totalHeight,
-    mountedRows,
+    maxHeight: options.maxHeight ?? "600px",
   };
 }
 
@@ -192,167 +54,131 @@ export interface TableVirtualizationProps {
   columnCount: number;
 }
 
-/**
- * Hook for virtualized table scrolling and variable row height measurement.
- */
+/** Measurements follow stable renderer row IDs, not positions in the current window. */
 export function useVirtualizedTable(
-  rowCount: number,
-  configInput: TableVirtualizationOptions | undefined,
+  rowIds: ReadonlyArray<string>,
+  config: TableVirtualizationConfig,
   enabledCondition: boolean,
 ) {
-  const config = useMemo(() => resolveTableVirtualizationConfig(configInput), [configInput]);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [scrollTop, setScrollTop] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
+  const [headerHeight, setHeaderHeight] = useState(0);
   const [containerWidth, setContainerWidth] = useState(0);
-  const measuredHeightsRef = useRef<Map<number, number>>(new Map());
+  const measuredWidth = useRef(0);
+  const measuredHeights = useRef(new Map<string, number>());
   const [measureVersion, setMeasureVersion] = useState(0);
-
-  // Fallback getRowHeight using measured cache with fallback to estimatedRowHeight
-  const getRowHeight = useCallback(
-    (index: number) => {
-      return measuredHeightsRef.current.get(index) ?? config.estimatedRowHeight;
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [config.estimatedRowHeight, measureVersion],
-  );
-
+  const atBottom = useRef(false);
+  const rowCount = rowIds.length;
   const isVirtualized = enabledCondition && config.enabled && rowCount >= config.minRows;
 
-  // Handle scroll
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const target = e.currentTarget;
+  // Rebuild only when measurements or rows change, never for a scroll event.
+  const offsets = useMemo(() => {
+    void measureVersion;
+    const next = new Float64Array(rowCount + 1);
+    for (let index = 0; index < rowCount; index++) {
+      next[index + 1] = next[index] + (measuredHeights.current.get(rowIds[index]) ?? config.estimatedRowHeight);
+    }
+    return next;
+  }, [rowIds, rowCount, config.estimatedRowHeight, measureVersion]);
+
+  const handleScroll = useCallback((event: React.UIEvent<HTMLDivElement>) => {
+    const target = event.currentTarget;
+    atBottom.current = target.scrollTop > 0 && target.scrollHeight - target.clientHeight - target.scrollTop <= 1;
     setScrollTop(target.scrollTop);
     setContainerHeight(target.clientHeight);
   }, []);
 
-  // Window calculation
   const window = useMemo(() => {
-    if (!isVirtualized) {
-      return {
-        startIndex: 0,
-        endIndex: rowCount,
-        visibleStart: 0,
-        visibleEnd: rowCount,
-        topSpacerHeight: 0,
-        bottomSpacerHeight: 0,
-        totalHeight: 0,
-        mountedRows: rowCount,
-      };
+    if (!isVirtualized || rowCount === 0) {
+      return { startIndex: 0, endIndex: rowCount, topSpacerHeight: 0, bottomSpacerHeight: 0, mountedRows: rowCount };
     }
-    return calculateTableWindow(rowCount, scrollTop, containerHeight, getRowHeight, config);
-  }, [rowCount, scrollTop, containerHeight, getRowHeight, config, isVirtualized]);
-
-  // Observe container size (viewport / container resize)
-  useEffect(() => {
-    if (!isVirtualized || !containerRef.current) return;
-    if (typeof ResizeObserver === "undefined") return;
-
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.target === containerRef.current) {
-          const height = entry.contentRect.height;
-          const width = entry.contentRect.width;
-          if (height > 0) {
-            setContainerHeight((prev) => (Math.abs(prev - height) > 1 ? height : prev));
-          }
-          if (width > 0) {
-            setContainerWidth((prev) => (Math.abs(prev - width) > 1 ? width : prev));
-          }
-        }
-      }
-    });
-
-    resizeObserver.observe(containerRef.current);
-    if (containerRef.current.clientHeight > 0) {
-      setContainerHeight(containerRef.current.clientHeight);
+    const fallbackHeight = typeof config.maxHeight === "number" ? config.maxHeight : 600;
+    const viewportHeight = Math.max(1, (containerHeight || fallbackHeight) - headerHeight);
+    const top = Math.min(Math.max(0, scrollTop), Math.max(0, offsets[rowCount] - viewportHeight));
+    const bottom = top + viewportHeight;
+    let low = 0;
+    let high = rowCount;
+    while (low < high) {
+      const mid = (low + high) >>> 1;
+      if (offsets[mid + 1] <= top) low = mid + 1;
+      else high = mid;
     }
-    if (containerRef.current.clientWidth > 0) {
-      setContainerWidth(containerRef.current.clientWidth);
+    const startIndex = Math.max(0, low - config.overscan);
+    high = rowCount;
+    while (low < high) {
+      const mid = (low + high) >>> 1;
+      if (offsets[mid] < bottom) low = mid + 1;
+      else high = mid;
     }
-
-    return () => resizeObserver.disconnect();
-  }, [isVirtualized]);
-
-  // Observe and measure rendered rows (variable height + resizing column/viewport updates measurements)
-  useEffect(() => {
-    if (!isVirtualized || !containerRef.current) return;
-
-    const container = containerRef.current;
-    const rowElements = container.querySelectorAll<HTMLTableRowElement>("tbody tr[data-row-index]");
-    let hasChanges = false;
-
-    // Immediate DOM measurement
-    rowElements.forEach((tr) => {
-      const idxAttr = tr.getAttribute("data-row-index");
-      if (idxAttr !== null) {
-        const idx = Number.parseInt(idxAttr, 10);
-        const measured = tr.getBoundingClientRect().height || tr.offsetHeight;
-        if (measured > 0) {
-          const prev = measuredHeightsRef.current.get(idx);
-          if (prev === undefined || Math.abs(prev - measured) > 0.5) {
-            measuredHeightsRef.current.set(idx, measured);
-            hasChanges = true;
-          }
-        }
-      }
-    });
-
-    if (hasChanges) {
-      setMeasureVersion((v) => v + 1);
-    }
-
-    if (typeof ResizeObserver === "undefined") return;
-
-    const rowObserver = new ResizeObserver((entries) => {
-      let observerChange = false;
-      for (const entry of entries) {
-        const target = entry.target as HTMLElement;
-        const idxAttr = target.getAttribute("data-row-index");
-        if (idxAttr !== null) {
-          const idx = Number.parseInt(idxAttr, 10);
-          const height = entry.borderBoxSize?.[0]?.blockSize ?? target.offsetHeight;
-          if (height > 0) {
-            const prev = measuredHeightsRef.current.get(idx);
-            if (prev === undefined || Math.abs(prev - height) > 0.5) {
-              measuredHeightsRef.current.set(idx, height);
-              observerChange = true;
-            }
-          }
-        }
-      }
-      if (observerChange) {
-        setMeasureVersion((v) => v + 1);
-      }
-    });
-
-    rowElements.forEach((tr) => rowObserver.observe(tr));
-
-    return () => {
-      rowObserver.disconnect();
+    const endIndex = Math.min(rowCount, low + config.overscan);
+    return {
+      startIndex,
+      endIndex,
+      topSpacerHeight: offsets[startIndex],
+      bottomSpacerHeight: offsets[rowCount] - offsets[endIndex],
+      mountedRows: endIndex - startIndex,
     };
-  }, [isVirtualized, window.startIndex, window.endIndex, containerWidth]);
+  }, [isVirtualized, rowCount, offsets, scrollTop, containerHeight, headerHeight, config.maxHeight, config.overscan]);
 
-  // Scroll to row helper
-  const scrollToRow = useCallback(
-    (rowIndex: number) => {
-      if (!containerRef.current || rowIndex < 0 || rowIndex >= rowCount) return;
-      let targetTop = 0;
-      for (let i = 0; i < rowIndex; i++) {
-        targetTop += getRowHeight(i);
+  useEffect(() => {
+    if (!isVirtualized) return;
+    const container = containerRef.current;
+    if (!container) return;
+    const header = container.querySelector("thead");
+    const measureContainer = () => {
+      setScrollTop(container.scrollTop);
+      setContainerHeight(container.clientHeight);
+      setHeaderHeight(header?.getBoundingClientRect().height ?? 0);
+      const width = container.clientWidth;
+      if (measuredWidth.current !== width) {
+        measuredHeights.current.clear();
+        measuredWidth.current = width;
+        setContainerWidth(width);
+        setMeasureVersion((version) => version + 1);
       }
-      containerRef.current.scrollTop = targetTop;
-      setScrollTop(targetTop);
-    },
-    [rowCount, getRowHeight],
-  );
+    };
+    measureContainer();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measureContainer);
+    observer.observe(container);
+    if (header) observer.observe(header);
+    return () => observer.disconnect();
+  }, [isVirtualized, config.maxHeight]);
 
-  return {
-    containerRef,
-    window,
-    handleScroll,
-    scrollToRow,
-    config,
-    isVirtualized,
-  };
+  useEffect(() => {
+    if (!isVirtualized) return;
+    const container = containerRef.current;
+    if (!container) return;
+    const rows = container.querySelectorAll<HTMLTableRowElement>("tbody tr[data-row-id]");
+    const measureRows = () => {
+      let changed = false;
+      for (const row of rows) {
+        const id = row.dataset.rowId;
+        const height = row.getBoundingClientRect().height || row.offsetHeight;
+        if (!id || height <= 0) continue;
+        const previous = measuredHeights.current.get(id);
+        if (previous === undefined || Math.abs(previous - height) > 0.5) {
+          measuredHeights.current.set(id, height);
+          changed = true;
+        }
+      }
+      if (changed) setMeasureVersion((version) => version + 1);
+    };
+    measureRows();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measureRows);
+    for (const row of rows) observer.observe(row);
+    return () => observer.disconnect();
+  }, [isVirtualized, rowIds, window.startIndex, window.endIndex, containerWidth]);
+
+  // Newly measured tail rows may move the scroll boundary. Keep a bottom scroll at the bottom.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!isVirtualized || !container || !atBottom.current) return;
+    container.scrollTop = Math.max(0, container.scrollHeight - container.clientHeight);
+    setScrollTop(container.scrollTop);
+  }, [isVirtualized, offsets]);
+
+  return { containerRef, window, handleScroll, config, isVirtualized };
 }

@@ -1,386 +1,169 @@
-import assert from "node:assert";
+import assert from "node:assert/strict";
 import type { Block, InlineNode } from "@stream-mdx/core";
+import { StreamingMarkdown, type StreamingMarkdownHandle, type TableElements, type TableVirtualizationOptions } from "@stream-mdx/react";
+import { ComponentRegistry, MarkdownBlocksRenderer } from "@stream-mdx/react/server";
 import { JSDOM } from "jsdom";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { ComponentRegistry } from "../src/components";
-import { BlockNodeRenderer } from "../src/renderer/node-views";
-import { createRendererStore } from "../src/renderer/store";
-import { MarkdownBlocksRenderer } from "../src/server";
-import type { TableElements } from "../src/types";
-
-function sleep(ms: number): Promise<void> {
-  const { promise, resolve } = Promise.withResolvers<void>();
-  setTimeout(resolve, ms);
-  return promise;
-}
-
-function textNode(content: string): InlineNode {
-  return { type: "text", text: content };
-}
-
-function createTestTableBlock(rowCount: number, isFinalized = true): Block {
-  const header = [[textNode("ID")], [textNode("Title")], [textNode("Score")]];
-  const rows = Array.from({ length: rowCount }, (_, i) => [
-    [textNode(`Row-${i}`)],
-    [textNode(i % 10 === 0 ? `Multiline Title for row ${i}\nSecond line\nThird line` : `Title for row ${i}`)],
-    [textNode(`Score-${i * 100}`)],
-  ]);
-
-  return {
-    id: "table-1",
-    type: "table",
-    isFinalized,
-    payload: {
-      raw: "| ID | Title | Score |\n| --- | --- | --- |\n" + rows.map((_, i) => `| Row-${i} | Title | Score |`).join("\n"),
-      meta: {
-        header,
-        rows,
-        align: ["left", "left", "right"],
-      },
+const text = (value: string): InlineNode => ({ kind: "text", text: value });
+const block: Block = {
+  id: "consumer-table",
+  type: "table",
+  isFinalized: true,
+  payload: {
+    raw: "| ID | Description |\n| --- | --- |",
+    meta: {
+      header: [[text("ID")], [text("Description")]],
+      rows: Array.from({ length: 120 }, (_, index) => [[text(`Row-${index}`)], [text(`Description-${index}`)]]),
     },
-  };
+  },
+};
+const registry = new ComponentRegistry({}, {}, {}, { tableVirtualization: true });
+const ssr = renderToStaticMarkup(<MarkdownBlocksRenderer blocks={[block]} componentRegistry={registry} />);
+assert.equal((ssr.match(/data-row-id=/g) ?? []).length, 120, "public SSR renderer emits every body row");
+assert.ok(ssr.includes("Row-119"));
+assert.ok(!ssr.includes("markdown-table-spacer"));
+assert.ok(!ssr.includes('data-table-virtualized="true"'));
+
+// This implements the browser observation boundary, not a renderer collaborator.
+class TestResizeObserver implements ResizeObserver {
+  static instances = new Set<TestResizeObserver>();
+  readonly targets = new Set<Element>();
+  constructor(private readonly callback: ResizeObserverCallback) {
+    TestResizeObserver.instances.add(this);
+  }
+  observe(target: Element) { this.targets.add(target); }
+  unobserve(target: Element) { this.targets.delete(target); }
+  disconnect() {
+    this.targets.clear();
+    TestResizeObserver.instances.delete(this);
+  }
+  static notify() {
+    for (const observer of TestResizeObserver.instances) observer.callback([], observer);
+  }
 }
 
-class MockResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', { pretendToBeVisual: true });
+const globals = {
+  window: dom.window,
+  document: dom.window.document,
+  HTMLElement: dom.window.HTMLElement,
+  Node: dom.window.Node,
+  requestAnimationFrame: dom.window.requestAnimationFrame.bind(dom.window),
+  cancelAnimationFrame: dom.window.cancelAnimationFrame.bind(dom.window),
+  ResizeObserver: TestResizeObserver,
+};
+const previousGlobals = new Map(Object.keys(globals).map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
+for (const [key, value] of Object.entries(globals)) {
+  Object.defineProperty(globalThis, key, { configurable: true, writable: true, value });
 }
 
-function setupDomEnvironment() {
-  const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
-    pretendToBeVisual: true,
-  });
-  const { window } = dom;
-  const target = globalThis as unknown as Record<string, unknown>;
-  target.window = window;
-  target.document = window.document;
-  target.HTMLElement = window.HTMLElement;
-  target.HTMLTableElement = window.HTMLTableElement;
-  target.HTMLTableRowElement = window.HTMLTableRowElement;
-  target.HTMLTableCellElement = window.HTMLTableCellElement;
-  target.Node = window.Node;
-  target.requestAnimationFrame = window.requestAnimationFrame.bind(window);
-  target.cancelAnimationFrame = window.cancelAnimationFrame.bind(window);
-  target.ResizeObserver = MockResizeObserver;
-  return { dom, window };
+async function waitFor(predicate: () => boolean, message: string) {
+  const deadline = Date.now() + 5000;
+  while (!predicate()) {
+    assert.ok(Date.now() < deadline, message);
+    const { promise, resolve } = Promise.withResolvers<void>();
+    setTimeout(resolve, 10);
+    await promise;
+  }
 }
 
-async function runTableVirtualizationTestSuite(): Promise<void> {
-  console.log("Starting table virtualization test suite...");
+const container = dom.window.document.getElementById("root");
+assert.ok(container);
+const root = createRoot(container);
+const markdown = ["| ID | Description |", "| --- | --- |", ...Array.from({ length: 120 }, (_, index) => `| Row-${index} | Description-${index} |`)].join("\n");
+const handle = React.createRef<StreamingMarkdownHandle>();
+const customElements: TableElements = {
+  Table: (props) => <div data-custom-wrapper="true"><table {...props} data-custom="table" /></div>,
+  Thead: (props) => <thead {...props} data-custom="thead" />,
+  Tbody: (props) => <tbody {...props} data-custom="tbody" />,
+  Tr: (props) => <tr {...props} data-custom="tr" />,
+  Th: (props) => <th {...props} data-custom="th" />,
+  Td: (props) => <td {...props} data-custom="td" />,
+};
+const features = { tables: true };
+const render = (tableVirtualization?: TableVirtualizationOptions) => root.render(
+  <StreamingMarkdown ref={handle} engine="main-thread" text={markdown} features={features} caret={false}
+    tableElements={customElements} tableVirtualization={tableVirtualization} />,
+);
+const rows = () => container.querySelectorAll<HTMLTableRowElement>("tbody tr[data-row-id]");
+const scrollContainer = () => container.querySelector<HTMLDivElement>('[data-table-virtualized="true"]');
 
-  // 1. SSR Invariant: Full table rendered, zero spacer rows, all row data preserved
-  {
-    const block = createTestTableBlock(100, true);
-    const registry = new ComponentRegistry({}, {}, {}, {
-      tableVirtualization: { enabled: true, minRows: 20 },
-    });
+try {
+  render();
+  await waitFor(() => rows().length === 120, "default public consumer renders all rows");
+  await handle.current?.waitForIdle();
+  assert.equal(scrollContainer(), null, "virtualization is opt-in");
+  const firstId = rows()[0].dataset.rowId;
 
-    const html = renderToStaticMarkup(
-      React.createElement(MarkdownBlocksRenderer, {
-        blocks: [block],
-        componentRegistry: registry,
-      }),
-    );
-
-    assert.ok(html.includes("<table"), "SSR output must contain <table>");
-    assert.ok(html.includes("Row-0"), "SSR output must contain first row");
-    assert.ok(html.includes("Row-99"), "SSR output must contain last row (Row-99)");
-    assert.ok(html.includes("Row-50"), "SSR output must contain middle row (Row-50)");
-    assert.strictEqual(
-      html.includes("markdown-table-spacer"),
-      false,
-      "SSR output must NEVER contain spacer rows",
-    );
-    console.log("  [PASS] 1. SSR invariant: renders full table with all rows and no spacers");
+  render({ minRows: 40, estimatedRowHeight: 40, overscan: 2, maxHeight: 240 });
+  await waitFor(() => Boolean(scrollContainer()), "config changes enable virtualization without new text");
+  const viewport = scrollContainer();
+  assert.ok(viewport);
+  assert.equal(viewport.style.maxHeight, "240px");
+  assert.ok(rows().length < 120);
+  assert.equal(rows()[0].dataset.rowId, firstId, "row IDs survive full-to-windowed rendering");
+  for (const tag of ["table", "thead", "tbody", "tr", "th", "td"]) {
+    assert.ok(container.querySelector(`${tag}[data-custom="${tag}"]`), `custom ${tag} renders`);
   }
+  assert.ok(container.querySelector('[data-custom-wrapper="true"] table'));
+  assert.equal(container.querySelector("thead")?.style.position, "sticky");
+  const spacer = container.querySelector("tr.markdown-table-spacer-bottom");
+  assert.equal(spacer?.getAttribute("aria-hidden"), "true");
+  assert.equal(spacer?.querySelector("td")?.colSpan, 2);
 
-  // 2. Active Streaming Invariant: Unfinalized table renders all rows without virtualization
-  {
-    const { window } = setupDomEnvironment();
-    const container = window.document.getElementById("root");
-    assert.ok(container, "root container required");
-    const block = createTestTableBlock(80, false); // isFinalized: false (streaming)
-    const store = createRendererStore([block]);
-    const registry = new ComponentRegistry({}, {}, {}, {
-      tableVirtualization: { enabled: true, minRows: 20 },
-    });
-
-    const root = createRoot(container);
-    root.render(React.createElement(BlockNodeRenderer, { store, blockId: block.id, registry }));
-    await sleep(40);
-
-    const table = container.querySelector("table");
-    assert.ok(table, "expected table to render");
-    assert.strictEqual(
-      table.getAttribute("data-table-virtualized"),
-      "false",
-      "active streaming table must remain non-virtualized",
-    );
-    const rows = container.querySelectorAll("tbody tr");
-    assert.strictEqual(rows.length, 80, "active streaming table must render all 80 rows in the DOM");
-    assert.ok(container.textContent?.includes("Row-79"), "last row must be present during streaming");
-    assert.strictEqual(
-      container.querySelectorAll(".markdown-table-spacer").length,
-      0,
-      "active streaming table must not have spacer rows",
-    );
-
-    root.unmount();
-    console.log("  [PASS] 2. Active streaming invariant: renders all rows without virtualization");
+  // Six 40px visible rows plus two overscan rows. Measured 80px rows reduce the window.
+  Object.defineProperty(viewport, "clientHeight", { configurable: true, value: 240 });
+  Object.defineProperty(viewport, "clientWidth", { configurable: true, value: 800 });
+  for (const row of rows()) {
+    row.getBoundingClientRect = () => new dom.window.DOMRect(0, 0, 800, 80);
   }
+  TestResizeObserver.notify();
+  await waitFor(() => rows().length === 5, "ResizeObserver updates the window for variable row heights");
+  assert.equal(rows()[0].dataset.rowId, firstId);
 
-  // 3. Conservative Default Invariant: Large finalized table without opt-in renders all rows
-  {
-    const { window } = setupDomEnvironment();
-    const container = window.document.getElementById("root");
-    assert.ok(container, "root container required");
-    const block = createTestTableBlock(100, true);
-    const store = createRendererStore([block]);
-    const registry = new ComponentRegistry(); // default: tableVirtualization disabled
+  viewport.scrollTop = 100000;
+  viewport.dispatchEvent(new dom.window.Event("scroll"));
+  await waitFor(() => container.textContent?.includes("Row-119") ?? false, "scroll beyond estimates still reaches the last row");
+  assert.equal(container.querySelector(".markdown-table-spacer-bottom"), null);
+  assert.ok(container.querySelector(".markdown-table-spacer-top"));
 
-    const root = createRoot(container);
-    root.render(React.createElement(BlockNodeRenderer, { store, blockId: block.id, registry }));
-    await sleep(40);
+  render({ enabled: true, minRows: 40, overscan: 10000, maxHeight: 320 });
+  await waitFor(() => viewport.style.maxHeight === "320px", "maxHeight config updates a mounted table");
+  assert.ok(rows().length <= 60, "overscan is bounded to 50 rows at the bottom");
+  render();
+  await waitFor(() => rows().length === 120 && !scrollContainer(), "removing the config restores full rendering");
 
-    const table = container.querySelector("table");
-    assert.ok(table, "expected table to render");
-    assert.strictEqual(
-      table.getAttribute("data-table-virtualized"),
-      "false",
-      "default conservative configuration must not virtualize tables",
-    );
-    const rows = container.querySelectorAll("tbody tr");
-    assert.strictEqual(rows.length, 100, "default configuration must render all 100 rows");
-    assert.strictEqual(
-      container.querySelectorAll(".markdown-table-spacer").length,
-      0,
-      "default configuration must have zero spacer rows",
-    );
-
-    root.unmount();
-    console.log("  [PASS] 3. Conservative default invariant: large table unchanged without opt-in");
+  root.unmount();
+  const unfinishedRoot = createRoot(container);
+  unfinishedRoot.render(
+    <MarkdownBlocksRenderer blocks={[{ ...block, isFinalized: false }]} componentRegistry={registry} />,
+  );
+  await waitFor(() => rows().length === 120, "public renderer mounts every unfinished table row");
+  assert.equal(scrollContainer(), null, "unfinished table snapshots do not virtualize");
+  assert.equal(container.querySelector(".markdown-table-spacer"), null);
+  unfinishedRoot.unmount();
+  const streamingRoot = createRoot(container);
+  const { promise: streamFinished, resolve: finishStream } = Promise.withResolvers<void>();
+  const stream = (async function* () {
+    yield `${markdown}\n`;
+    await streamFinished;
+  })();
+  streamingRoot.render(<StreamingMarkdown ref={handle} engine="main-thread" stream={stream} features={features} tableVirtualization={true} caret={false} />);
+  await waitFor(() => container.textContent?.includes("Row-119") ?? false, "active stream retains all table content");
+  assert.equal(scrollContainer(), null, "unfinished stream must not virtualize its tail table");
+  finishStream();
+  handle.current?.finalize();
+  await waitFor(() => Boolean(scrollContainer()), "finalization enables windowing of the streamed table");
+  streamingRoot.unmount();
+  assert.equal(TestResizeObserver.instances.size, 0, "unmount disconnects all table observers");
+} finally {
+  for (const [key, descriptor] of previousGlobals) {
+    if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+    else Reflect.deleteProperty(globalThis, key);
   }
-
-  // 4. Small Table Threshold Invariant: Tables under minRows render all rows
-  {
-    const { window } = setupDomEnvironment();
-    const container = window.document.getElementById("root");
-    assert.ok(container, "root container required");
-    const block = createTestTableBlock(15, true);
-    const store = createRendererStore([block]);
-    const registry = new ComponentRegistry({}, {}, {}, {
-      tableVirtualization: { enabled: true, minRows: 40 },
-    });
-
-    const root = createRoot(container);
-    root.render(React.createElement(BlockNodeRenderer, { store, blockId: block.id, registry }));
-    await sleep(40);
-
-    const table = container.querySelector("table");
-    assert.ok(table, "expected table to render");
-    assert.strictEqual(
-      table.getAttribute("data-table-virtualized"),
-      "false",
-      "small table under threshold must not virtualize",
-    );
-    const rows = container.querySelectorAll("tbody tr");
-    assert.strictEqual(rows.length, 15, "small table must render all 15 rows");
-
-    root.unmount();
-    console.log("  [PASS] 4. Small table invariant: under threshold renders all rows");
-  }
-
-  // 5. Finalized Large Table Virtualization: Mounted browser virtualizes, renders windowed subset
-  {
-    const { window } = setupDomEnvironment();
-    const container = window.document.getElementById("root");
-    assert.ok(container, "root container required");
-    const block = createTestTableBlock(100, true);
-    const store = createRendererStore([block]);
-    const registry = new ComponentRegistry({}, {}, {}, {
-      tableVirtualization: {
-        enabled: true,
-        minRows: 25,
-        estimatedRowHeight: 40,
-        overscan: 6,
-        maxHeight: "500px",
-      },
-    });
-
-    const root = createRoot(container);
-    root.render(React.createElement(BlockNodeRenderer, { store, blockId: block.id, registry }));
-    await sleep(40);
-
-    const scrollContainer = container.querySelector(".markdown-table-container");
-    assert.ok(scrollContainer, "expected scroll container wrapper for virtualized table");
-    assert.strictEqual(
-      scrollContainer.getAttribute("data-table-virtualized"),
-      "true",
-      "expected data-table-virtualized='true'",
-    );
-    assert.strictEqual(
-      scrollContainer.getAttribute("data-table-total-rows"),
-      "100",
-      "expected data-table-total-rows='100'",
-    );
-
-    // Initial mounted rows should be a subset of 100
-    const mountedRowsAttr = Number(scrollContainer.getAttribute("data-table-mounted-rows"));
-    assert.ok(mountedRowsAttr > 0 && mountedRowsAttr < 100, `expected mounted rows < 100, got ${mountedRowsAttr}`);
-
-    // Sticky header check
-    const thead = container.querySelector("thead");
-    assert.ok(thead, "expected thead to exist");
-    assert.strictEqual(thead.style.position, "sticky", "thead must have sticky positioning");
-    assert.strictEqual(thead.style.top, "0px", "thead top must be 0");
-
-    // Native table structure check
-    assert.ok(container.querySelector("table"), "must render native table");
-    assert.ok(container.querySelector("tbody"), "must render native tbody");
-
-    // Spacer rows check: top spacer should be 0 (unrendered), bottom spacer should exist
-    const bottomSpacer = container.querySelector(".markdown-table-spacer-bottom");
-    assert.ok(bottomSpacer, "expected bottom spacer row for unrendered tail rows");
-    assert.strictEqual(bottomSpacer.getAttribute("aria-hidden"), "true", "spacer row must have aria-hidden='true'");
-
-    root.unmount();
-    console.log("  [PASS] 5. Finalized large table: mounts windowed subset with sticky header and spacer");
-  }
-
-  // 6. End-Row Reachability & Row Data Preservation: Scroll to bottom reaches row 99 with intact data
-  {
-    const { window } = setupDomEnvironment();
-    const container = window.document.getElementById("root");
-    assert.ok(container, "root container required");
-    const block = createTestTableBlock(100, true);
-    const store = createRendererStore([block]);
-    const registry = new ComponentRegistry({}, {}, {}, {
-      tableVirtualization: {
-        enabled: true,
-        minRows: 25,
-        estimatedRowHeight: 40,
-        overscan: 5,
-        maxHeight: "400px",
-      },
-    });
-
-    const root = createRoot(container);
-    root.render(React.createElement(BlockNodeRenderer, { store, blockId: block.id, registry }));
-    await sleep(40);
-
-    const scrollContainer = container.querySelector(".markdown-table-container") as HTMLElement | null;
-    assert.ok(scrollContainer, "expected scroll container");
-
-    // Simulate scrolling down to the bottom (100 rows * 40px = 4000px, container = 400px, scrollTop = 3600)
-    scrollContainer.scrollTop = 3600;
-    scrollContainer.dispatchEvent(new window.Event("scroll"));
-    await sleep(40);
-
-    // End-row reachability: Row-99 must be rendered and visible in DOM
-    const lastRow = container.querySelector('tr[data-row-id="table-1::row:99"]');
-    assert.ok(lastRow, "last row (Row-99) must be mounted when scrolled to bottom");
-    assert.ok(lastRow.textContent?.includes("Row-99"), "Row-99 data must be preserved");
-    assert.ok(lastRow.textContent?.includes("Score-9900"), "Row-99 score must be preserved");
-
-    // Bottom spacer must be zero or gone
-    const bottomSpacer = container.querySelector(".markdown-table-spacer-bottom");
-    assert.strictEqual(bottomSpacer, null, "bottom spacer must be 0 / unmounted at bottom");
-
-    // Top spacer must be present and accurate
-    const topSpacer = container.querySelector(".markdown-table-spacer-top") as HTMLElement | null;
-    assert.ok(topSpacer, "top spacer must exist when scrolled to bottom");
-    const topSpacerHeight = Number.parseFloat(topSpacer.style.height || "0");
-    assert.ok(topSpacerHeight > 2000, `expected large top spacer height, got ${topSpacerHeight}`);
-
-    root.unmount();
-    console.log("  [PASS] 6. End-row reachability: user reaches last row with full row data preserved");
-  }
-
-  // 7. Custom tableElements Preservation: Custom wrappers and tags are fully preserved
-  {
-    const { window } = setupDomEnvironment();
-    const container = window.document.getElementById("root");
-    assert.ok(container, "root container required");
-    const block = createTestTableBlock(50, true);
-    const store = createRendererStore([block]);
-
-    const customTableElements: TableElements = {
-      Table: ({ children, className, ...props }: React.TableHTMLAttributes<HTMLTableElement>) =>
-        React.createElement("table", { ...props, className: `custom-table-cls ${className ?? ""}`, "data-custom": "table" }, children),
-      Thead: ({ children, className, ...props }: React.HTMLAttributes<HTMLTableSectionElement>) =>
-        React.createElement("thead", { ...props, className: `custom-thead-cls ${className ?? ""}`, "data-custom": "thead" }, children),
-      Tbody: ({ children, className, ...props }: React.HTMLAttributes<HTMLTableSectionElement>) =>
-        React.createElement("tbody", { ...props, className: `custom-tbody-cls ${className ?? ""}`, "data-custom": "tbody" }, children),
-      Tr: ({ children, className, ...props }: React.HTMLAttributes<HTMLTableRowElement>) =>
-        React.createElement("tr", { ...props, className: `custom-tr-cls ${className ?? ""}`, "data-custom": "tr" }, children),
-      Th: ({ children, className, ...props }: React.ThHTMLAttributes<HTMLTableCellElement>) =>
-        React.createElement("th", { ...props, className: `custom-th-cls ${className ?? ""}`, "data-custom": "th" }, children),
-      Td: ({ children, className, ...props }: React.TdHTMLAttributes<HTMLTableCellElement>) =>
-        React.createElement("td", { ...props, className: `custom-td-cls ${className ?? ""}`, "data-custom": "td" }, children),
-    };
-
-    const registry = new ComponentRegistry({}, {}, {}, {
-      tableVirtualization: { enabled: true, minRows: 20 },
-    });
-    registry.setTableElements(customTableElements);
-
-    const root = createRoot(container);
-    root.render(React.createElement(BlockNodeRenderer, { store, blockId: block.id, registry }));
-    await sleep(40);
-
-    const customTable = container.querySelector('table[data-custom="table"]');
-    assert.ok(customTable, "custom Table component must be preserved");
-    const customThead = container.querySelector('thead[data-custom="thead"]');
-    assert.ok(customThead, "custom Thead component must be preserved");
-    const customTbody = container.querySelector('tbody[data-custom="tbody"]');
-    assert.ok(customTbody, "custom Tbody component must be preserved");
-    const customTrs = container.querySelectorAll('tr[data-custom="tr"]');
-    assert.ok(customTrs.length > 0, "custom Tr components must be preserved for rows");
-
-    root.unmount();
-    console.log("  [PASS] 7. Custom tableElements: preserved without broken wrappers or bypassed elements");
-  }
-
-  // 8. Dynamic Registry Effect: Calling setTableVirtualization triggers view re-render
-  {
-    const { window } = setupDomEnvironment();
-    const container = window.document.getElementById("root");
-    assert.ok(container, "root container required");
-    const block = createTestTableBlock(60, true);
-    const store = createRendererStore([block]);
-    const registry = new ComponentRegistry(); // Initially disabled
-
-    const root = createRoot(container);
-    root.render(React.createElement(BlockNodeRenderer, { store, blockId: block.id, registry }));
-    await sleep(40);
-
-    const initialTable = container.querySelector("table");
-    assert.ok(initialTable, "expected table");
-    assert.strictEqual(initialTable.getAttribute("data-table-virtualized"), "false");
-    assert.strictEqual(container.querySelectorAll("tbody tr").length, 60);
-
-    // Dynamically enable table virtualization via registry
-    registry.setTableVirtualization({ enabled: true, minRows: 20, overscan: 5 });
-    await sleep(40);
-
-    const scrollContainer = container.querySelector(".markdown-table-container");
-    assert.ok(scrollContainer, "expected scrollContainer to appear after registry update");
-    assert.strictEqual(scrollContainer.getAttribute("data-table-virtualized"), "true");
-    const mountedRows = container.querySelectorAll("tbody tr[data-row-id]");
-    assert.ok(mountedRows.length < 60, "expected fewer mounted rows after virtualization enabled");
-
-    root.unmount();
-    console.log("  [PASS] 8. Dynamic registry effect: setTableVirtualization triggers view re-render");
-  }
-
-  console.log("All table virtualization tests passed successfully!");
+  dom.window.close();
 }
-
-runTableVirtualizationTestSuite().catch((error: unknown) => {
-  console.error("Test failed:", error);
-  process.exitCode = 1;
-});
+console.log("public table virtualization consumer tests passed");

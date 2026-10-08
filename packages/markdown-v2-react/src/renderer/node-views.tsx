@@ -671,7 +671,12 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
   const tableElements = registry.getTableElements();
   const childIds = useRendererChildren(store, blockId);
 
-  const virtualizationConfig = registry.getTableVirtualization();
+  const subscribeVirtualization = React.useCallback(
+    (listener: () => void) => registry.subscribeTableVirtualization(listener),
+    [registry],
+  );
+  const getVirtualization = React.useCallback(() => registry.getTableVirtualization(), [registry]);
+  const virtualizationConfig = React.useSyncExternalStore(subscribeVirtualization, getVirtualization, getVirtualization);
   const virtualizationDisabled =
     typeof process !== "undefined" && typeof process.env === "object" && process.env.STREAM_MDX_DISABLE_VIRTUALIZED_TABLE === "true";
 
@@ -679,12 +684,6 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
   React.useEffect(() => {
     setMounted(true);
   }, []);
-  const [, setRegistryVersion] = React.useState(0);
-  React.useEffect(() => {
-    return registry.subscribeTableVirtualization(() => {
-      setRegistryVersion((v) => v + 1);
-    });
-  }, [registry]);
 
   const tbodyId = React.useMemo(() => {
     for (const childId of childIds) {
@@ -722,7 +721,7 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
   const isFinalized = Boolean(node?.block?.isFinalized);
   const canVirtualize = mounted && typeof window !== "undefined" && isFinalized && !virtualizationDisabled;
 
-  const virtualization = useVirtualizedTable(rowCount, virtualizationConfig, canVirtualize);
+  const virtualization = useVirtualizedTable(rowIds, virtualizationConfig, canVirtualize);
   const { isVirtualized, containerRef, handleScroll, window: virtualWindow, config } = virtualization;
 
   const virtualizationProps: TableVirtualizationProps | undefined = React.useMemo(() => {
@@ -748,7 +747,11 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
   };
 
   const tableElement = (
-    <tableElements.Table className="markdown-table w-full caption-bottom text-base" {...(!isVirtualized ? tableAttrs : {})}>
+    <tableElements.Table
+      className="markdown-table w-full caption-bottom text-base"
+      style={isVirtualized ? { tableLayout: "fixed", width: "100%" } : undefined}
+      {...(!isVirtualized ? tableAttrs : {})}
+    >
       {childIds.map((sectionId) => (
         <TableSectionView
           key={sectionId}
@@ -771,6 +774,7 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
           overflowY: "auto",
           overflowX: "auto",
           maxHeight,
+          overflowAnchor: "none",
         }}
         onScroll={handleScroll}
         tabIndex={0}

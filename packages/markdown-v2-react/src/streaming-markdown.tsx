@@ -620,9 +620,7 @@ function StreamingMarkdownComponent(
     if (artifactHtml !== undefined) {
       renderer.getComponentRegistry().setArtifactHtml(artifactHtml);
     }
-    if (tableVirtualization !== undefined) {
-      renderer.getComponentRegistry().setTableVirtualization(tableVirtualization);
-    }
+    renderer.getComponentRegistry().setTableVirtualization(tableVirtualization);
   }, [renderer, components, mdxComponents, inlineComponents, resolvedInlineComponents, tableElements, htmlElements, codeRenderers, mathRenderer, artifactHtml, tableVirtualization]);
 
   useEffect(() => {

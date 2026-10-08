@@ -75,7 +75,7 @@ const ref = useRef<StreamingMarkdownHandle>(null);
 | `components` | `Partial<BlockComponents>` | Override block renders (wrap code/math without affecting the patch scheduler). |
 | `inlineComponents` | `Partial<InlineComponents>` | Override inline renders. |
 | `tableElements` | `Partial<TableElements>` | Override table tags (e.g. Shadcn table wrappers). |
-| `tableVirtualization` | `boolean \| TableVirtualizationConfig` | Opt-in row virtualization for large tables. Conservative default (`false`). |
+| `tableVirtualization` | `boolean \| Partial<TableVirtualizationConfig>` | Opt-in row virtualization for large finalized tables. Default `false`. |
 | `htmlElements` | `Partial<HtmlElements>` | Override HTML tag renders (when HTML is enabled). |
 | `mdxComponents` | `Record<string, ComponentType>` | Component registry used when hydrating MDX. |
 | `caret` | `CaretMode` | Show a streaming caret while blocks are still in-flight. |
@@ -284,9 +284,9 @@ export function Article({ markdown }: { markdown: string }) {
 1. **ArtifactFrame (P4)**: Built-in sandboxed iframe renderer for fence languages `artifact` and `html-artifact` (and `html` with `artifactHtml: true`). Displays fallback code view while streaming; once finalized, mounts an isolated `<iframe sandbox="allow-scripts" srcdoc="...">` with strict CSP meta (`connect-src 'none'`), auto-height messaging, and links routed through `onLinkClick` or `openLink` (only `http:`, `https:`, `mailto:`).
 2. **DefaultDiffRenderer**: When a code block payload includes `meta.diffBlocks` (from worker `features.emitDiffBlocks`), it automatically renders a structured git diff table with line kinds, old/new line numbers, and token colors. Overridable via `codeRenderers={{ diff: CustomDiff }}`.
 
-## 3.3) Table Row Virtualization (`tableVirtualization`)
+## 3.3) Table row virtualization (`tableVirtualization`)
 
-StreamMDX supports configurable row virtualization for large tables to maintain 60 FPS scrolling and low memory footprint while preserving semantic HTML tables and accessible screen-reader trees.
+Opt in to render a viewport-sized subset of a large finalized table. Server rendering and active streaming still render every row. This option does not change parsing or discard row content.
 
 ```tsx
 <StreamingMarkdown
@@ -301,14 +301,17 @@ StreamMDX supports configurable row virtualization for large tables to maintain 
 />
 ```
 
-### Key Invariants
+### Rendering behavior
 
-- **Conservative Opt-In**: Disabled by default (`enabled: false`). Existing tables and SSR rendering remain completely unchanged.
-- **Mount and Finalization Guard**: Only finalized large tables virtualize on a mounted browser. SSR outputs all rows without truncation or spacers; active streaming tables render all rows progressively without windowing jumps.
-- **Semantic & Accessible**: Maintains native `<table>`, `<thead>`, `<tbody>`, `<tr>`, and `<td>` elements. Spacer rows use `aria-hidden="true"`, and the table header remains `sticky` and accessible.
-- **Variable Row Heights**: Accurately measures multiline cells and dynamic row heights via `ResizeObserver`. Resizing columns or viewport recalculates measurements without clipping content.
-- **Full Reachability**: End-row reachability ensures users can scroll to and view the very last row (`bottomSpacerHeight === 0`).
-- **Custom `tableElements` Compatible**: Works seamlessly with ShadCN or design-system table wrappers passed to `tableElements`.
+- Disabled by default. `true` enables the defaults; an options object enables virtualization unless `enabled` is `false`.
+- Only mounted, finalized tables at or above `minRows` virtualize. The initial browser render matches SSR, then switches to a row window after mounting.
+- The scroll container has a native sticky `<thead>` and an accessible name. Spacer rows are `aria-hidden`. Only mounted body rows appear in the accessibility tree; disable virtualization when every row must be available to assistive technology, browser find, or printing.
+- A `ResizeObserver` measures mounted rows, including multiline cells and later content resizes. Container width changes invalidate cached heights. Unmounted rows use their last measurement or `estimatedRowHeight`.
+- Row keys and `data-row-id` values stay stable as the window changes. Spacer heights account for omitted rows. Scrolling to the bottom mounts the final row.
+- Custom `tableElements` render the table, sections, cells, and spacers. They must forward DOM props and preserve native table tags. Avoid another scrolling wrapper around the table; it becomes the sticky header's scroll ancestor.
+- Changing or removing `tableVirtualization` updates the existing view without restarting the parser. `maxHeight` limits the outer scroll container and `overscan` is clamped to 1–50 rows on each side.
+
+Try `/showcase/table-virtualization` in the docs app. It contains up to 500 rows with two- and three-line descriptions, live configuration controls, and a "Scroll to Last Row" button. The page names the expected final record.
 
 ### Configuration Options (`TableVirtualizationConfig`)
 
