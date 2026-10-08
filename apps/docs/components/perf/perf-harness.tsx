@@ -17,6 +17,71 @@ const streamdownPlugins = {
 };
 
 
+export type BenchmarkProfile = "parity" | "rich";
+
+export interface ParityPolicyConfig {
+  profile: BenchmarkProfile;
+  mdx: boolean;
+  callouts: boolean;
+  math: {
+    singleDollar: boolean;
+    output: "htmlAndMathml";
+  };
+  syntaxHighlighting: {
+    code: boolean;
+    diff: string;
+    mode: string;
+  };
+  streamdownControls: boolean;
+  streamdownAnimation: boolean;
+  html: boolean;
+  gfm: boolean;
+  footnotes: boolean;
+  customMarkupOverrides: boolean;
+}
+
+export const PARITY_POLICY: ParityPolicyConfig = {
+  profile: "parity",
+  mdx: false,
+  callouts: false,
+  math: {
+    singleDollar: true,
+    output: "htmlAndMathml",
+  },
+  syntaxHighlighting: {
+    code: true,
+    diff: "grammar_only",
+    mode: "incremental",
+  },
+  streamdownControls: false,
+  streamdownAnimation: false,
+  html: true,
+  gfm: true,
+  footnotes: true,
+  customMarkupOverrides: false,
+};
+
+export const RICH_POLICY: ParityPolicyConfig = {
+  profile: "rich",
+  mdx: true,
+  callouts: true,
+  math: {
+    singleDollar: true,
+    output: "htmlAndMathml",
+  },
+  syntaxHighlighting: {
+    code: true,
+    diff: "grammar_only",
+    mode: "live",
+  },
+  streamdownControls: true,
+  streamdownAnimation: true,
+  html: true,
+  gfm: true,
+  footnotes: true,
+  customMarkupOverrides: true,
+};
+
 const DEFAULT_FORMAT_ANTICIPATION = {
   inline: true,
   mathInline: true,
@@ -36,6 +101,106 @@ const DEFAULT_FEATURES: NonNullable<StreamingMarkdownProps["features"]> = {
   formatAnticipation: DEFAULT_FORMAT_ANTICIPATION,
   liveCodeHighlighting: true,
 };
+
+const PARITY_FEATURES: NonNullable<StreamingMarkdownProps["features"]> = {
+  html: true,
+  tables: true,
+  math: true,
+  mdx: false,
+  callouts: false,
+  footnotes: true,
+  formatAnticipation: false,
+  liveCodeHighlighting: true,
+};
+
+export type LiveSubtreeCounts = {
+  elements: number;
+  pre: number;
+  code: number;
+  codeBlocks: number;
+  inlineCode: number;
+  table: number;
+  tr: number;
+  li: number;
+  math: number;
+  katex: number;
+};
+export type SemanticContent = {
+  rawLength: number;
+  normalizedLength: number;
+  normalizedTextHash: string;
+  preview: string;
+};
+
+async function collectLiveDomMetrics(root: HTMLElement | null): Promise<{
+  subtreeCounts: LiveSubtreeCounts;
+  semanticContent: SemanticContent;
+}> {
+  if (!root) {
+    return {
+      subtreeCounts: { elements: 0, pre: 0, code: 0, codeBlocks: 0, inlineCode: 0, table: 0, tr: 0, li: 0, math: 0, katex: 0 },
+      semanticContent: { rawLength: 0, normalizedLength: 0, normalizedTextHash: "", preview: "" },
+    };
+  }
+
+  const elements = root.querySelectorAll("*").length;
+  const pre = root.querySelectorAll("pre").length;
+  const code = root.querySelectorAll("code").length;
+  const inlineCode = root.querySelectorAll("code:not(pre code):not(pre *)").length;
+  const codeBlocks = root.querySelectorAll("pre, .markdown-code-block").length;
+  const table = root.querySelectorAll("table").length;
+  const tr = root.querySelectorAll("tr").length;
+  const li = root.querySelectorAll("li").length;
+  const math = root.querySelectorAll("math").length;
+  const katex = root.querySelectorAll(".katex").length;
+
+  // Normalize semantic text: clone root, remove duplicate MathML, remove control buttons
+  const clone = root.cloneNode(true) as HTMLElement;
+  // Remove duplicate MathML in KaTeX htmlAndMathml output so math text is not duplicated
+  clone.querySelectorAll(".katex-mathml").forEach((el) => el.remove());
+  // Exclude copied control strings (button labels, copy/download controls)
+  clone.querySelectorAll("button, [data-control], [aria-label*='Copy'], [aria-label*='Download']").forEach((el) => el.remove());
+
+  const rawText = clone.innerText ?? clone.textContent ?? "";
+  const normalizedText = rawText
+    .replace(/\r\n/g, "\n")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n\s*\n/g, "\n\n")
+    .trim();
+
+  let hash = "";
+  try {
+    if (typeof crypto !== "undefined" && crypto.subtle) {
+      const msgBuffer = new TextEncoder().encode(normalizedText);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      hash = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+    }
+  } catch {
+    hash = "hash-failed";
+  }
+
+  return {
+    subtreeCounts: {
+      elements,
+      pre,
+      code,
+      codeBlocks,
+      inlineCode,
+      table,
+      tr,
+      li,
+      math: math > 0 ? math : katex,
+      katex,
+    },
+    semanticContent: {
+      rawLength: rawText.length,
+      normalizedLength: normalizedText.length,
+      normalizedTextHash: hash,
+      preview: normalizedText.slice(0, 200),
+    },
+  };
+}
 
 const DEFAULT_SCHEDULING: StreamingSchedulerOptions = {
   batch: "microtask",
@@ -96,6 +261,8 @@ type PerfReport = {
     scenarioId: string;
     schedulingPreset: string;
     scheduling: StreamingSchedulerOptions;
+    profile: BenchmarkProfile;
+    policy: ParityPolicyConfig;
     updateIntervalMs: number;
     charRateCps: number;
     maxChunkChars: number;
@@ -105,6 +272,10 @@ type PerfReport = {
     totalChars: number;
     firstFlushAt: number | null;
     userAgent: string;
+    liveDom: {
+      subtreeCounts: LiveSubtreeCounts;
+      semanticContent: SemanticContent;
+    };
   };
   samples: {
     flushes: RendererMetrics[];
@@ -206,13 +377,14 @@ async function waitForWorker(handle: StreamingMarkdownHandle | null): Promise<vo
 export function PerfHarness(): JSX.Element {
   const searchParams = useSearchParams();
   const renderer = (searchParams.get("renderer") ?? "streammdx") as "streammdx" | "streamdown";
+  const profile = (searchParams.get("profile") ?? "parity") as BenchmarkProfile;
+  const policy = profile === "rich" ? RICH_POLICY : PARITY_POLICY;
   const fixtureId = searchParams.get("fixture") ?? "naive-bayes";
   const scenarioId = searchParams.get("scenario") ?? "S2_typical";
   const schedulingPreset = searchParams.get("scheduling") ?? "aggressive";
   const profilerEnabled = parseBoolean(searchParams.get("profiler")) ?? false;
   const queryKey = searchParams.toString();
   const scheduling = useMemo(() => buildScheduling(schedulingPreset, new URLSearchParams(queryKey)), [schedulingPreset, queryKey]);
-
   const [streamdownText, setStreamdownText] = useState("");
   const [streamdownIsAnimating, setStreamdownIsAnimating] = useState(false);
   const streamdownCommittedRef = useRef(0);
@@ -386,7 +558,11 @@ export function PerfHarness(): JSX.Element {
           await nextFrame();
         } else {
           setStreamdownText("");
-          setStreamdownIsAnimating(true);
+          if (profile === "rich") {
+            setStreamdownIsAnimating(true);
+          } else {
+            setStreamdownIsAnimating(false);
+          }
           streamdownCommittedRef.current = 0;
           await nextFrame();
         }
@@ -441,10 +617,14 @@ export function PerfHarness(): JSX.Element {
         }
         await nextFrame();
         await nextFrame();
+        await sleep(100);
+        await nextFrame();
         const runEnd = performance.now();
         stopLongTasks();
         stopRaf();
         stopMemory();
+
+        const liveDom = await collectLiveDomMetrics(rootRef.current);
 
         const report: PerfReport = {
           meta: {
@@ -454,6 +634,8 @@ export function PerfHarness(): JSX.Element {
             scenarioId,
             schedulingPreset,
             scheduling,
+            profile,
+            policy,
             updateIntervalMs: scenario.updateIntervalMs,
             charRateCps: scenario.charRateCps,
             maxChunkChars: scenario.maxChunkChars,
@@ -463,6 +645,7 @@ export function PerfHarness(): JSX.Element {
             totalChars: fixture.length,
             firstFlushAt: firstFlushAtRef.current,
             userAgent: navigator.userAgent,
+            liveDom,
           },
           samples: {
             flushes: flushesRef.current,
@@ -491,18 +674,19 @@ export function PerfHarness(): JSX.Element {
       stopRaf();
       stopMemory();
     };
-  }, [renderer, fixtureId, scenarioId, schedulingPreset, scheduling]);
+  }, [renderer, fixtureId, scenarioId, schedulingPreset, scheduling, profile, policy]);
 
   return (
     <div className="prose">
-      <div id="perf-root" ref={rootRef} data-fixture={fixtureId} data-scenario={scenarioId} data-renderer={renderer}>
+      <div id="perf-root" ref={rootRef} data-fixture={fixtureId} data-scenario={scenarioId} data-renderer={renderer} data-profile={profile}>
         {renderer === "streamdown" ? (
           profilerEnabled ? (
             <Profiler id="Streamdown" onRender={onProfile}>
               <StreamdownHost
                 text={streamdownText}
                 plugins={streamdownPlugins}
-                isAnimating={streamdownIsAnimating}
+                isAnimating={profile === "rich" ? streamdownIsAnimating : false}
+                controls={profile === "rich"}
                 onCommit={onStreamdownCommit}
               />
             </Profiler>
@@ -510,8 +694,33 @@ export function PerfHarness(): JSX.Element {
             <StreamdownHost
               text={streamdownText}
               plugins={streamdownPlugins}
-              isAnimating={streamdownIsAnimating}
+              isAnimating={profile === "rich" ? streamdownIsAnimating : false}
+              controls={profile === "rich"}
               onCommit={onStreamdownCommit}
+            />
+          )
+        ) : profile === "parity" ? (
+          profilerEnabled ? (
+            <Profiler id="StreamingMarkdown" onRender={onProfile}>
+              <StreamingMarkdown
+                ref={handleRef}
+                worker="/workers/markdown-worker.js"
+                className="markdown-v2-output"
+                features={PARITY_FEATURES}
+                scheduling={scheduling}
+                caret={false}
+                onMetrics={onMetrics}
+              />
+            </Profiler>
+          ) : (
+            <StreamingMarkdown
+              ref={handleRef}
+              worker="/workers/markdown-worker.js"
+              className="markdown-v2-output"
+              features={PARITY_FEATURES}
+              scheduling={scheduling}
+              caret={false}
+              onMetrics={onMetrics}
             />
           )
         ) : profilerEnabled ? (
@@ -558,11 +767,13 @@ function StreamdownHost({
   text,
   plugins,
   isAnimating,
+  controls,
   onCommit,
 }: {
   text: string;
   plugins: PluginConfig;
   isAnimating: boolean;
+  controls: boolean;
   onCommit: (textLength: number) => void;
 }) {
   useLayoutEffect(() => {
@@ -576,6 +787,7 @@ function StreamdownHost({
       parseIncompleteMarkdown={true}
       isAnimating={isAnimating}
       animated={false}
+      controls={controls}
     >
       {text}
     </Streamdown>

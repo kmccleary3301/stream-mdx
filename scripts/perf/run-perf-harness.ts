@@ -32,6 +32,7 @@ const BASE_URL =
   getArg("--baseUrl") ?? getArg("--url") ?? process.env.STREAM_MDX_PERF_BASE_URL ?? "http://localhost:3000";
 
 const RENDERER = getArg("--renderer") ?? process.env.STREAM_MDX_PERF_RENDERER ?? "streammdx";
+const PROFILE = getArg("--profile") ?? process.env.STREAM_MDX_PERF_PROFILE ?? "parity";
 const WORKTREE = getArg("--worktree") ?? process.env.STREAM_MDX_PERF_WORKTREE ?? process.cwd();
 const FIXTURE = getArg("--fixture") ?? process.env.STREAM_MDX_PERF_FIXTURE ?? "naive-bayes";
 const SCENARIO = getArg("--scenario") ?? process.env.STREAM_MDX_PERF_SCENARIO ?? "S2_typical";
@@ -64,6 +65,8 @@ type PerfReport = {
   meta: {
     renderer: string;
     rendererVersion: string;
+    profile: string;
+    policy: Record<string, unknown>;
     fixtureId: string;
     scenarioId: string;
     schedulingPreset: string;
@@ -77,6 +80,24 @@ type PerfReport = {
     totalChars: number;
     firstFlushAt: number | null;
     userAgent: string;
+    liveDom: {
+      subtreeCounts: {
+        elements: number;
+        pre: number;
+        code: number;
+        table: number;
+        tr: number;
+        li: number;
+        math: number;
+        katex: number;
+      };
+      semanticContent: {
+        rawLength: number;
+        normalizedLength: number;
+        normalizedTextHash: string;
+        preview: string;
+      };
+    };
   };
   samples: {
     flushes: Array<{
@@ -143,6 +164,12 @@ type RunMetadata = {
   worktree: string;
   renderer: string;
   rendererVersion: string;
+  profile: string;
+  policy: Record<string, unknown>;
+  rendererVersions: {
+    streammdx: string;
+    streamdown: string;
+  };
   chromeVersion: string;
   os: {
     platform: string;
@@ -168,11 +195,31 @@ type RunMetadata = {
   };
 };
 
+type LiveSubtreeCounts = {
+  elements: number;
+  pre: number;
+  code: number;
+  codeBlocks: number;
+  inlineCode: number;
+  table: number;
+  tr: number;
+  li: number;
+  math: number;
+  katex: number;
+};
+
+type SemanticContentSummary = {
+  rawLength: number;
+  normalizedLength: number;
+  normalizedTextHash: string;
+  preview?: string;
+};
 type Summary = {
   metadata?: RunMetadata;
   config: {
     baseUrl: string;
     renderer: string;
+    profile: string;
     fixture: string;
     scenario: string;
     scheduling: string;
@@ -200,8 +247,10 @@ type Summary = {
     rafOver50: number;
     memoryMB: { start: number | null; peak: number | null; end: number | null };
     cdp: CdpMetrics | null;
-    domEnd: DomCounters | null;
-    domDelta: DomCounters | null;
+    liveSubtree: LiveSubtreeCounts | null;
+    semanticContent: SemanticContentSummary | null;
+    cdpHeapDomEnd: DomCounters | null;
+    cdpHeapDomDelta: DomCounters | null;
     profilerActual: Stats | null;
     profilerBase: Stats | null;
   }>;
@@ -216,8 +265,20 @@ type Summary = {
     cdpLayoutMs: Stats | null;
     cdpRecalcStyleMs: Stats | null;
     cdpPaintMs: Stats | null;
-    domNodesEnd: Stats | null;
-    domListenersEnd: Stats | null;
+    liveElements: Stats | null;
+    livePre: Stats | null;
+    liveCode: Stats | null;
+    liveCodeBlocks: Stats | null;
+    liveInlineCode: Stats | null;
+    liveTable: Stats | null;
+    liveLi: Stats | null;
+    liveMath: Stats | null;
+    semanticTextLength: Stats | null;
+    semanticTextHash: string | null;
+    cdpHeapTotalNodesEnd: Stats | null;
+    cdpHeapTotalNodesDelta: Stats | null;
+    cdpHeapListenersEnd: Stats | null;
+    cdpHeapDocumentsEnd: Stats | null;
     profilerActual: Stats | null;
     profilerBase: Stats | null;
   };
@@ -313,6 +374,7 @@ function getRendererVersion(renderer: string, targetWorktree: string): string {
 function buildUrl(): string {
   const url = new URL("/perf/harness/", BASE_URL);
   url.searchParams.set("renderer", RENDERER);
+  url.searchParams.set("profile", PROFILE);
   url.searchParams.set("fixture", FIXTURE);
   url.searchParams.set("scenario", SCENARIO);
   url.searchParams.set("scheduling", SCHEDULING);
@@ -397,8 +459,10 @@ function summarizeRun(entry: PerfRun) {
   const profilerActual = report.samples.profiler.map((entry) => entry.actualDuration);
   const profilerBase = report.samples.profiler.map((entry) => entry.baseDuration);
   const cdpMetrics = entry.cdp.metrics;
-  const domEnd = entry.cdp.domEnd;
-  const domDelta = entry.cdp.domDelta;
+  const cdpHeapDomEnd = entry.cdp.domEnd;
+  const cdpHeapDomDelta = entry.cdp.domDelta;
+  const liveSubtree = report.meta.liveDom?.subtreeCounts ?? null;
+  const semanticContent = report.meta.liveDom?.semanticContent ?? null;
 
   const timeToFirstFlushMs =
     report.meta.firstFlushAt === null ? null : Math.max(0, report.meta.firstFlushAt - report.meta.runStart);
@@ -423,8 +487,10 @@ function summarizeRun(entry: PerfRun) {
       end: memory.length > 0 ? memory[memory.length - 1] : null,
     },
     cdp: cdpMetrics,
-    domEnd,
-    domDelta,
+    liveSubtree,
+    semanticContent,
+    cdpHeapDomEnd,
+    cdpHeapDomDelta,
     profilerActual: stats(profilerActual),
     profilerBase: stats(profilerBase),
   };
@@ -434,6 +500,11 @@ function formatSummaryText(summary: Summary): string {
   const lines: string[] = [];
   lines.push("stream-mdx perf harness summary");
   lines.push(`renderer: ${summary.config.renderer} (${summary.metadata?.rendererVersion ?? "unknown"})`);
+  lines.push(`profile: ${summary.config.profile}`);
+  if (summary.metadata?.policy) {
+    const p = summary.metadata.policy;
+    lines.push(`policy: mdx=${p.mdx}, callouts=${p.callouts}, math=${JSON.stringify(p.math)}, controls=${p.streamdownControls}`);
+  }
   if (summary.metadata) {
     lines.push(`git SHA: ${summary.metadata.gitSha}`);
     lines.push(`worktree: ${summary.metadata.worktree}`);
@@ -488,12 +559,38 @@ function formatSummaryText(summary: Summary): string {
       `cdp script p50/p95: ${summary.aggregate.cdpScriptMs.p50.toFixed(2)} / ${summary.aggregate.cdpScriptMs.p95.toFixed(2)} ms`,
     );
   }
-  if (summary.aggregate.domNodesEnd && summary.aggregate.domListenersEnd) {
+  // Clearly distinguish live document subtree attached DOM vs CDP heap nodes
+  lines.push("--- Live Document Subtree (Attached DOM Nodes) ---");
+  if (summary.aggregate.liveElements) {
+    lines.push(`live elements p50/p95: ${summary.aggregate.liveElements.p50.toFixed(0)} / ${summary.aggregate.liveElements.p95.toFixed(0)}`);
+  }
+  if (summary.aggregate.livePre && summary.aggregate.liveCode) {
+    lines.push(`live pre/code p50: ${summary.aggregate.livePre.p50.toFixed(0)} / ${summary.aggregate.liveCode.p50.toFixed(0)} (fenced: ${summary.aggregate.liveCodeBlocks?.p50.toFixed(0) ?? "n/a"}, inline: ${summary.aggregate.liveInlineCode?.p50.toFixed(0) ?? "n/a"})`);
+  }
+  if (summary.aggregate.liveTable && summary.aggregate.liveTr && summary.aggregate.liveLi) {
+    lines.push(`live table/tr/li p50: ${summary.aggregate.liveTable.p50.toFixed(0)} / ${summary.aggregate.liveTr.p50.toFixed(0)} / ${summary.aggregate.liveLi.p50.toFixed(0)}`);
+  }
+  if (summary.aggregate.liveMath) {
+    lines.push(`live math p50: ${summary.aggregate.liveMath.p50.toFixed(0)}`);
+  }
+  if (summary.aggregate.semanticTextLength) {
+    lines.push(`visible semantic text length p50: ${summary.aggregate.semanticTextLength.p50.toFixed(0)} chars`);
+  }
+  if (summary.aggregate.semanticTextHash) {
+    lines.push(`visible semantic text SHA-256: ${summary.aggregate.semanticTextHash}`);
+  }
+  lines.push("--- Browser Heap / CDP DOM Counters (Includes Detached Nodes) ---");
+  if (summary.aggregate.cdpHeapTotalNodesEnd && summary.aggregate.cdpHeapListenersEnd) {
     lines.push(
-      `dom nodes p50/p95: ${summary.aggregate.domNodesEnd.p50.toFixed(0)} / ${summary.aggregate.domNodesEnd.p95.toFixed(0)}`,
+      `cdp heap total nodes p50/p95: ${summary.aggregate.cdpHeapTotalNodesEnd.p50.toFixed(0)} / ${summary.aggregate.cdpHeapTotalNodesEnd.p95.toFixed(0)}`,
     );
+    if (summary.aggregate.cdpHeapTotalNodesDelta) {
+      lines.push(
+        `cdp heap total nodes delta p50/p95: ${summary.aggregate.cdpHeapTotalNodesDelta.p50.toFixed(0)} / ${summary.aggregate.cdpHeapTotalNodesDelta.p95.toFixed(0)}`,
+      );
+    }
     lines.push(
-      `dom listeners p50/p95: ${summary.aggregate.domListenersEnd.p50.toFixed(0)} / ${summary.aggregate.domListenersEnd.p95.toFixed(0)}`,
+      `cdp heap listeners p50/p95: ${summary.aggregate.cdpHeapListenersEnd.p50.toFixed(0)} / ${summary.aggregate.cdpHeapListenersEnd.p95.toFixed(0)}`,
     );
   }
   return `${lines.join("\n")}\n`;
@@ -554,6 +651,12 @@ async function run(): Promise<void> {
     worktree: path.resolve(WORKTREE),
     renderer: RENDERER,
     rendererVersion: getRendererVersion(RENDERER, WORKTREE),
+    profile: PROFILE,
+    policy: outputs[0]?.report.meta.policy ?? {},
+    rendererVersions: {
+      streammdx: getRendererVersion("streammdx", WORKTREE),
+      streamdown: getRendererVersion("streamdown", WORKTREE),
+    },
     chromeVersion: browser.version(),
     os: {
       platform: os.platform(),
@@ -584,8 +687,8 @@ async function run(): Promise<void> {
     config: {
       baseUrl: BASE_URL,
       renderer: RENDERER,
+      profile: PROFILE,
       fixture: FIXTURE,
-      scenario: SCENARIO,
       scheduling: SCHEDULING,
       overrides: SCHEDULING_OVERRIDES,
       runs: RUNS,
@@ -606,8 +709,21 @@ async function run(): Promise<void> {
       cdpLayoutMs: statsFromRuns(runSummaries.map((run) => run.cdp?.layoutMs ?? null)),
       cdpRecalcStyleMs: statsFromRuns(runSummaries.map((run) => run.cdp?.recalcStyleMs ?? null)),
       cdpPaintMs: statsFromRuns(runSummaries.map((run) => run.cdp?.paintMs ?? null)),
-      domNodesEnd: statsFromRuns(runSummaries.map((run) => run.domEnd?.nodes ?? null)),
-      domListenersEnd: statsFromRuns(runSummaries.map((run) => run.domEnd?.jsEventListeners ?? null)),
+      liveElements: statsFromRuns(runSummaries.map((run) => run.liveSubtree?.elements ?? null)),
+      livePre: statsFromRuns(runSummaries.map((run) => run.liveSubtree?.pre ?? null)),
+      liveCode: statsFromRuns(runSummaries.map((run) => run.liveSubtree?.code ?? null)),
+      liveCodeBlocks: statsFromRuns(runSummaries.map((run) => run.liveSubtree?.codeBlocks ?? null)),
+      liveInlineCode: statsFromRuns(runSummaries.map((run) => run.liveSubtree?.inlineCode ?? null)),
+      liveTable: statsFromRuns(runSummaries.map((run) => run.liveSubtree?.table ?? null)),
+      liveTr: statsFromRuns(runSummaries.map((run) => run.liveSubtree?.tr ?? null)),
+      liveLi: statsFromRuns(runSummaries.map((run) => run.liveSubtree?.li ?? null)),
+      liveMath: statsFromRuns(runSummaries.map((run) => run.liveSubtree?.math ?? null)),
+      semanticTextLength: statsFromRuns(runSummaries.map((run) => run.semanticContent?.normalizedLength ?? null)),
+      semanticTextHash: runSummaries[0]?.semanticContent?.normalizedTextHash ?? null,
+      cdpHeapTotalNodesEnd: statsFromRuns(runSummaries.map((run) => run.cdpHeapDomEnd?.nodes ?? null)),
+      cdpHeapTotalNodesDelta: statsFromRuns(runSummaries.map((run) => run.cdpHeapDomDelta?.nodes ?? null)),
+      cdpHeapListenersEnd: statsFromRuns(runSummaries.map((run) => run.cdpHeapDomEnd?.jsEventListeners ?? null)),
+      cdpHeapDocumentsEnd: statsFromRuns(runSummaries.map((run) => run.cdpHeapDomEnd?.documents ?? null)),
       profilerActual: statsFromRuns(runSummaries.map((run) => run.profilerActual?.p95 ?? null)),
       profilerBase: statsFromRuns(runSummaries.map((run) => run.profilerBase?.p95 ?? null)),
     },
