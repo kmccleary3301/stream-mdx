@@ -1,0 +1,329 @@
+import type {
+  Block,
+  FormatAnticipationConfig,
+  InlineNode,
+  InlineParser,
+  MixedContentSegment,
+  Patch,
+  ProtectedRange,
+  TocHeading,
+} from "@stream-mdx/core";
+import { PATCH_ROOT_ID } from "@stream-mdx/core";
+import type { ContentChangeRange } from "./types";
+
+export function slugifyHeading(text: string): string {
+  const normalized = text
+    .trim()
+    .toLowerCase()
+    .replace(/[\u0000-\u001f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-");
+  return normalized;
+}
+
+export function buildTocHeadings(blocksInput: Block[]): TocHeading[] {
+  const headings: TocHeading[] = [];
+
+  for (const block of blocksInput) {
+    if (block.type !== "heading") continue;
+    const meta = (block.payload.meta ?? {}) as Record<string, unknown>;
+    const levelRaw = typeof meta.headingLevel === "number" ? meta.headingLevel : 1;
+    const level = Math.min(Math.max(levelRaw, 1), 6);
+    const id = typeof meta.headingId === "string" ? meta.headingId : slugifyHeading(String(block.payload.raw ?? ""));
+    const text = typeof meta.headingText === "string" ? meta.headingText : String(block.payload.raw ?? "");
+    headings.push({
+      id: id || "heading",
+      level,
+      text: text.trim(),
+    });
+  }
+
+  return headings;
+}
+
+export function tocSignatureFor(headings: TocHeading[]): string {
+  if (headings.length === 0) return "";
+  return headings.map((heading) => `${heading.id}:${heading.level}:${heading.text}`).join("|");
+}
+
+export function maybeBuildTocPatch(
+  blocksInput: Block[],
+  currentSignature: string,
+): { patch: Patch | null; nextHeadings: TocHeading[]; nextSignature: string } {
+  const nextHeadings = buildTocHeadings(blocksInput);
+  const nextSignature = tocSignatureFor(nextHeadings);
+  if (nextSignature === currentSignature) {
+    return { patch: null, nextHeadings, nextSignature: currentSignature };
+  }
+  const patch: Patch = {
+    op: "setProps",
+    at: { blockId: PATCH_ROOT_ID },
+    props: {
+      tocHeadings: nextHeadings,
+    },
+  };
+  return { patch, nextHeadings, nextSignature };
+}
+
+export function collectMathProtectedRanges(content: string): ProtectedRange[] {
+  if (!content) return [];
+  const ranges: ProtectedRange[] = [];
+  const inlineStack: number[] = [];
+  const displayStack: number[] = [];
+  const length = content.length;
+
+  let i = 0;
+  while (i < length) {
+    const char = content[i];
+    if (char === "\\") {
+      i += 2;
+      continue;
+    }
+    if (char === "\n" || char === "\r") {
+      inlineStack.length = 0;
+      i += 1;
+      continue;
+    }
+    if (char !== "$") {
+      i++;
+      continue;
+    }
+
+    const isDouble = i + 1 < length && content[i + 1] === "$";
+    if (isDouble) {
+      if (displayStack.length > 0) {
+        const start = displayStack.pop() as number;
+        ranges.push({ from: start, to: i + 2, kind: "math-display" });
+      } else {
+        displayStack.push(i);
+      }
+      i += 2;
+      continue;
+    }
+
+    if (inlineStack.length > 0) {
+      const start = inlineStack.pop() as number;
+      ranges.push({ from: start, to: i + 1, kind: "math-inline" });
+    } else {
+      inlineStack.push(i);
+    }
+    i++;
+  }
+
+  return ranges;
+}
+
+export function collectAutolinkProtectedRanges(content: string): ProtectedRange[] {
+  if (!content) return [];
+  const ranges: ProtectedRange[] = [];
+  const autolinkPattern = /<((?:https?:\/\/|mailto:)[^>\s]+)>/gi;
+  let match: RegExpExecArray | null;
+  while (true) {
+    match = autolinkPattern.exec(content);
+    if (match === null) break;
+    ranges.push({ from: match.index, to: match.index + match[0].length, kind: "autolink" });
+  }
+  return ranges;
+}
+
+export function collectHtmlProtectedRangesFromSegments(
+  segments: MixedContentSegment[],
+  baseOffset: number | undefined,
+): ProtectedRange[] {
+  if (!segments || segments.length === 0) return [];
+  if (typeof baseOffset !== "number" || !Number.isFinite(baseOffset)) {
+    return [];
+  }
+  const ranges: ProtectedRange[] = [];
+  for (const segment of segments) {
+    if (segment.kind === "html" && segment.range) {
+      ranges.push({
+        from: segment.range.from - baseOffset,
+        to: segment.range.to - baseOffset,
+        kind: "html-block",
+      });
+    }
+  }
+  return ranges;
+}
+
+export function enrichListBlock(
+  block: Block,
+  inlineParser: InlineParser,
+  enableMath = true,
+  formatAnticipationConfig?: FormatAnticipationConfig,
+): void {
+  const lines = (block.payload.raw ?? "").split("\n");
+  const itemsRaw: string[] = [];
+  let current: string[] | null = null;
+
+  const bulletRe = /^[-*+]\s+(.*)$/;
+  const orderedRe = /^\d+\.\s+(.*)$/;
+
+  for (const line of lines) {
+    const trimmed = line.trimEnd();
+    const bare = trimmed.trimStart();
+    const bulletMatch = bare.match(bulletRe);
+    const orderedMatch = bare.match(orderedRe);
+
+    if (bulletMatch || orderedMatch) {
+      if (current) {
+        itemsRaw.push(current.join("\n"));
+      }
+      const content = (bulletMatch ? bulletMatch[1] : orderedMatch?.[1]) ?? "";
+      current = [content];
+    } else if (current) {
+      current.push(bare);
+    }
+  }
+
+  if (current) {
+    itemsRaw.push(current.join("\n"));
+  }
+
+  const items: InlineNode[][] = itemsRaw.map((raw) => inlineParser.parse(raw));
+  const isOrdered = /^\d+\./.test(lines[0]?.trimStart() || "");
+  const existingMeta = (block.payload.meta ?? {}) as Record<string, unknown>;
+  block.payload.meta = {
+    ...existingMeta,
+    ordered: isOrdered,
+    items,
+    mathEnabled: enableMath,
+  };
+  if (!block.isFinalized && formatAnticipationConfig) {
+    (block.payload.meta as Record<string, unknown>).formatAnticipation = formatAnticipationConfig;
+  }
+}
+
+export function collectWorkerStructuralInvariantViolations(nextBlocks: ReadonlyArray<Block>): string[] {
+  const violations: string[] = [];
+
+  for (const block of nextBlocks) {
+    if (block.type === "table" && block.isFinalized) {
+      const tableMeta = (block.payload.meta ?? {}) as { header?: unknown[]; rows?: unknown[][] };
+      const headerColumns = Array.isArray(tableMeta.header) ? tableMeta.header.length : 0;
+      const rows = Array.isArray(tableMeta.rows) ? tableMeta.rows : [];
+      if (headerColumns > 0) {
+        rows.forEach((row, rowIndex) => {
+          if (row.length !== headerColumns) {
+            violations.push(`finalized table row width mismatch:${block.id}:${rowIndex}:${row.length}:${headerColumns}`);
+          }
+        });
+      }
+    }
+
+    if (block.type !== "mdx") {
+      if (block.payload.compiledMdxRef || block.payload.compiledMdxModule) {
+        violations.push(`non-mdx block carries mdx artifact:${block.id}:${block.type}`);
+      }
+      continue;
+    }
+
+    const meta = (block.payload.meta ?? {}) as { mdxStatus?: unknown };
+    const status = typeof meta.mdxStatus === "string" ? meta.mdxStatus : undefined;
+    const hasCompiledArtifact = Boolean(block.payload.compiledMdxRef || block.payload.compiledMdxModule);
+
+    if (block.isFinalized && status === "pending") {
+      violations.push(`finalized mdx block remained pending:${block.id}`);
+    }
+    if (status === "compiled" && !hasCompiledArtifact) {
+      violations.push(`compiled mdx block missing artifact:${block.id}`);
+    }
+    if (status === "error" && hasCompiledArtifact) {
+      violations.push(`errored mdx block retained compiled artifact:${block.id}`);
+    }
+    if (
+      block.payload.compiledMdxRef &&
+      block.payload.compiledMdxModule &&
+      block.payload.compiledMdxRef.id !== block.payload.compiledMdxModule.id
+    ) {
+      violations.push(`mdx artifact id mismatch:${block.id}:${block.payload.compiledMdxRef.id}:${block.payload.compiledMdxModule.id}`);
+    }
+  }
+
+  return violations;
+}
+
+export function reportWorkerStructuralInvariantViolations(
+  context: string,
+  nextBlocks: ReadonlyArray<Block>,
+  lastSignature: { value: string },
+): void {
+  const violations = collectWorkerStructuralInvariantViolations(nextBlocks);
+  if (violations.length === 0) {
+    lastSignature.value = "";
+    return;
+  }
+  const signature = violations.join(" || ");
+  if (signature === lastSignature.value) {
+    return;
+  }
+  lastSignature.value = signature;
+  console.error(`[stream-mdx:worker] Structural invariant violation in ${context}:\n${violations.map((v) => `  - ${v}`).join("\n")}`);
+}
+
+export function computeChangedRanges(previous: string, next: string): ContentChangeRange[] {
+  if (previous === next) {
+    return [];
+  }
+  let prefix = 0;
+  const maxPrefix = Math.min(previous.length, next.length);
+  while (prefix < maxPrefix && previous[prefix] === next[prefix]) {
+    prefix += 1;
+  }
+  let prevSuffix = previous.length - 1;
+  let nextSuffix = next.length - 1;
+  while (prevSuffix >= prefix && nextSuffix >= prefix && previous[prevSuffix] === next[nextSuffix]) {
+    prevSuffix -= 1;
+    nextSuffix -= 1;
+  }
+  return [
+    {
+      fromA: prefix,
+      toA: prevSuffix + 1,
+      fromB: prefix,
+      toB: nextSuffix + 1,
+    },
+  ];
+}
+
+export function rangesIntersect(aFrom: number, aTo: number, bFrom: number, bTo: number): boolean {
+  return Math.max(aFrom, bFrom) <= Math.min(aTo, bTo);
+}
+
+export function addIntersectingBlocks(target: Set<string>, blocks: Block[], from: number, to: number): void {
+  if (from === to) {
+    for (const block of blocks) {
+      const range = block.payload.range;
+      if (!range) continue;
+      const blockFrom = typeof range.from === "number" ? range.from : 0;
+      const blockTo = typeof range.to === "number" ? range.to : blockFrom;
+      if (from >= blockFrom && from <= blockTo) {
+        target.add(block.id);
+      }
+    }
+    return;
+  }
+  for (const block of blocks) {
+    const range = block.payload.range;
+    if (!range) continue;
+    const blockFrom = typeof range.from === "number" ? range.from : 0;
+    const blockTo = typeof range.to === "number" ? range.to : blockFrom;
+    if (rangesIntersect(from, to, blockFrom, blockTo)) {
+      target.add(block.id);
+    }
+  }
+}
+
+export function collectChangedBlockIds(previousBlocks: Block[], nextBlocks: Block[], ranges: ContentChangeRange[]): Set<string> {
+  const ids = new Set<string>();
+  if (!ranges || ranges.length === 0) {
+    return ids;
+  }
+  for (const range of ranges) {
+    addIntersectingBlocks(ids, previousBlocks, range.fromA, range.toA);
+    addIntersectingBlocks(ids, nextBlocks, range.fromB, range.toB);
+  }
+  return ids;
+}

@@ -51,6 +51,11 @@
       "import": "./dist/worker/node.mjs",
       "require": "./dist/worker/node.cjs"
     },
+    "./worker/engine": {
+      "types": "./dist/worker/engine.d.ts",
+      "import": "./dist/worker/engine.mjs",
+      "require": "./dist/worker/engine.cjs"
+    },
     "./plugins": {
       "types": "./dist/plugins.d.ts",
       "import": "./dist/plugins.mjs",

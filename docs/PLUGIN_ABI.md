@@ -90,14 +90,23 @@ globalPluginRegistry.register(myPlugin);
 
 ### 2.2 Document Plugins
 
-```ts
-import { globalDocumentPluginRegistry } from "@stream-mdx/plugins";
+Document plugins run inside the engine that parses the document, so they are registered per engine.
+In a worker entry (bundled by your app):
 
-globalDocumentPluginRegistry.register({
-  name: "my-doc-plugin",
-  process(ctx) {
-    // mutate ctx.blocks or append synthetic blocks
-    return { syntheticBlocks: [] };
+```ts
+import { serveMarkdownWorker } from "@stream-mdx/worker/engine";
+
+serveMarkdownWorker({
+  extensions: {
+    documentPlugins: [
+      {
+        name: "my-doc-plugin",
+        process(ctx) {
+          // mutate ctx.blocks or append synthetic blocks
+          return { syntheticBlocks: [] };
+        },
+      },
+    ],
   },
 });
 ```

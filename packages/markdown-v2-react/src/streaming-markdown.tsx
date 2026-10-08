@@ -121,10 +121,13 @@ export type LinkSafetyConfig = {
   renderModal?: (props: LinkSafetyModalProps) => React.ReactNode;
 };
 
+export type MarkdownEngineMode = "worker" | "main-thread" | "auto";
+
 export interface StreamingMarkdownProps {
   text?: string;
   stream?: AsyncIterable<string>;
   worker?: Worker | URL | (() => Worker) | string;
+  engine?: MarkdownEngineMode;
   managedWorker?: boolean;
   prewarmLangs?: string[];
   features?: StreamingFeatureFlags;
@@ -276,6 +279,7 @@ function StreamingMarkdownComponent(
     text,
     stream,
     worker: workerSource,
+    engine = "auto",
     prewarmLangs = [],
     features = {},
     components,
@@ -639,65 +643,119 @@ function StreamingMarkdownComponent(
   }, [historyLimit]);
 
   useEffect(() => {
-    const restartToken = session;
-    void restartToken;
+    let cancelled = false;
+    let activeWorker: Worker | null = null;
+    let activeOwned = false;
+    let activeRelease: (() => void) | undefined;
+
     if (process.env.NODE_ENV !== "production" && DEBUG_WORKER) {
       // eslint-disable-next-line no-console
       console.info("[debug] instantiate worker effect");
     }
-    if (typeof window === "undefined" || typeof Worker === "undefined") {
-      return undefined;
-    }
+
     setWorkerReady(false);
     workerReadyRef.current = false;
-    const { worker, owned, release } = instantiateWorker(workerSource);
-    if (process.env.NODE_ENV !== "production" && DEBUG_WORKER) {
-      // eslint-disable-next-line no-console
-      console.info("[debug] instantiate worker result", Boolean(worker));
-    }
-    if (!worker) {
-      if (onError) {
-        onError(new Error("Failed to create markdown worker instance"));
+
+    const setupWorker = (inst: WorkerInstance) => {
+      if (cancelled) {
+        if (inst.owned && inst.worker) {
+          try {
+            inst.worker.terminate();
+          } catch {}
+          inst.release?.();
+        }
+        return;
       }
-      return undefined;
-    }
-    renderer.detachWorker();
-    renderer.attachWorker(worker, { skipInit: managedWorker });
-    if (managedWorker) {
+      activeWorker = inst.worker;
+      activeOwned = inst.owned;
+      activeRelease = inst.release;
+
+      if (!activeWorker) {
+        if (onError) {
+          onError(new Error("Failed to create markdown worker instance"));
+        }
+        return;
+      }
+
+      renderer.detachWorker();
+      renderer.attachWorker(activeWorker, { skipInit: managedWorker });
       setWorkerReady(true);
       workerReadyRef.current = true;
-      return () => {
-        setWorkerReady(false);
-        workerReadyRef.current = false;
-        renderer.detachWorker();
-        if (owned) {
-          try {
-            worker.terminate();
-          } catch (error) {
-            console.warn("Unable to terminate markdown worker", error);
+    };
+
+    const resolveAndSetup = async () => {
+      if (engine === "main-thread") {
+        try {
+          // Dynamic import: avoids bundling @stream-mdx/worker/engine into consumer bundles unless main-thread is explicitly selected
+          const { createInlineEngineWorker } = await import("@stream-mdx/worker/engine");
+          const inlineWorker = createInlineEngineWorker();
+          setupWorker({ worker: inlineWorker as unknown as Worker, owned: true });
+        } catch (error) {
+          if (onError) {
+            onError(error instanceof Error ? error : new Error(String(error)));
           }
-          release?.();
         }
-      };
-    }
-    setWorkerReady(true);
-    workerReadyRef.current = true;
+        return;
+      }
+
+      if (engine === "worker") {
+        if (typeof window === "undefined" || typeof Worker === "undefined") {
+          if (onError) {
+            onError(new Error("Worker is not supported in this environment"));
+          }
+          return;
+        }
+        const inst = instantiateWorker(workerSource);
+        setupWorker(inst);
+        return;
+      }
+
+      // Default: "auto"
+      let inst: WorkerInstance = { worker: null, owned: false };
+      if (typeof window !== "undefined" && typeof Worker !== "undefined") {
+        try {
+          inst = instantiateWorker(workerSource);
+        } catch {
+          inst = { worker: null, owned: false };
+        }
+      }
+
+      if (inst.worker) {
+        setupWorker(inst);
+        return;
+      }
+
+      // Worker unavailable or failed in auto mode -> fall back to main-thread inline engine
+      try {
+        // Dynamic import: avoids bundling @stream-mdx/worker/engine into consumer bundles unless auto-fallback activates
+        const { createInlineEngineWorker } = await import("@stream-mdx/worker/engine");
+        if (cancelled) return;
+        const inlineWorker = createInlineEngineWorker();
+        setupWorker({ worker: inlineWorker as unknown as Worker, owned: true });
+      } catch (error) {
+        if (onError) {
+          onError(error instanceof Error ? error : new Error(String(error)));
+        }
+      }
+    };
+
+    void resolveAndSetup();
 
     return () => {
+      cancelled = true;
       setWorkerReady(false);
       workerReadyRef.current = false;
       renderer.detachWorker();
-      if (owned) {
+      if (activeOwned && activeWorker) {
         try {
-          worker.terminate();
+          activeWorker.terminate();
         } catch (error) {
           console.warn("Unable to terminate markdown worker", error);
         }
-        release?.();
+        activeRelease?.();
       }
     };
-  }, [renderer, workerSource, session, onError, managedWorker]);
-
+  }, [renderer, workerSource, engine, session, onError, managedWorker]);
   useEffect(() => {
     const restartToken = session;
     void restartToken;

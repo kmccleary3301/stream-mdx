@@ -21,6 +21,11 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
     },
+    "./engine": {
+      "types": "./dist/engine/index.d.ts",
+      "import": "./dist/engine/index.mjs",
+      "require": "./dist/engine/index.cjs"
+    },
     "./worker-client": {
       "types": "./dist/worker-client.d.ts",
       "import": "./dist/worker-client.mjs",
