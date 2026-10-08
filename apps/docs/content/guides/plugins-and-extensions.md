@@ -97,7 +97,7 @@ const unifiedRenderer = createUnifiedRenderer({
 />
 ```
 
-You can also pass custom React components via `components` to customize elements rendered by the unified pipeline.
+Both synchronous and asynchronous remark/rehype plugins are supported. Synchronous plugins execute immediately for SSR compatibility, while asynchronous plugins process off the streaming critical path without blocking streaming or hydration.
 
 ## Custom regex patterns
 

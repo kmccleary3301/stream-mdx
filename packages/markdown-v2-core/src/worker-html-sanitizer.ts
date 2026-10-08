@@ -1,7 +1,7 @@
 import * as rehypeParse from "rehype-parse";
 import * as rehypeSanitize from "rehype-sanitize";
 import * as rehypeStringify from "rehype-stringify";
-import { unified } from "unified";
+import { type Plugin, unified } from "unified";
 
 type RehypeSanitizeModule = typeof import("rehype-sanitize");
 const rehypeSanitizeModule = rehypeSanitize as RehypeSanitizeModule;
@@ -19,21 +19,37 @@ const resolvePlugin = (mod: unknown): unknown => {
   return mod;
 };
 
-const rehypeParsePlugin = resolvePlugin(rehypeParse);
-const rehypeSanitizePlugin = resolvePlugin(rehypeSanitizeModule);
-const rehypeStringifyPlugin = resolvePlugin(rehypeStringify);
+type ParsePlugin = Plugin<[{ fragment?: boolean }]>;
+type SanitizePlugin = Plugin<[Schema?]>;
+const rehypeParsePlugin = resolvePlugin(rehypeParse) as ParsePlugin;
+const rehypeSanitizePlugin = resolvePlugin(rehypeSanitizeModule) as SanitizePlugin;
+const rehypeStringifyPlugin = resolvePlugin(rehypeStringify) as Plugin<[]>;
 type AttributeDefinition = string | [string, ...(string | number | boolean | RegExp | null | undefined)[]];
 
 const SANITIZED_SCHEMA: Schema = createSchema();
 
 const sanitizeProcessor = unified()
-  .use(rehypeParsePlugin as any, { fragment: true })
-  .use(rehypeSanitizePlugin as any, SANITIZED_SCHEMA)
-  .use(rehypeStringifyPlugin as any)
+  .use(rehypeParsePlugin, { fragment: true })
+  .use(rehypeSanitizePlugin, SANITIZED_SCHEMA)
+  .use(rehypeStringifyPlugin)
   .freeze();
 
-export function sanitizeHtmlInWorker(html: string): string {
+export function sanitizeHtmlInWorker(html: string, options?: { allowedTags?: Record<string, string[]> }): string {
   if (!html) return "";
+  if (options?.allowedTags && Object.keys(options.allowedTags).length > 0) {
+    const schema = createSchema(options.allowedTags);
+    const customProcessor = unified()
+      .use(rehypeParsePlugin, { fragment: true })
+      .use(rehypeSanitizePlugin, schema)
+      .use(rehypeStringifyPlugin)
+      .freeze();
+    try {
+      return customProcessor.processSync(html).toString();
+    } catch (error) {
+      console.warn("[markdown-v2] Failed to sanitize HTML in worker with custom tags:", error);
+      return "";
+    }
+  }
   try {
     return sanitizeProcessor.processSync(html).toString();
   } catch (error) {
@@ -42,7 +58,7 @@ export function sanitizeHtmlInWorker(html: string): string {
   }
 }
 
-function createSchema(): Schema {
+function createSchema(customAllowedTags?: Record<string, string[]>): Schema {
   const base = JSON.parse(JSON.stringify(defaultSchema)) as Schema;
   const tagSet = new Set<string>(base.tagNames ?? []);
   const allowedTags = [
@@ -112,19 +128,42 @@ function createSchema(): Schema {
   for (const tag of allowedTags) {
     tagSet.add(tag);
   }
+  if (customAllowedTags) {
+    for (const tag of Object.keys(customAllowedTags)) {
+      tagSet.add(tag.toLowerCase());
+    }
+  }
   base.tagNames = Array.from(tagSet);
+
+  const customAttrs: Record<string, AttributeDefinition[]> = {};
+  if (customAllowedTags) {
+    for (const [tag, attrs] of Object.entries(customAllowedTags)) {
+      const lowerTag = tag.toLowerCase();
+      const attrDefs: string[] = [];
+      for (const a of attrs) {
+        attrDefs.push(a);
+        const camel = a.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+        if (camel !== a) {
+          attrDefs.push(camel);
+        }
+      }
+      customAttrs[lowerTag] = attrDefs;
+    }
+  }
 
   base.attributes = {
     ...(base.attributes || {}),
-    "*": mergeAttributes(base.attributes?.["*"] as AttributeDefinition[] | undefined, ["className", "id", "title", "style", "data-*", "aria-*"]),
+    "*": customAllowedTags && Object.keys(customAllowedTags).length > 0
+      ? mergeAttributes(base.attributes?.["*"] as AttributeDefinition[] | undefined, ["className", "id", "title", "style"])
+      : mergeAttributes(base.attributes?.["*"] as AttributeDefinition[] | undefined, ["className", "id", "title", "style", "data-*", "aria-*"]),
     a: mergeAttributes(base.attributes?.a as AttributeDefinition[] | undefined, ["href", "title", "target", "rel"]),
     img: mergeAttributes(base.attributes?.img as AttributeDefinition[] | undefined, ["src", "alt", "title"]),
     table: mergeAttributes(base.attributes?.table as AttributeDefinition[] | undefined, ["align", "border", "cellpadding", "cellspacing"]),
     th: mergeAttributes(base.attributes?.th as AttributeDefinition[] | undefined, ["align", "colspan", "rowspan"]),
     td: mergeAttributes(base.attributes?.td as AttributeDefinition[] | undefined, ["align", "colspan", "rowspan"]),
     tr: mergeAttributes(base.attributes?.tr as AttributeDefinition[] | undefined, ["align"]),
+    ...customAttrs,
   } as Schema["attributes"];
-
   base.protocols = {
     ...(base.protocols || {}),
     href: ["http", "https", "mailto", "tel", "callto"],

@@ -6,12 +6,16 @@ import type {
   CodeHighlightingMode,
   CompiledMdxModule,
   FormatAnticipationConfig,
+  HtmlOptions,
   InlineHtmlDescriptor,
   InlineNode,
   LazyTokenizationPriority,
+  SyntaxRuleSpec,
   TokenLineV1,
 } from "@stream-mdx/core";
 import type { ComponentRegistry } from "./components";
+
+export type { HtmlOptions, SyntaxRuleSpec } from "@stream-mdx/core";
 
 export interface CodeFenceRendererProps {
   code: string;
@@ -72,7 +76,7 @@ export type InlineHtmlRendererMap = Record<string, InlineHtmlRenderer>;
 
 export interface BlockComponents {
   paragraph: React.FC<{ inlines: InlineNode[]; raw?: string; meta?: Record<string, unknown>; children?: React.ReactNode }>;
-  heading: React.FC<{ level: 1 | 2 | 3 | 4 | 5 | 6; inlines: InlineNode[]; text?: string; meta?: Record<string, unknown> }>;
+  heading: React.FC<{ level: 1 | 2 | 3 | 4 | 5 | 6; inlines: InlineNode[]; text?: string; meta?: Record<string, unknown>; children?: React.ReactNode }>;
   code: React.FC<{
     html: string;
     meta?: Record<string, unknown>;
@@ -83,7 +87,7 @@ export interface BlockComponents {
   }>;
   blockquote: React.FC<{ inlines: InlineNode[]; renderedContent?: React.ReactNode }>;
   list: React.FC<{ ordered: boolean; items: InlineNode[][] }>;
-  html: React.FC<{ __trustedHtml: TrustedHTML | string; elements?: Record<string, GenericComponent> }>;
+  html: React.FC<{ __trustedHtml: TrustedHTML | string; elements?: Record<string, GenericComponent>; isSanitized?: boolean; literalTagContent?: string[] }>;
   mdx: React.FC<{
     compiledRef?: { id: string };
     compiledModule?: CompiledMdxModule | null;
@@ -149,6 +153,8 @@ export interface RendererConfig {
   mathRenderer?: MathRenderer;
   artifactHtml?: boolean;
   blockRenderer?: BlockRendererOverride;
+  syntax?: SyntaxRuleSpec[];
+  html?: HtmlOptions;
   performance?: {
     frameBudgetMs?: number;
     flushTimeoutMs?: number;

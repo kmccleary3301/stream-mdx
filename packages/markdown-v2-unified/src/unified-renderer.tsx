@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { jsx, jsxs, Fragment } from "react/jsx-runtime";
 import { unified } from "unified";
 import remarkParse from "remark-parse";
@@ -6,21 +6,30 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import remarkRehype from "remark-rehype";
 import { toJsxRuntime } from "hast-util-to-jsx-runtime";
-import type { Block } from "@stream-mdx/core";
+import type { Block, BlockResolvedLinkReference } from "@stream-mdx/core";
 import type { FinalizedBlockRenderProps } from "@stream-mdx/react";
 import type { UnifiedRenderer, UnifiedRendererOptions } from "./types";
 
-type HastNode = Parameters<typeof toJsxRuntime>[0];
-
-export interface UnifiedBlockProcessor {
-  parse(input: string): unknown;
-  runSync(tree: unknown): unknown;
+function buildProcessor(options: UnifiedRendererOptions) {
+  return unified()
+    .use(remarkParse)
+    .use(options.gfm === false ? [] : [remarkGfm])
+    .use(options.math ? [remarkMath] : [])
+    .use(options.remarkPlugins ?? [])
+    .use(remarkRehype)
+    .use(options.rehypePlugins ?? [])
+    .freeze();
 }
 
-export interface ResolvedLinkReference {
-  label: string;
-  href: string;
-  title?: string;
+export type UnifiedProcessor = ReturnType<typeof buildProcessor>;
+
+export type JobOutcome =
+  | { readonly kind: "success"; readonly node: React.ReactNode }
+  | { readonly kind: "error"; readonly error: Error };
+
+export interface UnifiedJob {
+  readonly promise: Promise<JobOutcome>;
+  outcome?: JobOutcome;
 }
 
 const DEFAULT_ROUTED_BLOCK_TYPES: Record<string, true> = {
@@ -30,7 +39,7 @@ const DEFAULT_ROUTED_BLOCK_TYPES: Record<string, true> = {
   list: true,
   table: true,
   code: true,
-  hr: true,
+  thematicBreak: true,
 };
 
 export class BoundedLruCache<K, V> {
@@ -71,7 +80,7 @@ export class BoundedLruCache<K, V> {
   }
 }
 
-export function formatLinkDefinitions(refs: readonly ResolvedLinkReference[]): string {
+export function formatLinkDefinitions(refs: readonly BlockResolvedLinkReference[]): string {
   const lines: string[] = [];
   for (const ref of refs) {
     if (!ref.label || !ref.href) continue;
@@ -86,36 +95,101 @@ export function formatLinkDefinitions(refs: readonly ResolvedLinkReference[]): s
   return lines.join("\n");
 }
 
-function buildProcessor(options: UnifiedRendererOptions): UnifiedBlockProcessor {
-  const p = unified().use(remarkParse);
-
-  if (options.gfm !== false) {
-    p.use(remarkGfm);
+export function getOrCreateJob(
+  cacheKey: string,
+  input: string,
+  block: Block,
+  processor: UnifiedProcessor,
+  options: UnifiedRendererOptions,
+  cache: BoundedLruCache<string, React.ReactNode>,
+  inflightJobs: Map<string, UnifiedJob>,
+): UnifiedJob {
+  const existing = inflightJobs.get(cacheKey);
+  if (existing) {
+    return existing;
   }
 
-  if (options.math) {
-    p.use(remarkMath);
+  let resolve!: (outcome: JobOutcome) => void;
+  const promise = new Promise<JobOutcome>((res) => {
+    resolve = res;
+  });
+
+  const job: UnifiedJob = { promise };
+  inflightJobs.set(cacheKey, job);
+
+  let mdast: ReturnType<typeof processor.parse>;
+  try {
+    mdast = processor.parse(input);
+  } catch (parseError) {
+    const error = parseError instanceof Error ? parseError : new Error(String(parseError));
+    const outcome: JobOutcome = { kind: "error", error };
+    job.outcome = outcome;
+    inflightJobs.delete(cacheKey);
+    resolve(outcome);
+    if (options.onError) {
+      options.onError(error, block);
+    } else {
+      console.error("Unified markdown parse failed:", error);
+    }
+    return job;
   }
 
-  if (options.remarkPlugins && options.remarkPlugins.length > 0) {
-    p.use(options.remarkPlugins);
-  }
+  // Exactly one processor.run invocation per cache key.
+  // Unified calls the callback synchronously for sync transformers, and asynchronously for async ones.
+  processor.run(mdast, (runError, hast) => {
+    if (runError || !hast) {
+      const error =
+        runError instanceof Error
+          ? runError
+          : new Error(String(runError ?? "Unified block transformation failed"));
+      const outcome: JobOutcome = { kind: "error", error };
+      job.outcome = outcome;
+      inflightJobs.delete(cacheKey);
+      resolve(outcome);
+      if (options.onError) {
+        options.onError(error, block);
+      } else {
+        console.error("Unified block transformation failed:", error);
+      }
+      return;
+    }
 
-  p.use(remarkRehype);
+    try {
+      const node = toJsxRuntime(hast, {
+        Fragment,
+        jsx,
+        jsxs,
+        components: options.components,
+      });
+      const outcome: JobOutcome = { kind: "success", node };
+      job.outcome = outcome;
+      cache.set(cacheKey, node);
+      inflightJobs.delete(cacheKey);
+      resolve(outcome);
+    } catch (renderError) {
+      const error = renderError instanceof Error ? renderError : new Error(String(renderError));
+      const outcome: JobOutcome = { kind: "error", error };
+      job.outcome = outcome;
+      inflightJobs.delete(cacheKey);
+      resolve(outcome);
+      if (options.onError) {
+        options.onError(error, block);
+      } else {
+        console.error("Unified JSX runtime conversion failed:", error);
+      }
+    }
+  });
 
-  if (options.rehypePlugins && options.rehypePlugins.length > 0) {
-    p.use(options.rehypePlugins);
-  }
-
-  return p.freeze() as unknown as UnifiedBlockProcessor;
+  return job;
 }
 
 interface UnifiedBlockItemProps {
   block: Block;
   element: React.ReactElement;
-  processor: UnifiedBlockProcessor;
+  processor: UnifiedProcessor;
   options: UnifiedRendererOptions;
   cache: BoundedLruCache<string, React.ReactNode>;
+  inflightJobs: Map<string, UnifiedJob>;
 }
 
 export const UnifiedBlockItem: React.FC<UnifiedBlockItemProps> = ({
@@ -124,51 +198,74 @@ export const UnifiedBlockItem: React.FC<UnifiedBlockItemProps> = ({
   processor,
   options,
   cache,
+  inflightJobs,
 }) => {
   const raw = typeof block.payload.raw === "string" ? block.payload.raw : "";
-  const metaRefs = Array.isArray(block.payload.meta?.linkReferences)
-    ? (block.payload.meta.linkReferences as ResolvedLinkReference[])
-    : undefined;
+  const metaRefs = block.payload.meta?.linkReferences;
   const serializedRefs = metaRefs && metaRefs.length > 0 ? JSON.stringify(metaRefs) : "";
   const cacheKey = `${block.id}::${raw}::${serializedRefs}`;
 
-  // Note: processor, options, and cache are immutable per createUnifiedRenderer instance
-  // and created once upon initialization; all read variables are listed in the dependency array.
-  const rendered = useMemo(() => {
-    const cached = cache.get(cacheKey);
+  const cached = cache.get(cacheKey);
+
+  // Retrieve or create the single processing job for this exact cacheKey
+  const job = useMemo(() => {
     if (cached !== undefined) {
-      return cached;
+      return undefined;
+    }
+    const linkDefs = metaRefs && metaRefs.length > 0 ? formatLinkDefinitions(metaRefs) : "";
+    const input = linkDefs ? `${linkDefs}\n\n${raw}` : raw;
+    return getOrCreateJob(cacheKey, input, block, processor, options, cache, inflightJobs);
+  }, [cacheKey, cached, block, processor, options, cache, inflightJobs, metaRefs, raw]);
+
+  // Keyed async state: if cacheKey changes while an async job is pending,
+  // asyncState.key !== cacheKey, so it immediately displays the new default element!
+  const [asyncState, setAsyncState] = useState<{
+    readonly key: string;
+    readonly node: React.ReactNode;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!job || job.outcome !== undefined) {
+      return;
     }
 
-    try {
-      const linkDefs = metaRefs && metaRefs.length > 0 ? formatLinkDefinitions(metaRefs) : "";
-      const input = linkDefs ? `${linkDefs}\n\n${raw}` : raw;
-      const mdast = processor.parse(input);
-      const hast = processor.runSync(mdast);
+    let cancelled = false;
+    job.promise.then((outcome) => {
+      if (!cancelled && outcome.kind === "success") {
+        setAsyncState({ key: cacheKey, node: outcome.node });
+      }
+    });
 
-      const result = toJsxRuntime(hast as HastNode, {
-        Fragment,
-        jsx,
-        jsxs,
-        components: options.components,
-      });
+    return () => {
+      cancelled = true;
+    };
+  }, [cacheKey, job]);
 
-      cache.set(cacheKey, result);
-      return result;
-    } catch (error) {
-      console.warn("Unified block rendering failed, falling back to default:", error);
-      return element;
+  // Determine what to render based on:
+  // 1. Cached result
+  // 2. Synchronous job outcome (for sync plugins / sync SSR)
+  // 3. Key-matched async completed result
+  // 4. Default element (while pending async or on error)
+  let output: React.ReactNode = element;
+  if (cached !== undefined) {
+    output = cached;
+  } else if (job?.outcome !== undefined) {
+    if (job.outcome.kind === "success") {
+      output = job.outcome.node;
     }
-  }, [cacheKey, element, cache, processor, options, metaRefs, raw]);
-
-  if (React.isValidElement(rendered)) {
-    return rendered;
+  } else if (asyncState !== null && asyncState.key === cacheKey) {
+    output = asyncState.node;
   }
-  return <>{rendered}</>;
+
+  if (React.isValidElement(output)) {
+    return output;
+  }
+  return <>{output}</>;
 };
 
 export function createUnifiedRenderer(options: UnifiedRendererOptions = {}): UnifiedRenderer {
   const cache = new BoundedLruCache<string, React.ReactNode>(options.cacheSize ?? 500);
+  const inflightJobs = new Map<string, UnifiedJob>();
   const processor = buildProcessor(options);
   const routedTypeMap: Record<string, true> = options.blockTypes
     ? Object.fromEntries(options.blockTypes.map((type) => [type, true]))
@@ -188,12 +285,14 @@ export function createUnifiedRenderer(options: UnifiedRendererOptions = {}): Uni
         processor={processor}
         options={options}
         cache={cache}
+        inflightJobs={inflightJobs}
       />
     );
   };
 
   renderer.clearCache = () => {
     cache.clear();
+    inflightJobs.clear();
   };
   renderer.options = options;
 
