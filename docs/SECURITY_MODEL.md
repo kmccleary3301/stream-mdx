@@ -44,10 +44,14 @@ Every artifact `srcdoc` includes a strict `<meta http-equiv="Content-Security-Po
 - `style-src 'unsafe-inline'` + configured allowlist
 - `img-src data: blob:` + configured allowlist
 - `font-src data:` + configured allowlist
+- `base-uri 'none'`, `form-action 'none'`
+
+The policy, theme styles, and bootstrap script are written before any artifact markup, so a full artifact document (with its own `<!doctype>`, `<html>`, `<head>`) cannot run script ahead of the policy.
 
 ### 3. Secure host communication
 - **Origin and window verification**: The artifact communicates with the host window via `postMessage`. The host listener verifies that `event.source === iframeRef.current.contentWindow`. Foreign-source messages and spoofed dimensions are ignored.
-- **Safe navigation**: Navigation links clicked inside the artifact are prevented, posted to the host via `stream-mdx:artifact-link`, validated through the host's `linkSafety` policy, and opened with `rel="noopener,noreferrer"` in a new browsing context.
+- **Safe navigation**: Navigation links clicked inside the artifact are prevented and posted to the host via `stream-mdx:artifact-link`. The host drops every URL whose protocol is not `http:`, `https:`, or `mailto:` (so `javascript:` and `data:` never reach the host), then calls the renderer's `onLinkClick`, else the `openLink` prop (which `StreamingMarkdown` wires to its `linkSafety` policy), else `window.open(url, "_blank", "noopener,noreferrer")`.
+
 ## Reporting security issues
 
 See the repo root `SECURITY.md` once added.

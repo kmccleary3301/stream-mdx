@@ -33,6 +33,17 @@ function formatDirective(defaultEntries: string[], userEntries?: string[]): stri
   return Array.from(set).join(" ");
 }
 
+const ARTIFACT_LINK_PROTOCOLS: Record<string, true> = { "http:": true, "https:": true, "mailto:": true };
+
+/** Only absolute http(s)/mailto URLs leave the sandbox; everything else (javascript:, data:, blob:) is dropped. */
+function toSafeArtifactHref(href: string): string | null {
+  try {
+    const url = new URL(href);
+    return ARTIFACT_LINK_PROTOCOLS[url.protocol] ? url.href : null;
+  } catch {
+    return null;
+  }
+}
 
 export function buildArtifactSrcDoc(options: {
   html: string;
@@ -46,7 +57,7 @@ export function buildArtifactSrcDoc(options: {
   const connectList = options.csp?.connectSrc?.length
     ? options.csp.connectSrc.join(" ")
     : "'none'";
-  const cspMeta = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src ${scriptList}; style-src ${styleList}; img-src ${imgList}; font-src ${fontList}; connect-src ${connectList};">`;
+  const cspMeta = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src ${scriptList}; style-src ${styleList}; img-src ${imgList}; font-src ${fontList}; connect-src ${connectList}; base-uri 'none'; form-action 'none';">`;
 
   let themeStyles = "";
   if (options.themeCssVars && Object.keys(options.themeCssVars).length > 0) {
@@ -71,9 +82,13 @@ export function buildArtifactSrcDoc(options: {
 
   window.addEventListener('load', postSize);
   window.addEventListener('resize', postSize);
-  if (typeof ResizeObserver !== 'undefined' && document.body) {
-    new ResizeObserver(postSize).observe(document.body);
-  }
+  // The bootstrap runs in <head>, before <body> exists.
+  document.addEventListener('DOMContentLoaded', function() {
+    postSize();
+    if (typeof ResizeObserver !== 'undefined' && document.body) {
+      new ResizeObserver(postSize).observe(document.body);
+    }
+  });
   setTimeout(postSize, 50);
   setTimeout(postSize, 300);
 
@@ -91,38 +106,28 @@ export function buildArtifactSrcDoc(options: {
 })();
 </script>`;
 
-  const lower = options.html.toLowerCase();
-  if (lower.includes("<html") || lower.includes("<!doctype")) {
-    // Insert into existing head or before body
-    if (lower.includes("<head>")) {
-      return options.html.replace(/<head>/i, `<head>${cspMeta}${themeStyles}${bootstrapScript}`);
-    }
-    return `<!DOCTYPE html><html><head>${cspMeta}${themeStyles}${bootstrapScript}</head>${options.html}</html>`;
-  }
-
+  // The policy and bootstrap always precede artifact content, so no artifact markup (including a
+  // full document with its own <!doctype>/<html>/<head>) can run before the CSP applies. The HTML
+  // parser ignores the artifact's duplicate <html>/<head> tags and keeps their contents.
   return `<!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  ${cspMeta}
-  ${themeStyles}
-  <style>
-    body {
-      margin: 0;
-      padding: 12px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      box-sizing: border-box;
-      color: var(--foreground, #111827);
-      background-color: transparent;
-    }
-  </style>
-  ${bootstrapScript}
-</head>
-<body>
-${options.html}
-</body>
-</html>`;
+<meta charset="utf-8">
+${cspMeta}
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body {
+  margin: 0;
+  padding: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  box-sizing: border-box;
+  color: var(--foreground, #111827);
+  background-color: transparent;
+}
+</style>
+${themeStyles}
+${bootstrapScript}
+${options.html}`;
 }
 
 export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
@@ -134,6 +139,7 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
   themeCssVars,
   maxHeight = 600,
   onLinkClick,
+  openLink,
   className = "",
   style,
 }) => {
@@ -156,11 +162,15 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
       if (data.type === "stream-mdx:artifact-size" && typeof data.height === "number") {
         setFrameHeight(Math.max(50, data.height));
       } else if (data.type === "stream-mdx:artifact-link" && typeof data.href === "string") {
+        const href = toSafeArtifactHref(data.href);
+        if (!href) return;
+        const target = typeof data.target === "string" ? data.target : undefined;
         if (onLinkClick) {
-          onLinkClick(data.href, data.target);
+          onLinkClick(href, target);
+        } else if (openLink) {
+          openLink(href);
         } else {
-          // Default link safety: open in new tab with noopener
-          window.open(data.href, "_blank", "noopener,noreferrer");
+          window.open(href, "_blank", "noopener,noreferrer");
         }
       }
     };
@@ -169,7 +179,7 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
     return () => {
       window.removeEventListener("message", handleMessage);
     };
-  }, [isFinalized, onLinkClick]);
+  }, [isFinalized, onLinkClick, openLink]);
 
   // While not finalized: show the code view
   if (!isFinalized) {

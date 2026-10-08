@@ -233,9 +233,10 @@ import { MermaidBlock } from "@stream-mdx/mermaid";
   - `isFinalized`: Boolean indicating if streaming for this block has finished.
   - `blockId`: Unique block ID.
   - `renderCode`: Pre-rendered fallback code view element.
+  - `openLink`: Host link handler. Under `StreamingMarkdown` it applies `linkSafety`; renderers that surface links should call it.
 
 ### Built-in Renderers
-1. **ArtifactFrame (P4)**: Built-in sandboxed iframe renderer for fence languages `artifact` and `html-artifact` (and `html` with `artifactHtml: true`). Displays fallback code view while streaming; once finalized, mounts an isolated `<iframe sandbox="allow-scripts" srcdoc="...">` with strict CSP meta (`connect-src 'none'`), auto-height messaging, and `noopener` link safety.
+1. **ArtifactFrame (P4)**: Built-in sandboxed iframe renderer for fence languages `artifact` and `html-artifact` (and `html` with `artifactHtml: true`). Displays fallback code view while streaming; once finalized, mounts an isolated `<iframe sandbox="allow-scripts" srcdoc="...">` with strict CSP meta (`connect-src 'none'`), auto-height messaging, and links routed through `onLinkClick` or `openLink` (only `http:`, `https:`, `mailto:`).
 2. **DefaultDiffRenderer**: When a code block payload includes `meta.diffBlocks` (from worker `features.emitDiffBlocks`), it automatically renders a structured git diff table with line kinds, old/new line numbers, and token colors. Overridable via `codeRenderers={{ diff: CustomDiff }}`.
 
 ## 3.3) Math Rendering (`mathRenderer`)

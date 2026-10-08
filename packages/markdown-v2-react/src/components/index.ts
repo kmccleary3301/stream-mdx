@@ -655,6 +655,7 @@ export class ComponentRegistry {
   private tableElements: TableElements;
   private codeRenderers: Record<string, CodeFenceRenderer> = {};
   private artifactHtml = false;
+  private linkHandler: ((url: string) => void) | undefined;
   private blockComponentMapCache: BlockComponents | null = null;
   private inlineComponentMapCache: InlineComponents | null = null;
 
@@ -687,6 +688,15 @@ export class ComponentRegistry {
 
   setArtifactHtml(enabled: boolean): void {
     this.artifactHtml = enabled;
+  }
+
+  /** Link handler handed to code fence renderers as `openLink` (StreamingMarkdown installs its `linkSafety`-aware handler). */
+  setLinkHandler(handler: ((url: string) => void) | undefined): void {
+    this.linkHandler = handler;
+  }
+
+  getLinkHandler(): ((url: string) => void) | undefined {
+    return this.linkHandler;
   }
 
   setMathRenderer(mathRenderer: MathRenderer): void {
@@ -818,6 +828,7 @@ export class ComponentRegistry {
           isFinalized: block.isFinalized,
           blockId: block.id,
           renderCode: element,
+          openLink: this.linkHandler,
         });
       }
 

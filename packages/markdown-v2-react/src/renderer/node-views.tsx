@@ -1080,6 +1080,7 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
       isFinalized: node.block.isFinalized,
       blockId,
       renderCode: codeView,
+      openLink: registry.getLinkHandler(),
     };
 
     if (shouldOptInDefer && deferredConfig) {

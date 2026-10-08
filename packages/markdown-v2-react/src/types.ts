@@ -21,6 +21,8 @@ export interface CodeFenceRendererProps {
   isFinalized?: boolean;
   blockId?: string;
   renderCode: React.ReactNode;
+  /** Host link handler (honors `linkSafety`). Renderers that surface links, such as artifacts, route clicks through it. */
+  openLink?: (url: string) => void;
 }
 
 export interface CodeFenceRendererConfig {

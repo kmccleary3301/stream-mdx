@@ -260,6 +260,13 @@ async function testArtifactFrameLifecycleAndSecurity(): Promise<void> {
   const defaultSrcDoc = buildArtifactSrcDoc({ html: "<p>test</p>" });
   assert.ok(defaultSrcDoc.includes("connect-src 'none'"), "default CSP must have connect-src 'none'");
 
+  // A full document whose own <head> starts with a script must still get the CSP first.
+  const fullDoc = buildArtifactSrcDoc({ html: "<!doctype html><script>fetch('https://evil.test')</script><html><head></head><body>x</body></html>" });
+  assert.ok(
+    fullDoc.indexOf("Content-Security-Policy") < fullDoc.indexOf("evil.test"),
+    "CSP must precede every byte of artifact markup",
+  );
+
   // Phase C: Foreign-source size message ignored
   const initialIframeHeight = iframe.style.height;
   // Dispatch a message whose event.source is NOT the iframe's contentWindow
@@ -271,6 +278,28 @@ async function testArtifactFrameLifecycleAndSecurity(): Promise<void> {
   await sleep(20);
 
   assert.strictEqual(iframe.style.height, initialIframeHeight, "foreign-source size messages must be ignored");
+
+  // Phase D: link messages from the frame route through openLink; non-http(s)/mailto URLs are dropped.
+  const opened: string[] = [];
+  root.render(
+    React.createElement(ArtifactFrame, {
+      code: "<a href='https://example.com'>x</a>",
+      language: "html-artifact",
+      isFinalized: true,
+      openLink: (url: string) => {
+        opened.push(url);
+      },
+      renderCode: null,
+    }),
+  );
+  await sleep(30);
+  const frameWindow = container.querySelector("iframe")?.contentWindow;
+  assert.ok(frameWindow, "iframe window available");
+  for (const href of ["javascript:alert(1)", "data:text/html,x", "https://example.com/next"]) {
+    window.dispatchEvent(new window.MessageEvent("message", { data: { type: "stream-mdx:artifact-link", href }, source: frameWindow }));
+  }
+  await sleep(20);
+  assert.deepStrictEqual(opened, ["https://example.com/next"], "only http(s)/mailto links leave the sandbox, via openLink");
 
   root.unmount();
 }

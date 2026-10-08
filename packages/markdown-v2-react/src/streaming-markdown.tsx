@@ -333,6 +333,8 @@ function StreamingMarkdownComponent(
     }),
     [mdxHydrationController, mdxHydration],
   );
+  // Stable indirection so renderers built once (artifact frames) always reach the current linkSafety handler.
+  const linkHandlerRef = useRef<(url: string) => Promise<void>>();
   const rendererRef = useRef<{ renderer: MarkdownRenderer; signature: string }>();
   const [session, setSession] = useState(0);
   const rendererKey = `${configSignature}:${session}`;
@@ -367,8 +369,12 @@ function StreamingMarkdownComponent(
       },
       mdx: mdxConfig,
     };
+    const nextRenderer = new MarkdownRenderer(rendererConfig);
+    nextRenderer.getComponentRegistry().setLinkHandler((url) => {
+      void linkHandlerRef.current?.(url);
+    });
     rendererRef.current = {
-      renderer: new MarkdownRenderer(rendererConfig),
+      renderer: nextRenderer,
       signature: rendererKey,
     };
   }
@@ -473,6 +479,7 @@ function StreamingMarkdownComponent(
       setLinkModalState({ url, isOpen: true, isChecking: false });
     };
   }, [linkSafety, linkSafetyEnabled, openLink]);
+  linkHandlerRef.current = handleLinkClick;
 
   const handleLinkClose = useMemo(() => {
     return () => setLinkModalState((prev) => ({ ...prev, isOpen: false }));
