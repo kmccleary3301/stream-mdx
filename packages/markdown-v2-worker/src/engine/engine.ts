@@ -200,7 +200,7 @@ export class MarkdownEngine {
   private lazyTokenizationProcessing = false;
   private lazyTokenizationThresholdLines = DEFAULT_LAZY_TOKENIZATION_THRESHOLD;
   private lazyTokenizationEnabled = true;
-
+  private mdxEnabled = true;
   private readonly workerMdxCache = new Map<string, CompiledMdxModule>();
   private readonly workerMdxInflight = new Map<string, Promise<CompiledMdxModule>>();
   private mdxCompileMode: WorkerMdxMode = "server";
@@ -529,6 +529,7 @@ export class MarkdownEngine {
       emitDiffBlocks: docPlugins?.emitDiffBlocks ?? false,
     };
 
+    this.mdxEnabled = enable.mdx;
     this.enableMath = enable.math;
     this.formatAnticipationConfig = normalizeFormatAnticipation(enable.formatAnticipation);
     if (enable.codeHighlighting === "incremental" || enable.codeHighlighting === "live" || enable.codeHighlighting === "final") {
@@ -703,10 +704,15 @@ export class MarkdownEngine {
       this.headingIdCounts = new Map<string, number>();
       const extracted: Block[] = [];
       const cursor = tree.cursor();
+      let hasRecognizedNodes = false;
 
       if (cursor.firstChild()) {
         do {
           const nodeType = cursor.type.name;
+          if (nodeType === "LinkReference") {
+            hasRecognizedNodes = true;
+            continue;
+          }
           let from = cursor.from;
           const to = cursor.to;
           if (nodeType === "CodeBlock") {
@@ -715,6 +721,7 @@ export class MarkdownEngine {
           }
           const raw = content.slice(from, to);
           if (isBlockLevelNode(nodeType)) {
+            hasRecognizedNodes = true;
             const blockType = mapLezerNodeToBlockType(nodeType);
             const block = await this.createBlock(blockType, raw, from, to, content, options, nodeType);
             if (block && raw.trim()) {
@@ -724,7 +731,7 @@ export class MarkdownEngine {
         } while (cursor.nextSibling());
       }
 
-      if (extracted.length === 0) {
+      if (extracted.length === 0 && !hasRecognizedNodes) {
         return await this.extractBlocksSimple(content, options);
       }
 
@@ -769,6 +776,8 @@ export class MarkdownEngine {
     for (const line of lines) {
       currentPos += line.length + 1;
       if (line.trim() === "") {
+        await finalizeParagraph();
+      } else if (line.trim().match(/^\[[^\]]+\]:\s*\S+/)) {
         await finalizeParagraph();
       } else {
         currentParagraph.push(line);
@@ -1065,7 +1074,7 @@ export class MarkdownEngine {
         break;
       }
     }
-    if (block.type === "paragraph" || block.type === "html") {
+    if (this.mdxEnabled && (block.type === "paragraph" || block.type === "html")) {
       const maybeMeta = block.payload.meta as Record<string, unknown> | undefined;
       const protectedRanges = Array.isArray(maybeMeta?.protectedRanges) ? (maybeMeta?.protectedRanges as ProtectedRange[]) : undefined;
       const blockRange = block.payload.range;
