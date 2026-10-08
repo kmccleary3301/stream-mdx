@@ -1,4 +1,8 @@
 import assert from "node:assert";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { JSDOM } from "jsdom";
+import { MarkdownBlocksRenderer } from "@stream-mdx/react/server";
 
 import { applyPatchBatch, createBlockSnapshot, createInitialSnapshot, type Block, type InlineNode, type NodeSnapshot, type Patch, type WorkerOut } from "@stream-mdx/core";
 import { createRendererStore } from "@stream-mdx/react/renderer/store";
@@ -124,11 +128,11 @@ async function runPreparedFootnoteConsumerTest(): Promise<void> {
     assert.deepStrictEqual(seen, new Set(numbers.keys()), "nested consumers must retain every reference, not just root compatibility inline");
   };
   const content = [
-    "- first[^beta]",
+    "- first<span>[^beta]</span>",
     "",
     "  > # Heading[^alpha]",
     "  >",
-    "  > repeat[^beta]",
+    "  > repeat<span>[^beta]</span>",
     "  >",
     "  > - third[^gamma]",
     "  >",
@@ -136,11 +140,11 @@ async function runPreparedFootnoteConsumerTest(): Promise<void> {
     "  > // [^ignored]",
     "  > ```",
     "",
-    "> quote[^alpha] and again[^beta]",
+    "> quote<span>[^alpha]</span> and again[^beta]",
     "",
     "Tail",
   ].join("\n");
-  const initialMessages = await harness.send({ type: "INIT", initialContent: content, prewarmLangs: [], docPlugins: { footnotes: true, html: false, mdx: false, tables: false, callouts: false } });
+  const initialMessages = await harness.send({ type: "INIT", initialContent: content, prewarmLangs: [], docPlugins: { footnotes: true, html: true, mdx: false, tables: false, callouts: false } });
   const initialBlocks = initialMessages.find((message): message is Extract<WorkerOut, { type: "INITIALIZED" }> => message.type === "INITIALIZED")?.blocks;
   assert.ok(initialBlocks);
   const initialSerialized = JSON.stringify(initialBlocks);
@@ -159,6 +163,14 @@ async function runPreparedFootnoteConsumerTest(): Promise<void> {
   assert.deepStrictEqual(reset.getInvariantViolations(), []);
   const items = blocks.find((block) => block.type === "footnotes")?.payload.meta?.items as Array<{ label: string; number: number; inlines: InlineNode[] }> | undefined;
   assert.ok(items);
+  const patchedDom = new JSDOM(renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: store.getBlocks(), store })));
+  const serializedDom = new JSDOM(renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: reset.getBlocks(), store: reset })));
+  const numbersInDom = (dom: JSDOM) => [...dom.window.document.querySelectorAll("sup.footnote-ref a")].map((anchor) => [anchor.getAttribute("href"), anchor.textContent]);
+  assert.deepStrictEqual(numbersInDom(patchedDom), numbersInDom(serializedDom), "HTML-owned native inline slots must retain numbers after serialized reset");
+  assert.ok(numbersInDom(patchedDom).some(([href, text]) => href === "#fn:1" && text === "1"), "real nested HTML consumer must render the numbered native footnote");
+  assert.ok([...patchedDom.window.document.querySelectorAll("span sup.footnote-ref a")].some((anchor) => anchor.textContent === "1"), "HTML paragraph ownership descriptors must not retain pre-document-plugin numbers");
+  patchedDom.window.close();
+  serializedDom.window.close();
   assert.deepStrictEqual(items.map(({ label, number }) => [label, number]), [...numbers.entries()], "first-reference order must survive repeated references and later definitions");
   assert.ok(items.every((item) => item.inlines.some((node) => node.kind === "text" && /First|Second|Third/.test(node.text))), "forward definition text must populate the synthetic consumer artifact");
   for (const quote of blocks.filter((block) => block.type === "blockquote")) {

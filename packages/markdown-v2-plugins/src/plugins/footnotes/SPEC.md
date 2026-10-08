@@ -30,10 +30,11 @@ This plugin adds footnote support to the V2 Markdown pipeline while preserving @
 - Inline parser adds `footnote-ref` nodes via a regex plugin.
 - Document-phase plugin:
   - Collects definitions from paragraph blocks, retagging them as `footnote-def`.
+  - The engine retains native `LinkReference` spans beginning with a supported footnote label when the footnotes document plugin is enabled. Single-word definitions reach this phase instead of disappearing as ordinary link-reference definitions.
   - Assigns numbers in document order from typed prepared list/quote children, or textual root blocks without prepared children. Nested code and HTML do not reserve numbers.
   - Appends a synthetic `footnotes` block with items.
   - Uses the `InlineParser` from worker state to parse definition content for better rendering.
-  - Numbers every serialized child inline representation and derives blockquote compatibility inline from those actual children. JSON snapshots, direct/worker PATCH consumers, and finalized roots carry the same numbers.
+  - Numbers every serialized child inline representation and existing HTML ownership inline descriptor, and derives blockquote compatibility inline from those actual children. JSON snapshots, direct/worker PATCH consumers, and finalized roots carry the same numbers.
   - Copies only changed footnote-owned paths. Reused roots and unrelated prepared code/HTML artifacts remain unchanged, so incremental diffs retain their old numbered snapshots.
 
 ## Edge Cases
