@@ -9,10 +9,13 @@ export const HtmlContinuationExtension: MarkdownConfig = {
     parse(context, line) {
       if (!/^<textarea(?:\s|>|$)/i.test(line.text.slice(line.pos))) return false;
       const from = context.lineStart + line.pos;
-      const depth = context.depth;
+      // Consume raw lines until the closing tag, mirroring the built-in Type 1 HTML block.
+      // Its guard against leaving the enclosing block uses the internal `Line.depth`; the public
+      // counterpart is `Line.basePos`, the position after the enclosing composite markers, which
+      // shrinks below the captured value once the new line is no longer inside this context.
+      const basePos = line.basePos;
       let closed = /<\/textarea>/i.test(line.text);
-      while (!closed && context.nextLine()) {
-        if (line.depth < depth) break;
+      while (!closed && context.nextLine() && line.basePos >= basePos) {
         closed = /<\/textarea>/i.test(line.text);
       }
       if (closed) context.nextLine();

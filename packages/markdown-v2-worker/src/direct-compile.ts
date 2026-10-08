@@ -1,3 +1,5 @@
+import "./worker-dom-stub";
+import { MarkdownEngine } from "./engine";
 import {
   PATCH_ROOT_ID,
   applyPatchBatch,
@@ -69,16 +71,10 @@ type NodeCacheRuntime = {
   path: NodePathLike;
 };
 
-const globalBridge = globalThis as {
-  self?: InlineWorkerScope;
-  postMessage?: (message: WorkerOut) => void;
-};
-
 let runtimePromise: Promise<InlineWorkerScope> | null = null;
 let nodeCacheRuntimePromise: Promise<NodeCacheRuntime | null> | null = null;
 let activeQueue: WorkerOut[] | null = null;
 let compileChain: Promise<void> = Promise.resolve();
-let originalPostMessage: ((message: WorkerOut) => void) | undefined;
 
 function withCompileLock<T>(fn: () => Promise<T>): Promise<T> {
   let resolveChain!: () => void;
@@ -101,33 +97,16 @@ function withCompileLock<T>(fn: () => Promise<T>): Promise<T> {
 
 async function ensureWorkerRuntimeLoaded(): Promise<InlineWorkerScope> {
   if (runtimePromise) return runtimePromise;
-  runtimePromise = (async () => {
-    const scope = (globalBridge.self ?? {}) as InlineWorkerScope;
-    globalBridge.self = scope;
-
-    if (!originalPostMessage && typeof globalBridge.postMessage === "function") {
-      originalPostMessage = globalBridge.postMessage.bind(globalBridge);
-    }
-    globalBridge.postMessage = (message: WorkerOut) => {
-      if (activeQueue) {
-        activeQueue.push(message);
-        return;
-      }
-      if (originalPostMessage) {
-        try {
-          originalPostMessage(message);
-        } catch {
-          // ignore passthrough errors
-        }
-      }
-    };
-
-    await import("./worker");
-    if (typeof scope.onmessage !== "function") {
-      throw new Error("[stream-mdx] direct compile runtime failed to initialize worker onmessage.");
-    }
-    return scope;
-  })();
+  const engine = new MarkdownEngine({
+    post(message) {
+      activeQueue?.push(message);
+    },
+  });
+  runtimePromise = Promise.resolve({
+    onmessage(event: MessageEvent<WorkerIn>) {
+      return engine.handle(event.data);
+    },
+  });
   return runtimePromise;
 }
 

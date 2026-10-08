@@ -6,6 +6,8 @@ import { fileURLToPath } from "node:url";
 
 import { compileMarkdownSnapshotDirect } from "../src/direct-compile";
 import { compileMarkdownSnapshot } from "../src/node/index";
+import { compileMarkdownSnapshotDirect as compilePublicDirect } from "@stream-mdx/worker/direct";
+import { createWorkerHarness } from "./worker-test-harness";
 
 function summarizeBlocks(blocks: ReadonlyArray<any>) {
   return blocks.map((block) => {
@@ -87,5 +89,28 @@ function resolveTestWorkerBundle(): string {
   return hostedPath;
 }
 
+async function runDirectTransportIsolationTest(): Promise<void> {
+  const text = "Root[^note].\n\n> Nested[^note].\n\n[^note]: Actual definition.\n";
+  const init = { prewarmLangs: [], docPlugins: { footnotes: true, html: false, mdx: false, math: false, tables: false, callouts: false } };
+  const beforeFirst = ["self", "postMessage"].map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)] as const);
+  try {
+    const first = await compilePublicDirect({ text, init });
+    for (const [key, descriptor] of beforeFirst) assert.deepStrictEqual(Object.getOwnPropertyDescriptor(globalThis, key), descriptor, `initial direct compilation must not install ${key}`);
+    const harness = await createWorkerHarness();
+    const transportMessages = await harness.send({ type: "INIT", initialContent: "Other transport owns its own document.", prewarmLangs: [] });
+    assert.ok(transportMessages.some((message) => message.type === "INITIALIZED"));
+    const beforeSecond = ["self", "postMessage"].map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)] as const);
+    const second = await compilePublicDirect({ text, init });
+    assert.deepStrictEqual(second.blocks, first.blocks, "cached public direct compilation must retain its own transport across another real worker runtime");
+    for (const [key, descriptor] of beforeSecond) assert.deepStrictEqual(Object.getOwnPropertyDescriptor(globalThis, key), descriptor, `direct compilation must not replace ${key}`);
+  } finally {
+    for (const [key, descriptor] of beforeFirst) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+      else Reflect.deleteProperty(globalThis, key);
+    }
+  }
+}
+
 await runDirectCompileParityTest();
+await runDirectTransportIsolationTest();
 console.log("direct compile parity test passed");

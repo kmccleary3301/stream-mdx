@@ -40,7 +40,6 @@ import {
   diffLinkReferences,
   dedentIndentedCode,
   detectMDX,
-  extractCodeLines,
   extractMixedContentSegments,
   generateBlockId,
   normalizeFormatAnticipation,
@@ -62,7 +61,7 @@ import {
 } from "@stream-mdx/plugins";
 import { isBlockLevelNode, mapLezerNodeToBlockType } from "../parser/block-types";
 import { HtmlContinuationExtension } from "../parser/html-extension";
-import { containsInlineHtml, groupHtmlOwnership, normalizeHtmlParagraph } from "./html-ownership";
+import { applyHtmlTagBalance, containsInlineHtml, groupHtmlOwnership, normalizeHtmlParagraph } from "./html-ownership";
 import { computeParagraphPatchLimit } from "../perf/patch-heuristics";
 import {
   clampLazyRange,
@@ -855,7 +854,8 @@ export class MarkdownEngine {
         return await this.extractBlocksSimple(content, options);
       }
 
-      return groupHtmlOwnership(extracted, this.mdParser, content, this.htmlConfig, 0, (text) => this.inlineParser.parse(text));
+      const grouped = groupHtmlOwnership(extracted, this.mdParser, content, this.htmlConfig, 0, (text) => this.inlineParser.parse(text));
+      return await this.refreshOwnedMdxRegions(grouped, options);
     } catch (error) {
       console.warn("Lezer parsing failed, falling back to simple parsing:", error);
       return await this.extractBlocksSimple(content, options);
@@ -993,6 +993,104 @@ export class MarkdownEngine {
     } finally {
       this.recordLinkReferences(block, this.inlineParser.stopCollectingAttemptedReferences());
     }
+  }
+
+  private engineMdxState(): EngineMdxState {
+    return {
+      cache: this.workerMdxCache,
+      inflight: this.workerMdxInflight,
+      compileMode: this.mdxCompileMode,
+      debugMdx: false,
+    };
+  }
+
+  /** Whether a raw fragment opens a container (`<div>`, `<SmokeBox>`) that never closes inside it. */
+  private leavesOpenContainer(raw: string): boolean {
+    if (!raw) return false;
+    const stack: string[] = [];
+    applyHtmlTagBalance(raw, this.mdParser, stack);
+    return stack.length > 0;
+  }
+
+  /**
+   * Native MDX eligibility for one block: a component open tag or JSX expression outside protected
+   * ranges. Html blocks are additionally re-checked without their own html-block protection so a
+   * complete `<Component>` region root is recognized even when its opening tag is the protected span.
+   */
+  private applyMdxDetection(block: Block, metrics?: WorkerMetricsCollector | null): boolean {
+    if (!this.mdxEnabled || (block.type !== "paragraph" && block.type !== "html")) return false;
+    const maybeMeta = block.payload.meta as Record<string, unknown> | undefined;
+    const protectedRanges = Array.isArray(maybeMeta?.protectedRanges) ? (maybeMeta?.protectedRanges as ProtectedRange[]) : undefined;
+    const blockRange = block.payload.range;
+    const baseOffset = typeof blockRange?.from === "number" ? blockRange.from : 0;
+    const normalizedRanges =
+      protectedRanges && protectedRanges.length > 0
+        ? protectedRanges.map((range) => ({
+            ...range,
+            from: baseOffset + range.from,
+            to: baseOffset + range.to,
+          }))
+        : undefined;
+    const mdxOptions =
+      normalizedRanges && normalizedRanges.length > 0 ? { protectedRanges: normalizedRanges, baseOffset } : baseOffset ? { baseOffset } : undefined;
+    const mdxDetectStart = now();
+    let shouldConvertToMDX = detectMDX(block.payload.raw, mdxOptions);
+    if (!shouldConvertToMDX && block.type === "html") {
+      const fallbackOptions = baseOffset ? { baseOffset } : undefined;
+      shouldConvertToMDX = detectMDX(block.payload.raw, fallbackOptions);
+    }
+    metrics?.recordMdxDetect(now() - mdxDetectStart);
+    if (shouldConvertToMDX && protectedRanges && protectedRanges.length > 0 && block.type !== "html") {
+      const exprPattern = /\{[^{}]+\}/g;
+      let match: RegExpExecArray | null;
+      while (true) {
+        match = exprPattern.exec(block.payload.raw);
+        if (match === null) break;
+        const start = match.index;
+        const end = start + match[0].length;
+        const covered = protectedRanges.some((range) => range.from <= start && range.to >= end);
+        if (!covered) {
+          shouldConvertToMDX = true;
+          break;
+        }
+        shouldConvertToMDX = false;
+      }
+    }
+    if (shouldConvertToMDX) {
+      const originalType = block.type;
+      block.payload.meta = { ...block.payload.meta, originalType };
+      block.type = "mdx";
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Region grouping runs before MDX detection so a balanced component stays one owning root.
+   * Deferred html blocks refresh here: region owners convert and compile, while an unclosed
+   * container that is not finalized yet stays an html block pending its close or FINALIZE.
+   */
+  private async refreshOwnedMdxRegions(blocks: Block[], options: ParseOptions): Promise<Block[]> {
+    if (!this.mdxEnabled) return blocks;
+    for (const block of blocks) {
+      if (block.type !== "html") continue;
+      const owned = (block.payload.meta as { htmlOwnership?: unknown } | undefined)?.htmlOwnership === true;
+      const raw = block.payload.raw ?? "";
+      const open = this.leavesOpenContainer(raw);
+      if (!open && !owned) continue;
+      if (open && !options.forceFinalize) {
+        if (owned || detectMDX(raw)) {
+          block.isFinalized = false;
+        }
+        continue;
+      }
+      if (!this.applyMdxDetection(block, this.activeMetricsCollector)) continue;
+      if ("sanitizedHtml" in block.payload) {
+        block.payload.sanitizedHtml = undefined;
+      }
+      await updateMdxCompilationState(this.engineMdxState(), block);
+    }
+    return blocks;
   }
 
   /**
@@ -1243,57 +1341,14 @@ export class MarkdownEngine {
         break;
       }
     }
-    if (this.mdxEnabled && (block.type === "paragraph" || block.type === "html")) {
-      const maybeMeta = block.payload.meta as Record<string, unknown> | undefined;
-      const protectedRanges = Array.isArray(maybeMeta?.protectedRanges) ? (maybeMeta?.protectedRanges as ProtectedRange[]) : undefined;
-      const blockRange = block.payload.range;
-      const baseOffset = typeof blockRange?.from === "number" ? blockRange.from : 0;
-      const normalizedRanges =
-        protectedRanges && protectedRanges.length > 0
-          ? protectedRanges.map((range) => ({
-              ...range,
-              from: baseOffset + range.from,
-              to: baseOffset + range.to,
-            }))
-          : undefined;
-      const mdxOptions =
-        normalizedRanges && normalizedRanges.length > 0 ? { protectedRanges: normalizedRanges, baseOffset } : baseOffset ? { baseOffset } : undefined;
-      const mdxDetectStart = now();
-      let shouldConvertToMDX = detectMDX(block.payload.raw, mdxOptions);
-      if (!shouldConvertToMDX && block.type === "html") {
-        const fallbackOptions = baseOffset ? { baseOffset } : undefined;
-        shouldConvertToMDX = detectMDX(block.payload.raw, fallbackOptions);
-      }
-      metrics?.recordMdxDetect(now() - mdxDetectStart);
-      if (shouldConvertToMDX && protectedRanges && protectedRanges.length > 0 && block.type !== "html") {
-        const exprPattern = /\{[^{}]+\}/g;
-        let match: RegExpExecArray | null;
-        while (true) {
-          match = exprPattern.exec(block.payload.raw);
-          if (match === null) break;
-          const start = match.index;
-          const end = start + match[0].length;
-          const covered = protectedRanges.some((range) => range.from <= start && range.to >= end);
-          if (!covered) {
-            shouldConvertToMDX = true;
-            break;
-          }
-          shouldConvertToMDX = false;
-        }
-      }
-      if (shouldConvertToMDX) {
-        const originalType = block.type;
-        block.payload.meta = { ...block.payload.meta, originalType };
-        block.type = "mdx";
-      }
+    if (!(this.mdxEnabled && block.type === "html" && this.leavesOpenContainer(block.payload.raw ?? ""))) {
+      // An html block that leaves a container open is a region candidate: grouping must see its
+      // native `html` identity before MDX detection can retag it, so detection is refreshed for
+      // region-owned blocks after grouping instead.
+      this.applyMdxDetection(block, metrics);
     }
 
-    const mdxState: EngineMdxState = {
-      cache: this.workerMdxCache,
-      inflight: this.workerMdxInflight,
-      compileMode: this.mdxCompileMode,
-      debugMdx: false,
-    };
+    const mdxState = this.engineMdxState();
     await updateMdxCompilationState(mdxState, block);
 
     const enrichDuration = this.performanceTimer.measure("enrich-block");
@@ -1317,14 +1372,17 @@ export class MarkdownEngine {
   private async prepareNestedChildren(block: Block): Promise<void> {
     block.payload.meta = { ...block.payload.meta, mathEnabled: this.enableMath, formatAnticipation: this.formatAnticipationConfig };
     const prepared = prepareNestedBlockSnapshot(block, this.inlineParser, this.mdParser, (text) => this.parseInlineStreaming(text).inline);
-    const groupChildren = (children: NodeSnapshot[]): NodeSnapshot[] => {
+    const groupChildren = async (children: NodeSnapshot[]): Promise<NodeSnapshot[]> => {
       const grouped: NodeSnapshot[] = [];
       let sequence: NodeSnapshot[] = [];
-      const flush = () => {
+      const flush = async () => {
         const blocks = sequence.map((child) => child.props?.block as Block);
-        const owned = groupHtmlOwnership(blocks, this.mdParser, block.payload.raw, this.htmlConfig, block.payload.range?.from ?? 0, (text) => this.inlineParser.parse(text));
+        const owned = groupHtmlOwnership(blocks, this.mdParser, block.payload.raw, this.htmlConfig, block.payload.range?.from ?? 0, (text) => this.inlineParser.parse(text), { joinLeafRaws: true });
         for (const child of owned) {
           const original = sequence.find((candidate) => candidate.props?.block === child);
+          if (!original) {
+            await this.refreshOwnedMdxRegions([child], {});
+          }
           grouped.push(original ?? createBlockSnapshot(child));
         }
         sequence = [];
@@ -1332,16 +1390,16 @@ export class MarkdownEngine {
       for (const child of children) {
         if (child.props?.block) sequence.push(child);
         else {
-          flush();
+          await flush();
           grouped.push(child);
         }
       }
-      flush();
+      await flush();
       return grouped;
     };
     const enrich = async (snapshot: NodeSnapshot): Promise<void> => {
       for (const child of snapshot.children ?? []) await enrich(child);
-      snapshot.children = groupChildren(snapshot.children ?? []);
+      snapshot.children = await groupChildren(snapshot.children ?? []);
       const nested = snapshot.props?.block as Block | undefined;
       if (!nested) return;
       if (nested.type === "list" || nested.type === "blockquote" || nested.type === "list-item") {
@@ -1349,6 +1407,7 @@ export class MarkdownEngine {
         nested.payload.meta = { ...nested.payload.meta, preparedNested: { props, children: snapshot.children ?? [] } };
       } else {
         await this.enrichBlockContent(nested);
+        await this.refreshOwnedMdxRegions([nested], {});
         const updated = createBlockSnapshot(nested);
         snapshot.type = updated.type;
         snapshot.props = { ...snapshot.props, ...updated.props, inline: nested.payload.inline };
@@ -1357,7 +1416,7 @@ export class MarkdownEngine {
       }
     };
     for (const child of prepared.children) await enrich(child);
-    prepared.children = groupChildren(prepared.children);
+    prepared.children = await groupChildren(prepared.children);
     this.canonicalizePreparedSnapshot(prepared);
     block.payload.meta = {
       ...block.payload.meta,
@@ -2085,12 +2144,7 @@ export class MarkdownEngine {
     }
 
     const { blocks: reparsedBlocks, lastTree: reparsedTree } = await this.parseAll(this.currentContent, { forceFinalize: true });
-    const mdxState: EngineMdxState = {
-      cache: this.workerMdxCache,
-      inflight: this.workerMdxInflight,
-      compileMode: this.mdxCompileMode,
-      debugMdx: false,
-    };
+    const mdxState = this.engineMdxState();
     for (const block of reparsedBlocks) {
       block.isFinalized = true;
       await updateMdxCompilationState(mdxState, block);

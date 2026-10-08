@@ -1,5 +1,5 @@
 import { createJavaScriptRegexEngine } from "@shikijs/engine-javascript";
-import { type Highlighter, createHighlighter } from "shiki";
+import { type BundledLanguage, type Highlighter, type SpecialLanguage, bundledLanguages, createHighlighter } from "shiki";
 import type {
   DiffBlock,
   DiffKind,
@@ -29,6 +29,11 @@ export type SharedHighlighter = Highlighter;
 
 let sharedHighlighterPromise: Promise<SharedHighlighter> | null = null;
 let sharedHighlighter: SharedHighlighter | null = null;
+
+function isSupportedLanguage(language: string): language is BundledLanguage | SpecialLanguage {
+  return language === "text" || language === "plaintext" || language === "txt" || language === "ansi"
+    || Object.prototype.hasOwnProperty.call(bundledLanguages, language);
+}
 export async function getSharedHighlighter(prewarmLangs: string[] = []): Promise<SharedHighlighter> {
   if (!sharedHighlighterPromise) {
     const coreLangs = ["javascript", "typescript", "json", "text", "markdown", "diff"];
@@ -49,7 +54,7 @@ export async function getSharedHighlighter(prewarmLangs: string[] = []): Promise
     if (toLoad.length > 0) {
       await Promise.all(
         toLoad.map((l) =>
-          highlighter.loadLanguage(l).catch((err) => {
+          (isSupportedLanguage(l) ? highlighter.loadLanguage(l) : Promise.reject(new Error(`Unsupported language ${l}`))).catch((err) => {
             console.warn(`Failed to prewarm language ${l}:`, err);
           }),
         ),
@@ -62,8 +67,12 @@ export async function getSharedHighlighter(prewarmLangs: string[] = []): Promise
 export async function resolveHighlightLanguage(
   highlighter: SharedHighlighter | null,
   requestedLanguage: string,
-): Promise<string> {
+): Promise<BundledLanguage | SpecialLanguage> {
   if (!highlighter) return "text";
+  if (!isSupportedLanguage(requestedLanguage)) {
+    console.warn(`Unsupported language ${requestedLanguage}, falling back to text`);
+    return "text";
+  }
   const loadedLangs = highlighter.getLoadedLanguages();
   if (!loadedLangs.includes(requestedLanguage)) {
     try {
@@ -513,12 +522,15 @@ export async function tokenizeDiffRun(
     return { tokenLines: [], grammarState };
   }
   const text = lines.map((line) => line.raw).join("\n");
-  const rawTokens = highlighter.codeToTokensWithThemes(text, {
-    lang: language,
+  // Shiki 1.29 forwards this continuation option to codeToTokensBase, although
+  // its multi-theme options declaration omits it.
+  const options = {
+    lang: isSupportedLanguage(language) ? language : "text",
     themes: CODE_HIGHLIGHT_THEMES,
-    grammarState: grammarState as any,
-  }) as ShikiThemedToken[][];
-  const nextGrammarState = highlighter.getLastGrammarState(rawTokens as any);
+    grammarState,
+  };
+  const rawTokens = highlighter.codeToTokensWithThemes(text, options);
+  const nextGrammarState = highlighter.getLastGrammarState(rawTokens);
   return {
     tokenLines: renderTokenLines(rawTokens),
     grammarState: nextGrammarState,

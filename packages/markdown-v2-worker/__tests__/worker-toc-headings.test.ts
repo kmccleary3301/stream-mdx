@@ -34,6 +34,14 @@ async function runTocHeadingsTest(): Promise<void> {
     ],
     "tocHeadings should include stable slug ids and levels",
   );
+  const dump = (await harness.send({ type: "DUMP_BLOCKS" })).find((message): message is Extract<WorkerOut, { type: "DUMP_BLOCKS" }> => message.type === "DUMP_BLOCKS");
+  assert.ok(dump);
+  for (const heading of tocHeadings) {
+    const owner = dump.blocks.find((block) => block.id === heading.blockId);
+    assert.ok(owner, `TOC heading ${heading.id} must target an actual owning block`);
+    assert.strictEqual(owner.type, "heading");
+    assert.strictEqual(owner.payload.meta?.headingId, heading.id);
+  }
 }
 
 await runTocHeadingsTest();
