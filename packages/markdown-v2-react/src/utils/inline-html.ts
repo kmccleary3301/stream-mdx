@@ -1,12 +1,13 @@
 import React from "react";
 
 import type { InlineHtmlDescriptor } from "@stream-mdx/core";
-import type { InlineHtmlRendererMap } from "../types";
+import type { HtmlElements, InlineHtmlRendererMap } from "../types";
 
 export interface RenderInlineHtmlOptions {
   key?: React.Key;
   renderers?: InlineHtmlRendererMap;
   className?: string;
+  htmlElements?: HtmlElements;
 }
 
 const BACKTICK_CONTENT = /^`([\s\S]+)`$/;
@@ -37,6 +38,14 @@ export function renderInlineHtmlSegment(
   if (!descriptor) {
     return null;
   }
+  const customElementComp = options.htmlElements?.[descriptor.tagName];
+  if (customElementComp) {
+    const props = mapAttributesToProps(descriptor.attributes);
+    if (options.key !== undefined && options.key !== null) {
+      props.key = options.key;
+    }
+    return React.createElement(customElementComp, props, descriptor.text || descriptor.sanitizedInner || undefined);
+  }
 
   const className = options.className ?? "markdown-inline-html";
   const isInlineTag = INLINE_ELEMENTS.has(descriptor.tagName);
@@ -53,7 +62,7 @@ export function renderInlineHtmlSegment(
     }
 
     if (isInlineTag) {
-      const parsedElement = renderSanitizedHtmlTree(descriptor.sanitized, options.key);
+      const parsedElement = renderSanitizedHtmlTree(descriptor.sanitized, options.key, options.htmlElements);
       if (parsedElement) {
         return parsedElement;
       }
@@ -189,7 +198,7 @@ function extractPlainText(value: string): string {
   return decodeHtmlEntities(withoutTags);
 }
 
-function renderSanitizedHtmlTree(html: string, key: React.Key | undefined): React.ReactElement | null {
+function renderSanitizedHtmlTree(html: string, key: React.Key | undefined, htmlElements?: HtmlElements): React.ReactElement | null {
   if (typeof DOMParser === "undefined") {
     return null;
   }
@@ -204,7 +213,7 @@ function renderSanitizedHtmlTree(html: string, key: React.Key | undefined): Reac
 
     const baseKey = typeof key === "string" || typeof key === "number" ? String(key) : "inline-html";
     const children = nodes
-      .map((node, index) => convertDomNode(node, `${baseKey}-${index}`))
+      .map((node, index) => convertDomNode(node, `${baseKey}-${index}`, htmlElements))
       .filter((child): child is React.ReactNode => child !== null && child !== undefined);
 
     if (children.length === 0) {
@@ -234,7 +243,7 @@ function renderSanitizedHtmlTree(html: string, key: React.Key | undefined): Reac
   }
 }
 
-function convertDomNode(node: Node, key: string): React.ReactNode | null {
+function convertDomNode(node: Node, key: string, htmlElements?: HtmlElements): React.ReactNode | null {
   if (node.nodeType === Node.TEXT_NODE) {
     return node.textContent ?? "";
   }
@@ -248,11 +257,19 @@ function convertDomNode(node: Node, key: string): React.ReactNode | null {
   props.key = key;
   const children: React.ReactNode[] = [];
   element.childNodes.forEach((child, index) => {
-    const converted = convertDomNode(child, `${key}-${index}`);
+    const converted = convertDomNode(child, `${key}-${index}`, htmlElements);
     if (converted !== null && converted !== undefined) {
       children.push(converted);
     }
   });
+
+  const customComponent = htmlElements?.[tagName];
+  if (customComponent) {
+    if (children.length === 0) {
+      return React.createElement(customComponent, props);
+    }
+    return React.createElement(customComponent, props, ...children);
+  }
 
   if (children.length === 0) {
     return React.createElement(tagName, props);

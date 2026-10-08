@@ -817,6 +817,7 @@ function StreamingMarkdownComponent(
           }
         }
         if (!cancelled) {
+          renderer.finalize();
           setStreamStatus("done");
         }
       } catch (error) {

@@ -5,6 +5,7 @@ export interface MixedContentAutoCloseHtmlOptions {
   autoClose?: boolean;
   maxNewlines?: number;
   allowTags?: Iterable<string>;
+  allowedTags?: Record<string, string[]>;
 }
 
 export interface MixedContentAutoCloseMdxOptions {
@@ -18,6 +19,7 @@ export interface MixedContentOptions {
   mdx?: MixedContentAutoCloseMdxOptions;
   protectedRanges?: ReadonlyArray<ProtectedRange>;
   protectedRangeKinds?: ReadonlyArray<ProtectedRange["kind"]>;
+  allowedTags?: Record<string, string[]>;
 }
 
 const DEFAULT_INLINE_HTML_AUTOCLOSE_TAGS = new Set([
@@ -70,7 +72,12 @@ function splitByTagSegments(
   let cursor = 0;
   let match: RegExpExecArray | null = tagPattern.exec(source);
   const baseIsFinite = typeof baseOffset === "number" && Number.isFinite(baseOffset);
-  const htmlAllowTags = normalizeHtmlAllowlist(options?.html?.allowTags);
+  const customAllowed = options?.allowedTags ? Object.keys(options.allowedTags) : undefined;
+  const htmlAllowTags = normalizeHtmlAllowlist(options?.html?.allowTags, customAllowed);
+  const sanitizeOptions =
+    options?.allowedTags || options?.html?.allowedTags
+      ? { allowedTags: options.allowedTags ?? options.html?.allowedTags }
+      : undefined;
   const htmlAutoClose = options?.html?.autoClose === true;
   const htmlMaxNewlines = normalizeNewlineLimit(options?.html?.maxNewlines);
   const mdxAutoClose = options?.mdx?.autoClose === true;
@@ -159,7 +166,7 @@ function splitByTagSegments(
             const segment: MixedContentSegment = {
               kind: "html",
               value: closedValue,
-              sanitized: sanitizeHtmlInWorker(closedValue),
+              sanitized: sanitizeHtmlInWorker(closedValue, sanitizeOptions),
             };
             setSegmentRange(segment, createSegmentRange(baseOffset, start, source.length));
             segments.push(segment);
@@ -189,7 +196,7 @@ function splitByTagSegments(
     };
     setSegmentRange(segment, createSegmentRange(baseOffset, start, end));
     if (kind === "html") {
-      segment.sanitized = sanitizeHtmlInWorker(rawSegment);
+      segment.sanitized = sanitizeHtmlInWorker(rawSegment, sanitizeOptions);
     } else {
       const tail = source.slice(end);
       const newlineCount = countNewlines(tail, mdxMaxNewlines + 1);
@@ -363,15 +370,19 @@ function normalizeNewlineLimit(value: number | undefined): number {
   return Math.max(0, value ?? 0);
 }
 
-function normalizeHtmlAllowlist(value: Iterable<string> | undefined): Set<string> {
-  if (!value) return DEFAULT_INLINE_HTML_AUTOCLOSE_TAGS;
-  const tags = new Set<string>();
-  for (const tag of value) {
-    if (tag) {
-      tags.add(tag.toLowerCase());
+function normalizeHtmlAllowlist(value: Iterable<string> | undefined, additional?: Iterable<string>): Set<string> {
+  const tags = new Set<string>(DEFAULT_INLINE_HTML_AUTOCLOSE_TAGS);
+  if (value) {
+    for (const tag of value) {
+      if (tag) tags.add(tag.toLowerCase());
     }
   }
-  return tags.size > 0 ? tags : DEFAULT_INLINE_HTML_AUTOCLOSE_TAGS;
+  if (additional) {
+    for (const tag of additional) {
+      if (tag) tags.add(tag.toLowerCase());
+    }
+  }
+  return tags;
 }
 
 function normalizeComponentAllowlist(value: Iterable<string> | undefined): Set<string> | null {

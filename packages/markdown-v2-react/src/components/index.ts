@@ -776,6 +776,11 @@ export class ComponentRegistry {
     this.htmlElements = { ...this.htmlElements, ...map } as HtmlElements;
   }
 
+  /** Get HTML element mapping */
+  getHtmlElements(): HtmlElements {
+    return this.htmlElements;
+  }
+
   /** Update table element mapping for table blocks */
   setTableElements(map: Partial<TableElements>): void {
     this.tableElements = { ...this.tableElements, ...map } as TableElements;
@@ -1142,6 +1147,7 @@ export function renderParagraphMixedSegments(
   segments: MixedContentSegment[],
   inlineComponents: InlineComponents,
   inlineHtmlRenderers: InlineHtmlRendererMap,
+  htmlElements?: HtmlElements,
 ): React.ReactNode[] {
   const result: React.ReactNode[] = [];
   let inlineBuffer: React.ReactNode[] = [];
@@ -1240,6 +1246,7 @@ export function renderParagraphMixedSegments(
         const element = renderInlineHtmlSegment(segment.value, segment.sanitized, {
           key,
           renderers: inlineHtmlRenderers,
+          htmlElements,
         });
         if (isBlockLevel) {
           flushInline();

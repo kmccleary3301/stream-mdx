@@ -963,13 +963,11 @@ export class MarkdownEngine {
                   to: baseOffset + range.to,
                 }))
               : undefined;
-          const mixedSegmentOptions =
-            mixedOptions || protectedRangesAbsolute
-              ? {
-                  ...mixedOptions,
-                  protectedRanges: protectedRangesAbsolute,
-                }
-              : undefined;
+          const mixedSegmentOptions = {
+            ...mixedOptions,
+            ...(protectedRangesAbsolute ? { protectedRanges: protectedRangesAbsolute } : {}),
+            ...(this.htmlConfig?.allowedTags ? { allowedTags: this.htmlConfig.allowedTags } : {}),
+          };
           const inlineFn = block.isFinalized ? (v: string) => this.inlineParser.parse(v) : (v: string) => this.parseInlineStreaming(v).inline;
           const segments = extractMixedContentSegments(rawParagraph, baseOffset, inlineFn, mixedSegmentOptions);
           const hasStructuredSegments = segments.some((segment) => segment.kind !== "text");
