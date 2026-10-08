@@ -1,6 +1,6 @@
 # `@stream-mdx/mermaid`
 
-`@stream-mdx/mermaid` is the opt-in Mermaid addon for StreamMDX. Register it as the `mermaid` block renderer and fenced `mermaid` code blocks will render as diagrams with a code/diagram toggle.
+`@stream-mdx/mermaid` is the opt-in Mermaid addon for StreamMDX. Register it in `codeRenderers.mermaid` and fenced `mermaid` code blocks render as diagrams with a code/diagram toggle.
 
 ## Install
 
@@ -38,10 +38,22 @@ Incomplete or invalid diagrams report errors inside their own block. Once valid 
 ## Customization
 
 ```tsx
-codeRenderers={{
-  mermaid: (props) => <MermaidBlock {...props} debounceMs={250} defaultView="diagram" />,
-}}
+import { StreamingMarkdown } from "stream-mdx";
+import { MermaidBlock } from "@stream-mdx/mermaid";
+
+export function CustomDiagram({ text }: { text: string }) {
+  return (
+    <StreamingMarkdown
+      text={text}
+      codeRenderers={{
+        mermaid: (props) => <MermaidBlock {...props} debounceMs={250} defaultView="diagram" />,
+      }}
+    />
+  );
+}
 ```
+
+`MermaidBlock` accepts the code fence renderer props. `renderCode` is an already rendered React node used by the Code view. Set `deferHeavyBlocks` on `StreamingMarkdown` to use Mermaid's viewport deferral.
 
 ## Documentation
 

@@ -15,6 +15,7 @@ npm install @stream-mdx/worker
 | Export | Purpose |
 | --- | --- |
 | `@stream-mdx/worker` | Main worker utilities surface |
+| `@stream-mdx/worker/engine` | `MarkdownEngine`, `serveMarkdownWorker`, `createInlineEngineWorker`, and extension types |
 | `@stream-mdx/worker/worker-client` | Explicit worker client wiring |
 | `@stream-mdx/worker/node` | Node `worker_threads` hosted-worker helper |
 | `@stream-mdx/worker/direct` | Direct compile path without `worker_threads` |
@@ -38,6 +39,27 @@ Then point the React surface at it:
 ```
 
 This is the preferred deployment path for explicit CSP control and predictable static hosting.
+
+`<StreamingMarkdown engine="auto" />` defaults to a browser Worker, then dynamically imports an in-process engine if Worker construction is unavailable or fails. `engine="worker"` requires a Worker; `engine="main-thread"` skips it and runs parsing on the browser thread. These modes initialize in a React effect, not during SSR. They do not recover from later worker script loading or runtime errors.
+
+## Isolated engine and custom entries
+
+```ts
+import { MarkdownEngine } from "@stream-mdx/worker/engine";
+import type { WorkerOut } from "@stream-mdx/core";
+
+const messages: WorkerOut[] = [];
+const engine = new MarkdownEngine({ post: (message) => messages.push(message) });
+await engine.handle({ type: "INIT" });
+await engine.handle({ type: "APPEND", text: "# Hello" });
+await engine.handle({ type: "FINALIZE" });
+await engine.handle({ type: "INIT", initialContent: "A new document" });
+engine.dispose();
+```
+
+Each engine owns document state and emits protocol messages through `post`. A new `INIT` resets the document while retaining instance extensions. Constructor options are `{ post, extensions? }`; flags and HTML settings belong in `INIT`.
+
+Bundle native functions with `serveMarkdownWorker({ extensions })`. For in-process use, `createInlineEngineWorker({ extensions })` returns a Worker-compatible adapter with microtask delivery and `terminate()`. Extensions accept `markdown`, `inline`, `documentPlugins`, and serializable `syntax` arrays. See the [complete custom worker entry](../../docs/PLUGIN_ABI.md#3-custom-bundled-worker-entry).
 
 ## Node `worker_threads` Helper
 
