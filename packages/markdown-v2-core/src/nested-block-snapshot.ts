@@ -48,7 +48,18 @@ export function prepareNestedBlockSnapshot(block: Block, inlineParser: InlinePar
       from = mark.to;
       if (source[from] === " " || source[from] === "\t") from++;
     }
-    return (result + source.slice(from, node.to)).split("\n").map((line) => line.trimStart()).join("\n");
+    const text = result + source.slice(from, node.to);
+    if (node.type.name !== "HTMLBlock") return text.split("\n").map((line) => line.trimStart()).join("\n");
+    let listIndent = 0;
+    for (let parent = node.parent; parent; parent = parent.parent) {
+      if (parent.type.name !== "ListItem" && parent.type.name !== "EmptyListItem") continue;
+      const mark = parent.getChild("ListMark");
+      if (!mark) continue;
+      const spacing = source.slice(mark.to).match(/^[ \t]*/)?.[0].length ?? 0;
+      listIndent += mark.to - mark.from + (spacing >= 1 && spacing <= 4 ? spacing : 1);
+    }
+    const prefix = new RegExp(`^ {0,${listIndent}}`);
+    return listIndent === 0 ? text : text.split("\n").map((line) => line.replace(prefix, "")).join("\n");
   };
   const looseList = (node: SyntaxNode): boolean => {
     const items = childrenOf(node).filter((child) => child.type.name === "ListItem" || child.type.name === "EmptyListItem");

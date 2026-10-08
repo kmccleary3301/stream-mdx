@@ -51,3 +51,12 @@ assert.equal(parseCodeFenceInfo("unknown\\+&amp;").lang, "unknown+&");
 assert.equal(parseCodeFenceInfo("\\&amp;").lang, "&amp;", "escaped entity opener is not decoded a second time");
 assert.equal(parseCodeFenceInfo("unknown&madeup;").lang, "unknown&madeup;");
 console.log("nested block snapshot conformance passed");
+
+for (const [rawHtml, expectedHtml] of [
+  ["- <pre>\n      literal\n  </pre>\n", "<pre>\n    literal\n</pre>"],
+  ["> <pre>\n>     literal\n> </pre>\n", "<pre>\n    literal\n</pre>"],
+] as const) {
+  const container: Block = { id: "html", type: rawHtml.startsWith(">") ? "blockquote" : "list", isFinalized: true, payload: { raw: rawHtml } };
+  const html = flatten(createBlockSnapshot(container)).find((node) => node.type === "html");
+  assert.equal((html?.props?.block as Block).payload.raw, expectedHtml);
+}

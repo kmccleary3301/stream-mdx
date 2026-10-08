@@ -112,6 +112,10 @@ async function run(): Promise<void> {
   const secondPrepared = other[0].payload.meta?.preparedNested as PreparedNestedSnapshot;
   assert.ok(descendants({ id: "root", type: "root", children: secondPrepared.children }).some((node) => inlineNodes(node).some((inline) => inline.kind === "plugin" && inline.attrs.label === "second-instance")));
   assert.equal(JSON.stringify(other).includes("first-instance"), false, "owning parser state must not leak across engines");
+  other.length = 0;
+  await second.handle({ type: "INIT", initialContent: "> <pre>\n>     literal\n> </pre>\n", prewarmLangs: [], docPlugins: { mdx: false, callouts: false } });
+  const literalHtml = renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: other }));
+  assert.ok(literalHtml.includes("\n    literal\n"), "nested literal HTML indentation must survive the React consumer");
   second.dispose();
 }
 

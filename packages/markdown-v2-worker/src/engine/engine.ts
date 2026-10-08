@@ -180,7 +180,7 @@ function sliceAppendChunk(text: string, maxChars: number): { chunk: string; rest
 export class MarkdownEngine {
   private readonly postFn: (message: WorkerOut) => void;
   public readonly extensions?: EngineExtensions;
-  private readonly mdParser: typeof mdParser;
+  private mdParser!: typeof mdParser;
 
   public readonly documentPluginRegistry: DocumentPluginRegistry;
   private readonly documentPluginState: DocumentState = {};
