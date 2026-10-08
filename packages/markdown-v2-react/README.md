@@ -55,6 +55,10 @@ export function Demo({ text }: { text: string }) {
 }
 ```
 
+`engine` defaults to `"auto"`. It tries a browser Worker and dynamically imports the in-process engine only when Worker creation is unavailable or fails. `"worker"` requires a Worker; `"main-thread"` skips the Worker and runs parsing on the browser thread. Engine setup runs after mounting, not during SSR. Use compiled snapshots and the server entry for server markup.
+
+Custom inline regex syntax uses `syntax` plus named `inlineComponents`. Code fences use `codeRenderers`, whose `renderCode` prop is a React node, not a callback. `mathRenderer` replaces math views; `features.math: false` disables math parsing. See the [public API](../../docs/PUBLIC_API.md) for HTML policy, artifact sandbox/CSP, and optional finalized-block unified routing.
+
 ## Typical Uses
 
 | Use case | API |

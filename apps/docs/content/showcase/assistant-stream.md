@@ -50,7 +50,7 @@ The block below demonstrates a custom code fence renderer for the `metric` langu
 
 ### Interactive Sandboxed Visualization Artifact
 
-Below is an interactive HTML artifact sandboxed by `ArtifactFrame`. It runs in an isolated iframe (`sandbox="allow-scripts"`, without `allow-same-origin`) with a strict Content Security Policy (`connect-src 'none'`), preventing external network access. Click the button to switch sample distributions using an inline self-contained script (no external requests, no animations).
+Below is an interactive HTML artifact rendered by `ArtifactFrame`. Its iframe uses `sandbox="allow-scripts"` without `allow-same-origin` for host DOM/origin isolation. The default CSP blocks connection APIs such as `fetch` and `WebSocket` and restricts resource loads; it does not guarantee total network isolation or prevent iframe self-navigation. This demo is self-contained. Click the button to switch sample distributions using inline code with no external resource requests or animations.
 
 ```html-artifact
 <!DOCTYPE html>

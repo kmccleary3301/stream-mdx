@@ -39,7 +39,7 @@ StreamMDX provides built-in sandboxing for interactive HTML artifacts (languages
 ### 2. In-frame Content Security Policy (CSP)
 Every artifact `srcdoc` includes a strict `<meta http-equiv="Content-Security-Policy">`:
 - `default-src 'none'`
-- `connect-src 'none'` by default (prevents data exfiltration; allowlists can be configured via `csp.connectSrc`)
+- `connect-src 'none'` by default blocks connection APIs such as `fetch`, `XMLHttpRequest`, and `WebSocket`; allowlists can be configured via `csp.connectSrc`.
 - `script-src 'unsafe-inline'` + configured allowlist
 - `style-src 'unsafe-inline'` + configured allowlist
 - `img-src data: blob:` + configured allowlist
@@ -47,6 +47,8 @@ Every artifact `srcdoc` includes a strict `<meta http-equiv="Content-Security-Po
 - `base-uri 'none'`, `form-action 'none'`
 
 The policy, theme styles, and bootstrap script are written before any artifact markup, so a full artifact document (with its own `<!doctype>`, `<html>`, `<head>`) cannot run script ahead of the policy.
+
+The sandbox provides host DOM/origin isolation, and the default CSP restricts connections and resource loads. These controls do not guarantee total network isolation or prevent iframe self-navigation. Use self-contained artifact content. The link handler below covers intercepted anchor clicks, not every navigation a script can initiate.
 
 ### 3. Secure host communication
 - **Origin and window verification**: The artifact communicates with the host window via `postMessage`. The host listener verifies that `event.source === iframeRef.current.contentWindow`. Foreign-source messages and spoofed dimensions are ignored.
