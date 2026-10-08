@@ -345,22 +345,17 @@ export class InlineParser {
           count++;
           idx = content.indexOf(open, idx + open.length);
         }
-        if (count % 2 !== 0) {
-          return close;
-        }
-      } else {
-        if (!afterOpen.includes(close)) {
-          let needed = close;
-          for (let len = close.length - 1; len > 0; len--) {
-            const prefix = close.slice(0, len);
-            if (content.endsWith(prefix)) {
-              needed = close.slice(len);
-              break;
-            }
-          }
-          return needed;
+        if (count % 2 === 0) continue;
+      } else if (afterOpen.includes(close)) {
+        continue;
+      }
+      // Complete only the missing suffix after an unmatched opener.
+      for (let len = close.length - 1; len > 0; len--) {
+        if (afterOpen.endsWith(close.slice(0, len))) {
+          return close.slice(len);
         }
       }
+      return close;
     }
     return null;
   }
