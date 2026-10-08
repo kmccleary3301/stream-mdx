@@ -2,10 +2,12 @@ import assert from "node:assert";
 import { applyPatchBatch, createInitialSnapshot, extractHighlightedLines, sanitizeCodeHTML, type Block, type CodeHighlightOutputMode, type HtmlTreeNode, type Patch, type WorkerOut } from "@stream-mdx/core";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { ComponentRegistry, MarkdownBlocksRenderer, type CodeFenceRendererProps } from "@stream-mdx/react/server";
+import { ComponentRegistry, MarkdownBlocksRenderer, type BlockComponents, type CodeFenceRendererProps } from "@stream-mdx/react/server";
 import { createRendererStore, type RendererStore } from "../../markdown-v2-react/src/renderer/store";
 import { createWorkerHarness } from "./worker-test-harness";
 import { JSDOM } from "jsdom";
+import { CODE_HIGHLIGHT_THEMES, getSharedHighlighter } from "../src/engine/highlight";
+import type { ShikiThemedToken } from "../src/engine/types";
 
 function buildSnippet(lineCount: number): string {
   const lines = Array.from({ length: lineCount }, (_, idx) => `const value_${idx} = ${idx};`);
@@ -237,6 +239,54 @@ async function runNestedLazyConsumers(): Promise<void> {
   }
 }
 
+async function runPublicTokenThemeConsumers(): Promise<void> {
+  const lines = ["# Heading", "*italic*", "**bold**", "***both***", ...Array.from({ length: 56 }, (_, index) => `text ${index}`)];
+  const code = lines.join("\n");
+  const lazy = await renderWithWorker(["```markdown", code, "```"].join("\n"), true, "tokens");
+  const block = lazy.store.getBlocks().find((candidate) => candidate.type === "code");
+  assert.ok(block);
+  lazy.consume(await lazy.harness.send({ type: "TOKENIZE_RANGE", blockId: block.id, startLine: 0, endLine: lines.length, priority: "visible" }));
+  const highlighter = await getSharedHighlighter();
+  const expected = highlighter.codeToTokensWithThemes(code, { lang: "markdown", themes: CODE_HIGHLIGHT_THEMES }) as ShikiThemedToken[][];
+  assert.ok(expected.flat().some((token) => (token.variants.dark?.fontStyle ?? 0) & 1), "fixture must exercise real italic syntax");
+  assert.ok(expected.flat().some((token) => (token.variants.dark?.fontStyle ?? 0) & 2), "fixture must exercise real bold syntax");
+  assert.ok(expected.flat().some((token) => token.variants.dark?.color !== token.variants.light?.color), "fixture must exercise distinct theme foregrounds");
+  for (const theme of ["dark", "light"] as const) {
+    const Code: BlockComponents["code"] = ({ lines: rows }) => React.createElement("pre", {}, React.createElement("code", {},
+      rows?.map((line) => React.createElement("span", { key: line.id, "data-token-line": line.index },
+        line.tokens?.spans.map((span, index) => {
+          const style = span.s ?? span.v?.[theme];
+          assert.ok(!style || (!Object.hasOwn(style, "color") && !Object.hasOwn(style, "fontStyle")), "public IR must use compact style fields only");
+          const flags = style?.fs ?? 0;
+          return React.createElement("span", { key: index, "data-token-index": index, "data-font-flags": flags,
+            style: { color: style?.fg, fontStyle: flags & 1 ? "italic" : undefined, fontWeight: flags & 2 ? "bold" : undefined, textDecoration: flags & 4 ? "underline" : undefined } }, span.t);
+        })))));
+    const registry = new ComponentRegistry({ code: Code });
+    const rendered = renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: lazy.store.getBlocks(), store: lazy.store, componentRegistry: registry }));
+    const dom = new JSDOM(rendered);
+    const rows = dom.window.document.querySelectorAll<HTMLElement>("[data-token-line]");
+    assert.strictEqual(rows.length, lines.length);
+    for (let lineIndex = 0; lineIndex < expected.length; lineIndex++) {
+      const actual = rows[lineIndex].querySelectorAll<HTMLElement>("[data-token-index]");
+      assert.strictEqual(actual.length, expected[lineIndex].length);
+      expected[lineIndex].forEach((token, index) => {
+        const style = token.variants[theme];
+        const color = dom.window.document.createElement("span");
+        color.style.color = style?.color ?? "";
+        const flags = style?.fontStyle ?? 0;
+        assert.strictEqual(actual[index].textContent, token.content);
+        assert.strictEqual(actual[index].style.color, color.style.color, `${theme} foreground must match independent raw Shiki output`);
+        assert.strictEqual(Number(actual[index].dataset.fontFlags), flags);
+        assert.strictEqual(actual[index].style.fontStyle, flags & 1 ? "italic" : "");
+        assert.strictEqual(actual[index].style.fontWeight, flags & 2 ? "bold" : "");
+        assert.strictEqual(actual[index].style.textDecoration, flags & 4 ? "underline" : "");
+      });
+    }
+    dom.window.close();
+  }
+}
+
 await main();
 await runNestedLazyConsumers();
+await runPublicTokenThemeConsumers();
 console.log("nested lazy tokenization consumer parity passed");

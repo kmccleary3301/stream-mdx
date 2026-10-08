@@ -63,6 +63,15 @@ code-renderer props without a separate parser or renderer line-count repair.
 Appending content retains lazy state for prepared code descendants still present
 in the document.
 
+`INIT` and disposal invalidate in-flight lazy work, even when a replacement
+document reuses descendant IDs. Before committing, the engine checks the original
+leaf identity and resolves its current owning root and index. Copy-on-write
+ancestor updates and newly appended siblings remain intact.
+
+Public token spans use `fg` and `fs` in their compact style records. Theme variants
+remain in `v.dark` and `v.light`; the legacy themed-line bridge converts these
+fields to `color` and `fontStyle` rather than exposing those legacy keys in token IR.
+
 Footnote numbering runs over the actual prepared inline children in document
 order. It updates serialized child views and existing HTML ownership descriptors
 without changing unrelated code/HTML artifacts. Blockquote compatibility inline
