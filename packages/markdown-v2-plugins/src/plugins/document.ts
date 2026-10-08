@@ -85,5 +85,3 @@ export class DocumentPluginRegistry {
     return { syntheticBlocks };
   }
 }
-
-export const globalDocumentPluginRegistry = new DocumentPluginRegistry();
