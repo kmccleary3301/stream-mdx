@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useMemo, useRef, useState } from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
 import type { CodeFenceRendererProps } from "../types";
 
 export interface ArtifactCspConfig {

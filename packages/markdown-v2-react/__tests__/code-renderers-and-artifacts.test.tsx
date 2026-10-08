@@ -192,7 +192,16 @@ async function testDiffRendererRowsAndTokens(): Promise<void> {
   assert.ok(addRow.className.includes("diff-line-add"));
   assert.strictEqual(addRow.querySelector(".stream-mdx-diff-old-no")?.textContent?.trim(), "");
   assert.strictEqual(addRow.querySelector(".stream-mdx-diff-new-no")?.textContent?.trim(), "1");
-
+  // Also test direct DefaultDiffRenderer fallback when diffBlocks is absent
+  root.render(
+    React.createElement(DefaultDiffRenderer, {
+      code: "raw code",
+      language: "diff",
+      renderCode: React.createElement("pre", { id: "direct-fallback" }, "raw code"),
+    }),
+  );
+  await sleep(20);
+  assert.ok(container.querySelector("#direct-fallback"), "plain path when diffBlocks absent");
   root.unmount();
 }
 
@@ -285,6 +294,11 @@ async function testKaTeXMathAndOverride(): Promise<void> {
     inlineEl.textContent?.includes("E = mc^2") || inlineEl.querySelector(".katex"),
     "math content or KaTeX markup should be present",
   );
+  // Test KaTeXBlockMath component directly
+  root.render(React.createElement(KaTeXBlockMath, { tex: "\\int x dx" }));
+  await sleep(30);
+  const blockEl = container.querySelector(".math-display");
+  assert.ok(blockEl, "block math element rendered");
 
   root.unmount();
 
