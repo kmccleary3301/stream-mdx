@@ -20,6 +20,8 @@ function ensureDom(): void {
     HTMLElement: dom.window.HTMLElement,
     Node: dom.window.Node,
   });
+  // React DOM reads the bare global navigator once a window exists (Node 20 has no global navigator).
+  Object.defineProperty(globalThis, "navigator", { configurable: true, writable: true, value: dom.window.navigator });
 }
 
 const FIXTURE = `# Section Heading

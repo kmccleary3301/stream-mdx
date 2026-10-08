@@ -210,6 +210,8 @@ function findNestedCode(blocks: Block[]): Block {
 async function runInflightLazyLifecycleTest(): Promise<void> {
   const dom = new JSDOM("<!doctype html><html><body></body></html>");
   Object.assign(globalThis, { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, Node: dom.window.Node });
+  // React DOM reads the bare global navigator once a window exists (Node 20 has no global navigator).
+  Object.defineProperty(globalThis, "navigator", { configurable: true, writable: true, value: dom.window.navigator });
   const lines = ["@@ -1,25 +1,25 @@", ...Array.from({ length: 25 }, (_, index) => [`-const oldOnlySentinel_${index} = 0;`, `+const oldOnlySentinel_${index} = 1;`]).flat()];
   const oldMarkdown = ["- owner", "", "  ```diff-js", ...lines.map((line) => `  ${line}`), "  ```"].join("\n");
   const replacement = "- owner\n\n  ```js\n  const replacementOnly = 1;\n  ```";
