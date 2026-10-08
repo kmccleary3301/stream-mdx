@@ -79,6 +79,11 @@ order. It updates serialized child views and existing HTML ownership descriptors
 without changing unrelated code/HTML artifacts. Blockquote compatibility inline
 is derived from those numbered children, not reparsed from container source.
 
+Defined footnote occurrences carry `occurrence` and `defined` metadata. The first
+anchor is `fnref:n`, subsequent anchors are `fnref:n:2`, `fnref:n:3`, and so on.
+Footer items carry their actual `refCount`; each backlink targets its own
+occurrence. Missing references remain literal and create no empty footer item.
+
 ### Block packet verification, October 2026
 
 The saved pre-packet report counted 622/675 client-static and SSR passes,

@@ -1,12 +1,15 @@
 import assert from "node:assert";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { createRoot } from "react-dom/client";
 import { JSDOM } from "jsdom";
 import { MarkdownBlocksRenderer } from "@stream-mdx/react/server";
 
-import { applyPatchBatch, createBlockSnapshot, createInitialSnapshot, type Block, type InlineNode, type NodeSnapshot, type Patch, type WorkerOut } from "@stream-mdx/core";
+import { applyPatchBatch, createBlockSnapshot, createInitialSnapshot, type Block, type FootnoteItem, type InlineNode, type NodeSnapshot, type Patch, type WorkerOut } from "@stream-mdx/core";
 import { createRendererStore } from "@stream-mdx/react/renderer/store";
 import { createWorkerHarness } from "./worker-test-harness";
+import { compileMarkdownSnapshotDirect } from "@stream-mdx/worker/direct";
+import { createWorkerThread } from "@stream-mdx/worker/node";
 
 function findInlineFootnoteNumber(nodes: InlineNode[], label: string): number | undefined {
   for (const node of nodes) {
@@ -92,7 +95,8 @@ async function runPreparedFootnoteConsumerTest(): Promise<void> {
   const store = createRendererStore();
   const document = createInitialSnapshot();
   const consume = (messages: WorkerOut[]) => {
-    for (const message of messages) {
+    for (const emitted of messages) {
+      const message = structuredClone(emitted);
       if (message.type === "INITIALIZED") {
         store.reset(message.blocks);
         Object.assign(document, createInitialSnapshot(message.blocks));
@@ -177,6 +181,138 @@ async function runPreparedFootnoteConsumerTest(): Promise<void> {
     assert.strictEqual(findInlineFootnoteNumber(quote.payload.inline ?? [], "alpha"), 2, "root compatibility inline must expose the actual numbered child content");
   }
 }
+async function runRepeatedReferenceTargetsTest(): Promise<void> {
+  const content = "Missing[^missing] then outer[^note].\n\n> repeated<span>[^note]</span>\n\n[^note]: Body with **emphasis**.\n";
+  const init = { prewarmLangs: [], docPlugins: { footnotes: true, html: true, mdx: false, math: false, tables: false, callouts: false } };
+  const compiled = await compileMarkdownSnapshotDirect({ text: content, init });
+  const worker = createWorkerThread();
+  const store = createRendererStore();
+  let document = createInitialSnapshot();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const finish = (error?: Error) => {
+        worker.off("message", onMessage);
+        worker.off("error", onError);
+        if (error) reject(error);
+        else resolve();
+      };
+      const onError = (error: Error) => finish(error);
+      const onMessage = (message: WorkerOut) => {
+        try {
+          if (message.type === "INITIALIZED") {
+            store.reset(message.blocks);
+            document = createInitialSnapshot(message.blocks);
+          } else if (message.type === "PATCH") {
+            applyPatchBatch(document, message.patches);
+            store.applyPatches(message.patches, { captureMetrics: false });
+          } else if (message.type === "ERROR") {
+            finish(new Error(message.error.message));
+            return;
+          }
+          assert.deepStrictEqual(document.blocks, store.getBlocks());
+          assert.deepStrictEqual(store.getInvariantViolations(), []);
+          if (message.type === "FINALIZED") finish();
+        } catch (error) {
+          finish(error instanceof Error ? error : new Error(String(error)));
+        }
+      };
+      worker.on("message", onMessage);
+      worker.on("error", onError);
+      worker.postMessage({ type: "INIT", initialContent: "", ...init });
+      for (let index = 0; index < content.length; index += 7) worker.postMessage({ type: "APPEND", text: content.slice(index, index + 7) });
+      worker.postMessage({ type: "FINALIZE" });
+    });
+  } finally {
+    await worker.terminate();
+  }
+  const items = store.getBlocks().find((block) => block.type === "footnotes")?.payload.meta?.items as FootnoteItem[] | undefined;
+  assert.ok(items);
+  assert.deepStrictEqual(items.map(({ label, number, refCount }) => [label, number, refCount]), [["note", 1, 2]], "missing refs must not create empty items or consume displayed numbers; metadata aliases must not double-count");
+  const assertTargets = (container: HTMLElement) => {
+    const refs = [...container.querySelectorAll<HTMLAnchorElement>("sup.footnote-ref a")];
+    assert.deepStrictEqual(refs.map((ref) => [ref.id, ref.getAttribute("href"), ref.textContent]), [["fnref:1", "#fn:1", "1"], ["fnref:1:2", "#fn:1", "1"]]);
+    assert.ok(!refs[0].closest("blockquote") && refs[1].closest("blockquote span"), "occurrences must retain their distinct source locations, including HTML ownership");
+    const footer = container.querySelector<HTMLElement>('[id="fn:1"]');
+    assert.ok(footer?.querySelector("strong")?.textContent === "emphasis");
+    const backrefs = [...footer.querySelectorAll<HTMLAnchorElement>("a.footnote-backref")];
+    assert.deepStrictEqual(backrefs.map((ref) => ref.getAttribute("href")), ["#fnref:1", "#fnref:1:2"]);
+    const idNodes = [...container.querySelectorAll<HTMLElement>("[id]")];
+    assert.strictEqual(new Set(idNodes.map((node) => node.id)).size, idNodes.length, "all generated targets must be unique");
+    for (const ref of refs) assert.strictEqual(footer.ownerDocument.getElementById(ref.hash.slice(1)), footer, "every visible reference must resolve to the real definition");
+    for (let index = 0; index < backrefs.length; index++) assert.strictEqual(footer.ownerDocument.getElementById(backrefs[index].hash.slice(1)), refs[index], "each backlink must resolve to its own occurrence, not the first alias");
+    assert.ok(container.textContent?.includes("[^missing]"), "missing references must remain literal");
+    return { refs, backrefs, footer };
+  };
+  for (const blocks of [store.getBlocks(), compiled.blocks, JSON.parse(JSON.stringify(store.getBlocks())) as Block[]]) {
+    const dom = new JSDOM(renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks })));
+    assertTargets(dom.window.document.body);
+    dom.window.close();
+  }
+  const dom = new JSDOM("<!doctype html><html><body><main></main></body></html>", { url: "http://localhost/footnote-consumer", pretendToBeVisual: true });
+  const globals = { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, Node: dom.window.Node, MutationObserver: dom.window.MutationObserver };
+  const previous = new Map(Object.keys(globals).map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
+  Object.assign(globalThis, globals);
+  const container = dom.window.document.querySelector("main");
+  assert.ok(container);
+  const root = createRoot(container);
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const signal = AbortSignal.timeout(10_000);
+      const finish = (error?: Error) => {
+        observer.disconnect();
+        signal.removeEventListener("abort", fail);
+        if (error) reject(error);
+        else resolve();
+      };
+      const fail = () => finish(new Error("real footnote consumer did not mount"));
+      const check = () => {
+        if (container.querySelectorAll("sup.footnote-ref a").length === 2 && container.querySelectorAll("a.footnote-backref").length === 2) finish();
+      };
+      const observer = new dom.window.MutationObserver(check);
+      observer.observe(container, { childList: true, subtree: true });
+      signal.addEventListener("abort", fail, { once: true });
+      root.render(React.createElement(MarkdownBlocksRenderer, { blocks: store.getBlocks(), store }));
+      check();
+    });
+    const { refs, backrefs, footer } = assertTargets(container);
+    const click = async (anchor: HTMLAnchorElement) => {
+      await new Promise<void>((resolve, reject) => {
+        const signal = AbortSignal.timeout(10_000);
+        const finish = (error?: Error) => {
+          dom.window.removeEventListener("hashchange", changed);
+          signal.removeEventListener("abort", fail);
+          if (error) reject(error);
+          else resolve();
+        };
+        const fail = () => finish(new Error("real footnote anchor did not navigate"));
+        const changed = () => {
+          try {
+            assert.strictEqual(dom.window.location.hash, anchor.hash);
+            finish();
+          } catch (error) {
+            finish(error instanceof Error ? error : new Error(String(error)));
+          }
+        };
+        dom.window.addEventListener("hashchange", changed);
+        signal.addEventListener("abort", fail, { once: true });
+        anchor.click();
+      });
+    };
+    await click(refs[0]);
+    assert.strictEqual(dom.window.document.getElementById(dom.window.location.hash.slice(1)), footer);
+    await click(backrefs[1]);
+    assert.strictEqual(dom.window.document.getElementById(dom.window.location.hash.slice(1)), refs[1], "mounted second backlink must navigate to the second nested HTML occurrence");
+  } finally {
+    root.unmount();
+    dom.window.close();
+    for (const [key, descriptor] of previous) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+      else Reflect.deleteProperty(globalThis, key);
+    }
+  }
+}
+
 await runFootnotesFinalizeTest();
 await runPreparedFootnoteConsumerTest();
+await runRepeatedReferenceTargetsTest();
 console.log("worker-footnotes-finalize test passed");
