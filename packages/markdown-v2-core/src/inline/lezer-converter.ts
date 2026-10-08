@@ -20,6 +20,19 @@ function resolveReference(map: LinkReferenceMap | undefined, rawLabel: string): 
   return map[key];
 }
 
+function encodeURIWithPercentPreserved(url: string): string {
+  if (!url.includes("%")) {
+    return encodeURI(url);
+  }
+  return url
+    .split(/(%[0-9a-fA-F]{2})/g)
+    .map((part, i) => {
+      if (i % 2 === 1) return part;
+      return encodeURI(part);
+    })
+    .join("");
+}
+
 export function cleanUrl(raw: string): string {
   let url = raw.trim();
   if (url.startsWith("<") && url.endsWith(">")) {
@@ -29,9 +42,9 @@ export function cleanUrl(raw: string): string {
   url = url.replace(/\\([!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~])/g, "$1");
   // 2. Decode HTML entities
   url = decodeHTML5Strict(url);
-  // 3. Percent-encode URI
+  // 3. Percent-encode URI while preserving valid existing %-encoded octets
   try {
-    return encodeURI(url);
+    return encodeURIWithPercentPreserved(url);
   } catch {
     return url;
   }
@@ -46,6 +59,13 @@ export function cleanTitle(raw: string): string {
     (trimmed.startsWith("(") && trimmed.endsWith(")"))
   ) {
     title = trimmed.slice(1, -1);
+  }
+  // Strip leading and trailing whitespace from each line per CommonMark spec
+  if (title.includes("\n")) {
+    title = title
+      .split("\n")
+      .map((line) => line.trim())
+      .join("\n");
   }
   // 1. Resolve backslash escapes
   title = title.replace(/\\([!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~])/g, "$1");

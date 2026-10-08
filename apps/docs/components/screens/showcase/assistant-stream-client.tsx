@@ -1,7 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import type { CodeFenceRenderer, MarkdownEngineMode, StreamingMarkdownProps } from "@stream-mdx/react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type {
+  CodeFenceRenderer,
+  MarkdownEngineMode,
+  StreamingMarkdownHandle,
+  StreamingMarkdownProps,
+} from "@stream-mdx/react";
 import { ArtifactFrame, StreamingMarkdown } from "@stream-mdx/react";
 import { MermaidBlock } from "@stream-mdx/mermaid";
 import "katex/dist/katex.min.css";
@@ -10,7 +15,7 @@ import { BottomStickScrollArea } from "@/components/layout/bottom-stick-scroll-a
 import { Button } from "@/components/ui/button";
 import { DocsCodeBlock } from "@/components/markdown/docs-code-block";
 import { cn } from "@/lib/utils";
-import { Cpu, Play, RotateCcw, ShieldCheck, Terminal } from "lucide-react";
+import { AlertCircle, Cpu, Pause, Play, RotateCcw, ShieldCheck, Terminal } from "lucide-react";
 
 const USER_PROMPT =
   "Can you provide an architectural walkthrough of the StreamMDX engine-v2 pipeline? Include Bayes' Theorem with concrete mathematical notation, the engine flow diagram, a custom code fence renderer example, and an interactive self-contained HTML visualization artifact.";
@@ -55,78 +60,180 @@ const CustomMetricRenderer: CodeFenceRenderer = ({ code, language, isFinalized, 
 };
 
 const STREAMING_INTERVAL_MS = 25;
-const CHUNK_SIZE_CHARS = 38;
+const CHUNK_SIZE_CHARS = 45;
 
 interface AssistantStreamClientProps {
   fullContent: string;
 }
 
 export function AssistantStreamClient({ fullContent }: AssistantStreamClientProps) {
+  const handleRef = useRef<StreamingMarkdownHandle | null>(null);
+  const streamIndexRef = useRef(0);
+  const isPausedRef = useRef(false);
+  const generationRef = useRef(0);
+
   const [engineMode, setEngineMode] = useState<MarkdownEngineMode>("worker");
-  const [streamIndex, setStreamIndex] = useState(0);
-  const [isStreaming, setIsStreaming] = useState(true);
   const [sessionKey, setSessionKey] = useState(0);
+  const [streamIndex, setStreamIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [status, setStatus] = useState<"initializing" | "streaming" | "paused" | "complete" | "error">(
+    "initializing",
+  );
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const totalLength = fullContent.length;
+
   useEffect(() => {
-    if (!isStreaming) return;
-    if (streamIndex >= totalLength) {
-      setIsStreaming(false);
-      return;
-    }
+    generationRef.current += 1;
+    const currentGeneration = generationRef.current;
 
-    const timer = setInterval(() => {
-      setStreamIndex((prev) => {
-        const next = prev + CHUNK_SIZE_CHARS;
-        if (next >= totalLength) {
-          setIsStreaming(false);
-          return totalLength;
+    setErrorMessage(null);
+    setStatus("initializing");
+    setStreamIndex(0);
+    streamIndexRef.current = 0;
+
+    let cancelled = false;
+
+    const runStream = async () => {
+      const startWait = Date.now();
+      const timeoutMs = 15000;
+
+      // Wait until the handle is mounted and the engine/worker is ready
+      while (!cancelled && currentGeneration === generationRef.current) {
+        const handle = handleRef.current;
+        if (handle) {
+          try {
+            if (handle.getState().workerReady) {
+              break;
+            }
+          } catch {
+            // Worker is still instantiating
+          }
         }
-        return next;
-      });
-    }, STREAMING_INTERVAL_MS);
 
-    return () => clearInterval(timer);
-  }, [isStreaming, streamIndex, totalLength]);
+        if (Date.now() - startWait > timeoutMs) {
+          if (!cancelled && currentGeneration === generationRef.current) {
+            setErrorMessage(`Failed to initialize ${engineMode} engine within timeout.`);
+            setStatus("error");
+          }
+          return;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 30));
+      }
+
+      if (cancelled || currentGeneration !== generationRef.current) return;
+
+      const handle = handleRef.current;
+      if (!handle) {
+        setErrorMessage("Markdown renderer handle unavailable.");
+        setStatus("error");
+        return;
+      }
+
+      setStatus(isPausedRef.current ? "paused" : "streaming");
+
+      // Incrementally stream chunks
+      while (!cancelled && currentGeneration === generationRef.current) {
+        if (isPausedRef.current) {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+          continue;
+        }
+
+        const currentIndex = streamIndexRef.current;
+        if (currentIndex >= fullContent.length) {
+          handle.finalize();
+          setStatus("complete");
+          break;
+        }
+
+        const nextIndex = Math.min(fullContent.length, currentIndex + CHUNK_SIZE_CHARS);
+        const chunk = fullContent.slice(currentIndex, nextIndex);
+        handle.append(chunk);
+
+        streamIndexRef.current = nextIndex;
+        setStreamIndex(nextIndex);
+
+        if (nextIndex >= fullContent.length) {
+          handle.finalize();
+          setStatus("complete");
+          break;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, STREAMING_INTERVAL_MS));
+      }
+    };
+
+    void runStream();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fullContent, engineMode, sessionKey]);
 
   const handleRestart = useCallback(() => {
-    setStreamIndex(0);
-    setIsStreaming(true);
+    isPausedRef.current = false;
+    setIsPaused(false);
     setSessionKey((prev) => prev + 1);
   }, []);
 
   const handleEngineChange = useCallback((mode: MarkdownEngineMode) => {
     setEngineMode(mode);
-    setStreamIndex(0);
-    setIsStreaming(true);
+    isPausedRef.current = false;
+    setIsPaused(false);
     setSessionKey((prev) => prev + 1);
   }, []);
 
-  const currentText = fullContent.slice(0, streamIndex);
+  const handleTogglePause = useCallback(() => {
+    setIsPaused((prev) => {
+      const next = !prev;
+      isPausedRef.current = next;
+      setStatus((currentStatus) => {
+        if (currentStatus === "streaming" && next) return "paused";
+        if (currentStatus === "paused" && !next) return "streaming";
+        return currentStatus;
+      });
+      return next;
+    });
+  }, []);
 
-  const components = useMemo(() => ({
-    code: DocsCodeBlock,
-  }), []);
+  const components = useMemo(
+    () => ({
+      code: DocsCodeBlock,
+    }),
+    [],
+  );
 
-  const codeRenderers = useMemo(() => ({
-    mermaid: MermaidBlock,
-    "html-artifact": ArtifactFrame,
-    artifact: ArtifactFrame,
-    metric: CustomMetricRenderer,
-  }), []);
+  const codeRenderers = useMemo(
+    () => ({
+      mermaid: MermaidBlock,
+      "html-artifact": ArtifactFrame,
+      artifact: ArtifactFrame,
+      metric: CustomMetricRenderer,
+    }),
+    [],
+  );
 
-  const features = useMemo<NonNullable<StreamingMarkdownProps["features"]>>(() => ({
-    mdx: false, // SAFE DEFAULT: mdx=false for agent content
-    html: false, // Enforce artifact containment rather than raw HTML injection
-    tables: true,
-    math: true,
-    callouts: true,
-    codeHighlighting: "final",
-  }), []);
+  const features = useMemo<NonNullable<StreamingMarkdownProps["features"]>>(
+    () => ({
+      mdx: false, // SAFE DEFAULT: mdx=false for agent content
+      html: false, // Enforce artifact containment rather than raw HTML injection
+      tables: true,
+      math: true,
+      callouts: true,
+      codeHighlighting: "final",
+    }),
+    [],
+  );
 
-  const linkSafety = useMemo(() => ({
-    enabled: true,
-  }), []);
+  const linkSafety = useMemo(
+    () => ({
+      enabled: true,
+    }),
+    [],
+  );
+
+  const isStreamingActive = status === "streaming" || status === "initializing";
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8">
@@ -190,22 +297,30 @@ export function AssistantStreamClient({ fullContent }: AssistantStreamClientProp
             <span
               className={cn(
                 "inline-flex h-2 w-2 rounded-full",
-                isStreaming ? "bg-amber-500 animate-none" : "bg-emerald-500",
+                status === "streaming" && "bg-amber-500",
+                status === "initializing" && "bg-blue-500",
+                status === "paused" && "bg-yellow-500",
+                status === "complete" && "bg-emerald-500",
+                status === "error" && "bg-destructive",
               )}
             />
             <span className="font-mono text-muted-foreground">
-              {isStreaming ? "Streaming..." : "Stream Complete"} ({streamIndex}/{totalLength} chars)
+              {status === "initializing" && "Initializing engine..."}
+              {status === "streaming" && `Streaming... (${streamIndex}/${totalLength} chars)`}
+              {status === "paused" && `Paused (${streamIndex}/${totalLength} chars)`}
+              {status === "complete" && `Complete (${totalLength}/${totalLength} chars)`}
+              {status === "error" && "Engine error"}
             </span>
           </div>
 
           <Button
             size="sm"
             variant="outline"
-            onClick={() => setIsStreaming((prev) => !prev)}
-            disabled={streamIndex >= totalLength && !isStreaming}
+            onClick={handleTogglePause}
+            disabled={status === "complete" || status === "error" || status === "initializing"}
           >
-            <Play className="mr-1.5 h-3.5 w-3.5" />
-            {isStreaming ? "Pause" : "Play"}
+            {isPaused ? <Play className="mr-1.5 h-3.5 w-3.5" /> : <Pause className="mr-1.5 h-3.5 w-3.5" />}
+            {isPaused ? "Resume" : "Pause"}
           </Button>
 
           <Button size="sm" variant="default" onClick={handleRestart}>
@@ -257,10 +372,23 @@ export function AssistantStreamClient({ fullContent }: AssistantStreamClientProp
               <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground uppercase">
                 {engineMode}
               </span>
-              {isStreaming && (
-                <span className="text-[11px] text-amber-500 font-medium">streaming tokens...</span>
+              {isStreamingActive && (
+                <span className="text-[11px] text-amber-500 font-medium">
+                  {status === "initializing" ? "initializing..." : "streaming tokens..."}
+                </span>
               )}
             </div>
+
+            {/* Error Callout if Worker or Engine Fails */}
+            {errorMessage && (
+              <div className="my-2 flex items-start gap-2.5 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-xs text-destructive">
+                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                <div>
+                  <div className="font-semibold">Renderer Error</div>
+                  <div className="mt-0.5">{errorMessage}</div>
+                </div>
+              </div>
+            )}
 
             <BottomStickScrollArea
               className="w-full max-h-[720px] rounded-xl border border-border/50 bg-background/50 p-4"
@@ -268,7 +396,7 @@ export function AssistantStreamClient({ fullContent }: AssistantStreamClientProp
             >
               <StreamingMarkdown
                 key={`session-${sessionKey}-${engineMode}`}
-                text={currentText}
+                ref={handleRef}
                 engine={engineMode}
                 worker={engineMode === "worker" ? "/workers/markdown-worker.js" : undefined}
                 className="markdown-v2-output"
@@ -276,6 +404,10 @@ export function AssistantStreamClient({ fullContent }: AssistantStreamClientProp
                 codeRenderers={codeRenderers}
                 features={features}
                 linkSafety={linkSafety}
+                onError={(error) => {
+                  setErrorMessage(error.message);
+                  setStatus("error");
+                }}
               />
             </BottomStickScrollArea>
           </div>

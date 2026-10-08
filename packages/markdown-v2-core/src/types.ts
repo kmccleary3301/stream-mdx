@@ -110,7 +110,29 @@ export type InlineNode =
   | { kind: "citation"; id: string }
   | { kind: "math-inline"; tex: string }
   | { kind: "math-display"; tex: string }
-  | { kind: "footnote-ref"; label: string; number?: number };
+  | { kind: "footnote-ref"; label: string; number?: number }
+  | {
+      kind: "plugin";
+      name: string;
+      attrs: Record<string, string>;
+      children?: InlineNode[];
+      raw: string;
+    };
+
+export interface SyntaxRuleSpec {
+  name: string;
+  pattern: { source: string; flags?: string };
+  trigger?: string /* first char(s) for fast dispatch */;
+  before?: string /* Lezer inline parser to precede, e.g. 'Emphasis' */;
+  attrs?: Record<string, number | string> /* capture group index or literal */;
+  content?: number /* capture group parsed as inline children */;
+  anticipation?: { open: string; close: string };
+}
+
+export interface HtmlOptions {
+  allowedTags?: Record<string, string[]>;
+  literalTagContent?: string[];
+}
 
 export type TokenStyle = {
   fg?: string;
@@ -188,6 +210,8 @@ export type WorkerIn =
         };
       };
       mdx?: { compileMode?: "server" | "worker" };
+      syntax?: SyntaxRuleSpec[];
+      html?: HtmlOptions;
     }
   | { type: "APPEND"; text: string }
   | { type: "FINALIZE" }

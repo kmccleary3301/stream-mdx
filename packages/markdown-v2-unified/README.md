@@ -59,8 +59,10 @@ export function Doc({ text }: { text: string }) {
 | `remarkPlugins` | `PluggableList` | `[]` | List of remark plugins or plugin tuples `[plugin, options]` |
 | `rehypePlugins` | `PluggableList` | `[]` | List of rehype plugins or plugin tuples `[plugin, options]` |
 | `components` | `Record<string, Component>` | `{}` | Custom React component mapping passed to `hast-util-to-jsx-runtime` |
-| `blockTypes` | `string[]` | `['paragraph', 'heading', 'blockquote', 'list', 'table', 'code', 'hr']` | Block types to route to unified pipeline |
+| `blockTypes` | `string[]` | `['paragraph', 'heading', 'blockquote', 'list', 'table', 'code', 'thematicBreak']` | Block types to route to unified pipeline |
 | `cacheSize` | `number` | `500` | Maximum number of rendered blocks to retain in LRU cache |
 | `math` | `boolean` | `false` | Enable `remark-math` support |
 | `gfm` | `boolean` | `true` | Enable `remark-gfm` support |
 | `onError` | `(error: Error, block: Block) => void` | `undefined` | Callback invoked when a unified plugin throws during block processing |
+
+> **Note on Block Types**: Standard CommonMark/GFM blocks are routed by default. Specialized block types like `html` and `mdx` are opt-in via `blockTypes` (e.g. `blockTypes: ['paragraph', 'html']`). When routing `html` blocks, ensure your unified pipeline includes appropriate plugins (e.g. `rehype-raw`) if you wish to parse embedded raw HTML.
