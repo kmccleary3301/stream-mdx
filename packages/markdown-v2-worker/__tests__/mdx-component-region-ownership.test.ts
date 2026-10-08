@@ -17,16 +17,20 @@ const DOM_GLOBAL_KEYS = ["window", "document", "HTMLElement", "Node", "MutationO
  * Installs the browser globals React DOM's client runtime expects. `navigator` comes from the real
  * JSDOM window (Node 20 has no global navigator) and every key is installed with defineProperty
  * because Node 22 already owns a read-only `navigator` accessor that Object.assign cannot replace.
- * Descriptors are captured for exact restore: a window installed by an earlier test file is
- * borrowed and never closed, while an owned JSDOM is closed on cleanup.
+ * A window installed by an earlier test file is borrowed only when it already provides the DOM APIs
+ * this fixture installs; otherwise an owned JSDOM is installed over the earlier descriptors, which
+ * are restored without closing the earlier window. An owned JSDOM is closed on cleanup.
  */
 function ensureDom(): () => void {
   const previous = new Map(DOM_GLOBAL_KEYS.map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)] as const));
-  const borrowedWindow = (globalThis as { window?: Window }).window;
+  const candidate = (globalThis as { window?: Window }).window;
+  const borrowedWindow = candidate && typeof candidate.MutationObserver === "function" && typeof candidate.HTMLElement === "function" ? candidate : null;
   const dom = borrowedWindow ? null : new JSDOM("<!doctype html><html><body></body></html>", { pretendToBeVisual: true });
   const target = dom ? dom.window : (borrowedWindow as Window);
-  for (const key of DOM_GLOBAL_KEYS) {
-    const value = key === "navigator" ? target.navigator : target[key];
+  // Prepare every value before the first defineProperty call so a setup failure cannot leave a
+  // partially installed fixture.
+  const values = new Map<string, unknown>(DOM_GLOBAL_KEYS.map((key) => [key, key === "navigator" ? target.navigator : target[key]]));
+  for (const [key, value] of values) {
     Object.defineProperty(globalThis, key, { configurable: true, writable: true, value });
   }
   return () => {

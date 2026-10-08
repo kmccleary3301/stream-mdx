@@ -11,6 +11,8 @@ import { normalizeHtmlSemantics } from "../../../tests/conformance/normalizer.mt
 
 const { window } = new JSDOM("");
 Object.assign(globalThis, { window, document: window.document, DOMParser: window.DOMParser, Node: window.Node, Element: window.Element, HTMLElement: window.HTMLElement });
+// React DOM reads the bare global navigator once a window exists (Node 20 has no global navigator).
+Object.defineProperty(globalThis, "navigator", { configurable: true, writable: true, value: window.navigator });
 const init = {
   docPlugins: { html: true, tables: true, footnotes: true, math: true, callouts: true, mdx: false },
   mdx: { compileMode: "server" as const },
