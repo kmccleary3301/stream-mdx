@@ -13,7 +13,9 @@ export default defineConfig({
     resolve("src/streaming/custom-matcher.ts"),
     resolve("src/node/index.ts"),
     resolve("src/node/worker-thread-entry.ts"),
-    resolve("src/engine/index.ts"),
+    // `src/engine/index.ts` (the public worker entry) is built by
+    // `tsup.worker-engine.config.ts`, which bundles the MDX pipeline with the
+    // DOM-free decoder for the worker realm.
   ],
   dts: true,
   splitting: false,
