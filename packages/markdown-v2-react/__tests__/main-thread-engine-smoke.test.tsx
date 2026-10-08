@@ -1,7 +1,11 @@
 import assert from "node:assert";
+import { setTimeout as delay } from "node:timers/promises";
 import { JSDOM } from "jsdom";
+import { createRef } from "react";
+import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { StreamingMarkdown } from "../src/streaming-markdown";
+import type { StreamingMarkdownHandle } from "../src/streaming-markdown";
 
 async function setupDom(): Promise<Window & typeof globalThis> {
   const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
@@ -81,4 +85,37 @@ async function runMainThreadEngineSmokeTest(): Promise<void> {
 }
 
 await runMainThreadEngineSmokeTest();
+
+async function runCallbackUpdateDuringStream(): Promise<void> {
+  const window = await setupDom();
+  const container = window.document.getElementById("root");
+  assert.ok(container);
+  const root = createRoot(container);
+  const handle = createRef<StreamingMarkdownHandle>();
+  try {
+    flushSync(() => {
+      root.render(<StreamingMarkdown ref={handle} engine="main-thread" onError={() => {}} />);
+    });
+    const deadline = Date.now() + 10000;
+    while (!handle.current?.getState().workerReady) {
+      assert.ok(Date.now() < deadline, "inline engine did not become ready");
+      await delay(5);
+    }
+    handle.current.append("# Retained heading\n\nBefore callback update.\n\n");
+    await waitForMutation(container, () => container.textContent?.includes("Before callback update.") ?? false);
+    flushSync(() => {
+      root.render(<StreamingMarkdown ref={handle} engine="main-thread" onError={() => {}} />);
+    });
+    await delay(30);
+    handle.current?.append("After callback update.");
+    handle.current?.finalize();
+    await waitForMutation(container, () => container.textContent?.includes("After callback update.") ?? false);
+    assert.strictEqual(container.querySelector("h1")?.textContent, "Retained heading");
+    assert.ok(container.textContent?.includes("Before callback update."));
+  } finally {
+    root.unmount();
+  }
+}
+
+await runCallbackUpdateDuringStream();
 console.log("main-thread engine smoke test passed");

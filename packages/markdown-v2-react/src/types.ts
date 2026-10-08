@@ -17,6 +17,11 @@ import type { ComponentRegistry } from "./components";
 
 export type { HtmlOptions, SyntaxRuleSpec } from "@stream-mdx/core";
 
+import type {
+  TableVirtualizationConfig,
+  TableVirtualizationOptions,
+} from "./renderer/virtualized-table";
+export type { TableVirtualizationConfig, TableVirtualizationOptions };
 export interface CodeFenceRendererProps {
   code: string;
   language: string;
@@ -155,6 +160,7 @@ export interface RendererConfig {
   blockRenderer?: BlockRendererOverride;
   syntax?: SyntaxRuleSpec[];
   html?: HtmlOptions;
+  tableVirtualization?: TableVirtualizationOptions;
   performance?: {
     frameBudgetMs?: number;
     flushTimeoutMs?: number;
@@ -193,6 +199,7 @@ export interface Renderer {
   setMdxComponents(map: Record<string, GenericComponent>): void;
   setCodeRenderers(map: Record<string, CodeFenceRenderer>): void;
   setMathRenderer(renderer: MathRenderer): void;
+  setTableVirtualization(options: TableVirtualizationOptions): void;
   getComponentRegistry(): ComponentRegistry;
   getStore(): RendererStore;
   requestCodeHighlightRange(request: CodeHighlightRangeRequest): void;

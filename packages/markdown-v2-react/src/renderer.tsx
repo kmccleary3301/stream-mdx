@@ -3,6 +3,7 @@ import type { Block, PatchMetrics, WorkerIn, WorkerOut } from "@stream-mdx/core"
 // Client-side renderer with component registry and worker integration
 import type { PatchCommitSchedulerOptions, PatchFlushResult } from "./renderer/patch-commit-scheduler";
 import type { BlockComponents, CodeFenceRenderer, CodeHighlightRangeRequest, InlineComponents, MathRenderer, Renderer, RendererConfig } from "./types";
+import type { TableVirtualizationOptions } from "./renderer/virtualized-table";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
@@ -76,6 +77,7 @@ export class MarkdownRenderer implements Renderer {
       {
         artifactHtml: this.config.artifactHtml,
         mathRenderer: this.config.mathRenderer,
+        tableVirtualization: this.config.tableVirtualization,
       },
     );
     if (this.config.html?.literalTagContent) {
@@ -283,6 +285,9 @@ export class MarkdownRenderer implements Renderer {
     this.componentRegistry.setMathRenderer(mathRenderer);
   }
 
+  setTableVirtualization(options: TableVirtualizationOptions): void {
+    this.componentRegistry.setTableVirtualization(options);
+  }
   /**
    * Get component registry for external access
    */

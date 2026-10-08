@@ -29,6 +29,13 @@ export const SHOWCASE_ITEMS: ShowcaseItem[] = [
     tags: ["rendering", "extensibility", "components"],
   },
   {
+    slug: "table-virtualization",
+    title: "Table Row Virtualization",
+    file: "table-virtualization.md",
+    description: "Executable showcase demonstrating configurable table row virtualization, sticky headers, variable height rows, and multiline content.",
+    tags: ["rendering", "performance", "components"],
+  },
+  {
     slug: "custom-regex",
     title: "Custom Regex Plugins",
     file: "custom-regex.md",
