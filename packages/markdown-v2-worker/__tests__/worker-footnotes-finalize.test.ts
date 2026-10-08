@@ -249,9 +249,14 @@ async function runRepeatedReferenceTargetsTest(): Promise<void> {
     dom.window.close();
   }
   const dom = new JSDOM("<!doctype html><html><body><main></main></body></html>", { url: "http://localhost/footnote-consumer", pretendToBeVisual: true });
-  const globals = { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, Node: dom.window.Node, MutationObserver: dom.window.MutationObserver };
-  const previous = new Map(Object.keys(globals).map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
-  Object.assign(globalThis, globals);
+  // React DOM's client runtime reads the bare global `navigator` (absent on Node 20), so the
+  // fixture exposes the real JSDOM navigator and installs every key with defineProperty: Node 22
+  // already owns a read-only `navigator` accessor that Object.assign cannot overwrite.
+  const globals = ["window", "document", "HTMLElement", "Node", "MutationObserver", "navigator"] as const;
+  const previous = new Map(globals.map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)] as const));
+  for (const key of globals) {
+    Object.defineProperty(globalThis, key, { configurable: true, writable: true, value: (dom.window as unknown as Record<string, unknown>)[key] });
+  }
   const container = dom.window.document.querySelector("main");
   assert.ok(container);
   const root = createRoot(container);
@@ -393,7 +398,7 @@ async function runCanonicalFootnoteOrderTest(): Promise<void> {
           assert.ok(dom.window.document.getElementById("fnref:1")?.closest("section"));
           assert.strictEqual(Boolean(dom.window.document.getElementById("fnref:1:2")?.closest("section")), name === "quote HTML table compatibility");
         }
-        const previous = new Map(["window", "document", "HTMLElement", "Node", "MutationObserver"].map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
+        const previous = new Map(["window", "document", "HTMLElement", "Node", "MutationObserver", "navigator"].map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
         for (const key of previous.keys()) Object.defineProperty(globalThis, key, { configurable: true, writable: true, value: (dom.window as unknown as Record<string, unknown>)[key] });
         const container = dom.window.document.createElement("div");
         dom.window.document.body.replaceChildren(container);

@@ -10,23 +10,41 @@ import { ComponentRegistry } from "../../markdown-v2-react/src/components";
 import { BlockNodeRenderer } from "../../markdown-v2-react/src/renderer/node-views";
 import { createWorkerHarness, type WorkerHarness } from "./worker-test-harness";
 
-function ensureDom(): void {
-  if (typeof window !== "undefined") {
-    return;
+const DOM_GLOBAL_KEYS = ["window", "document", "HTMLElement", "Node", "MutationObserver", "requestAnimationFrame", "cancelAnimationFrame", "navigator"] as const;
+
+/**
+ * Installs the browser globals React DOM's client runtime expects. `navigator` comes from the real
+ * JSDOM window (Node 20 has no global navigator) and every key is installed with defineProperty
+ * because Node 22 already owns a read-only `navigator` accessor that Object.assign cannot replace.
+ * Descriptors are captured for exact restore: a window installed by an earlier test file is
+ * borrowed and never closed, while an owned JSDOM is closed on cleanup.
+ */
+function ensureDom(): () => void {
+  const previous = new Map(DOM_GLOBAL_KEYS.map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)] as const));
+  const borrowedWindow = (globalThis as { window?: Window }).window;
+  const dom = borrowedWindow ? null : new JSDOM("<!doctype html><html><body></body></html>", { pretendToBeVisual: true });
+  const target = dom ? dom.window : (borrowedWindow as Window);
+  for (const key of DOM_GLOBAL_KEYS) {
+    const value =
+      key === "requestAnimationFrame"
+        ? target.requestAnimationFrame.bind(target)
+        : key === "cancelAnimationFrame"
+          ? target.cancelAnimationFrame.bind(target)
+          : key === "navigator"
+            ? target.navigator
+            : target[key];
+    Object.defineProperty(globalThis, key, { configurable: true, writable: true, value });
   }
-  const dom = new JSDOM("<!doctype html><html><body></body></html>", { pretendToBeVisual: true });
-  Object.assign(globalThis, {
-    window: dom.window,
-    document: dom.window.document,
-    HTMLElement: dom.window.HTMLElement,
-    Node: dom.window.Node,
-    MutationObserver: dom.window.MutationObserver,
-    requestAnimationFrame: dom.window.requestAnimationFrame.bind(dom.window),
-    cancelAnimationFrame: dom.window.cancelAnimationFrame.bind(dom.window),
-  });
+  return () => {
+    for (const [key, descriptor] of previous) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+      else Reflect.deleteProperty(globalThis, key);
+    }
+    dom?.window.close();
+  };
 }
 
-ensureDom();
+const restoreDom = ensureDom();
 
 // Deterministic pseudo-random number generator
 function createRng(seed = 123456789) {
@@ -247,4 +265,8 @@ async function runParityTest(): Promise<void> {
   console.log("incremental-chunking-parity test passed");
 }
 
-await runParityTest();
+try {
+  await runParityTest();
+} finally {
+  restoreDom();
+}
