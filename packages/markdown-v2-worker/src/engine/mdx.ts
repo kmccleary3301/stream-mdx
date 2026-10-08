@@ -115,7 +115,7 @@ export async function updateMdxCompilationState(state: EngineMdxState, block: Bl
     block.payload.meta = nextMeta;
   } catch (error) {
     const message = error instanceof Error ? error.message : "MDX compilation failed";
-    block.payload.compiledMdxModule = null;
+    block.payload.compiledMdxModule = undefined;
     block.payload.compiledMdxRef = undefined;
     const errorMeta = {
       ...(block.payload.meta ?? {}),
@@ -133,6 +133,36 @@ export function preserveMdxMetadata(previous: Block, next: Block): void {
     return;
   }
 
+  const prevMeta = (previous.payload.meta ?? null) as {
+    mdxStatus?: unknown;
+    mdxError?: unknown;
+  } | null;
+  const currentMeta = (next.payload.meta ?? undefined) as { mdxStatus?: unknown; mdxError?: unknown } | undefined;
+  const nextStatus = currentMeta?.mdxStatus ?? prevMeta?.mdxStatus;
+
+  if (nextStatus === "error") {
+    next.payload.compiledMdxRef = undefined;
+    next.payload.compiledMdxModule = undefined;
+
+    const mergedMeta: Record<string, unknown> = currentMeta ? { ...currentMeta } : {};
+    let metaChanged = false;
+
+    if (typeof prevMeta?.mdxStatus === "string" && mergedMeta.mdxStatus === undefined) {
+      mergedMeta.mdxStatus = prevMeta.mdxStatus;
+      metaChanged = true;
+    }
+
+    if (typeof prevMeta?.mdxError === "string" && mergedMeta.mdxError === undefined) {
+      mergedMeta.mdxError = prevMeta.mdxError;
+      metaChanged = true;
+    }
+
+    if (metaChanged || !currentMeta) {
+      next.payload.meta = mergedMeta;
+    }
+    return;
+  }
+
   if (previous.payload.compiledMdxRef && !next.payload.compiledMdxRef) {
     next.payload.compiledMdxRef = { ...previous.payload.compiledMdxRef };
   }
@@ -145,15 +175,10 @@ export function preserveMdxMetadata(previous: Block, next: Block): void {
     next.payload.compiledMdxModule = null;
   }
 
-  const prevMeta = (previous.payload.meta ?? null) as {
-    mdxStatus?: unknown;
-    mdxError?: unknown;
-  } | null;
   if (!prevMeta) {
     return;
   }
 
-  const currentMeta = (next.payload.meta ?? undefined) as { mdxStatus?: unknown; mdxError?: unknown } | undefined;
   const mergedMeta: Record<string, unknown> = currentMeta ? { ...currentMeta } : {};
   let metaChanged = false;
 
