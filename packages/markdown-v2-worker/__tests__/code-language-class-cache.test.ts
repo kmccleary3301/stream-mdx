@@ -34,4 +34,14 @@ assert.ok(labeled.includes("language-text"), "explicit text fence keeps its lang
 assert.ok(!bare.includes("language-"), "info-less fence must not inherit a cached language class");
 assert.ok(!bare.includes("data-language"), "info-less fence has no data-language");
 assert.strictEqual(labeledAgain, labeled, "cached explicit fence renders identically");
+
+// Alias info words select the canonical grammar but keep the authored word (CommonMark `language-js`).
+const aliasBody = "const answer = 42;\n";
+const viaAlias = await highlightedCode(`\`\`\`js\n${aliasBody}\`\`\`\n`);
+const viaCanonical = await highlightedCode(`\`\`\`javascript\n${aliasBody}\`\`\`\n`);
+assert.ok(viaAlias.includes("language-js") && !viaAlias.includes("language-javascript"), `authored js class preserved: ${viaAlias}`);
+assert.ok(viaAlias.includes('data-language="js"'), "data-language reflects the authored word");
+const tokenStyles = (html: string) => html.match(/--shiki-[a-z]+:#[0-9a-fA-F]+/g)?.join("|") ?? "";
+assert.ok(tokenStyles(viaAlias).length > 0, "alias fence is still highlighted");
+assert.strictEqual(tokenStyles(viaAlias), tokenStyles(viaCanonical), "alias and canonical fences use the same grammar");
 console.log("code language class cache test passed");

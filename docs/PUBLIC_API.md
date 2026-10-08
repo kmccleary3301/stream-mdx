@@ -315,9 +315,15 @@ export function CodeExample({ text }: { text: string }) {
 ```
 
 ### Code fence renderer contract
+
 Language keys are trimmed and lowercased. Entries accept a component or `{ component: Component, defer?: boolean, aliases?: string[] }`; each alias resolves to the same renderer.
 
-Language matching is case-insensitive (e.g. `JS` resolves to the `js` renderer). `defer: true` opts that renderer into viewport/idle deferral when `deferHeavyBlocks` is enabled.
+Language matching is case-insensitive (e.g. `JS` resolves to the `js` renderer). A key that misses falls back to the canonical grammar name, so a renderer registered as `javascript` also receives ```` ```js ```` fences. `defer: true` opts that renderer into viewport/idle deferral when `deferHeavyBlocks` is enabled.
+
+`language` is the authored first info word, exactly as written (```` ```js ```` gives `"js"`), matching the CommonMark `language-js` class. Aliases such as `js`, `ts`, `py` and `sh` only choose the Shiki grammar.
+
+```ts
+import type React from "react";
 
 interface CodeFenceRendererProps {
   code: string;

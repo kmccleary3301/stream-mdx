@@ -138,6 +138,17 @@ in the isolated consumer worktree's
 `.codex-optimization/runs/20261007-211411-engine-v2-comparison/` directory
 (`results.md`, `summary.json`, and `final-quiet/`).
 
+### Comparable fixture: `code-huge`
+
+`code-huge` (one 16.5 KB `js` fence, no footnotes, no display math) is the first
+fixture whose canonical semantic records match exactly between StreamMDX and
+Streamdown `2.7.0`: same fixture hash, chunk trace, and canonical SHA-256
+`7ce0b889…` on S2. Before engine-v2 kept the authored fence word, the only
+difference was the code language (`javascript` vs authored `js`). That
+parity-only probe ran on battery power with one stream per renderer, so it
+provides no timing evidence. No speed claim exists for this fixture until a
+quiet AC-power run with warmup and three measured streams per renderer completes.
+
 ## Related references
 
 - [`PERF_HARNESS.md`](./PERF_HARNESS.md)

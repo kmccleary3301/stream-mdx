@@ -162,8 +162,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 2,
-        "lastPatchToDomMs": 0.10000000149011612,
-        "lastDurationMs": 0.10000000149011612,
+        "lastPatchToDomMs": 0.10000000894069672,
+        "lastDurationMs": 0.10000000894069672,
         "meta": {
           "fixtureId": "code-highlight-incremental",
           "scenarioId": "S3_fast_reasonable",
@@ -233,8 +233,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 2,
-        "lastPatchToDomMs": 0.10000000149011612,
-        "lastDurationMs": 0.10000000149011612,
+        "lastPatchToDomMs": 0.10000000894069672,
+        "lastDurationMs": 0.10000000894069672,
         "meta": {
           "fixtureId": "code-highlight-incremental",
           "scenarioId": "S3_fast_reasonable",
@@ -304,7 +304,7 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 3,
-        "lastPatchToDomMs": 4.300000004470348,
+        "lastPatchToDomMs": 2.7000000029802322,
         "lastDurationMs": 0.9000000059604645,
         "meta": {
           "fixtureId": "code-highlight-incremental",
@@ -375,7 +375,7 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 6,
-        "lastPatchToDomMs": 15.199999995529652,
+        "lastPatchToDomMs": 14.700000002980232,
         "lastDurationMs": 0.7999999970197678,
         "meta": {
           "fixtureId": "code-highlight-incremental",
@@ -446,8 +446,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 9,
-        "lastPatchToDomMs": 15.700000002980232,
-        "lastDurationMs": 0.9000000059604645,
+        "lastPatchToDomMs": 17.399999991059303,
+        "lastDurationMs": 0.8999999910593033,
         "meta": {
           "fixtureId": "code-highlight-incremental",
           "scenarioId": "S3_fast_reasonable",
@@ -517,8 +517,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 11,
-        "lastPatchToDomMs": 11.5,
-        "lastDurationMs": 1.2000000029802322,
+        "lastPatchToDomMs": 11.100000008940697,
+        "lastDurationMs": 1.2999999970197678,
         "meta": {
           "fixtureId": "code-highlight-incremental",
           "scenarioId": "S3_fast_reasonable",
@@ -588,8 +588,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 12,
-        "lastPatchToDomMs": 15.100000001490116,
-        "lastDurationMs": 1.1000000014901161,
+        "lastPatchToDomMs": 14.600000008940697,
+        "lastDurationMs": 1.2000000029802322,
         "meta": {
           "fixtureId": "code-highlight-incremental",
           "scenarioId": "S3_fast_reasonable",
@@ -663,15 +663,15 @@
       "hasBlockquote": false,
       "hasMath": false
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Incremental Code Highlighting\">Incremental Code Highlighting</h3><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-javascript\" data-language=\"javascript\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> label</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"incremental\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> items</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> [</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">  \"alpha\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">  \"beta\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">  \"gamma\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">];</span></span>\n<span class=\"line\" data-line=\"7\"></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">function</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> format</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">list</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) {</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#6A737D;--shiki-light:#6A737D\">  /* multi-line</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#6A737D;--shiki-light:#6A737D\">     comment */</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  return</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> list.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">map</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">((</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">value</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">index</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=&gt;</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> `${</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">index</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> +</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 1</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">}: ${</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">value</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">}`</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">);</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}</span></span>\n<span class=\"line\" data-line=\"13\"></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">console.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">log</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">format</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(items));</span></span></code></pre></div></div></div></div></div></div></div>",
+    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Incremental Code Highlighting\">Incremental Code Highlighting</h3><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-js\" data-language=\"js\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> label</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"incremental\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> items</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> [</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">  \"alpha\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">  \"beta\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">  \"gamma\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">];</span></span>\n<span class=\"line\" data-line=\"7\"></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">function</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> format</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">list</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) {</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#6A737D;--shiki-light:#6A737D\">  /* multi-line</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#6A737D;--shiki-light:#6A737D\">     comment */</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  return</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> list.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">map</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">((</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">value</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">index</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=&gt;</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> `${</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">index</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> +</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 1</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">}: ${</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">value</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">}`</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">);</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}</span></span>\n<span class=\"line\" data-line=\"13\"></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">console.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">log</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">format</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(items));</span></span></code></pre></div></div></div></div></div></div></div>",
     "runtimeState": {
       "rendererVersion": 17,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
       "lastTx": 14,
-      "lastPatchToDomMs": 12.100000001490116,
-      "lastDurationMs": 1.8000000044703484,
+      "lastPatchToDomMs": 13,
+      "lastDurationMs": 2.2999999970197678,
       "meta": {
         "fixtureId": "code-highlight-incremental",
         "scenarioId": "S3_fast_reasonable",
@@ -703,7 +703,7 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "2b24276716699487803121ae1d156b52183944f5c5f16806b2d45ac5ca5f32b8",
+        "hash": "ed9535711e11c3544f8033fd2f85ef71d504df0120bcd6ed0d9c777531c24017",
         "textSample": "Incremental Code Highlighting[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-over"
       }
     ],

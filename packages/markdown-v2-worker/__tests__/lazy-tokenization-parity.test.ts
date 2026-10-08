@@ -194,7 +194,7 @@ async function runNestedLazyConsumers(): Promise<void> {
     const before = captured.at(-1);
     assert.ok(before);
     assert.strictEqual(before.code, lines.join("\n"));
-    assert.strictEqual(before.language, "javascript", "callbacks use the canonical native language alias");
+    assert.strictEqual(before.language, "js", "renderers receive the authored info word; the `javascript` key still matches via the alias");
     assert.strictEqual(before.blockId, code.id);
     assert.strictEqual(before.isFinalized, true);
     assert.strictEqual(before.meta?.lazyTokenizedUntil, 0);

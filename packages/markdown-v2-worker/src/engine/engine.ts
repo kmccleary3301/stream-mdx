@@ -44,6 +44,7 @@ import {
   extractMixedContentSegments,
   generateBlockId,
   normalizeFormatAnticipation,
+  normalizeLang,
   parseCodeFenceInfo,
   prepareInlineStreamingContent,
   removeHeadingMarkers,
@@ -1490,7 +1491,7 @@ export class MarkdownEngine {
       };
     }
     const requestedLanguage = diffInfo.isDiff ? diffInfo.diffLang : (lang || undefined);
-    const highlightLanguage = diffInfo.isDiff ? diffInfo.diffLang : (lang || "text");
+    const highlightLanguage = diffInfo.isDiff ? diffInfo.diffLang : (normalizeLang(lang) || "text");
     const tokenLanguage = diffInfo.isDiff ? diffInfo.baseLang ?? "text" : highlightLanguage;
     const baseMeta = (block.payload.meta ?? {}) as Record<string, unknown>;
     let resolvedLanguage = highlightLanguage;
@@ -2508,7 +2509,7 @@ export class MarkdownEngine {
       };
     }
     const requestedLanguage = diffInfo.isDiff ? diffInfo.diffLang : (lang || undefined);
-    const highlightLanguage = diffInfo.isDiff ? diffInfo.diffLang : (lang || "text");
+    const highlightLanguage = diffInfo.isDiff ? diffInfo.diffLang : (normalizeLang(lang) || "text");
     const tokenLanguage = diffInfo.isDiff ? diffInfo.baseLang ?? "text" : highlightLanguage;
     const hasHighlightableContent = codeBody.trim().length > 0;
     if (!shouldLazyTokenizeBlock(this.lazyTokenizationEnabled, codeLines.length, this.lazyTokenizationThresholdLines, Boolean(this.highlighter), hasHighlightableContent)) {

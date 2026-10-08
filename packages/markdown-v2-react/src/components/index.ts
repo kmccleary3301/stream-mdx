@@ -14,7 +14,7 @@ export {
   type RenderInlineAnimationContext,
 } from "../animation";
 export { defaultUrlTransform, type UrlTransform, type UrlTransformContext } from "@stream-mdx/core";
-import { InlineParser, createTrustedHTML, defaultUrlTransform, isForbiddenAttribute, isSafeStyleDeclaration, sanitizeHTML, stripCodeFence } from "@stream-mdx/core";
+import { InlineParser, createTrustedHTML, defaultUrlTransform, isForbiddenAttribute, isSafeStyleDeclaration, normalizeLang, sanitizeHTML, stripCodeFence } from "@stream-mdx/core";
 import type { UrlTransform } from "@stream-mdx/core";
 import { markMdxHydrated, markMdxHydrationError, markMdxHydrationStart } from "../mdx-hydration-metrics";
 import { MdxHydrationContext } from "../mdx-hydration-context";
@@ -1200,6 +1200,11 @@ export class ComponentRegistry {
     const normalized = (language ?? "").trim().toLowerCase();
     if (Object.prototype.hasOwnProperty.call(this.codeRenderers, normalized)) {
       return this.codeRenderers[normalized];
+    }
+    // Authored `js` still reaches a renderer registered as `javascript`.
+    const canonical = normalizeLang(normalized);
+    if (canonical !== normalized && Object.prototype.hasOwnProperty.call(this.codeRenderers, canonical)) {
+      return this.codeRenderers[canonical];
     }
     if (normalized === "artifact" || normalized === "html-artifact") {
       return ArtifactFrame;

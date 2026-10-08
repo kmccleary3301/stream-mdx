@@ -1,9 +1,9 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-08T21:04:54.038Z",
-  "hash": "a34503dbed92f978de78f733178f24448f6545e0f915cf4e385ea71aa25bbe33",
-  "contentHash": "87d7079f4b42a25136db78d7ea8f0900f8c2fe691257620906c67b6fe961963f",
+  "createdAt": "2026-10-08T22:11:37.831Z",
+  "hash": "74df32528c94a291d170adf42d1a9edf3fe30a8488aefeeeb8f640dcb173cce4",
+  "contentHash": "cae6028fcd31b68c3866c216cc24c7e8d0f9c185e87d589cadedb149a38c3372",
   "configHash": "a274f269183e8eac42eeb12b1ae0dc7fea9398cc27792626c9ca0c17911fb0b4",
   "hashSalt": "docs-snapshots-v2:9417117db4c19b323c5bd2a5c7754c6e0d46bf7c962c13c422b86e6485aac7c0",
   "blocks": [
@@ -4785,6 +4785,99 @@
       "type": "heading",
       "isFinalized": true,
       "payload": {
+        "raw": "Comparable fixture: `code-huge`",
+        "meta": {
+          "lezerNodeType": "ATXHeading3",
+          "headingLevel": 3,
+          "headingText": "Comparable fixture: `code-huge`",
+          "headingId": "comparable-fixture-code-huge"
+        },
+        "range": {
+          "from": 8696,
+          "to": 8731
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Comparable fixture: "
+          },
+          {
+            "kind": "code",
+            "text": "code-huge"
+          }
+        ]
+      }
+    },
+    {
+      "id": "3cf9f8df",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "`code-huge` (one 16.5 KB `js` fence, no footnotes, no display math) is the first\nfixture whose canonical semantic records match exactly between StreamMDX and\nStreamdown `2.7.0`: same fixture hash, chunk trace, and canonical SHA-256\n`7ce0b889…` on S2. Before engine-v2 kept the authored fence word, the only\ndifference was the code language (`javascript` vs authored `js`). That\nparity-only probe ran on battery power with one stream per renderer, so it\nprovides no timing evidence. No speed claim exists for this fixture until a\nquiet AC-power run with warmup and three measured streams per renderer completes.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
+        "range": {
+          "from": 8733,
+          "to": 9343
+        },
+        "inline": [
+          {
+            "kind": "code",
+            "text": "code-huge"
+          },
+          {
+            "kind": "text",
+            "text": " (one 16.5 KB "
+          },
+          {
+            "kind": "code",
+            "text": "js"
+          },
+          {
+            "kind": "text",
+            "text": " fence, no footnotes, no display math) is the first\nfixture whose canonical semantic records match exactly between StreamMDX and\nStreamdown "
+          },
+          {
+            "kind": "code",
+            "text": "2.7.0"
+          },
+          {
+            "kind": "text",
+            "text": ": same fixture hash, chunk trace, and canonical SHA-256\n"
+          },
+          {
+            "kind": "code",
+            "text": "7ce0b889…"
+          },
+          {
+            "kind": "text",
+            "text": " on S2. Before engine-v2 kept the authored fence word, the only\ndifference was the code language ("
+          },
+          {
+            "kind": "code",
+            "text": "javascript"
+          },
+          {
+            "kind": "text",
+            "text": " vs authored "
+          },
+          {
+            "kind": "code",
+            "text": "js"
+          },
+          {
+            "kind": "text",
+            "text": "). That\nparity-only probe ran on battery power with one stream per renderer, so it\nprovides no timing evidence. No speed claim exists for this fixture until a\nquiet AC-power run with warmup and three measured streams per renderer completes."
+          }
+        ]
+      }
+    },
+    {
+      "id": "4fc0a4e5",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
         "raw": "Related references",
         "meta": {
           "lezerNodeType": "ATXHeading2",
@@ -4793,8 +4886,8 @@
           "headingId": "related-references"
         },
         "range": {
-          "from": 8696,
-          "to": 8717
+          "from": 9345,
+          "to": 9366
         },
         "inline": [
           {
@@ -4805,7 +4898,7 @@
       }
     },
     {
-      "id": "588cd90b",
+      "id": "5d02cde0",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -4885,17 +4978,17 @@
             },
             "children": [
               {
-                "id": "588cd90b::item:0",
+                "id": "5d02cde0::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 8719,
-                  "to": 8759
+                  "from": 9368,
+                  "to": 9408
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "588cd90b::item:0",
+                    "id": "5d02cde0::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -4913,8 +5006,8 @@
                         }
                       ],
                       "range": {
-                        "from": 8719,
-                        "to": 8759
+                        "from": 9368,
+                        "to": 9408
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -4962,17 +5055,17 @@
                 "children": []
               },
               {
-                "id": "588cd90b::item:1",
+                "id": "5d02cde0::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 8760,
-                  "to": 8810
+                  "from": 9409,
+                  "to": 9459
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "588cd90b::item:1",
+                    "id": "5d02cde0::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -4990,8 +5083,8 @@
                         }
                       ],
                       "range": {
-                        "from": 8760,
-                        "to": 8810
+                        "from": 9409,
+                        "to": 9459
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -5039,17 +5132,17 @@
                 "children": []
               },
               {
-                "id": "588cd90b::item:2",
+                "id": "5d02cde0::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 8811,
-                  "to": 8887
+                  "from": 9460,
+                  "to": 9536
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "588cd90b::item:2",
+                    "id": "5d02cde0::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -5067,8 +5160,8 @@
                         }
                       ],
                       "range": {
-                        "from": 8811,
-                        "to": 8887
+                        "from": 9460,
+                        "to": 9536
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -5116,17 +5209,17 @@
                 "children": []
               },
               {
-                "id": "588cd90b::item:3",
+                "id": "5d02cde0::item:3",
                 "type": "list-item",
                 "range": {
-                  "from": 8888,
-                  "to": 8956
+                  "from": 9537,
+                  "to": 9605
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "588cd90b::item:3",
+                    "id": "5d02cde0::item:3",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -5149,8 +5242,8 @@
                         }
                       ],
                       "range": {
-                        "from": 8888,
-                        "to": 8956
+                        "from": 9537,
+                        "to": 9605
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -5211,8 +5304,8 @@
           }
         },
         "range": {
-          "from": 8719,
-          "to": 8956
+          "from": 9368,
+          "to": 9605
         }
       }
     }
@@ -5303,8 +5396,14 @@
       "text": "Engine-v2 production comparison, 2026-10-08"
     },
     {
-      "id": "related-references",
+      "id": "comparable-fixture-code-huge",
       "blockId": "3f108d65",
+      "level": 3,
+      "text": "Comparable fixture: `code-huge`"
+    },
+    {
+      "id": "related-references",
+      "blockId": "4fc0a4e5",
       "level": 2,
       "text": "Related references"
     }

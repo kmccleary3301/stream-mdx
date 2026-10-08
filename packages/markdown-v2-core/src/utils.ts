@@ -163,7 +163,8 @@ function isWithinRanges(start: number, end: number, ranges: Array<{ from: number
 }
 
 /**
- * Parse code fence info (language and metadata)
+ * Parse code fence info (language and metadata).
+ * `lang` is the authored first info word (CommonMark `language-<word>`); use `normalizeLang` to pick a grammar.
  */
 export function parseCodeFenceInfo(info: string): { lang: string; meta: Record<string, unknown> } {
   const trimmed = (info || "").trim();
@@ -175,7 +176,7 @@ export function parseCodeFenceInfo(info: string): { lang: string; meta: Record<s
     (match, escaped: string | undefined) => escaped ?? decodeHTML5Strict(match),
   );
   const parts = decoded.split(/\s+/);
-  const lang = normalizeLang(parts[0]);
+  const lang = parts[0];
   const meta: Record<string, unknown> = {};
   for (let i = 1; i < parts.length; i++) {
     const part = parts[i];
