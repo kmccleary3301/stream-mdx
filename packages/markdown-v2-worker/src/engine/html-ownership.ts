@@ -1,5 +1,5 @@
 import type { MarkdownParser } from "@lezer/markdown";
-import { dedentIndentedCode, sanitizeHtmlTreeInWorker, stripCodeFence, type Block, type HtmlOptions, type InlineNode, type MarkdownElement } from "@stream-mdx/core";
+import { dedentIndentedCode, sanitizeHtmlTreeInWorker, stripCodeFence, type Block, type HtmlOptions, type InlineNode } from "@stream-mdx/core";
 
 const VOID: Record<string, true> = { area: true, base: true, br: true, col: true, embed: true, hr: true, img: true, input: true, link: true, meta: true, param: true, source: true, track: true, wbr: true };
 const escapeHtml = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
@@ -41,30 +41,44 @@ function blockHtml(block: Block, attribute: string, index: number): string {
   return `<${tag}${marker}>${inlineHtml(block.payload.inline ?? [])}</${tag}>`;
 }
 
+/**
+ * Inline elements produced by Lezer's parser carry their nested children at runtime (see
+ * `InlineContext.elt(..., children)`), while the published `Element` type only documents
+ * `type`/`from`/`to`. Walk them through this structural view instead of casting through `unknown`.
+ */
+interface InlineElementView {
+  readonly type: number;
+  readonly from: number;
+  readonly to: number;
+  readonly children?: readonly InlineElementView[];
+}
+
+/** Apply one raw fragment's Lezer HTMLTag open/close effects to an open-container stack. */
+export function applyHtmlTagBalance(raw: string, parser: MarkdownParser, stack: string[]): void {
+  const visit = (elements: readonly InlineElementView[]) => {
+    for (const element of elements) {
+      if (parser.nodeSet.types[element.type].name === "HTMLTag") {
+        const tag = raw.slice(element.from, element.to);
+        const name = /^<\/?([a-zA-Z][^\s/>]*)/.exec(tag)?.[1]?.toLowerCase();
+        if (!name) continue;
+        if (tag.startsWith("</")) {
+          const at = stack.lastIndexOf(name);
+          if (at >= 0) stack.length = at;
+        } else if (!VOID[name] && !tag.endsWith("/>")) {
+          stack.push(name);
+        }
+      }
+      if (element.children?.length) visit(element.children);
+    }
+  };
+  visit(parser.parseInline(raw, 0));
+}
+
 /** Own an open HTML container across Lezer block boundaries, retaining markdown leaves. */
-export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, content: string, options?: HtmlOptions, sourceOffset = 0, parseInline?: (text: string) => InlineNode[]): Block[] {
+export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, content: string, options?: HtmlOptions, sourceOffset = 0, parseInline?: (text: string) => InlineNode[], regionSource?: { joinLeafRaws?: boolean }): Block[] {
   const result: Block[] = [];
   let region: Block[] = [];
   let stack: string[] = [];
-  const updateStack = (raw: string) => {
-    const visit = (elements: readonly MarkdownElement[]) => {
-      for (const element of elements) {
-        if (parser.nodeSet.types[element.type].name === "HTMLTag") {
-          const tag = raw.slice(element.from, element.to);
-          const name = /^<\/?([a-zA-Z][^\s/>]*)/.exec(tag)?.[1]?.toLowerCase();
-          if (!name) continue;
-          if (tag.startsWith("</")) {
-            const at = stack.lastIndexOf(name);
-            if (at >= 0) stack.length = at;
-          } else if (!VOID[name] && !tag.endsWith("/>")) {
-            stack.push(name);
-          }
-        }
-        if (element.children.length) visit(element.children);
-      }
-    };
-    visit(parser.parseInline(raw, 0) as readonly MarkdownElement[]);
-  };
   const flush = () => {
     if (region.length === 1) {
       result.push(region[0]);
@@ -79,12 +93,15 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
         return blockHtml(block, attribute, index);
       }).join("\n");
       const last = region[region.length - 1];
+      const raw = regionSource?.joinLeafRaws
+        ? region.map((block) => (block.payload.raw ?? "").replace(/\n$/, "")).join("\n\n")
+        : content.slice((first.payload.range?.from ?? sourceOffset) - sourceOffset, (last.payload.range?.to ?? content.length + sourceOffset) - sourceOffset);
       result.push({
         ...first,
         isFinalized: stack.length === 0 && last.isFinalized,
         payload: {
           ...first.payload,
-          raw: content.slice((first.payload.range?.from ?? sourceOffset) - sourceOffset, (last.payload.range?.to ?? content.length + sourceOffset) - sourceOffset),
+          raw,
           range: { from: first.payload.range?.from ?? sourceOffset, to: last.payload.range?.to ?? content.length + sourceOffset },
           meta: { ...first.payload.meta, htmlTree: sanitizeHtmlTreeInWorker(html, options, { attribute, blocks: markdown }, parseInline), htmlOwnership: true },
         },
@@ -98,7 +115,7 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
       result.push(block);
       continue;
     }
-    updateStack(block.payload.raw);
+    applyHtmlTagBalance(block.payload.raw, parser, stack);
     if (region.length === 0 && stack.length === 0) {
       result.push(block);
       continue;
