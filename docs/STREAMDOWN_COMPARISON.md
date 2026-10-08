@@ -38,6 +38,22 @@ It does **not** claim universal latency or memory superiority across every brows
 | Terminal / protocol use | React-first surface | Dedicated TUI / protocol path exists |
 | Operational visibility | Mostly renderer-level behavior | More moving parts, but more instrumentation and runtime controls |
 
+## Feature surface (engine v2)
+
+StreamMDX features below are default off unless stated, so default rendering is unchanged.
+
+| Feature | StreamMDX | Notes / open gaps |
+| --- | --- | --- |
+| Code/table/Mermaid copy and download controls | `controls`, `controlsComponent`, `labels` | No `icons` or `prefix` customization props; replace the bar through `controlsComponent`. |
+| Animated streaming text | `animated` (fade/blur/slide, stagger, reduced-motion CSS) | Static/SSR output is never animated. |
+| Element filtering | `allowedElements`, `disallowedElements`, `allowElement`, `unwrapDisallowed`, `disableAutolinkProtocols` | Applied at render time across markdown and raw HTML. |
+| Custom code renderers | `codeRenderers` with case-insensitive keys and `aliases` | |
+| URL policy | Default denylist plus `urlTransform` | |
+| Shiki themes | Configurable light/dark themes | |
+| remark/rehype plugins | Optional adapter on finalized blocks | Streaming (non-finalized) blocks do not run remark/rehype. |
+| Incomplete-markdown repair | Built into the incremental parser | No public hook to replace or extend it. |
+| Artifacts | Sandboxed iframe renderer | No `artifact={{ Frame }}` replacement prop. |
+
 ## What the current harnesses are good at measuring
 
 The current StreamMDX harnesses are good at comparing:

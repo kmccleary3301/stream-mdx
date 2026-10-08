@@ -1,9 +1,9 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-08T19:48:58.207Z",
-  "hash": "b51c40e05aa016de2c6af7b72bbfdaef4049d6f8238bf6121bd6b39ddd2d938d",
-  "contentHash": "a7ffaf55a147d272814ee0c176cc6b60cfb400c1227153cac5b1c5757d4fdb9a",
+  "createdAt": "2026-10-08T21:04:54.038Z",
+  "hash": "a34503dbed92f978de78f733178f24448f6545e0f915cf4e385ea71aa25bbe33",
+  "contentHash": "87d7079f4b42a25136db78d7ea8f0900f8c2fe691257620906c67b6fe961963f",
   "configHash": "a274f269183e8eac42eeb12b1ae0dc7fea9398cc27792626c9ca0c17911fb0b4",
   "hashSalt": "docs-snapshots-v2:9417117db4c19b323c5bd2a5c7754c6e0d46bf7c962c13c422b86e6485aac7c0",
   "blocks": [
@@ -1092,6 +1092,355 @@
       "type": "heading",
       "isFinalized": true,
       "payload": {
+        "raw": "Feature surface (engine v2)",
+        "meta": {
+          "lezerNodeType": "ATXHeading2",
+          "headingLevel": 2,
+          "headingText": "Feature surface (engine v2)",
+          "headingId": "feature-surface-engine-v2"
+        },
+        "range": {
+          "from": 2434,
+          "to": 2464
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Feature surface (engine v2)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "3fecbfe",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "StreamMDX features below are default off unless stated, so default rendering is unchanged.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
+        "range": {
+          "from": 2466,
+          "to": 2556
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "StreamMDX features below are default off unless stated, so default rendering is unchanged."
+          }
+        ]
+      }
+    },
+    {
+      "id": "3581aa6",
+      "type": "table",
+      "isFinalized": true,
+      "payload": {
+        "raw": "| Feature | StreamMDX | Notes / open gaps |\n| --- | --- | --- |\n| Code/table/Mermaid copy and download controls | `controls`, `controlsComponent`, `labels` | No `icons` or `prefix` customization props; replace the bar through `controlsComponent`. |\n| Animated streaming text | `animated` (fade/blur/slide, stagger, reduced-motion CSS) | Static/SSR output is never animated. |\n| Element filtering | `allowedElements`, `disallowedElements`, `allowElement`, `unwrapDisallowed`, `disableAutolinkProtocols` | Applied at render time across markdown and raw HTML. |\n| Custom code renderers | `codeRenderers` with case-insensitive keys and `aliases` | |\n| URL policy | Default denylist plus `urlTransform` | |\n| Shiki themes | Configurable light/dark themes | |\n| remark/rehype plugins | Optional adapter on finalized blocks | Streaming (non-finalized) blocks do not run remark/rehype. |\n| Incomplete-markdown repair | Built into the incremental parser | No public hook to replace or extend it. |\n| Artifacts | Sandboxed iframe renderer | No `artifact={{ Frame }}` replacement prop. |",
+        "meta": {
+          "lezerNodeType": "Table",
+          "header": [
+            [
+              {
+                "kind": "text",
+                "text": "Feature"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "StreamMDX"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Notes / open gaps"
+              }
+            ]
+          ],
+          "align": [
+            null,
+            null,
+            null
+          ],
+          "rows": [
+            [
+              [
+                {
+                  "kind": "text",
+                  "text": "Code/table/Mermaid copy and download controls"
+                }
+              ],
+              [
+                {
+                  "kind": "code",
+                  "text": "controls"
+                },
+                {
+                  "kind": "text",
+                  "text": ", "
+                },
+                {
+                  "kind": "code",
+                  "text": "controlsComponent"
+                },
+                {
+                  "kind": "text",
+                  "text": ", "
+                },
+                {
+                  "kind": "code",
+                  "text": "labels"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "No "
+                },
+                {
+                  "kind": "code",
+                  "text": "icons"
+                },
+                {
+                  "kind": "text",
+                  "text": " or "
+                },
+                {
+                  "kind": "code",
+                  "text": "prefix"
+                },
+                {
+                  "kind": "text",
+                  "text": " customization props; replace the bar through "
+                },
+                {
+                  "kind": "code",
+                  "text": "controlsComponent"
+                },
+                {
+                  "kind": "text",
+                  "text": "."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "text",
+                  "text": "Animated streaming text"
+                }
+              ],
+              [
+                {
+                  "kind": "code",
+                  "text": "animated"
+                },
+                {
+                  "kind": "text",
+                  "text": " (fade/blur/slide, stagger, reduced-motion CSS)"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Static/SSR output is never animated."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "text",
+                  "text": "Element filtering"
+                }
+              ],
+              [
+                {
+                  "kind": "code",
+                  "text": "allowedElements"
+                },
+                {
+                  "kind": "text",
+                  "text": ", "
+                },
+                {
+                  "kind": "code",
+                  "text": "disallowedElements"
+                },
+                {
+                  "kind": "text",
+                  "text": ", "
+                },
+                {
+                  "kind": "code",
+                  "text": "allowElement"
+                },
+                {
+                  "kind": "text",
+                  "text": ", "
+                },
+                {
+                  "kind": "code",
+                  "text": "unwrapDisallowed"
+                },
+                {
+                  "kind": "text",
+                  "text": ", "
+                },
+                {
+                  "kind": "code",
+                  "text": "disableAutolinkProtocols"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Applied at render time across markdown and raw HTML."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "text",
+                  "text": "Custom code renderers"
+                }
+              ],
+              [
+                {
+                  "kind": "code",
+                  "text": "codeRenderers"
+                },
+                {
+                  "kind": "text",
+                  "text": " with case-insensitive keys and "
+                },
+                {
+                  "kind": "code",
+                  "text": "aliases"
+                }
+              ],
+              []
+            ],
+            [
+              [
+                {
+                  "kind": "text",
+                  "text": "URL policy"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Default denylist plus "
+                },
+                {
+                  "kind": "code",
+                  "text": "urlTransform"
+                }
+              ],
+              []
+            ],
+            [
+              [
+                {
+                  "kind": "text",
+                  "text": "Shiki themes"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Configurable light/dark themes"
+                }
+              ],
+              []
+            ],
+            [
+              [
+                {
+                  "kind": "text",
+                  "text": "remark/rehype plugins"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Optional adapter on finalized blocks"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Streaming (non-finalized) blocks do not run remark/rehype."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "text",
+                  "text": "Incomplete-markdown repair"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Built into the incremental parser"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "No public hook to replace or extend it."
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "text",
+                  "text": "Artifacts"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "Sandboxed iframe renderer"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "No "
+                },
+                {
+                  "kind": "code",
+                  "text": "artifact={{ Frame }}"
+                },
+                {
+                  "kind": "text",
+                  "text": " replacement prop."
+                }
+              ]
+            ]
+          ]
+        },
+        "range": {
+          "from": 2558,
+          "to": 3634
+        },
+        "inline": []
+      }
+    },
+    {
+      "id": "1f416efa",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
         "raw": "What the current harnesses are good at measuring",
         "meta": {
           "lezerNodeType": "ATXHeading2",
@@ -1100,8 +1449,8 @@
           "headingId": "what-the-current-harnesses-are-good-at-measuring"
         },
         "range": {
-          "from": 2434,
-          "to": 2485
+          "from": 3636,
+          "to": 3687
         },
         "inline": [
           {
@@ -1112,7 +1461,7 @@
       }
     },
     {
-      "id": "5fb6ce7f",
+      "id": "7709925c",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -1121,8 +1470,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 2487,
-          "to": 2541
+          "from": 3689,
+          "to": 3743
         },
         "inline": [
           {
@@ -1133,7 +1482,7 @@
       }
     },
     {
-      "id": "d742ec6",
+      "id": "59fc4b37",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -1184,17 +1533,17 @@
             },
             "children": [
               {
-                "id": "d742ec6::item:0",
+                "id": "59fc4b37::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 2543,
-                  "to": 2598
+                  "from": 3745,
+                  "to": 3800
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "d742ec6::item:0",
+                    "id": "59fc4b37::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1206,8 +1555,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2543,
-                        "to": 2598
+                        "from": 3745,
+                        "to": 3800
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1243,17 +1592,17 @@
                 "children": []
               },
               {
-                "id": "d742ec6::item:1",
+                "id": "59fc4b37::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 2599,
-                  "to": 2651
+                  "from": 3801,
+                  "to": 3853
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "d742ec6::item:1",
+                    "id": "59fc4b37::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1265,8 +1614,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2599,
-                        "to": 2651
+                        "from": 3801,
+                        "to": 3853
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1302,17 +1651,17 @@
                 "children": []
               },
               {
-                "id": "d742ec6::item:2",
+                "id": "59fc4b37::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 2652,
-                  "to": 2688
+                  "from": 3854,
+                  "to": 3890
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "d742ec6::item:2",
+                    "id": "59fc4b37::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1324,8 +1673,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2652,
-                        "to": 2688
+                        "from": 3854,
+                        "to": 3890
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1361,17 +1710,17 @@
                 "children": []
               },
               {
-                "id": "d742ec6::item:3",
+                "id": "59fc4b37::item:3",
                 "type": "list-item",
                 "range": {
-                  "from": 2689,
-                  "to": 2757
+                  "from": 3891,
+                  "to": 3959
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "d742ec6::item:3",
+                    "id": "59fc4b37::item:3",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1383,8 +1732,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2689,
-                        "to": 2757
+                        "from": 3891,
+                        "to": 3959
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1423,13 +1772,13 @@
           }
         },
         "range": {
-          "from": 2543,
-          "to": 2757
+          "from": 3745,
+          "to": 3959
         }
       }
     },
     {
-      "id": "7e86ba69",
+      "id": "62095f9f",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -1438,8 +1787,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 2759,
-          "to": 2820
+          "from": 3961,
+          "to": 4022
         },
         "inline": [
           {
@@ -1463,7 +1812,7 @@
       }
     },
     {
-      "id": "4151f74a",
+      "id": "5468cf02",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -1508,17 +1857,17 @@
             },
             "children": [
               {
-                "id": "4151f74a::item:0",
+                "id": "5468cf02::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 2822,
-                  "to": 2885
+                  "from": 4024,
+                  "to": 4087
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "4151f74a::item:0",
+                    "id": "5468cf02::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1530,8 +1879,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2822,
-                        "to": 2885
+                        "from": 4024,
+                        "to": 4087
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1567,17 +1916,17 @@
                 "children": []
               },
               {
-                "id": "4151f74a::item:1",
+                "id": "5468cf02::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 2886,
-                  "to": 2942
+                  "from": 4088,
+                  "to": 4144
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "4151f74a::item:1",
+                    "id": "5468cf02::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1589,8 +1938,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2886,
-                        "to": 2942
+                        "from": 4088,
+                        "to": 4144
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1626,17 +1975,17 @@
                 "children": []
               },
               {
-                "id": "4151f74a::item:2",
+                "id": "5468cf02::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 2943,
-                  "to": 2997
+                  "from": 4145,
+                  "to": 4199
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "4151f74a::item:2",
+                    "id": "5468cf02::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1648,8 +1997,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2943,
-                        "to": 2997
+                        "from": 4145,
+                        "to": 4199
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1688,13 +2037,13 @@
           }
         },
         "range": {
-          "from": 2822,
-          "to": 2997
+          "from": 4024,
+          "to": 4199
         }
       }
     },
     {
-      "id": "e40f7a7",
+      "id": "2d551301",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -1706,8 +2055,8 @@
           "headingId": "security-and-isolation"
         },
         "range": {
-          "from": 2999,
-          "to": 3024
+          "from": 4201,
+          "to": 4226
         },
         "inline": [
           {
@@ -1718,7 +2067,7 @@
       }
     },
     {
-      "id": "70db63a1",
+      "id": "885d6bc",
       "type": "table",
       "isFinalized": true,
       "payload": {
@@ -1822,14 +2171,14 @@
           ]
         },
         "range": {
-          "from": 3026,
-          "to": 3430
+          "from": 4228,
+          "to": 4632
         },
         "inline": []
       }
     },
     {
-      "id": "65e36f80",
+      "id": "4018a79d",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -1841,8 +2190,8 @@
           "headingId": "conformance-and-spec-parity-commonmark-0-31-2-gfm-extensions"
         },
         "range": {
-          "from": 3432,
-          "to": 3499
+          "from": 4634,
+          "to": 4701
         },
         "inline": [
           {
@@ -1853,7 +2202,7 @@
       }
     },
     {
-      "id": "4a3f59dd",
+      "id": "61921dba",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -1862,8 +2211,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 3501,
-          "to": 3627
+          "from": 4703,
+          "to": 4829
         },
         "inline": [
           {
@@ -1882,7 +2231,7 @@
       }
     },
     {
-      "id": "5acc8d6a",
+      "id": "7a3c7362",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -1891,8 +2240,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 3629,
-          "to": 3805
+          "from": 4831,
+          "to": 5007
         },
         "inline": [
           {
@@ -1911,7 +2260,7 @@
       }
     },
     {
-      "id": "10069c4f",
+      "id": "231d7407",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -1992,17 +2341,17 @@
             },
             "children": [
               {
-                "id": "10069c4f::item:0",
+                "id": "231d7407::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 3806,
-                  "to": 3897
+                  "from": 5008,
+                  "to": 5099
                 },
                 "props": {
                   "ordered": true,
                   "loose": false,
                   "block": {
-                    "id": "10069c4f::item:0",
+                    "id": "231d7407::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2031,8 +2380,8 @@
                         }
                       ],
                       "range": {
-                        "from": 3806,
-                        "to": 3897
+                        "from": 5008,
+                        "to": 5099
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2069,7 +2418,7 @@
                           },
                           "children": [
                             {
-                              "id": "10069c4f::item:0::list-item:segment:0",
+                              "id": "231d7407::item:0::list-item:segment:0",
                               "type": "list-item-text",
                               "props": {
                                 "inline": [
@@ -2092,7 +2441,7 @@
                               "children": []
                             },
                             {
-                              "id": "10069c4f::item:0::list-item:segment:1",
+                              "id": "231d7407::item:0::list-item:segment:1",
                               "type": "list-item-mdx",
                               "props": {
                                 "raw": "{ enabled: false }",
@@ -2101,7 +2450,7 @@
                               "children": []
                             },
                             {
-                              "id": "10069c4f::item:0::list-item:segment:2",
+                              "id": "231d7407::item:0::list-item:segment:2",
                               "type": "list-item-text",
                               "props": {
                                 "inline": [
@@ -2148,7 +2497,7 @@
                 },
                 "children": [
                   {
-                    "id": "10069c4f::item:0::list-item:segment:0",
+                    "id": "231d7407::item:0::list-item:segment:0",
                     "type": "list-item-text",
                     "props": {
                       "inline": [
@@ -2171,7 +2520,7 @@
                     "children": []
                   },
                   {
-                    "id": "10069c4f::item:0::list-item:segment:1",
+                    "id": "231d7407::item:0::list-item:segment:1",
                     "type": "list-item-mdx",
                     "props": {
                       "raw": "{ enabled: false }",
@@ -2180,7 +2529,7 @@
                     "children": []
                   },
                   {
-                    "id": "10069c4f::item:0::list-item:segment:2",
+                    "id": "231d7407::item:0::list-item:segment:2",
                     "type": "list-item-text",
                     "props": {
                       "inline": [
@@ -2196,17 +2545,17 @@
                 ]
               },
               {
-                "id": "10069c4f::item:1",
+                "id": "231d7407::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 3898,
-                  "to": 4051
+                  "from": 5100,
+                  "to": 5253
                 },
                 "props": {
                   "ordered": true,
                   "loose": false,
                   "block": {
-                    "id": "10069c4f::item:1",
+                    "id": "231d7407::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2243,8 +2592,8 @@
                         }
                       ],
                       "range": {
-                        "from": 3898,
-                        "to": 4051
+                        "from": 5100,
+                        "to": 5253
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2289,7 +2638,7 @@
                           },
                           "children": [
                             {
-                              "id": "10069c4f::item:1::list-item:segment:0",
+                              "id": "231d7407::item:1::list-item:segment:0",
                               "type": "list-item-text",
                               "props": {
                                 "inline": [
@@ -2320,7 +2669,7 @@
                               "children": []
                             },
                             {
-                              "id": "10069c4f::item:1::list-item:segment:1",
+                              "id": "231d7407::item:1::list-item:segment:1",
                               "type": "list-item-mdx",
                               "props": {
                                 "raw": "{ enabled: false }",
@@ -2329,7 +2678,7 @@
                               "children": []
                             },
                             {
-                              "id": "10069c4f::item:1::list-item:segment:2",
+                              "id": "231d7407::item:1::list-item:segment:2",
                               "type": "list-item-text",
                               "props": {
                                 "inline": [
@@ -2384,7 +2733,7 @@
                 },
                 "children": [
                   {
-                    "id": "10069c4f::item:1::list-item:segment:0",
+                    "id": "231d7407::item:1::list-item:segment:0",
                     "type": "list-item-text",
                     "props": {
                       "inline": [
@@ -2415,7 +2764,7 @@
                     "children": []
                   },
                   {
-                    "id": "10069c4f::item:1::list-item:segment:1",
+                    "id": "231d7407::item:1::list-item:segment:1",
                     "type": "list-item-mdx",
                     "props": {
                       "raw": "{ enabled: false }",
@@ -2424,7 +2773,7 @@
                     "children": []
                   },
                   {
-                    "id": "10069c4f::item:1::list-item:segment:2",
+                    "id": "231d7407::item:1::list-item:segment:2",
                     "type": "list-item-text",
                     "props": {
                       "inline": [
@@ -2443,13 +2792,13 @@
           }
         },
         "range": {
-          "from": 3806,
-          "to": 4051
+          "from": 5008,
+          "to": 5253
         }
       }
     },
     {
-      "id": "1ea5666",
+      "id": "7b4b90c3",
       "type": "table",
       "isFinalized": true,
       "payload": {
@@ -2595,14 +2944,14 @@
           ]
         },
         "range": {
-          "from": 4053,
-          "to": 4411
+          "from": 5255,
+          "to": 5613
         },
         "inline": []
       }
     },
     {
-      "id": "1946a1a2",
+      "id": "734a8a85",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -2614,8 +2963,8 @@
           "headingId": "key-takeaways-on-conformance"
         },
         "range": {
-          "from": 4413,
-          "to": 4445
+          "from": 5615,
+          "to": 5647
         },
         "inline": [
           {
@@ -2626,7 +2975,7 @@
       }
     },
     {
-      "id": "47adf3c6",
+      "id": "1fc28637",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -2762,17 +3111,17 @@
             },
             "children": [
               {
-                "id": "47adf3c6::item:0",
+                "id": "1fc28637::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 4446,
-                  "to": 4613
+                  "from": 5648,
+                  "to": 5815
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "47adf3c6::item:0",
+                    "id": "1fc28637::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2793,8 +3142,8 @@
                         }
                       ],
                       "range": {
-                        "from": 4446,
-                        "to": 4613
+                        "from": 5648,
+                        "to": 5815
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2848,17 +3197,17 @@
                 "children": []
               },
               {
-                "id": "47adf3c6::item:1",
+                "id": "1fc28637::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 4614,
-                  "to": 4937
+                  "from": 5816,
+                  "to": 6139
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "47adf3c6::item:1",
+                    "id": "1fc28637::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2895,8 +3244,8 @@
                         }
                       ],
                       "range": {
-                        "from": 4614,
-                        "to": 4937
+                        "from": 5816,
+                        "to": 6139
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2982,17 +3331,17 @@
                 "children": []
               },
               {
-                "id": "47adf3c6::item:2",
+                "id": "1fc28637::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 4938,
-                  "to": 5147
+                  "from": 6140,
+                  "to": 6349
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "47adf3c6::item:2",
+                    "id": "1fc28637::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -3061,8 +3410,8 @@
                         }
                       ],
                       "range": {
-                        "from": 4938,
-                        "to": 5147
+                        "from": 6140,
+                        "to": 6349
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -3215,13 +3564,13 @@
           }
         },
         "range": {
-          "from": 4446,
-          "to": 5147
+          "from": 5648,
+          "to": 6349
         }
       }
     },
     {
-      "id": "247cad20",
+      "id": "57e24ee8",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -3233,8 +3582,8 @@
           "headingId": "where-streamdown-is-the-better-fit"
         },
         "range": {
-          "from": 5148,
-          "to": 5185
+          "from": 6350,
+          "to": 6387
         },
         "inline": [
           {
@@ -3245,7 +3594,7 @@
       }
     },
     {
-      "id": "15bf45bf",
+      "id": "51b1343e",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -3298,17 +3647,17 @@
             },
             "children": [
               {
-                "id": "15bf45bf::item:0",
+                "id": "51b1343e::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 5187,
-                  "to": 5260
+                  "from": 6389,
+                  "to": 6462
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "15bf45bf::item:0",
+                    "id": "51b1343e::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -3328,8 +3677,8 @@
                         }
                       ],
                       "range": {
-                        "from": 5187,
-                        "to": 5260
+                        "from": 6389,
+                        "to": 6462
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -3381,17 +3730,17 @@
                 "children": []
               },
               {
-                "id": "15bf45bf::item:1",
+                "id": "51b1343e::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 5261,
-                  "to": 5345
+                  "from": 6463,
+                  "to": 6547
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "15bf45bf::item:1",
+                    "id": "51b1343e::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -3403,8 +3752,8 @@
                         }
                       ],
                       "range": {
-                        "from": 5261,
-                        "to": 5345
+                        "from": 6463,
+                        "to": 6547
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -3440,17 +3789,17 @@
                 "children": []
               },
               {
-                "id": "15bf45bf::item:2",
+                "id": "51b1343e::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 5346,
-                  "to": 5428
+                  "from": 6548,
+                  "to": 6630
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "15bf45bf::item:2",
+                    "id": "51b1343e::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -3462,8 +3811,8 @@
                         }
                       ],
                       "range": {
-                        "from": 5346,
-                        "to": 5428
+                        "from": 6548,
+                        "to": 6630
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -3502,13 +3851,13 @@
           }
         },
         "range": {
-          "from": 5187,
-          "to": 5428
+          "from": 6389,
+          "to": 6630
         }
       }
     },
     {
-      "id": "4cbddc3c",
+      "id": "593e3ae1",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -3520,8 +3869,8 @@
           "headingId": "where-streammdx-is-the-better-fit"
         },
         "range": {
-          "from": 5430,
-          "to": 5466
+          "from": 6632,
+          "to": 6668
         },
         "inline": [
           {
@@ -3532,7 +3881,7 @@
       }
     },
     {
-      "id": "46335d05",
+      "id": "4512e203",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -3583,17 +3932,17 @@
             },
             "children": [
               {
-                "id": "46335d05::item:0",
+                "id": "4512e203::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 5468,
-                  "to": 5541
+                  "from": 6670,
+                  "to": 6743
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "46335d05::item:0",
+                    "id": "4512e203::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -3605,8 +3954,8 @@
                         }
                       ],
                       "range": {
-                        "from": 5468,
-                        "to": 5541
+                        "from": 6670,
+                        "to": 6743
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -3642,17 +3991,17 @@
                 "children": []
               },
               {
-                "id": "46335d05::item:1",
+                "id": "4512e203::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 5542,
-                  "to": 5620
+                  "from": 6744,
+                  "to": 6822
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "46335d05::item:1",
+                    "id": "4512e203::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -3664,8 +4013,8 @@
                         }
                       ],
                       "range": {
-                        "from": 5542,
-                        "to": 5620
+                        "from": 6744,
+                        "to": 6822
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -3701,17 +4050,17 @@
                 "children": []
               },
               {
-                "id": "46335d05::item:2",
+                "id": "4512e203::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 5621,
-                  "to": 5722
+                  "from": 6823,
+                  "to": 6924
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "46335d05::item:2",
+                    "id": "4512e203::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -3723,8 +4072,8 @@
                         }
                       ],
                       "range": {
-                        "from": 5621,
-                        "to": 5722
+                        "from": 6823,
+                        "to": 6924
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -3760,17 +4109,17 @@
                 "children": []
               },
               {
-                "id": "46335d05::item:3",
+                "id": "4512e203::item:3",
                 "type": "list-item",
                 "range": {
-                  "from": 5723,
-                  "to": 5805
+                  "from": 6925,
+                  "to": 7007
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "46335d05::item:3",
+                    "id": "4512e203::item:3",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -3782,8 +4131,8 @@
                         }
                       ],
                       "range": {
-                        "from": 5723,
-                        "to": 5805
+                        "from": 6925,
+                        "to": 7007
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -3822,13 +4171,13 @@
           }
         },
         "range": {
-          "from": 5468,
-          "to": 5805
+          "from": 6670,
+          "to": 7007
         }
       }
     },
     {
-      "id": "2eaca316",
+      "id": "6219efa2",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -3840,8 +4189,8 @@
           "headingId": "benchmark-reading-guidance"
         },
         "range": {
-          "from": 5807,
-          "to": 5836
+          "from": 7009,
+          "to": 7038
         },
         "inline": [
           {
@@ -3852,7 +4201,7 @@
       }
     },
     {
-      "id": "6e5b2048",
+      "id": "1e8a8ed5",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -3861,8 +4210,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 5838,
-          "to": 5946
+          "from": 7040,
+          "to": 7148
         },
         "inline": [
           {
@@ -3873,7 +4222,7 @@
       }
     },
     {
-      "id": "57660cd4",
+      "id": "6824fa27",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -3950,17 +4299,17 @@
             },
             "children": [
               {
-                "id": "57660cd4::item:0",
+                "id": "6824fa27::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 5948,
-                  "to": 6002
+                  "from": 7150,
+                  "to": 7204
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "57660cd4::item:0",
+                    "id": "6824fa27::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -3972,8 +4321,8 @@
                         }
                       ],
                       "range": {
-                        "from": 5948,
-                        "to": 6002
+                        "from": 7150,
+                        "to": 7204
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -4009,17 +4358,17 @@
                 "children": []
               },
               {
-                "id": "57660cd4::item:1",
+                "id": "6824fa27::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 6003,
-                  "to": 6074
+                  "from": 7205,
+                  "to": 7276
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "57660cd4::item:1",
+                    "id": "6824fa27::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -4057,8 +4406,8 @@
                         }
                       ],
                       "range": {
-                        "from": 6003,
-                        "to": 6074
+                        "from": 7205,
+                        "to": 7276
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -4146,17 +4495,17 @@
                 "children": []
               },
               {
-                "id": "57660cd4::item:2",
+                "id": "6824fa27::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 6075,
-                  "to": 6147
+                  "from": 7277,
+                  "to": 7349
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "57660cd4::item:2",
+                    "id": "6824fa27::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -4168,8 +4517,8 @@
                         }
                       ],
                       "range": {
-                        "from": 6075,
-                        "to": 6147
+                        "from": 7277,
+                        "to": 7349
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -4205,17 +4554,17 @@
                 "children": []
               },
               {
-                "id": "57660cd4::item:3",
+                "id": "6824fa27::item:3",
                 "type": "list-item",
                 "range": {
-                  "from": 6148,
-                  "to": 6260
+                  "from": 7350,
+                  "to": 7462
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "57660cd4::item:3",
+                    "id": "6824fa27::item:3",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -4227,8 +4576,8 @@
                         }
                       ],
                       "range": {
-                        "from": 6148,
-                        "to": 6260
+                        "from": 7350,
+                        "to": 7462
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -4267,13 +4616,13 @@
           }
         },
         "range": {
-          "from": 5948,
-          "to": 6260
+          "from": 7150,
+          "to": 7462
         }
       }
     },
     {
-      "id": "300b4d78",
+      "id": "75f0c9a5",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -4285,8 +4634,8 @@
           "headingId": "engine-v2-production-comparison-2026-10-08"
         },
         "range": {
-          "from": 6262,
-          "to": 6309
+          "from": 7464,
+          "to": 7511
         },
         "inline": [
           {
@@ -4297,7 +4646,7 @@
       }
     },
     {
-      "id": "79fa64a3",
+      "id": "6eb2d780",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -4306,8 +4655,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 6311,
-          "to": 6734
+          "from": 7513,
+          "to": 7936
         },
         "inline": [
           {
@@ -4350,7 +4699,7 @@
       }
     },
     {
-      "id": "37ec7de4",
+      "id": "2099ba07",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -4359,8 +4708,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 6736,
-          "to": 7092
+          "from": 7938,
+          "to": 8294
         },
         "inline": [
           {
@@ -4371,7 +4720,7 @@
       }
     },
     {
-      "id": "676a6b4c",
+      "id": "7ebd2f29",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -4380,8 +4729,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 7094,
-          "to": 7492
+          "from": 8296,
+          "to": 8694
         },
         "inline": [
           {
@@ -4432,7 +4781,7 @@
       }
     },
     {
-      "id": "66eb89b8",
+      "id": "3f108d65",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -4444,8 +4793,8 @@
           "headingId": "related-references"
         },
         "range": {
-          "from": 7494,
-          "to": 7515
+          "from": 8696,
+          "to": 8717
         },
         "inline": [
           {
@@ -4456,7 +4805,7 @@
       }
     },
     {
-      "id": "4002acf8",
+      "id": "588cd90b",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -4524,7 +4873,8 @@
                     "kind": "text",
                     "text": "https://stream-mdx.vercel.app/benchmarks"
                   }
-                ]
+                ],
+                "autolink": true
               }
             ]
           ],
@@ -4535,17 +4885,17 @@
             },
             "children": [
               {
-                "id": "4002acf8::item:0",
+                "id": "588cd90b::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 7517,
-                  "to": 7557
+                  "from": 8719,
+                  "to": 8759
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "4002acf8::item:0",
+                    "id": "588cd90b::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -4563,8 +4913,8 @@
                         }
                       ],
                       "range": {
-                        "from": 7517,
-                        "to": 7557
+                        "from": 8719,
+                        "to": 8759
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -4612,17 +4962,17 @@
                 "children": []
               },
               {
-                "id": "4002acf8::item:1",
+                "id": "588cd90b::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 7558,
-                  "to": 7608
+                  "from": 8760,
+                  "to": 8810
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "4002acf8::item:1",
+                    "id": "588cd90b::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -4640,8 +4990,8 @@
                         }
                       ],
                       "range": {
-                        "from": 7558,
-                        "to": 7608
+                        "from": 8760,
+                        "to": 8810
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -4689,17 +5039,17 @@
                 "children": []
               },
               {
-                "id": "4002acf8::item:2",
+                "id": "588cd90b::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 7609,
-                  "to": 7685
+                  "from": 8811,
+                  "to": 8887
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "4002acf8::item:2",
+                    "id": "588cd90b::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -4717,8 +5067,8 @@
                         }
                       ],
                       "range": {
-                        "from": 7609,
-                        "to": 7685
+                        "from": 8811,
+                        "to": 8887
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -4766,17 +5116,17 @@
                 "children": []
               },
               {
-                "id": "4002acf8::item:3",
+                "id": "588cd90b::item:3",
                 "type": "list-item",
                 "range": {
-                  "from": 7686,
-                  "to": 7754
+                  "from": 8888,
+                  "to": 8956
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "4002acf8::item:3",
+                    "id": "588cd90b::item:3",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -4794,12 +5144,13 @@
                               "kind": "text",
                               "text": "https://stream-mdx.vercel.app/benchmarks"
                             }
-                          ]
+                          ],
+                          "autolink": true
                         }
                       ],
                       "range": {
-                        "from": 7686,
-                        "to": 7754
+                        "from": 8888,
+                        "to": 8956
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -4821,7 +5172,8 @@
                                     "kind": "text",
                                     "text": "https://stream-mdx.vercel.app/benchmarks"
                                   }
-                                ]
+                                ],
+                                "autolink": true
                               }
                             ],
                             "text": "Public benchmark route: https://stream-mdx.vercel.app/benchmarks",
@@ -4846,7 +5198,8 @@
                           "kind": "text",
                           "text": "https://stream-mdx.vercel.app/benchmarks"
                         }
-                      ]
+                      ],
+                      "autolink": true
                     }
                   ],
                   "text": "Public benchmark route: https://stream-mdx.vercel.app/benchmarks",
@@ -4858,8 +5211,8 @@
           }
         },
         "range": {
-          "from": 7517,
-          "to": 7754
+          "from": 8719,
+          "to": 8956
         }
       }
     }
@@ -4896,56 +5249,62 @@
       "text": "Integration tradeoffs"
     },
     {
-      "id": "what-the-current-harnesses-are-good-at-measuring",
+      "id": "feature-surface-engine-v2",
       "blockId": "794557dd",
+      "level": 2,
+      "text": "Feature surface (engine v2)"
+    },
+    {
+      "id": "what-the-current-harnesses-are-good-at-measuring",
+      "blockId": "1f416efa",
       "level": 2,
       "text": "What the current harnesses are good at measuring"
     },
     {
       "id": "security-and-isolation",
-      "blockId": "e40f7a7",
+      "blockId": "2d551301",
       "level": 2,
       "text": "Security and isolation"
     },
     {
       "id": "conformance-and-spec-parity-commonmark-0-31-2-gfm-extensions",
-      "blockId": "65e36f80",
+      "blockId": "4018a79d",
       "level": 2,
       "text": "Conformance and Spec Parity (CommonMark 0.31.2 + GFM Extensions)"
     },
     {
       "id": "key-takeaways-on-conformance",
-      "blockId": "1946a1a2",
+      "blockId": "734a8a85",
       "level": 3,
       "text": "Key takeaways on conformance"
     },
     {
       "id": "where-streamdown-is-the-better-fit",
-      "blockId": "247cad20",
+      "blockId": "57e24ee8",
       "level": 2,
       "text": "Where Streamdown is the better fit"
     },
     {
       "id": "where-streammdx-is-the-better-fit",
-      "blockId": "4cbddc3c",
+      "blockId": "593e3ae1",
       "level": 2,
       "text": "Where StreamMDX is the better fit"
     },
     {
       "id": "benchmark-reading-guidance",
-      "blockId": "2eaca316",
+      "blockId": "6219efa2",
       "level": 2,
       "text": "Benchmark reading guidance"
     },
     {
       "id": "engine-v2-production-comparison-2026-10-08",
-      "blockId": "300b4d78",
+      "blockId": "75f0c9a5",
       "level": 3,
       "text": "Engine-v2 production comparison, 2026-10-08"
     },
     {
       "id": "related-references",
-      "blockId": "66eb89b8",
+      "blockId": "3f108d65",
       "level": 2,
       "text": "Related references"
     }

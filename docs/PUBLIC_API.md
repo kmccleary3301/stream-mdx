@@ -208,7 +208,7 @@ await engine.handle({ type: "INIT", initialContent: "Another document." });
 engine.dispose();
 ```
 
-`handle(message: WorkerIn): Promise<void>` serializes protocol messages. Reset with `INIT`; there is no separate `reset()` or `emit()` method. `post(message: WorkerOut): void` sends through the supplied callback. `dispose(): void` releases instance state and stops further output.
+`handle(message: WorkerIn): Promise<void>` serializes protocol messages. Reset with `INIT`; there is no separate `reset()` or `emit()` method. `post(message: WorkerOut): void` sends through the supplied callback. `dispose(): void` releases instance state and stops further output. Disposal is terminal: afterwards `handle()` resolves immediately without processing the message, queued messages are skipped, and `post()` drops output. Create a new engine instead of reusing a disposed one.
 
 The constructor accepts only `{ post, extensions? }`. `extensions` has `markdown?: MarkdownConfig[]`, `inline?: InlineExtension[]`, `documentPlugins?: DocumentPlugin[]`, and `syntax?: SyntaxRuleSpec[]`. Flags and HTML settings belong in `INIT`, not constructor options. Native extension functions cannot cross structured clone; bundle them into a custom worker entry with `serveMarkdownWorker({ extensions })`, or create an adapter with `createInlineEngineWorker({ extensions })` and supply it through a stable `worker={() => adapter}` factory in a Worker-capable browser. Do not pass the adapter directly as a Worker instance. The caller owns adapter termination. See [PLUGIN_ABI.md](./PLUGIN_ABI.md) for a complete custom entry.
 

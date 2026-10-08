@@ -120,7 +120,8 @@ This builds the hosted worker bundle and copies it into:
 
 ## 7) Engine-v2 delivery evidence
 
-- Node 20 integrated suites: 20 core, 50 worker, 42 React, and one unified test file passed.
+- Node 20 integrated suites: 21 core, 52 worker, 48 React, one unified, and one Mermaid test file passed.
+- Review-phase additions, all default off so default output is unchanged: opt-in code/table/Mermaid `controls` (rendered beside `<pre>`, never inside it), `animated` streaming text, render-time element filters (`allowedElements`/`disallowedElements`/`allowElement`/`unwrapDisallowed`/`disableAutolinkProtocols`), `codeRenderers` `aliases`, configurable Shiki themes, and a render-time `urlTransform`. Render-time props re-render mounted blocks without restarting the stream.
 - CommonMark/GFM corpus (675 cases): 675/675 static, streaming, and SSR cases under normalized semantics with zero streaming divergences (retaining the 675 ratchet baseline). Under strict semantics preserving link/image titles and code language-* info strings, StreamMDX scores 675/675 across all three paths with zero streaming divergences (unlabeled and indented code blocks emit bare `<pre><code>` with no class). For comparison, micromark scores 669/675 (5 GFM tagfilter differences + 1 dropped FTP autolink), Streamdown default chat mode scores 540/675, and Streamdown raw HTML mode scores 586/675. This is the configured corpus, not universal conformance.
 - Final production HTML regressions: 120/120 scenarios passed in a non-update run.
 - Fresh packed ESM/CJS consumers and production Next/Vite builds passed on Node 20. Real main-thread browser consumers rendered remark/rehype output and Mermaid SVGs.

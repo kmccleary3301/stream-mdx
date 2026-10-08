@@ -1,9 +1,9 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-08T19:48:59.596Z",
-  "hash": "814c3cac375fa34338ffd643564f0667fe43433f3a6c847a49d95d0bd9f808d3",
-  "contentHash": "5c9a76a61c5fe279eb217dd80b780b5630aa31e605b129b95f1eb3aeaa6534da",
+  "createdAt": "2026-10-08T20:59:43.694Z",
+  "hash": "c21da3db278c87cdd8a9b0534ee1fd5c56deefd82aab6dc66835f9e4a2b55b8c",
+  "contentHash": "9236b87fd26874eecb6a1b39cc4ad3a06d0d78114ddacab080c7aff6e8f634ef",
   "configHash": "a274f269183e8eac42eeb12b1ae0dc7fea9398cc27792626c9ca0c17911fb0b4",
   "hashSalt": "docs-snapshots-v2:9417117db4c19b323c5bd2a5c7754c6e0d46bf7c962c13c422b86e6485aac7c0",
   "blocks": [
@@ -831,7 +831,1066 @@
       }
     },
     {
-      "id": "2daba32b",
+      "id": "6698cbd6",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Block controls (copy and download)",
+        "meta": {
+          "lezerNodeType": "ATXHeading2",
+          "headingLevel": 2,
+          "headingText": "Block controls (copy and download)",
+          "headingId": "block-controls-copy-and-download"
+        },
+        "range": {
+          "from": 3805,
+          "to": 3842
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Block controls (copy and download)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "5ebe6765",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Enable copy and download buttons for code blocks, tables, and Mermaid diagrams using the opt-in `controls` prop:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
+        "range": {
+          "from": 3844,
+          "to": 3956
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Enable copy and download buttons for code blocks, tables, and Mermaid diagrams using the opt-in "
+          },
+          {
+            "kind": "code",
+            "text": "controls"
+          },
+          {
+            "kind": "text",
+            "text": " prop:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "22c9b20f",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```tsx\n<StreamingMarkdown\n  text={content}\n  controls={{\n    code: { copy: true, download: true },\n    table: { copy: true, download: [\"csv\", \"tsv\", \"markdown\"] },\n    mermaid: { copy: true },\n    labels: {\n      copy: \"Copy code\",\n      downloadCsv: \"Download CSV\",\n    },\n  }}\n/>\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "<StreamingMarkdown\n  text={content}\n  controls={{\n    code: { copy: true, download: true },\n    table: { copy: true, download: [\"csv\", \"tsv\", \"markdown\"] },\n    mermaid: { copy: true },\n    labels: {\n      copy: \"Copy code\",\n      downloadCsv: \"Download CSV\",\n    },\n  }}\n/>",
+          "info": "tsx",
+          "lang": "tsx",
+          "highlightLang": "tsx"
+        },
+        "range": {
+          "from": 3958,
+          "to": 4243
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content}</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  controls</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    code: { copy: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, download: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> },</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    table: { copy: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, download: [</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"csv\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"tsv\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"markdown\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">] },</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    mermaid: { copy: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> },</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    labels: {</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      copy: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"Copy code\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      downloadCsv: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"Download CSV\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    },</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }}</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/></span></span></code></pre>"
+      }
+    },
+    {
+      "id": "3e6ebcbf",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Controls are disabled (`false`) by default so existing rendered output and snapshots remain unchanged. When enabled:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
+        "range": {
+          "from": 4245,
+          "to": 4361
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Controls are disabled ("
+          },
+          {
+            "kind": "code",
+            "text": "false"
+          },
+          {
+            "kind": "text",
+            "text": ") by default so existing rendered output and snapshots remain unchanged. When enabled:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "4c960c9f",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Code blocks provide a copy button that extracts the raw authored code text (not highlighted HTML) and a download button that saves `snippet.<ext>` matching the authored language.\n- Tables provide copy as TSV or Markdown, and download as CSV, TSV, or Markdown (enabled once the table block is finalized).\n- All buttons are real `<button type=\"button\">` elements with accessible labels and `data-stream-mdx-control` attributes for styling.",
+        "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
+          "ordered": false,
+          "loose": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Code blocks provide a copy button that extracts the raw authored code text (not highlighted HTML) and a download button that saves "
+              },
+              {
+                "kind": "code",
+                "text": "snippet.<ext>"
+              },
+              {
+                "kind": "text",
+                "text": " matching the authored language."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Tables provide copy as TSV or Markdown, and download as CSV, TSV, or Markdown (enabled once the table block is finalized)."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "All buttons are real "
+              },
+              {
+                "kind": "code",
+                "text": "<button type=\"button\">"
+              },
+              {
+                "kind": "text",
+                "text": " elements with accessible labels and "
+              },
+              {
+                "kind": "code",
+                "text": "data-stream-mdx-control"
+              },
+              {
+                "kind": "text",
+                "text": " attributes for styling."
+              }
+            ]
+          ],
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "4c960c9f::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 4362,
+                  "to": 4542
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "4c960c9f::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Code blocks provide a copy button that extracts the raw authored code text (not highlighted HTML) and a download button that saves `snippet.<ext>` matching the authored language.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Code blocks provide a copy button that extracts the raw authored code text (not highlighted HTML) and a download button that saves "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "snippet.<ext>"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " matching the authored language."
+                        }
+                      ],
+                      "range": {
+                        "from": 4362,
+                        "to": 4542
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Code blocks provide a copy button that extracts the raw authored code text (not highlighted HTML) and a download button that saves "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "snippet.<ext>"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " matching the authored language."
+                              }
+                            ],
+                            "text": "Code blocks provide a copy button that extracts the raw authored code text (not highlighted HTML) and a download button that saves snippet.<ext> matching the authored language.",
+                            "raw": "- Code blocks provide a copy button that extracts the raw authored code text (not highlighted HTML) and a download button that saves `snippet.<ext>` matching the authored language."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Code blocks provide a copy button that extracts the raw authored code text (not highlighted HTML) and a download button that saves "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "snippet.<ext>"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " matching the authored language."
+                    }
+                  ],
+                  "text": "Code blocks provide a copy button that extracts the raw authored code text (not highlighted HTML) and a download button that saves snippet.<ext> matching the authored language.",
+                  "raw": "- Code blocks provide a copy button that extracts the raw authored code text (not highlighted HTML) and a download button that saves `snippet.<ext>` matching the authored language."
+                },
+                "children": []
+              },
+              {
+                "id": "4c960c9f::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 4543,
+                  "to": 4667
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "4c960c9f::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Tables provide copy as TSV or Markdown, and download as CSV, TSV, or Markdown (enabled once the table block is finalized).",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Tables provide copy as TSV or Markdown, and download as CSV, TSV, or Markdown (enabled once the table block is finalized)."
+                        }
+                      ],
+                      "range": {
+                        "from": 4543,
+                        "to": 4667
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Tables provide copy as TSV or Markdown, and download as CSV, TSV, or Markdown (enabled once the table block is finalized)."
+                              }
+                            ],
+                            "text": "Tables provide copy as TSV or Markdown, and download as CSV, TSV, or Markdown (enabled once the table block is finalized).",
+                            "raw": "- Tables provide copy as TSV or Markdown, and download as CSV, TSV, or Markdown (enabled once the table block is finalized)."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Tables provide copy as TSV or Markdown, and download as CSV, TSV, or Markdown (enabled once the table block is finalized)."
+                    }
+                  ],
+                  "text": "Tables provide copy as TSV or Markdown, and download as CSV, TSV, or Markdown (enabled once the table block is finalized).",
+                  "raw": "- Tables provide copy as TSV or Markdown, and download as CSV, TSV, or Markdown (enabled once the table block is finalized)."
+                },
+                "children": []
+              },
+              {
+                "id": "4c960c9f::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 4668,
+                  "to": 4801
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "4c960c9f::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- All buttons are real `<button type=\"button\">` elements with accessible labels and `data-stream-mdx-control` attributes for styling.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "All buttons are real "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "<button type=\"button\">"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " elements with accessible labels and "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "data-stream-mdx-control"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " attributes for styling."
+                        }
+                      ],
+                      "range": {
+                        "from": 4668,
+                        "to": 4801
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "All buttons are real "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "<button type=\"button\">"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " elements with accessible labels and "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "data-stream-mdx-control"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " attributes for styling."
+                              }
+                            ],
+                            "text": "All buttons are real <button type=\"button\"> elements with accessible labels and data-stream-mdx-control attributes for styling.",
+                            "raw": "- All buttons are real `<button type=\"button\">` elements with accessible labels and `data-stream-mdx-control` attributes for styling."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "All buttons are real "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "<button type=\"button\">"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " elements with accessible labels and "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "data-stream-mdx-control"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " attributes for styling."
+                    }
+                  ],
+                  "text": "All buttons are real <button type=\"button\"> elements with accessible labels and data-stream-mdx-control attributes for styling.",
+                  "raw": "- All buttons are real `<button type=\"button\">` elements with accessible labels and `data-stream-mdx-control` attributes for styling."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 4362,
+          "to": 4801
+        }
+      }
+    },
+    {
+      "id": "788ffb87",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Animated streaming text (`animated`)",
+        "meta": {
+          "lezerNodeType": "ATXHeading2",
+          "headingLevel": 2,
+          "headingText": "Animated streaming text (`animated`)",
+          "headingId": "animated-streaming-text-animated"
+        },
+        "range": {
+          "from": 4803,
+          "to": 4842
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Animated streaming text ("
+          },
+          {
+            "kind": "code",
+            "text": "animated"
+          },
+          {
+            "kind": "text",
+            "text": ")"
+          }
+        ]
+      }
+    },
+    {
+      "id": "409c3104",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Opt in to smooth, per-word or per-character fade and slide transitions as text streams into non-finalized blocks:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
+        "range": {
+          "from": 4844,
+          "to": 4957
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Opt in to smooth, per-word or per-character fade and slide transitions as text streams into non-finalized blocks:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "732f9591",
+      "type": "code",
+      "isFinalized": true,
+      "payload": {
+        "raw": "```tsx\nimport { STREAM_MDX_ANIMATION_CSS, StreamingMarkdown } from \"@stream-mdx/react\";\n\n// 1. Include default animation keyframes in your document/stylesheet\n<style dangerouslySetInnerHTML={{ __html: STREAM_MDX_ANIMATION_CSS }} />\n\n// 2. Enable animation on the streaming markdown component\n<StreamingMarkdown\n  stream={stream}\n  animated={{\n    animation: \"fadeIn\", // \"fadeIn\" | \"blurIn\" | \"slideUp\" | custom keyframe name\n    duration: 150,      // ms\n    easing: \"ease-out\",\n    sep: \"word\",        // \"word\" | \"char\"\n    stagger: 20,        // ms delay between newly mounted segments\n    maxBacklogMs: 320,  // ms maximum delay cap\n  }}\n/>\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "import { STREAM_MDX_ANIMATION_CSS, StreamingMarkdown } from \"@stream-mdx/react\";\n\n// 1. Include default animation keyframes in your document/stylesheet\n<style dangerouslySetInnerHTML={{ __html: STREAM_MDX_ANIMATION_CSS }} />\n\n// 2. Enable animation on the streaming markdown component\n<StreamingMarkdown\n  stream={stream}\n  animated={{\n    animation: \"fadeIn\", // \"fadeIn\" | \"blurIn\" | \"slideUp\" | custom keyframe name\n    duration: 150,      // ms\n    easing: \"ease-out\",\n    sep: \"word\",        // \"word\" | \"char\"\n    stagger: 20,        // ms delay between newly mounted segments\n    maxBacklogMs: 320,  // ms maximum delay cap\n  }}\n/>",
+          "info": "tsx",
+          "lang": "tsx",
+          "highlightLang": "tsx"
+        },
+        "range": {
+          "from": 4959,
+          "to": 5608
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { STREAM_MDX_ANIMATION_CSS, StreamingMarkdown } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/react\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#6A737D;--shiki-light:#6A737D\">// 1. Include default animation keyframes in your document/stylesheet</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">style</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> dangerouslySetInnerHTML</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ __html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">STREAM_MDX_ANIMATION_CSS</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }} /></span></span>\n<span class=\"line\" data-line=\"5\"></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#6A737D;--shiki-light:#6A737D\">// 2. Enable animation on the streaming markdown component</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  stream</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{stream}</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  animated</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    animation: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"fadeIn\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#6A737D;--shiki-light:#6A737D\">// \"fadeIn\" | \"blurIn\" | \"slideUp\" | custom keyframe name</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    duration: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">150</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,      </span><span style=\"--shiki-dark:#6A737D;--shiki-light:#6A737D\">// ms</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    easing: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"ease-out\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    sep: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"word\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,        </span><span style=\"--shiki-dark:#6A737D;--shiki-light:#6A737D\">// \"word\" | \"char\"</span></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    stagger: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">20</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,        </span><span style=\"--shiki-dark:#6A737D;--shiki-light:#6A737D\">// ms delay between newly mounted segments</span></span>\n<span class=\"line\" data-line=\"15\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    maxBacklogMs: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">320</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,  </span><span style=\"--shiki-dark:#6A737D;--shiki-light:#6A737D\">// ms maximum delay cap</span></span>\n<span class=\"line\" data-line=\"16\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }}</span></span>\n<span class=\"line\" data-line=\"17\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/></span></span></code></pre>"
+      }
+    },
+    {
+      "id": "2533cd80",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "When `animated` is `true` or an configuration object:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
+        "range": {
+          "from": 5610,
+          "to": 5663
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "When "
+          },
+          {
+            "kind": "code",
+            "text": "animated"
+          },
+          {
+            "kind": "text",
+            "text": " is "
+          },
+          {
+            "kind": "code",
+            "text": "true"
+          },
+          {
+            "kind": "text",
+            "text": " or an configuration object:"
+          }
+        ]
+      }
+    },
+    {
+      "id": "7d4465c3",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- Non-finalized text renders as stable keyed `<span>` elements with class `stream-mdx-anim` and CSS variables `--sm-anim-duration`, `--sm-anim-easing`, and `--sm-anim-delay`.\n- As new tokens stream in, already-mounted segments preserve their DOM identity and stay at their final resting state without restarting animation.\n- When a block finalizes, or during server-side and static renders, content renders as plain text without animation wrapper elements.\n- Reduced-motion preferences (`prefers-reduced-motion: reduce`) are honored automatically in `STREAM_MDX_ANIMATION_CSS`.",
+        "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
+          "ordered": false,
+          "loose": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "Non-finalized text renders as stable keyed "
+              },
+              {
+                "kind": "code",
+                "text": "<span>"
+              },
+              {
+                "kind": "text",
+                "text": " elements with class "
+              },
+              {
+                "kind": "code",
+                "text": "stream-mdx-anim"
+              },
+              {
+                "kind": "text",
+                "text": " and CSS variables "
+              },
+              {
+                "kind": "code",
+                "text": "--sm-anim-duration"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "--sm-anim-easing"
+              },
+              {
+                "kind": "text",
+                "text": ", and "
+              },
+              {
+                "kind": "code",
+                "text": "--sm-anim-delay"
+              },
+              {
+                "kind": "text",
+                "text": "."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "As new tokens stream in, already-mounted segments preserve their DOM identity and stay at their final resting state without restarting animation."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "When a block finalizes, or during server-side and static renders, content renders as plain text without animation wrapper elements."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Reduced-motion preferences ("
+              },
+              {
+                "kind": "code",
+                "text": "prefers-reduced-motion: reduce"
+              },
+              {
+                "kind": "text",
+                "text": ") are honored automatically in "
+              },
+              {
+                "kind": "code",
+                "text": "STREAM_MDX_ANIMATION_CSS"
+              },
+              {
+                "kind": "text",
+                "text": "."
+              }
+            ]
+          ],
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "7d4465c3::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 5664,
+                  "to": 5838
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "7d4465c3::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Non-finalized text renders as stable keyed `<span>` elements with class `stream-mdx-anim` and CSS variables `--sm-anim-duration`, `--sm-anim-easing`, and `--sm-anim-delay`.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Non-finalized text renders as stable keyed "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "<span>"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " elements with class "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "stream-mdx-anim"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " and CSS variables "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "--sm-anim-duration"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "--sm-anim-easing"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", and "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "--sm-anim-delay"
+                        },
+                        {
+                          "kind": "text",
+                          "text": "."
+                        }
+                      ],
+                      "range": {
+                        "from": 5664,
+                        "to": 5838
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Non-finalized text renders as stable keyed "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "<span>"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " elements with class "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "stream-mdx-anim"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " and CSS variables "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "--sm-anim-duration"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "--sm-anim-easing"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", and "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "--sm-anim-delay"
+                              },
+                              {
+                                "kind": "text",
+                                "text": "."
+                              }
+                            ],
+                            "text": "Non-finalized text renders as stable keyed <span> elements with class stream-mdx-anim and CSS variables --sm-anim-duration, --sm-anim-easing, and --sm-anim-delay.",
+                            "raw": "- Non-finalized text renders as stable keyed `<span>` elements with class `stream-mdx-anim` and CSS variables `--sm-anim-duration`, `--sm-anim-easing`, and `--sm-anim-delay`."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Non-finalized text renders as stable keyed "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "<span>"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " elements with class "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "stream-mdx-anim"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " and CSS variables "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "--sm-anim-duration"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "--sm-anim-easing"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", and "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "--sm-anim-delay"
+                    },
+                    {
+                      "kind": "text",
+                      "text": "."
+                    }
+                  ],
+                  "text": "Non-finalized text renders as stable keyed <span> elements with class stream-mdx-anim and CSS variables --sm-anim-duration, --sm-anim-easing, and --sm-anim-delay.",
+                  "raw": "- Non-finalized text renders as stable keyed `<span>` elements with class `stream-mdx-anim` and CSS variables `--sm-anim-duration`, `--sm-anim-easing`, and `--sm-anim-delay`."
+                },
+                "children": []
+              },
+              {
+                "id": "7d4465c3::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 5839,
+                  "to": 5986
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "7d4465c3::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- As new tokens stream in, already-mounted segments preserve their DOM identity and stay at their final resting state without restarting animation.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "As new tokens stream in, already-mounted segments preserve their DOM identity and stay at their final resting state without restarting animation."
+                        }
+                      ],
+                      "range": {
+                        "from": 5839,
+                        "to": 5986
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "As new tokens stream in, already-mounted segments preserve their DOM identity and stay at their final resting state without restarting animation."
+                              }
+                            ],
+                            "text": "As new tokens stream in, already-mounted segments preserve their DOM identity and stay at their final resting state without restarting animation.",
+                            "raw": "- As new tokens stream in, already-mounted segments preserve their DOM identity and stay at their final resting state without restarting animation."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "As new tokens stream in, already-mounted segments preserve their DOM identity and stay at their final resting state without restarting animation."
+                    }
+                  ],
+                  "text": "As new tokens stream in, already-mounted segments preserve their DOM identity and stay at their final resting state without restarting animation.",
+                  "raw": "- As new tokens stream in, already-mounted segments preserve their DOM identity and stay at their final resting state without restarting animation."
+                },
+                "children": []
+              },
+              {
+                "id": "7d4465c3::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 5987,
+                  "to": 6120
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "7d4465c3::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- When a block finalizes, or during server-side and static renders, content renders as plain text without animation wrapper elements.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "When a block finalizes, or during server-side and static renders, content renders as plain text without animation wrapper elements."
+                        }
+                      ],
+                      "range": {
+                        "from": 5987,
+                        "to": 6120
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "When a block finalizes, or during server-side and static renders, content renders as plain text without animation wrapper elements."
+                              }
+                            ],
+                            "text": "When a block finalizes, or during server-side and static renders, content renders as plain text without animation wrapper elements.",
+                            "raw": "- When a block finalizes, or during server-side and static renders, content renders as plain text without animation wrapper elements."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "When a block finalizes, or during server-side and static renders, content renders as plain text without animation wrapper elements."
+                    }
+                  ],
+                  "text": "When a block finalizes, or during server-side and static renders, content renders as plain text without animation wrapper elements.",
+                  "raw": "- When a block finalizes, or during server-side and static renders, content renders as plain text without animation wrapper elements."
+                },
+                "children": []
+              },
+              {
+                "id": "7d4465c3::item:3",
+                "type": "list-item",
+                "range": {
+                  "from": 6121,
+                  "to": 6241
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "7d4465c3::item:3",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Reduced-motion preferences (`prefers-reduced-motion: reduce`) are honored automatically in `STREAM_MDX_ANIMATION_CSS`.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Reduced-motion preferences ("
+                        },
+                        {
+                          "kind": "code",
+                          "text": "prefers-reduced-motion: reduce"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ") are honored automatically in "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "STREAM_MDX_ANIMATION_CSS"
+                        },
+                        {
+                          "kind": "text",
+                          "text": "."
+                        }
+                      ],
+                      "range": {
+                        "from": 6121,
+                        "to": 6241
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 3,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Reduced-motion preferences ("
+                              },
+                              {
+                                "kind": "code",
+                                "text": "prefers-reduced-motion: reduce"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ") are honored automatically in "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "STREAM_MDX_ANIMATION_CSS"
+                              },
+                              {
+                                "kind": "text",
+                                "text": "."
+                              }
+                            ],
+                            "text": "Reduced-motion preferences (prefers-reduced-motion: reduce) are honored automatically in STREAM_MDX_ANIMATION_CSS.",
+                            "raw": "- Reduced-motion preferences (`prefers-reduced-motion: reduce`) are honored automatically in `STREAM_MDX_ANIMATION_CSS`."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 3,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Reduced-motion preferences ("
+                    },
+                    {
+                      "kind": "code",
+                      "text": "prefers-reduced-motion: reduce"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ") are honored automatically in "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "STREAM_MDX_ANIMATION_CSS"
+                    },
+                    {
+                      "kind": "text",
+                      "text": "."
+                    }
+                  ],
+                  "text": "Reduced-motion preferences (prefers-reduced-motion: reduce) are honored automatically in STREAM_MDX_ANIMATION_CSS.",
+                  "raw": "- Reduced-motion preferences (`prefers-reduced-motion: reduce`) are honored automatically in `STREAM_MDX_ANIMATION_CSS`."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 5664,
+          "to": 6241
+        }
+      }
+    },
+    {
+      "id": "7001493c",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -843,8 +1902,8 @@
           "headingId": "html-overrides"
         },
         "range": {
-          "from": 3806,
-          "to": 3823
+          "from": 6244,
+          "to": 6261
         },
         "inline": [
           {
@@ -855,7 +1914,7 @@
       }
     },
     {
-      "id": "1bc03098",
+      "id": "183bcac7",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -864,8 +1923,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 3825,
-          "to": 3907
+          "from": 6263,
+          "to": 6345
         },
         "inline": [
           {
@@ -884,7 +1943,7 @@
       }
     },
     {
-      "id": "299401b5",
+      "id": "bde8626",
       "type": "code",
       "isFinalized": true,
       "payload": {
@@ -897,14 +1956,14 @@
           "highlightLang": "tsx"
         },
         "range": {
-          "from": 3909,
-          "to": 4257
+          "from": 6347,
+          "to": 6695
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> htmlElements</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  table</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: ({ </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">children</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">children</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> React</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">ReactNode</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x3C;</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> className</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"not-prose overflow-x-auto\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>{children}&#x3C;/</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>,</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  blockquote</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: ({ </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">children</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">children</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> React</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">ReactNode</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x3C;</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">blockquote</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>{children}&#x3C;/</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">blockquote</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>,</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">};</span></span>\n<span class=\"line\" data-line=\"5\"></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">htmlElements</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{htmlElements} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }} />;</span></span></code></pre>"
       }
     },
     {
-      "id": "664cd2de",
+      "id": "c780a5e",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -913,8 +1972,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 4259,
-          "to": 4440
+          "from": 6697,
+          "to": 6878
         },
         "inline": [
           {
@@ -925,7 +1984,7 @@
       }
     },
     {
-      "id": "61de85fe",
+      "id": "6d71823a",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -937,8 +1996,8 @@
           "headingId": "optional-tailwind-theme-package"
         },
         "range": {
-          "from": 4442,
-          "to": 4476
+          "from": 6880,
+          "to": 6914
         },
         "inline": [
           {
@@ -949,7 +2008,7 @@
       }
     },
     {
-      "id": "ec82ddf",
+      "id": "58f4028",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -958,8 +2017,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 4478,
-          "to": 4564
+          "from": 6916,
+          "to": 7002
         },
         "inline": [
           {
@@ -970,7 +2029,7 @@
       }
     },
     {
-      "id": "3729379",
+      "id": "780aeb5d",
       "type": "code",
       "isFinalized": true,
       "payload": {
@@ -983,14 +2042,14 @@
           "highlightLang": "bash"
         },
         "range": {
-          "from": 4566,
-          "to": 4616
+          "from": 7004,
+          "to": 7054
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-bash\" data-language=\"bash\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> install</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> @stream-mdx/theme-tailwind</span></span></code></pre>"
       }
     },
     {
-      "id": "5fec0117",
+      "id": "5c679b46",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -999,8 +2058,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 4618,
-          "to": 4676
+          "from": 7056,
+          "to": 7114
         },
         "inline": [
           {
@@ -1011,7 +2070,7 @@
       }
     },
     {
-      "id": "5c5c5329",
+      "id": "183c04bb",
       "type": "code",
       "isFinalized": true,
       "payload": {
@@ -1024,14 +2083,14 @@
           "highlightLang": "css"
         },
         "range": {
-          "from": 4678,
-          "to": 4796
+          "from": 7116,
+          "to": 7234
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-css\" data-language=\"css\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">@tailwind</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> base;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">@tailwind</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> components;</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">@tailwind</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> utilities;</span></span>\n<span class=\"line\" data-line=\"4\"></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">@import</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/theme-tailwind/theme.css\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span></code></pre>"
       }
     },
     {
-      "id": "33dbcf9e",
+      "id": "713b26fe",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -1040,8 +2099,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 4798,
-          "to": 4841
+          "from": 7236,
+          "to": 7279
         },
         "inline": [
           {
@@ -1052,7 +2111,7 @@
       }
     },
     {
-      "id": "33d4e649",
+      "id": "161f6aba",
       "type": "code",
       "isFinalized": true,
       "payload": {
@@ -1065,14 +2124,14 @@
           "highlightLang": "tsx"
         },
         "range": {
-          "from": 4843,
-          "to": 4960
+          "from": 7281,
+          "to": 7398
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> className</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"prose\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  &#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> /></span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;/</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span></code></pre>"
       }
     },
     {
-      "id": "14b91cc1",
+      "id": "462feca3",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -1081,8 +2140,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 4962,
-          "to": 5157
+          "from": 7400,
+          "to": 7595
         },
         "inline": [
           {
@@ -1145,14 +2204,26 @@
       "text": "Tables"
     },
     {
+      "id": "block-controls-copy-and-download",
+      "blockId": "6698cbd6",
+      "level": 2,
+      "text": "Block controls (copy and download)"
+    },
+    {
+      "id": "animated-streaming-text-animated",
+      "blockId": "788ffb87",
+      "level": 2,
+      "text": "Animated streaming text (`animated`)"
+    },
+    {
       "id": "html-overrides",
-      "blockId": "2daba32b",
+      "blockId": "7001493c",
       "level": 2,
       "text": "HTML overrides"
     },
     {
       "id": "optional-tailwind-theme-package",
-      "blockId": "61de85fe",
+      "blockId": "6d71823a",
       "level": 2,
       "text": "Optional Tailwind theme package"
     }

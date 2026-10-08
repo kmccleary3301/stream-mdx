@@ -1,9 +1,9 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-08T19:48:55.112Z",
-  "hash": "b9405534bc5c5430acdc5a9601d47370c30bbd9e999b3a5476a4d4c129f501b2",
-  "contentHash": "1664f6abaa7356454086d244f6f80101c326442a5e5810a5e2b48c1186471a80",
+  "createdAt": "2026-10-08T20:59:42.443Z",
+  "hash": "4d78abdd33047f0769d87f357fff557e147167ac34009bd37ce4f004886cb9c7",
+  "contentHash": "26989200cf3efbd46450c05ecffc84b82042ad54277e2e4ced9827935505d6c1",
   "configHash": "a274f269183e8eac42eeb12b1ae0dc7fea9398cc27792626c9ca0c17911fb0b4",
   "hashSalt": "docs-snapshots-v2:9417117db4c19b323c5bd2a5c7754c6e0d46bf7c962c13c422b86e6485aac7c0",
   "blocks": [
@@ -906,7 +906,7 @@
       "type": "list",
       "isFinalized": true,
       "payload": {
-        "raw": "- `components`: override block renders (heading/code/table/etc).\n- `inlineComponents`: override inline renders (strong/em/link/code/etc).\n- `tableElements`: override table tags (Shadcn table wrappers).\n- `htmlElements`: override HTML tag renders (when HTML is enabled).\n- `codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `artifact`, `diff`, custom languages).\n- `mathRenderer`: provide custom inline and display math renderers (KaTeX is built-in default; MathJax supported).\n- `artifactHtml`: opt-in flag (`true` to render standard ````html ```` code fences via `ArtifactFrame`).",
+        "raw": "- `components`: override block renders (heading/code/table/etc).\n- `inlineComponents`: override inline renders (strong/em/link/code/etc).\n- `tableElements`: override table tags (Shadcn table wrappers).\n- `htmlElements`: override HTML tag renders (when HTML is enabled).\n- `codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `artifact`, `diff`, custom languages) keyed by language; `{ component, aliases }` entries add alias languages, resolved case-insensitively.\n- `allowedElements`: whitelist of permitted HTML tag names (mutually exclusive with `disallowedElements`).\n- `disallowedElements`: blacklist of HTML tag names to drop (mutually exclusive with `allowedElements`).\n- `unwrapDisallowed`: when `true`, render children of disallowed tags instead of dropping the subtree.\n- `allowElement`: callback predicate `(element, context) => boolean` for dynamic tag filtering.\n- `disableAutolinkProtocols`: protocols (e.g. `[\"mailto\"]`) whose autolinks render as plain text while explicit markdown links remain active.\n- `mathRenderer`: provide custom inline and display math renderers (KaTeX is built-in default; MathJax supported).\n- `artifactHtml`: opt-in flag (`true` to render standard ````html ```` code fences via `ArtifactFrame`).",
         "meta": {
           "lezerNodeType": "BulletList",
           "mathEnabled": true,
@@ -992,7 +992,105 @@
               },
               {
                 "kind": "text",
-                "text": ", custom languages)."
+                "text": ", custom languages) keyed by language; "
+              },
+              {
+                "kind": "code",
+                "text": "{ component, aliases }"
+              },
+              {
+                "kind": "text",
+                "text": " entries add alias languages, resolved case-insensitively."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "allowedElements"
+              },
+              {
+                "kind": "text",
+                "text": ": whitelist of permitted HTML tag names (mutually exclusive with "
+              },
+              {
+                "kind": "code",
+                "text": "disallowedElements"
+              },
+              {
+                "kind": "text",
+                "text": ")."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "disallowedElements"
+              },
+              {
+                "kind": "text",
+                "text": ": blacklist of HTML tag names to drop (mutually exclusive with "
+              },
+              {
+                "kind": "code",
+                "text": "allowedElements"
+              },
+              {
+                "kind": "text",
+                "text": ")."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "unwrapDisallowed"
+              },
+              {
+                "kind": "text",
+                "text": ": when "
+              },
+              {
+                "kind": "code",
+                "text": "true"
+              },
+              {
+                "kind": "text",
+                "text": ", render children of disallowed tags instead of dropping the subtree."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "allowElement"
+              },
+              {
+                "kind": "text",
+                "text": ": callback predicate "
+              },
+              {
+                "kind": "code",
+                "text": "(element, context) => boolean"
+              },
+              {
+                "kind": "text",
+                "text": " for dynamic tag filtering."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "disableAutolinkProtocols"
+              },
+              {
+                "kind": "text",
+                "text": ": protocols (e.g. "
+              },
+              {
+                "kind": "code",
+                "text": "[\"mailto\"]"
+              },
+              {
+                "kind": "text",
+                "text": ") whose autolinks render as plain text while explicit markdown links remain active."
               }
             ],
             [
@@ -1335,7 +1433,7 @@
                 "type": "list-item",
                 "range": {
                   "from": 1393,
-                  "to": 1513
+                  "to": 1614
                 },
                 "props": {
                   "ordered": false,
@@ -1345,7 +1443,7 @@
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
-                      "raw": "- `codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `artifact`, `diff`, custom languages).",
+                      "raw": "- `codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `artifact`, `diff`, custom languages) keyed by language; `{ component, aliases }` entries add alias languages, resolved case-insensitively.",
                       "inline": [
                         {
                           "kind": "code",
@@ -1377,12 +1475,20 @@
                         },
                         {
                           "kind": "text",
-                          "text": ", custom languages)."
+                          "text": ", custom languages) keyed by language; "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "{ component, aliases }"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " entries add alias languages, resolved case-insensitively."
                         }
                       ],
                       "range": {
                         "from": 1393,
-                        "to": 1513
+                        "to": 1614
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1422,13 +1528,87 @@
                               },
                               {
                                 "kind": "text",
-                                "text": ", custom languages)."
+                                "text": ", custom languages) keyed by language; "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "{ component, aliases }"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " entries add alias languages, resolved case-insensitively."
                               }
                             ],
-                            "text": "codeRenderers: map fenced code languages to custom renderers (e.g. mermaid, artifact, diff, custom languages).",
-                            "raw": "- `codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `artifact`, `diff`, custom languages)."
+                            "text": "codeRenderers: map fenced code languages to custom renderers (e.g. mermaid, artifact, diff, custom languages) keyed by language; { component, aliases } entries add alias languages, resolved case-insensitively.",
+                            "raw": "- `codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `artifact`, `diff`, custom languages) keyed by language; `{ component, aliases }` entries add alias languages, resolved case-insensitively."
                           },
-                          "children": []
+                          "children": [
+                            {
+                              "id": "54f6383b::item:4::list-item:segment:0",
+                              "type": "list-item-text",
+                              "props": {
+                                "inline": [
+                                  {
+                                    "kind": "code",
+                                    "text": "codeRenderers"
+                                  },
+                                  {
+                                    "kind": "text",
+                                    "text": ": map fenced code languages to custom renderers (e.g. "
+                                  },
+                                  {
+                                    "kind": "code",
+                                    "text": "mermaid"
+                                  },
+                                  {
+                                    "kind": "text",
+                                    "text": ", "
+                                  },
+                                  {
+                                    "kind": "code",
+                                    "text": "artifact"
+                                  },
+                                  {
+                                    "kind": "text",
+                                    "text": ", "
+                                  },
+                                  {
+                                    "kind": "code",
+                                    "text": "diff"
+                                  },
+                                  {
+                                    "kind": "text",
+                                    "text": ", custom languages) keyed by language; `"
+                                  }
+                                ],
+                                "text": "`codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `artifact`, `diff`, custom languages) keyed by language; `"
+                              },
+                              "children": []
+                            },
+                            {
+                              "id": "54f6383b::item:4::list-item:segment:1",
+                              "type": "list-item-mdx",
+                              "props": {
+                                "raw": "{ component, aliases }",
+                                "status": "pending"
+                              },
+                              "children": []
+                            },
+                            {
+                              "id": "54f6383b::item:4::list-item:segment:2",
+                              "type": "list-item-text",
+                              "props": {
+                                "inline": [
+                                  {
+                                    "kind": "text",
+                                    "text": "` entries add alias languages, resolved case-insensitively."
+                                  }
+                                ],
+                                "text": "` entries add alias languages, resolved case-insensitively."
+                              },
+                              "children": []
+                            }
+                          ]
                         }
                       }
                     }
@@ -1465,26 +1645,575 @@
                     },
                     {
                       "kind": "text",
-                      "text": ", custom languages)."
+                      "text": ", custom languages) keyed by language; "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "{ component, aliases }"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " entries add alias languages, resolved case-insensitively."
                     }
                   ],
-                  "text": "codeRenderers: map fenced code languages to custom renderers (e.g. mermaid, artifact, diff, custom languages).",
-                  "raw": "- `codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `artifact`, `diff`, custom languages)."
+                  "text": "codeRenderers: map fenced code languages to custom renderers (e.g. mermaid, artifact, diff, custom languages) keyed by language; { component, aliases } entries add alias languages, resolved case-insensitively.",
+                  "raw": "- `codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `artifact`, `diff`, custom languages) keyed by language; `{ component, aliases }` entries add alias languages, resolved case-insensitively."
                 },
-                "children": []
+                "children": [
+                  {
+                    "id": "54f6383b::item:4::list-item:segment:0",
+                    "type": "list-item-text",
+                    "props": {
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "codeRenderers"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": map fenced code languages to custom renderers (e.g. "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "mermaid"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "artifact"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "diff"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", custom languages) keyed by language; `"
+                        }
+                      ],
+                      "text": "`codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `artifact`, `diff`, custom languages) keyed by language; `"
+                    },
+                    "children": []
+                  },
+                  {
+                    "id": "54f6383b::item:4::list-item:segment:1",
+                    "type": "list-item-mdx",
+                    "props": {
+                      "raw": "{ component, aliases }",
+                      "status": "pending"
+                    },
+                    "children": []
+                  },
+                  {
+                    "id": "54f6383b::item:4::list-item:segment:2",
+                    "type": "list-item-text",
+                    "props": {
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "` entries add alias languages, resolved case-insensitively."
+                        }
+                      ],
+                      "text": "` entries add alias languages, resolved case-insensitively."
+                    },
+                    "children": []
+                  }
+                ]
               },
               {
                 "id": "54f6383b::item:5",
                 "type": "list-item",
                 "range": {
-                  "from": 1514,
-                  "to": 1628
+                  "from": 1615,
+                  "to": 1721
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
                     "id": "54f6383b::item:5",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `allowedElements`: whitelist of permitted HTML tag names (mutually exclusive with `disallowedElements`).",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "allowedElements"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": whitelist of permitted HTML tag names (mutually exclusive with "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "disallowedElements"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ")."
+                        }
+                      ],
+                      "range": {
+                        "from": 1615,
+                        "to": 1721
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 5,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "allowedElements"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": whitelist of permitted HTML tag names (mutually exclusive with "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "disallowedElements"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ")."
+                              }
+                            ],
+                            "text": "allowedElements: whitelist of permitted HTML tag names (mutually exclusive with disallowedElements).",
+                            "raw": "- `allowedElements`: whitelist of permitted HTML tag names (mutually exclusive with `disallowedElements`)."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 5,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "allowedElements"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": whitelist of permitted HTML tag names (mutually exclusive with "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "disallowedElements"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ")."
+                    }
+                  ],
+                  "text": "allowedElements: whitelist of permitted HTML tag names (mutually exclusive with disallowedElements).",
+                  "raw": "- `allowedElements`: whitelist of permitted HTML tag names (mutually exclusive with `disallowedElements`)."
+                },
+                "children": []
+              },
+              {
+                "id": "54f6383b::item:6",
+                "type": "list-item",
+                "range": {
+                  "from": 1722,
+                  "to": 1826
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "54f6383b::item:6",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `disallowedElements`: blacklist of HTML tag names to drop (mutually exclusive with `allowedElements`).",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "disallowedElements"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": blacklist of HTML tag names to drop (mutually exclusive with "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "allowedElements"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ")."
+                        }
+                      ],
+                      "range": {
+                        "from": 1722,
+                        "to": 1826
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 6,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "disallowedElements"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": blacklist of HTML tag names to drop (mutually exclusive with "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "allowedElements"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ")."
+                              }
+                            ],
+                            "text": "disallowedElements: blacklist of HTML tag names to drop (mutually exclusive with allowedElements).",
+                            "raw": "- `disallowedElements`: blacklist of HTML tag names to drop (mutually exclusive with `allowedElements`)."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 6,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "disallowedElements"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": blacklist of HTML tag names to drop (mutually exclusive with "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "allowedElements"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ")."
+                    }
+                  ],
+                  "text": "disallowedElements: blacklist of HTML tag names to drop (mutually exclusive with allowedElements).",
+                  "raw": "- `disallowedElements`: blacklist of HTML tag names to drop (mutually exclusive with `allowedElements`)."
+                },
+                "children": []
+              },
+              {
+                "id": "54f6383b::item:7",
+                "type": "list-item",
+                "range": {
+                  "from": 1827,
+                  "to": 1929
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "54f6383b::item:7",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `unwrapDisallowed`: when `true`, render children of disallowed tags instead of dropping the subtree.",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "unwrapDisallowed"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": when "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "true"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", render children of disallowed tags instead of dropping the subtree."
+                        }
+                      ],
+                      "range": {
+                        "from": 1827,
+                        "to": 1929
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 7,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "unwrapDisallowed"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": when "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "true"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", render children of disallowed tags instead of dropping the subtree."
+                              }
+                            ],
+                            "text": "unwrapDisallowed: when true, render children of disallowed tags instead of dropping the subtree.",
+                            "raw": "- `unwrapDisallowed`: when `true`, render children of disallowed tags instead of dropping the subtree."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 7,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "unwrapDisallowed"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": when "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "true"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", render children of disallowed tags instead of dropping the subtree."
+                    }
+                  ],
+                  "text": "unwrapDisallowed: when true, render children of disallowed tags instead of dropping the subtree.",
+                  "raw": "- `unwrapDisallowed`: when `true`, render children of disallowed tags instead of dropping the subtree."
+                },
+                "children": []
+              },
+              {
+                "id": "54f6383b::item:8",
+                "type": "list-item",
+                "range": {
+                  "from": 1930,
+                  "to": 2025
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "54f6383b::item:8",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `allowElement`: callback predicate `(element, context) => boolean` for dynamic tag filtering.",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "allowElement"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": callback predicate "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "(element, context) => boolean"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " for dynamic tag filtering."
+                        }
+                      ],
+                      "range": {
+                        "from": 1930,
+                        "to": 2025
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 8,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "allowElement"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": callback predicate "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "(element, context) => boolean"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " for dynamic tag filtering."
+                              }
+                            ],
+                            "text": "allowElement: callback predicate (element, context) => boolean for dynamic tag filtering.",
+                            "raw": "- `allowElement`: callback predicate `(element, context) => boolean` for dynamic tag filtering."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 8,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "allowElement"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": callback predicate "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "(element, context) => boolean"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " for dynamic tag filtering."
+                    }
+                  ],
+                  "text": "allowElement: callback predicate (element, context) => boolean for dynamic tag filtering.",
+                  "raw": "- `allowElement`: callback predicate `(element, context) => boolean` for dynamic tag filtering."
+                },
+                "children": []
+              },
+              {
+                "id": "54f6383b::item:9",
+                "type": "list-item",
+                "range": {
+                  "from": 2026,
+                  "to": 2167
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "54f6383b::item:9",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `disableAutolinkProtocols`: protocols (e.g. `[\"mailto\"]`) whose autolinks render as plain text while explicit markdown links remain active.",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "disableAutolinkProtocols"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": protocols (e.g. "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "[\"mailto\"]"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ") whose autolinks render as plain text while explicit markdown links remain active."
+                        }
+                      ],
+                      "range": {
+                        "from": 2026,
+                        "to": 2167
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 9,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "disableAutolinkProtocols"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": protocols (e.g. "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "[\"mailto\"]"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ") whose autolinks render as plain text while explicit markdown links remain active."
+                              }
+                            ],
+                            "text": "disableAutolinkProtocols: protocols (e.g. [\"mailto\"]) whose autolinks render as plain text while explicit markdown links remain active.",
+                            "raw": "- `disableAutolinkProtocols`: protocols (e.g. `[\"mailto\"]`) whose autolinks render as plain text while explicit markdown links remain active."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 9,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "disableAutolinkProtocols"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": protocols (e.g. "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "[\"mailto\"]"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ") whose autolinks render as plain text while explicit markdown links remain active."
+                    }
+                  ],
+                  "text": "disableAutolinkProtocols: protocols (e.g. [\"mailto\"]) whose autolinks render as plain text while explicit markdown links remain active.",
+                  "raw": "- `disableAutolinkProtocols`: protocols (e.g. `[\"mailto\"]`) whose autolinks render as plain text while explicit markdown links remain active."
+                },
+                "children": []
+              },
+              {
+                "id": "54f6383b::item:10",
+                "type": "list-item",
+                "range": {
+                  "from": 2168,
+                  "to": 2282
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "54f6383b::item:10",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1500,8 +2229,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1514,
-                        "to": 1628
+                        "from": 2168,
+                        "to": 2282
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1509,7 +2238,7 @@
                           "props": {
                             "ordered": false,
                             "loose": false,
-                            "index": 5,
+                            "index": 10,
                             "inline": [
                               {
                                 "kind": "code",
@@ -1528,7 +2257,7 @@
                       }
                     }
                   },
-                  "index": 5,
+                  "index": 10,
                   "inline": [
                     {
                       "kind": "code",
@@ -1545,17 +2274,17 @@
                 "children": []
               },
               {
-                "id": "54f6383b::item:6",
+                "id": "54f6383b::item:11",
                 "type": "list-item",
                 "range": {
-                  "from": 1629,
-                  "to": 1733
+                  "from": 2283,
+                  "to": 2387
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "54f6383b::item:6",
+                    "id": "54f6383b::item:11",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1595,8 +2324,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1629,
-                        "to": 1733
+                        "from": 2283,
+                        "to": 2387
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1604,7 +2333,7 @@
                           "props": {
                             "ordered": false,
                             "loose": false,
-                            "index": 6,
+                            "index": 11,
                             "inline": [
                               {
                                 "kind": "code",
@@ -1647,7 +2376,7 @@
                       }
                     }
                   },
-                  "index": 6,
+                  "index": 11,
                   "inline": [
                     {
                       "kind": "code",
@@ -1692,36 +2421,12 @@
         },
         "range": {
           "from": 1123,
-          "to": 1733
+          "to": 2387
         }
       }
     },
     {
-      "id": "2e0475f8",
-      "type": "heading",
-      "isFinalized": true,
-      "payload": {
-        "raw": "Mermaid diagrams (optional)",
-        "meta": {
-          "lezerNodeType": "ATXHeading2",
-          "headingLevel": 2,
-          "headingText": "Mermaid diagrams (optional)",
-          "headingId": "mermaid-diagrams-optional"
-        },
-        "range": {
-          "from": 1735,
-          "to": 1765
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "Mermaid diagrams (optional)"
-          }
-        ]
-      }
-    },
-    {
-      "id": "7a9130a7",
+      "id": "24706f7e",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -1730,8 +2435,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 1767,
-          "to": 1887
+          "from": 2389,
+          "to": 2509
         },
         "inline": [
           {
@@ -1763,7 +2468,7 @@
       }
     },
     {
-      "id": "12cc328e",
+      "id": "361dade9",
       "type": "code",
       "isFinalized": true,
       "payload": {
@@ -1776,14 +2481,14 @@
           "highlightLang": "bash"
         },
         "range": {
-          "from": 1889,
-          "to": 1932
+          "from": 2511,
+          "to": 2554
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-bash\" data-language=\"bash\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> install</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> @stream-mdx/mermaid</span></span></code></pre>"
       }
     },
     {
-      "id": "440d96f1",
+      "id": "59fc85ca",
       "type": "code",
       "isFinalized": true,
       "payload": {
@@ -1796,14 +2501,14 @@
           "highlightLang": "tsx"
         },
         "range": {
-          "from": 1934,
-          "to": 2078
+          "from": 2556,
+          "to": 2700
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { MermaidBlock } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/mermaid\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{text}</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  codeRenderers</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ mermaid: MermaidBlock }}</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/>;</span></span></code></pre>"
       }
     },
     {
-      "id": "587aa94a",
+      "id": "40038f07",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -1815,8 +2520,8 @@
           "headingId": "scheduling-and-metrics"
         },
         "range": {
-          "from": 2080,
-          "to": 2105
+          "from": 2702,
+          "to": 2727
         },
         "inline": [
           {
@@ -1827,7 +2532,7 @@
       }
     },
     {
-      "id": "79be6cca",
+      "id": "62bec830",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -1874,17 +2579,17 @@
             },
             "children": [
               {
-                "id": "79be6cca::item:0",
+                "id": "62bec830::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 2107,
-                  "to": 2199
+                  "from": 2729,
+                  "to": 2821
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "79be6cca::item:0",
+                    "id": "62bec830::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1900,8 +2605,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2107,
-                        "to": 2199
+                        "from": 2729,
+                        "to": 2821
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1945,17 +2650,17 @@
                 "children": []
               },
               {
-                "id": "79be6cca::item:1",
+                "id": "62bec830::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 2200,
-                  "to": 2288
+                  "from": 2822,
+                  "to": 2910
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "79be6cca::item:1",
+                    "id": "62bec830::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1971,8 +2676,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2200,
-                        "to": 2288
+                        "from": 2822,
+                        "to": 2910
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2019,13 +2724,13 @@
           }
         },
         "range": {
-          "from": 2107,
-          "to": 2288
+          "from": 2729,
+          "to": 2910
         }
       }
     },
     {
-      "id": "474c1969",
+      "id": "2a854ea8",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -2034,8 +2739,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 2290,
-          "to": 2345
+          "from": 2912,
+          "to": 2967
         },
         "inline": [
           {
@@ -2092,14 +2797,8 @@
       "text": "Rendering overrides"
     },
     {
-      "id": "mermaid-diagrams-optional",
-      "blockId": "2e0475f8",
-      "level": 2,
-      "text": "Mermaid diagrams (optional)"
-    },
-    {
       "id": "scheduling-and-metrics",
-      "blockId": "587aa94a",
+      "blockId": "40038f07",
       "level": 2,
       "text": "Scheduling and metrics"
     }
