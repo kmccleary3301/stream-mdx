@@ -383,8 +383,43 @@ import { StreamingMarkdown } from "@stream-mdx/react";
 - **Accessibility & SSR**: Buttons are real `<button type="button">` with `aria-label`, `data-stream-mdx-control`, and semantic classes. Rendering is 100% SSR-safe (no `window` access during render).
 - **Replacement slot**: Fully replaceable via `controlsComponent` prop on `<StreamingMarkdown />` or `ComponentRegistry.setControlsComponent()`.
 
-## 3.4) Remark & Rehype Adapter (`@stream-mdx/unified`)
+## 3.4) Animated Streaming (`animated`)
 
+StreamMDX provides opt-in, per-word or per-character streaming text animation via the `animated` prop on `<StreamingMarkdown />` and `<MarkdownBlocksRenderer />`.
+
+Animation is **disabled by default**, guaranteeing zero overhead on the hot path and byte-identical DOM output for static and existing renders.
+
+```tsx
+import { STREAM_MDX_ANIMATION_CSS, StreamingMarkdown } from "@stream-mdx/react";
+
+// Include the stylesheet once in your app or inject the exported CSS constant
+<style dangerouslySetInnerHTML={{ __html: STREAM_MDX_ANIMATION_CSS }} />
+
+// Default animation (fadeIn, 150ms, ease-out, per-word, 20ms stagger):
+<StreamingMarkdown stream={stream} animated />
+
+// Custom options:
+<StreamingMarkdown
+  stream={stream}
+  animated={{
+    animation: "blurIn", // "fadeIn" | "blurIn" | "slideUp" | custom animation name
+    duration: 180,       // Duration in ms
+    easing: "ease-out",  // Timing function
+    sep: "word",         // "word" | "char"
+    stagger: 20,         // Delay between successive tokens (ms)
+    maxBacklogMs: 320,   // Maximum cumulative delay cap (ms)
+  }}
+/>
+```
+
+### Mechanics
+
+- **Streaming only**: Animation applies only while blocks are streaming (non-finalized). Once a block finalizes, or during static / SSR rendering, it outputs plain text without animation wrapper spans.
+- **Stable DOM identities**: When enabled, inline text nodes render as keyed `<span>` elements keyed by segment index within the text node. Appending new text updates the DOM incrementally without remounting or re-animating previously rendered words.
+- **CSS variables**: Each newly mounted span receives class `stream-mdx-anim` and CSS variables `--sm-anim-duration`, `--sm-anim-easing`, and `--sm-anim-delay`.
+- **Timeline & backlog capping**: Delay is tracked per renderer in an isolated timeline object. If a large burst of text arrives in a single flush, `stagger` compresses so the cascade stays capped within `maxBacklogMs`.
+- **Reduced motion**: `STREAM_MDX_ANIMATION_CSS` includes `@media (prefers-reduced-motion: reduce)` which disables animation automatically.
+## 3.5) Remark & Rehype Adapter (`@stream-mdx/unified`)
 `@stream-mdx/unified` provides an adapter for existing `remarkPlugins` and `rehypePlugins`.
 
 ```bash
@@ -432,9 +467,7 @@ Explicit `blockTypes` replaces the default routing list. Routed lists and blockq
 - **Deduplication and stale results**: Multiple render passes for the same cache key share in-flight jobs. Old jobs may finish, but cannot replace a newer block's rendered result. Keys include block ID/type, reconstructed markdown, and resolved link references.
 
 Create the renderer once for each stable plugin configuration, outside render or in `useMemo`. Each renderer has its own bounded cache. Recreate it when plugin options change. `unifiedRenderer.clearCache(): void` clears completed results and the in-flight lookup; it does not abort plugin execution already running. Failed jobs call `onError(error, block)` when supplied and retain the native element; otherwise the adapter logs the error.
-
-## 3.3) Table row virtualization (`tableVirtualization`)
-
+## 3.6) Table row virtualization (`tableVirtualization`)
 Opt in to render a viewport-sized subset of a large finalized table. Server rendering and active streaming still render every row. This option does not change parsing or discard row content.
 
 ```tsx
@@ -474,9 +507,7 @@ Try `/showcase/table-virtualization` in the docs app. It contains up to 500 rows
 | `estimatedRowHeight` | `number` | `40` | Estimated height in pixels for unmeasured rows. |
 | `overscan` | `number` | `8` | Number of buffer rows rendered above and below the viewport (bounded 1-50). |
 | `maxHeight` | `number \| string` | `"600px"` | Maximum height of the scroll container. |
-
-## 3.3) Math Rendering (`mathRenderer`)
-
+## 3.7) Math Rendering (`mathRenderer`)
 StreamMDX includes first-party KaTeX math rendering by default for inline (`$...$`) and display (`$$...$$`) math.
 
 To override or use MathJax:

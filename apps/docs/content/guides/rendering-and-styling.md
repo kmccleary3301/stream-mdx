@@ -134,6 +134,36 @@ Controls are disabled (`false`) by default so existing rendered output and snaps
 - Tables provide copy as TSV or Markdown, and download as CSV, TSV, or Markdown (enabled once the table block is finalized).
 - All buttons are real `<button type="button">` elements with accessible labels and `data-stream-mdx-control` attributes for styling.
 
+## Animated streaming text (`animated`)
+
+Opt in to smooth, per-word or per-character fade and slide transitions as text streams into non-finalized blocks:
+
+```tsx
+import { STREAM_MDX_ANIMATION_CSS, StreamingMarkdown } from "@stream-mdx/react";
+
+// 1. Include default animation keyframes in your document/stylesheet
+<style dangerouslySetInnerHTML={{ __html: STREAM_MDX_ANIMATION_CSS }} />
+
+// 2. Enable animation on the streaming markdown component
+<StreamingMarkdown
+  stream={stream}
+  animated={{
+    animation: "fadeIn", // "fadeIn" | "blurIn" | "slideUp" | custom keyframe name
+    duration: 150,      // ms
+    easing: "ease-out",
+    sep: "word",        // "word" | "char"
+    stagger: 20,        // ms delay between newly mounted segments
+    maxBacklogMs: 320,  // ms maximum delay cap
+  }}
+/>
+```
+
+When `animated` is `true` or an configuration object:
+- Non-finalized text renders as stable keyed `<span>` elements with class `stream-mdx-anim` and CSS variables `--sm-anim-duration`, `--sm-anim-easing`, and `--sm-anim-delay`.
+- As new tokens stream in, already-mounted segments preserve their DOM identity and stay at their final resting state without restarting animation.
+- When a block finalizes, or during server-side and static renders, content renders as plain text without animation wrapper elements.
+- Reduced-motion preferences (`prefers-reduced-motion: reduce`) are honored automatically in `STREAM_MDX_ANIMATION_CSS`.
+
 
 ## HTML overrides
 
