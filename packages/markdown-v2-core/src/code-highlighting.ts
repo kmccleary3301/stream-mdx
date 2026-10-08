@@ -188,20 +188,21 @@ export function getDefaultCodeWrapperAttributes(
   preAttrs: Record<string, string>;
   codeAttrs: Record<string, string>;
 } {
-  const language = lang && typeof lang === "string" && lang.length > 0 ? lang : "text";
+  const language = lang && typeof lang === "string" && lang.trim().length > 0 ? lang.trim() : undefined;
   const themeLabel = `${themes.dark} ${themes.light}`;
-  return {
-    preAttrs: {
-      class: `shiki shiki-themes ${themeLabel}`,
-      "data-language": language,
-      style: "--shiki-dark-bg: transparent; --shiki-light-bg: transparent",
-    },
-    codeAttrs: {
-      "data-language": language,
-      "data-theme": themeLabel,
-      style: "display: grid;",
-    },
+  const preAttrs: Record<string, string> = {
+    class: `shiki shiki-themes ${themeLabel}`,
+    style: "--shiki-dark-bg: transparent; --shiki-light-bg: transparent",
   };
+  const codeAttrs: Record<string, string> = {
+    "data-theme": themeLabel,
+    style: "display: grid;",
+  };
+  if (language) {
+    preAttrs["data-language"] = language;
+    codeAttrs["data-language"] = language;
+  }
+  return { preAttrs, codeAttrs };
 }
 
 export function extractCodeLines(raw: string): string[] {
