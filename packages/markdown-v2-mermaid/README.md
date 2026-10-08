@@ -33,6 +33,8 @@ export function Demo() {
 | Code view toggle | Keep the source visible and inspectable |
 | Opt-in registration | Only affects `mermaid` blocks when you register the component |
 
+Incomplete or invalid diagrams report errors inside their own block. Once valid source arrives, the diagram replaces that error without leaving an error SVG elsewhere on the page.
+
 ## Customization
 
 ```tsx
