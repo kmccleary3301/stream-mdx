@@ -1,19 +1,25 @@
 import assert from "node:assert";
-import type { Patch, WorkerIn, WorkerOut } from "@stream-mdx/core";
-import { createRendererStore } from "../../markdown-v2-react/src/renderer/store";
+import type { WorkerIn, WorkerOut } from "@stream-mdx/core";
+import { createRendererStore, type RendererStore } from "../../markdown-v2-react/src/renderer/store";
 import { JSDOM } from "jsdom";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { ComponentRegistry } from "../../markdown-v2-react/src/components";
+import { BlockNodeRenderer } from "../../markdown-v2-react/src/renderer/node-views";
 import { createInlineEngineWorker } from "../src/engine/index";
 import { createWorkerThread } from "../src/node/index";
 
 function ensureDom(): void {
-  if (typeof (globalThis as { window?: unknown }).window !== "undefined") {
+  if (typeof window !== "undefined") {
     return;
   }
   const dom = new JSDOM("<!doctype html><html><body></body></html>");
-  (globalThis as any).window = dom.window;
-  (globalThis as any).document = dom.window.document;
-  (globalThis as any).HTMLElement = dom.window.HTMLElement;
-  (globalThis as any).Node = dom.window.Node;
+  Object.assign(globalThis, {
+    window: dom.window,
+    document: dom.window.document,
+    HTMLElement: dom.window.HTMLElement,
+    Node: dom.window.Node,
+  });
 }
 
 const FIXTURE = `# Section Heading
@@ -45,27 +51,21 @@ function runWorkerStream(
   },
   fixture: string,
   chunkSize: number,
-): Promise<{ store: ReturnType<typeof createRendererStore>; messages: WorkerOut[] }> {
+  docPlugins: Extract<WorkerIn, { type: "INIT" }>["docPlugins"],
+): Promise<{ store: RendererStore; messages: WorkerOut[] }> {
   return new Promise((resolve, reject) => {
     ensureDom();
     const store = createRendererStore();
     const messages: WorkerOut[] = [];
-    let hasFinalized = false;
 
     worker.onMessage((msg) => {
       messages.push(msg);
       if (msg.type === "INITIALIZED") {
         store.reset(msg.blocks);
       } else if (msg.type === "PATCH") {
-        store.applyPatches(msg.patches as Patch[], { captureMetrics: false });
-        const hasFinalizeOp = (msg.patches as Patch[]).some((p) => p.op === "finalize");
-        if (hasFinalizeOp && !hasFinalized) {
-          hasFinalized = true;
-          const blocks = store.getBlocks();
-          if (blocks.length > 0 && blocks.every((b) => b.isFinalized)) {
-            resolve({ store, messages });
-          }
-        }
+        store.applyPatches(msg.patches, { captureMetrics: false });
+      } else if (msg.type === "FINALIZED") {
+        resolve({ store, messages });
       } else if (msg.type === "ERROR") {
         reject(new Error(`Worker error: ${msg.error.message}`));
       }
@@ -75,7 +75,7 @@ function runWorkerStream(
       type: "INIT",
       initialContent: "",
       prewarmLangs: ["ts", "typescript"],
-      docPlugins: ["footnotes", "tables"],
+      docPlugins,
     };
     worker.postMessage(initMsg);
 
@@ -87,13 +87,27 @@ function runWorkerStream(
   });
 }
 
-async function runParityTest(): Promise<void> {
+function renderStore(store: RendererStore): string {
+  const registry = new ComponentRegistry();
+  return renderToStaticMarkup(
+    React.createElement(
+      React.Fragment,
+      null,
+      store.getBlocks().map((block) =>
+        React.createElement(BlockNodeRenderer, { key: block.id, store, blockId: block.id, registry }),
+      ),
+    ),
+  );
+}
+
+async function runParitySession(enabled: boolean): Promise<void> {
   ensureDom();
   const inlineWorker = createInlineEngineWorker();
   const threadWorker = createWorkerThread({ stdout: true, stderr: true });
 
   try {
     const chunkSize = 20;
+    const docPlugins = { footnotes: enabled, tables: enabled };
 
     const inlinePromise = runWorkerStream(
       {
@@ -104,6 +118,7 @@ async function runParityTest(): Promise<void> {
       },
       FIXTURE,
       chunkSize,
+      docPlugins,
     );
 
     const threadPromise = runWorkerStream(
@@ -115,6 +130,7 @@ async function runParityTest(): Promise<void> {
       },
       FIXTURE,
       chunkSize,
+      docPlugins,
     );
 
     const [inlineResult, threadResult] = await Promise.all([inlinePromise, threadPromise]);
@@ -122,14 +138,31 @@ async function runParityTest(): Promise<void> {
     const inlineBlocks = inlineResult.store.getBlocks();
     const threadBlocks = threadResult.store.getBlocks();
 
-    // Verify all 5 expected block types are present
-    const types = inlineBlocks.map((b) => b.type);
-    assert.ok(types.includes("heading"), "missing heading block");
-    assert.ok(types.includes("paragraph"), "missing paragraph block");
-    assert.ok(types.includes("list"), "missing list block");
-    assert.ok(types.includes("table"), "missing table block");
-    assert.ok(types.includes("code"), "missing code block");
-    assert.ok(types.includes("footnotes"), "missing footnotes block");
+    for (const result of [inlineResult, threadResult]) {
+      assert.strictEqual(result.messages.at(-1)?.type, "FINALIZED", "comparison must wait for terminal FINALIZED");
+      const blocks = result.store.getBlocks();
+      const types = blocks.map((block) => block.type);
+      for (const type of ["heading", "paragraph", "list", "code"]) {
+        assert.ok(types.includes(type), `missing ${type} block`);
+      }
+      assert.strictEqual(types.includes("table"), enabled, "table configuration must reach the engine");
+      assert.strictEqual(types.includes("footnotes"), enabled, "footnote configuration must reach the engine");
+
+      const document = new JSDOM(renderStore(result.store)).window.document;
+      assert.strictEqual(document.querySelector("h1")?.textContent, "Section Heading");
+      assert.strictEqual(document.querySelector("strong")?.textContent, "bold");
+      assert.ok(document.querySelector("pre")?.textContent?.includes("return a + b;"));
+      assert.strictEqual(document.querySelectorAll("table").length, enabled ? 1 : 0);
+      assert.strictEqual(document.querySelectorAll('sup a[href="#fn:1"]').length, enabled ? 1 : 0);
+      if (enabled) {
+        assert.strictEqual(document.querySelector("tbody td")?.textContent, "Alice");
+        assert.ok(document.querySelector('[id="fn:1"]')?.textContent?.includes("Footnote definition content."));
+      } else {
+        assert.ok(document.body.textContent?.includes("[^ref]"), "disabled footnotes must remain literal text");
+        assert.ok(document.body.textContent?.includes("| Alice | 100 |"), "disabled tables must remain literal text");
+      }
+    }
+    assert.strictEqual(renderStore(inlineResult.store), renderStore(threadResult.store), "final consumer DOM must match");
 
     // All blocks must be finalized
     assert.ok(inlineBlocks.every((b) => b.isFinalized), "all inline blocks must be finalized");
@@ -164,6 +197,11 @@ async function runParityTest(): Promise<void> {
     inlineWorker.terminate();
     await threadWorker.terminate();
   }
+}
+
+async function runParityTest(): Promise<void> {
+  await runParitySession(true);
+  await runParitySession(false);
 }
 
 runParityTest()

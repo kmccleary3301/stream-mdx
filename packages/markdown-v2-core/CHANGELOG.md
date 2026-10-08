@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Preserve whitespace beyond the required four columns on internal indented-code blank lines, including nested containers. Include invisible reference definitions when determining loose lists.
+- Recognize bare FTP links with native GFM URL punctuation and parenthesis handling. Keep the existing Markdown URI and raw-HTML sanitizer policies unchanged.
 - Convert Lezer HTML tags, comments, and processing instructions to typed inline nodes. Keep parsed markdown children inside allowed inline tags and apply the configured attribute policy.
 - Keep HTML containers open across markdown block boundaries using a sanitized ownership tree with prepared markdown children. Add textarea Type 1 continuation through blank lines and strip script/style contents.
 - Normalize HTML-containing paragraphs as complete browser-owned regions. Keep configured paragraph components and native inline plugin renderers through private serialized slots, including reconstructed formatting boundaries. Preserve literal pre indentation with matching server and client DOM semantics.

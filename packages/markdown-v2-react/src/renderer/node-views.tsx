@@ -1,7 +1,7 @@
 import { dedentIndentedCode, getDefaultCodeWrapperAttributes, normalizeBlockquoteText, stripCodeFence, type Block, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type TokenLineV1 } from "@stream-mdx/core";
 import React from "react";
 import { DefaultDiffRenderer } from "../components/diff-renderer";
-import type { CodeFenceRendererProps } from "../types";
+import type { CodeFenceRendererProps, TableElements } from "../types";
 import { renderInlineNodes, renderParagraphMixedSegments } from "../components";
 import type { ComponentRegistry } from "../components";
 import { DEFAULT_INLINE_HTML_RENDERERS, renderInlineHtmlSegment } from "../utils/inline-html";
@@ -12,6 +12,7 @@ import { createRendererStore, isListPatchDebugEnabled, type RendererStore } from
 import { useDeferredRender } from "./use-deferred-render";
 import { DEFAULT_VIRTUALIZED_CODE_CONFIG, type VirtualizedLine, useVirtualizedCode } from "./virtualized-code";
 import { useVirtualizedTable, type TableVirtualizationProps } from "./virtualized-table";
+import { StreamingActivityContext } from "./streaming-activity-context";
 
 export const BlockNodeRenderer: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = ({ store, blockId, registry }) => {
   const node = useRendererNode(store, blockId);
@@ -739,11 +740,12 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
     return 1;
   }, [theadCellIds.length, rowIds, store]);
 
+  const sessionActive = React.useContext(StreamingActivityContext);
   const isFinalized = Boolean(node?.block?.isFinalized);
-  const canVirtualize = mounted && typeof window !== "undefined" && isFinalized && !virtualizationDisabled;
+  const canVirtualize = mounted && typeof window !== "undefined" && isFinalized && !sessionActive && !virtualizationDisabled;
 
   const virtualization = useVirtualizedTable(rowIds, virtualizationConfig, canVirtualize);
-  const { isVirtualized, containerRef, handleScroll, window: virtualWindow, config } = virtualization;
+  const { isEligible, isVirtualized, containerRef, handleScroll, window: virtualWindow, config, naturalLayout, headerBackgroundColor } = virtualization;
 
   const virtualizationProps: TableVirtualizationProps | undefined = React.useMemo(() => {
     if (!isVirtualized) return undefined;
@@ -754,8 +756,9 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
       topSpacerHeight: virtualWindow.topSpacerHeight,
       bottomSpacerHeight: virtualWindow.bottomSpacerHeight,
       columnCount,
+      headerBackgroundColor,
     };
-  }, [isVirtualized, virtualWindow, columnCount]);
+  }, [isVirtualized, virtualWindow, columnCount, headerBackgroundColor]);
 
   const tableAttrs = {
     "data-table-block": "true",
@@ -770,22 +773,30 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
   const tableElement = (
     <tableElements.Table
       className="markdown-table w-full caption-bottom text-base"
-      style={isVirtualized ? { tableLayout: "fixed", width: "100%" } : undefined}
-      {...(!isVirtualized ? tableAttrs : {})}
+      style={isVirtualized && naturalLayout?.columnWidths.length
+        ? { tableLayout: "fixed", width: naturalLayout.tableWidth }
+        : undefined}
+      {...(!isEligible ? tableAttrs : {})}
     >
+      {isVirtualized && naturalLayout?.columnWidths.length ? (
+        <colgroup>
+          {naturalLayout.columnWidths.map((width, index) => <col key={index} style={{ width }} />)}
+        </colgroup>
+      ) : null}
       {childIds.map((sectionId) => (
         <TableSectionView
           key={sectionId}
           store={store}
           nodeId={sectionId}
           registry={registry}
+          tableElements={tableElements}
           virtualization={virtualizationProps}
         />
       ))}
     </tableElements.Table>
   );
 
-  if (isVirtualized) {
+  if (isEligible) {
     const maxHeight = typeof config.maxHeight === "number" ? `${config.maxHeight}px` : config.maxHeight;
     return (
       <div
@@ -817,21 +828,26 @@ const TableSectionView: React.FC<{
   store: RendererStore;
   nodeId: string;
   registry: ComponentRegistry;
+  tableElements: TableElements;
   virtualization?: TableVirtualizationProps;
-}> = React.memo(({ store, nodeId, registry, virtualization }) => {
+}> = React.memo(({ store, nodeId, registry, tableElements, virtualization }) => {
   const node = useRendererNode(store, nodeId);
   if (!node) return null;
-  const tableElements = registry.getTableElements();
   if (node.type === "table-header") {
     const childIds = useRendererChildren(store, nodeId);
     return (
       <tableElements.Thead
         className={virtualization?.isVirtualized ? "sticky top-0 z-10" : undefined}
-        style={virtualization?.isVirtualized ? { position: "sticky", top: 0, zIndex: 10 } : undefined}
+        style={virtualization?.isVirtualized ? {
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+          backgroundColor: `var(--stream-mdx-table-header-background, ${virtualization.headerBackgroundColor})`,
+        } : undefined}
       >
         <tableElements.Tr>
           {childIds.map((cellId) => (
-            <TableCellView key={cellId} store={store} nodeId={cellId} registry={registry} />
+            <TableCellView key={cellId} store={store} nodeId={cellId} registry={registry} tableElements={tableElements} />
           ))}
         </tableElements.Tr>
       </tableElements.Thead>
@@ -843,7 +859,7 @@ const TableSectionView: React.FC<{
       return (
         <tableElements.Tbody>
           {rowIds.map((rowId) => (
-            <TableRowView key={rowId} store={store} nodeId={rowId} registry={registry} />
+            <TableRowView key={rowId} store={store} nodeId={rowId} registry={registry} tableElements={tableElements} />
           ))}
         </tableElements.Tbody>
       );
@@ -868,13 +884,11 @@ const TableSectionView: React.FC<{
           </tableElements.Tr>
         )}
         {visibleRowIds.map((rowId, offset) => (
-          <TableRowView
-            key={rowId}
-            store={store}
-            nodeId={rowId}
-            registry={registry}
-            rowIndex={startIndex + offset}
-          />
+          <TableRowView key={rowId}
+          store={store}
+          nodeId={rowId}
+          registry={registry}
+          rowIndex={startIndex + offset} tableElements={tableElements} />
         ))}
         {bottomSpacerHeight > 0 && (
           <tableElements.Tr
@@ -901,9 +915,9 @@ const TableRowView: React.FC<{
   store: RendererStore;
   nodeId: string;
   registry: ComponentRegistry;
+  tableElements: TableElements;
   rowIndex?: number;
-}> = React.memo(({ store, nodeId, registry, rowIndex }) => {
-  const tableElements = registry.getTableElements();
+}> = React.memo(({ store, nodeId, registry, tableElements, rowIndex }) => {
   const cellIds = useRendererChildren(store, nodeId);
   return (
     <tableElements.Tr
@@ -911,7 +925,7 @@ const TableRowView: React.FC<{
       {...(rowIndex !== undefined ? { "data-row-index": rowIndex } : {})}
     >
       {cellIds.map((cellId) => (
-        <TableCellView key={cellId} store={store} nodeId={cellId} registry={registry} />
+        <TableCellView key={cellId} store={store} nodeId={cellId} registry={registry} tableElements={tableElements} />
       ))}
     </tableElements.Tr>
   );
@@ -919,10 +933,9 @@ const TableRowView: React.FC<{
 
 TableRowView.displayName = "TableRowView";
 
-const TableCellView: React.FC<{ store: RendererStore; nodeId: string; registry: ComponentRegistry }> = React.memo(({ store, nodeId, registry }) => {
+const TableCellView: React.FC<{ store: RendererStore; nodeId: string; registry: ComponentRegistry; tableElements: TableElements }> = React.memo(({ store, nodeId, registry, tableElements }) => {
   const node = useRendererNode(store, nodeId);
   const inlineComponents = registry.getInlineComponents();
-  const tableElements = registry.getTableElements();
   if (!node) return null;
   const Tag = node.type === "table-header-cell" ? tableElements.Th : tableElements.Td;
   const inline = (node.props?.inline as InlineNode[] | undefined) ?? [];

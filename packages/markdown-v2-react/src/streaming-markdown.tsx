@@ -13,6 +13,7 @@ import { prefetchMdxRuntime } from "./mdx-runtime";
 import type { AdaptiveBudgetState, PatchFlushResult } from "./renderer/patch-commit-scheduler";
 import { DeferredRenderContext, type DeferredRenderConfig } from "./renderer/deferred-render-context";
 import { useRendererBlocks } from "./renderer/hooks";
+import { StreamingActivityContext } from "./renderer/streaming-activity-context";
 import type { RendererStore } from "./renderer/store";
 import { createDefaultWorker, releaseDefaultWorker } from "@stream-mdx/worker";
 import type { BlockComponents, BlockRendererOverride, CodeFenceRenderer, HtmlElements, HtmlOptions, InlineComponents, MathRenderer, RendererConfig, SyntaxRuleSpec, TableElements, TableVirtualizationOptions } from "./types";
@@ -417,6 +418,8 @@ function StreamingMarkdownComponent(
   const [workerReady, setWorkerReady] = useState(false);
   const workerReadyRef = useRef(false);
   const [streamStatus, setStreamStatus] = useState<"idle" | "streaming" | "done">("idle");
+  const iteratorSequenceRef = useRef(0);
+  const activeIteratorRef = useRef<number | null>(null);
   const lastMetricsRef = useRef<RendererMetrics | null>(null);
   const patchHistoryRef = useRef<RendererMetrics[]>([]);
 
@@ -444,22 +447,6 @@ function StreamingMarkdownComponent(
       observer?.disconnect();
     };
   }, []);
-
-  const previousTextRef = useRef<string | undefined>();
-  useEffect(() => {
-    if (text !== undefined && text !== previousTextRef.current) {
-      previousTextRef.current = text;
-      setSession((prev) => prev + 1);
-    }
-  }, [text]);
-
-  const previousStreamRef = useRef<AsyncIterable<string> | undefined>();
-  useEffect(() => {
-    if (stream && stream !== previousStreamRef.current) {
-      previousStreamRef.current = stream;
-      setSession((prev) => prev + 1);
-    }
-  }, [stream]);
 
   const linkSafetyEnabled = Boolean(linkSafety?.enabled);
   const [linkModalState, setLinkModalState] = useState<{ url: string; isOpen: boolean; isChecking: boolean }>({
@@ -806,12 +793,14 @@ function StreamingMarkdownComponent(
       };
     }
 
+    const iteratorOwner = ++iteratorSequenceRef.current;
+    activeIteratorRef.current = iteratorOwner;
     (async () => {
       try {
         setStreamStatus("streaming");
         renderer.restart();
         for await (const chunk of stream) {
-          if (cancelled) {
+          if (cancelled || activeIteratorRef.current !== iteratorOwner) {
             break;
           }
           renderer.append(chunk);
@@ -820,20 +809,23 @@ function StreamingMarkdownComponent(
             console.info("[debug] streaming chunk", chunk.length);
           }
         }
-        if (!cancelled) {
+        if (!cancelled && activeIteratorRef.current === iteratorOwner) {
           renderer.finalize();
           setStreamStatus("done");
         }
       } catch (error) {
-        if (!cancelled) {
+        if (!cancelled && activeIteratorRef.current === iteratorOwner) {
           setStreamStatus("done");
           onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
         }
+      } finally {
+        if (activeIteratorRef.current === iteratorOwner) activeIteratorRef.current = null;
       }
     })();
 
     return () => {
       cancelled = true;
+      if (activeIteratorRef.current === iteratorOwner) activeIteratorRef.current = null;
     };
   }, [renderer, text, stream, workerReady, session, managedWorker]);
 
@@ -847,13 +839,17 @@ function StreamingMarkdownComponent(
         renderer.resume();
       },
       restart() {
+        activeIteratorRef.current = null;
+        setStreamStatus("idle");
         setSession((prev) => prev + 1);
       },
       finalize() {
         renderer.finalize();
+        if (activeIteratorRef.current === null) setStreamStatus("done");
       },
       append(text: string) {
         if (!text || !workerReadyRef.current) return;
+        setStreamStatus("streaming");
         renderer.append(text);
       },
       setCredits(value: number) {
@@ -942,6 +938,7 @@ function StreamingMarkdownComponent(
         <MdxPrefetchBridge store={store} />
         {mdxMode === "server" ? <MdxCoordinatorBridge store={store} mode={mdxMode} /> : null}
         <CodeHighlightRequestContext.Provider value={highlightRequester}>
+        <StreamingActivityContext.Provider value={streamStatus === "streaming" || hasActiveBlocks}>
           <MarkdownBlocksRenderer
             blocks={EMPTY_BLOCKS}
             componentRegistry={renderer.getComponentRegistry()}
@@ -951,6 +948,7 @@ function StreamingMarkdownComponent(
             style={resolvedStyle}
             store={store}
           />
+        </StreamingActivityContext.Provider>
         </CodeHighlightRequestContext.Provider>
         {linkModal}
       </DeferredRenderContext.Provider>

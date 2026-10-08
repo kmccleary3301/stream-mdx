@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { StreamingMarkdown } from "@stream-mdx/react";
 import type { TableVirtualizationOptions } from "@stream-mdx/react";
+import { createDemoTableElements } from "@/lib/streaming-demo-registry";
 
 function generateTableMarkdown(rowCount: number): string {
   const lines: string[] = [];
@@ -39,6 +40,7 @@ export function TableVirtualizationClient() {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const markdown = useMemo(() => generateTableMarkdown(rowCount), [rowCount]);
+  const tableElements = useMemo(() => createDemoTableElements(), []);
 
   const virtualizationConfig: TableVirtualizationOptions = useMemo(() => {
     return {
@@ -158,6 +160,7 @@ export function TableVirtualizationClient() {
           text={markdown}
           features={{ tables: true, html: true }}
           tableVirtualization={virtualizationConfig}
+          tableElements={tableElements}
         />
       </main>
     </div>

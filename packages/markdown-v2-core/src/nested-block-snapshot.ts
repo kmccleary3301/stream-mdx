@@ -66,7 +66,8 @@ export function prepareNestedBlockSnapshot(block: Block, inlineParser: InlinePar
     const blankGap = (a: SyntaxNode, b: SyntaxNode) => /\n[ >\t]*\n/.test(source.slice(a.to, b.from));
     return items.some((item, i) => {
       if (i > 0 && blankGap(items[i - 1], item)) return true;
-      const children = childrenOf(item).filter((child) => !["ListMark", "QuoteMark", "LinkReference"].includes(child.type.name));
+      // Definitions are invisible, but remain blocks when deciding list looseness.
+      const children = childrenOf(item).filter((child) => !["ListMark", "QuoteMark"].includes(child.type.name));
       return children.some((child, j) => j > 0 && blankGap(children[j - 1], child));
     });
   };
@@ -190,14 +191,34 @@ export function extractLezerCode(node: SyntaxNode, source: string): { code: stri
   const fenced = node.type.name === "FencedCode";
   const fenceIndent = fenced ? Math.max(0, columnAt(node.from) - baseIndent) : 0;
   let code = "";
+  let previousCodeEnd = node.from;
   for (let child = node.firstChild; child; child = child.nextSibling) {
     if (child.type.name !== "CodeText") continue;
     let text = source.slice(child.from, child.to);
-    if (!fenced && source[child.from - 1] === "\t") {
+    // Lezer emits only a newline for internal blank lines, omitting their indentation.
+    // Recover that whitespace from the native range gap, dedenting only the required columns.
+    if (!fenced && source[child.from] === "\n") {
+      const lineStart = source.lastIndexOf("\n", child.from - 1) + 1;
+      if (lineStart >= previousCodeEnd) {
+        let position = lineStart;
+        const requiredColumns = baseIndent + 4;
+        let columns = 0;
+        while (position < child.from && columns < requiredColumns) {
+          columns += source[position] === "\t" ? 4 - (columns % 4) : 1;
+          position++;
+        }
+        const remaining = source.slice(position, child.from);
+        if (/^[ \t]*$/.test(remaining)) {
+          text = " ".repeat(Math.max(0, columns - requiredColumns)) + remaining + text;
+        }
+      }
+    }
+    if (!fenced && source[child.from] !== "\n" && source[child.from - 1] === "\t") {
       text = " ".repeat(Math.max(0, columnAt(child.from) - baseIndent - 4)) + text;
     }
     if (fenceIndent > 0) text = text.split("\n").map((line) => line.replace(new RegExp(`^ {0,${fenceIndent}}`), "")).join("\n");
     code += text;
+    previousCodeEnd = child.to;
   }
   const infoNode = node.getChild("CodeInfo");
   return { code, info: infoNode ? source.slice(infoNode.from, infoNode.to) : "" };
