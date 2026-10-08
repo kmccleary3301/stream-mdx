@@ -260,7 +260,12 @@ export function Article({ markdown }: { markdown: string }) {
 - `cacheSize`: Maximum number of rendered blocks to retain in LRU cache (default: `500`)
 - `math`: Enable math syntax (`remark-math`)
 - `gfm`: Enable GitHub Flavored Markdown (`remark-gfm`, default: `true`)
+- `onError`: Explicit error callback `(error: Error, block: Block) => void` for plugin failures (prevents unhandled rejections and falls back to default rendered element)
 
+### Sync vs. Async Behavior & SSR
+- **Sync Plugins**: Executed synchronously in `useMemo`. Produces immediate markup in SSR (`renderToStaticMarkup`, `renderToString`) with zero duplicated execution.
+- **Async Plugins**: Processed off the streaming critical path. During SSR or initial client render, the default StreamMDX rendered element is retained while the async job is pending. Once complete, the transformed block is committed.
+- **Deduplication & Cancellation**: Multiple render passes for the same block/cacheKey reuse in-flight jobs. If block content or link references update before an async job finishes, stale jobs are cancelled and will not overwrite newer metadata.
 ### CodeFenceRenderer contract
 - **Language lookup**: Case-insensitive and trimmed (`"ts"`, `"TS"`, `"python"`).
 - **Renderer shape**: `Component | { component: Component; defer?: boolean }`.

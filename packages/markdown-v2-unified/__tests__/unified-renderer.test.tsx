@@ -1,6 +1,8 @@
 import assert from "node:assert";
 import React from "react";
 import ReactDOMServer from "react-dom/server";
+import { JSDOM } from "jsdom";
+import { createRoot } from "react-dom/client";
 import rehypeSlug from "rehype-slug";
 import { visit } from "unist-util-visit";
 import type { Block } from "@stream-mdx/core";
@@ -8,8 +10,25 @@ import type { Node } from "unist";
 import { MarkdownBlocksRenderer } from "@stream-mdx/react";
 import { createUnifiedRenderer } from "../src";
 
+// Initialize JSDOM environment for client/async lifecycle tests
+const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
+  pretendToBeVisual: true,
+});
+(globalThis as any).window = dom.window;
+(globalThis as any).document = dom.window.document;
+(globalThis as any).HTMLElement = dom.window.HTMLElement;
+(globalThis as any).Node = dom.window.Node;
+(globalThis as any).requestAnimationFrame = dom.window.requestAnimationFrame.bind(dom.window);
+(globalThis as any).cancelAnimationFrame = dom.window.cancelAnimationFrame.bind(dom.window);
+
 function normalizeHtml(html: string): string {
   return html.replace(/\s+/g, " ").trim();
+}
+
+function delay(ms: number): Promise<void> {
+  const { promise, resolve } = Promise.withResolvers<void>();
+  setTimeout(resolve, ms);
+  return promise;
 }
 
 async function runTests() {
@@ -67,25 +86,25 @@ async function runTests() {
       },
     };
 
-    const defaultElement = React.createElement("p", { className: "default-p" }, "streaming text");
+    const defaultElement = React.createElement("p", null, "streaming text");
 
-    // While streaming (unfinalized), should return default untouched element
+    // While streaming (unfinalized), unified renderer leaves it unchanged
     const streamingRendered = unifiedRenderer({
       block: unfinalizedBlock,
       element: defaultElement,
     });
-    const streamingHtml = ReactDOMServer.renderToStaticMarkup(streamingRendered as React.ReactElement);
     assert.strictEqual(
-      streamingHtml,
-      '<p class="default-p">streaming text</p>',
-      "Unfinalized block must return normal default renderer output",
+      streamingRendered,
+      defaultElement,
+      "Streaming block must return original default element untouched",
     );
 
-    // Once finalized, should return uppercase output
+    // After finalize, remark plugin executes
     const finalizedBlock: Block = {
       ...unfinalizedBlock,
       isFinalized: true,
     };
+
     const finalizedRendered = unifiedRenderer({
       block: finalizedBlock,
       element: defaultElement,
@@ -99,7 +118,7 @@ async function runTests() {
     console.log("✓ Test 2 passed: Remark plugin only transforms after block is finalized");
   }
 
-  // Test 3: reference links resolve inside a routed paragraph
+  // Test 3: reference links resolve inside a routed paragraph using meta.linkReferences
   {
     console.log("Test 3: reference links resolve inside a routed paragraph...");
     const unifiedRenderer = createUnifiedRenderer({
@@ -151,25 +170,38 @@ async function runTests() {
     console.log("✓ Test 3 passed: Reference links resolve properly using block.payload.meta.linkReferences");
   }
 
-  // Test 4: streaming in 1-char chunks yields the same final DOM as static
+  // Test 4: 1-char chunk streaming yields identical final DOM to static
   {
     console.log("Test 4: 1-char chunk streaming yields identical final DOM to static...");
+    const markdownSource = "# Title\n\nThis is a paragraph with **bold** text and [link](https://example.com).\n\n> Blockquote text";
+
     const unifiedRenderer = createUnifiedRenderer({
       rehypePlugins: [rehypeSlug],
+      components: {
+        h1: (props) => React.createElement("h1", { ...props, className: "custom-h1" }),
+      },
     });
 
-    const blocksData = [
-      { id: "b1", type: "heading", raw: "# Architecture Overview" },
-      { id: "b2", type: "paragraph", raw: "StreamMDX engine provides high throughput streaming." },
+    const staticBlocks: Block[] = [
+      {
+        id: "b-static-1",
+        type: "heading",
+        isFinalized: true,
+        payload: { raw: "# Title" },
+      },
+      {
+        id: "b-static-2",
+        type: "paragraph",
+        isFinalized: true,
+        payload: { raw: "This is a paragraph with **bold** text and [link](https://example.com)." },
+      },
+      {
+        id: "b-static-3",
+        type: "blockquote",
+        isFinalized: true,
+        payload: { raw: "> Blockquote text" },
+      },
     ];
-
-    // Static rendering
-    const staticBlocks: Block[] = blocksData.map((b) => ({
-      id: b.id,
-      type: b.type,
-      isFinalized: true,
-      payload: { raw: b.raw },
-    }));
 
     const staticHtml = ReactDOMServer.renderToStaticMarkup(
       React.createElement(MarkdownBlocksRenderer, {
@@ -178,25 +210,36 @@ async function runTests() {
       }),
     );
 
-    // Simulate streaming: blocks start dirty, text streams character by character, then finalizes
+    // Simulate 1-char streaming where blocks finalize one by one
+    const blocksData = [
+      { id: "b-stream-1", type: "heading", raw: "# Title" },
+      { id: "b-stream-2", type: "paragraph", raw: "This is a paragraph with **bold** text and [link](https://example.com)." },
+      { id: "b-stream-3", type: "blockquote", raw: "> Blockquote text" },
+    ];
+
     let streamedBlocks: Block[] = [];
-    for (const b of blocksData) {
-      let currentRaw = "";
-      for (let i = 0; i < b.raw.length; i++) {
-        currentRaw += b.raw[i];
+    for (let i = 0; i < blocksData.length; i++) {
+      const b = blocksData[i];
+      for (let len = 1; len <= b.raw.length; len++) {
+        const partialRaw = b.raw.slice(0, len);
+        const isLastChar = len === b.raw.length;
         streamedBlocks = [
-          ...staticBlocks.filter((sb) => sb.id !== b.id && staticBlocks.indexOf(sb) < blocksData.findIndex((x) => x.id === b.id)),
+          ...blocksData.slice(0, i).map((prev) => ({
+            id: prev.id,
+            type: prev.type,
+            isFinalized: true,
+            payload: { raw: prev.raw },
+          })),
           {
             id: b.id,
             type: b.type,
-            isFinalized: false,
-            payload: { raw: currentRaw },
+            isFinalized: isLastChar,
+            payload: { raw: partialRaw },
           },
         ];
       }
     }
 
-    // Finalize all blocks at completion of stream
     streamedBlocks = blocksData.map((b) => ({
       id: b.id,
       type: b.type,
@@ -234,17 +277,20 @@ async function runTests() {
     });
 
     const block: Block = {
-      id: "cached-block",
+      id: "cached-p",
       type: "paragraph",
       isFinalized: true,
-      payload: { raw: "Cached paragraph test." },
+      payload: {
+        raw: "Hello world cached",
+      },
     };
 
+    // First render
     const el1 = unifiedRenderer({ block, element: React.createElement("p") });
     ReactDOMServer.renderToStaticMarkup(el1 as React.ReactElement);
-    assert.strictEqual(parseCalls, 1, "First render should call plugin");
+    assert.strictEqual(parseCalls, 1, "First render should parse and transform");
 
-    // Second render with same block id & raw
+    // Second render (same block id and content)
     const el2 = unifiedRenderer({ block, element: React.createElement("p") });
     ReactDOMServer.renderToStaticMarkup(el2 as React.ReactElement);
     assert.strictEqual(parseCalls, 1, "Second render should use cached output without re-running plugin");
@@ -321,6 +367,200 @@ async function runTests() {
     const html2 = ReactDOMServer.renderToStaticMarkup(r2 as React.ReactElement);
     assert.match(html2, /https:\/\/b\.com/);
     console.log("✓ Test 6 passed: LRU cache is bounded and cache key incorporates linkReferences");
+  }
+
+  // Test 7: async remark plugin modifies final DOM after async completion
+  {
+    console.log("Test 7: async remark plugin modifies final DOM after async completion...");
+    function asyncSuffixPlugin() {
+      return async (tree: unknown) => {
+        await delay(20);
+        visit(tree as Node, "text", (node: { value: string }) => {
+          node.value = node.value + " [ASYNC APPLIED]";
+        });
+      };
+    }
+
+    const unifiedRenderer = createUnifiedRenderer({
+      remarkPlugins: [asyncSuffixPlugin],
+    });
+
+    const block: Block = {
+      id: "p-async-1",
+      type: "paragraph",
+      isFinalized: true,
+      payload: { raw: "Finalized paragraph text" },
+    };
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    const defaultElement = React.createElement("p", null, "Finalized paragraph text");
+    root.render(unifiedRenderer({ block, element: defaultElement }));
+
+    // Pending state retains default element
+    await delay(5);
+    assert.strictEqual(container.textContent, "Finalized paragraph text", "While pending, default element is retained");
+
+    // After async completion, modified DOM is committed
+    await delay(45);
+    assert.strictEqual(
+      container.textContent,
+      "Finalized paragraph text [ASYNC APPLIED]",
+      "After async completion, plugin transforms DOM",
+    );
+    root.unmount();
+    container.remove();
+    console.log("✓ Test 7 passed: Async remark plugin modifies DOM after async completion and retains default element while pending");
+  }
+
+  // Test 8: newer reference metadata doesn't get overwritten by older async job
+  {
+    console.log("Test 8: newer reference metadata doesn't get overwritten by older async job...");
+    function asyncDelayPlugin() {
+      return async (tree: unknown) => {
+        let isSlow = false;
+        visit(tree as Node, "link", (node: { url?: string }) => {
+          if (node.url && node.url.includes("slow-v1")) {
+            isSlow = true;
+          }
+        });
+        if (isSlow) {
+          // Slow job takes 60ms
+          await delay(60);
+        } else {
+          await delay(10);
+        }
+      };
+    }
+
+    const unifiedRenderer = createUnifiedRenderer({
+      remarkPlugins: [asyncDelayPlugin],
+    });
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    const blockV1: Block = {
+      id: "p-stale-race",
+      type: "paragraph",
+      isFinalized: true,
+      payload: {
+        raw: "See documentation at [doc-ref].",
+        meta: {
+          linkReferences: [{ label: "doc-ref", href: "https://slow-v1.example.com" }],
+        },
+      },
+    };
+
+    // Step 1: Render with v1 (triggers slow 60ms job)
+    root.render(unifiedRenderer({ block: blockV1, element: React.createElement("p", null, "default") }));
+
+    // Step 2: At 15ms, update block to v2 with newer metadata (triggers fast 10ms job)
+    await delay(15);
+    const blockV2: Block = {
+      id: "p-stale-race",
+      type: "paragraph",
+      isFinalized: true,
+      payload: {
+        raw: "See documentation at [doc-ref].",
+        meta: {
+          linkReferences: [{ label: "doc-ref", href: "https://fast-v2.example.com" }],
+        },
+      },
+    };
+    root.render(unifiedRenderer({ block: blockV2, element: React.createElement("p", null, "default") }));
+
+    // Step 3: At 35ms (15ms + 20ms), v2 has finished
+    await delay(20);
+    assert.match(container.innerHTML, /https:\/\/fast-v2\.example\.com/, "Fast v2 should have committed its output");
+
+    // Step 4: At 85ms, slow v1 has finished. It must NOT overwrite fast v2!
+    await delay(50);
+    assert.match(container.innerHTML, /https:\/\/fast-v2\.example\.com/, "Newer metadata must not be overwritten by older async job");
+    assert.ok(!container.innerHTML.includes("slow-v1.example.com"), "Slow v1 url must not overwrite newer v2");
+
+    root.unmount();
+    container.remove();
+    console.log("✓ Test 8 passed: Stale older async jobs do not overwrite newer reference metadata");
+  }
+
+  // Test 9: streaming blocks stay normal
+  {
+    console.log("Test 9: streaming blocks stay normal...");
+    let pluginCalls = 0;
+    function countPlugin() {
+      return async () => {
+        pluginCalls += 1;
+      };
+    }
+
+    const unifiedRenderer = createUnifiedRenderer({
+      remarkPlugins: [countPlugin],
+    });
+
+    const streamingBlock: Block = {
+      id: "p-stream",
+      type: "paragraph",
+      isFinalized: false,
+      payload: { raw: "Streaming in progress..." },
+    };
+
+    const defaultElement = React.createElement("p", { className: "default-stream" }, "Streaming in progress...");
+    const rendered = unifiedRenderer({ block: streamingBlock, element: defaultElement });
+
+    // Returns default element directly
+    assert.strictEqual(rendered, defaultElement, "Unfinalized block returns default element directly");
+    assert.strictEqual(pluginCalls, 0, "Plugin is never called for unfinalized streaming blocks");
+    console.log("✓ Test 9 passed: Streaming blocks stay completely normal and bypass unified");
+  }
+
+  // Test 10: onError hook receives plugin error and retains default element
+  {
+    console.log("Test 10: onError hook receives plugin error and retains default element...");
+    function failingAsyncPlugin() {
+      return async () => {
+        await delay(10);
+        throw new Error("Deliberate plugin failure");
+      };
+    }
+
+    let capturedError: Error | null = null;
+    let capturedBlock: Block | null = null;
+
+    const unifiedRenderer = createUnifiedRenderer({
+      remarkPlugins: [failingAsyncPlugin],
+      onError: (err, b) => {
+        capturedError = err;
+        capturedBlock = b;
+      },
+    });
+
+    const block: Block = {
+      id: "p-fail",
+      type: "paragraph",
+      isFinalized: true,
+      payload: { raw: "Error testing" },
+    };
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    const defaultElement = React.createElement("p", null, "Safe fallback text");
+    root.render(unifiedRenderer({ block, element: defaultElement }));
+
+    await delay(40);
+    assert.ok(capturedError, "onError must be called on plugin failure");
+    assert.strictEqual(capturedError?.message, "Deliberate plugin failure");
+    assert.strictEqual(capturedBlock?.id, "p-fail");
+    assert.strictEqual(container.textContent, "Safe fallback text", "Default element retained on error");
+
+    root.unmount();
+    container.remove();
+    console.log("✓ Test 10 passed: Explicit onError hook handles plugin errors safely");
   }
 
   console.log("All @stream-mdx/unified tests passed successfully!");
