@@ -138,16 +138,26 @@ in the isolated consumer worktree's
 `.codex-optimization/runs/20261007-211411-engine-v2-comparison/` directory
 (`results.md`, `summary.json`, and `final-quiet/`).
 
-### Comparable fixture: `code-huge`
+### Firehose matrix, 2026-10-09
 
-`code-huge` (one 16.5 KB `js` fence, no footnotes, no display math) is the first
-fixture whose canonical semantic records match exactly between StreamMDX and
-Streamdown `2.7.0`: same fixture hash, chunk trace, and canonical SHA-256
-`7ce0b889…` on S2. Before engine-v2 kept the authored fence word, the only
-difference was the code language (`javascript` vs authored `js`). That
-parity-only probe ran on battery power with one stream per renderer, so it
-provides no timing evidence. No speed claim exists for this fixture until a
-quiet AC-power run with warmup and three measured streams per renderer completes.
+Streamdown `2.7.0` vs StreamMDX on long, full-feature documents (headings, nested and task lists, tables, multi-language code, inline and display math, blockquotes, inline HTML, footnotes) streamed at 5k, 10k, and 20k characters per second. Minified production docs build, Chrome 153 headless, Apple M5 Pro. Each row is one warmup plus three measured streams; the metric is median main-thread CDP `TaskDuration`.
+
+| Fixture | Rate | StreamMDX ms | Streamdown ms | Delta | Canonical semantics |
+|---|---|---|---|---|---|
+| `code-huge` (16.5 KB, one fence) | 20k | 258 | 208 | +24% | identical |
+| `code-huge` | 5k | 777 | 604 | +29% | identical |
+| `stress-mega` (253 KB) | 20k | 2954 | 4318 | -32% | identical |
+| `stress-mega` | 10k | 5014 | 7926 | -37% | identical |
+| `stress-mega` | 5k | 9281 | 14123 | -34% | identical |
+| `stress-xl` (1 MB) | 20k | 30942 | 48511 | -36% | identical |
+
+- On long documents StreamMDX does 32-37% less main-thread work, with lower peak heap and rAF p95 at 16.8 ms. Streamdown's main-thread script time is 2.5-3.5x higher.
+- On a single small code block Streamdown is cheaper, and it commits first content at about 24 ms vs 68-85 ms.
+- StreamMDX ends each long stream with one finalize long task: about 190 ms at 253 KB and about 530 ms at 1 MB. Streamdown has none on `stress-mega`.
+- `stress-mega-footnotes` is excluded from the table. Visible text matches, but footnote link attributes and the footer separator differ. On that fixture Streamdown's per-update cost grows with the document (71 s of main-thread work for a 13 s stream at 20k cps; StreamMDX: 3.1 s).
+- The `stress-xl` 10k and 5k rows ran on battery and are omitted.
+
+Raw runs, spreads, guardrails, and the per-change before/after evidence are in the engine-v2 worktree's `.codex-optimization/runs/20261008-171503-firehose-vs-streamdown/` directory (`contract.md`, `results.md`, `final/`). That directory is not committed.
 
 ## Related references
 
