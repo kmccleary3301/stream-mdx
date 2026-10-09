@@ -1,5 +1,5 @@
 import assert from "node:assert";
-import { readdirSync, readFileSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import type { Block, WorkerOut } from "@stream-mdx/core";
 import { createRendererStore, type RendererStore } from "../../markdown-v2-react/src/renderer/store";
@@ -235,7 +235,12 @@ async function runParityTest(): Promise<void> {
   for (const store of [artifactSingle, artifactStreamed]) assertArtifacts(store.getBlocks());
   assert.strictEqual(await assertArtifactDom(artifactStreamed), await assertArtifactDom(artifactSingle), "artifact DOM must match single-shot output");
   const fixturesDir = join(import.meta.dirname, "../../../apps/docs/public/perf/fixtures");
-  const files = readdirSync(fixturesDir).filter((f) => f.endsWith(".md")).sort();
+  // stress-xl (1 MB) is a throughput fixture: same generator and feature mix as the 250 KB stress-mega
+  // documents covered here, so random 16-128 char chunking of it (~14k appends) adds cost, not coverage.
+  const MAX_PARITY_FIXTURE_BYTES = 300_000;
+  const files = readdirSync(fixturesDir)
+    .filter((f) => f.endsWith(".md") && statSync(join(fixturesDir, f)).size <= MAX_PARITY_FIXTURE_BYTES)
+    .sort();
   assert.ok(files.length > 0, "expected fixtures to be found");
 
   const rng = createRng(42);

@@ -80,28 +80,27 @@ function collectDefinitionsFromBlocks(blocks: Block[], state: FootnoteState) {
   for (let i = 0; i < blocks.length; i++) {
     const block = blocks[i];
     if (block.type !== "paragraph") continue;
+    // Definitions start the paragraph; reject the common case before splitting the whole raw into lines.
+    if (!block.payload.raw.startsWith("[^")) continue;
     const lines = block.payload.raw.split("\n");
-    if (lines.length === 0) continue;
+    if (!defStartRe.test(lines[0])) continue;
 
-    const first = lines[0];
-    const m = first.match(defStartRe);
-    if (!m) continue;
-
-    const label = m[1];
-    const firstText = m[2] || "";
-    const parts: string[] = [firstText];
-
-    // In-block continuation lines
-    for (let k = 1; k < lines.length; k++) {
-      const line = lines[k];
-      if (line.trim() === "") {
-        parts.push("");
-      } else if (/^(?:\s{4}|\t).*/.test(line)) {
-        parts.push(line.replace(/^\s{4}|^\t/, ""));
+    // Every `[^label]:` line starts a definition (GFM allows consecutive definitions without blank lines);
+    // other lines continue the current one, indented or lazily.
+    const blockFrom = block.payload.range?.from ?? 0;
+    const definitions: Array<{ label: string; origin: number; parts: string[] }> = [];
+    let lineOffset = 0;
+    for (const line of lines) {
+      const m = line.match(defStartRe);
+      if (m) {
+        definitions.push({ label: m[1], origin: blockFrom + lineOffset, parts: [m[2] || ""] });
       } else {
-        break;
+        const current = definitions[definitions.length - 1];
+        current.parts.push(line.trim() === "" ? "" : line.replace(/^\s{4}|^\t/, ""));
       }
+      lineOffset += line.length + 1;
     }
+    const last = definitions[definitions.length - 1];
 
     // Cross-paragraph continuation: subsequent paragraphs fully indented (or blank)
     let j = i + 1;
@@ -114,8 +113,8 @@ function collectDefinitionsFromBlocks(blocks: Block[], state: FootnoteState) {
       if (!allIndented && blines.some((l) => l.trim() !== "")) break;
       // Append stripped content (preserve blank lines)
       for (const l of blines) {
-        if (l.trim() === "") parts.push("");
-        else parts.push(l.replace(/^\s{4}|^\t/, ""));
+        if (l.trim() === "") last.parts.push("");
+        else last.parts.push(l.replace(/^\s{4}|^\t/, ""));
       }
       // Retag the absorbed paragraph
       b.type = "footnote-def";
@@ -127,21 +126,20 @@ function collectDefinitionsFromBlocks(blocks: Block[], state: FootnoteState) {
     // Move outer index to last consumed paragraph - 1 (for loop increments)
     i = j - 1;
 
-    const content = parts.join("\n").trim();
-    const origin = block.payload.range?.from ?? 0;
-    const previousOrigin = state.definitionOrigins.get(label);
-    // Streaming-safe: allow the first definition to grow as text is appended, while still ignoring later duplicates.
-    if (previousOrigin === undefined) {
-      state.definitionOrigins.set(label, origin);
-      state.definitions.set(label, content);
-    } else if (previousOrigin === origin) {
-      state.definitions.set(label, content);
+    for (const definition of definitions) {
+      const content = definition.parts.join("\n").trim();
+      const previousOrigin = state.definitionOrigins.get(definition.label);
+      // Streaming-safe: allow the first definition to grow as text is appended, while still ignoring later duplicates.
+      if (previousOrigin === undefined) {
+        state.definitionOrigins.set(definition.label, definition.origin);
+        state.definitions.set(definition.label, content);
+      } else if (previousOrigin === definition.origin) {
+        state.definitions.set(definition.label, content);
+      }
     }
-
     // Retag the starting block
     block.type = "footnote-def";
     block.payload.inline = [];
-    const blockFrom = block.payload.range?.from ?? 0;
     block.id = generateBlockId(`${blockFrom}:${block.type}`, block.type);
   }
 }
@@ -263,7 +261,9 @@ function assignNumbersFromReferencesInBlocks(blocks: Block[], state: FootnoteSta
       scanInline(block.payload.inline, owners);
     }
   };
-  for (const block of blocks) visitBlock(block, []);
+  for (const block of blocks) {
+    if (mayReferenceFootnotes(block)) visitBlock(block, []);
+  }
   const queuedDefinitions = new Set(pendingDefinitions);
   const discoverDefinitions = (nodes: InlineNode[]): void => {
     for (const node of nodes) {
@@ -423,7 +423,10 @@ function numberInlineReferences(blocks: Block[], state: FootnoteState, scopes: M
     numbered.set(block, result);
     return result;
   };
-  for (let index = 0; index < blocks.length; index++) blocks[index] = numberBlock(blocks[index]);
+  for (let index = 0; index < blocks.length; index++) {
+    const block = blocks[index];
+    if (mayReferenceFootnotes(block) || mayContainBlockquote(block)) blocks[index] = numberBlock(block);
+  }
   for (const [label, inline] of state.definitionInlines) {
     state.definitionInlines.set(label, applyNumbers(inline, scopes.get(`footnote-definition:${label}`)) ?? inline);
   }
@@ -482,6 +485,26 @@ function visitPreparedInline(children: NodeSnapshot[], visit: (nodes: InlineNode
   }
 }
 
+/**
+ * Footnote-ref inline nodes are only parsed from literal `[^label]` text, and every nested view of a block
+ * (prepared children, table cells, segments, HTML ownership trees) is parsed from its own raw. Container
+ * marker stripping cannot join `[` and `^`; only HTML entity decoding (`&#91;^1]`) can, which needs `&`.
+ * A block whose raw contains neither cannot change numbering state or be renumbered, so whole-document
+ * passes skip it.
+ */
+function mayReferenceFootnotes(block: Block): boolean {
+  const raw = block.payload.raw;
+  return raw.includes("[^") || raw.includes("&");
+}
+
+/**
+ * `numberBlock` also rebuilds the missing `inline` of every prepared blockquote it reaches, references or not,
+ * including blockquotes nested in lists or HTML ownership trees. Any blockquote's source starts with `>`, and a
+ * container's raw includes its nested blocks' source, so a block without `>` holds no blockquote.
+ */
+function mayContainBlockquote(block: Block): boolean {
+  return block.payload.raw.includes(">");
+}
 
 /** Copy only a changed array, leaving unrelated prepared code/HTML artifacts shared. */
 function mapChanged<T>(values: T[], map: (value: T, index: number) => T): T[] {

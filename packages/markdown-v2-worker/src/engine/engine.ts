@@ -118,7 +118,6 @@ import {
   collectChangedBlockIds,
   collectHtmlProtectedRangesFromSegments,
   collectMathProtectedRanges,
-  computeChangedRanges,
   maybeBuildTocPatch,
   parseGfmTableFromTree,
   reportWorkerStructuralInvariantViolations,
@@ -751,10 +750,10 @@ export class MarkdownEngine {
     this.deferredPatchQueue = [];
 
     const newContent = this.currentContent + appendedText;
-    const changeRanges = computeChangedRanges(this.currentContent, newContent);
-
     const oldLen = this.currentContent.length;
     const newLen = oldLen + appendedText.length;
+    // Append-only: the single changed range is the appended tail (no document-wide diff needed).
+    const changeRanges: ContentChangeRange[] = appendedText.length > 0 ? [{ fromA: oldLen, toA: oldLen, fromB: oldLen, toB: newLen }] : [];
     const updatedFragments = TreeFragment.applyChanges(this.treeFragments, [
       { fromA: oldLen, toA: oldLen, fromB: oldLen, toB: newLen },
     ]);
@@ -832,14 +831,10 @@ export class MarkdownEngine {
       const cursor = tree.cursor();
       const footnotesEnabled = this.documentPluginRegistry.getAll().some((plugin) => plugin.name === "footnotes");
       let hasRecognizedNodes = false;
+      // Keyed by range only: a key embedding `raw` hashes the whole document on every append. `raw` is checked on hit.
       const reusableBlockMap =
         options.firstChangedPos !== undefined && options.previousBlocks
-          ? new Map(
-              options.previousBlocks.map((b) => [
-                `${b.payload.range?.from ?? -1}:${b.payload.range?.to ?? -1}:${b.payload.raw ?? ""}`,
-                b,
-              ]),
-            )
+          ? new Map(options.previousBlocks.map((b) => [`${b.payload.range?.from ?? -1}:${b.payload.range?.to ?? -1}`, b]))
           : null;
 
       if (cursor.firstChild()) {
@@ -862,8 +857,8 @@ export class MarkdownEngine {
             const blockType = footnoteDefinition ? "paragraph" : mapLezerNodeToBlockType(nodeType);
             let block: Block | null = null;
             if (reusableBlockMap && to <= options.firstChangedPos!) {
-              const prev = reusableBlockMap.get(`${from}:${to}:${raw}`);
-              if (prev && prev.isFinalized && prev.type === blockType) {
+              const prev = reusableBlockMap.get(`${from}:${to}`);
+              if (prev && prev.isFinalized && prev.type === blockType && prev.payload.raw === raw) {
                 block = prev;
                 if (blockType === "heading") {
                   const headingMeta = prev.payload.meta as { headingText?: string } | undefined;

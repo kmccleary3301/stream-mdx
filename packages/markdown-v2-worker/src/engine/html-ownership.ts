@@ -109,8 +109,11 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
       result.push(region[0]);
     } else if (region.length > 1) {
       const first = region[0];
+      // Only the region's own source reaches the sanitizer, so the private attribute must avoid that
+      // source alone (as in `normalizeHtmlParagraph`); scanning the whole document is O(document) per region.
+      const regionSource = region.map((block) => block.payload.raw ?? "").join("\n").toLowerCase();
       let attribute = "smdxblock";
-      while (content.toLowerCase().includes(attribute)) attribute += "x";
+      while (regionSource.includes(attribute)) attribute += "x";
       const markdown: Block[] = [];
       const html = region.map((block) => {
         if (block.type === "html") return block.payload.raw;

@@ -50,6 +50,29 @@ function extractNodeText(node: SyntaxNode, content: string): string {
 }
 
 /**
+ * Leaf blocks never contain LinkReference nodes (definitions are block-level siblings), and paragraphs and
+ * headings hold the inline subtrees that make up most of the tree, so the walk skips them.
+ */
+const REFERENCE_FREE_BLOCKS = new Set([
+  "Paragraph",
+  "ATXHeading1",
+  "ATXHeading2",
+  "ATXHeading3",
+  "ATXHeading4",
+  "ATXHeading5",
+  "ATXHeading6",
+  "SetextHeading1",
+  "SetextHeading2",
+  "FencedCode",
+  "CodeBlock",
+  "HTMLBlock",
+  "CommentBlock",
+  "ProcessingInstructionBlock",
+  "HorizontalRule",
+  "Table",
+]);
+
+/**
  * Collects all link reference definitions ([label]: url "title") recursively from a Lezer parse tree.
  */
 export function collectLinkReferences(tree: Tree, content: string): Map<string, LinkReferenceDefinition> {
@@ -57,6 +80,7 @@ export function collectLinkReferences(tree: Tree, content: string): Map<string, 
 
   tree.iterate({
     enter(node) {
+      if (REFERENCE_FREE_BLOCKS.has(node.name)) return false;
       if (node.name === "LinkReference") {
         let label = "";
         let rawLabel = "";

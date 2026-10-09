@@ -219,31 +219,6 @@ export function reportWorkerStructuralInvariantViolations(
   console.error(`[stream-mdx:worker] Structural invariant violation in ${context}:\n${violations.map((v) => `  - ${v}`).join("\n")}`);
 }
 
-export function computeChangedRanges(previous: string, next: string): ContentChangeRange[] {
-  if (previous === next) {
-    return [];
-  }
-  let prefix = 0;
-  const maxPrefix = Math.min(previous.length, next.length);
-  while (prefix < maxPrefix && previous[prefix] === next[prefix]) {
-    prefix += 1;
-  }
-  let prevSuffix = previous.length - 1;
-  let nextSuffix = next.length - 1;
-  while (prevSuffix >= prefix && nextSuffix >= prefix && previous[prevSuffix] === next[nextSuffix]) {
-    prevSuffix -= 1;
-    nextSuffix -= 1;
-  }
-  return [
-    {
-      fromA: prefix,
-      toA: prevSuffix + 1,
-      fromB: prefix,
-      toB: nextSuffix + 1,
-    },
-  ];
-}
-
 export function rangesIntersect(aFrom: number, aTo: number, bFrom: number, bTo: number): boolean {
   return Math.max(aFrom, bFrom) <= Math.min(aTo, bTo);
 }

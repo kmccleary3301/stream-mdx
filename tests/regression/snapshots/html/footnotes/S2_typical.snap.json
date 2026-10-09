@@ -30,7 +30,7 @@
         "workerReady": true,
         "lastTx": 1,
         "lastPatchToDomMs": 0.20000000298023224,
-        "lastDurationMs": 0.10000000149011612,
+        "lastDurationMs": 0.20000000298023224,
         "meta": {
           "fixtureId": "footnotes",
           "scenarioId": "S2_typical",
@@ -96,7 +96,7 @@
         "workerReady": true,
         "lastTx": 1,
         "lastPatchToDomMs": 0.20000000298023224,
-        "lastDurationMs": 0.10000000149011612,
+        "lastDurationMs": 0.20000000298023224,
         "meta": {
           "fixtureId": "footnotes",
           "scenarioId": "S2_typical",
@@ -162,7 +162,7 @@
         "workerReady": true,
         "lastTx": 1,
         "lastPatchToDomMs": 0.20000000298023224,
-        "lastDurationMs": 0.10000000149011612,
+        "lastDurationMs": 0.20000000298023224,
         "meta": {
           "fixtureId": "footnotes",
           "scenarioId": "S2_typical",
@@ -227,8 +227,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 3,
-        "lastPatchToDomMs": 14.600000001490116,
-        "lastDurationMs": 0.10000000149011612,
+        "lastPatchToDomMs": 15.5,
+        "lastDurationMs": 0.09999999403953552,
         "meta": {
           "fixtureId": "footnotes",
           "scenarioId": "S2_typical",
@@ -293,8 +293,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 5,
-        "lastPatchToDomMs": 15.399999998509884,
-        "lastDurationMs": 0,
+        "lastPatchToDomMs": 15.5,
+        "lastDurationMs": 0.10000000894069672,
         "meta": {
           "fixtureId": "footnotes",
           "scenarioId": "S2_typical",
@@ -359,7 +359,7 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 8,
-        "lastPatchToDomMs": 14.899999998509884,
+        "lastPatchToDomMs": 14.599999994039536,
         "lastDurationMs": 0,
         "meta": {
           "fixtureId": "footnotes",
@@ -425,8 +425,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 9,
-        "lastPatchToDomMs": 15.299999997019768,
-        "lastDurationMs": 0,
+        "lastPatchToDomMs": 12.900000005960464,
+        "lastDurationMs": 0.10000000894069672,
         "meta": {
           "fixtureId": "footnotes",
           "scenarioId": "S2_typical",
@@ -491,8 +491,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 10,
-        "lastPatchToDomMs": 14.899999998509884,
-        "lastDurationMs": 0,
+        "lastPatchToDomMs": 12.299999997019768,
+        "lastDurationMs": 0.09999999403953552,
         "meta": {
           "fixtureId": "footnotes",
           "scenarioId": "S2_typical",
@@ -557,8 +557,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 12,
-        "lastPatchToDomMs": 13.600000001490116,
-        "lastDurationMs": 0.10000000149011612,
+        "lastPatchToDomMs": 14.899999991059303,
+        "lastDurationMs": 0.29999999701976776,
         "meta": {
           "fixtureId": "footnotes",
           "scenarioId": "S2_typical",
@@ -590,8 +590,8 @@
         "footnotes": 1,
         "hr": 1
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"1\" style=\"color: var(--foreground); text-decoration: underline;\">1</a></sup></p><p class=\"markdown-paragraph\">Another sentence with a second reference.[^second]</p><section class=\"footnotes\"><hr><ol><li id=\"fn:1\">First footnote text. <a href=\"#fnref:1\" class=\"footnote-backref\" aria-label=\"Back to content\" style=\"color: var(--foreground); text-decoration: underline;\">↩</a></li></ol></section></div>",
-      "textSample": "FootnotesA sentence with a footnote reference.1Another sentence with a second reference.[^second]First footnote text. ↩",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"1\" style=\"color: var(--foreground); text-decoration: underline;\">1</a></sup></p><p class=\"markdown-paragraph\">Another sentence with a second reference.<sup class=\"footnote-ref\"><a href=\"#fn:2\" id=\"fnref:2\" data-label=\"second\" style=\"color: var(--foreground); text-decoration: underline;\">2</a></sup></p><section class=\"footnotes\"><hr><ol><li id=\"fn:1\">First footnote text. <a href=\"#fnref:1\" class=\"footnote-backref\" aria-label=\"Back to content\" style=\"color: var(--foreground); text-decoration: underline;\">↩</a></li><li id=\"fn:2\">Second footnote with <strong>bold</strong> text. <a href=\"#fnref:2\" class=\"footnote-backref\" aria-label=\"Back to content\" style=\"color: var(--foreground); text-decoration: underline;\">↩</a></li></ol></section></div>",
+      "textSample": "FootnotesA sentence with a footnote reference.1Another sentence with a second reference.2First footnote text. ↩Second footnote with bold text. ↩",
       "structure": {
         "topLevelTags": [
           "div"
@@ -627,15 +627,15 @@
       "hasBlockquote": false,
       "hasMath": false
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"1\" style=\"color: var(--foreground); text-decoration: underline;\">1</a></sup></p><p class=\"markdown-paragraph\">Another sentence with a second reference.[^second]</p><section class=\"footnotes\"><hr><ol><li id=\"fn:1\">First footnote text. <a href=\"#fnref:1\" class=\"footnote-backref\" aria-label=\"Back to content\" style=\"color: var(--foreground); text-decoration: underline;\">↩</a></li></ol></section></div>",
+    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Footnotes\">Footnotes</h1><p class=\"markdown-paragraph\">A sentence with a footnote reference.<sup class=\"footnote-ref\"><a href=\"#fn:1\" id=\"fnref:1\" data-label=\"1\" style=\"color: var(--foreground); text-decoration: underline;\">1</a></sup></p><p class=\"markdown-paragraph\">Another sentence with a second reference.<sup class=\"footnote-ref\"><a href=\"#fn:2\" id=\"fnref:2\" data-label=\"second\" style=\"color: var(--foreground); text-decoration: underline;\">2</a></sup></p><section class=\"footnotes\"><hr><ol><li id=\"fn:1\">First footnote text. <a href=\"#fnref:1\" class=\"footnote-backref\" aria-label=\"Back to content\" style=\"color: var(--foreground); text-decoration: underline;\">↩</a></li><li id=\"fn:2\">Second footnote with <strong>bold</strong> text. <a href=\"#fnref:2\" class=\"footnote-backref\" aria-label=\"Back to content\" style=\"color: var(--foreground); text-decoration: underline;\">↩</a></li></ol></section></div>",
     "runtimeState": {
       "rendererVersion": 15,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
       "lastTx": 12,
-      "lastPatchToDomMs": 13.600000001490116,
-      "lastDurationMs": 0.10000000149011612,
+      "lastPatchToDomMs": 14.899999991059303,
+      "lastDurationMs": 0.29999999701976776,
       "meta": {
         "fixtureId": "footnotes",
         "scenarioId": "S2_typical",
@@ -667,8 +667,8 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "39414044731d16b9323e1c08a03cfeccffb8ca5ed55a2ff6a3d4b51274488b59",
-        "textSample": "FootnotesA sentence with a footnote reference.1Another sentence with a second reference.[^second]First footnote text. ↩"
+        "hash": "6c6221a3c194b5c2edef0b042da1842a7cf5ea6d4ee7655b0765b73b36eace48",
+        "textSample": "FootnotesA sentence with a footnote reference.1Another sentence with a second reference.2First footnote text. ↩Second fo"
       }
     ],
     "inspection": {

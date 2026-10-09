@@ -243,6 +243,37 @@ export function sanitizeHtmlInWorker(html: string, options?: { allowedTags?: Rec
   }
 }
 
+type TreeSanitize = (html: string) => unknown;
+
+// Schema construction deep-copies the default schema, so processors are built once per
+// (allowed-tags config, marker attribute). Configs are long-lived engine options; markers are a small set.
+const treeSanitizers = new WeakMap<object, Map<string, TreeSanitize>>();
+const DEFAULT_ALLOWED_TAGS_KEY = {};
+
+function getTreeSanitizer(allowedTags: Record<string, string[]> | undefined, markerAttribute: string | undefined): TreeSanitize {
+  const tagsKey = allowedTags ?? DEFAULT_ALLOWED_TAGS_KEY;
+  let byMarker = treeSanitizers.get(tagsKey);
+  if (!byMarker) {
+    byMarker = new Map();
+    treeSanitizers.set(tagsKey, byMarker);
+  }
+  const markerKey = markerAttribute ?? "";
+  let sanitize = byMarker.get(markerKey);
+  if (!sanitize) {
+    const schema = createSchema(allowedTags);
+    if (markerAttribute) {
+      schema.attributes = {
+        ...schema.attributes,
+        "*": [...(schema.attributes?.["*"] ?? []), markerAttribute],
+      };
+    }
+    const processor = unified().use(rehypeParsePlugin, { fragment: true }).use(rehypeSanitizePlugin, schema).freeze();
+    sanitize = (html) => processor.runSync(processor.parse(html));
+    byMarker.set(markerKey, sanitize);
+  }
+  return sanitize;
+}
+
 /**
  * Parse and sanitize a complete ownership region, never independent opening fragments.
  * Internal block markers are chosen outside user source and removed before rendering.
@@ -253,15 +284,7 @@ export function sanitizeHtmlTreeInWorker(
   marker?: { attribute: string; blocks?: Block[]; inline?: InlineNode[] },
   parseInline?: (text: string) => InlineNode[],
 ): HtmlTreeNode[] {
-  const schema = createSchema(options?.allowedTags);
-  if (marker) {
-    schema.attributes = {
-      ...schema.attributes,
-      "*": [...(schema.attributes?.["*"] ?? []), marker.attribute],
-    };
-  }
-  const processor = unified().use(rehypeParsePlugin, { fragment: true }).use(rehypeSanitizePlugin, schema);
-  const tree = processor.runSync(processor.parse(html));
+  const tree = getTreeSanitizer(options?.allowedTags, marker?.attribute)(html);
   sanitizeHastStyles(tree);
   type HtmlAst = {
     type: string;

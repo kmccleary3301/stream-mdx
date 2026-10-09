@@ -441,6 +441,60 @@ async function runCanonicalFootnoteOrderTest(): Promise<void> {
   }
 }
 
+// GFM: each `[^x]:` line starts a new definition, even without a blank line; other lines continue lazily.
+async function runConsecutiveDefinitionsTest(): Promise<void> {
+  const content = "First[^a] then second[^b] and third[^c].\n\n[^a]: Alpha body\nlazy tail.\n[^b]: Beta body.\n[^c]: Gamma body.\n";
+  const init = { prewarmLangs: [], docPlugins: { footnotes: true, html: false, mdx: false, math: false, tables: false, callouts: false } };
+  const renderedItems = (blocks: Block[]) => {
+    const dom = new JSDOM(renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks })));
+    const doc = dom.window.document;
+    const result = {
+      refs: [...doc.querySelectorAll("sup.footnote-ref a")].map((a) => a.textContent),
+      items: [...doc.querySelectorAll("li[id^='fn:']")].map((li) => li.textContent?.replace("↩", "").replace(/\s+/g, " ").trim()),
+      literal: (doc.body.textContent ?? "").includes("[^"),
+    };
+    dom.window.close();
+    return result;
+  };
+  const expected = { refs: ["1", "2", "3"], items: ["Alpha body lazy tail.", "Beta body.", "Gamma body."], literal: false };
+  const compiled = await compileMarkdownSnapshotDirect({ text: content, init });
+  assert.deepStrictEqual(renderedItems(compiled.blocks), expected, "static compile resolves consecutive definitions");
+
+  const harness = await createWorkerHarness();
+  const store = createRendererStore();
+  const apply = (messages: WorkerOut[]) => {
+    for (const message of messages) {
+      if (message.type === "INITIALIZED") store.reset(message.blocks);
+      else if (message.type === "PATCH") store.applyPatches(message.patches as Patch[], { captureMetrics: false });
+    }
+  };
+  apply(await harness.send({ type: "INIT", initialContent: "", ...init } as WorkerIn));
+  for (const char of content) apply(await harness.send({ type: "APPEND", text: char }));
+  apply(await harness.send({ type: "FINALIZE" }));
+  assert.deepStrictEqual(renderedItems(store.getBlocks()), expected, "character streaming resolves consecutive definitions");
+}
+
+// The footnotes pass also rebuilds a prepared blockquote's `inline`, which block component overrides render from. A
+// reference-free blockquote nested in an open MDX component region must still carry its streamed text.
+async function runNestedBlockquoteWithoutReferencesTest(): Promise<void> {
+  const content = "<Note>\nintro\n\n> quoted text";
+  const harness = await createWorkerHarness();
+  const store = createRendererStore();
+  for (const message of [
+    ...(await harness.send({ type: "INIT", initialContent: "", prewarmLangs: [], docPlugins: { footnotes: true, html: true, mdx: true, tables: false, callouts: false } })),
+    ...(await harness.send({ type: "APPEND", text: content })),
+  ]) {
+    if (message.type === "INITIALIZED") store.reset(message.blocks);
+    else if (message.type === "PATCH") store.applyPatches(message.patches as Patch[], { captureMetrics: false });
+  }
+  const region = store.getBlocks().find((block) => Array.isArray(block.payload.meta?.htmlTree));
+  const tree = (region?.payload.meta?.htmlTree ?? []) as Array<{ kind: string; block?: Block }>;
+  const quote = tree.find((node) => node.kind === "block" && node.block?.type === "blockquote")?.block;
+  assert.ok(quote, "the MDX region owns the streaming blockquote");
+  const text = (quote.payload.inline ?? []).map((node) => (node.kind === "text" ? node.text : "")).join("");
+  assert.strictEqual(text, "quoted text", "a streaming blockquote inside an MDX component region carries its inline text");
+}
+
 const consumerDom = new JSDOM("<!doctype html><html><body></body></html>");
 const consumerGlobals = new Map(["window", "document", "HTMLElement", "Node", "MutationObserver"].map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
 for (const key of consumerGlobals.keys()) Object.defineProperty(globalThis, key, { configurable: true, writable: true, value: (consumerDom.window as unknown as Record<string, unknown>)[key] });
@@ -449,6 +503,8 @@ try {
   await runPreparedFootnoteConsumerTest();
   await runRepeatedReferenceTargetsTest();
   await runCanonicalFootnoteOrderTest();
+  await runConsecutiveDefinitionsTest();
+  await runNestedBlockquoteWithoutReferencesTest();
   console.log("worker-footnotes-finalize test passed");
 } finally {
   consumerDom.window.close();
