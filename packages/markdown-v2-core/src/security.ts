@@ -1,7 +1,7 @@
 // Security layer with sanitization and Trusted Types
 // Handles HTML sanitization for safe rendering
 
-import createDOMPurify, { type Config as DOMPurifyConfig } from "dompurify";
+import createDOMPurify, { type Config as DOMPurifyConfig, type DOMPurify } from "dompurify";
 import { decodeHTML5Strict } from "entities";
 
 import { CODE_ROW_ALLOWED_ATTRS, CODE_ROW_ALLOWED_TAGS, isSafeCodeRowStyle, sanitizeCodeHtmlInWorker } from "./worker-html-sanitizer";
@@ -394,7 +394,29 @@ export function sanitizeCodeHTML(html: string): string {
   if (typeof window === "undefined") {
     return sanitizeCodeHtmlInWorker(html);
   }
-  const out = resolveDOMPurify().sanitize(html, {
+  const out = resolveCodeRowPurifier().sanitize(html);
+  return typeof out === "string" ? out : String(out);
+}
+
+let codeRowPurifier: DOMPurify | null = null;
+let codeRowPurifierWindow: Window | null = null;
+
+/**
+ * Code rows are sanitized once per highlighted line, so they get a dedicated
+ * DOMPurify instance with a persistent config (`setConfig` skips per-call
+ * config parsing) and the shared style policy applied as an attribute hook
+ * (no second parse of the sanitized output). Rebinds when `window` changes,
+ * like `resolveDOMPurify`.
+ */
+function resolveCodeRowPurifier(): DOMPurify {
+  if (codeRowPurifier && codeRowPurifierWindow === window) {
+    return codeRowPurifier;
+  }
+  if (typeof createDOMPurify !== "function") {
+    throw new Error("[markdown-v2] DOMPurify could not bind to the available DOM `window` to sanitize code HTML.");
+  }
+  const purifier = createDOMPurify(window);
+  purifier.setConfig({
     ALLOWED_TAGS: [...CODE_ROW_ALLOWED_TAGS],
     ALLOWED_ATTR: [...CODE_ROW_ALLOWED_ATTRS],
     // Mirror the declared allowlist exactly: DOMPurify would otherwise keep
@@ -404,27 +426,16 @@ export function sanitizeCodeHTML(html: string): string {
     KEEP_CONTENT: true,
     RETURN_DOM: false,
   });
-  const sanitized = typeof out === "string" ? out : String(out);
-  // DOMPurify keeps style attribute values verbatim; apply the shared code-row
-  // style policy on the sanitized DOM so the browser path drops exactly what
-  // the DOM-free path drops.
-  return sanitized.includes("style=") ? stripUnsafeCodeRowStylesInDom(sanitized) : sanitized;
-}
-
-function stripUnsafeCodeRowStylesInDom(html: string): string {
-  const documentRef = typeof window === "undefined" ? null : window.document;
-  if (!documentRef || !html) {
-    return html;
-  }
-  const template = documentRef.createElement("template");
-  template.innerHTML = html;
-  for (const element of Array.from(template.content.querySelectorAll("[style]"))) {
-    const style = element.getAttribute("style") ?? "";
-    if (!isSafeCodeRowStyle(style)) {
-      element.removeAttribute("style");
+  // DOMPurify keeps style values verbatim; drop styles failing the shared
+  // code-row policy so the browser path drops exactly what the DOM-free path drops.
+  purifier.addHook("uponSanitizeAttribute", (_node, event) => {
+    if (event.attrName === "style" && !isSafeCodeRowStyle(event.attrValue)) {
+      event.keepAttr = false;
     }
-  }
-  return template.innerHTML;
+  });
+  codeRowPurifier = purifier;
+  codeRowPurifierWindow = window;
+  return purifier;
 }
 
 /**

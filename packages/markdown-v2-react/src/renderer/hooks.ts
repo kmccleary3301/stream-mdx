@@ -1,5 +1,6 @@
 import type { Block } from "@stream-mdx/core";
-import { createContext, useContext, useMemo, useSyncExternalStore } from "react";
+import { createContext, useCallback, useContext, useMemo, useSyncExternalStore } from "react";
+import { subscribeRendererNode } from "./node-subscriptions";
 import type { NodeRecord, RendererStore } from "./store";
 
 /**
@@ -19,20 +20,22 @@ export function useRendererBlocks(store: RendererStore): ReadonlyArray<Block> {
 
 export function useRendererNode(store: RendererStore, id: string): NodeRecord | undefined {
   useContext(RenderConfigVersionContext);
+  const subscribe = useCallback((listener: () => void) => subscribeRendererNode(store, id, listener), [store, id]);
   const selector = useMemo(() => {
     return () => store.getNodeWithVersion(id);
   }, [store, id]);
 
-  const snapshot = useSyncExternalStore(store.subscribe, selector, selector);
+  const snapshot = useSyncExternalStore(subscribe, selector, selector);
   return snapshot.node;
 }
 
 export function useRendererChildren(store: RendererStore, id: string): ReadonlyArray<string> {
   useContext(RenderConfigVersionContext);
+  const subscribe = useCallback((listener: () => void) => subscribeRendererNode(store, id, listener), [store, id]);
   const selector = useMemo(() => {
     return () => store.getChildrenWithVersion(id);
   }, [store, id]);
 
-  const snapshot = useSyncExternalStore(store.subscribe, selector, selector);
+  const snapshot = useSyncExternalStore(subscribe, selector, selector);
   return snapshot.children;
 }

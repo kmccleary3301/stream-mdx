@@ -775,7 +775,7 @@ const ListItemView: React.FC<{
   const renderedPrimary = !hasPrimaryContent ? null : isLoose ? (
     <p className="markdown-paragraph">
       {isTask ? (
-        <input type="checkbox" className="markdown-task-checkbox" checked={isChecked} readOnly disabled tabIndex={-1} aria-checked={isChecked} />
+        <input type="checkbox" className="markdown-task-checkbox" checked={isChecked} readOnly disabled tabIndex={-1} />
       ) : null}
       {isTask ? " " : null}
       {primaryContent}
@@ -783,7 +783,7 @@ const ListItemView: React.FC<{
   ) : (
     <>
       {isTask ? (
-        <input type="checkbox" className="markdown-task-checkbox" checked={isChecked} readOnly disabled tabIndex={-1} aria-checked={isChecked} />
+        <input type="checkbox" className="markdown-task-checkbox" checked={isChecked} readOnly disabled tabIndex={-1} />
       ) : null}
       {isTask ? " " : null}
       {primaryContent}
