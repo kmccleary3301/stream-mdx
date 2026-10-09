@@ -1,0 +1,8 @@
+{
+  "id": "S8_firehose_10k",
+  "label": "Firehose 10k cps (16 ms network frames)",
+  "updateIntervalMs": 16,
+  "charRateCps": 10000,
+  "maxChunkChars": 4096,
+  "includeTags": ["perf-firehose"]
+}

@@ -4,7 +4,7 @@ import fsSync from "node:fs";
 import os from "node:os";
 import { execSync } from "node:child_process";
 
-import { chromium } from "@playwright/test";
+import { chromium, type Page } from "@playwright/test";
 import type { GeneratedFootnoteLabel, SemanticDomRecords } from "./semantic-dom";
 
 
@@ -45,6 +45,10 @@ const OUT_DIR = getArg("--out") ?? process.env.STREAM_MDX_PERF_OUT ?? "tmp/perf-
 const HEADLESS = !(hasFlag("--headed") || process.env.STREAM_MDX_PERF_HEADED === "1");
 const CPU_THROTTLE = getNumArg("--cpuThrottle", "STREAM_MDX_PERF_CPU_THROTTLE");
 const PROFILER_ENABLED = hasFlag("--profiler") || process.env.STREAM_MDX_PERF_PROFILER === "1";
+// Main-thread V8 sampling profile of the measured window; adds sampling overhead, so never mix with reported timings.
+const CPU_PROFILE = hasFlag("--cpuProfile");
+// Chrome timeline trace of the measured window (rendering categories); diagnostic only, like --cpuProfile.
+const TRACE = hasFlag("--trace");
 const SCHEDULING_OVERRIDES: Record<string, string> = {
   batch: getArg("--batch") ?? process.env.STREAM_MDX_PERF_BATCH ?? "",
   frameBudgetMs: getArg("--frameBudgetMs") ?? process.env.STREAM_MDX_PERF_FRAME_BUDGET_MS ?? "",
@@ -403,7 +407,7 @@ async function ensureDir(dir: string): Promise<void> {
   await fs.mkdir(dir, { recursive: true });
 }
 
-async function runOnce(pageId: number, page: Awaited<ReturnType<ReturnType<typeof chromium.launch>["newPage"]>>) {
+async function runOnce(pageId: number, page: Page, cpuProfilePath?: string, tracePath?: string) {
   const client = await page.context().newCDPSession(page);
   try {
     await client.send("Performance.enable");
@@ -429,6 +433,21 @@ async function runOnce(pageId: number, page: Awaited<ReturnType<ReturnType<typeo
     .then((response) => metricMap(response.metrics))
     .catch(() => null);
   const startDom = await client.send("Memory.getDOMCounters").catch(() => null);
+  if (cpuProfilePath) {
+    await client.send("Profiler.enable");
+    await client.send("Profiler.setSamplingInterval", { interval: 200 });
+    await client.send("Profiler.start");
+  }
+  const traceEvents: unknown[] = [];
+  if (tracePath) {
+    client.on("Tracing.dataCollected", (event) => {
+      traceEvents.push(...event.value);
+    });
+    await client.send("Tracing.start", {
+      categories: "devtools.timeline,disabled-by-default-devtools.timeline,blink,v8,toplevel",
+      transferMode: "ReportEvents",
+    });
+  }
   await page.evaluate(() => {
     if (!window.__streammdxPerfStart) throw new Error(window.__streammdxPerfError ?? "Incomplete measurement: CDP start handshake missing.");
     window.__streammdxPerfStart();
@@ -443,6 +462,27 @@ async function runOnce(pageId: number, page: Awaited<ReturnType<ReturnType<typeo
     .then((response) => metricMap(response.metrics))
     .catch(() => null);
   const endDom = await client.send("Memory.getDOMCounters").catch(() => null);
+  if (cpuProfilePath) {
+    const { profile } = await client.send("Profiler.stop");
+    await fs.writeFile(cpuProfilePath, JSON.stringify(profile));
+  }
+  if (tracePath) {
+    const complete = new Promise<void>((resolve) => client.once("Tracing.tracingComplete", () => resolve()));
+    await client.send("Tracing.end");
+    await complete;
+    // Long runs exceed the max string length as one JSON.stringify; write the array in chunks.
+    const file = await fs.open(tracePath, "w");
+    try {
+      await file.write('{"traceEvents":[\n');
+      for (let index = 0; index < traceEvents.length; index += 10_000) {
+        const chunk = traceEvents.slice(index, index + 10_000).map((event) => JSON.stringify(event));
+        await file.write((index > 0 ? ",\n" : "") + chunk.join(",\n"));
+      }
+      await file.write("\n]}\n");
+    } finally {
+      await file.close();
+    }
+  }
   await page.evaluate(() => {
     if (!window.__streammdxPerfCollect) throw new Error(window.__streammdxPerfError ?? "Incomplete measurement: CDP end handshake missing.");
     window.__streammdxPerfCollect();
@@ -653,7 +693,12 @@ async function run(): Promise<void> {
 
     for (let i = 0; i < RUNS; i += 1) {
       const page = await context.newPage();
-      const result = await runOnce(i + 1, page);
+      const result = await runOnce(
+        i + 1,
+        page,
+        CPU_PROFILE ? path.join(outRoot, `run${i + 1}.cpuprofile`) : undefined,
+        TRACE ? path.join(outRoot, `run${i + 1}.trace.json`) : undefined,
+      );
       outputs.push(result);
       await page.close();
     }

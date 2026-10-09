@@ -237,6 +237,9 @@ async function collectLiveDomMetrics(root: HTMLElement | null): Promise<{
 class BenchmarkWorker {
   private worker: Worker | null = null;
   finalized = false;
+  // `workerReady` on the handle means the worker is attached and INIT is posted; the engine is ready only
+  // once it answers INITIALIZED. The run clock must not include worker boot (Streamdown has none).
+  initialized = false;
   error: Error | null = null;
 
   readonly onError = (error: Error): void => {
@@ -244,6 +247,7 @@ class BenchmarkWorker {
   };
 
   private readonly onMessage = (event: MessageEvent<WorkerOut>): void => {
+    if (event.data.type === "INITIALIZED") this.initialized = true;
     if (event.data.type === "FINALIZED") this.finalized = true;
     if (event.data.type === "ERROR") this.onError(new Error(event.data.error.message));
   };
@@ -259,6 +263,7 @@ class BenchmarkWorker {
   readonly create = (): Worker => {
     this.dispose();
     this.finalized = false;
+    this.initialized = false;
     this.error = null;
     const worker = new Worker(`${BASE_PATH}/workers/markdown-worker.js`, { type: "module", name: "markdown-v2" });
     worker.addEventListener("message", this.onMessage);
@@ -572,7 +577,7 @@ async function waitForWorker(handle: StreamingMarkdownHandle, worker: BenchmarkW
   while (true) {
     if (signal.aborted) throw new Error("Benchmark navigation cancelled.");
     worker.assertHealthy();
-    if (handle.getState().workerReady) return;
+    if (handle.getState().workerReady && worker.initialized) return;
     if (Date.now() - start > timeoutMs) throw new Error("Worker did not initialize in time.");
     await nextFrame();
   }

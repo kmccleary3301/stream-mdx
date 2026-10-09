@@ -182,7 +182,8 @@ export function collectSemanticDom(root: HTMLElement): SemanticDomRecords {
     if (body) return `\n\n\uFFF0${body.index}\uFFF1\n\n`;
     if (element.tagName === "CODE" && !element.closest("pre")) return `\uFFF2${inlineCode.indexOf(element)}\uFFF3`;
     if (element.tagName === "PRE") return `\n\n\uFFF4${preformatted.indexOf(element)}\uFFF5\n\n`;
-    if (element.matches(".katex")) return ` ${mathSource(element)} `;
+    // Display math is block content (KaTeX CSS: `.katex-display { display: block }`), whether wrapped in a div or a bare span.
+    if (element.matches(".katex")) return element.closest(".katex-display,.math-display") ? `\n${mathSource(element)}\n` : ` ${mathSource(element)} `;
     if (element.tagName === "BR") return "\n";
     if (element.tagName === "HR") return "\n";
     const content = Array.from(element.childNodes, textOf).join("");
