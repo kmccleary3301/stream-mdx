@@ -1,9 +1,9 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-08T22:11:37.831Z",
-  "hash": "74df32528c94a291d170adf42d1a9edf3fe30a8488aefeeeb8f640dcb173cce4",
-  "contentHash": "cae6028fcd31b68c3866c216cc24c7e8d0f9c185e87d589cadedb149a38c3372",
+  "createdAt": "2026-10-09T19:24:38.409Z",
+  "hash": "a57758866680bbe5cc3818a1ce20d2202a5cd7b42846087e1ae9f026e0acae81",
+  "contentHash": "ddd2793b657f61a52c3f40d4ce94f53b626d6c162d3c59ae120a341d2fb0bffa",
   "configHash": "a274f269183e8eac42eeb12b1ae0dc7fea9398cc27792626c9ca0c17911fb0b4",
   "hashSalt": "docs-snapshots-v2:9417117db4c19b323c5bd2a5c7754c6e0d46bf7c962c13c422b86e6485aac7c0",
   "blocks": [
@@ -4785,58 +4785,42 @@
       "type": "heading",
       "isFinalized": true,
       "payload": {
-        "raw": "Comparable fixture: `code-huge`",
+        "raw": "Firehose matrix, 2026-10-09",
         "meta": {
           "lezerNodeType": "ATXHeading3",
           "headingLevel": 3,
-          "headingText": "Comparable fixture: `code-huge`",
-          "headingId": "comparable-fixture-code-huge"
+          "headingText": "Firehose matrix, 2026-10-09",
+          "headingId": "firehose-matrix-2026-10-09"
         },
         "range": {
           "from": 8696,
-          "to": 8731
+          "to": 8727
         },
         "inline": [
           {
             "kind": "text",
-            "text": "Comparable fixture: "
-          },
-          {
-            "kind": "code",
-            "text": "code-huge"
+            "text": "Firehose matrix, 2026-10-09"
           }
         ]
       }
     },
     {
-      "id": "3cf9f8df",
+      "id": "4d5b7bfa",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "`code-huge` (one 16.5 KB `js` fence, no footnotes, no display math) is the first\nfixture whose canonical semantic records match exactly between StreamMDX and\nStreamdown `2.7.0`: same fixture hash, chunk trace, and canonical SHA-256\n`7ce0b889…` on S2. Before engine-v2 kept the authored fence word, the only\ndifference was the code language (`javascript` vs authored `js`). That\nparity-only probe ran on battery power with one stream per renderer, so it\nprovides no timing evidence. No speed claim exists for this fixture until a\nquiet AC-power run with warmup and three measured streams per renderer completes.",
+        "raw": "Streamdown `2.7.0` vs StreamMDX on long, full-feature documents (headings, nested and task lists, tables, multi-language code, inline and display math, blockquotes, inline HTML, footnotes) streamed at 5k, 10k, and 20k characters per second. Minified production docs build, Chrome 153 headless, Apple M5 Pro. Each row is one warmup plus three measured streams; the metric is median main-thread CDP `TaskDuration`.",
         "meta": {
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 8733,
-          "to": 9343
+          "from": 8729,
+          "to": 9141
         },
         "inline": [
           {
-            "kind": "code",
-            "text": "code-huge"
-          },
-          {
             "kind": "text",
-            "text": " (one 16.5 KB "
-          },
-          {
-            "kind": "code",
-            "text": "js"
-          },
-          {
-            "kind": "text",
-            "text": " fence, no footnotes, no display math) is the first\nfixture whose canonical semantic records match exactly between StreamMDX and\nStreamdown "
+            "text": "Streamdown "
           },
           {
             "kind": "code",
@@ -4844,37 +4828,819 @@
           },
           {
             "kind": "text",
-            "text": ": same fixture hash, chunk trace, and canonical SHA-256\n"
+            "text": " vs StreamMDX on long, full-feature documents (headings, nested and task lists, tables, multi-language code, inline and display math, blockquotes, inline HTML, footnotes) streamed at 5k, 10k, and 20k characters per second. Minified production docs build, Chrome 153 headless, Apple M5 Pro. Each row is one warmup plus three measured streams; the metric is median main-thread CDP "
           },
           {
             "kind": "code",
-            "text": "7ce0b889…"
+            "text": "TaskDuration"
           },
           {
             "kind": "text",
-            "text": " on S2. Before engine-v2 kept the authored fence word, the only\ndifference was the code language ("
-          },
-          {
-            "kind": "code",
-            "text": "javascript"
-          },
-          {
-            "kind": "text",
-            "text": " vs authored "
-          },
-          {
-            "kind": "code",
-            "text": "js"
-          },
-          {
-            "kind": "text",
-            "text": "). That\nparity-only probe ran on battery power with one stream per renderer, so it\nprovides no timing evidence. No speed claim exists for this fixture until a\nquiet AC-power run with warmup and three measured streams per renderer completes."
+            "text": "."
           }
         ]
       }
     },
     {
-      "id": "4fc0a4e5",
+      "id": "1017dea9",
+      "type": "table",
+      "isFinalized": true,
+      "payload": {
+        "raw": "| Fixture | Rate | StreamMDX ms | Streamdown ms | Delta | Canonical semantics |\n|---|---|---|---|---|---|\n| `code-huge` (16.5 KB, one fence) | 20k | 258 | 208 | +24% | identical |\n| `code-huge` | 5k | 777 | 604 | +29% | identical |\n| `stress-mega` (253 KB) | 20k | 2954 | 4318 | -32% | identical |\n| `stress-mega` | 10k | 5014 | 7926 | -37% | identical |\n| `stress-mega` | 5k | 9281 | 14123 | -34% | identical |\n| `stress-xl` (1 MB) | 20k | 30942 | 48511 | -36% | identical |",
+        "meta": {
+          "lezerNodeType": "Table",
+          "header": [
+            [
+              {
+                "kind": "text",
+                "text": "Fixture"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Rate"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "StreamMDX ms"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Streamdown ms"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Delta"
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "Canonical semantics"
+              }
+            ]
+          ],
+          "align": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "rows": [
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "code-huge"
+                },
+                {
+                  "kind": "text",
+                  "text": " (16.5 KB, one fence)"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "20k"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "258"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "208"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "+24%"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "identical"
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "code-huge"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "5k"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "777"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "604"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "+29%"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "identical"
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "stress-mega"
+                },
+                {
+                  "kind": "text",
+                  "text": " (253 KB)"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "20k"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "2954"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "4318"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "-32%"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "identical"
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "stress-mega"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "10k"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "5014"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "7926"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "-37%"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "identical"
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "stress-mega"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "5k"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "9281"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "14123"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "-34%"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "identical"
+                }
+              ]
+            ],
+            [
+              [
+                {
+                  "kind": "code",
+                  "text": "stress-xl"
+                },
+                {
+                  "kind": "text",
+                  "text": " (1 MB)"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "20k"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "30942"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "48511"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "-36%"
+                }
+              ],
+              [
+                {
+                  "kind": "text",
+                  "text": "identical"
+                }
+              ]
+            ]
+          ]
+        },
+        "range": {
+          "from": 9143,
+          "to": 9618
+        },
+        "inline": []
+      }
+    },
+    {
+      "id": "69ef93f",
+      "type": "list",
+      "isFinalized": true,
+      "payload": {
+        "raw": "- On long documents StreamMDX does 32-37% less main-thread work, with lower peak heap and rAF p95 at 16.8 ms. Streamdown's main-thread script time is 2.5-3.5x higher.\n- On a single small code block Streamdown is cheaper, and it commits first content at about 24 ms vs 68-85 ms.\n- StreamMDX ends each long stream with one finalize long task: about 190 ms at 253 KB and about 530 ms at 1 MB. Streamdown has none on `stress-mega`.\n- `stress-mega-footnotes` is excluded from the table. Visible text matches, but footnote link attributes and the footer separator differ. On that fixture Streamdown's per-update cost grows with the document (71 s of main-thread work for a 13 s stream at 20k cps; StreamMDX: 3.1 s).\n- The `stress-xl` 10k and 5k rows ran on battery and are omitted.",
+        "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
+          "ordered": false,
+          "loose": false,
+          "items": [
+            [
+              {
+                "kind": "text",
+                "text": "On long documents StreamMDX does 32-37% less main-thread work, with lower peak heap and rAF p95 at 16.8 ms. Streamdown's main-thread script time is 2.5-3.5x higher."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "On a single small code block Streamdown is cheaper, and it commits first content at about 24 ms vs 68-85 ms."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "StreamMDX ends each long stream with one finalize long task: about 190 ms at 253 KB and about 530 ms at 1 MB. Streamdown has none on "
+              },
+              {
+                "kind": "code",
+                "text": "stress-mega"
+              },
+              {
+                "kind": "text",
+                "text": "."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "stress-mega-footnotes"
+              },
+              {
+                "kind": "text",
+                "text": " is excluded from the table. Visible text matches, but footnote link attributes and the footer separator differ. On that fixture Streamdown's per-update cost grows with the document (71 s of main-thread work for a 13 s stream at 20k cps; StreamMDX: 3.1 s)."
+              }
+            ],
+            [
+              {
+                "kind": "text",
+                "text": "The "
+              },
+              {
+                "kind": "code",
+                "text": "stress-xl"
+              },
+              {
+                "kind": "text",
+                "text": " 10k and 5k rows ran on battery and are omitted."
+              }
+            ]
+          ],
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "69ef93f::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 9620,
+                  "to": 9786
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "69ef93f::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- On long documents StreamMDX does 32-37% less main-thread work, with lower peak heap and rAF p95 at 16.8 ms. Streamdown's main-thread script time is 2.5-3.5x higher.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "On long documents StreamMDX does 32-37% less main-thread work, with lower peak heap and rAF p95 at 16.8 ms. Streamdown's main-thread script time is 2.5-3.5x higher."
+                        }
+                      ],
+                      "range": {
+                        "from": 9620,
+                        "to": 9786
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "On long documents StreamMDX does 32-37% less main-thread work, with lower peak heap and rAF p95 at 16.8 ms. Streamdown's main-thread script time is 2.5-3.5x higher."
+                              }
+                            ],
+                            "text": "On long documents StreamMDX does 32-37% less main-thread work, with lower peak heap and rAF p95 at 16.8 ms. Streamdown's main-thread script time is 2.5-3.5x higher.",
+                            "raw": "- On long documents StreamMDX does 32-37% less main-thread work, with lower peak heap and rAF p95 at 16.8 ms. Streamdown's main-thread script time is 2.5-3.5x higher."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "On long documents StreamMDX does 32-37% less main-thread work, with lower peak heap and rAF p95 at 16.8 ms. Streamdown's main-thread script time is 2.5-3.5x higher."
+                    }
+                  ],
+                  "text": "On long documents StreamMDX does 32-37% less main-thread work, with lower peak heap and rAF p95 at 16.8 ms. Streamdown's main-thread script time is 2.5-3.5x higher.",
+                  "raw": "- On long documents StreamMDX does 32-37% less main-thread work, with lower peak heap and rAF p95 at 16.8 ms. Streamdown's main-thread script time is 2.5-3.5x higher."
+                },
+                "children": []
+              },
+              {
+                "id": "69ef93f::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 9787,
+                  "to": 9897
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "69ef93f::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- On a single small code block Streamdown is cheaper, and it commits first content at about 24 ms vs 68-85 ms.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "On a single small code block Streamdown is cheaper, and it commits first content at about 24 ms vs 68-85 ms."
+                        }
+                      ],
+                      "range": {
+                        "from": 9787,
+                        "to": 9897
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "On a single small code block Streamdown is cheaper, and it commits first content at about 24 ms vs 68-85 ms."
+                              }
+                            ],
+                            "text": "On a single small code block Streamdown is cheaper, and it commits first content at about 24 ms vs 68-85 ms.",
+                            "raw": "- On a single small code block Streamdown is cheaper, and it commits first content at about 24 ms vs 68-85 ms."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "On a single small code block Streamdown is cheaper, and it commits first content at about 24 ms vs 68-85 ms."
+                    }
+                  ],
+                  "text": "On a single small code block Streamdown is cheaper, and it commits first content at about 24 ms vs 68-85 ms.",
+                  "raw": "- On a single small code block Streamdown is cheaper, and it commits first content at about 24 ms vs 68-85 ms."
+                },
+                "children": []
+              },
+              {
+                "id": "69ef93f::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 9898,
+                  "to": 10047
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "69ef93f::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- StreamMDX ends each long stream with one finalize long task: about 190 ms at 253 KB and about 530 ms at 1 MB. Streamdown has none on `stress-mega`.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "StreamMDX ends each long stream with one finalize long task: about 190 ms at 253 KB and about 530 ms at 1 MB. Streamdown has none on "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "stress-mega"
+                        },
+                        {
+                          "kind": "text",
+                          "text": "."
+                        }
+                      ],
+                      "range": {
+                        "from": 9898,
+                        "to": 10047
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "StreamMDX ends each long stream with one finalize long task: about 190 ms at 253 KB and about 530 ms at 1 MB. Streamdown has none on "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "stress-mega"
+                              },
+                              {
+                                "kind": "text",
+                                "text": "."
+                              }
+                            ],
+                            "text": "StreamMDX ends each long stream with one finalize long task: about 190 ms at 253 KB and about 530 ms at 1 MB. Streamdown has none on stress-mega.",
+                            "raw": "- StreamMDX ends each long stream with one finalize long task: about 190 ms at 253 KB and about 530 ms at 1 MB. Streamdown has none on `stress-mega`."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "StreamMDX ends each long stream with one finalize long task: about 190 ms at 253 KB and about 530 ms at 1 MB. Streamdown has none on "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "stress-mega"
+                    },
+                    {
+                      "kind": "text",
+                      "text": "."
+                    }
+                  ],
+                  "text": "StreamMDX ends each long stream with one finalize long task: about 190 ms at 253 KB and about 530 ms at 1 MB. Streamdown has none on stress-mega.",
+                  "raw": "- StreamMDX ends each long stream with one finalize long task: about 190 ms at 253 KB and about 530 ms at 1 MB. Streamdown has none on `stress-mega`."
+                },
+                "children": []
+              },
+              {
+                "id": "69ef93f::item:3",
+                "type": "list-item",
+                "range": {
+                  "from": 10048,
+                  "to": 10329
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "69ef93f::item:3",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `stress-mega-footnotes` is excluded from the table. Visible text matches, but footnote link attributes and the footer separator differ. On that fixture Streamdown's per-update cost grows with the document (71 s of main-thread work for a 13 s stream at 20k cps; StreamMDX: 3.1 s).",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "stress-mega-footnotes"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " is excluded from the table. Visible text matches, but footnote link attributes and the footer separator differ. On that fixture Streamdown's per-update cost grows with the document (71 s of main-thread work for a 13 s stream at 20k cps; StreamMDX: 3.1 s)."
+                        }
+                      ],
+                      "range": {
+                        "from": 10048,
+                        "to": 10329
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 3,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "stress-mega-footnotes"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " is excluded from the table. Visible text matches, but footnote link attributes and the footer separator differ. On that fixture Streamdown's per-update cost grows with the document (71 s of main-thread work for a 13 s stream at 20k cps; StreamMDX: 3.1 s)."
+                              }
+                            ],
+                            "text": "stress-mega-footnotes is excluded from the table. Visible text matches, but footnote link attributes and the footer separator differ. On that fixture Streamdown's per-update cost grows with the document (71 s of main-thread work for a 13 s stream at 20k cps; StreamMDX: 3.1 s).",
+                            "raw": "- `stress-mega-footnotes` is excluded from the table. Visible text matches, but footnote link attributes and the footer separator differ. On that fixture Streamdown's per-update cost grows with the document (71 s of main-thread work for a 13 s stream at 20k cps; StreamMDX: 3.1 s)."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 3,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "stress-mega-footnotes"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " is excluded from the table. Visible text matches, but footnote link attributes and the footer separator differ. On that fixture Streamdown's per-update cost grows with the document (71 s of main-thread work for a 13 s stream at 20k cps; StreamMDX: 3.1 s)."
+                    }
+                  ],
+                  "text": "stress-mega-footnotes is excluded from the table. Visible text matches, but footnote link attributes and the footer separator differ. On that fixture Streamdown's per-update cost grows with the document (71 s of main-thread work for a 13 s stream at 20k cps; StreamMDX: 3.1 s).",
+                  "raw": "- `stress-mega-footnotes` is excluded from the table. Visible text matches, but footnote link attributes and the footer separator differ. On that fixture Streamdown's per-update cost grows with the document (71 s of main-thread work for a 13 s stream at 20k cps; StreamMDX: 3.1 s)."
+                },
+                "children": []
+              },
+              {
+                "id": "69ef93f::item:4",
+                "type": "list-item",
+                "range": {
+                  "from": 10330,
+                  "to": 10395
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "69ef93f::item:4",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- The `stress-xl` 10k and 5k rows ran on battery and are omitted.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "The "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "stress-xl"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " 10k and 5k rows ran on battery and are omitted."
+                        }
+                      ],
+                      "range": {
+                        "from": 10330,
+                        "to": 10395
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 4,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "The "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "stress-xl"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " 10k and 5k rows ran on battery and are omitted."
+                              }
+                            ],
+                            "text": "The stress-xl 10k and 5k rows ran on battery and are omitted.",
+                            "raw": "- The `stress-xl` 10k and 5k rows ran on battery and are omitted."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 4,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "The "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "stress-xl"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " 10k and 5k rows ran on battery and are omitted."
+                    }
+                  ],
+                  "text": "The stress-xl 10k and 5k rows ran on battery and are omitted.",
+                  "raw": "- The `stress-xl` 10k and 5k rows ran on battery and are omitted."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 9620,
+          "to": 10395
+        }
+      }
+    },
+    {
+      "id": "15457a06",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Raw runs, spreads, guardrails, and the per-change before/after evidence are in the engine-v2 worktree's `.codex-optimization/runs/20261008-171503-firehose-vs-streamdown/` directory (`contract.md`, `results.md`, `final/`). That directory is not committed.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
+        "range": {
+          "from": 10397,
+          "to": 10651
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Raw runs, spreads, guardrails, and the per-change before/after evidence are in the engine-v2 worktree's "
+          },
+          {
+            "kind": "code",
+            "text": ".codex-optimization/runs/20261008-171503-firehose-vs-streamdown/"
+          },
+          {
+            "kind": "text",
+            "text": " directory ("
+          },
+          {
+            "kind": "code",
+            "text": "contract.md"
+          },
+          {
+            "kind": "text",
+            "text": ", "
+          },
+          {
+            "kind": "code",
+            "text": "results.md"
+          },
+          {
+            "kind": "text",
+            "text": ", "
+          },
+          {
+            "kind": "code",
+            "text": "final/"
+          },
+          {
+            "kind": "text",
+            "text": "). That directory is not committed."
+          }
+        ]
+      }
+    },
+    {
+      "id": "1cb3591b",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -4886,8 +5652,8 @@
           "headingId": "related-references"
         },
         "range": {
-          "from": 9345,
-          "to": 9366
+          "from": 10653,
+          "to": 10674
         },
         "inline": [
           {
@@ -4898,7 +5664,7 @@
       }
     },
     {
-      "id": "5d02cde0",
+      "id": "1f173ede",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -4978,17 +5744,17 @@
             },
             "children": [
               {
-                "id": "5d02cde0::item:0",
+                "id": "1f173ede::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 9368,
-                  "to": 9408
+                  "from": 10676,
+                  "to": 10716
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "5d02cde0::item:0",
+                    "id": "1f173ede::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -5006,8 +5772,8 @@
                         }
                       ],
                       "range": {
-                        "from": 9368,
-                        "to": 9408
+                        "from": 10676,
+                        "to": 10716
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -5055,17 +5821,17 @@
                 "children": []
               },
               {
-                "id": "5d02cde0::item:1",
+                "id": "1f173ede::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 9409,
-                  "to": 9459
+                  "from": 10717,
+                  "to": 10767
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "5d02cde0::item:1",
+                    "id": "1f173ede::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -5083,8 +5849,8 @@
                         }
                       ],
                       "range": {
-                        "from": 9409,
-                        "to": 9459
+                        "from": 10717,
+                        "to": 10767
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -5132,17 +5898,17 @@
                 "children": []
               },
               {
-                "id": "5d02cde0::item:2",
+                "id": "1f173ede::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 9460,
-                  "to": 9536
+                  "from": 10768,
+                  "to": 10844
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "5d02cde0::item:2",
+                    "id": "1f173ede::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -5160,8 +5926,8 @@
                         }
                       ],
                       "range": {
-                        "from": 9460,
-                        "to": 9536
+                        "from": 10768,
+                        "to": 10844
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -5209,17 +5975,17 @@
                 "children": []
               },
               {
-                "id": "5d02cde0::item:3",
+                "id": "1f173ede::item:3",
                 "type": "list-item",
                 "range": {
-                  "from": 9537,
-                  "to": 9605
+                  "from": 10845,
+                  "to": 10913
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "5d02cde0::item:3",
+                    "id": "1f173ede::item:3",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -5242,8 +6008,8 @@
                         }
                       ],
                       "range": {
-                        "from": 9537,
-                        "to": 9605
+                        "from": 10845,
+                        "to": 10913
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -5304,8 +6070,8 @@
           }
         },
         "range": {
-          "from": 9368,
-          "to": 9605
+          "from": 10676,
+          "to": 10913
         }
       }
     }
@@ -5396,14 +6162,14 @@
       "text": "Engine-v2 production comparison, 2026-10-08"
     },
     {
-      "id": "comparable-fixture-code-huge",
+      "id": "firehose-matrix-2026-10-09",
       "blockId": "3f108d65",
       "level": 3,
-      "text": "Comparable fixture: `code-huge`"
+      "text": "Firehose matrix, 2026-10-09"
     },
     {
       "id": "related-references",
-      "blockId": "4fc0a4e5",
+      "blockId": "1cb3591b",
       "level": 2,
       "text": "Related references"
     }

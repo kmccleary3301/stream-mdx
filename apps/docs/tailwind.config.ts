@@ -2,8 +2,25 @@ import type { Config } from "tailwindcss";
 
 import plugin from "tailwindcss/plugin";
 
+type ColorOptions = { opacityValue?: string; opacityVariable?: string };
+
+/**
+ * Plain `var()` colors cannot take Tailwind opacity modifiers (`bg-muted/20` silently emits nothing).
+ * Unmodified utilities keep emitting `var(--token)`; only `/N` modifiers mix toward transparent.
+ * Tailwind 3 resolves function colors at runtime, but its `Config` typings only admit strings.
+ */
+const alphaVar = (name: string) =>
+  (({ opacityValue, opacityVariable }: ColorOptions) =>
+    opacityVariable !== undefined || opacityValue === undefined
+      ? `var(${name})`
+      : `color-mix(in srgb, var(${name}) calc(${opacityValue} * 100%), transparent)`) as unknown as string;
+
 const config: Config = {
   important: true,
+  // Touch taps fire `:hover` and leave it stuck; emit `hover:` utilities only for hover-capable fine pointers.
+  future: {
+    hoverOnlyWhenSupported: true,
+  },
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -119,16 +136,16 @@ const config: Config = {
           a11: "var(--yellow-a11)",
           a12: "var(--yellow-a12)",
         },
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        background: alphaVar("--background"),
+        foreground: alphaVar("--foreground"),
         muted: {
-          DEFAULT: "var(--muted)",
-          foreground: "hsl(var(--muted-foreground))",
-          old: "var(--muted-old)",
+          DEFAULT: alphaVar("--muted"),
+          foreground: "hsl(var(--muted-foreground) / <alpha-value>)",
+          old: alphaVar("--muted-old"),
         },
         hover: "var(--hover)",
         border: {
-          DEFAULT: "var(--border)",
+          DEFAULT: alphaVar("--border"),
           old: "var(--border-old)",
         },
         scrollbar: {
@@ -149,31 +166,31 @@ const config: Config = {
           border: "var(--kbd-border)",
         },
         card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+          DEFAULT: "hsl(var(--card) / <alpha-value>)",
+          foreground: "hsl(var(--card-foreground) / <alpha-value>)",
         },
         popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
+          DEFAULT: "hsl(var(--popover) / <alpha-value>)",
+          foreground: "hsl(var(--popover-foreground) / <alpha-value>)",
         },
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+          DEFAULT: "hsl(var(--primary) / <alpha-value>)",
+          foreground: "hsl(var(--primary-foreground) / <alpha-value>)",
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
+          DEFAULT: "hsl(var(--secondary) / <alpha-value>)",
+          foreground: "hsl(var(--secondary-foreground) / <alpha-value>)",
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
+          DEFAULT: "hsl(var(--accent) / <alpha-value>)",
+          foreground: "hsl(var(--accent-foreground) / <alpha-value>)",
         },
         destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+          DEFAULT: "hsl(var(--destructive) / <alpha-value>)",
+          foreground: "hsl(var(--destructive-foreground) / <alpha-value>)",
         },
         input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
+        ring: "hsl(var(--ring) / <alpha-value>)",
         chart: {
           "1": "hsl(var(--chart-1))",
           "2": "hsl(var(--chart-2))",
@@ -190,6 +207,12 @@ const config: Config = {
           "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
+        },
+      },
+      // `--muted` (gray-8) is a tint for surfaces; as text it fails contrast in both themes. Muted text reads from `--muted-old`.
+      textColor: {
+        muted: {
+          DEFAULT: alphaVar("--muted-old"),
         },
       },
       fontFamily: {

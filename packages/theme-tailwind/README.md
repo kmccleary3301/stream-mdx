@@ -52,6 +52,7 @@ export function Article({ content }: { content: string }) {
 - Prefer one prose owner around rendered output. Do not stack `.prose markdown` in new code unless you are maintaining an older integration.
 - If you want full `prose` defaults, install and enable `@tailwindcss/typography`.
 - The theme expects CSS variables like `--foreground` and `--border`; map them into your design system or replace them.
+- Highlighted code uses Shiki's light tokens by default and dark tokens under a `.dark` ancestor (Tailwind `darkMode: "class"`, `next-themes`). Apps that switch themes another way should map `--shiki-dark` themselves.
 - StreamMDX component overrides (`components`, `inlineComponents`, `tableElements`) still work on top of the theme.
 
 ## Documentation

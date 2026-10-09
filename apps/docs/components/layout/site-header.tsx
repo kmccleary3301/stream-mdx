@@ -52,7 +52,7 @@ export function SiteHeader() {
         <div className="flex items-center gap-2 md:gap-3">
           <CommandPalette />
           <Link
-            className="hidden rounded-full border border-border/70 bg-background/80 p-2 text-muted-old transition hover:text-foreground md:inline-flex"
+            className="hidden h-9 w-9 items-center justify-center rounded-full border border-border/70 bg-background/80 text-muted-old transition-colors hover:text-foreground md:inline-flex"
             href="https://github.com/kmccleary3301/stream-mdx"
             target="_blank"
             rel="noreferrer"

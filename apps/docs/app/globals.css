@@ -116,7 +116,7 @@
     height: 2.25rem;
     border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
     border-radius: 0.85rem;
-    background: linear-gradient(180deg, color-mix(in srgb, white 26%, transparent), color-mix(in srgb, var(--gray-a2) 86%, transparent));
+    background: linear-gradient(180deg, color-mix(in srgb, var(--gray-1) 80%, transparent), color-mix(in srgb, var(--gray-a3) 86%, transparent));
     box-shadow: 0 14px 30px -24px color-mix(in srgb, var(--foreground) 28%, transparent);
   }
 
@@ -216,16 +216,23 @@
     transition:
       background-color 160ms ease,
       border-color 160ms ease,
-      transform 160ms ease;
+      transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
   }
 
-  .studio-action:hover {
-    border-color: color-mix(in srgb, var(--foreground) 28%, var(--border));
-    transform: translateY(-1px);
+  @media (hover: hover) and (pointer: fine) {
+    .studio-action:hover {
+      border-color: color-mix(in srgb, var(--foreground) 28%, var(--border));
+      transform: translateY(-1px);
+    }
   }
 
+  .studio-action:active {
+    transform: scale(0.96);
+  }
+
+  /* Yellow fill keeps the same luminance in both themes, so its ink is fixed dark rather than theme-derived. */
   .studio-action--primary {
-    color: color-mix(in srgb, var(--background) 90%, black 10%);
+    color: color-mix(in srgb, black 86%, var(--yellow-9));
     border-color: color-mix(in srgb, var(--yellow-9) 70%, var(--border));
     background: color-mix(in srgb, var(--yellow-9) 72%, white 28%);
   }
@@ -509,7 +516,7 @@
   :root {
     --bg: var(--gray-1);
     --fg: var(--gray-12);
-    --muted-old: var(--gray-8);
+    --muted-old: var(--gray-11);
     --border-old: var(--gray-4);
     --muted: var(--gray-8);
     --note-muted: color-mix(in srgb, var(--foreground) 68%, var(--background) 32%);
@@ -585,6 +592,19 @@
     scroll-behavior: smooth;
   }
 
+  /* Reduced motion keeps color/opacity feedback but drops movement: no smooth scroll, no animated lifts or presses. */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    ::before,
+    ::after {
+      transition-property: color, background-color, border-color, text-decoration-color, opacity, box-shadow !important;
+    }
+  }
+
   html {
     @apply text-default text-foreground bg-background;
 
@@ -597,8 +617,6 @@
       @apply font-medium;
     }
 
-    h2,
-    h3,
     sub,
     sup {
       @apply text-muted;
@@ -609,7 +627,16 @@
     }
 
     a {
-      @apply transition hover:opacity-50;
+      transition-property: opacity, color, background-color, border-color;
+      transition-duration: 150ms;
+      transition-timing-function: ease;
+    }
+
+    /* Text links fade on hover; anchors that declare their own hover styling (buttons, nav pills, cards) opt out. */
+    @media (hover: hover) and (pointer: fine) {
+      a:not(:where(.studio-action, [class*="hover:"])):hover {
+        opacity: 0.6;
+      }
     }
 
     ol {
@@ -749,31 +776,28 @@
     }
   }
 
-  /* 
-  * We are using rehypye-pretty to style the code blocks in the project.
-  * rehype-pretty-code is a Rehype plugin powered by the shiki syntax highlighter that provides beautiful code blocks for Markdown or MDX. 
-  * It works on both the server at build-time (avoiding runtime syntax highlighting) and on the client for dynamic highlighting.
-  * @see: https://rehype-pretty.pages.dev/
-  */
-
-  /* 
-  * Here we are setting up the styles needed to enable theme-aware code blocks.
-  * @see: https://rehype-pretty.pages.dev/#multiple-themes-dark-and-light-mode
+  /*
+  * Shiki dual-theme output (`defaultColor: false`) carries token colors only as
+  * `--shiki-light*` / `--shiki-dark*` custom properties; map them per color scheme.
+  * Backgrounds stay owned by the surrounding code surface.
   */
 
   html {
-    code[data-theme*=" "],
-    code[data-theme*=" "] span {
-      min-height: 1.25rem;
+    .shiki,
+    .shiki span {
       color: var(--shiki-light);
-      background-color: var(--shiki-light-bg);
+      font-style: var(--shiki-light-font-style);
+      font-weight: var(--shiki-light-font-weight);
+      text-decoration: var(--shiki-light-text-decoration);
     }
 
     &.dark {
-      code[data-theme*=" "],
-      code[data-theme*=" "] span {
+      .shiki,
+      .shiki span {
         color: var(--shiki-dark);
-        background-color: var(--shiki-dark-bg);
+        font-style: var(--shiki-dark-font-style);
+        font-weight: var(--shiki-dark-font-weight);
+        text-decoration: var(--shiki-dark-text-decoration);
       }
     }
   }

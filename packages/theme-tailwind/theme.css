@@ -1347,6 +1347,24 @@
     margin-bottom: 0.75rem;
   }
 
+  /* Highlighted code carries token colors only as Shiki CSS variables (`defaultColor: false`).
+     Light tokens apply by default; a `.dark` ancestor (Tailwind `darkMode: "class"`) switches to dark tokens. */
+  .markdown-v2-output .shiki,
+  .markdown-v2-output .shiki span {
+    color: var(--shiki-light);
+    font-style: var(--shiki-light-font-style);
+    font-weight: var(--shiki-light-font-weight);
+    text-decoration: var(--shiki-light-text-decoration);
+  }
+
+  .dark .markdown-v2-output .shiki,
+  .dark .markdown-v2-output .shiki span {
+    color: var(--shiki-dark);
+    font-style: var(--shiki-dark-font-style);
+    font-weight: var(--shiki-dark-font-weight);
+    text-decoration: var(--shiki-dark-text-decoration);
+  }
+
   .markdown-v2-output .markdown-hr {
     margin: 2rem 0;
     clear: both;

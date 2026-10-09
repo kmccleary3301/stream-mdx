@@ -34,7 +34,7 @@ export function DocsSidebar({ sections }: { sections: DocsNavSection[] }) {
                   href={item.href}
                   aria-current={isActive ? "page" : undefined}
                   className={cn(
-                    "rounded-md border-l-2 border-transparent px-2 py-1 text-[13px] transition",
+                    "rounded-r-md border-l-2 border-transparent px-2 py-1 text-[13px] transition-colors",
                     isActive
                       ? "border-foreground/70 bg-muted/30 text-foreground"
                       : "text-muted-foreground hover:border-foreground/40 hover:text-foreground",

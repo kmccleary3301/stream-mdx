@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Link } from "next-view-transitions";
+import { ArrowRight } from "lucide-react";
 
 import { SHOWCASE_ITEMS } from "@/content/showcase";
 import { cn } from "@/lib/utils";
@@ -66,7 +67,7 @@ export default function ShowcaseIndexPage() {
               className={cn(
                 "rounded-full border px-3 py-1.5 transition",
                 activeFilter === filter.key
-                  ? "border-foreground/20 bg-foreground/7 text-foreground shadow-[0_14px_32px_-28px_rgba(15,23,42,0.55)]"
+                  ? "border-foreground/20 bg-foreground/5 text-foreground shadow-[0_14px_32px_-28px_rgba(15,23,42,0.55)]"
                   : "border-border/50 bg-background/75 text-muted hover:border-border hover:text-foreground",
               )}
             >
@@ -89,23 +90,25 @@ export default function ShowcaseIndexPage() {
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {filteredItems.map((item) => (
-          <div key={item.slug} className="route-grid-card flex flex-col p-5">
+          <Link
+            key={item.slug}
+            href={`/showcase/${item.slug}`}
+            className="route-grid-card group flex flex-col p-5 transition-[border-color,transform] duration-200 ease-out hover:border-foreground/25 active:scale-[0.99]"
+          >
             <div className="text-sm font-semibold text-foreground">{item.title}</div>
             {item.description ? <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.description}</p> : null}
-            <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-muted">
+            <div className="mt-3 flex flex-wrap gap-1.5 text-[11px] font-medium text-muted">
               {(item.tags.length > 0 ? item.tags : ["streaming"]).map((tag) => (
-                <span key={tag} className="rounded-full border border-border/50 bg-background/70 px-2.5 py-1">
+                <span key={tag} className="rounded-full border border-border/70 bg-muted/15 px-2 py-0.5">
                   {tag}
                 </span>
               ))}
             </div>
-            <Link
-              className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-foreground underline decoration-1 decoration-gray-a4 underline-offset-4"
-              href={`/showcase/${item.slug}`}
-            >
+            <span className="mt-auto inline-flex items-center gap-1 pt-5 text-sm font-semibold text-foreground">
               Open
-            </Link>
-          </div>
+              <ArrowRight size={14} className="transition-transform duration-200 ease-out group-hover:translate-x-0.5" aria-hidden />
+            </span>
+          </Link>
         ))}
       </section>
 

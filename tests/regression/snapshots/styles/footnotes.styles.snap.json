@@ -131,9 +131,9 @@
         "::before": {
           "content": "counter(list)",
           "position": "absolute",
-          "left": "-3.92188px",
+          "left": "-3.17188px",
           "top": "0px",
-          "width": "3.92188px",
+          "width": "3.17188px",
           "height": "21px",
           "margin-top": "0px",
           "padding-right": "0px",

@@ -37,15 +37,11 @@ export function DocsShell({
           showToc ? "lg:grid-cols-[236px_minmax(0,1fr)_220px]" : "lg:grid-cols-[236px_minmax(0,1fr)]",
         )}
       >
-        <aside
-          className={cn(
-            "hidden lg:block lg:sticky lg:top-24 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto lg:pr-2 lg:no-scrollbar",
-            navClassName,
-          )}
-        >
+        <aside className={cn("hidden lg:block lg:sticky lg:top-24", navClassName)}>
+          {/* The bordered panel owns the scroll so its frame stays intact when the nav is taller than the viewport. */}
           <div
             className={cn(
-              "rounded-xl border border-border/60 bg-muted/20 p-4",
+              "max-h-[calc(100vh-8rem)] overflow-y-auto overscroll-contain rounded-xl border border-border/60 bg-muted/20 p-4",
               panelClassName,
               navPanelClassName,
             )}
@@ -67,15 +63,10 @@ export function DocsShell({
           {children}
         </div>
         {showToc ? (
-          <aside
-            className={cn(
-              "hidden lg:block lg:sticky lg:top-24 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto lg:pl-2 lg:no-scrollbar",
-              tocClassName,
-            )}
-          >
+          <aside className={cn("hidden lg:block lg:sticky lg:top-24", tocClassName)}>
             <div
               className={cn(
-                "rounded-xl border border-border/60 bg-muted/20 p-4",
+                "max-h-[calc(100vh-8rem)] overflow-y-auto overscroll-contain rounded-xl border border-border/60 bg-muted/20 p-4",
                 panelClassName,
                 tocPanelClassName,
               )}
