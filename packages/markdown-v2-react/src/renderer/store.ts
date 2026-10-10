@@ -196,6 +196,7 @@ type PatchPerfSummary = {
   ops: Record<string, PatchPerfOpSummary>;
   setPropsByType?: Record<string, PatchPerfOpSummary>;
   setPropsBySize?: Record<string, PatchPerfOpSummary>;
+  setPropsStages?: Record<string, PatchPerfOpSummary>;
 };
 
 type PatchPerfTotals = {
@@ -209,6 +210,7 @@ type PatchPerfTotals = {
   ops: Record<string, PatchPerfOpSummary>;
   setPropsByType: Record<string, PatchPerfOpSummary>;
   setPropsBySize: Record<string, PatchPerfOpSummary>;
+  setPropsStages: Record<string, PatchPerfOpSummary>;
 };
 
 type StoreDebugCounters = {
@@ -275,6 +277,7 @@ function recordPatchPerf(summary: PatchPerfSummary): void {
       ops: {},
       setPropsByType: {},
       setPropsBySize: {},
+      setPropsStages: {},
     };
 
     totals.calls += 1;
@@ -307,6 +310,15 @@ function recordPatchPerf(summary: PatchPerfSummary): void {
         entry.count += stats.count;
         entry.durationMs += stats.durationMs;
         totals.setPropsBySize[key] = entry;
+      }
+    }
+
+    if (summary.setPropsStages) {
+      for (const [key, stats] of Object.entries(summary.setPropsStages)) {
+        const entry = totals.setPropsStages[key] ?? { count: 0, durationMs: 0 };
+        entry.count += stats.count;
+        entry.durationMs += stats.durationMs;
+        totals.setPropsStages[key] = entry;
       }
     }
 
@@ -1430,6 +1442,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
       const opStats: Record<string, PatchPerfOpSummary> = perfEnabled ? {} : {};
       const setPropsByType: Record<string, PatchPerfOpSummary> = perfEnabled ? {} : {};
       const setPropsBySize: Record<string, PatchPerfOpSummary> = perfEnabled ? {} : {};
+      const setPropsStages: Record<string, PatchPerfOpSummary> = perfEnabled ? {} : {};
       let applyMs = 0;
       let listNormalizeMs = 0;
 
@@ -1456,6 +1469,14 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
       const debugListPatches = isListPatchDebugEnabled();
 
       const isListRelated = (type: string | undefined) => type === "list" || type === "list-item";
+
+      const recordSetPropsStage = (stage: string, duration: number) => {
+        if (!perfEnabled) return;
+        const entry = setPropsStages[stage] ?? { count: 0, durationMs: 0 };
+        entry.count += 1;
+        entry.durationMs += duration;
+        setPropsStages[stage] = entry;
+      };
       const logListPatch = (label: string, details: Record<string, unknown>) => {
         if (!debugListPatches) return;
         try {
@@ -1563,6 +1584,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
 
         let propsChanged = false;
         if (target.type === "code-line") {
+          const normalizeStart = perfEnabled ? getPerfNow() : 0;
           const incoming: Record<string, unknown> = {
             index: props?.index,
             text: props?.text,
@@ -1572,6 +1594,9 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
             incoming.tokens = (props as Record<string, unknown>).tokens;
           }
           const normalized = normalizeCodeLineProps(incoming, target.props);
+          if (perfEnabled) {
+            recordSetPropsStage("code-line:normalize-props", getPerfNow() - normalizeStart);
+          }
           if (normalized !== target.props) {
             target.props = normalized;
             propsChanged = true;
@@ -1587,7 +1612,11 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
               bumpVersion(parent);
               touched.add(parent.id);
               if (parent.type === "code") {
+                const parentNormalizeStart = perfEnabled ? getPerfNow() : 0;
                 normalizeCodeBlockChildren(nodes, parent, touched);
+                if (perfEnabled) {
+                  recordSetPropsStage("code-line:normalize-parent-code", getPerfNow() - parentNormalizeStart);
+                }
               }
             }
           }
@@ -1606,16 +1635,21 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
           }
           return;
         } else if (isInlineSegmentType(target.type)) {
+          const mergeStart = perfEnabled ? getPerfNow() : 0;
           const nextProps = props ? { ...props } : {};
           if ("block" in nextProps) {
             delete (nextProps as Record<string, unknown>).block;
           }
           const mergedSegments = mergeInlineSegmentProps(target.props, nextProps);
+          if (perfEnabled) {
+            recordSetPropsStage("inline:merge-segment-props", getPerfNow() - mergeStart);
+          }
           if (!shallowEqualRecords(target.props as Record<string, unknown> | undefined, mergedSegments)) {
             target.props = mergedSegments;
             propsChanged = true;
           }
         } else {
+          const mergeStart = perfEnabled ? getPerfNow() : 0;
           const nextProps = props ? { ...props } : {};
           if ("block" in nextProps) {
             delete (nextProps as Record<string, unknown>).block;
@@ -1641,6 +1675,9 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
             target.props = base;
             propsChanged = true;
           }
+          if (perfEnabled) {
+            recordSetPropsStage(`${target.type || "unknown"}:merge-props`, getPerfNow() - mergeStart);
+          }
         }
 
         let blockChanged = false;
@@ -1649,7 +1686,11 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
         let blockEpochAdvanced = false;
         const incomingBlock = props?.block as Block | undefined;
         if (incomingBlock && typeof incomingBlock === "object") {
+          const cloneStart = perfEnabled ? getPerfNow() : 0;
           target.block = cloneBlock(incomingBlock as Block);
+          if (perfEnabled) {
+            recordSetPropsStage(`${target.type || "unknown"}:clone-block`, getPerfNow() - cloneStart);
+          }
           const previousType = target.type;
           const incomingType = typeof target.block.type === "string" ? target.block.type : target.type;
           if (incomingType !== target.type) {
@@ -1660,7 +1701,11 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
             }
           }
           if (target.type === "code") {
+            const metadataStart = perfEnabled ? getPerfNow() : 0;
             applyCodeBlockMetadata(target, currentThemes);
+            if (perfEnabled) {
+              recordSetPropsStage("code:apply-metadata", getPerfNow() - metadataStart);
+            }
           }
           if (semanticUpdate) {
             advanceBlockEpoch(at.blockId, touched, preferredEpoch, tx);
@@ -1720,9 +1765,17 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
           }
 
           if (target.type === "code") {
+            const normalizeChildrenStart = perfEnabled ? getPerfNow() : 0;
             normalizeCodeBlockChildren(nodes, target, touched);
+            if (perfEnabled) {
+              recordSetPropsStage("code:normalize-children", getPerfNow() - normalizeChildrenStart);
+            }
           } else if (parentForNormalization) {
+            const normalizeParentStart = perfEnabled ? getPerfNow() : 0;
             normalizeCodeBlockChildren(nodes, parentForNormalization, touched);
+            if (perfEnabled) {
+              recordSetPropsStage("code-line:normalize-parent-code-post", getPerfNow() - normalizeParentStart);
+            }
           }
           const parentType = target.parentId ? nodes.get(target.parentId)?.type : undefined;
           if (isListRelated(target.type) || isListRelated(parentType)) {
@@ -2192,6 +2245,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
           ops: opStats,
           setPropsByType,
           setPropsBySize,
+          setPropsStages,
         });
       }
 

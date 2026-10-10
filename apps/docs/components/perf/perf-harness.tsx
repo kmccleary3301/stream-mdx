@@ -457,6 +457,41 @@ type ProfilerSample = {
   commitTime: number;
 };
 
+type PatchPerfOpSummary = {
+  count: number;
+  durationMs: number;
+};
+
+type PatchPerfSummary = {
+  timestamp: string;
+  totalMs: number;
+  applyMs: number;
+  coalesceMs: number;
+  listNormalizeMs: number;
+  patches: number;
+  coalescedPatches: number;
+  touchedCount: number;
+  mutatedBlocks: boolean;
+  ops: Record<string, PatchPerfOpSummary>;
+  setPropsByType?: Record<string, PatchPerfOpSummary>;
+  setPropsBySize?: Record<string, PatchPerfOpSummary>;
+  setPropsStages?: Record<string, PatchPerfOpSummary>;
+};
+
+type PatchPerfTotals = {
+  calls: number;
+  totalMs: number;
+  applyMs: number;
+  coalesceMs: number;
+  listNormalizeMs: number;
+  patches: number;
+  coalescedPatches: number;
+  ops: Record<string, PatchPerfOpSummary>;
+  setPropsByType: Record<string, PatchPerfOpSummary>;
+  setPropsBySize: Record<string, PatchPerfOpSummary>;
+  setPropsStages: Record<string, PatchPerfOpSummary>;
+};
+
 type PerfReport = {
   meta: {
     renderer: "streammdx" | "streamdown";
@@ -487,6 +522,10 @@ type PerfReport = {
   samples: {
     flushes: RendererMetrics[];
     workerPerformance: PerformanceMetrics[];
+    patchPerf: {
+      totals: PatchPerfTotals | null;
+      last: PatchPerfSummary | null;
+    };
     longTasks: LongTaskEntry[];
     rafDeltas: number[];
     memory: MemorySample[];
@@ -496,6 +535,14 @@ type PerfReport = {
 
 declare global {
   interface Window {
+    __STREAMING_DEBUG__?: {
+      patchPerf?: boolean;
+      worker?: boolean;
+      codeLines?: boolean;
+    };
+    __STREAM_MDX_PATCH_STATS__?: PatchPerfSummary[];
+    __STREAM_MDX_PATCH_STATS_LAST__?: PatchPerfSummary;
+    __STREAM_MDX_PATCH_STATS_TOTALS__?: PatchPerfTotals;
     __streammdxPerfReport?: PerfReport;
     __streammdxPerfDone?: Promise<void>;
     __streammdxPerfError?: string;
@@ -596,6 +643,7 @@ export function PerfHarness(): JSX.Element {
   const scenarioId = searchParams.get("scenario") ?? "S2_typical";
   const schedulingPreset = searchParams.get("scheduling") ?? "aggressive";
   const profilerEnabled = parseBoolean(searchParams.get("profiler")) ?? false;
+  const patchPerfEnabled = parseBoolean(searchParams.get("patchPerf")) ?? false;
   const queryKey = searchParams.toString();
   const scheduling = useMemo(() => buildScheduling(schedulingPreset, new URLSearchParams(queryKey)), [schedulingPreset, queryKey]);
   const benchmarkWorker = useMemo(() => new BenchmarkWorker(), [queryKey]);
@@ -671,8 +719,15 @@ export function PerfHarness(): JSX.Element {
     const controller = new AbortController();
     let firstContentObserver: MutationObserver | null = null;
     const { promise: done, resolve: resolveDone } = Promise.withResolvers<void>();
+    const previousDebug = typeof window !== "undefined" ? window.__STREAMING_DEBUG__ : undefined;
+    const previousPatchPerfDescriptor = previousDebug ? Object.getOwnPropertyDescriptor(previousDebug, "patchPerf") : undefined;
+    const patchPerfDebug = { ...(previousDebug ?? {}), patchPerf: patchPerfEnabled };
 
     if (typeof window !== "undefined") {
+      window.__STREAMING_DEBUG__ = patchPerfDebug;
+      window.__STREAM_MDX_PATCH_STATS__ = [];
+      window.__STREAM_MDX_PATCH_STATS_LAST__ = undefined;
+      window.__STREAM_MDX_PATCH_STATS_TOTALS__ = undefined;
       window.__streammdxPerfReport = undefined;
       window.__streammdxPerfError = undefined;
       window.__streammdxPerfRunStart = undefined;
@@ -884,6 +939,10 @@ export function PerfHarness(): JSX.Element {
           samples: {
             flushes: flushesRef.current,
             workerPerformance: benchmarkWorker.performanceMetrics,
+            patchPerf: {
+              totals: window.__STREAM_MDX_PATCH_STATS_TOTALS__ ?? null,
+              last: window.__STREAM_MDX_PATCH_STATS_LAST__ ?? null,
+            },
             longTasks: longTasksRef.current,
             rafDeltas: rafDeltasRef.current,
             memory: memorySamplesRef.current,
@@ -915,6 +974,13 @@ export function PerfHarness(): JSX.Element {
 
     return () => {
       cancelled = true;
+      if (typeof window !== "undefined" && token === runTokenRef.current && window.__STREAMING_DEBUG__ === patchPerfDebug) {
+        if (previousPatchPerfDescriptor) {
+          Object.defineProperty(patchPerfDebug, "patchPerf", previousPatchPerfDescriptor);
+        } else {
+          delete window.__STREAMING_DEBUG__.patchPerf;
+        }
+      }
       firstContentObserver?.disconnect();
       controller.abort();
       benchmarkWorker.dispose();
@@ -923,7 +989,7 @@ export function PerfHarness(): JSX.Element {
       stopRaf();
       stopMemory();
     };
-  }, [renderer, fixtureId, scenarioId, schedulingPreset, scheduling, profile, policy, benchmarkWorker, rendererVersion, highlighting]);
+  }, [renderer, fixtureId, patchPerfEnabled, scenarioId, schedulingPreset, scheduling, profile, policy, benchmarkWorker, rendererVersion, highlighting]);
 
   return (
     <div className="prose">

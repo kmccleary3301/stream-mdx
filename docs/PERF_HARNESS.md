@@ -130,6 +130,29 @@ Capture React commit durations for the `StreamingMarkdown` subtree:
 
 This adds `profiler actual/base` stats to the summary output.
 
+## Optional renderer patch profiling
+
+Enable renderer patch timing only for diagnostic runs:
+
+```
+npm run perf:harness -- --fixture naive-bayes --scenario S2_typical --patchPerf
+```
+
+The equivalent environment variable is `STREAM_MDX_PERF_PATCH_PERF=1`; direct visits to
+`/perf/harness/` accept `?patchPerf=1`. Patch profiling is off by default.
+Leaving the harness restores the prior `patchPerf` property if the effect still owns the
+debug object; captured reports and patch metrics remain available.
+
+`run.json` includes `samples.patchPerf.totals` and `samples.patchPerf.last`, with operation,
+setProps node-type, payload-size bucket, and stage counts and durations. Stages separate
+prop normalization and merging, block cloning, code metadata, and code-child normalization.
+`summary.json` and `summary.txt` report patch total/apply timings and the most expensive
+operation, setProps node type, and setProps stage.
+
+The instrumentation adds timing and aggregation overhead. Keep it off for claim-grade
+benchmarks and do not compare profiled runs against unprofiled baselines. These metrics
+come from the StreamMDX renderer store, not Streamdown.
+
 ## Optional CPU throttling
 
 You can apply a CDP CPU throttle to reduce variance (Chromium only):
