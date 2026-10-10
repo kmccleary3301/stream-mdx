@@ -253,6 +253,8 @@ npm run test:regression:styles
 
 `seeded-smoke` owns high-risk final-HTML convergence.
 
+Seeded marker-containing fixtures use their selected ordinary scenario's exact final golden when eligible. Marker-only fixtures use their existing eligible S5 golden. Every seed must match that golden and the first replay; missing goldens remain failures. Replay errors must exit nonzero after page, context, and browser cleanup without replacing the original failure.
+
 `scheduler-parity` owns scheduler-mode final-HTML equivalence for the promoted fixtures.
 
 `test:benchmarks:methodology` owns the public benchmark terminology contract so docs, site copy, and harness settings do not drift silently.

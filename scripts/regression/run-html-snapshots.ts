@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import crypto from "node:crypto";
 
 import { chromium } from "@playwright/test";
-import type { Page } from "@playwright/test";
+import type { BrowserContext, Page } from "@playwright/test";
 
 import {
   getFixtures,
@@ -470,7 +470,9 @@ async function run(): Promise<void> {
   }
 
   const browser = await chromium.launch();
-  const context = await browser.newContext();
+  let context: BrowserContext | undefined;
+  try {
+    context = await browser.newContext();
   const suppressedConsole = {
     nameNotResolved: 0,
     nameNotResolvedByFixture: {} as Record<string, number>,
@@ -531,9 +533,9 @@ async function run(): Promise<void> {
 
       const split = splitMarkers(rawContent);
       const text = split ? split.text : rawContent;
-      // Marker fixtures have an ordinary S5 final oracle, not an S2 baseline.
-      // Reuse that exact final for seeded replays without expanding the baseline matrix.
-      const baselineScenario = seededReplay && split && !isSplitScenario(scenario)
+      // Keep the selected ordinary oracle when eligible. Marker-only fixtures
+      // use their eligible S5 final without expanding the baseline matrix.
+      const baselineScenario = seededReplay && split && !shouldRunScenario(fixture, scenario)
         ? allScenarios.find((candidate) => isSplitScenario(candidate) && shouldRunScenario(fixture, candidate))
         : scenario;
       if (!baselineScenario) {
@@ -1017,19 +1019,21 @@ async function run(): Promise<void> {
             );
             console.error(`artifacts: ${artifactDir}`);
             console.error(`trace replay: ${buildTraceReplayCommand(fixture.file)}`);
-          } else if (!scenarioFailed) {
+          }
+          }
+          if (!scenarioFailed) {
             console.log(`ok ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}`);
           }
-          }
         } finally {
-          await page.close();
+          await page.close().catch((error) => {
+            console.error(`Failed to close regression page for ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}:`, error);
+            process.exitCode = 1;
+          });
         }
       }
     }
   }
 
-  await context.close();
-  await browser.close();
   if (executedByFixture.size === 0) {
     failures += 1;
     console.error("No fixture/scenario cases executed after eligibility filters.");
@@ -1062,6 +1066,17 @@ async function run(): Promise<void> {
 
   if (failures > 0) {
     process.exitCode = 1;
+  }
+  } finally {
+    // Cleanup failures must fail the command without replacing a replay error.
+    await context?.close().catch((error) => {
+      console.error("Failed to close regression browser context:", error);
+      process.exitCode = 1;
+    });
+    await browser.close().catch((error) => {
+      console.error("Failed to close regression browser:", error);
+      process.exitCode = 1;
+    });
   }
 }
 run().catch((error) => {
