@@ -31,8 +31,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 2.5999999940395355,
-        "lastDurationMs": 2.2000000029802322,
+        "lastPatchToDomMs": 1.0999999940395355,
+        "lastDurationMs": 0.9000000059604645,
         "meta": {
           "fixtureId": "inline-html-allowlist",
           "scenarioId": "S2_typical",
@@ -97,8 +97,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 2,
-        "lastPatchToDomMs": 0.19999998807907104,
-        "lastDurationMs": 0.19999998807907104,
+        "lastPatchToDomMs": 0,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "inline-html-allowlist",
           "scenarioId": "S2_typical",
@@ -130,7 +130,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML Allowlist\">Inline HTML Allowlist</h1><p class=\"markdown-paragraph streaming-partial\">Inline allowl</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML Allowlist\">Inline HTML Allowlist</h1><p class=\"markdown-paragraph\">Inline allowl</p></div>",
       "textSample": "Inline HTML AllowlistInline allowl",
       "structure": {
         "topLevelTags": [
@@ -163,8 +163,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 4,
-        "lastPatchToDomMs": 10.5,
-        "lastDurationMs": 0.29999999701976776,
+        "lastPatchToDomMs": 15.100000023841858,
+        "lastDurationMs": 0.20000001788139343,
         "meta": {
           "fixtureId": "inline-html-allowlist",
           "scenarioId": "S2_typical",
@@ -196,7 +196,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML Allowlist\">Inline HTML Allowlist</h1><p class=\"markdown-paragraph streaming-partial\">Inline allowlisted HTML should stay bounded and sho</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML Allowlist\">Inline HTML Allowlist</h1><p class=\"markdown-paragraph\">Inline allowlisted HTML should stay bounded and sho</p></div>",
       "textSample": "Inline HTML AllowlistInline allowlisted HTML should stay bounded and sho",
       "structure": {
         "topLevelTags": [
@@ -229,8 +229,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 8,
-        "lastPatchToDomMs": 6.700000002980232,
-        "lastDurationMs": 0.5,
+        "lastPatchToDomMs": 13.899999976158142,
+        "lastDurationMs": 0.09999999403953552,
         "meta": {
           "fixtureId": "inline-html-allowlist",
           "scenarioId": "S2_typical",
@@ -262,8 +262,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML Allowlist\">Inline HTML Allowlist</h1><p class=\"markdown-paragraph\">Inline allowlisted HTML should stay bounded and should not swallow nearby text.</p><p class=\"markdown-paragraph\">Paragraph with <kbd>Ctrl</kbd> + <kbd>K</kbd>,</p></div>",
-      "textSample": "Inline HTML AllowlistInline allowlisted HTML should stay bounded and should not swallow nearby text.Paragraph with Ctrl + K,",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML Allowlist\">Inline HTML Allowlist</h1><p class=\"markdown-paragraph\">Inline allowlisted HTML should stay bounded and should not swallow nearby text.</p><p class=\"markdown-paragraph\">Paragraph with <kbd>Ctrl</kbd> + <kbd>K</kbd>,</p>\n</div>",
+      "textSample": "Inline HTML AllowlistInline allowlisted HTML should stay bounded and should not swallow nearby text.Paragraph with Ctrl + K,\n",
       "structure": {
         "topLevelTags": [
           "div"
@@ -295,8 +295,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 16,
-        "lastPatchToDomMs": 12.799999997019768,
-        "lastDurationMs": 0.29999999701976776,
+        "lastPatchToDomMs": 14,
+        "lastDurationMs": 0.20000001788139343,
         "meta": {
           "fixtureId": "inline-html-allowlist",
           "scenarioId": "S2_typical",
@@ -328,8 +328,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML Allowlist\">Inline HTML Allowlist</h1><p class=\"markdown-paragraph\">Inline allowlisted HTML should stay bounded and should not swallow nearby text.</p><p class=\"markdown-paragraph\">Paragraph with <kbd>Ctrl</kbd> + <kbd>K</kbd>, plus <sup>2</sup> and H<sub>2</sub>O.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with inline HTML: <span>hint text</span> followed by markdown <em>emphasis</em>.</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List it</li></ul></div>",
-      "textSample": "Inline HTML AllowlistInline allowlisted HTML should stay bounded and should not swallow nearby text.Paragraph with Ctrl + K, plus 2 and H2O.List item with inline HTML: hint text followed by markdown e",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML Allowlist\">Inline HTML Allowlist</h1><p class=\"markdown-paragraph\">Inline allowlisted HTML should stay bounded and should not swallow nearby text.</p><p class=\"markdown-paragraph\">Paragraph with <kbd>Ctrl</kbd> + <kbd>K</kbd>, plus <sup>2</sup> and H<sub>2</sub>O.</p>\n<ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with inline HTML: <span>hint text</span> followed by markdown <em>emphasis</em>.</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List it</li></ul></div>",
+      "textSample": "Inline HTML AllowlistInline allowlisted HTML should stay bounded and should not swallow nearby text.Paragraph with Ctrl + K, plus 2 and H2O.\nList item with inline HTML: hint text followed by markdown ",
       "structure": {
         "topLevelTags": [
           "div"
@@ -361,8 +361,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 22,
-        "lastPatchToDomMs": 11,
-        "lastDurationMs": 0.19999998807907104,
+        "lastPatchToDomMs": 14.100000023841858,
+        "lastDurationMs": 0.20000001788139343,
         "meta": {
           "fixtureId": "inline-html-allowlist",
           "scenarioId": "S2_typical",
@@ -394,8 +394,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML Allowlist\">Inline HTML Allowlist</h1><p class=\"markdown-paragraph\">Inline allowlisted HTML should stay bounded and should not swallow nearby text.</p><p class=\"markdown-paragraph\">Paragraph with <kbd>Ctrl</kbd> + <kbd>K</kbd>, plus <sup>2</sup> and H<sub>2</sub>O.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with inline HTML: <span>hint text</span> followed by markdown <em>emphasis</em>.</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with link-shaped HTML: <a href=\"https://example.com/docs\">docs</a> followed by trailing text.</li></ul><blockquote class=\"markdown-blockquote\">Blockquote wit</blockquote></div>",
-      "textSample": "Inline HTML AllowlistInline allowlisted HTML should stay bounded and should not swallow nearby text.Paragraph with Ctrl + K, plus 2 and H2O.List item with inline HTML: hint text followed by markdown e",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML Allowlist\">Inline HTML Allowlist</h1><p class=\"markdown-paragraph\">Inline allowlisted HTML should stay bounded and should not swallow nearby text.</p><p class=\"markdown-paragraph\">Paragraph with <kbd>Ctrl</kbd> + <kbd>K</kbd>, plus <sup>2</sup> and H<sub>2</sub>O.</p>\n<ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with inline HTML: <span>hint text</span> followed by markdown <em>emphasis</em>.</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with link-shaped HTML: <a href=\"https://example.com/docs\">docs</a> followed by trailing text.</li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote wit</p></blockquote></div>",
+      "textSample": "Inline HTML AllowlistInline allowlisted HTML should stay bounded and should not swallow nearby text.Paragraph with Ctrl + K, plus 2 and H2O.\nList item with inline HTML: hint text followed by markdown ",
       "structure": {
         "topLevelTags": [
           "div"
@@ -427,8 +427,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 24,
-        "lastPatchToDomMs": 6.299999997019768,
-        "lastDurationMs": 0.29999999701976776,
+        "lastPatchToDomMs": 14.199999988079071,
+        "lastDurationMs": 0.09999999403953552,
         "meta": {
           "fixtureId": "inline-html-allowlist",
           "scenarioId": "S2_typical",
@@ -460,8 +460,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML Allowlist\">Inline HTML Allowlist</h1><p class=\"markdown-paragraph\">Inline allowlisted HTML should stay bounded and should not swallow nearby text.</p><p class=\"markdown-paragraph\">Paragraph with <kbd>Ctrl</kbd> + <kbd>K</kbd>, plus <sup>2</sup> and H<sub>2</sub>O.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with inline HTML: <span>hint text</span> followed by markdown <em>emphasis</em>.</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with link-shaped HTML: <a href=\"https://example.com/docs\">docs</a> followed by trailing text.</li></ul><blockquote class=\"markdown-blockquote\">Blockquote with nested inline HTML: <code>npm run do</code></blockquote></div>",
-      "textSample": "Inline HTML AllowlistInline allowlisted HTML should stay bounded and should not swallow nearby text.Paragraph with Ctrl + K, plus 2 and H2O.List item with inline HTML: hint text followed by markdown e",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML Allowlist\">Inline HTML Allowlist</h1><p class=\"markdown-paragraph\">Inline allowlisted HTML should stay bounded and should not swallow nearby text.</p><p class=\"markdown-paragraph\">Paragraph with <kbd>Ctrl</kbd> + <kbd>K</kbd>, plus <sup>2</sup> and H<sub>2</sub>O.</p>\n<ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with inline HTML: <span>hint text</span> followed by markdown <em>emphasis</em>.</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with link-shaped HTML: <a href=\"https://example.com/docs\">docs</a> followed by trailing text.</li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote with nested inline HTML: <code>npm run do</code></p><code>\n</code></blockquote></div>",
+      "textSample": "Inline HTML AllowlistInline allowlisted HTML should stay bounded and should not swallow nearby text.Paragraph with Ctrl + K, plus 2 and H2O.\nList item with inline HTML: hint text followed by markdown ",
       "structure": {
         "topLevelTags": [
           "div"
@@ -493,8 +493,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 28,
-        "lastPatchToDomMs": 9.300000011920929,
-        "lastDurationMs": 0.10000000894069672,
+        "lastPatchToDomMs": 15.300000011920929,
+        "lastDurationMs": 0.09999999403953552,
         "meta": {
           "fixtureId": "inline-html-allowlist",
           "scenarioId": "S2_typical",
@@ -526,8 +526,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML Allowlist\">Inline HTML Allowlist</h1><p class=\"markdown-paragraph\">Inline allowlisted HTML should stay bounded and should not swallow nearby text.</p><p class=\"markdown-paragraph\">Paragraph with <kbd>Ctrl</kbd> + <kbd>K</kbd>, plus <sup>2</sup> and H<sub>2</sub>O.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with inline HTML: <span>hint text</span> followed by markdown <em>emphasis</em>.</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with link-shaped HTML: <a href=\"https://example.com/docs\">docs</a> followed by trailing text.</li></ul><blockquote class=\"markdown-blockquote\">Blockquote with nested inline HTML: <code>npm run docs:dev</code> and trailing prose.</blockquote><p class=\"markdown-paragraph streaming-partial\">Final paragraph after inline HTML to make</p></div>",
-      "textSample": "Inline HTML AllowlistInline allowlisted HTML should stay bounded and should not swallow nearby text.Paragraph with Ctrl + K, plus 2 and H2O.List item with inline HTML: hint text followed by markdown e",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML Allowlist\">Inline HTML Allowlist</h1><p class=\"markdown-paragraph\">Inline allowlisted HTML should stay bounded and should not swallow nearby text.</p><p class=\"markdown-paragraph\">Paragraph with <kbd>Ctrl</kbd> + <kbd>K</kbd>, plus <sup>2</sup> and H<sub>2</sub>O.</p>\n<ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with inline HTML: <span>hint text</span> followed by markdown <em>emphasis</em>.</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with link-shaped HTML: <a href=\"https://example.com/docs\">docs</a> followed by trailing text.</li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote with nested inline HTML: <code>npm run docs:dev</code> and trailing prose.</p>\n</blockquote><p class=\"markdown-paragraph\">Final paragraph after inline HTML to make</p></div>",
+      "textSample": "Inline HTML AllowlistInline allowlisted HTML should stay bounded and should not swallow nearby text.Paragraph with Ctrl + K, plus 2 and H2O.\nList item with inline HTML: hint text followed by markdown ",
       "structure": {
         "topLevelTags": [
           "div"
@@ -559,8 +559,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 32,
-        "lastPatchToDomMs": 12.099999994039536,
-        "lastDurationMs": 0.20000000298023224,
+        "lastPatchToDomMs": 15.099999994039536,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "inline-html-allowlist",
           "scenarioId": "S2_typical",
@@ -592,8 +592,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML Allowlist\">Inline HTML Allowlist</h1><p class=\"markdown-paragraph\">Inline allowlisted HTML should stay bounded and should not swallow nearby text.</p><p class=\"markdown-paragraph\">Paragraph with <kbd>Ctrl</kbd> + <kbd>K</kbd>, plus <sup>2</sup> and H<sub>2</sub>O.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with inline HTML: <span>hint text</span> followed by markdown <em>emphasis</em>.</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with link-shaped HTML: <a href=\"https://example.com/docs\">docs</a> followed by trailing text.</li></ul><blockquote class=\"markdown-blockquote\">Blockquote with nested inline HTML: <code>npm run docs:dev</code> and trailing prose.</blockquote><p class=\"markdown-paragraph streaming-partial\">Final paragraph after inline HTML to make sure open-tag anticipation cannot capture the next block.</p></div>",
-      "textSample": "Inline HTML AllowlistInline allowlisted HTML should stay bounded and should not swallow nearby text.Paragraph with Ctrl + K, plus 2 and H2O.List item with inline HTML: hint text followed by markdown e",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML Allowlist\">Inline HTML Allowlist</h1><p class=\"markdown-paragraph\">Inline allowlisted HTML should stay bounded and should not swallow nearby text.</p><p class=\"markdown-paragraph\">Paragraph with <kbd>Ctrl</kbd> + <kbd>K</kbd>, plus <sup>2</sup> and H<sub>2</sub>O.</p>\n<ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with inline HTML: <span>hint text</span> followed by markdown <em>emphasis</em>.</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with link-shaped HTML: <a href=\"https://example.com/docs\">docs</a> followed by trailing text.</li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote with nested inline HTML: <code>npm run docs:dev</code> and trailing prose.</p>\n</blockquote><p class=\"markdown-paragraph\">Final paragraph after inline HTML to make sure open-tag anticipation cannot capture the next block.</p></div>",
+      "textSample": "Inline HTML AllowlistInline allowlisted HTML should stay bounded and should not swallow nearby text.Paragraph with Ctrl + K, plus 2 and H2O.\nList item with inline HTML: hint text followed by markdown ",
       "structure": {
         "topLevelTags": [
           "div"
@@ -629,15 +629,15 @@
       "hasBlockquote": true,
       "hasMath": false
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML Allowlist\">Inline HTML Allowlist</h1><p class=\"markdown-paragraph\">Inline allowlisted HTML should stay bounded and should not swallow nearby text.</p><p class=\"markdown-paragraph\">Paragraph with <kbd>Ctrl</kbd> + <kbd>K</kbd>, plus <sup>2</sup> and H<sub>2</sub>O.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with inline HTML: <span>hint text</span> followed by markdown <em>emphasis</em>.</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with link-shaped HTML: <a href=\"https://example.com/docs\">docs</a> followed by trailing text.</li></ul><blockquote class=\"markdown-blockquote\">Blockquote with nested inline HTML: <code>npm run docs:dev</code> and trailing prose.</blockquote><p class=\"markdown-paragraph\">Final paragraph after inline HTML to make sure open-tag anticipation cannot capture the next block.</p></div>",
+    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Inline HTML Allowlist\">Inline HTML Allowlist</h1><p class=\"markdown-paragraph\">Inline allowlisted HTML should stay bounded and should not swallow nearby text.</p><p class=\"markdown-paragraph\">Paragraph with <kbd>Ctrl</kbd> + <kbd>K</kbd>, plus <sup>2</sup> and H<sub>2</sub>O.</p>\n<ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with inline HTML: <span>hint text</span> followed by markdown <em>emphasis</em>.</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with link-shaped HTML: <a href=\"https://example.com/docs\">docs</a> followed by trailing text.</li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote with nested inline HTML: <code>npm run docs:dev</code> and trailing prose.</p>\n</blockquote><p class=\"markdown-paragraph\">Final paragraph after inline HTML to make sure open-tag anticipation cannot capture the next block.</p></div>",
     "runtimeState": {
-      "rendererVersion": 36,
+      "rendererVersion": 37,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
-      "lastTx": 33,
-      "lastPatchToDomMs": 3.7999999970197678,
-      "lastDurationMs": 0.8999999910593033,
+      "lastTx": 34,
+      "lastPatchToDomMs": 12.900000005960464,
+      "lastDurationMs": 0.800000011920929,
       "meta": {
         "fixtureId": "inline-html-allowlist",
         "scenarioId": "S2_typical",
@@ -669,7 +669,7 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "c3df125817e4644d178944ac93f74a4461140d4cba7825935fb22b22534ad0cc",
+        "hash": "d63ea8294d816ce0678bfa8a4f32ad26b4edeaca7b82594a67fb172a70d26c9d",
         "textSample": "Inline HTML AllowlistInline allowlisted HTML should stay bounded and should not swallow nearby text.Paragraph with Ctrl "
       }
     ],

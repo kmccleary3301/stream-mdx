@@ -1,0 +1,616 @@
+{
+  "fixtureId": "mdx-tag-no-swallow-negative",
+  "fixtureTitle": "MDX Tag No Swallow Negative",
+  "scenarioId": "S3_fast_reasonable",
+  "scenario": {
+    "id": "S3_fast_reasonable",
+    "label": "Fast but reasonable",
+    "updateIntervalMs": 8,
+    "charRateCps": 3000,
+    "maxChunkChars": 512
+  },
+  "runMeta": {
+    "seed": null,
+    "schedulerMode": null,
+    "usedSplitMarkers": false,
+    "fixtureTags": [
+      "anticipation",
+      "mdx",
+      "negative"
+    ]
+  },
+  "totalLength": 183,
+  "checkpoints": [
+    {
+      "id": "after-first-chunk",
+      "appendedChars": 24,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 4,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 1,
+        "lastPatchToDomMs": 1,
+        "lastDurationMs": 0.800000011920929,
+        "meta": {
+          "fixtureId": "mdx-tag-no-swallow-negative",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag No Swallow Neg\">MDX Tag No Swallow Neg</h1></div>",
+      "textSample": "MDX Tag No Swallow Neg",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-9",
+      "appendedChars": 24,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 4,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 1,
+        "lastPatchToDomMs": 1,
+        "lastDurationMs": 0.800000011920929,
+        "meta": {
+          "fixtureId": "mdx-tag-no-swallow-negative",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag No Swallow Neg\">MDX Tag No Swallow Neg</h1></div>",
+      "textSample": "MDX Tag No Swallow Neg",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-18",
+      "appendedChars": 24,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 4,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 1,
+        "lastPatchToDomMs": 1,
+        "lastDurationMs": 0.800000011920929,
+        "meta": {
+          "fixtureId": "mdx-tag-no-swallow-negative",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag No Swallow Neg\">MDX Tag No Swallow Neg</h1></div>",
+      "textSample": "MDX Tag No Swallow Neg",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-46",
+      "appendedChars": 48,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 5,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 2,
+        "lastPatchToDomMs": 0.09999999403953552,
+        "lastDurationMs": 0.09999999403953552,
+        "meta": {
+          "fixtureId": "mdx-tag-no-swallow-negative",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag No Swallow Negative\">MDX Tag No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with </p></div>",
+      "textSample": "MDX Tag No Swallow NegativePrefix text with ",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-92",
+      "appendedChars": 96,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 7,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 4,
+        "lastPatchToDomMs": 14.400000005960464,
+        "lastDurationMs": 0.30000001192092896,
+        "meta": {
+          "fixtureId": "mdx-tag-no-swallow-negative",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag No Swallow Negative\">MDX Tag No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;DangerChip/&gt;</span>{expr and trailing prose that must s</p></div>",
+      "textSample": "MDX Tag No Swallow NegativePrefix text with <DangerChip/>{expr and trailing prose that must s",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-137",
+      "appendedChars": 144,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 9,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 6,
+        "lastPatchToDomMs": 14.300000011920929,
+        "lastDurationMs": 0.10000002384185791,
+        "meta": {
+          "fixtureId": "mdx-tag-no-swallow-negative",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag No Swallow Negative\">MDX Tag No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;DangerChip/&gt;</span>{expr and trailing prose that must stay visible.</p><p class=\"markdown-paragraph\">This following paragraph must rema</p></div>",
+      "textSample": "MDX Tag No Swallow NegativePrefix text with <DangerChip/>{expr and trailing prose that must stay visible.This following paragraph must rema",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-165",
+      "appendedChars": 168,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 10,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 7,
+        "lastPatchToDomMs": 13.400000005960464,
+        "lastDurationMs": 0.10000002384185791,
+        "meta": {
+          "fixtureId": "mdx-tag-no-swallow-negative",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag No Swallow Negative\">MDX Tag No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;DangerChip/&gt;</span>{expr and trailing prose that must stay visible.</p><p class=\"markdown-paragraph\">This following paragraph must remain outside any speculati</p></div>",
+      "textSample": "MDX Tag No Swallow NegativePrefix text with <DangerChip/>{expr and trailing prose that must stay visible.This following paragraph must remain outside any speculati",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-183",
+      "appendedChars": 183,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 11,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 8,
+        "lastPatchToDomMs": 12.399999976158142,
+        "lastDurationMs": 0,
+        "meta": {
+          "fixtureId": "mdx-tag-no-swallow-negative",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag No Swallow Negative\">MDX Tag No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;DangerChip/&gt;</span>{expr and trailing prose that must stay visible.</p><p class=\"markdown-paragraph\">This following paragraph must remain outside any speculative MDX repair.</p></div>",
+      "textSample": "MDX Tag No Swallow NegativePrefix text with <DangerChip/>{expr and trailing prose that must stay visible.This following paragraph must remain outside any speculative MDX repair.",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    }
+  ],
+  "final": {
+    "id": "after-finalize",
+    "appendedChars": 183,
+    "rootChildCount": 1,
+    "selectors": {
+      "hasTable": false,
+      "hasPre": false,
+      "hasFootnotes": false,
+      "hasMdxPending": false,
+      "hasMdxCompiled": false,
+      "hasBlockquote": false,
+      "hasMath": false
+    },
+    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag No Swallow Negative\">MDX Tag No Swallow Negative</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;DangerChip/&gt;</span>{expr and trailing prose that must stay visible.</p><p class=\"markdown-paragraph\">This following paragraph must remain outside any speculative MDX repair.</p></div>",
+    "runtimeState": {
+      "rendererVersion": 13,
+      "queueDepth": 0,
+      "pendingBatches": 0,
+      "workerReady": true,
+      "lastTx": 10,
+      "lastPatchToDomMs": 12.599999994039536,
+      "lastDurationMs": 0.5999999940395355,
+      "meta": {
+        "fixtureId": "mdx-tag-no-swallow-negative",
+        "scenarioId": "S3_fast_reasonable",
+        "seed": null,
+        "schedulerMode": null
+      },
+      "storeCounters": {
+        "appendLineGuardRejected": 0,
+        "staleEpochRejected": 0,
+        "storeInvariantViolationCount": 0
+      }
+    },
+    "structure": {
+      "topLevelTags": [
+        "div"
+      ],
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      }
+    },
+    "children": [
+      {
+        "index": 0,
+        "tag": "div",
+        "hash": "a50230e539e81b6184a66dde51998edec5debb122ab817d0366a3cd99065b342",
+        "textSample": "MDX Tag No Swallow NegativePrefix text with <DangerChip/>{expr and trailing prose that must stay visible.This following "
+      }
+    ],
+    "inspection": {
+      "tables": [],
+      "mdxBlocks": [],
+      "codeBlocks": []
+    }
+  }
+}

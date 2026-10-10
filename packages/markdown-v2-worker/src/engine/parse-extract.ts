@@ -40,11 +40,11 @@ export function trimProvisionalNativeCode(raw: string, code: string): string {
 }
 
 /** Match native list-item owners by absolute source range, never by their text. */
-export function collectNestedListItemInlineSources(block: Block, parser: MarkdownParser, nativeNode?: SyntaxNode): Map<string, string> {
+export function collectNestedListItemInlineSources(block: Block, parser: MarkdownParser, nativeNode?: SyntaxNode): Map<string, { text: string; from: number }> {
   const source = block.payload.raw;
   const offset = block.payload.range?.from ?? 0;
   const sourceOffset = nativeNode ? offset : 0;
-  const sources = new Map<string, string>();
+  const sources = new Map<string, { text: string; from: number }>();
   const leafText = (node: SyntaxNode): string => {
     const marks: SyntaxNode[] = [];
     const collectMarks = (child: SyntaxNode): void => {
@@ -66,8 +66,12 @@ export function collectNestedListItemInlineSources(block: Block, parser: Markdow
       let primary = node.firstChild;
       while (primary && ["ListMark", "QuoteMark", "LinkReference"].includes(primary.type.name)) primary = primary.nextSibling;
       let text = primary && (primary.type.name === "Paragraph" || primary.type.name === "Task") ? leafText(primary) : "";
-      if (primary?.type.name === "Task") text = text.replace(/^\[([ xX])\][ \t]+/, "");
-      sources.set(`${offset + node.from - sourceOffset}:${offset + node.to - sourceOffset}`, text);
+      const task = primary?.type.name === "Task" ? /^\[([ xX])\][ \t]+/.exec(text) : null;
+      if (task) text = text.slice(task[0].length);
+      sources.set(`${offset + node.from - sourceOffset}:${offset + node.to - sourceOffset}`, {
+        text,
+        from: offset + (primary?.from ?? node.from) - sourceOffset + (task?.[0].length ?? 0),
+      });
     }
     for (let child = node.firstChild; child; child = child.nextSibling) visit(child);
   };
@@ -133,19 +137,24 @@ export function maybeBuildTocPatch(
   return { patch, nextHeadings, nextSignature };
 }
 
-export function collectMathProtectedRanges(content: string): ProtectedRange[] {
+/** Native code-span grammar owns braces, tags and dollars inside matching delimiters. */
+export function collectCodeProtectedRanges(content: string): ProtectedRange[] {
+  if (!content.includes("`")) return [];
+  const ranges: ProtectedRange[] = [];
+  const cursor = nativeParser.parse(content).cursor();
+  do {
+    if (cursor.name === "InlineCode") ranges.push({ from: cursor.from, to: cursor.to, kind: "code-inline" });
+  } while (cursor.next());
+  return ranges;
+}
+
+export function collectMathProtectedRanges(content: string, codeRanges?: ReadonlyArray<ProtectedRange>): ProtectedRange[] {
   if (!content) return [];
   const ranges: ProtectedRange[] = [];
   const inlineStack: number[] = [];
   const displayStack: number[] = [];
   const length = content.length;
-  const codeRanges: Array<{ from: number; to: number }> = [];
-  if (content.includes("`") && content.includes("$")) {
-    const cursor = nativeParser.parse(content).cursor();
-    do {
-      if (cursor.name === "InlineCode") codeRanges.push({ from: cursor.from, to: cursor.to });
-    } while (cursor.next());
-  }
+  codeRanges ??= content.includes("$") ? collectCodeProtectedRanges(content) : [];
   let codeIndex = 0;
 
   let i = 0;

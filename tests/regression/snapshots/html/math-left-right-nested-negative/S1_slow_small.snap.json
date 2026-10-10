@@ -1,0 +1,617 @@
+{
+  "fixtureId": "math-left-right-nested-negative",
+  "fixtureTitle": "Math Left/Right Nested Negative",
+  "scenarioId": "S1_slow_small",
+  "scenario": {
+    "id": "S1_slow_small",
+    "label": "Slow + small chunks",
+    "updateIntervalMs": 50,
+    "charRateCps": 200,
+    "maxChunkChars": 32
+  },
+  "runMeta": {
+    "seed": null,
+    "schedulerMode": null,
+    "usedSplitMarkers": false,
+    "fixtureTags": [
+      "anticipation",
+      "math",
+      "display",
+      "negative"
+    ]
+  },
+  "totalLength": 247,
+  "checkpoints": [
+    {
+      "id": "after-first-chunk",
+      "appendedChars": 10,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 4,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 1,
+        "lastPatchToDomMs": 1.0999999940395355,
+        "lastDurationMs": 0.8999999761581421,
+        "meta": {
+          "fixtureId": "math-left-right-nested-negative",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A\">Math V2A</h1></div>",
+      "textSample": "Math V2A",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-12",
+      "appendedChars": 20,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 5,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 2,
+        "lastPatchToDomMs": 0.09999999403953552,
+        "lastDurationMs": 0.09999999403953552,
+        "meta": {
+          "fixtureId": "math-left-right-nested-negative",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Righ\">Math V2A Left/Righ</h1></div>",
+      "textSample": "Math V2A Left/Righ",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-25",
+      "appendedChars": 30,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 6,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 3,
+        "lastPatchToDomMs": 12.699999988079071,
+        "lastDurationMs": 0.19999998807907104,
+        "meta": {
+          "fixtureId": "math-left-right-nested-negative",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Nested N\">Math V2A Left/Right Nested N</h1></div>",
+      "textSample": "Math V2A Left/Right Nested N",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-62",
+      "appendedChars": 70,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 10,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 7,
+        "lastPatchToDomMs": 15.099999994039536,
+        "lastDurationMs": 0,
+        "meta": {
+          "fixtureId": "math-left-right-nested-negative",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Nested Negative\">Math V2A Left/Right Nested Negative</h1><p class=\"markdown-paragraph\">This case should remain conserv</p></div>",
+      "textSample": "Math V2A Left/Right Nested NegativeThis case should remain conserv",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-124",
+      "appendedChars": 130,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 16,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 13,
+        "lastPatchToDomMs": 14.700000017881393,
+        "lastDurationMs": 0,
+        "meta": {
+          "fixtureId": "math-left-right-nested-negative",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Nested Negative\">Math V2A Left/Right Nested Negative</h1><p class=\"markdown-paragraph\">This case should remain conservative:</p><p class=\"markdown-paragraph\">$$\n\\left( \\frac{\\left[a+b}{c}</p><p class=\"markdown-paragraph\">Trailing prose must r</p></div>",
+      "textSample": "Math V2A Left/Right Nested NegativeThis case should remain conservative:$$\n\\left( \\frac{\\left[a+b}{c}Trailing prose must r",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-185",
+      "appendedChars": 190,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 22,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 19,
+        "lastPatchToDomMs": 14.5,
+        "lastDurationMs": 0.20000001788139343,
+        "meta": {
+          "fixtureId": "math-left-right-nested-negative",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Nested Negative\">Math V2A Left/Right Nested Negative</h1><p class=\"markdown-paragraph\">This case should remain conservative:</p><p class=\"markdown-paragraph\">$$\n\\left( \\frac{\\left[a+b}{c}</p><p class=\"markdown-paragraph\">Trailing prose must remain visible after the nested left-right negative case.</p><p class=\"markdown-paragraph\">Fi</p></div>",
+      "textSample": "Math V2A Left/Right Nested NegativeThis case should remain conservative:$$\n\\left( \\frac{\\left[a+b}{c}Trailing prose must remain visible after the nested left-right negative case.Fi",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-222",
+      "appendedChars": 230,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 26,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 23,
+        "lastPatchToDomMs": 15.399999976158142,
+        "lastDurationMs": 0,
+        "meta": {
+          "fixtureId": "math-left-right-nested-negative",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Nested Negative\">Math V2A Left/Right Nested Negative</h1><p class=\"markdown-paragraph\">This case should remain conservative:</p><p class=\"markdown-paragraph\">$$\n\\left( \\frac{\\left[a+b}{c}</p><p class=\"markdown-paragraph\">Trailing prose must remain visible after the nested left-right negative case.</p><p class=\"markdown-paragraph\">Final paragraph after the nested left-righ</p></div>",
+      "textSample": "Math V2A Left/Right Nested NegativeThis case should remain conservative:$$\n\\left( \\frac{\\left[a+b}{c}Trailing prose must remain visible after the nested left-right negative case.Final paragraph after ",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-247",
+      "appendedChars": 247,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 28,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 25,
+        "lastPatchToDomMs": 15.5,
+        "lastDurationMs": 0.10000002384185791,
+        "meta": {
+          "fixtureId": "math-left-right-nested-negative",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Nested Negative\">Math V2A Left/Right Nested Negative</h1><p class=\"markdown-paragraph\">This case should remain conservative:</p><p class=\"markdown-paragraph\">$$\n\\left( \\frac{\\left[a+b}{c}</p><p class=\"markdown-paragraph\">Trailing prose must remain visible after the nested left-right negative case.</p><p class=\"markdown-paragraph\">Final paragraph after the nested left-right negative case.</p></div>",
+      "textSample": "Math V2A Left/Right Nested NegativeThis case should remain conservative:$$\n\\left( \\frac{\\left[a+b}{c}Trailing prose must remain visible after the nested left-right negative case.Final paragraph after ",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    }
+  ],
+  "final": {
+    "id": "after-finalize",
+    "appendedChars": 247,
+    "rootChildCount": 1,
+    "selectors": {
+      "hasTable": false,
+      "hasPre": false,
+      "hasFootnotes": false,
+      "hasMdxPending": false,
+      "hasMdxCompiled": false,
+      "hasBlockquote": false,
+      "hasMath": false
+    },
+    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Nested Negative\">Math V2A Left/Right Nested Negative</h1><p class=\"markdown-paragraph\">This case should remain conservative:</p><p class=\"markdown-paragraph\">$$\n\\left( \\frac{\\left[a+b}{c}</p><p class=\"markdown-paragraph\">Trailing prose must remain visible after the nested left-right negative case.</p><p class=\"markdown-paragraph\">Final paragraph after the nested left-right negative case.</p></div>",
+    "runtimeState": {
+      "rendererVersion": 30,
+      "queueDepth": 0,
+      "pendingBatches": 0,
+      "workerReady": true,
+      "lastTx": 27,
+      "lastPatchToDomMs": 12.099999994039536,
+      "lastDurationMs": 0.5999999940395355,
+      "meta": {
+        "fixtureId": "math-left-right-nested-negative",
+        "scenarioId": "S1_slow_small",
+        "seed": null,
+        "schedulerMode": null
+      },
+      "storeCounters": {
+        "appendLineGuardRejected": 0,
+        "staleEpochRejected": 0,
+        "storeInvariantViolationCount": 0
+      }
+    },
+    "structure": {
+      "topLevelTags": [
+        "div"
+      ],
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      }
+    },
+    "children": [
+      {
+        "index": 0,
+        "tag": "div",
+        "hash": "dedd6d79236b4dc29a6fbab0f393caab1f832b6a639eaa759a7322f4a2a3ecef",
+        "textSample": "Math V2A Left/Right Nested NegativeThis case should remain conservative:$$\n\\left( \\frac{\\left[a+b}{c}Trailing prose must"
+      }
+    ],
+    "inspection": {
+      "tables": [],
+      "mdxBlocks": [],
+      "codeBlocks": []
+    }
+  }
+}

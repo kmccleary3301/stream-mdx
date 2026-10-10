@@ -1,0 +1,237 @@
+{
+  "fixtureId": "mdx-expression-no-swallow-negative",
+  "fixtureTitle": "MDX Expression No Swallow Negative",
+  "scenarioId": "S2_typical",
+  "scenario": {
+    "id": "S2_typical",
+    "label": "Typical streaming",
+    "updateIntervalMs": 16,
+    "charRateCps": 1200,
+    "maxChunkChars": 256
+  },
+  "targets": {
+    "h1": {
+      "selector": "#regression-root h1",
+      "computed": {
+        "font-family": "Inter, \"Inter Fallback\"",
+        "font-size": "35px",
+        "font-weight": "700",
+        "font-style": "normal",
+        "line-height": "38.5px",
+        "letter-spacing": "-0.35px",
+        "color": "rgb(32, 32, 32)",
+        "margin-top": "52.5px",
+        "margin-bottom": "17.5px"
+      }
+    },
+    "h2": {
+      "missing": true,
+      "selector": "#regression-root h2"
+    },
+    "p": {
+      "selector": "#regression-root p",
+      "computed": {
+        "font-family": "Inter, \"Inter Fallback\"",
+        "font-size": "14px",
+        "font-weight": "400",
+        "font-style": "normal",
+        "line-height": "21px",
+        "letter-spacing": "-0.09px",
+        "color": "rgb(32, 32, 32)",
+        "margin-top": "8px",
+        "margin-bottom": "17.5px"
+      }
+    },
+    "blockquote": {
+      "selector": "#regression-root blockquote",
+      "computed": {
+        "font-family": "Inter, \"Inter Fallback\"",
+        "font-size": "14px",
+        "font-weight": "500",
+        "font-style": "normal",
+        "line-height": "21px",
+        "letter-spacing": "-0.09px",
+        "color": "color(srgb 0.401569 0.401569 0.401569)",
+        "margin-top": "22.4px",
+        "margin-bottom": "22.4px",
+        "display": "block",
+        "padding-top": "0px",
+        "padding-right": "0px",
+        "padding-bottom": "0px",
+        "padding-left": "14px",
+        "border-top-width": "0px",
+        "border-right-width": "0px",
+        "border-bottom-width": "0px",
+        "border-left-width": "3px",
+        "border-top-color": "rgb(232, 232, 232)",
+        "border-right-color": "rgb(232, 232, 232)",
+        "border-bottom-color": "rgb(232, 232, 232)",
+        "border-left-color": "rgb(232, 232, 232)",
+        "border-top-left-radius": "0px",
+        "border-top-right-radius": "0px",
+        "border-bottom-left-radius": "0px",
+        "border-bottom-right-radius": "0px",
+        "background-color": "rgba(0, 0, 0, 0)",
+        "box-shadow": "none",
+        "overflow": "visible",
+        "overflow-x": "visible",
+        "overflow-y": "visible"
+      }
+    },
+    "code-pre": {
+      "missing": true,
+      "selector": "#regression-root pre"
+    },
+    "hr": {
+      "missing": true,
+      "selector": "#regression-root hr"
+    },
+    "kbd": {
+      "missing": true,
+      "selector": "#regression-root kbd"
+    },
+    "table": {
+      "missing": true,
+      "selector": "#regression-root table"
+    },
+    "table-row": {
+      "missing": true,
+      "selector": "#regression-root tbody tr"
+    },
+    "table-th": {
+      "missing": true,
+      "selector": "#regression-root th"
+    },
+    "table-td": {
+      "missing": true,
+      "selector": "#regression-root td"
+    },
+    "list-ol": {
+      "missing": true,
+      "selector": "#regression-root ol"
+    },
+    "list-nested-ol": {
+      "missing": true,
+      "selector": "#regression-root li ol"
+    },
+    "list-nested-ul": {
+      "selector": "#regression-root li ul",
+      "computed": {
+        "display": "flex",
+        "padding-top": "0px",
+        "padding-right": "0px",
+        "padding-bottom": "0px",
+        "padding-left": "24.5px",
+        "margin-top": "3.5px",
+        "margin-bottom": "17.5px",
+        "border-top-width": "0px",
+        "border-right-width": "0px",
+        "border-bottom-width": "0px",
+        "border-left-width": "0px",
+        "border-top-color": "rgb(232, 232, 232)",
+        "border-right-color": "rgb(232, 232, 232)",
+        "border-bottom-color": "rgb(232, 232, 232)",
+        "border-left-color": "rgb(232, 232, 232)",
+        "border-top-left-radius": "0px",
+        "border-top-right-radius": "0px",
+        "border-bottom-left-radius": "0px",
+        "border-bottom-right-radius": "0px",
+        "background-color": "rgba(0, 0, 0, 0)",
+        "box-shadow": "none",
+        "overflow": "visible",
+        "overflow-x": "visible",
+        "overflow-y": "visible",
+        "--list-indent": "1.75rem",
+        "--list-marker-digits": ""
+      }
+    },
+    "list-ol-li": {
+      "missing": true,
+      "selector": "#regression-root ol > li"
+    },
+    "list-nested-ol-li": {
+      "missing": true,
+      "selector": "#regression-root li ol > li"
+    },
+    "list-ul-li": {
+      "selector": "#regression-root ul > li",
+      "computed": {
+        "margin-top": "1.4px",
+        "margin-bottom": "1.4px",
+        "padding-left": "0px",
+        "position": "relative",
+        "line-height": "21px"
+      },
+      "pseudo": {
+        "::before": {
+          "content": "\"•\"",
+          "position": "absolute",
+          "left": "-28px",
+          "top": "0px",
+          "width": "28px",
+          "height": "21px",
+          "margin-top": "-0.7px",
+          "padding-right": "7px",
+          "font-size": "17.5px",
+          "color": "rgb(32, 32, 32)",
+          "opacity": "0.7",
+          "display": "block"
+        }
+      }
+    },
+    "list-nested-ul-li": {
+      "selector": "#regression-root li ul > li",
+      "computed": {
+        "margin-top": "1.4px",
+        "margin-bottom": "1.4px",
+        "padding-left": "0px",
+        "position": "relative",
+        "line-height": "21px"
+      },
+      "pseudo": {
+        "::before": {
+          "content": "\"•\"",
+          "position": "absolute",
+          "left": "-24.5px",
+          "top": "0px",
+          "width": "24.5px",
+          "height": "21px",
+          "margin-top": "-0.7px",
+          "padding-right": "7px",
+          "font-size": "17.5px",
+          "color": "rgb(32, 32, 32)",
+          "opacity": "0.7",
+          "display": "block"
+        }
+      }
+    },
+    "footnotes": {
+      "missing": true,
+      "selector": "#regression-root .footnotes"
+    },
+    "footnotes-ol-li": {
+      "missing": true,
+      "selector": "#regression-root .footnotes ol li"
+    },
+    "footnote-backref": {
+      "missing": true,
+      "selector": "#regression-root .footnotes .footnote-backref"
+    },
+    "preview-pre-adjacent": {
+      "missing": true,
+      "selector": "#regression-root .markdown-mdx + pre"
+    },
+    "mdx-block": {
+      "missing": true,
+      "selector": "#regression-root .markdown-mdx"
+    },
+    "math-inline": {
+      "missing": true,
+      "selector": "#regression-root .katex"
+    },
+    "math-display": {
+      "missing": true,
+      "selector": "#regression-root .katex-display"
+    }
+  }
+}

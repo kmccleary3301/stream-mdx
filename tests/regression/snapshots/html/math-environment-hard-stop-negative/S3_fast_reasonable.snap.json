@@ -1,0 +1,617 @@
+{
+  "fixtureId": "math-environment-hard-stop-negative",
+  "fixtureTitle": "Math Environment Hard Stop Negative",
+  "scenarioId": "S3_fast_reasonable",
+  "scenario": {
+    "id": "S3_fast_reasonable",
+    "label": "Fast but reasonable",
+    "updateIntervalMs": 8,
+    "charRateCps": 3000,
+    "maxChunkChars": 512
+  },
+  "runMeta": {
+    "seed": null,
+    "schedulerMode": null,
+    "usedSplitMarkers": false,
+    "fixtureTags": [
+      "anticipation",
+      "math",
+      "display",
+      "negative"
+    ]
+  },
+  "totalLength": 322,
+  "checkpoints": [
+    {
+      "id": "after-first-chunk",
+      "appendedChars": 24,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 4,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 1,
+        "lastPatchToDomMs": 1.300000011920929,
+        "lastDurationMs": 1,
+        "meta": {
+          "fixtureId": "math-environment-hard-stop-negative",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Environment H\">Math V2A Environment H</h1></div>",
+      "textSample": "Math V2A Environment H",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-16",
+      "appendedChars": 24,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 4,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 1,
+        "lastPatchToDomMs": 1.300000011920929,
+        "lastDurationMs": 1,
+        "meta": {
+          "fixtureId": "math-environment-hard-stop-negative",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Environment H\">Math V2A Environment H</h1></div>",
+      "textSample": "Math V2A Environment H",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-32",
+      "appendedChars": 48,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 5,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 2,
+        "lastPatchToDomMs": 0,
+        "lastDurationMs": 0,
+        "meta": {
+          "fixtureId": "math-environment-hard-stop-negative",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Environment Hard-Stop\">Math V2A Environment Hard-Stop</h1><p class=\"markdown-paragraph\">$$\n\\begin{matr</p></div>",
+      "textSample": "Math V2A Environment Hard-Stop$$\n\\begin{matr",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-81",
+      "appendedChars": 96,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 7,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 4,
+        "lastPatchToDomMs": 14.100000023841858,
+        "lastDurationMs": 0.30000001192092896,
+        "meta": {
+          "fixtureId": "math-environment-hard-stop-negative",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Environment Hard-Stop\">Math V2A Environment Hard-Stop</h1><p class=\"markdown-paragraph\">$$\n\\begin{matrix}\na &amp; b</p><p class=\"markdown-paragraph\">Expected direction:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as str</li></ul></div>",
+      "textSample": "Math V2A Environment Hard-Stop$$\n\\begin{matrix}\na & bExpected direction:classify as str",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-161",
+      "appendedChars": 168,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 10,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 7,
+        "lastPatchToDomMs": 15.299999982118607,
+        "lastDurationMs": 0.19999998807907104,
+        "meta": {
+          "fixtureId": "math-environment-hard-stop-negative",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Environment Hard-Stop\">Math V2A Environment Hard-Stop</h1><p class=\"markdown-paragraph\">$$\n\\begin{matrix}\na &amp; b</p><p class=\"markdown-paragraph\">Expected direction:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as structured environment pressure</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">hard-stop / fallback</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no optimistic envi</li></ul></div>",
+      "textSample": "Math V2A Environment Hard-Stop$$\n\\begin{matrix}\na & bExpected direction:classify as structured environment pressurehard-stop / fallbackno optimistic envi",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-242",
+      "appendedChars": 264,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 14,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 11,
+        "lastPatchToDomMs": 15.199999988079071,
+        "lastDurationMs": 0.09999999403953552,
+        "meta": {
+          "fixtureId": "math-environment-hard-stop-negative",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Environment Hard-Stop\">Math V2A Environment Hard-Stop</h1><p class=\"markdown-paragraph\">$$\n\\begin{matrix}\na &amp; b</p><p class=\"markdown-paragraph\">Expected direction:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as structured environment pressure</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">hard-stop / fallback</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no optimistic environment closure</li></ul><p class=\"markdown-paragraph\">Trailing prose must remain visible after the unsupported environment math.</p><p class=\"markdown-paragraph\">Fin</p></div>",
+      "textSample": "Math V2A Environment Hard-Stop$$\n\\begin{matrix}\na & bExpected direction:classify as structured environment pressurehard-stop / fallbackno optimistic environment closureTrailing prose must remain visib",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-290",
+      "appendedChars": 312,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 16,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 13,
+        "lastPatchToDomMs": 15.599999994039536,
+        "lastDurationMs": 0.09999999403953552,
+        "meta": {
+          "fixtureId": "math-environment-hard-stop-negative",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Environment Hard-Stop\">Math V2A Environment Hard-Stop</h1><p class=\"markdown-paragraph\">$$\n\\begin{matrix}\na &amp; b</p><p class=\"markdown-paragraph\">Expected direction:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as structured environment pressure</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">hard-stop / fallback</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no optimistic environment closure</li></ul><p class=\"markdown-paragraph\">Trailing prose must remain visible after the unsupported environment math.</p><p class=\"markdown-paragraph\">Final paragraph after the unsupported environment m</p></div>",
+      "textSample": "Math V2A Environment Hard-Stop$$\n\\begin{matrix}\na & bExpected direction:classify as structured environment pressurehard-stop / fallbackno optimistic environment closureTrailing prose must remain visib",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-322",
+      "appendedChars": 322,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 17,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 14,
+        "lastPatchToDomMs": 14,
+        "lastDurationMs": 0.09999999403953552,
+        "meta": {
+          "fixtureId": "math-environment-hard-stop-negative",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Environment Hard-Stop\">Math V2A Environment Hard-Stop</h1><p class=\"markdown-paragraph\">$$\n\\begin{matrix}\na &amp; b</p><p class=\"markdown-paragraph\">Expected direction:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as structured environment pressure</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">hard-stop / fallback</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no optimistic environment closure</li></ul><p class=\"markdown-paragraph\">Trailing prose must remain visible after the unsupported environment math.</p><p class=\"markdown-paragraph\">Final paragraph after the unsupported environment math case.</p></div>",
+      "textSample": "Math V2A Environment Hard-Stop$$\n\\begin{matrix}\na & bExpected direction:classify as structured environment pressurehard-stop / fallbackno optimistic environment closureTrailing prose must remain visib",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    }
+  ],
+  "final": {
+    "id": "after-finalize",
+    "appendedChars": 322,
+    "rootChildCount": 1,
+    "selectors": {
+      "hasTable": false,
+      "hasPre": false,
+      "hasFootnotes": false,
+      "hasMdxPending": false,
+      "hasMdxCompiled": false,
+      "hasBlockquote": false,
+      "hasMath": false
+    },
+    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Environment Hard-Stop\">Math V2A Environment Hard-Stop</h1><p class=\"markdown-paragraph\">$$\n\\begin{matrix}\na &amp; b</p><p class=\"markdown-paragraph\">Expected direction:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as structured environment pressure</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">hard-stop / fallback</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no optimistic environment closure</li></ul><p class=\"markdown-paragraph\">Trailing prose must remain visible after the unsupported environment math.</p><p class=\"markdown-paragraph\">Final paragraph after the unsupported environment math case.</p></div>",
+    "runtimeState": {
+      "rendererVersion": 19,
+      "queueDepth": 0,
+      "pendingBatches": 0,
+      "workerReady": true,
+      "lastTx": 16,
+      "lastPatchToDomMs": 12.5,
+      "lastDurationMs": 0.5,
+      "meta": {
+        "fixtureId": "math-environment-hard-stop-negative",
+        "scenarioId": "S3_fast_reasonable",
+        "seed": null,
+        "schedulerMode": null
+      },
+      "storeCounters": {
+        "appendLineGuardRejected": 0,
+        "staleEpochRejected": 0,
+        "storeInvariantViolationCount": 0
+      }
+    },
+    "structure": {
+      "topLevelTags": [
+        "div"
+      ],
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      }
+    },
+    "children": [
+      {
+        "index": 0,
+        "tag": "div",
+        "hash": "257530604de0e6f05044261302881bc49db746ca160552eb375140696a313bf6",
+        "textSample": "Math V2A Environment Hard-Stop$$\n\\begin{matrix}\na & bExpected direction:classify as structured environment pressurehard-"
+      }
+    ],
+    "inspection": {
+      "tables": [],
+      "mdxBlocks": [],
+      "codeBlocks": []
+    }
+  }
+}

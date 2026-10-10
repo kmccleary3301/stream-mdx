@@ -31,8 +31,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 3,
-        "lastDurationMs": 2.5,
+        "lastPatchToDomMs": 1.0999999940395355,
+        "lastDurationMs": 0.7999999821186066,
         "meta": {
           "fixtureId": "math-inline-hard-stop-negative",
           "scenarioId": "S2_typical",
@@ -97,8 +97,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 3,
-        "lastDurationMs": 2.5,
+        "lastPatchToDomMs": 1.0999999940395355,
+        "lastDurationMs": 0.7999999821186066,
         "meta": {
           "fixtureId": "math-inline-hard-stop-negative",
           "scenarioId": "S2_typical",
@@ -163,8 +163,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 2,
-        "lastPatchToDomMs": 0.6000000014901161,
-        "lastDurationMs": 0.3999999985098839,
+        "lastPatchToDomMs": 0.10000002384185791,
+        "lastDurationMs": 0.10000002384185791,
         "meta": {
           "fixtureId": "math-inline-hard-stop-negative",
           "scenarioId": "S2_typical",
@@ -196,7 +196,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Inline Hard Stop Negative\">Math Inline Hard Stop Negative</h1><p class=\"markdown-paragraph streaming-partial\">Unsu</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Inline Hard Stop Negative\">Math Inline Hard Stop Negative</h1><p class=\"markdown-paragraph\">Unsu</p></div>",
       "textSample": "Math Inline Hard Stop NegativeUnsu",
       "structure": {
         "topLevelTags": [
@@ -229,8 +229,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 4,
-        "lastPatchToDomMs": 5.800000004470348,
-        "lastDurationMs": 0.30000000447034836,
+        "lastPatchToDomMs": 14.299999982118607,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "math-inline-hard-stop-negative",
           "scenarioId": "S2_typical",
@@ -262,7 +262,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Inline Hard Stop Negative\">Math Inline Hard Stop Negative</h1><p class=\"markdown-paragraph streaming-partial\">Unsupported inline math should remain cons</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Inline Hard Stop Negative\">Math Inline Hard Stop Negative</h1><p class=\"markdown-paragraph\">Unsupported inline math should remain cons</p></div>",
       "textSample": "Math Inline Hard Stop NegativeUnsupported inline math should remain cons",
       "structure": {
         "topLevelTags": [
@@ -295,8 +295,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 8,
-        "lastPatchToDomMs": 1,
-        "lastDurationMs": 0.6000000014901161,
+        "lastPatchToDomMs": 12.599999994039536,
+        "lastDurationMs": 0.19999998807907104,
         "meta": {
           "fixtureId": "math-inline-hard-stop-negative",
           "scenarioId": "S2_typical",
@@ -361,8 +361,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 12,
-        "lastPatchToDomMs": 1.7000000029802322,
-        "lastDurationMs": 0.30000000447034836,
+        "lastPatchToDomMs": 13.900000005960464,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "math-inline-hard-stop-negative",
           "scenarioId": "S2_typical",
@@ -427,8 +427,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 14,
-        "lastPatchToDomMs": 6.200000002980232,
-        "lastDurationMs": 0.3999999985098839,
+        "lastPatchToDomMs": 14.900000005960464,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "math-inline-hard-stop-negative",
           "scenarioId": "S2_typical",
@@ -460,7 +460,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Inline Hard Stop Negative\">Math Inline Hard Stop Negative</h1><p class=\"markdown-paragraph\">Unsupported inline math should remain conservative: $\\left(x + y and trailing prose must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested item with unsupported environment marker kept raw: $\\begin{align} and sibling prose.</li></ul><p class=\"markdown-paragraph streaming-partial\">Final paragraph after the unsup</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Inline Hard Stop Negative\">Math Inline Hard Stop Negative</h1><p class=\"markdown-paragraph\">Unsupported inline math should remain conservative: $\\left(x + y and trailing prose must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested item with unsupported environment marker kept raw: $\\begin{align} and sibling prose.</li></ul><p class=\"markdown-paragraph\">Final paragraph after the unsup</p></div>",
       "textSample": "Math Inline Hard Stop NegativeUnsupported inline math should remain conservative: $\\left(x + y and trailing prose must remain visible.Nested item with unsupported environment marker kept raw: $\\begin{",
       "structure": {
         "topLevelTags": [
@@ -493,8 +493,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 15,
-        "lastPatchToDomMs": 0.5,
-        "lastDurationMs": 0.09999999403953552,
+        "lastPatchToDomMs": 13.899999976158142,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "math-inline-hard-stop-negative",
           "scenarioId": "S2_typical",
@@ -526,7 +526,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Inline Hard Stop Negative\">Math Inline Hard Stop Negative</h1><p class=\"markdown-paragraph\">Unsupported inline math should remain conservative: $\\left(x + y and trailing prose must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested item with unsupported environment marker kept raw: $\\begin{align} and sibling prose.</li></ul><p class=\"markdown-paragraph streaming-partial\">Final paragraph after the unsupported math cases.</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Inline Hard Stop Negative\">Math Inline Hard Stop Negative</h1><p class=\"markdown-paragraph\">Unsupported inline math should remain conservative: $\\left(x + y and trailing prose must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested item with unsupported environment marker kept raw: $\\begin{align} and sibling prose.</li></ul><p class=\"markdown-paragraph\">Final paragraph after the unsupported math cases.</p></div>",
       "textSample": "Math Inline Hard Stop NegativeUnsupported inline math should remain conservative: $\\left(x + y and trailing prose must remain visible.Nested item with unsupported environment marker kept raw: $\\begin{",
       "structure": {
         "topLevelTags": [
@@ -565,13 +565,13 @@
     },
     "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Inline Hard Stop Negative\">Math Inline Hard Stop Negative</h1><p class=\"markdown-paragraph\">Unsupported inline math should remain conservative: $\\left(x + y and trailing prose must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Nested item with unsupported environment marker kept raw: $\\begin{align} and sibling prose.</li></ul><p class=\"markdown-paragraph\">Final paragraph after the unsupported math cases.</p></div>",
     "runtimeState": {
-      "rendererVersion": 19,
+      "rendererVersion": 20,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
-      "lastTx": 16,
-      "lastPatchToDomMs": 1.6000000014901161,
-      "lastDurationMs": 1.3999999985098839,
+      "lastTx": 17,
+      "lastPatchToDomMs": 14.300000011920929,
+      "lastDurationMs": 0.5999999940395355,
       "meta": {
         "fixtureId": "math-inline-hard-stop-negative",
         "scenarioId": "S2_typical",

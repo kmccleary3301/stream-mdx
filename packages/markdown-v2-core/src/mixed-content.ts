@@ -78,12 +78,13 @@ export function extractMixedContentSegmentsWithLookahead(
   options?: MixedContentOptions,
 ): MixedContentExtractionResult {
   if (!raw) return { segments: [], lookahead: [] };
-  const initial = splitByTagSegments(raw, baseOffset, parseInline, options);
+  const needsLocalRanges = !(typeof baseOffset === "number" && Number.isFinite(baseOffset)) && (options?.protectedRanges?.length ?? 0) > 0;
+  const initial = splitByTagSegments(raw, needsLocalRanges ? 0 : baseOffset, parseInline, options);
   const expanded: MixedContentSegment[] = [];
   const lookahead: LookaheadDecisionTrace[] = [];
   for (const segment of initial) {
     if (segment.kind === "text") {
-      const splitSegments = splitTextSegmentByExpressions(segment, parseInline, options?.lookaheadContext);
+      const splitSegments = splitTextSegmentByExpressions(segment, parseInline, options);
       expanded.push(...splitSegments);
       for (const splitSegment of splitSegments) {
         if (Array.isArray(splitSegment.lookahead) && splitSegment.lookahead.length > 0) {
@@ -97,7 +98,11 @@ export function extractMixedContentSegmentsWithLookahead(
       lookahead.push(...(segment.lookahead as LookaheadDecisionTrace[]));
     }
   }
-  return { segments: mergeAdjacentTextSegments(expanded, parseInline), lookahead };
+  const segments = mergeAdjacentTextSegments(expanded, parseInline);
+  if (needsLocalRanges) {
+    for (const segment of segments) delete segment.range;
+  }
+  return { segments, lookahead };
 }
 
 function splitByTagSegments(
@@ -299,7 +304,7 @@ function splitByTagSegments(
   return segments;
 }
 
-function splitTextSegmentByExpressions(segment: MixedContentSegment, parseInline: (content: string) => InlineNode[], context?: Partial<LookaheadContainerContext>): MixedContentSegment[] {
+function splitTextSegmentByExpressions(segment: MixedContentSegment, parseInline: (content: string) => InlineNode[], options?: MixedContentOptions): MixedContentSegment[] {
   if (segment.kind !== "text" || !segment.value) {
     return [segment];
   }
@@ -309,6 +314,11 @@ function splitTextSegmentByExpressions(segment: MixedContentSegment, parseInline
   }
   const hasRange = segment.range && typeof segment.range.from === "number" && typeof segment.range.to === "number";
   const rangeStart = hasRange ? segment.range?.from : undefined;
+  const context = options?.lookaheadContext;
+  const protectedRanges = options?.protectedRanges ?? [];
+  const protectedKinds = protectedRanges.length
+    ? new Set<ProtectedRange["kind"]>(options?.protectedRangeKinds ?? ["math-inline", "math-display", "code-inline", "code-block", "autolink"])
+    : null;
   const exprPattern = /\{[^{}]+\}/g;
   const results: MixedContentSegment[] = [];
   let cursor = 0;
@@ -318,6 +328,12 @@ function splitTextSegmentByExpressions(segment: MixedContentSegment, parseInline
   while (match !== null) {
     const start = match.index;
     const end = exprPattern.lastIndex;
+    const absoluteStart = (rangeStart ?? 0) + start;
+    const absoluteEnd = (rangeStart ?? 0) + end;
+    if (protectedKinds && protectedRanges.some((range) => protectedKinds.has(range.kind) && range.from <= absoluteStart && range.to >= absoluteEnd)) {
+      match = exprPattern.exec(value);
+      continue;
+    }
     if (start > cursor) {
       const textValue = value.slice(cursor, start);
       results.push(
@@ -335,6 +351,7 @@ function splitTextSegmentByExpressions(segment: MixedContentSegment, parseInline
     cursor = end;
     match = exprPattern.exec(value);
   }
+  if (results.length === 0) return [segment];
 
   if (cursor < value.length) {
     const textValue = value.slice(cursor);

@@ -4,7 +4,7 @@ import React, { act } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createRoot, hydrateRoot } from "react-dom/client";
 import { JSDOM } from "jsdom";
-import type { Block, HtmlOptions, SyntaxRuleSpec, WorkerOut } from "@stream-mdx/core";
+import type { Block, HtmlOptions, SyntaxRuleSpec, WorkerIn, WorkerOut } from "@stream-mdx/core";
 import { compileMarkdownSnapshotDirect } from "@stream-mdx/worker/direct";
 import { createInlineEngineWorker } from "@stream-mdx/worker/engine";
 import { ComponentRegistry, MarkdownBlocksRenderer, createRendererStore, type RendererStore } from "../src/server";
@@ -34,7 +34,7 @@ function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void; reje
   return { promise, resolve, reject };
 }
 
-async function streamed(text: string, config: { html?: HtmlOptions; syntax?: SyntaxRuleSpec[] } = {}): Promise<RendererStore> {
+async function streamed(text: string, config: Pick<Extract<WorkerIn, { type: "INIT" }>, "html" | "syntax" | "docPlugins" | "mdxCompileMode"> = {}): Promise<RendererStore> {
   const worker = createInlineEngineWorker();
   const store = createRendererStore();
   const { promise, resolve, reject } = deferred<RendererStore>();
@@ -170,6 +170,93 @@ for (const [source, expected] of [
   assert.equal(hydrated.querySelector("pre")?.textContent, expected);
   assert.deepEqual(errors, [], "literal HTML hydration must not replace mismatched server text");
   await act(async () => { hydrationRoot.unmount(); });
+}
+
+// The authored HTML fixture contains braces owned by native code, not MDX.
+const inlineHtmlFixture = await fs.readFile(new URL("../../../tests/regression/fixtures/inline-html.md", import.meta.url), "utf8");
+const codeParagraph = "Inline code with language hint: `{:js}{:js}`.";
+const expectedParagraph = "Inline code with language hint: {:js}{:js}.";
+const codeSource = [
+  inlineHtmlFixture.trimEnd(),
+  "",
+  `> ${codeParagraph}`,
+  "",
+  `- ${codeParagraph}`,
+  "",
+  "- parent",
+  "",
+  `  ${codeParagraph}`,
+  "",
+  `  - ${codeParagraph}`,
+  "",
+  "Double ticks: `` {:js} `literal` {:js} ``.",
+  "",
+  "| Code |",
+  "| --- |",
+  "| `{:js}{:js}` |",
+  "",
+].join("\n");
+const codeInit = { ...init, docPlugins: { ...init.docPlugins, mdx: true }, mdxCompileMode: "server" as const };
+const codeCompiled = await compileMarkdownSnapshotDirect({ text: codeSource, init: codeInit });
+const codeSerialized = JSON.parse(JSON.stringify(codeCompiled.blocks)) as Block[];
+const codeStore = await streamed(codeSource, codeInit);
+const customCodeRegistry = new ComponentRegistry({
+  paragraph: ({ children }) => <p data-paragraph="configured">{children}</p>,
+});
+customCodeRegistry.setInlineComponents({
+  code: ({ text }) => <code className="inline-code" data-code="configured">{text}</code>,
+});
+for (const registry of [new ComponentRegistry(), customCodeRegistry]) {
+  for (const element of [
+    <MarkdownBlocksRenderer blocks={codeCompiled.blocks} componentRegistry={registry} />,
+    <MarkdownBlocksRenderer blocks={codeSerialized} componentRegistry={registry} />,
+    <MarkdownBlocksRenderer store={codeStore} componentRegistry={registry} />,
+  ]) {
+    const assertCodeOwnership = (root: ParentNode) => {
+      const codes = Array.from(root.querySelectorAll("code.inline-code"));
+      assert.deepEqual(codes.map((code) => code.textContent), [
+        "{:js}{:js}", "{:js}{:js}", "{:js}{:js}", "{:js}{:js}", "{:js}{:js}",
+        "{:js} `literal` {:js}", "{:js}{:js}",
+      ], "root, nested paragraphs/list items, double ticks and table cells must retain native inline-code ownership");
+      assert.equal(root.querySelector(".markdown-mdx-inline, .markdown-mdx-error, [data-mdx-status]"), null);
+      assert.equal(codes[0].closest("p")?.textContent, expectedParagraph, "the fixture's whole paragraph prose must survive");
+      assert.equal(codes[1].closest("blockquote p")?.textContent, expectedParagraph);
+      assert.equal(codes[2].closest("li")?.textContent, expectedParagraph);
+      assert.equal(codes[3].closest("p")?.textContent, expectedParagraph);
+      assert.ok(codes[4].closest("li li"));
+      assert.equal(codes[6].closest("td")?.textContent, "{:js}{:js}");
+      if (registry === customCodeRegistry) {
+        assert.equal(root.querySelectorAll('code[data-code="configured"]').length, codes.length);
+        assert.ok(codes[0].closest('p[data-paragraph="configured"]'));
+      }
+    };
+    assertCodeOwnership(new JSDOM(renderToStaticMarkup(element)).window.document);
+    const mounted = window.document.createElement("div");
+    const root = createRoot(mounted);
+    try {
+      await act(async () => { root.render(element); });
+      assertCodeOwnership(mounted);
+    } finally {
+      await act(async () => { root.unmount(); });
+    }
+  }
+}
+const outsideCodeSource = "Code `{:js}{:js}` with <em>HTML</em> and {outside} <InlineChip /> [link](/safe) tail.";
+const outsideCodeCompiled = await compileMarkdownSnapshotDirect({ text: outsideCodeSource, init: codeInit });
+const outsideCodeStore = await streamed(outsideCodeSource, codeInit);
+for (const registry of [new ComponentRegistry(), customCodeRegistry]) {
+  for (const markup of [
+    render(JSON.parse(JSON.stringify(outsideCodeCompiled.blocks)) as Block[], registry),
+    render([], registry, outsideCodeStore),
+  ]) {
+    const document = new JSDOM(markup).window.document;
+    assert.equal(document.querySelector("code.inline-code")?.textContent, "{:js}{:js}");
+    assert.equal(document.querySelector("em")?.textContent, "HTML");
+    assert.deepEqual(Array.from(document.querySelectorAll(".markdown-mdx-inline")).map((span) => span.textContent), ["{outside}", "<InlineChip />"]);
+    assert.equal(document.querySelector('[data-mdx-status="error"]'), null);
+    assert.equal(document.querySelector('a[href="/safe"]')?.textContent, "link");
+    assert.equal(document.querySelector("p")?.textContent, "Code {:js}{:js} with HTML and {outside} <InlineChip /> link tail.");
+  }
 }
 for (const [key, descriptor] of globalDescriptors) {
   if (descriptor) Object.defineProperty(globalThis, key, descriptor);

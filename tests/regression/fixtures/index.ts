@@ -61,7 +61,9 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
     title: "Inline HTML",
     file: "inline-html.md",
     tags: ["html"],
-    requiredSelectors: ["kbd", "sub", "sup"],
+    requiredSelectors: ["kbd", "sub", "sup", "code.inline-code"],
+    forbidSelectors: [".markdown-mdx-inline", "[data-mdx-status]"],
+    requiredTextFragments: ["Inline code with language hint: {:js}{:js}."],
   },
   {
     id: "footnotes",

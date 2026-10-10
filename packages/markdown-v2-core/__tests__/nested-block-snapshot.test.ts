@@ -135,3 +135,44 @@ assert.equal(orderedQuotePrepared.children[1].props?.ordered, true);
 assert.equal(orderedQuotePrepared.children[1].props?.start, 3);
 assert.deepEqual(orderedQuotePrepared.children[1].children?.map((item) => item.props?.text), ["first", "second"]);
 assert.deepEqual([orderedQuotePrepared.children[0].props?.text, orderedQuotePrepared.children[2].props?.text], ["before", "after"]);
+
+for (const raw of [
+  "- Inline code: `{:js}{:js}`.\n",
+  "> - Inline code: `{:js}{:js}`.\n",
+  "- parent\n  - Inline code: `{:js}{:js}`.\n",
+  "- [x] Inline code: `{:js}{:js}`.\n",
+  "- Inline code: `` {:js} `literal` {:js} ``.\n",
+]) {
+  const block: Block = {
+    id: "native-code",
+    type: raw.startsWith(">") ? "blockquote" : "list",
+    isFinalized: true,
+    payload: { raw, range: { from: 700, to: 700 + raw.length } },
+  };
+  block.payload.meta = { preparedNested: prepareNestedBlockSnapshot(block, new InlineParser(), nativeParser) };
+  for (const value of [block, JSON.parse(JSON.stringify(block)) as Block]) {
+    const nodes = flatten(createBlockSnapshot(value));
+    assert.equal(nodes.some((node) => node.type === "list-item-mdx"), false, raw);
+    const item = nodes.find((node) => node.type === "list-item" && (node.props?.text as string).startsWith("Inline code:"));
+    assert.ok(item, raw);
+    assert.deepEqual((item.props?.inline as Array<{ kind: string; text?: string }>).filter((node) => node.kind === "code"), [
+      { kind: "code", text: raw.includes("``") ? "{:js} `literal` {:js}" : "{:js}{:js}" },
+    ]);
+    assert.equal(item.props?.text, raw.includes("``") ? "Inline code: {:js} `literal` {:js}." : "Inline code: {:js}{:js}.");
+  }
+}
+
+const mixedCodeRaw = "- Before <em>HTML</em> `{:js}{:js}` after {outside} <InlineChip /> tail.\n";
+const mixedCodeBlock: Block = {
+  id: "native-code-outside",
+  type: "list",
+  isFinalized: true,
+  payload: { raw: mixedCodeRaw, range: { from: 900, to: 900 + mixedCodeRaw.length } },
+};
+mixedCodeBlock.payload.meta = { preparedNested: prepareNestedBlockSnapshot(mixedCodeBlock, new InlineParser(), nativeParser) };
+const mixedCodeNodes = flatten(createBlockSnapshot(JSON.parse(JSON.stringify(mixedCodeBlock)) as Block));
+assert.deepEqual(mixedCodeNodes.filter((node) => node.type === "list-item-mdx").map((node) => node.props?.raw), ["{outside}", "<InlineChip />"]);
+assert.deepEqual(mixedCodeNodes.filter((node) => node.type === "list-item-html").map((node) => node.props?.raw), ["<em>HTML</em>"]);
+assert.deepEqual(mixedCodeNodes.filter((node) => node.type === "list-item-text").flatMap((node) => node.props?.inline as Array<{ kind: string; text?: string }>).filter((node) => node.kind === "code"), [
+  { kind: "code", text: "{:js}{:js}" },
+]);

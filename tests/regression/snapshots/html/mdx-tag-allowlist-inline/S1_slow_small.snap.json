@@ -1,0 +1,753 @@
+{
+  "fixtureId": "mdx-tag-allowlist-inline",
+  "fixtureTitle": "MDX Tag Allowlist Inline",
+  "scenarioId": "S1_slow_small",
+  "scenario": {
+    "id": "S1_slow_small",
+    "label": "Slow + small chunks",
+    "updateIntervalMs": 50,
+    "charRateCps": 200,
+    "maxChunkChars": 32
+  },
+  "runMeta": {
+    "seed": null,
+    "schedulerMode": null,
+    "usedSplitMarkers": false,
+    "fixtureTags": [
+      "anticipation",
+      "mdx",
+      "inline"
+    ]
+  },
+  "totalLength": 297,
+  "checkpoints": [
+    {
+      "id": "after-first-chunk",
+      "appendedChars": 10,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 4,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 1,
+        "lastPatchToDomMs": 1.0999999940395355,
+        "lastDurationMs": 0.9000000059604645,
+        "meta": {
+          "fixtureId": "mdx-tag-allowlist-inline",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag\">MDX Tag</h1></div>",
+      "textSample": "MDX Tag",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-15",
+      "appendedChars": 20,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 5,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 2,
+        "lastPatchToDomMs": 0.09999999403953552,
+        "lastDurationMs": 0.09999999403953552,
+        "meta": {
+          "fixtureId": "mdx-tag-allowlist-inline",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist\">MDX Tag Allowlist</h1></div>",
+      "textSample": "MDX Tag Allowlist",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-30",
+      "appendedChars": 30,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 6,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 3,
+        "lastPatchToDomMs": 10.5,
+        "lastDurationMs": 0.09999999403953552,
+        "meta": {
+          "fixtureId": "mdx-tag-allowlist-inline",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Pr</p></div>",
+      "textSample": "MDX Tag Allowlist InlinePr",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "event-hasMdxPending",
+      "appendedChars": 60,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 9,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 6,
+        "lastPatchToDomMs": 14.400000005960464,
+        "lastDurationMs": 0.20000001788139343,
+        "meta": {
+          "fixtureId": "mdx-tag-allowlist-inline",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": true,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 1,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><div class=\"markdown-mdx\" data-mdx-ref=\"pending\" data-mdx-status=\"pending\" data-mdx-mode=\"server\">Compiling MDX (server)…</div></div>",
+      "textSample": "MDX Tag Allowlist InlineCompiling MDX (server)…",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 1,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [
+          {
+            "status": "pending",
+            "textSample": "Compiling MDX (server)…"
+          }
+        ],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-74",
+      "appendedChars": 80,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 11,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 8,
+        "lastPatchToDomMs": 14.900000005960464,
+        "lastDurationMs": 0.10000002384185791,
+        "meta": {
+          "fixtureId": "mdx-tag-allowlist-inline",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"warm\"/&gt;</span> and traili</p></div>",
+      "textSample": "MDX Tag Allowlist InlinePrefix text with <InlineChip tone=\"warm\"/> and traili",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-149",
+      "appendedChars": 150,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 18,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 15,
+        "lastPatchToDomMs": 15,
+        "lastDurationMs": 0.10000002384185791,
+        "meta": {
+          "fixtureId": "mdx-tag-allowlist-inline",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"warm\"/&gt;</span> and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=</li></ul></div>",
+      "textSample": "MDX Tag Allowlist InlinePrefix text with <InlineChip tone=\"warm\"/> and trailing prose that must remain visible.List item with <InlineChip tone=",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "event-hasBlockquote",
+      "appendedChars": 190,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 22,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 19,
+        "lastPatchToDomMs": 14.800000011920929,
+        "lastDurationMs": 0.20000001788139343,
+        "meta": {
+          "fixtureId": "mdx-tag-allowlist-inline",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": true,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 1,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"warm\"/&gt;</span> and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">B</p></blockquote></div>",
+      "textSample": "MDX Tag Allowlist InlinePrefix text with <InlineChip tone=\"warm\"/> and trailing prose that must remain visible.List item with <InlineChip tone=\"cool\"> and sibling text afterward.B",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 1,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-223",
+      "appendedChars": 230,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 26,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 23,
+        "lastPatchToDomMs": 15,
+        "lastDurationMs": 0.09999999403953552,
+        "meta": {
+          "fixtureId": "mdx-tag-allowlist-inline",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": true,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 1,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"warm\"/&gt;</span> and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"sharp\"/&gt;</span></p></blockquote></div>",
+      "textSample": "MDX Tag Allowlist InlinePrefix text with <InlineChip tone=\"warm\"/> and trailing prose that must remain visible.List item with <InlineChip tone=\"cool\"> and sibling text afterward.Blockquote with <Inlin",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 1,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-267",
+      "appendedChars": 270,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 30,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 27,
+        "lastPatchToDomMs": 15.300000011920929,
+        "lastDurationMs": 0.20000001788139343,
+        "meta": {
+          "fixtureId": "mdx-tag-allowlist-inline",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": true,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 1,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"warm\"/&gt;</span> and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"sharp\"/&gt;</span> and trailing content.</p></blockquote><p class=\"markdown-paragraph\">Final paragraph </p></div>",
+      "textSample": "MDX Tag Allowlist InlinePrefix text with <InlineChip tone=\"warm\"/> and trailing prose that must remain visible.List item with <InlineChip tone=\"cool\"> and sibling text afterward.Blockquote with <Inlin",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 1,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-297",
+      "appendedChars": 297,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 33,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 30,
+        "lastPatchToDomMs": 15,
+        "lastDurationMs": 0,
+        "meta": {
+          "fixtureId": "mdx-tag-allowlist-inline",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasMdxPending": false,
+        "hasMdxCompiled": false,
+        "hasBlockquote": true,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 1,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"warm\"/&gt;</span> and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"sharp\"/&gt;</span> and trailing content.</p></blockquote><p class=\"markdown-paragraph\">Final paragraph after the inline MDX tags.</p></div>",
+      "textSample": "MDX Tag Allowlist InlinePrefix text with <InlineChip tone=\"warm\"/> and trailing prose that must remain visible.List item with <InlineChip tone=\"cool\"> and sibling text afterward.Blockquote with <Inlin",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 1,
+          "katex": 0,
+          "mdxPending": 0,
+          "mdxCompiled": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    }
+  ],
+  "final": {
+    "id": "after-finalize",
+    "appendedChars": 297,
+    "rootChildCount": 1,
+    "selectors": {
+      "hasTable": false,
+      "hasPre": false,
+      "hasFootnotes": false,
+      "hasMdxPending": false,
+      "hasMdxCompiled": false,
+      "hasBlockquote": true,
+      "hasMath": false
+    },
+    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"warm\"/&gt;</span> and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"sharp\"/&gt;</span> and trailing content.</p></blockquote><p class=\"markdown-paragraph\">Final paragraph after the inline MDX tags.</p></div>",
+    "runtimeState": {
+      "rendererVersion": 35,
+      "queueDepth": 0,
+      "pendingBatches": 0,
+      "workerReady": true,
+      "lastTx": 32,
+      "lastPatchToDomMs": 13,
+      "lastDurationMs": 0.6000000238418579,
+      "meta": {
+        "fixtureId": "mdx-tag-allowlist-inline",
+        "scenarioId": "S1_slow_small",
+        "seed": null,
+        "schedulerMode": null
+      },
+      "storeCounters": {
+        "appendLineGuardRejected": 0,
+        "staleEpochRejected": 0,
+        "storeInvariantViolationCount": 0
+      }
+    },
+    "structure": {
+      "topLevelTags": [
+        "div"
+      ],
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 1,
+        "katex": 0,
+        "mdxPending": 0,
+        "mdxCompiled": 0,
+        "footnotes": 0,
+        "hr": 0
+      }
+    },
+    "children": [
+      {
+        "index": 0,
+        "tag": "div",
+        "hash": "7779df26c240ec59f4a9afe1069f23c1aa8f56020393c4afa705abdba36f7d34",
+        "textSample": "MDX Tag Allowlist InlinePrefix text with <InlineChip tone=\"warm\"/> and trailing prose that must remain visible.List item"
+      }
+    ],
+    "inspection": {
+      "tables": [],
+      "mdxBlocks": [],
+      "codeBlocks": []
+    }
+  }
+}

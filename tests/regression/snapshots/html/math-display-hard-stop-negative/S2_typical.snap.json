@@ -32,8 +32,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 4.300000000745058,
-        "lastDurationMs": 3.5,
+        "lastPatchToDomMs": 1,
+        "lastDurationMs": 0.7999999821186066,
         "meta": {
           "fixtureId": "math-display-hard-stop-negative",
           "scenarioId": "S2_typical",
@@ -98,8 +98,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 4.300000000745058,
-        "lastDurationMs": 3.5,
+        "lastPatchToDomMs": 1,
+        "lastDurationMs": 0.7999999821186066,
         "meta": {
           "fixtureId": "math-display-hard-stop-negative",
           "scenarioId": "S2_typical",
@@ -164,8 +164,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 2,
-        "lastPatchToDomMs": 0.3999999985098839,
-        "lastDurationMs": 0.3999999985098839,
+        "lastPatchToDomMs": 0.09999999403953552,
+        "lastDurationMs": 0.09999999403953552,
         "meta": {
           "fixtureId": "math-display-hard-stop-negative",
           "scenarioId": "S2_typical",
@@ -197,7 +197,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Display Hard Stop Negative\">Math Display Hard Stop Negative</h1><p class=\"markdown-paragraph streaming-partial\">Uns</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Display Hard Stop Negative\">Math Display Hard Stop Negative</h1><p class=\"markdown-paragraph\">Uns</p></div>",
       "textSample": "Math Display Hard Stop NegativeUns",
       "structure": {
         "topLevelTags": [
@@ -230,8 +230,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 5,
-        "lastPatchToDomMs": 8.599999997764826,
-        "lastDurationMs": 0.3999999985098839,
+        "lastPatchToDomMs": 13.900000005960464,
+        "lastDurationMs": 0.30000001192092896,
         "meta": {
           "fixtureId": "math-display-hard-stop-negative",
           "scenarioId": "S2_typical",
@@ -263,7 +263,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Display Hard Stop Negative\">Math Display Hard Stop Negative</h1><p class=\"markdown-paragraph\">Unsupported display math should remain conservative.</p><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow></mrow><annotation encoding=\"application/x-tex\"></annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"></span></span></span></span></div></div></div></div></div></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Display Hard Stop Negative\">Math Display Hard Stop Negative</h1><p class=\"markdown-paragraph\">Unsupported display math should remain conservative.</p><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow></mrow><annotation encoding=\"application/x-tex\"></annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"></span></span></span></span></div></div></div></div></div></div></div>",
       "textSample": "Math Display Hard Stop NegativeUnsupported display math should remain conservative.[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[dat",
       "structure": {
         "topLevelTags": [
@@ -296,8 +296,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 5,
-        "lastPatchToDomMs": 8.599999997764826,
-        "lastDurationMs": 0.3999999985098839,
+        "lastPatchToDomMs": 13.900000005960464,
+        "lastDurationMs": 0.30000001192092896,
         "meta": {
           "fixtureId": "math-display-hard-stop-negative",
           "scenarioId": "S2_typical",
@@ -329,7 +329,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Display Hard Stop Negative\">Math Display Hard Stop Negative</h1><p class=\"markdown-paragraph\">Unsupported display math should remain conservative.</p><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow></mrow><annotation encoding=\"application/x-tex\"></annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"></span></span></span></span></div></div></div></div></div></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Display Hard Stop Negative\">Math Display Hard Stop Negative</h1><p class=\"markdown-paragraph\">Unsupported display math should remain conservative.</p><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow></mrow><annotation encoding=\"application/x-tex\"></annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"></span></span></span></span></div></div></div></div></div></div></div>",
       "textSample": "Math Display Hard Stop NegativeUnsupported display math should remain conservative.[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[dat",
       "structure": {
         "topLevelTags": [
@@ -362,8 +362,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 9,
-        "lastPatchToDomMs": 4,
-        "lastDurationMs": 0.19999999925494194,
+        "lastPatchToDomMs": 14.900000005960464,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "math-display-hard-stop-negative",
           "scenarioId": "S2_typical",
@@ -395,7 +395,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Display Hard Stop Negative\">Math Display Hard Stop Negative</h1><p class=\"markdown-paragraph\">Unsupported display math should remain conservative.</p><p class=\"markdown-paragraph\">$$\n\\begin{align}\nx + y</p><p class=\"markdown-paragraph streaming-partial\">This trailing prose must remain visible after the unfinish</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Display Hard Stop Negative\">Math Display Hard Stop Negative</h1><p class=\"markdown-paragraph\">Unsupported display math should remain conservative.</p><p class=\"markdown-paragraph\">$$\n\\begin{align}\nx + y</p><p class=\"markdown-paragraph\">This trailing prose must remain visible after the unfinish</p></div>",
       "textSample": "Math Display Hard Stop NegativeUnsupported display math should remain conservative.$$\n\\begin{align}\nx + yThis trailing prose must remain visible after the unfinish",
       "structure": {
         "topLevelTags": [
@@ -428,8 +428,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 13,
-        "lastPatchToDomMs": 8.599999997764826,
-        "lastDurationMs": 0.3999999985098839,
+        "lastPatchToDomMs": 13.5,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "math-display-hard-stop-negative",
           "scenarioId": "S2_typical",
@@ -494,8 +494,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 16,
-        "lastPatchToDomMs": 9.699999999254942,
-        "lastDurationMs": 0.29999999701976776,
+        "lastPatchToDomMs": 14.199999988079071,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "math-display-hard-stop-negative",
           "scenarioId": "S2_typical",
@@ -527,7 +527,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Display Hard Stop Negative\">Math Display Hard Stop Negative</h1><p class=\"markdown-paragraph\">Unsupported display math should remain conservative.</p><p class=\"markdown-paragraph\">$$\n\\begin{align}\nx + y</p><p class=\"markdown-paragraph\">This trailing prose must remain visible after the unfinished display block.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">The following list item must remain visible as ordinary markdown content.</li></ul><p class=\"markdown-paragraph streaming-partial\">Final paragraph after the unsupported</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Display Hard Stop Negative\">Math Display Hard Stop Negative</h1><p class=\"markdown-paragraph\">Unsupported display math should remain conservative.</p><p class=\"markdown-paragraph\">$$\n\\begin{align}\nx + y</p><p class=\"markdown-paragraph\">This trailing prose must remain visible after the unfinished display block.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">The following list item must remain visible as ordinary markdown content.</li></ul><p class=\"markdown-paragraph\">Final paragraph after the unsupported</p></div>",
       "textSample": "Math Display Hard Stop NegativeUnsupported display math should remain conservative.$$\n\\begin{align}\nx + yThis trailing prose must remain visible after the unfinished display block.The following list i",
       "structure": {
         "topLevelTags": [
@@ -560,8 +560,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 17,
-        "lastPatchToDomMs": 0.5,
-        "lastDurationMs": 0.20000000298023224,
+        "lastPatchToDomMs": 13,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "math-display-hard-stop-negative",
           "scenarioId": "S2_typical",
@@ -593,7 +593,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Display Hard Stop Negative\">Math Display Hard Stop Negative</h1><p class=\"markdown-paragraph\">Unsupported display math should remain conservative.</p><p class=\"markdown-paragraph\">$$\n\\begin{align}\nx + y</p><p class=\"markdown-paragraph\">This trailing prose must remain visible after the unfinished display block.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">The following list item must remain visible as ordinary markdown content.</li></ul><p class=\"markdown-paragraph streaming-partial\">Final paragraph after the unsupported display math case.</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Display Hard Stop Negative\">Math Display Hard Stop Negative</h1><p class=\"markdown-paragraph\">Unsupported display math should remain conservative.</p><p class=\"markdown-paragraph\">$$\n\\begin{align}\nx + y</p><p class=\"markdown-paragraph\">This trailing prose must remain visible after the unfinished display block.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">The following list item must remain visible as ordinary markdown content.</li></ul><p class=\"markdown-paragraph\">Final paragraph after the unsupported display math case.</p></div>",
       "textSample": "Math Display Hard Stop NegativeUnsupported display math should remain conservative.$$\n\\begin{align}\nx + yThis trailing prose must remain visible after the unfinished display block.The following list i",
       "structure": {
         "topLevelTags": [
@@ -632,13 +632,13 @@
     },
     "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math Display Hard Stop Negative\">Math Display Hard Stop Negative</h1><p class=\"markdown-paragraph\">Unsupported display math should remain conservative.</p><p class=\"markdown-paragraph\">$$\n\\begin{align}\nx + y</p><p class=\"markdown-paragraph\">This trailing prose must remain visible after the unfinished display block.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">The following list item must remain visible as ordinary markdown content.</li></ul><p class=\"markdown-paragraph\">Final paragraph after the unsupported display math case.</p></div>",
     "runtimeState": {
-      "rendererVersion": 21,
+      "rendererVersion": 22,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
-      "lastTx": 18,
-      "lastPatchToDomMs": 15.100000001490116,
-      "lastDurationMs": 1.300000000745058,
+      "lastTx": 19,
+      "lastPatchToDomMs": 9.5,
+      "lastDurationMs": 0.800000011920929,
       "meta": {
         "fixtureId": "math-display-hard-stop-negative",
         "scenarioId": "S2_typical",

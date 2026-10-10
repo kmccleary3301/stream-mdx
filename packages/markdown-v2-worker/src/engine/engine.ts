@@ -120,6 +120,7 @@ import {
 import {
   collectAutolinkProtectedRanges,
   collectChangedBlockIds,
+  collectCodeProtectedRanges,
   collectHtmlProtectedRangesFromSegments,
   collectMathProtectedRanges,
   collectNestedListItemInlineSources,
@@ -1337,10 +1338,10 @@ export class MarkdownEngine {
           metaChanged = true;
         }
 
-        const baseOffset = typeof block.payload.range?.from === "number" ? block.payload.range.from : undefined;
-        const protectedRanges: ProtectedRange[] = [];
+        const baseOffset = block.payload.range?.from ?? 0;
+        const protectedRanges = collectCodeProtectedRanges(rawParagraph);
         if (this.enableMath) {
-          protectedRanges.push(...collectMathProtectedRanges(rawParagraph));
+          protectedRanges.push(...collectMathProtectedRanges(rawParagraph, protectedRanges));
         }
         const autolinkRanges = collectAutolinkProtectedRanges(rawParagraph);
         if (autolinkRanges.length > 0) {
@@ -1571,18 +1572,25 @@ export class MarkdownEngine {
       if (nested.type === "list" || nested.type === "blockquote" || nested.type === "list-item") {
         if (nested.type === "list-item") {
           const range = nested.payload.range;
-          const text = range ? listItemSources.get(`${range.from}:${range.to}`) : undefined;
-          if (text !== undefined) {
+          const source = range ? listItemSources.get(`${range.from}:${range.to}`) : undefined;
+          if (source !== undefined) {
+            const { text, from: baseOffset } = source;
+            const codeRanges = collectCodeProtectedRanges(text).map((range) => ({
+              ...range,
+              from: baseOffset + range.from,
+              to: baseOffset + range.to,
+            }));
             const parsed = nested.isFinalized ? null : this.parseInlineStreaming(text, this.inlineContext(nested, ancestors), nested.payload.inline);
             this.updateInlineLookaheadMeta(nested, parsed, this.tracksInlineStatus());
             if (text.includes("<") || text.includes("{")) {
-              const extraction = extractMixedContentSegmentsWithLookahead(text, undefined,
+              const extraction = extractMixedContentSegmentsWithLookahead(text, baseOffset,
                 (value) => {
                   const inline = nested.isFinalized ? this.inlineParser.parse(value) : this.parseInlineStreaming(value, this.inlineContext(nested, ancestors, "mixed-content")).inline;
                   return this.mdxEnabled ? preserveInlineComponentSource(inline) : inline;
                 }, {
                   html: !nested.isFinalized && this.formatAnticipationConfig.html ? { autoClose: true, maxNewlines: MIXED_CONTENT_AUTOCLOSE_NEWLINES } : undefined,
                   mdx: { autoClose: !nested.isFinalized && this.formatAnticipationConfig.mdx, maxNewlines: MIXED_CONTENT_AUTOCLOSE_NEWLINES, componentAllowlist: this.mdxComponentAllowlist ?? undefined },
+                  protectedRanges: codeRanges,
                   allowedTags: this.htmlConfig?.allowedTags,
                   literalTagContent: this.htmlConfig?.literalTagContent,
                   lookaheadContext: this.inlineContext(nested, ancestors, "mixed-content"),

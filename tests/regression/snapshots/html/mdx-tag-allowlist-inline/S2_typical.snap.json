@@ -31,8 +31,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 3.099999997764826,
-        "lastDurationMs": 2.599999997764826,
+        "lastPatchToDomMs": 1,
+        "lastDurationMs": 0.9000000059604645,
         "meta": {
           "fixtureId": "mdx-tag-allowlist-inline",
           "scenarioId": "S2_typical",
@@ -97,8 +97,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 3.099999997764826,
-        "lastDurationMs": 2.599999997764826,
+        "lastPatchToDomMs": 1,
+        "lastDurationMs": 0.9000000059604645,
         "meta": {
           "fixtureId": "mdx-tag-allowlist-inline",
           "scenarioId": "S2_typical",
@@ -163,8 +163,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 2,
-        "lastPatchToDomMs": 0.30000000074505806,
-        "lastDurationMs": 0.30000000074505806,
+        "lastPatchToDomMs": 0.09999999403953552,
+        "lastDurationMs": 0.09999999403953552,
         "meta": {
           "fixtureId": "mdx-tag-allowlist-inline",
           "scenarioId": "S2_typical",
@@ -196,7 +196,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph streaming-partial\">Prefix tex</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix tex</p></div>",
       "textSample": "MDX Tag Allowlist InlinePrefix tex",
       "structure": {
         "topLevelTags": [
@@ -229,8 +229,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 3,
-        "lastPatchToDomMs": 0.6999999992549419,
-        "lastDurationMs": 0.19999999925494194,
+        "lastPatchToDomMs": 12.200000017881393,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "mdx-tag-allowlist-inline",
           "scenarioId": "S2_typical",
@@ -300,8 +300,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 4,
-        "lastPatchToDomMs": 0.3999999985098839,
-        "lastDurationMs": 0.19999999925494194,
+        "lastPatchToDomMs": 12.199999988079071,
+        "lastDurationMs": 0.30000001192092896,
         "meta": {
           "fixtureId": "mdx-tag-allowlist-inline",
           "scenarioId": "S2_typical",
@@ -366,8 +366,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 8,
-        "lastPatchToDomMs": 11.300000000745058,
-        "lastDurationMs": 0.6999999992549419,
+        "lastPatchToDomMs": 15.300000011920929,
+        "lastDurationMs": 0.20000001788139343,
         "meta": {
           "fixtureId": "mdx-tag-allowlist-inline",
           "scenarioId": "S2_typical",
@@ -432,8 +432,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 10,
-        "lastPatchToDomMs": 10.099999997764826,
-        "lastDurationMs": 0.30000000074505806,
+        "lastPatchToDomMs": 15,
+        "lastDurationMs": 0.20000001788139343,
         "meta": {
           "fixtureId": "mdx-tag-allowlist-inline",
           "scenarioId": "S2_typical",
@@ -465,7 +465,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"warm\"/&gt;</span> and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote\">B</blockquote></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"warm\"/&gt;</span> and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">B</p></blockquote></div>",
       "textSample": "MDX Tag Allowlist InlinePrefix text with <InlineChip tone=\"warm\"/> and trailing prose that must remain visible.List item with <InlineChip tone=\"cool\"> and sibling text afterward.B",
       "structure": {
         "topLevelTags": [
@@ -498,8 +498,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 12,
-        "lastPatchToDomMs": 10.900000002235174,
-        "lastDurationMs": 0.19999999925494194,
+        "lastPatchToDomMs": 15.5,
+        "lastDurationMs": 0.09999999403953552,
         "meta": {
           "fixtureId": "mdx-tag-allowlist-inline",
           "scenarioId": "S2_typical",
@@ -516,7 +516,7 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
+        "hasMdxPending": true,
         "hasMdxCompiled": false,
         "hasBlockquote": true,
         "hasMath": false
@@ -526,13 +526,13 @@
         "pre": 0,
         "blockquote": 1,
         "katex": 0,
-        "mdxPending": 0,
+        "mdxPending": 1,
         "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"warm\"/&gt;</span> and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote\">Blockquote with &lt;InlineChip tone=\"sharp</blockquote></div>",
-      "textSample": "MDX Tag Allowlist InlinePrefix text with <InlineChip tone=\"warm\"/> and trailing prose that must remain visible.List item with <InlineChip tone=\"cool\"> and sibling text afterward.Blockquote with <Inlin",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"warm\"/&gt;</span> and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote\"><div class=\"markdown-mdx\" data-mdx-ref=\"pending\" data-mdx-status=\"pending\" data-mdx-mode=\"server\">Compiling MDX (server)…</div></blockquote></div>",
+      "textSample": "MDX Tag Allowlist InlinePrefix text with <InlineChip tone=\"warm\"/> and trailing prose that must remain visible.List item with <InlineChip tone=\"cool\"> and sibling text afterward.Compiling MDX (server)",
       "structure": {
         "topLevelTags": [
           "div"
@@ -542,7 +542,7 @@
           "pre": 0,
           "blockquote": 1,
           "katex": 0,
-          "mdxPending": 0,
+          "mdxPending": 1,
           "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
@@ -550,7 +550,12 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
+        "mdxBlocks": [
+          {
+            "status": "pending",
+            "textSample": "Compiling MDX (server)…"
+          }
+        ],
         "codeBlocks": []
       }
     },
@@ -564,8 +569,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 15,
-        "lastPatchToDomMs": 10.800000000745058,
-        "lastDurationMs": 0.20000000298023224,
+        "lastPatchToDomMs": 14.600000023841858,
+        "lastDurationMs": 0.10000002384185791,
         "meta": {
           "fixtureId": "mdx-tag-allowlist-inline",
           "scenarioId": "S2_typical",
@@ -597,7 +602,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"warm\"/&gt;</span> and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote\">Blockquote with <span data-mdx-status=\"pending\">&lt;InlineChip tone=\"sharp\"/&gt;</span> and trailing content.</blockquote><p class=\"markdown-paragraph streaming-partial\">Final paragraph after the inlin</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"warm\"/&gt;</span> and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"sharp\"/&gt;</span> and trailing content.</p></blockquote><p class=\"markdown-paragraph\">Final paragraph after the inlin</p></div>",
       "textSample": "MDX Tag Allowlist InlinePrefix text with <InlineChip tone=\"warm\"/> and trailing prose that must remain visible.List item with <InlineChip tone=\"cool\"> and sibling text afterward.Blockquote with <Inlin",
       "structure": {
         "topLevelTags": [
@@ -630,8 +635,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 16,
-        "lastPatchToDomMs": 0.19999999925494194,
-        "lastDurationMs": 0.10000000149011612,
+        "lastPatchToDomMs": 14,
+        "lastDurationMs": 0.09999999403953552,
         "meta": {
           "fixtureId": "mdx-tag-allowlist-inline",
           "scenarioId": "S2_typical",
@@ -663,7 +668,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"warm\"/&gt;</span> and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote\">Blockquote with <span data-mdx-status=\"pending\">&lt;InlineChip tone=\"sharp\"/&gt;</span> and trailing content.</blockquote><p class=\"markdown-paragraph streaming-partial\">Final paragraph after the inline MDX tags.</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"warm\"/&gt;</span> and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"sharp\"/&gt;</span> and trailing content.</p></blockquote><p class=\"markdown-paragraph\">Final paragraph after the inline MDX tags.</p></div>",
       "textSample": "MDX Tag Allowlist InlinePrefix text with <InlineChip tone=\"warm\"/> and trailing prose that must remain visible.List item with <InlineChip tone=\"cool\"> and sibling text afterward.Blockquote with <Inlin",
       "structure": {
         "topLevelTags": [
@@ -700,15 +705,15 @@
       "hasBlockquote": true,
       "hasMath": false
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"warm\"/&gt;</span> and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote\">Blockquote with <span data-mdx-status=\"pending\">&lt;InlineChip tone=\"sharp\"/&gt;</span> and trailing content.</blockquote><p class=\"markdown-paragraph\">Final paragraph after the inline MDX tags.</p></div>",
+    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Tag Allowlist Inline\">MDX Tag Allowlist Inline</h1><p class=\"markdown-paragraph\">Prefix text with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"warm\"/&gt;</span> and trailing prose that must remain visible.</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">List item with &lt;InlineChip tone=\"cool\"&gt; and sibling text afterward.</li></ul><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote with <span class=\"markdown-mdx-inline\" data-mdx-status=\"pending\">&lt;InlineChip tone=\"sharp\"/&gt;</span> and trailing content.</p></blockquote><p class=\"markdown-paragraph\">Final paragraph after the inline MDX tags.</p></div>",
     "runtimeState": {
-      "rendererVersion": 20,
+      "rendererVersion": 21,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
-      "lastTx": 17,
-      "lastPatchToDomMs": 16.600000001490116,
-      "lastDurationMs": 1.4000000022351742,
+      "lastTx": 18,
+      "lastPatchToDomMs": 12.400000005960464,
+      "lastDurationMs": 0.7000000178813934,
       "meta": {
         "fixtureId": "mdx-tag-allowlist-inline",
         "scenarioId": "S2_typical",
@@ -740,7 +745,7 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "30d39b48ca8b4f3a8c97406de2934dd9ebf888ebaee5f5798b0b8b516012e7a9",
+        "hash": "7779df26c240ec59f4a9afe1069f23c1aa8f56020393c4afa705abdba36f7d34",
         "textSample": "MDX Tag Allowlist InlinePrefix text with <InlineChip tone=\"warm\"/> and trailing prose that must remain visible.List item"
       }
     ],

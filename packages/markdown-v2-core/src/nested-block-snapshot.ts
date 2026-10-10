@@ -4,7 +4,7 @@ import { createBlockSnapshot, inlineNodesToPlainText } from "./block-snapshot";
 import type { InlineParser } from "./inline-parser";
 import { extractMixedContentSegments } from "./mixed-content";
 import { normalizeFormatAnticipation, prepareInlineStreamingContent } from "./streaming/inline-streaming";
-import type { Block, FormatAnticipationConfig, InlineNode, NodeSnapshot } from "./types";
+import type { Block, FormatAnticipationConfig, InlineNode, NodeSnapshot, ProtectedRange } from "./types";
 import { parseCodeFenceInfo, removeHeadingMarkers } from "./utils";
 
 /** Serializable container structure prepared by the owning engine, not by renderers. */
@@ -91,7 +91,15 @@ export function prepareNestedBlockSnapshot(block: Block, inlineParser: InlinePar
         const task = primary?.type.name === "Task" ? text.match(/^\[([ xX])\][ \t]+/) : null;
         const primaryText = task ? text.slice(task[0].length) : text;
         const inline = parseInline(primaryText);
-        const segments = primary ? extractMixedContentSegments(primaryText, undefined, parseInline) : [];
+        const baseOffset = offset + (primary?.from ?? item.from) + (task?.[0].length ?? 0);
+        const protectedRanges: ProtectedRange[] = [];
+        if (primaryText.includes("`")) {
+          const cursor = parser.parse(primaryText).cursor();
+          do {
+            if (cursor.name === "InlineCode") protectedRanges.push({ from: baseOffset + cursor.from, to: baseOffset + cursor.to, kind: "code-inline" });
+          } while (cursor.next());
+        }
+        const segments = primary ? extractMixedContentSegments(primaryText, baseOffset, parseInline, { protectedRanges }) : [];
         const structured = segments.some((segment) => segment.kind === "mdx");
         const children: NodeSnapshot[] = structured ? segments.map((segment, segmentIndex) => ({
           id: `${itemId}::list-item:segment:${segmentIndex}`,

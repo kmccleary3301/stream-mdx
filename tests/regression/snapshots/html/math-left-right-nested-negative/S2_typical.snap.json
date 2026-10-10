@@ -32,8 +32,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 4.200000002980232,
-        "lastDurationMs": 3.7000000029802322,
+        "lastPatchToDomMs": 1.0999999940395355,
+        "lastDurationMs": 0.9000000059604645,
         "meta": {
           "fixtureId": "math-left-right-nested-negative",
           "scenarioId": "S2_typical",
@@ -98,8 +98,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 4.200000002980232,
-        "lastDurationMs": 3.7000000029802322,
+        "lastPatchToDomMs": 1.0999999940395355,
+        "lastDurationMs": 0.9000000059604645,
         "meta": {
           "fixtureId": "math-left-right-nested-negative",
           "scenarioId": "S2_typical",
@@ -164,8 +164,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 2,
-        "lastPatchToDomMs": 0.5,
-        "lastDurationMs": 0.3999999985098839,
+        "lastPatchToDomMs": 0.09999999403953552,
+        "lastDurationMs": 0.09999999403953552,
         "meta": {
           "fixtureId": "math-left-right-nested-negative",
           "scenarioId": "S2_typical",
@@ -230,8 +230,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 4,
-        "lastPatchToDomMs": 3.9000000059604645,
-        "lastDurationMs": 0.6000000014901161,
+        "lastPatchToDomMs": 13.599999994039536,
+        "lastDurationMs": 0.09999999403953552,
         "meta": {
           "fixtureId": "math-left-right-nested-negative",
           "scenarioId": "S2_typical",
@@ -263,7 +263,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Nested Negative\">Math V2A Left/Right Nested Negative</h1><p class=\"markdown-paragraph streaming-partial\">This case should remain conservative:</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Nested Negative\">Math V2A Left/Right Nested Negative</h1><p class=\"markdown-paragraph\">This case should remain conservative:</p></div>",
       "textSample": "Math V2A Left/Right Nested NegativeThis case should remain conservative:",
       "structure": {
         "topLevelTags": [
@@ -296,8 +296,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 7,
-        "lastPatchToDomMs": 2.0999999940395355,
-        "lastDurationMs": 0.29999999701976776,
+        "lastPatchToDomMs": 13.699999988079071,
+        "lastDurationMs": 0.09999999403953552,
         "meta": {
           "fixtureId": "math-left-right-nested-negative",
           "scenarioId": "S2_typical",
@@ -329,8 +329,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Nested Negative\">Math V2A Left/Right Nested Negative</h1><p class=\"markdown-paragraph\">This case should remain conservative:</p><div class=\"markdown-mdx error\" data-mdx-ref=\"pending\" data-mdx-status=\"error\" data-mdx-mode=\"server\"><strong>MDX failed</strong><div>Cannot read properties of undefined (reading 'nodeType')</div></div><p class=\"markdown-paragraph streaming-partial\">Trailing prose must rema</p></div>",
-      "textSample": "Math V2A Left/Right Nested NegativeThis case should remain conservative:MDX failedCannot read properties of undefined (reading 'nodeType')Trailing prose must rema",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Nested Negative\">Math V2A Left/Right Nested Negative</h1><p class=\"markdown-paragraph\">This case should remain conservative:</p><p class=\"markdown-paragraph\">$$\n\\left( \\frac{\\left[a+b}{c}</p><p class=\"markdown-paragraph\">Trailing prose must rema</p></div>",
+      "textSample": "Math V2A Left/Right Nested NegativeThis case should remain conservative:$$\n\\left( \\frac{\\left[a+b}{c}Trailing prose must rema",
       "structure": {
         "topLevelTags": [
           "div"
@@ -348,12 +348,7 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "error",
-            "textSample": "MDX failedCannot read properties of undefined (reading 'nodeType')"
-          }
-        ],
+        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -367,8 +362,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 10,
-        "lastPatchToDomMs": 3.7999999970197678,
-        "lastDurationMs": 0.5,
+        "lastPatchToDomMs": 14.800000011920929,
+        "lastDurationMs": 0.10000002384185791,
         "meta": {
           "fixtureId": "math-left-right-nested-negative",
           "scenarioId": "S2_typical",
@@ -400,8 +395,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Nested Negative\">Math V2A Left/Right Nested Negative</h1><p class=\"markdown-paragraph\">This case should remain conservative:</p><div class=\"markdown-mdx error\" data-mdx-ref=\"pending\" data-mdx-status=\"error\" data-mdx-mode=\"server\"><strong>MDX failed</strong><div>Cannot read properties of undefined (reading 'nodeType')</div></div><p class=\"markdown-paragraph\">Trailing prose must remain visible after the nested left-right negative case.</p><p class=\"markdown-paragraph streaming-partial\">Fi</p></div>",
-      "textSample": "Math V2A Left/Right Nested NegativeThis case should remain conservative:MDX failedCannot read properties of undefined (reading 'nodeType')Trailing prose must remain visible after the nested left-right",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Nested Negative\">Math V2A Left/Right Nested Negative</h1><p class=\"markdown-paragraph\">This case should remain conservative:</p><p class=\"markdown-paragraph\">$$\n\\left( \\frac{\\left[a+b}{c}</p><p class=\"markdown-paragraph\">Trailing prose must remain visible after the nested left-right negative case.</p><p class=\"markdown-paragraph\">Fi</p></div>",
+      "textSample": "Math V2A Left/Right Nested NegativeThis case should remain conservative:$$\n\\left( \\frac{\\left[a+b}{c}Trailing prose must remain visible after the nested left-right negative case.Fi",
       "structure": {
         "topLevelTags": [
           "div"
@@ -419,12 +414,7 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "error",
-            "textSample": "MDX failedCannot read properties of undefined (reading 'nodeType')"
-          }
-        ],
+        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -438,8 +428,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 12,
-        "lastPatchToDomMs": 3.5999999940395355,
-        "lastDurationMs": 0.19999999552965164,
+        "lastPatchToDomMs": 14.5,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "math-left-right-nested-negative",
           "scenarioId": "S2_typical",
@@ -471,8 +461,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Nested Negative\">Math V2A Left/Right Nested Negative</h1><p class=\"markdown-paragraph\">This case should remain conservative:</p><div class=\"markdown-mdx error\" data-mdx-ref=\"pending\" data-mdx-status=\"error\" data-mdx-mode=\"server\"><strong>MDX failed</strong><div>Cannot read properties of undefined (reading 'nodeType')</div></div><p class=\"markdown-paragraph\">Trailing prose must remain visible after the nested left-right negative case.</p><p class=\"markdown-paragraph streaming-partial\">Final paragraph after the nested left-ri</p></div>",
-      "textSample": "Math V2A Left/Right Nested NegativeThis case should remain conservative:MDX failedCannot read properties of undefined (reading 'nodeType')Trailing prose must remain visible after the nested left-right",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Nested Negative\">Math V2A Left/Right Nested Negative</h1><p class=\"markdown-paragraph\">This case should remain conservative:</p><p class=\"markdown-paragraph\">$$\n\\left( \\frac{\\left[a+b}{c}</p><p class=\"markdown-paragraph\">Trailing prose must remain visible after the nested left-right negative case.</p><p class=\"markdown-paragraph\">Final paragraph after the nested left-ri</p></div>",
+      "textSample": "Math V2A Left/Right Nested NegativeThis case should remain conservative:$$\n\\left( \\frac{\\left[a+b}{c}Trailing prose must remain visible after the nested left-right negative case.Final paragraph after ",
       "structure": {
         "topLevelTags": [
           "div"
@@ -490,12 +480,7 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "error",
-            "textSample": "MDX failedCannot read properties of undefined (reading 'nodeType')"
-          }
-        ],
+        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -509,8 +494,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 13,
-        "lastPatchToDomMs": 0.20000000298023224,
-        "lastDurationMs": 0.10000000149011612,
+        "lastPatchToDomMs": 12.299999982118607,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "math-left-right-nested-negative",
           "scenarioId": "S2_typical",
@@ -542,8 +527,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Nested Negative\">Math V2A Left/Right Nested Negative</h1><p class=\"markdown-paragraph\">This case should remain conservative:</p><div class=\"markdown-mdx error\" data-mdx-ref=\"pending\" data-mdx-status=\"error\" data-mdx-mode=\"server\"><strong>MDX failed</strong><div>Cannot read properties of undefined (reading 'nodeType')</div></div><p class=\"markdown-paragraph\">Trailing prose must remain visible after the nested left-right negative case.</p><p class=\"markdown-paragraph streaming-partial\">Final paragraph after the nested left-right negative case.</p></div>",
-      "textSample": "Math V2A Left/Right Nested NegativeThis case should remain conservative:MDX failedCannot read properties of undefined (reading 'nodeType')Trailing prose must remain visible after the nested left-right",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Nested Negative\">Math V2A Left/Right Nested Negative</h1><p class=\"markdown-paragraph\">This case should remain conservative:</p><p class=\"markdown-paragraph\">$$\n\\left( \\frac{\\left[a+b}{c}</p><p class=\"markdown-paragraph\">Trailing prose must remain visible after the nested left-right negative case.</p><p class=\"markdown-paragraph\">Final paragraph after the nested left-right negative case.</p></div>",
+      "textSample": "Math V2A Left/Right Nested NegativeThis case should remain conservative:$$\n\\left( \\frac{\\left[a+b}{c}Trailing prose must remain visible after the nested left-right negative case.Final paragraph after ",
       "structure": {
         "topLevelTags": [
           "div"
@@ -561,12 +546,7 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "error",
-            "textSample": "MDX failedCannot read properties of undefined (reading 'nodeType')"
-          }
-        ],
+        "mdxBlocks": [],
         "codeBlocks": []
       }
     }
@@ -584,15 +564,15 @@
       "hasBlockquote": false,
       "hasMath": false
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Nested Negative\">Math V2A Left/Right Nested Negative</h1><p class=\"markdown-paragraph\">This case should remain conservative:</p><div class=\"markdown-mdx error\" data-mdx-ref=\"pending\" data-mdx-status=\"error\" data-mdx-mode=\"server\"><strong>MDX failed</strong><div>Cannot read properties of undefined (reading 'nodeType')</div></div><p class=\"markdown-paragraph\">Trailing prose must remain visible after the nested left-right negative case.</p><p class=\"markdown-paragraph\">Final paragraph after the nested left-right negative case.</p></div>",
+    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Left/Right Nested Negative\">Math V2A Left/Right Nested Negative</h1><p class=\"markdown-paragraph\">This case should remain conservative:</p><p class=\"markdown-paragraph\">$$\n\\left( \\frac{\\left[a+b}{c}</p><p class=\"markdown-paragraph\">Trailing prose must remain visible after the nested left-right negative case.</p><p class=\"markdown-paragraph\">Final paragraph after the nested left-right negative case.</p></div>",
     "runtimeState": {
-      "rendererVersion": 17,
+      "rendererVersion": 18,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
-      "lastTx": 14,
-      "lastPatchToDomMs": 1.1999999955296516,
-      "lastDurationMs": 1.1000000014901161,
+      "lastTx": 15,
+      "lastPatchToDomMs": 10.699999988079071,
+      "lastDurationMs": 0.5999999940395355,
       "meta": {
         "fixtureId": "math-left-right-nested-negative",
         "scenarioId": "S2_typical",
@@ -624,18 +604,13 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "a6641e67adc65c84a6e57dd3ffc860f88bfdc88d48a4fa6115fc8dfa99c4aa04",
-        "textSample": "Math V2A Left/Right Nested NegativeThis case should remain conservative:MDX failedCannot read properties of undefined (r"
+        "hash": "dedd6d79236b4dc29a6fbab0f393caab1f832b6a639eaa759a7322f4a2a3ecef",
+        "textSample": "Math V2A Left/Right Nested NegativeThis case should remain conservative:$$\n\\left( \\frac{\\left[a+b}{c}Trailing prose must"
       }
     ],
     "inspection": {
       "tables": [],
-      "mdxBlocks": [
-        {
-          "status": "error",
-          "textSample": "MDX failedCannot read properties of undefined (reading 'nodeType')"
-        }
-      ],
+      "mdxBlocks": [],
       "codeBlocks": []
     }
   }

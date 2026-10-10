@@ -91,6 +91,8 @@ At every committed semantic state:
 
 Inline JSX tags and expressions belong to their paragraph or list-item projection. They must preserve surrounding prose and component allowlists without gaining block-module evaluation. A complete standalone component owns its source as block MDX and uses the existing evaluator. Normalized inline HTML, including quoted `code` elements, must retain the paragraph's text and elements.
 
+Native `InlineCode` spans own their literal contents. Mixed-content projection must not promote braces or tags inside them to MDX or HTML, including multi-backtick spans and code inside prepared quotes or lists. Direct compilation, worker patches, and serialized resets must preserve the same code text.
+
 Registered paragraph wrappers receive each projected inline group through the existing `children` prop, with their original raw, inline, and metadata props intact. Prepared quotes pass their native child projection to the registered quote wrapper. Custom wrappers must consume that projection rather than rebuild incomplete JSX from raw prose. Coordinator-mode standalone MDX retains pending segment metadata for status/signature reconciliation without changing its block-module ownership.
 
 HTML portions of mixed paragraphs and list items retain owner-prepared sanitized trees through patches and serialization. Registry URL transforms and descendant drop/unwrap policies apply to those trees without reintroducing filtered HTML. Registered quote wrappers remain active while streaming and when the prepared quote is empty.

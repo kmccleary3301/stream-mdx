@@ -32,8 +32,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 3.2999999970197678,
-        "lastDurationMs": 2.6999999955296516,
+        "lastPatchToDomMs": 1.0999999940395355,
+        "lastDurationMs": 0.9000000059604645,
         "meta": {
           "fixtureId": "math-environment-hard-stop-negative",
           "scenarioId": "S2_typical",
@@ -98,8 +98,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 3.2999999970197678,
-        "lastDurationMs": 2.6999999955296516,
+        "lastPatchToDomMs": 1.0999999940395355,
+        "lastDurationMs": 0.9000000059604645,
         "meta": {
           "fixtureId": "math-environment-hard-stop-negative",
           "scenarioId": "S2_typical",
@@ -164,8 +164,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 2,
-        "lastPatchToDomMs": 0.5,
-        "lastDurationMs": 0.29999999701976776,
+        "lastPatchToDomMs": 0.19999998807907104,
+        "lastDurationMs": 0.19999998807907104,
         "meta": {
           "fixtureId": "math-environment-hard-stop-negative",
           "scenarioId": "S2_typical",
@@ -197,7 +197,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Environment Hard-Stop\">Math V2A Environment Hard-Stop</h1><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow></mrow><annotation encoding=\"application/x-tex\"></annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"></span></span></span></span></div></div></div></div></div></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Environment Hard-Stop\">Math V2A Environment Hard-Stop</h1><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow></mrow><annotation encoding=\"application/x-tex\"></annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"></span></span></span></span></div></div></div></div></div></div></div>",
       "textSample": "Math V2A Environment Hard-Stop[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{disp",
       "structure": {
         "topLevelTags": [
@@ -230,8 +230,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 2,
-        "lastPatchToDomMs": 0.5,
-        "lastDurationMs": 0.29999999701976776,
+        "lastPatchToDomMs": 0.19999998807907104,
+        "lastDurationMs": 0.19999998807907104,
         "meta": {
           "fixtureId": "math-environment-hard-stop-negative",
           "scenarioId": "S2_typical",
@@ -263,7 +263,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Environment Hard-Stop\">Math V2A Environment Hard-Stop</h1><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow></mrow><annotation encoding=\"application/x-tex\"></annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"></span></span></span></span></div></div></div></div></div></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Environment Hard-Stop\">Math V2A Environment Hard-Stop</h1><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow></mrow><annotation encoding=\"application/x-tex\"></annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"></span></span></span></span></div></div></div></div></div></div></div>",
       "textSample": "Math V2A Environment Hard-Stop[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{disp",
       "structure": {
         "topLevelTags": [
@@ -296,8 +296,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 5,
-        "lastPatchToDomMs": 4.100000001490116,
-        "lastDurationMs": 0.7000000029802322,
+        "lastPatchToDomMs": 13.900000005960464,
+        "lastDurationMs": 0.30000001192092896,
         "meta": {
           "fixtureId": "math-environment-hard-stop-negative",
           "scenarioId": "S2_typical",
@@ -362,8 +362,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 9,
-        "lastPatchToDomMs": 5.799999997019768,
-        "lastDurationMs": 0.5,
+        "lastPatchToDomMs": 13.200000017881393,
+        "lastDurationMs": 0.10000002384185791,
         "meta": {
           "fixtureId": "math-environment-hard-stop-negative",
           "scenarioId": "S2_typical",
@@ -428,8 +428,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 13,
-        "lastPatchToDomMs": 3.899999998509884,
-        "lastDurationMs": 0.20000000298023224,
+        "lastPatchToDomMs": 14.099999994039536,
+        "lastDurationMs": 0.09999999403953552,
         "meta": {
           "fixtureId": "math-environment-hard-stop-negative",
           "scenarioId": "S2_typical",
@@ -461,7 +461,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Environment Hard-Stop\">Math V2A Environment Hard-Stop</h1><p class=\"markdown-paragraph\">$$\n\\begin{matrix}\na &amp; b</p><p class=\"markdown-paragraph\">Expected direction:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as structured environment pressure</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">hard-stop / fallback</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no optimistic environment closure</li></ul><p class=\"markdown-paragraph streaming-partial\">Trailing prose must remain visible after the unsupported envir</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Environment Hard-Stop\">Math V2A Environment Hard-Stop</h1><p class=\"markdown-paragraph\">$$\n\\begin{matrix}\na &amp; b</p><p class=\"markdown-paragraph\">Expected direction:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as structured environment pressure</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">hard-stop / fallback</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no optimistic environment closure</li></ul><p class=\"markdown-paragraph\">Trailing prose must remain visible after the unsupported envir</p></div>",
       "textSample": "Math V2A Environment Hard-Stop$$\n\\begin{matrix}\na & bExpected direction:classify as structured environment pressurehard-stop / fallbackno optimistic environment closureTrailing prose must remain visib",
       "structure": {
         "topLevelTags": [
@@ -494,8 +494,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 16,
-        "lastPatchToDomMs": 3.899999998509884,
-        "lastDurationMs": 0.10000000149011612,
+        "lastPatchToDomMs": 14.799999982118607,
+        "lastDurationMs": 0.09999999403953552,
         "meta": {
           "fixtureId": "math-environment-hard-stop-negative",
           "scenarioId": "S2_typical",
@@ -527,7 +527,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Environment Hard-Stop\">Math V2A Environment Hard-Stop</h1><p class=\"markdown-paragraph\">$$\n\\begin{matrix}\na &amp; b</p><p class=\"markdown-paragraph\">Expected direction:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as structured environment pressure</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">hard-stop / fallback</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no optimistic environment closure</li></ul><p class=\"markdown-paragraph\">Trailing prose must remain visible after the unsupported environment math.</p><p class=\"markdown-paragraph streaming-partial\">Final paragraph after the unsupported envir</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Environment Hard-Stop\">Math V2A Environment Hard-Stop</h1><p class=\"markdown-paragraph\">$$\n\\begin{matrix}\na &amp; b</p><p class=\"markdown-paragraph\">Expected direction:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as structured environment pressure</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">hard-stop / fallback</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no optimistic environment closure</li></ul><p class=\"markdown-paragraph\">Trailing prose must remain visible after the unsupported environment math.</p><p class=\"markdown-paragraph\">Final paragraph after the unsupported envir</p></div>",
       "textSample": "Math V2A Environment Hard-Stop$$\n\\begin{matrix}\na & bExpected direction:classify as structured environment pressurehard-stop / fallbackno optimistic environment closureTrailing prose must remain visib",
       "structure": {
         "topLevelTags": [
@@ -560,8 +560,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 17,
-        "lastPatchToDomMs": 0.30000000447034836,
-        "lastDurationMs": 0.10000000149011612,
+        "lastPatchToDomMs": 13.099999994039536,
+        "lastDurationMs": 0.09999999403953552,
         "meta": {
           "fixtureId": "math-environment-hard-stop-negative",
           "scenarioId": "S2_typical",
@@ -593,7 +593,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Environment Hard-Stop\">Math V2A Environment Hard-Stop</h1><p class=\"markdown-paragraph\">$$\n\\begin{matrix}\na &amp; b</p><p class=\"markdown-paragraph\">Expected direction:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as structured environment pressure</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">hard-stop / fallback</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no optimistic environment closure</li></ul><p class=\"markdown-paragraph\">Trailing prose must remain visible after the unsupported environment math.</p><p class=\"markdown-paragraph streaming-partial\">Final paragraph after the unsupported environment math case.</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Environment Hard-Stop\">Math V2A Environment Hard-Stop</h1><p class=\"markdown-paragraph\">$$\n\\begin{matrix}\na &amp; b</p><p class=\"markdown-paragraph\">Expected direction:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as structured environment pressure</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">hard-stop / fallback</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no optimistic environment closure</li></ul><p class=\"markdown-paragraph\">Trailing prose must remain visible after the unsupported environment math.</p><p class=\"markdown-paragraph\">Final paragraph after the unsupported environment math case.</p></div>",
       "textSample": "Math V2A Environment Hard-Stop$$\n\\begin{matrix}\na & bExpected direction:classify as structured environment pressurehard-stop / fallbackno optimistic environment closureTrailing prose must remain visib",
       "structure": {
         "topLevelTags": [
@@ -632,13 +632,13 @@
     },
     "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Math V2A Environment Hard-Stop\">Math V2A Environment Hard-Stop</h1><p class=\"markdown-paragraph\">$$\n\\begin{matrix}\na &amp; b</p><p class=\"markdown-paragraph\">Expected direction:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">classify as structured environment pressure</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">hard-stop / fallback</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">no optimistic environment closure</li></ul><p class=\"markdown-paragraph\">Trailing prose must remain visible after the unsupported environment math.</p><p class=\"markdown-paragraph\">Final paragraph after the unsupported environment math case.</p></div>",
     "runtimeState": {
-      "rendererVersion": 21,
+      "rendererVersion": 22,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
-      "lastTx": 18,
-      "lastPatchToDomMs": 1.1000000014901161,
-      "lastDurationMs": 0.8999999985098839,
+      "lastTx": 19,
+      "lastPatchToDomMs": 13.100000023841858,
+      "lastDurationMs": 0.7000000178813934,
       "meta": {
         "fixtureId": "math-environment-hard-stop-negative",
         "scenarioId": "S2_typical",
