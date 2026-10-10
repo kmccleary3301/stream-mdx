@@ -9,12 +9,40 @@
     "charRateCps": 1200,
     "maxChunkChars": 256
   },
-  "totalLength": 705,
+  "runMeta": {
+    "seed": null,
+    "schedulerMode": null,
+    "usedSplitMarkers": false,
+    "fixtureTags": [
+      "table"
+    ]
+  },
+  "totalLength": 988,
   "checkpoints": [
     {
       "id": "after-first-chunk",
       "appendedChars": 19,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 4,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 1,
+        "lastPatchToDomMs": 0.20000000298023224,
+        "lastDurationMs": 0.20000000298023224,
+        "meta": {
+          "fixtureId": "table-incremental",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -50,12 +78,37 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
-      "id": "progress-35",
-      "appendedChars": 38,
+      "id": "progress-49",
+      "appendedChars": 57,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 6,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 3,
+        "lastPatchToDomMs": 14.299999997019768,
+        "lastDurationMs": 0,
+        "meta": {
+          "fixtureId": "table-incremental",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -75,8 +128,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\">Table Incremental</h1><p class=\"markdown-paragraph streaming-partial\">| Column A | Colu</p></div>",
-      "textSample": "Table Incremental| Column A | Colu",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\">Table Incremental</h1><p class=\"markdown-paragraph\">| Column A | Column B | Column C |\n|</p></div>",
+      "textSample": "Table Incremental| Column A | Column B | Column C |\n|",
       "structure": {
         "topLevelTags": [
           "div"
@@ -91,14 +144,39 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
-      "id": "progress-71",
-      "appendedChars": 76,
+      "id": "progress-99",
+      "appendedChars": 114,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 9,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 6,
+        "lastPatchToDomMs": 13.600000001490116,
+        "lastDurationMs": 0,
+        "meta": {
+          "fixtureId": "table-incremental",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
-        "hasTable": true,
+        "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
         "hasMdxPending": false,
@@ -107,7 +185,7 @@
         "hasMath": false
       },
       "counts": {
-        "table": 1,
+        "table": 0,
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
@@ -116,14 +194,14 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\">Table Incremental</h1><div class=\"relative w-full overflow-auto\"><table class=\"markdown-table w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column A</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column B</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column C</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"></tbody></table></div></div>",
-      "textSample": "Table IncrementalColumn AColumn BColumn C",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\">Table Incremental</h1><p class=\"markdown-paragraph\">| Column A | Column B | Column C |\n| --- | --- | --- |\n| Alpha | Beta | Gamma |\n| Delta | Eps</p></div>",
+      "textSample": "Table Incremental| Column A | Column B | Column C |\n| --- | --- | --- |\n| Alpha | Beta | Gamma |\n| Delta | Eps",
       "structure": {
         "topLevelTags": [
           "div"
         ],
         "counts": {
-          "table": 1,
+          "table": 0,
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
@@ -132,12 +210,37 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
       "id": "event-hasTable",
-      "appendedChars": 76,
+      "appendedChars": 228,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 15,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 12,
+        "lastPatchToDomMs": 15.199999995529652,
+        "lastDurationMs": 0.19999999552965164,
+        "meta": {
+          "fixtureId": "table-incremental",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": true,
         "hasPre": false,
@@ -157,8 +260,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\">Table Incremental</h1><div class=\"relative w-full overflow-auto\"><table class=\"markdown-table w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column A</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column B</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column C</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"></tbody></table></div></div>",
-      "textSample": "Table IncrementalColumn AColumn BColumn C",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\">Table Incremental</h1><div dir=\"ltr\" class=\"relative overflow-x-hidden my-6 w-full rounded border border-border\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max\"><div class=\"relative w-full overflow-auto\"><table class=\"w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column A</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column B</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column C</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Delta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Epsilon</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Zeta</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Eta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Theta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Iota</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Kappa</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Lambda</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Mu</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Nu</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Xi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Omicron</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Pi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Rho</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Sigma</td></tr></tbody></table></div></div></div></div></div><p class=\"markdown-paragraph\">This para</p></div>",
+      "textSample": "Table Incremental[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}Colu",
       "structure": {
         "topLevelTags": [
           "div"
@@ -173,12 +276,50 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [
+          {
+            "headerColumns": 3,
+            "rowCellCounts": [
+              3,
+              3,
+              3,
+              3,
+              3,
+              3
+            ],
+            "emptyBodyCellCount": 0
+          }
+        ],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
-      "id": "progress-176",
-      "appendedChars": 190,
+      "id": "progress-247",
+      "appendedChars": 247,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 16,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 13,
+        "lastPatchToDomMs": 14.200000002980232,
+        "lastDurationMs": 0,
+        "meta": {
+          "fixtureId": "table-incremental",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": true,
         "hasPre": false,
@@ -198,8 +339,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\">Table Incremental</h1><div class=\"relative w-full overflow-auto\"><table class=\"markdown-table w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column A</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column B</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column C</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Delta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Epsilon</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Zeta</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Eta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Theta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Iota</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Kappa</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Lambda</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Mu</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Nu</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Xi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Omi</td></tr></tbody></table></div></div>",
-      "textSample": "Table IncrementalColumn AColumn BColumn CAlphaBetaGammaDeltaEpsilonZetaEtaThetaIotaKappaLambdaMuNuXiOmi",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\">Table Incremental</h1><div dir=\"ltr\" class=\"relative overflow-x-hidden my-6 w-full rounded border border-border\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max\"><div class=\"relative w-full overflow-auto\"><table class=\"w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column A</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column B</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column C</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Delta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Epsilon</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Zeta</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Eta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Theta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Iota</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Kappa</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Lambda</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Mu</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Nu</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Xi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Omicron</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Pi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Rho</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Sigma</td></tr></tbody></table></div></div></div></div></div><p class=\"markdown-paragraph\">This paragraph exists to kee</p></div>",
+      "textSample": "Table Incremental[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}Colu",
       "structure": {
         "topLevelTags": [
           "div"
@@ -214,12 +355,50 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [
+          {
+            "headerColumns": 3,
+            "rowCellCounts": [
+              3,
+              3,
+              3,
+              3,
+              3,
+              3
+            ],
+            "emptyBodyCellCount": 0
+          }
+        ],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
-      "id": "progress-353",
-      "appendedChars": 361,
+      "id": "progress-494",
+      "appendedChars": 494,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 29,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 26,
+        "lastPatchToDomMs": 14.799999997019768,
+        "lastDurationMs": 0.10000000149011612,
+        "meta": {
+          "fixtureId": "table-incremental",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": true,
         "hasPre": false,
@@ -239,8 +418,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\">Table Incremental</h1><div class=\"relative w-full overflow-auto\"><table class=\"markdown-table w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column A</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column B</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column C</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Delta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Epsilon</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Zeta</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Eta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Theta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Iota</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Kappa</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Lambda</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Mu</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Nu</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Xi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Omicron</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Pi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Rho</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Sigma</td></tr></tbody></table></div><p class=\"markdown-paragraph streaming-partial\">This paragraph exists to keep the table early in the document so we can assert that\nthe table appears during streaming, not only after the ent</p></div>",
-      "textSample": "Table IncrementalColumn AColumn BColumn CAlphaBetaGammaDeltaEpsilonZetaEtaThetaIotaKappaLambdaMuNuXiOmicronPiRhoSigmaThis paragraph exists to keep the table early in the document so we can assert that",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\">Table Incremental</h1><div dir=\"ltr\" class=\"relative overflow-x-hidden my-6 w-full rounded border border-border\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max\"><div class=\"relative w-full overflow-auto\"><table class=\"w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column A</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column B</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column C</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Delta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Epsilon</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Zeta</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Eta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Theta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Iota</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Kappa</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Lambda</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Mu</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Nu</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Xi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Omicron</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Pi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Rho</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Sigma</td></tr></tbody></table></div></div></div></div></div><p class=\"markdown-paragraph\">This paragraph exists to keep the table early in the document so we can assert that\nthe table appears during streaming, not only after the entire document completes.\nWe want to see the table element materialize before the final checkpoint.</p><p class=\"markdown-paragraph\">Additional filler text continues h</p></div>",
+      "textSample": "Table Incremental[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}Colu",
       "structure": {
         "topLevelTags": [
           "div"
@@ -255,12 +434,50 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [
+          {
+            "headerColumns": 3,
+            "rowCellCounts": [
+              3,
+              3,
+              3,
+              3,
+              3,
+              3
+            ],
+            "emptyBodyCellCount": 0
+          }
+        ],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
-      "id": "progress-529",
-      "appendedChars": 532,
+      "id": "progress-741",
+      "appendedChars": 741,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 42,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 39,
+        "lastPatchToDomMs": 14.600000001490116,
+        "lastDurationMs": 0,
+        "meta": {
+          "fixtureId": "table-incremental",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": true,
         "hasPre": false,
@@ -280,8 +497,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\">Table Incremental</h1><div class=\"relative w-full overflow-auto\"><table class=\"markdown-table w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column A</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column B</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column C</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Delta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Epsilon</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Zeta</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Eta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Theta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Iota</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Kappa</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Lambda</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Mu</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Nu</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Xi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Omicron</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Pi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Rho</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Sigma</td></tr></tbody></table></div><p class=\"markdown-paragraph\">This paragraph exists to keep the table early in the document so we can assert that\nthe table appears during streaming, not only after the entire document completes.\nWe want to see the table element materialize before the final checkpoint.</p><p class=\"markdown-paragraph streaming-partial\">Additional filler text continues here to extend the document length. The</p></div>",
-      "textSample": "Table IncrementalColumn AColumn BColumn CAlphaBetaGammaDeltaEpsilonZetaEtaThetaIotaKappaLambdaMuNuXiOmicronPiRhoSigmaThis paragraph exists to keep the table early in the document so we can assert that",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\">Table Incremental</h1><div dir=\"ltr\" class=\"relative overflow-x-hidden my-6 w-full rounded border border-border\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max\"><div class=\"relative w-full overflow-auto\"><table class=\"w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column A</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column B</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column C</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Delta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Epsilon</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Zeta</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Eta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Theta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Iota</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Kappa</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Lambda</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Mu</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Nu</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Xi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Omicron</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Pi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Rho</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Sigma</td></tr></tbody></table></div></div></div></div></div><p class=\"markdown-paragraph\">This paragraph exists to keep the table early in the document so we can assert that\nthe table appears during streaming, not only after the entire document completes.\nWe want to see the table element materialize before the final checkpoint.</p><p class=\"markdown-paragraph\">Additional filler text continues here to extend the document length. The goal is to\nensure the table is fully described before roughly one quarter of the stream has\nbeen appended so that the regression harness can verify incremental visibility.</p><p class=\"markdown-paragraph\">The remaining prose deliberately ex</p></div>",
+      "textSample": "Table Incremental[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}Colu",
       "structure": {
         "topLevelTags": [
           "div"
@@ -296,12 +513,50 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [
+          {
+            "headerColumns": 3,
+            "rowCellCounts": [
+              3,
+              3,
+              3,
+              3,
+              3,
+              3
+            ],
+            "emptyBodyCellCount": 0
+          }
+        ],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
-      "id": "progress-635",
-      "appendedChars": 646,
+      "id": "progress-889",
+      "appendedChars": 893,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 50,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 47,
+        "lastPatchToDomMs": 17.600000001490116,
+        "lastDurationMs": 0.10000000149011612,
+        "meta": {
+          "fixtureId": "table-incremental",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": true,
         "hasPre": false,
@@ -321,8 +576,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\">Table Incremental</h1><div class=\"relative w-full overflow-auto\"><table class=\"markdown-table w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column A</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column B</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column C</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Delta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Epsilon</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Zeta</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Eta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Theta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Iota</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Kappa</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Lambda</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Mu</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Nu</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Xi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Omicron</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Pi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Rho</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Sigma</td></tr></tbody></table></div><p class=\"markdown-paragraph\">This paragraph exists to keep the table early in the document so we can assert that\nthe table appears during streaming, not only after the entire document completes.\nWe want to see the table element materialize before the final checkpoint.</p><p class=\"markdown-paragraph streaming-partial\">Additional filler text continues here to extend the document length. The goal is to\nensure the table is fully described before roughly one quarter of the stream has\nbeen appended so that</p></div>",
-      "textSample": "Table IncrementalColumn AColumn BColumn CAlphaBetaGammaDeltaEpsilonZetaEtaThetaIotaKappaLambdaMuNuXiOmicronPiRhoSigmaThis paragraph exists to keep the table early in the document so we can assert that",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\">Table Incremental</h1><div dir=\"ltr\" class=\"relative overflow-x-hidden my-6 w-full rounded border border-border\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max\"><div class=\"relative w-full overflow-auto\"><table class=\"w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column A</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column B</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column C</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Delta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Epsilon</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Zeta</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Eta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Theta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Iota</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Kappa</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Lambda</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Mu</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Nu</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Xi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Omicron</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Pi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Rho</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Sigma</td></tr></tbody></table></div></div></div></div></div><p class=\"markdown-paragraph\">This paragraph exists to keep the table early in the document so we can assert that\nthe table appears during streaming, not only after the entire document completes.\nWe want to see the table element materialize before the final checkpoint.</p><p class=\"markdown-paragraph\">Additional filler text continues here to extend the document length. The goal is to\nensure the table is fully described before roughly one quarter of the stream has\nbeen appended so that the regression harness can verify incremental visibility.</p><p class=\"markdown-paragraph\">The remaining prose deliberately extends the fixture after the table instead of\nchanging the table itself. That keeps the table early in the stream and makes\nthe twenty-five percent visib</p></div>",
+      "textSample": "Table Incremental[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}Colu",
       "structure": {
         "topLevelTags": [
           "div"
@@ -337,12 +592,50 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [
+          {
+            "headerColumns": 3,
+            "rowCellCounts": [
+              3,
+              3,
+              3,
+              3,
+              3,
+              3
+            ],
+            "emptyBodyCellCount": 0
+          }
+        ],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
-      "id": "progress-705",
-      "appendedChars": 705,
+      "id": "progress-988",
+      "appendedChars": 988,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 55,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 52,
+        "lastPatchToDomMs": 14.399999998509884,
+        "lastDurationMs": 0,
+        "meta": {
+          "fixtureId": "table-incremental",
+          "scenarioId": "S2_typical",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": true,
         "hasPre": false,
@@ -362,8 +655,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\">Table Incremental</h1><div class=\"relative w-full overflow-auto\"><table class=\"markdown-table w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column A</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column B</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column C</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Delta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Epsilon</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Zeta</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Eta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Theta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Iota</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Kappa</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Lambda</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Mu</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Nu</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Xi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Omicron</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Pi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Rho</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Sigma</td></tr></tbody></table></div><p class=\"markdown-paragraph\">This paragraph exists to keep the table early in the document so we can assert that\nthe table appears during streaming, not only after the entire document completes.\nWe want to see the table element materialize before the final checkpoint.</p><p class=\"markdown-paragraph streaming-partial\">Additional filler text continues here to extend the document length. The goal is to\nensure the table is fully described before roughly one quarter of the stream has\nbeen appended so that the regression harness can verify incremental visibility.</p></div>",
-      "textSample": "Table IncrementalColumn AColumn BColumn CAlphaBetaGammaDeltaEpsilonZetaEtaThetaIotaKappaLambdaMuNuXiOmicronPiRhoSigmaThis paragraph exists to keep the table early in the document so we can assert that",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\">Table Incremental</h1><div dir=\"ltr\" class=\"relative overflow-x-hidden my-6 w-full rounded border border-border\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max\"><div class=\"relative w-full overflow-auto\"><table class=\"w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column A</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column B</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column C</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Delta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Epsilon</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Zeta</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Eta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Theta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Iota</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Kappa</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Lambda</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Mu</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Nu</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Xi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Omicron</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Pi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Rho</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Sigma</td></tr></tbody></table></div></div></div></div></div><p class=\"markdown-paragraph\">This paragraph exists to keep the table early in the document so we can assert that\nthe table appears during streaming, not only after the entire document completes.\nWe want to see the table element materialize before the final checkpoint.</p><p class=\"markdown-paragraph\">Additional filler text continues here to extend the document length. The goal is to\nensure the table is fully described before roughly one quarter of the stream has\nbeen appended so that the regression harness can verify incremental visibility.</p><p class=\"markdown-paragraph\">The remaining prose deliberately extends the fixture after the table instead of\nchanging the table itself. That keeps the table early in the stream and makes\nthe twenty-five percent visibility assertion mechanically reachable across the\nsmall, typical, and fast chunking scenarios.</p></div>",
+      "textSample": "Table Incremental[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}Colu",
       "structure": {
         "topLevelTags": [
           "div"
@@ -378,12 +671,30 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [
+          {
+            "headerColumns": 3,
+            "rowCellCounts": [
+              3,
+              3,
+              3,
+              3,
+              3,
+              3
+            ],
+            "emptyBodyCellCount": 0
+          }
+        ],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     }
   ],
   "final": {
     "id": "after-finalize",
-    "appendedChars": 705,
+    "appendedChars": 988,
     "rootChildCount": 1,
     "selectors": {
       "hasTable": true,
@@ -394,7 +705,27 @@
       "hasBlockquote": false,
       "hasMath": false
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\">Table Incremental</h1><div class=\"relative w-full overflow-auto\"><table class=\"markdown-table w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column A</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column B</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column C</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Delta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Epsilon</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Zeta</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Eta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Theta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Iota</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Kappa</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Lambda</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Mu</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Nu</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Xi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Omicron</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Pi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Rho</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Sigma</td></tr></tbody></table></div><p class=\"markdown-paragraph\">This paragraph exists to keep the table early in the document so we can assert that\nthe table appears during streaming, not only after the entire document completes.\nWe want to see the table element materialize before the final checkpoint.</p><p class=\"markdown-paragraph\">Additional filler text continues here to extend the document length. The goal is to\nensure the table is fully described before roughly one quarter of the stream has\nbeen appended so that the regression harness can verify incremental visibility.</p></div>",
+    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Table Incremental\">Table Incremental</h1><div dir=\"ltr\" class=\"relative overflow-x-hidden my-6 w-full rounded border border-border\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max\"><div class=\"relative w-full overflow-auto\"><table class=\"w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column A</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column B</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Column C</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Alpha</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Beta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Gamma</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Delta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Epsilon</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Zeta</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Eta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Theta</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Iota</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Kappa</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Lambda</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Mu</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Nu</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Xi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Omicron</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Pi</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Rho</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">Sigma</td></tr></tbody></table></div></div></div></div></div><p class=\"markdown-paragraph\">This paragraph exists to keep the table early in the document so we can assert that\nthe table appears during streaming, not only after the entire document completes.\nWe want to see the table element materialize before the final checkpoint.</p><p class=\"markdown-paragraph\">Additional filler text continues here to extend the document length. The goal is to\nensure the table is fully described before roughly one quarter of the stream has\nbeen appended so that the regression harness can verify incremental visibility.</p><p class=\"markdown-paragraph\">The remaining prose deliberately extends the fixture after the table instead of\nchanging the table itself. That keeps the table early in the stream and makes\nthe twenty-five percent visibility assertion mechanically reachable across the\nsmall, typical, and fast chunking scenarios.</p></div>",
+    "runtimeState": {
+      "rendererVersion": 57,
+      "queueDepth": 0,
+      "pendingBatches": 0,
+      "workerReady": true,
+      "lastTx": 54,
+      "lastPatchToDomMs": 14.099999994039536,
+      "lastDurationMs": 0.29999999701976776,
+      "meta": {
+        "fixtureId": "table-incremental",
+        "scenarioId": "S2_typical",
+        "seed": null,
+        "schedulerMode": null
+      },
+      "storeCounters": {
+        "appendLineGuardRejected": 0,
+        "staleEpochRejected": 0,
+        "storeInvariantViolationCount": 0
+      }
+    },
     "structure": {
       "topLevelTags": [
         "div"
@@ -414,9 +745,27 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "a77571c69549d634ece0d113ca74f3f66254873c0e32b47b1e6b066c7b199ba6",
-        "textSample": "Table IncrementalColumn AColumn BColumn CAlphaBetaGammaDeltaEpsilonZetaEtaThetaIotaKappaLambdaMuNuXiOmicronPiRhoSigmaThi"
+        "hash": "82988eafcea5fe029babe1adcf9a69aca7feefa83d2253b0ef0cf119fdd66479",
+        "textSample": "Table Incremental[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolli"
       }
-    ]
+    ],
+    "inspection": {
+      "tables": [
+        {
+          "headerColumns": 3,
+          "rowCellCounts": [
+            3,
+            3,
+            3,
+            3,
+            3,
+            3
+          ],
+          "emptyBodyCellCount": 0
+        }
+      ],
+      "mdxBlocks": [],
+      "codeBlocks": []
+    }
   }
 }

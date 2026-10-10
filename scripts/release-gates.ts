@@ -44,10 +44,7 @@ function startServer(): ReturnType<typeof spawn> {
     ["-m", "http.server", String(PORT), "--bind", HOST],
     {
       cwd: path.resolve(process.cwd(), "apps/docs/out"),
-      env: {
-        ...process.env,
-        NEXT_PUBLIC_STREAMING_DEMO_API: "true",
-      },
+      env: process.env,
       stdio: ["ignore", "pipe", "pipe"],
     },
   );
@@ -86,7 +83,11 @@ async function main(): Promise<void> {
         DOCS_CHECK_ANCHORS: "1",
       },
     });
-    run("npm", ["run", "docs:build"]);
+    run("npm", ["run", "docs:build"], {
+      env: {
+        NEXT_PUBLIC_STREAMING_DEMO_API: "true",
+      },
+    });
     server = startServer();
     await waitForServer(`${BASE_URL}/regression/html/`, server);
 

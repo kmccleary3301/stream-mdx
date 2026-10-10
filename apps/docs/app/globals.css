@@ -13,7 +13,14 @@
 @import url("@radix-ui/colors/black-alpha.css");
 @import url("@radix-ui/colors/white-alpha.css");
 @import url("./prose.css");
-@import url("./markdown.css");
+
+/*
+  Frontend V1 integration ownership note:
+  - globals.css owns app shell, route chrome, navigation, layout primitives, and
+    non-markdown control surfaces.
+  - rendered markdown output is owned by prose.css; do not add .markdown-v2-output
+    rules here.
+*/
 
 @tailwind base;
 @tailwind components;
@@ -33,6 +40,7 @@
 @layer components {
   .route-kicker {
     font-size: 0.72rem;
+
     font-weight: 700;
     letter-spacing: 0.16em;
     text-transform: uppercase;
@@ -60,40 +68,35 @@
     border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
     border-radius: 1.25rem;
     background:
-      linear-gradient(180deg, color-mix(in srgb, white 54%, var(--background) 46%), color-mix(in srgb, var(--background) 97%, transparent)),
-      color-mix(in srgb, var(--gray-a2) 80%, transparent);
+      linear-gradient(180deg, color-mix(in srgb, var(--background) 94%, white 6%), color-mix(in srgb, var(--background) 99%, transparent)),
+      color-mix(in srgb, var(--gray-a2) 84%, transparent);
     box-shadow:
-      0 28px 72px -48px color-mix(in srgb, var(--foreground) 32%, transparent),
-      0 1px 0 color-mix(in srgb, white 52%, transparent) inset,
-      0 -18px 44px -44px color-mix(in srgb, var(--pink-5) 36%, transparent) inset;
-    backdrop-filter: blur(18px);
+      0 24px 60px -42px color-mix(in srgb, var(--foreground) 30%, transparent),
+      0 1px 0 color-mix(in srgb, white 40%, transparent) inset;
+    backdrop-filter: blur(12px);
   }
 
   .route-panel-soft {
     border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
     border-radius: 1rem;
     background:
-      linear-gradient(180deg, color-mix(in srgb, white 48%, var(--background) 52%), color-mix(in srgb, var(--background) 98%, transparent)),
-      color-mix(in srgb, var(--gray-a2) 76%, transparent);
-    box-shadow:
-      0 16px 40px -34px color-mix(in srgb, var(--foreground) 24%, transparent),
-      0 1px 0 color-mix(in srgb, white 40%, transparent) inset;
+      linear-gradient(180deg, color-mix(in srgb, var(--background) 88%, white 12%), color-mix(in srgb, var(--background) 98%, transparent)),
+      color-mix(in srgb, var(--gray-a2) 72%, transparent);
+    box-shadow: 0 18px 44px -36px color-mix(in srgb, var(--foreground) 26%, transparent);
   }
 
   .route-panel-hero {
     position: relative;
     overflow: hidden;
     border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
-    border-radius: 1.75rem;
+    border-radius: 1.5rem;
     background:
-      radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--yellow-4) 78%, transparent), transparent 34%),
-      radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--pink-4) 65%, transparent), transparent 32%),
-      radial-gradient(circle at 50% 120%, color-mix(in srgb, var(--gray-a2) 82%, transparent), transparent 44%),
-      linear-gradient(135deg, color-mix(in srgb, white 46%, var(--background) 54%), color-mix(in srgb, var(--background) 98%, transparent));
+      radial-gradient(circle at top left, color-mix(in srgb, var(--yellow-3) 70%, transparent), transparent 36%),
+      radial-gradient(circle at top right, color-mix(in srgb, var(--pink-3) 58%, transparent), transparent 34%),
+      linear-gradient(180deg, color-mix(in srgb, var(--background) 92%, white 8%), color-mix(in srgb, var(--background) 99%, transparent));
     box-shadow:
-      0 40px 90px -58px color-mix(in srgb, var(--foreground) 34%, transparent),
-      0 1px 0 color-mix(in srgb, white 58%, transparent) inset,
-      0 -36px 80px -72px color-mix(in srgb, var(--yellow-6) 36%, transparent) inset;
+      0 32px 80px -56px color-mix(in srgb, var(--foreground) 36%, transparent),
+      0 1px 0 color-mix(in srgb, white 45%, transparent) inset;
   }
 
   .route-panel-hero::after {
@@ -103,15 +106,7 @@
     content: "";
     background:
       linear-gradient(135deg, color-mix(in srgb, white 18%, transparent), transparent 28%),
-      linear-gradient(0deg, color-mix(in srgb, var(--background) 8%, transparent), transparent 26%),
-      repeating-linear-gradient(
-        90deg,
-        transparent 0,
-        transparent 28px,
-        color-mix(in srgb, var(--foreground) 3%, transparent) 28px,
-        color-mix(in srgb, var(--foreground) 3%, transparent) 29px
-      );
-    opacity: 0.78;
+      linear-gradient(0deg, color-mix(in srgb, var(--background) 8%, transparent), transparent 26%);
   }
 
   .route-icon-box {
@@ -122,7 +117,7 @@
     height: 2.25rem;
     border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
     border-radius: 0.85rem;
-    background: linear-gradient(180deg, color-mix(in srgb, white 26%, transparent), color-mix(in srgb, var(--gray-a2) 86%, transparent));
+    background: linear-gradient(180deg, color-mix(in srgb, var(--gray-1) 80%, transparent), color-mix(in srgb, var(--gray-a3) 86%, transparent));
     box-shadow: 0 14px 30px -24px color-mix(in srgb, var(--foreground) 28%, transparent);
   }
 
@@ -132,15 +127,9 @@
     border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
     border-radius: 1.1rem;
     background:
-      linear-gradient(180deg, color-mix(in srgb, white 58%, var(--background) 42%), color-mix(in srgb, var(--background) 98%, transparent)),
+      linear-gradient(180deg, color-mix(in srgb, var(--background) 95%, white 5%), color-mix(in srgb, var(--background) 99%, transparent)),
       color-mix(in srgb, var(--gray-a2) 74%, transparent);
-    box-shadow:
-      0 24px 52px -42px color-mix(in srgb, var(--foreground) 28%, transparent),
-      0 1px 0 color-mix(in srgb, white 42%, transparent) inset;
-    transition:
-      transform 180ms ease,
-      border-color 180ms ease,
-      box-shadow 180ms ease;
+    box-shadow: 0 20px 48px -42px color-mix(in srgb, var(--foreground) 28%, transparent);
   }
 
   .route-grid-card::before {
@@ -153,397 +142,350 @@
     opacity: 0.85;
   }
 
-  .route-grid-card:hover {
-    transform: translateY(-3px);
-    border-color: color-mix(in srgb, var(--border) 100%, var(--pink-6) 22%);
-    box-shadow:
-      0 28px 58px -40px color-mix(in srgb, var(--foreground) 32%, transparent),
-      0 1px 0 color-mix(in srgb, white 42%, transparent) inset;
+  .studio-page {
+    --studio-line: color-mix(in srgb, var(--border) 82%, transparent);
+    --studio-ink-soft: color-mix(in srgb, var(--foreground) 64%, transparent);
+    --studio-ink-faint: color-mix(in srgb, var(--foreground) 42%, transparent);
+    --studio-field: color-mix(in srgb, var(--background) 94%, var(--gray-a2) 6%);
+    --studio-field-strong: color-mix(in srgb, var(--background) 88%, var(--gray-a3) 12%);
   }
 
-  .route-section-heading {
-    display: flex;
-    align-items: end;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1rem;
+  .studio-hero {
+    display: grid;
+    gap: 1px;
+    overflow: hidden;
+    border: 1px solid var(--studio-line);
+    border-radius: 0.85rem;
+    background: var(--studio-line);
   }
 
-  .route-stat-tile {
-    border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
-    border-radius: 1rem;
+  @media (min-width: 960px) {
+    .studio-hero {
+      grid-template-columns: minmax(0, 1.1fr) minmax(22rem, 0.9fr);
+    }
+  }
+
+  .studio-hero__copy,
+  .studio-schematic {
     background:
-      linear-gradient(180deg, color-mix(in srgb, white 52%, var(--background) 48%), color-mix(in srgb, var(--background) 99%, transparent)),
-      color-mix(in srgb, var(--gray-a2) 80%, transparent);
-    box-shadow:
-      0 18px 42px -34px color-mix(in srgb, var(--foreground) 24%, transparent),
-      0 1px 0 color-mix(in srgb, white 40%, transparent) inset;
+      linear-gradient(135deg, color-mix(in srgb, var(--yellow-a2) 72%, transparent), transparent 34%),
+      linear-gradient(180deg, var(--studio-field-strong), var(--studio-field));
   }
 
-  .route-stat-label {
+  .studio-hero__copy {
+    padding: clamp(1.25rem, 4vw, 3rem);
+  }
+
+  .studio-hero__copy h1 {
+    max-width: 13ch;
+    margin-top: 0.75rem;
+    font-size: clamp(2.5rem, 8vw, 6.5rem);
+    font-weight: 720;
+    line-height: 0.9;
+    letter-spacing: -0.07em;
+    color: var(--foreground);
+  }
+
+  .studio-hero__copy p {
+    max-width: 43rem;
+    margin-top: 1.1rem;
+    font-size: clamp(0.98rem, 1.8vw, 1.18rem);
+    line-height: 1.65;
+    color: var(--studio-ink-soft);
+  }
+
+  .studio-hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    margin-top: 1.5rem;
+  }
+
+  .studio-action {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.45rem;
+    padding: 0 0.95rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    color: var(--foreground);
+    text-transform: uppercase;
+    border: 1px solid var(--studio-line);
+    border-radius: 0.45rem;
+    background: color-mix(in srgb, var(--background) 88%, transparent);
+    transition:
+      background-color 160ms ease,
+      border-color 160ms ease,
+      transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .studio-action:hover {
+      border-color: color-mix(in srgb, var(--foreground) 28%, var(--border));
+      transform: translateY(-1px);
+    }
+  }
+
+  .studio-action:active {
+    transform: scale(0.96);
+  }
+
+  /* Yellow fill keeps the same luminance in both themes, so its ink is fixed dark rather than theme-derived. */
+  .studio-action--primary {
+    color: color-mix(in srgb, black 86%, var(--yellow-9));
+    border-color: color-mix(in srgb, var(--yellow-9) 70%, var(--border));
+    background: color-mix(in srgb, var(--yellow-9) 72%, white 28%);
+  }
+
+  .studio-schematic {
+    display: grid;
+    align-content: stretch;
+    min-height: 100%;
+  }
+
+  .studio-schematic__row {
+    display: grid;
+    grid-template-columns: 3.2rem minmax(5.5rem, 0.58fr) minmax(0, 1fr);
+    gap: 0.85rem;
+    align-items: center;
+    min-height: 4.6rem;
+    padding: 1rem clamp(1rem, 2vw, 1.4rem);
+    border-bottom: 1px solid var(--studio-line);
+  }
+
+  .studio-schematic__row:last-child {
+    border-bottom: 0;
+  }
+
+  .studio-schematic__index,
+  .studio-schematic__label,
+  .studio-proof-cell__label {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace);
     font-size: 0.68rem;
     font-weight: 700;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: color-mix(in srgb, var(--foreground) 46%, var(--background) 54%);
   }
 
-  .route-shell-grid {
+  .studio-schematic__index {
+    color: var(--studio-ink-faint);
+  }
+
+  .studio-schematic__label {
+    color: var(--foreground);
+  }
+
+  .studio-schematic__detail {
+    font-size: 0.85rem;
+    line-height: 1.45;
+    color: var(--studio-ink-soft);
+  }
+
+  .studio-proof-grid {
     display: grid;
-    gap: 1rem;
+    gap: 1px;
+    overflow: hidden;
+    border: 1px solid var(--studio-line);
+    border-radius: 0.75rem;
+    background: var(--studio-line);
   }
 
-  @media (min-width: 1024px) {
-    .route-shell-grid {
-      grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr);
-      align-items: start;
+  @media (min-width: 760px) {
+    .studio-proof-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
 
-  .markdown-v2-output h1,
-  .markdown-v2-output h2,
-  .markdown-v2-output h3,
-  .markdown-v2-output h4,
-  .markdown-v2-output h5,
-  .markdown-v2-output h6 {
+  .studio-proof-cell {
+    min-height: 10rem;
+    padding: 1rem;
+    background: var(--studio-field);
+  }
+
+  .studio-proof-cell__label {
+    color: var(--studio-ink-faint);
+  }
+
+  .studio-proof-cell__value {
+    margin-top: 1.4rem;
+    font-size: 1.15rem;
     font-weight: 700;
-    color: var(--tw-prose-headings, var(--foreground));
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
+    color: var(--foreground);
   }
 
-  .markdown-v2-output h1 {
-    margin-top: 1.5em;
-    margin-bottom: 0.5em;
-    font-size: 2.5rem;
-    line-height: 1.1;
+  .studio-proof-cell p {
+    margin-top: 0.55rem;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: var(--studio-ink-soft);
   }
 
-  .markdown-v2-output h2 {
-    margin-top: 1.5em;
-    margin-bottom: 0.75em;
-    font-size: 1.75rem;
-    line-height: 1.2;
-  }
-
-  .markdown-v2-output h3 {
-    margin-top: 1.5em;
-    margin-bottom: 0.75em;
-    font-size: 1.25rem;
-    line-height: 1.4;
-  }
-
-  .markdown-v2-output h4 {
-    margin-top: 1.5em;
-    margin-bottom: 0.5em;
-    font-size: 1.125rem;
-    line-height: 1.45;
-  }
-
-  .markdown-v2-output h5 {
-    margin-top: 1.5em;
-    margin-bottom: 0.5em;
-    font-size: 1rem;
-    line-height: 1.5;
-  }
-
-  .markdown-v2-output h6 {
-    margin-top: 1.5em;
-    margin-bottom: 0.5em;
-    font-size: 1em;
-    line-height: 1.5;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
-
-  .markdown-v2-output .markdown-link {
-    padding: 0;
-    font: inherit;
-    color: var(--tw-prose-links, var(--foreground));
-    text-decoration: underline;
-    text-decoration-thickness: 1px;
-    text-underline-offset: 2px;
-    cursor: pointer;
-    background: transparent;
-    border: none;
-  }
-
-  .markdown-v2-output h1 + h2,
-  .markdown-v2-output h2 + h3,
-  .markdown-v2-output h3 + h4 {
-    margin-top: 0.75em;
-  }
-
-  .markdown-v2-output p + h1,
-  .markdown-v2-output p + h2,
-  .markdown-v2-output p + h3,
-  .markdown-v2-output p + h4,
-  .markdown-v2-output p + h5,
-  .markdown-v2-output p + h6 {
-    margin-top: 1.5em;
-  }
-
-  .markdown-v2-output .markdown-list {
-    --list-indent: 2rem;
-
-    display: flex;
-    flex-direction: column;
-    padding-left: var(--list-indent, 2rem);
-    margin: 1.25em 0;
-    list-style: none;
-    list-style-type: none;
-  }
-
-  .markdown-v2-output .markdown-list[data-list-depth="1"] {
-    --list-indent: 1.75rem;
-  }
-
-  .markdown-v2-output .markdown-list[data-list-depth="2"],
-  .markdown-v2-output .markdown-list[data-list-depth="3"] {
-    --list-indent: 1.5rem;
-  }
-
-  .markdown-v2-output .markdown-list .markdown-list {
-    margin-top: 0.25rem;
-    margin-left: 1rem;
-  }
-
-  .markdown-v2-output .markdown-list-item {
-    position: relative;
-    display: block;
-    padding-left: 0;
-    margin: 0.1rem 0;
-  }
-
-  .markdown-v2-output .markdown-list-item::before {
-    --tw-numeric-spacing: tabular-nums;
-
-    position: absolute;
-    top: 0;
-    right: 100%;
-    width: var(--list-indent, 2rem);
-    padding-right: 0.5rem;
-    font-variant-numeric: var(--tw-ordinal) var(--tw-slashed-zero) var(--tw-numeric-figure) var(--tw-numeric-spacing) var(--tw-numeric-fraction);
-    text-align: right;
-    content: attr(data-counter-text) " ";
-    opacity: 0.5;
-  }
-
-  .markdown-v2-output .markdown-list-item::marker {
-    content: none;
-  }
-
-  .markdown-v2-output .markdown-list.ordered > .markdown-list-item::before {
-    content: attr(data-counter-text) " ";
-  }
-
-  .markdown-v2-output .markdown-list.unordered > .markdown-list-item::before {
-    --tw-numeric-spacing: tabular-nums;
-
-    display: block;
-    width: var(--list-indent, 2rem);
-    padding-right: 0.5rem;
-    margin-top: -0.05rem;
-    font-size: 1.25rem;
-    text-align: right;
-    content: "\2022";
-    opacity: 0.7;
-  }
-
-  .markdown-v2-output .markdown-list-item.markdown-list-item-task::before {
-    content: none;
-  }
-
-  .markdown-v2-output .markdown-list-item > * {
-    width: 100%;
-    max-width: 100%;
-  }
-
-  .markdown-v2-output {
-    --shiki-light-bg: transparent;
-    --shiki-dark-bg: transparent;
-  }
-
-  .markdown-v2-output .markdown-mdx:has(> figure[data-with-codeblock="true"]) + pre,
-  .markdown-v2-output .markdown-mdx:has(> figure[data-with-codeblock="true"]) + figure {
-    margin-top: 0 !important;
-    border-top-width: 0 !important;
-    border-top-left-radius: 0 !important;
-    border-top-right-radius: 0 !important;
-  }
-
-  .markdown-v2-output figure[data-with-codeblock="true"] {
-    margin-bottom: 0;
-  }
-
-  .markdown-v2-output pre {
-    margin-top: 0.75rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .markdown-v2-output .markdown-code-block,
-  .markdown-v2-output pre.markdown-code-block {
-    position: relative;
-    margin: 0.75rem 0;
+  .studio-instrument,
+  .studio-renderer-shell {
     overflow: hidden;
-    border: 1px solid var(--code-border);
-    border-radius: 0.75rem;
-    background: var(--code-bg);
-  }
-
-  .markdown-v2-output .markdown-code-block pre,
-  .markdown-v2-output pre.markdown-code-block {
-    margin: 0;
-    padding: 0.85rem 1rem;
-    font-size: 0.875rem;
-    line-height: 1.6;
-    background: transparent;
-    border: 0;
-  }
-
-  .markdown-v2-output .markdown-code-block code,
-  .markdown-v2-output pre.markdown-code-block code {
-    font-family: var(--code-font, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace);
-    font-size: inherit;
-    background: transparent;
-  }
-
-  .markdown-v2-output .markdown-code-block pre[data-language]:not([data-language=\"text\"]):not([data-language=\"plaintext\"]),
-  .markdown-v2-output pre.markdown-code-block[data-language]:not([data-language=\"text\"]):not([data-language=\"plaintext\"]) {
-    padding-top: 2.25rem;
-  }
-
-  .markdown-v2-output .markdown-code-block pre[data-language]:not([data-language=\"text\"]):not([data-language=\"plaintext\"])::before,
-  .markdown-v2-output pre.markdown-code-block[data-language]:not([data-language=\"text\"]):not([data-language=\"plaintext\"])::before {
-    position: absolute;
-    top: 0.6rem;
-    left: 0.9rem;
-    padding: 0.2rem 0.45rem;
-    font-size: 0.6rem;
-    font-weight: 600;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--code-label);
-    border: 1px solid var(--code-border);
-    border-radius: 999px;
-    background: var(--gray-a2);
-    content: attr(data-language);
-  }
-
-  .markdown-v2-output .docs-code-block {
-    margin: 0.9rem 0;
+    border: 1px solid var(--studio-line);
     border-radius: 0.85rem;
-    background: var(--code-bg);
+    background: var(--studio-field);
   }
 
-  .markdown-v2-output .docs-code-block__header {
+  .studio-instrument__header,
+  .studio-renderer-shell__header {
+    display: grid;
+    gap: 0.75rem;
+    padding: 1rem;
+    border-bottom: 1px solid var(--studio-line);
+    background: var(--studio-field-strong);
+  }
+
+  @media (min-width: 820px) {
+    .studio-instrument__header,
+    .studio-renderer-shell__header {
+      grid-template-columns: minmax(16rem, 0.62fr) minmax(0, 1fr);
+      align-items: end;
+      padding: 1.25rem;
+    }
+  }
+
+  .studio-instrument__header h2,
+  .studio-renderer-shell__header h2 {
+    margin-top: 0.25rem;
+    font-size: clamp(1.35rem, 3vw, 2.15rem);
+    font-weight: 680;
+    line-height: 1;
+    letter-spacing: -0.045em;
+    color: var(--foreground);
+  }
+
+  .studio-instrument__header p,
+  .studio-renderer-shell__header p {
+    max-width: 54rem;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: var(--studio-ink-soft);
+  }
+
+  .studio-sample-grid {
+    display: grid;
+    gap: 1px;
+    background: var(--studio-line);
+  }
+
+  @media (min-width: 760px) {
+    .studio-sample-grid {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+  }
+
+  .studio-sample-button {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    padding: 0.35rem 0.65rem;
-    border-bottom: 1px solid var(--code-border);
-    background: var(--gray-a2);
-    color: var(--foreground);
+    min-height: 12.5rem;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1rem;
+    text-align: left;
+    color: var(--studio-ink-soft);
+    background: var(--studio-field);
+    border: 0;
+    transition:
+      background-color 160ms ease,
+      color 160ms ease,
+      box-shadow 160ms ease;
   }
 
-  .markdown-v2-output .docs-code-block__lang {
-    font-size: 0.65rem;
-    font-weight: 600;
-    letter-spacing: 0.16em;
+  .studio-sample-button:hover,
+  .studio-sample-button:focus-visible,
+  .studio-sample-button.is-active {
+    color: var(--foreground);
+    background: color-mix(in srgb, var(--yellow-a3) 18%, var(--studio-field-strong));
+    outline: none;
+  }
+
+  .studio-sample-button:focus-visible {
+    box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--yellow-9) 58%, var(--foreground));
+  }
+
+  .studio-sample-button__label {
+    font-size: 0.98rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .studio-sample-button__summary {
+    margin-top: 0.7rem;
+    font-size: 0.79rem;
+    line-height: 1.5;
+    color: var(--studio-ink-soft);
+  }
+
+  .studio-sample-button__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: auto;
+    padding-top: 1rem;
+  }
+
+  .studio-sample-button__tags span {
+    padding: 0.28rem 0.45rem;
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace);
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: color-mix(in srgb, var(--foreground) 70%, transparent);
+    border: 1px solid var(--studio-line);
+    border-radius: 0.32rem;
   }
 
-  .markdown-v2-output .docs-code-block__copy {
-    height: 1.7rem;
-    width: 1.7rem;
-    border-radius: 0.55rem;
+  .studio-renderer-shell > :last-child {
+    padding: 0.75rem;
   }
 
-  .markdown-v2-output .docs-code-block__body {
-    overflow-x: auto;
+  .studio-live-renderer {
+    --studio-control-field: color-mix(in srgb, var(--background) 91%, var(--gray-a3) 9%);
+    --studio-control-field-strong: color-mix(in srgb, var(--background) 84%, var(--gray-a4) 16%);
+    --studio-control-line: color-mix(in srgb, var(--border) 86%, transparent);
+    --studio-control-ink: color-mix(in srgb, var(--foreground) 72%, transparent);
   }
 
-  .markdown-v2-output .docs-code-block__body pre {
-    min-width: 100%;
+  .studio-live-renderer > .grid {
+    gap: 1px;
+    overflow: hidden;
+    border: 1px solid var(--studio-control-line);
+    border-radius: 0.78rem;
+    background: var(--studio-control-line);
   }
 
-  .markdown-v2-output .docs-code-block__body pre code {
-    display: block;
-    min-width: max-content;
+  .studio-live-renderer > .grid > div,
+  .studio-live-renderer > .grid > aside {
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: var(--studio-control-field);
   }
 
-  .markdown-v2-output .docs-code-block pre[data-language]::before {
-    content: none;
+  .studio-live-renderer :where(.studio-live-stat, .studio-live-panel, .studio-live-output-frame, .studio-live-subpanel) {
+    border-color: var(--studio-control-line);
+    border-radius: 0.42rem;
+    background: var(--studio-control-field);
+    box-shadow: none;
   }
 
-  .markdown-v2-output .docs-code-block pre[data-language]:not([data-language=\"text\"]):not([data-language=\"plaintext\"]) {
-    padding-top: 0.85rem;
+  .studio-live-renderer :where(.studio-live-stat, .studio-live-subpanel) {
+    background: var(--studio-control-field-strong);
   }
 
-  .code-panel-block {
-    --code-bg: transparent;
-    --code-border: transparent;
+  .studio-live-renderer .studio-live-output-frame {
+    background: var(--background);
   }
 
-  .code-panel-block .markdown-code-block,
-  .code-panel-block pre.markdown-code-block {
-    border: 0;
-    background: transparent;
+  .studio-live-renderer :where(.studio-live-panel summary, .studio-live-panel button, .studio-live-status) {
+    border-radius: 0.3rem;
   }
 
-  .code-panel-block .markdown-code-block pre,
-  .code-panel-block pre.markdown-code-block {
-    padding: 0.25rem 0;
+  .studio-live-renderer .studio-live-status {
+    border: 1px solid var(--studio-control-line);
   }
 
-  .code-panel-block .markdown-code-block pre[data-language]::before,
-  .code-panel-block pre.markdown-code-block[data-language]::before {
-    content: none;
-  }
-
-  .code-panel-block .markdown-code-block pre[data-language],
-  .code-panel-block pre.markdown-code-block[data-language] {
-    padding-top: 0.25rem;
-  }
-
-  .code-panel-block .docs-code-block {
-    margin: 0;
-    border: 0;
-    background: transparent;
-  }
-
-  .code-panel-block .docs-code-block__header {
-    padding: 0.1rem 0.1rem 0.45rem;
-    border-bottom: 0;
-    background: transparent;
-  }
-
-  .code-panel-block .docs-code-block__body {
-    border: 1px solid var(--code-border);
-    border-radius: 0.75rem;
-    background: var(--code-bg);
-  }
-
-  .code-panel-block .docs-code-block__body pre,
-  .code-panel-block .docs-code-block__body pre code {
-    color: var(--foreground);
-  }
-
-  .markdown-v2-output .markdown-hr {
-    margin: 2rem 0;
-    clear: both;
-    border: 0;
-    border-top: 1px solid var(--border);
-  }
-
-  .markdown-v2-output .markdown-list-virtualization-sentinel {
-    height: 1px;
-    padding: 0;
-    margin: 0;
-    list-style: none;
-    visibility: hidden;
-  }
 
   .stream-mdx-caret > *:last-child::after {
     display: inline-block;
@@ -575,7 +517,7 @@
   :root {
     --bg: var(--gray-1);
     --fg: var(--gray-12);
-    --muted-old: var(--gray-8);
+    --muted-old: var(--gray-11);
     --border-old: var(--gray-4);
     --muted: var(--gray-8);
     --note-muted: color-mix(in srgb, var(--foreground) 68%, var(--background) 32%);
@@ -651,6 +593,19 @@
     scroll-behavior: smooth;
   }
 
+  /* Reduced motion keeps color/opacity feedback but drops movement: no smooth scroll, no animated lifts or presses. */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    ::before,
+    ::after {
+      transition-property: color, background-color, border-color, text-decoration-color, opacity, box-shadow !important;
+    }
+  }
+
   html {
     @apply text-default text-foreground bg-background;
 
@@ -663,8 +618,6 @@
       @apply font-medium;
     }
 
-    h2,
-    h3,
     sub,
     sup {
       @apply text-muted;
@@ -675,7 +628,16 @@
     }
 
     a {
-      @apply transition hover:opacity-50;
+      transition-property: opacity, color, background-color, border-color;
+      transition-duration: 150ms;
+      transition-timing-function: ease;
+    }
+
+    /* Text links fade on hover; anchors that declare their own hover styling (buttons, nav pills, cards) opt out. */
+    @media (hover: hover) and (pointer: fine) {
+      a:not(:where(.studio-action, [class*="hover:"])):hover {
+        opacity: 0.6;
+      }
     }
 
     ol {
@@ -809,66 +771,39 @@
       content: counter(list);
     }
 
-    .markdown .footnote-ref a,
-    .markdown .footnotes a,
-    .markdown .footnotes .footnote-backref {
-      color: var(--foreground) !important;
-      text-decoration: underline;
-      text-underline-offset: 2px;
-      text-decoration-thickness: 1px;
-    }
 
-    .markdown .footnote-ref a:visited,
-    .markdown .footnotes a:visited,
-    .markdown .footnotes .footnote-backref:visited {
-      color: var(--foreground) !important;
-    }
 
     .footnotes ol li p a {
       z-index: 2;
     }
   }
 
-  /* 
-  * We are using rehypye-pretty to style the code blocks in the project.
-  * rehype-pretty-code is a Rehype plugin powered by the shiki syntax highlighter that provides beautiful code blocks for Markdown or MDX. 
-  * It works on both the server at build-time (avoiding runtime syntax highlighting) and on the client for dynamic highlighting.
-  * @see: https://rehype-pretty.pages.dev/
-  */
-
-  /* 
-  * Here we are setting up the styles needed to enable theme-aware code blocks.
-  * @see: https://rehype-pretty.pages.dev/#multiple-themes-dark-and-light-mode
+  /*
+  * Shiki dual-theme output (`defaultColor: false`) carries token colors only as
+  * `--shiki-light*` / `--shiki-dark*` custom properties; map them per color scheme.
+  * Backgrounds stay owned by the surrounding code surface.
   */
 
   html {
-    code[data-theme*=" "],
-    code[data-theme*=" "] span {
-      min-height: 1.25rem;
+    .shiki,
+    .shiki span {
       color: var(--shiki-light);
-      background-color: var(--shiki-light-bg);
+      font-style: var(--shiki-light-font-style);
+      font-weight: var(--shiki-light-font-weight);
+      text-decoration: var(--shiki-light-text-decoration);
     }
 
     &.dark {
-      code[data-theme*=" "],
-      code[data-theme*=" "] span {
+      .shiki,
+      .shiki span {
         color: var(--shiki-dark);
-        background-color: var(--shiki-dark-bg);
+        font-style: var(--shiki-dark-font-style);
+        font-weight: var(--shiki-dark-font-weight);
+        text-decoration: var(--shiki-dark-text-decoration);
       }
     }
   }
 
-  .markdown-v2-output .shiki,
-  .markdown-v2-output .shiki span {
-    background-color: transparent !important;
-  }
-
-  .markdown-v2-output pre,
-  .markdown-v2-output pre code,
-  .markdown-v2-output pre [data-line],
-  .markdown-v2-output pre span {
-    background: transparent !important;
-  }
 
   /* 
   * Here we are setting up the styles needed to enable line numbers in code blocks.
@@ -991,17 +926,9 @@
 
     min-height: 100vh;
     background-image:
-      radial-gradient(circle at top left, color-mix(in srgb, var(--yellow-3) 62%, transparent), transparent 30%),
-      radial-gradient(circle at top right, color-mix(in srgb, var(--pink-3) 48%, transparent), transparent 28%),
-      radial-gradient(circle at 50% 0%, color-mix(in srgb, white 14%, transparent), transparent 42%),
-      linear-gradient(180deg, color-mix(in srgb, var(--background) 97%, white 3%), var(--background)),
-      repeating-linear-gradient(
-        90deg,
-        transparent 0,
-        transparent 72px,
-        color-mix(in srgb, var(--foreground) 2.5%, transparent) 72px,
-        color-mix(in srgb, var(--foreground) 2.5%, transparent) 73px
-      );
+      radial-gradient(circle at top left, color-mix(in srgb, var(--yellow-3) 52%, transparent), transparent 28%),
+      radial-gradient(circle at top right, color-mix(in srgb, var(--pink-3) 42%, transparent), transparent 26%),
+      linear-gradient(180deg, color-mix(in srgb, var(--background) 98%, white 2%), var(--background));
     background-attachment: fixed;
   }
 }

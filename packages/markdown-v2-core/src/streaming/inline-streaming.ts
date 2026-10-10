@@ -546,7 +546,14 @@ function planInlineFormat(
 
   const mathMode = hasIncompleteMathDisplay ? "display" : "inline";
   if (hasIncompleteMath) {
-    return planMathLookahead(request.raw, hasIncompleteMathDisplay ? "math-block" : "math-inline", mathMode);
+    const mathPlan = planMathLookahead(request.raw, hasIncompleteMathDisplay ? "math-block" : "math-inline", mathMode);
+    if (mathPlan.decision !== "repair") return mathPlan;
+    const outerTokens = scan.stack.filter((token) => token !== "math-inline" && token !== "math-display").reverse();
+    return {
+      ...mathPlan,
+      ops: [...mathPlan.ops, ...outerTokens.flatMap((token) => appendOpsForToken(token, request.raw, scan.mathDisplayCrossedNewline))],
+      debugNotes: [...mathPlan.debugNotes, ...outerTokens],
+    };
   }
 
   const ops = scan.stack

@@ -1,5 +1,3 @@
-import type { InlineNode } from "@stream-mdx/core";
-import { generateBlockId } from "@stream-mdx/core";
 import type { DocumentContext, DocumentPlugin } from "../document";
 
 // GFM-style tables detection and retagging
@@ -12,39 +10,7 @@ type Align = "left" | "center" | "right" | null;
 
 export const TablesPlugin: DocumentPlugin = {
   name: "tables",
-  process(ctx: DocumentContext) {
-    const inlineParser = ctx.state.inlineParser;
-    const fallbackParse = (text: string): InlineNode[] => [{ kind: "text", text }];
-    const parseInline = inlineParser ? (text: string) => inlineParser.parse(text) : fallbackParse;
-    for (const block of ctx.blocks) {
-      if (block.type !== "paragraph") continue;
-      // Do not rewrite a still-streaming paragraph into a semantic table yet.
-      // The raw markdown text is still the user-visible truth until the block closes,
-      // and switching representations early causes observable text discontinuities.
-      if (!block.isFinalized) continue;
-      const raw = block.payload.raw;
-      const lines = raw.split("\n");
-      if (lines.length < 2) continue;
-
-      const table = parseGfmTable(lines, { finalized: block.isFinalized });
-      if (!table) continue;
-
-      // Retag to table and populate meta
-      const headerInlines = table.header?.map((cell) => parseInline(cell));
-      const rowsInlines = table.rows.map((row) => row.map((cell) => parseInline(cell)));
-
-      block.type = "table";
-      block.payload.inline = [];
-      block.payload.meta = {
-        header: headerInlines, // InlineNode[][] (cells)
-        rows: rowsInlines, // InlineNode[][][] (rows->cells)
-        align: table.align,
-      };
-      // Make raw the exact slice of the table (trim extra lines)
-      block.payload.raw = lines.slice(0, 2 + table.rows.length).join("\n");
-      const from = block.payload.range?.from ?? 0;
-      block.id = generateBlockId(`${from}:${block.type}`, block.type);
-    }
+  process(_ctx: DocumentContext) {
     return undefined;
   },
 };

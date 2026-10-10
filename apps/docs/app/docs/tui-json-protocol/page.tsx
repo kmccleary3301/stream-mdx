@@ -98,7 +98,7 @@ export default function TuiJsonProtocolPage() {
   ];
 
   return (
-    <div className="relative -mx-6 rounded-3xl border border-border/60 bg-muted/20 p-6 shadow-sm md:p-10">
+    <div className="relative rounded-3xl border border-border/60 bg-muted/20 p-4 shadow-sm md:-mx-6 md:p-10">
       <DocsShell
         sections={navSections}
         showToc={false}
@@ -123,7 +123,7 @@ export default function TuiJsonProtocolPage() {
             </div>
           </header>
 
-          <section className="grid gap-6 lg:grid-cols-[1.1fr_1fr]">
+          <section className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
             <div className="rounded-2xl border border-border/60 bg-background p-5 shadow-sm">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-muted-old">
                 <TerminalSquare size={14} /> Structured documentation

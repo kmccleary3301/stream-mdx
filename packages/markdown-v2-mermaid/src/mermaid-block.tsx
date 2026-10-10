@@ -1,6 +1,7 @@
+import type { CSSProperties, ComponentType, FC, ReactNode } from "react";
 import React from "react";
 
-type MermaidModule = {
+export type MermaidModule = {
   initialize?: (config: Record<string, unknown>) => void;
   render?: (
     id: string,
@@ -14,178 +15,334 @@ type MermaidModule = {
   >;
 };
 
-let mermaidPromise: Promise<MermaidModule> | null = null;
-let mermaidInitialized = false;
-let mermaidIdCounter = 0;
+export type MermaidModuleLoader = MermaidModule | (() => Promise<MermaidModule>);
 
-async function loadMermaid(): Promise<MermaidModule> {
-  if (!mermaidPromise) {
-    mermaidPromise = import("mermaid").then((mod) => ((mod as unknown as { default?: MermaidModule }).default ?? (mod as unknown as MermaidModule)) as MermaidModule);
-  }
-  const mermaid = await mermaidPromise;
-  if (!mermaidInitialized && typeof mermaid.initialize === "function") {
-    mermaid.initialize({ startOnLoad: false });
-    mermaidInitialized = true;
-  }
-  return mermaid;
-}
+export type MermaidConfig = Record<string, unknown>;
 
-function nextMermaidId(): string {
-  mermaidIdCounter += 1;
-  return `stream-mdx-mermaid-${mermaidIdCounter}`;
-}
+export type MermaidErrorComponentProps = {
+  error: string;
+  code: string;
+  retry: () => void;
+  chart?: string;
+};
+
+export type CreateMermaidBlockOptions = {
+  config?: MermaidConfig;
+  errorComponent?: ComponentType<MermaidErrorComponentProps>;
+  defaultView?: "diagram" | "code";
+  debounceMs?: number;
+  mermaid?: MermaidModuleLoader;
+};
 
 export type MermaidBlockProps = {
   code: string;
-  renderCode: React.ReactNode;
+  renderCode: ReactNode;
   meta?: Record<string, unknown>;
   isFinalized?: boolean;
+  language: string;
+  info?: string;
+  blockId?: string;
   defaultView?: "diagram" | "code";
   debounceMs?: number;
+  controls?: {
+    copy?: boolean;
+    download?: boolean;
+    fullscreen?: boolean;
+  };
+  copy?: () => Promise<boolean>;
+  download?: () => void;
 };
+export interface MermaidBlockComponent extends FC<MermaidBlockProps> {
+  defer?: boolean;
+}
 
-export const MermaidBlock: React.FC<MermaidBlockProps> = ({ code, renderCode, defaultView = "diagram", debounceMs = 200 }) => {
-  const [view, setView] = React.useState<"diagram" | "code">(defaultView);
-  const [svg, setSvg] = React.useState<string>("");
-  const [error, setError] = React.useState<string | null>(null);
-  const containerRef = React.useRef<HTMLDivElement | null>(null);
-  const bindRef = React.useRef<((element: Element) => void) | undefined>(undefined);
-  const lastValidSvgRef = React.useRef<string>("");
-  const generationRef = React.useRef(0);
+type MermaidExport = MermaidModule & { default?: MermaidModule };
 
-  React.useEffect(() => {
-    setView(defaultView);
-  }, [defaultView]);
+let defaultMermaidPromise: Promise<MermaidModule> | null = null;
+let mermaidIdCounter = 0;
+let renderQueue: Promise<unknown> = Promise.resolve();
 
-  React.useEffect(() => {
-    if (view !== "diagram") return;
+async function loadDefaultMermaid(): Promise<MermaidModule> {
+  if (!defaultMermaidPromise) {
+    defaultMermaidPromise = import("mermaid").then(
+      (mod: MermaidExport) => mod.default ?? mod,
+    );
+  }
+  return defaultMermaidPromise;
+}
 
-    const trimmed = typeof code === "string" ? code.trim() : "";
-    if (!trimmed) {
-      setError(null);
-      setSvg("");
-      lastValidSvgRef.current = "";
-      return;
+function cleanupLeakedErrorElement(id: string): void {
+  if (typeof document !== "undefined") {
+    const el =
+      document.getElementById(id) ??
+      document.getElementById(`d${id}`) ??
+      document.getElementById(`mermaid-${id}`);
+    if (el && el.parentNode === document.body) {
+      el.remove();
     }
+  }
+}
 
-    generationRef.current += 1;
-    const generation = generationRef.current;
+function enqueueRender<T>(task: () => Promise<T>): Promise<T> {
+  const result = renderQueue.then(
+    () => task(),
+    () => task(),
+  );
+  renderQueue = result.then(
+    () => {},
+    () => {},
+  );
+  return result;
+}
 
-    const timeout = setTimeout(async () => {
-      try {
-        const mermaid = await loadMermaid();
-        if (typeof mermaid.render !== "function") {
-          throw new Error("Mermaid runtime missing render()");
-        }
-        const result = await mermaid.render(nextMermaidId(), trimmed);
-        if (generation !== generationRef.current) return;
+export function createMermaidBlock(options: CreateMermaidBlockOptions = {}): MermaidBlockComponent {
+  const resolveMermaid = async (): Promise<MermaidModule> => {
+    const provider = options.mermaid;
+    if (provider) {
+      if (typeof provider === "function") {
+        return await provider();
+      }
+      return provider;
+    }
+    return await loadDefaultMermaid();
+  };
 
-        const svgText = typeof result === "string" ? result : (result?.svg ?? "");
-        const bindFunctions = typeof result === "string" ? undefined : result?.bindFunctions;
-        if (!svgText || svgText.trim().length === 0) {
-          throw new Error("Mermaid render returned empty SVG");
-        }
+  const MermaidBlockInstance: MermaidBlockComponent = (props) => {
+    const {
+      code,
+      renderCode,
+      defaultView = options.defaultView ?? "diagram",
+      debounceMs = options.debounceMs ?? 200,
+      controls,
+      copy,
+    } = props;
+    const [view, setView] = React.useState<"diagram" | "code">(defaultView);
+    const [svg, setSvg] = React.useState<string>("");
+    const [error, setError] = React.useState<string | null>(null);
+    const [retryNonce, setRetryNonce] = React.useState(0);
+    const containerRef = React.useRef<HTMLDivElement | null>(null);
+    const bindRef = React.useRef<((element: Element) => void) | undefined>(undefined);
+    const lastValidSvgRef = React.useRef<string>("");
+    const generationRef = React.useRef(0);
+    const retryRef = React.useRef(false);
 
-        lastValidSvgRef.current = svgText;
-        bindRef.current = typeof bindFunctions === "function" ? bindFunctions : undefined;
-        setSvg(svgText);
-        setError(null);
-      } catch (err) {
-        if (generation !== generationRef.current) return;
-        const message = err instanceof Error ? err.message : String(err);
-        setError(message);
-        if (lastValidSvgRef.current) {
-          setSvg(lastValidSvgRef.current);
+    React.useEffect(() => {
+      setView(defaultView);
+    }, [defaultView]);
+
+    const [copied, setCopied] = React.useState(false);
+    const handleCopy = React.useCallback(async () => {
+      if (copy) {
+        const success = await copy();
+        if (success) {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
         }
       }
-    }, Math.max(0, debounceMs));
+    }, [copy]);
 
-    return () => clearTimeout(timeout);
-  }, [code, debounceMs, view]);
+    const retry = React.useCallback(() => {
+      setView("diagram");
+      setError(null);
+      retryRef.current = true;
+      setRetryNonce((n) => n + 1);
+    }, []);
 
-  React.useEffect(() => {
-    if (view !== "diagram") return;
-    if (!svg) return;
-    const bind = bindRef.current;
-    const el = containerRef.current;
-    if (!el || typeof bind !== "function") return;
-    try {
-      bind(el);
-    } catch {
-      // ignore bind errors
-    }
-  }, [svg, view]);
+    React.useEffect(() => {
+      if (view !== "diagram") return;
 
-  const toolbarStyle: React.CSSProperties = {
-    display: "flex",
-    gap: 8,
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "6px 10px",
-    borderBottom: "1px solid rgba(0,0,0,0.08)",
-  };
+      const trimmed = typeof code === "string" ? code.trim() : "";
+      if (!trimmed) {
+        setError(null);
+        setSvg("");
+        lastValidSvgRef.current = "";
+        return;
+      }
 
-  const wrapperStyle: React.CSSProperties = {
-    border: "1px solid rgba(0,0,0,0.12)",
-    borderRadius: 10,
-    overflow: "hidden",
-    margin: "12px 0",
-  };
+      generationRef.current += 1;
+      const generation = generationRef.current;
+      const isRetry = retryRef.current;
+      retryRef.current = false;
+      const delay = isRetry ? 0 : Math.max(0, debounceMs);
 
-  const buttonStyle = (active: boolean): React.CSSProperties => ({
-    border: "1px solid rgba(0,0,0,0.18)",
-    borderRadius: 8,
-    padding: "3px 8px",
-    fontSize: 12,
-    background: active ? "rgba(0,0,0,0.06)" : "transparent",
-    cursor: "pointer",
-  });
+      const timeout = setTimeout(async () => {
+        try {
+          const result = await enqueueRender(async () => {
+            const mermaid = await resolveMermaid();
+            if (typeof mermaid.initialize === "function") {
+              mermaid.initialize({
+                securityLevel: "strict",
+                ...options.config,
+                startOnLoad: false,
+                suppressErrorRendering: true,
+              });
+            }
+            if (typeof mermaid.render !== "function") {
+              throw new Error("Mermaid runtime missing render()");
+            }
+            mermaidIdCounter += 1;
+            const id = `stream-mdx-mermaid-${mermaidIdCounter}`;
+            try {
+              return await mermaid.render(id, trimmed);
+            } finally {
+              cleanupLeakedErrorElement(id);
+            }
+          });
 
-  const toolbar = (
-    <div style={toolbarStyle} className="stream-mdx-mermaid-toolbar">
-      <span style={{ fontSize: 12, opacity: 0.8 }}>mermaid</span>
-      <div style={{ display: "flex", gap: 6 }}>
-        <button type="button" onClick={() => setView("diagram")} style={buttonStyle(view === "diagram")}>
-          Diagram
-        </button>
-        <button type="button" onClick={() => setView("code")} style={buttonStyle(view === "code")}>
-          Code
-        </button>
+          if (generation !== generationRef.current) return;
+
+          const svgText = typeof result === "string" ? result : (result?.svg ?? "");
+          const bindFunctions = typeof result === "string" ? undefined : result?.bindFunctions;
+          if (!svgText || svgText.trim().length === 0) {
+            throw new Error("Mermaid render returned empty SVG");
+          }
+
+          lastValidSvgRef.current = svgText;
+          bindRef.current = typeof bindFunctions === "function" ? bindFunctions : undefined;
+          setSvg(svgText);
+          setError(null);
+        } catch (err) {
+          if (generation !== generationRef.current) return;
+          const message = err instanceof Error ? err.message : String(err);
+          setError(message);
+          if (lastValidSvgRef.current) {
+            setSvg(lastValidSvgRef.current);
+          }
+        }
+      }, delay);
+
+      return () => clearTimeout(timeout);
+    }, [code, debounceMs, view, retryNonce]);
+
+    React.useEffect(() => {
+      if (view !== "diagram") return;
+      if (!svg) return;
+      const bind = bindRef.current;
+      const el = containerRef.current;
+      if (!el || typeof bind !== "function") return;
+      try {
+        bind(el);
+      } catch {
+        // ignore bind errors
+      }
+    }, [svg, view]);
+
+    const toolbarStyle: CSSProperties = {
+      display: "flex",
+      gap: 8,
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: "6px 10px",
+      borderBottom: "1px solid rgba(0,0,0,0.08)",
+    };
+
+    const wrapperStyle: CSSProperties = {
+      border: "1px solid rgba(0,0,0,0.12)",
+      borderRadius: 10,
+      overflow: "hidden",
+      margin: "12px 0",
+    };
+
+    const toolbar = (
+      <div style={toolbarStyle} className="stream-mdx-mermaid-toolbar">
+        <span style={{ fontSize: 12, opacity: 0.8 }}>mermaid</span>
+        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          <button
+            type="button"
+            onClick={() => setView("diagram")}
+            style={{
+              border: "1px solid rgba(0,0,0,0.18)",
+              borderRadius: 8,
+              padding: "3px 8px",
+              fontSize: 12,
+              background: view === "diagram" ? "rgba(0,0,0,0.06)" : "transparent",
+              cursor: "pointer",
+            }}
+          >
+            Diagram
+          </button>
+          <button
+            type="button"
+            onClick={() => setView("code")}
+            style={{
+              border: "1px solid rgba(0,0,0,0.18)",
+              borderRadius: 8,
+              padding: "3px 8px",
+              fontSize: 12,
+              background: view === "code" ? "rgba(0,0,0,0.06)" : "transparent",
+              cursor: "pointer",
+            }}
+          >
+            Code
+          </button>
+          {copy && controls?.copy ? (
+            <button
+              type="button"
+              className="stream-mdx-control stream-mdx-control-copy stream-mdx-control-mermaid-copy"
+              data-stream-mdx-control="copy"
+              data-stream-mdx-target="mermaid"
+              data-stream-mdx-action="copy"
+              aria-label={copied ? "Copied!" : "Copy diagram code"}
+              onClick={handleCopy}
+              style={{
+                border: "1px solid rgba(0,0,0,0.18)",
+                borderRadius: 8,
+                padding: "3px 8px",
+                fontSize: 12,
+                background: "transparent",
+                cursor: "pointer",
+              }}
+            >
+              {copied ? "Copied!" : "Copy"}
+            </button>
+          ) : null}
+        </div>
       </div>
-    </div>
-  );
+    );
 
-  if (view === "code") {
+    if (view === "code") {
+      return (
+        <div style={wrapperStyle} className="stream-mdx-mermaid-block">
+          {toolbar}
+          {renderCode}
+        </div>
+      );
+    }
+
+    const ErrorComponent = options.errorComponent;
+
     return (
       <div style={wrapperStyle} className="stream-mdx-mermaid-block">
         {toolbar}
-        {renderCode}
+        {error ? (
+          ErrorComponent ? (
+            <ErrorComponent error={error} code={code} chart={code} retry={retry} />
+          ) : (
+            <div style={{ fontSize: 12, padding: "6px 10px", opacity: 0.8 }} className="stream-mdx-mermaid-error">
+              {error}
+            </div>
+          )
+        ) : null}
+        {svg ? (
+          <div
+            ref={containerRef}
+            className="stream-mdx-mermaid-diagram"
+            style={{ overflowX: "auto", padding: 10 }}
+            /* biome-ignore lint/security/noDangerouslySetInnerHtml: SVG is produced by mermaid */
+            dangerouslySetInnerHTML={{ __html: svg }}
+          />
+        ) : !error || !ErrorComponent ? (
+          <div style={{ fontSize: 12, padding: "10px", opacity: 0.7 }} className="stream-mdx-mermaid-placeholder">
+            Waiting for a valid diagram…
+          </div>
+        ) : null}
       </div>
     );
-  }
+  };
 
-  return (
-    <div style={wrapperStyle} className="stream-mdx-mermaid-block">
-      {toolbar}
-      {error ? (
-        <div style={{ fontSize: 12, padding: "6px 10px", opacity: 0.8 }} className="stream-mdx-mermaid-error">
-          {error}
-        </div>
-      ) : null}
-      {svg ? (
-        <div
-          ref={containerRef}
-          className="stream-mdx-mermaid-diagram"
-          style={{ overflowX: "auto", padding: 10 }}
-          /* biome-ignore lint/security/noDangerouslySetInnerHtml: SVG is produced by mermaid */
-          dangerouslySetInnerHTML={{ __html: svg }}
-        />
-      ) : (
-        <div style={{ fontSize: 12, padding: "10px", opacity: 0.7 }} className="stream-mdx-mermaid-placeholder">
-          Waiting for a valid diagram…
-        </div>
-      )}
-    </div>
-  );
-};
+  MermaidBlockInstance.displayName = "MermaidBlock";
+  MermaidBlockInstance.defer = true;
+  return MermaidBlockInstance;
+}
 
+export const MermaidBlock: MermaidBlockComponent = createMermaidBlock();

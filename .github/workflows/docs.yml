@@ -37,6 +37,7 @@ jobs:
 
       - name: Build docs (static export)
         env:
+          NEXT_EXPORT: "1"
           NEXT_PUBLIC_BASE_PATH: /stream-mdx
         run: npm run docs:build
 

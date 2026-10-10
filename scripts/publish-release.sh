@@ -4,31 +4,15 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 AUTO_YES="${STREAM_MDX_PUBLISH_YES:-0}"
 EXPECTED_VERSION="${STREAM_MDX_EXPECT_VERSION:-}"
+CHECK_VERSIONS_ONLY=0
 
 if [[ "${1:-}" == "--yes" ]]; then
   AUTO_YES=1
+elif [[ "${1:-}" == "--check-versions" ]]; then
+  CHECK_VERSIONS_ONLY=1
 fi
 
 cd "$ROOT_DIR"
-
-echo "[stream-mdx] Release publish helper (interactive)"
-echo
-echo "This script:"
-echo "- Publishes in dependency order"
-echo "- Skips packages already published at the same version"
-echo "- Requires an interactive terminal for npm WebAuthn/passkey prompts"
-if [[ -n "$EXPECTED_VERSION" ]]; then
-  echo "- Enforces expected version: $EXPECTED_VERSION"
-fi
-echo
-
-if ! npm whoami >/dev/null 2>&1; then
-  echo "[stream-mdx] ERROR: Not logged into npm. Run: npm login --auth-type=web"
-  exit 1
-fi
-
-echo "[stream-mdx] npm user: $(npm whoami)"
-echo
 
 get_local_version() {
   node -e 'const fs=require("fs"); const p=process.argv[1]; const j=JSON.parse(fs.readFileSync(p,"utf8")); process.stdout.write(j.version);' "$1"
@@ -65,6 +49,7 @@ const packages = [
   "packages/markdown-v2-worker/package.json",
   "packages/markdown-v2-react/package.json",
   "packages/markdown-v2-mermaid/package.json",
+  "packages/markdown-v2-unified/package.json",
   "packages/markdown-v2-tui/package.json",
   "packages/theme-tailwind/package.json",
   "packages/stream-mdx/package.json",
@@ -130,8 +115,30 @@ publish_if_needed() {
   (cd "$ROOT_DIR/$pkg_dir" && npm publish "${publish_args[@]}")
 }
 
-# Scoped packages require --access public on first publish.
 assert_all_local_versions_match
+if [[ "$CHECK_VERSIONS_ONLY" == "1" ]]; then
+  exit 0
+fi
+
+echo "[stream-mdx] Release publish helper (interactive)"
+echo
+echo "This script:"
+echo "- Publishes in dependency order"
+echo "- Skips packages already published at the same version"
+echo "- Requires an interactive terminal for npm WebAuthn/passkey prompts"
+if [[ -n "$EXPECTED_VERSION" ]]; then
+  echo "- Enforces expected version: $EXPECTED_VERSION"
+fi
+echo
+
+if ! npm whoami >/dev/null 2>&1; then
+  echo "[stream-mdx] ERROR: Not logged into npm. Run: npm login --auth-type=web"
+  exit 1
+fi
+
+echo "[stream-mdx] npm user: $(npm whoami)"
+echo
+# Scoped packages require --access public on first publish.
 
 publish_if_needed "packages/markdown-v2-core" "@stream-mdx/core" --access public
 publish_if_needed "packages/markdown-v2-plugins" "@stream-mdx/plugins" --access public
@@ -139,6 +146,7 @@ publish_if_needed "packages/markdown-v2-protocol" "@stream-mdx/protocol" --acces
 publish_if_needed "packages/markdown-v2-worker" "@stream-mdx/worker" --access public
 publish_if_needed "packages/markdown-v2-react" "@stream-mdx/react" --access public
 publish_if_needed "packages/markdown-v2-mermaid" "@stream-mdx/mermaid" --access public
+publish_if_needed "packages/markdown-v2-unified" "@stream-mdx/unified" --access public
 publish_if_needed "packages/markdown-v2-tui" "@stream-mdx/tui" --access public
 publish_if_needed "packages/theme-tailwind" "@stream-mdx/theme-tailwind" --access public
 

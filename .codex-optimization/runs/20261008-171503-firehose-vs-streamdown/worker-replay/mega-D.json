@@ -1,0 +1,24 @@
+{
+  "fixture": "stress-mega",
+  "scenario": "S9_firehose_20k",
+  "chars": 253248,
+  "appends": 792,
+  "nominalStreamMs": 12672,
+  "appendTotalMs": 3790.2,
+  "workerBusyRatio": 0.3,
+  "sustainableCps": 66817,
+  "appendP50Ms": 4.1,
+  "appendP95Ms": 8.2,
+  "appendMaxMs": 104.2,
+  "firstAppendMs": 6.1,
+  "appendMeanByQuarterMs": [
+    4.8,
+    3.2,
+    4.6,
+    6.5
+  ],
+  "finalizeMs": 206.9,
+  "messages": 796,
+  "patchMessages": 794,
+  "patchMegabytes": 30
+}

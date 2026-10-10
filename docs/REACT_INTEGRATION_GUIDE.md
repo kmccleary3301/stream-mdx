@@ -124,6 +124,8 @@ export async function ArticlePage() {
 }
 ```
 
+Code-row HTML produced by the highlighter is sanitized on this path without a DOM: the server renderer reuses the DOM-free rehype pipeline (`packages/markdown-v2-core/src/worker-html-sanitizer.ts`) with the same `pre`/`code`/`span`/`div`/`br` + `class`/`data-*`/`style` allowlist the browser path applies through DOMPurify. Prerender therefore needs no `window`/jsdom shim, script/event/`javascript:`/`url(...)` style content is dropped on both paths, and theme CSS variables (`--shiki-*`) survive.
+
 ### Edge / No-worker Threads
 
 If your runtime cannot spawn `worker_threads`, use the direct compile surface and render
@@ -176,7 +178,7 @@ Cache note:
 | `features` | `object` | Feature flags: `{ math?, mdx?, tables?, html?, callouts?, footnotes?, formatAnticipation?, codeHighlighting? }` |
 | `mdxCompileMode` | `"server" \| "worker"` | Enables MDX compilation/hydration and selects strategy. |
 | `mdxComponents` | `object` | Component map passed to hydrated MDX blocks. |
-| `components` | `object` | Override block components (headings, code, tables, etc.). |
+| `components` | `object` | Override block components (headings, code, tables, etc.). Only entries that differ from the built-in defaults replace native block views, so re-passing `registry.getBlockComponentMap()` keeps native list/table/HTML rendering (nested list children, tables, HTML ownership) enabled. |
 | `inlineComponents` | `object` | Override inline components (bold, links, code, etc.). |
 | `tableElements` | `object` | Override table tags (Shadcn table wrappers, etc.). |
 | `htmlElements` | `object` | Override HTML tag renders (when HTML is enabled). |
@@ -529,11 +531,106 @@ import { StreamingMarkdown } from "stream-mdx";
 import { MermaidBlock } from "@stream-mdx/mermaid";
 
 export function MermaidDemo({ text }: { text: string }) {
-  return <StreamingMarkdown text={text} components={{ mermaid: MermaidBlock }} />;
+  return <StreamingMarkdown text={text} codeRenderers={{ mermaid: MermaidBlock }} />;
 }
 ```
 
 The Code view uses the same optimized code rendering path (including incremental updates and virtualization) because StreamMDX passes the standard code renderer into the Mermaid component.
+
+### Code Fence Renderers (`codeRenderers`)
+
+Fenced code blocks can be mapped to custom renderers by language via `codeRenderers`:
+
+```tsx
+import { StreamingMarkdown } from "stream-mdx";
+import { MermaidBlock } from "@stream-mdx/mermaid";
+import { ArtifactFrame } from "@stream-mdx/react";
+
+export function DocsPage({ content }: { content: string }) {
+  return (
+    <StreamingMarkdown
+      text={content}
+      codeRenderers={{
+        mermaid: MermaidBlock,
+        artifact: ArtifactFrame,
+        "html-artifact": ArtifactFrame,
+      }}
+    />
+  );
+}
+```
+
+#### Deferring heavy renderers
+To defer mounting heavy block components until they enter the viewport:
+```tsx
+<StreamingMarkdown
+  deferHeavyBlocks={{ rootMargin: "200px" }}
+  codeRenderers={{
+    mermaid: MermaidBlock, // MermaidBlock opts in by default
+    chart: {
+      component: CustomChartBlock,
+      defer: true,
+    },
+  }}
+/>
+```
+
+### Structured Diff Rendering
+When worker has `emitDiffBlocks` enabled (`features={{ emitDiffBlocks: true }}`), code blocks with diffs automatically render structured rows with line numbers (`+`, `-`, `@` hunk, meta):
+
+```tsx
+<StreamingMarkdown
+  text={content}
+  features={{ emitDiffBlocks: true }}
+/>
+```
+You can override diff rendering globally with `codeRenderers={{ diff: MyDiffComponent }}`.
+
+### Math Rendering (KaTeX & MathJax)
+
+KaTeX is built-in as the first-party default for inline (`$...$`) and display (`$$...$$`) math.
+
+To integrate **MathJax** instead:
+```tsx
+import React, { useEffect, useRef } from "react";
+import { StreamingMarkdown } from "stream-mdx";
+
+function MathJaxFormula({ tex, display = false }: { tex: string; display?: boolean }) {
+  const containerRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const win = window as unknown as { MathJax?: { typesetPromise?: (elements: Element[]) => Promise<void> } };
+    if (containerRef.current && win.MathJax?.typesetPromise) {
+      containerRef.current.innerHTML = display ? `\\[${tex}\\]` : `\\(${tex}\\)`;
+      win.MathJax.typesetPromise([containerRef.current]).catch((err: unknown) => {
+        console.error("MathJax render error:", err);
+      });
+    }
+  }, [tex, display]);
+
+  return (
+    <span
+      ref={containerRef}
+      className={display ? "mathjax-display block my-2 overflow-x-auto" : "mathjax-inline inline-block"}
+    >
+      {display ? `$$${tex}$$` : `$${tex}$`}
+    </span>
+  );
+}
+
+export function MathJaxArticle({ content }: { content: string }) {
+  return (
+    <StreamingMarkdown
+      text={content}
+      features={{ math: true }}
+      mathRenderer={{
+        inline: ({ tex }) => <MathJaxFormula tex={tex} display={false} />,
+        display: ({ tex }) => <MathJaxFormula tex={tex} display={true} />,
+      }}
+    />
+  );
+}
+```
 
 ### Override Inline Components
 

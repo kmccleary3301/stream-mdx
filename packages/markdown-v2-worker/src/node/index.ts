@@ -168,6 +168,7 @@ function getModuleUrl(): string {
 
 function getImportMetaUrl(): string | undefined {
   try {
+    // biome-ignore lint/security/noGlobalEval: this probes import.meta.url from a CJS-compatible node entrypoint.
     const candidate = (0, eval)("import.meta.url");
     return typeof candidate === "string" && candidate.length > 0 ? candidate : undefined;
   } catch {
@@ -222,6 +223,9 @@ export interface SnapshotArtifactV1 {
     docPlugins?: WorkerInitMessage["docPlugins"];
     mdx?: WorkerInitMessage["mdx"];
     prewarmLangs?: string[];
+    themes?: WorkerInitMessage["themes"];
+    syntax?: WorkerInitMessage["syntax"];
+    html?: WorkerInitMessage["html"];
   };
 }
 
@@ -254,6 +258,18 @@ export interface CompileMarkdownSnapshotResult {
   fromCache: boolean;
 }
 
+function createSnapshotArtifactInit(init: CompileMarkdownSnapshotOptions["init"]): SnapshotArtifactV1["init"] {
+  if (!init) return undefined;
+  return {
+    docPlugins: init.docPlugins,
+    mdx: init.mdx,
+    prewarmLangs: init.prewarmLangs,
+    themes: init.themes,
+    syntax: init.syntax,
+    html: init.html,
+  };
+}
+
 export function computeSnapshotHash(text: string, init?: Omit<WorkerInitMessage, "type" | "initialContent">, hashSalt?: string): string {
   return hashCompileInput(text, init, hashSalt);
 }
@@ -282,7 +298,7 @@ export async function compileMarkdownSnapshot(options: CompileMarkdownSnapshotOp
       return {
         blocks: snapshot.blocks,
         snapshot,
-        artifact: cached,
+        artifact: { ...cached, init: createSnapshotArtifactInit(init) },
         fromCache: true,
       };
     }
@@ -327,13 +343,7 @@ export async function compileMarkdownSnapshot(options: CompileMarkdownSnapshotOp
           const maybe = root?.props?.tocHeadings;
           return Array.isArray(maybe) ? (maybe as TocHeading[]) : undefined;
         })(),
-        init: init
-          ? {
-              docPlugins: init.docPlugins,
-              mdx: init.mdx,
-              prewarmLangs: init.prewarmLangs,
-            }
-          : undefined,
+        init: createSnapshotArtifactInit(init),
       };
 
       if (cachePath && !cache?.readOnly) {
@@ -419,6 +429,9 @@ export async function compileMarkdownSnapshot(options: CompileMarkdownSnapshotOp
       prewarmLangs: init?.prewarmLangs,
       docPlugins: init?.docPlugins,
       mdx: init?.mdx,
+      themes: init?.themes,
+      syntax: init?.syntax,
+      html: init?.html,
     };
     worker.postMessage(initMessage);
 

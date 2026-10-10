@@ -1,14 +1,134 @@
 import React from "react";
 
-import type { InlineHtmlDescriptor } from "@stream-mdx/core";
-import type { InlineHtmlRendererMap } from "../types";
+import { defaultUrlTransform, isForbiddenAttribute, isSafeStyleDeclaration, type HtmlTreeNode, type InlineHtmlDescriptor, type InlineNode, type UrlTransform } from "@stream-mdx/core";
+import type { HtmlElements, InlineHtmlRendererMap } from "../types";
 
 export interface RenderInlineHtmlOptions {
   key?: React.Key;
   renderers?: InlineHtmlRendererMap;
   className?: string;
+  htmlElements?: HtmlElements;
+  literalTagContent?: string[];
+  parseMarkdown?: (text: string) => React.ReactNode;
+  urlTransform?: UrlTransform;
 }
 
+/** Render only the sanitized attributes supplied by the engine, with parsed children intact. */
+export function renderHtmlInlineNode(
+  node: Omit<Extract<InlineNode, { kind: "html" }>, "children">,
+  children: React.ReactNode,
+  elements?: HtmlElements,
+  key?: React.Key,
+  textValue?: string,
+  urlTransform?: UrlTransform,
+  filterElement?: (
+    element: { tagName: string; properties: Record<string, unknown>; blockType?: string },
+    context: { source: "markdown" | "html"; parentTagName?: string },
+    renderElement: () => React.ReactNode,
+    renderChildren?: () => React.ReactNode,
+  ) => React.ReactNode,
+  parentTagName?: string,
+): React.ReactElement | null {
+  if (node.isClose || node.tagName === "script" || node.tagName === "style") return null;
+  if (!node.tagName || node.sanitized === "") {
+    return React.createElement(React.Fragment, { key }, children);
+  }
+  const tag = node.tagName.toLowerCase();
+  const props = mapAttributesToProps(node.attributes ?? {}, urlTransform);
+  props.key = key;
+
+  if (!filterElement) {
+    if (tag === "textarea") {
+      props.defaultValue = textValue ?? "";
+      return React.createElement(elements?.[tag] ?? tag, props);
+    }
+    return React.createElement(elements?.[tag] ?? tag, props, node.isSelfClosing ? undefined : children);
+  }
+
+  const renderElement = () => {
+    if (tag === "textarea") {
+      props.defaultValue = textValue ?? "";
+      return React.createElement(elements?.[tag] ?? tag, props);
+    }
+    return React.createElement(elements?.[tag] ?? tag, props, node.isSelfClosing ? undefined : children);
+  };
+
+  return filterElement(
+    { tagName: tag, properties: props },
+    { source: "html", parentTagName },
+    renderElement,
+    () => children,
+  ) as React.ReactElement | null;
+}
+
+export function renderHtmlOwnershipTree(
+  nodes: HtmlTreeNode[],
+  elements: HtmlElements,
+  renderBlock: (block: Extract<HtmlTreeNode, { kind: "block" }>["block"]) => React.ReactNode,
+  renderInline?: (nodes: InlineNode[], parentTagName?: string) => React.ReactNode,
+  renderInlineElement?: (node: InlineNode, children: React.ReactNode) => React.ReactNode,
+  renderParagraph?: (children: React.ReactNode) => React.ReactNode,
+  urlTransform?: UrlTransform,
+  filterElement?: (
+    element: { tagName: string; properties: Record<string, unknown>; blockType?: string },
+    context: { source: "markdown" | "html"; parentTagName?: string },
+    renderElement: () => React.ReactNode,
+    renderChildren?: () => React.ReactNode,
+  ) => React.ReactNode,
+  parentTagName?: string,
+): React.ReactNode {
+  return nodes.map((node, index) => {
+    if (node.kind === "text") return node.inline && renderInline ? renderInline(node.inline, parentTagName) : node.text;
+    if (node.kind === "block") return renderBlock(node.block);
+    const tag = node.tagName.toLowerCase();
+    const props = mapAttributesToProps(node.attributes, urlTransform);
+    props.key = index;
+    const children = renderHtmlOwnershipTree(node.children, elements, renderBlock, renderInline, renderInlineElement, renderParagraph, urlTransform, filterElement, tag);
+    if (node.paragraphRoot && renderParagraph) {
+      const paragraph = filterElement
+        ? filterElement(
+          { tagName: "p", properties: props, blockType: "paragraph" },
+          { source: "markdown", parentTagName },
+          () => renderParagraph(children),
+          () => children,
+        )
+        : renderParagraph(children);
+      return React.createElement(React.Fragment, { key: index }, paragraph);
+    }
+    if (node.inlineNode && renderInlineElement) {
+      return React.createElement(React.Fragment, { key: index }, renderInlineElement(node.inlineNode, children));
+    }
+    if (!filterElement) {
+      if (tag === "textarea") {
+        props.defaultValue = node.children.map((child) => child.kind === "text" ? child.text : "").join("");
+        return React.createElement(elements[tag] ?? tag, props);
+      }
+      const content = tag === "pre" && node.children.every((child) => child.kind === "text" && !child.inline)
+        ? node.children.map((child) => child.kind === "text" ? child.text : "").join("")
+        : children;
+      return React.createElement(elements[tag] ?? tag, props,
+        node.children.length ? content : undefined);
+    }
+    const renderElement = () => {
+      if (tag === "textarea") {
+        props.defaultValue = node.children.map((child) => child.kind === "text" ? child.text : "").join("");
+        return React.createElement(elements[tag] ?? tag, props);
+      }
+      const content = tag === "pre" && node.children.every((child) => child.kind === "text" && !child.inline)
+        ? node.children.map((child) => child.kind === "text" ? child.text : "").join("")
+        : children;
+      return React.createElement(elements[tag] ?? tag, props,
+        node.children.length ? content : undefined);
+    };
+
+    return filterElement(
+      { tagName: tag, properties: props },
+      { source: "html", parentTagName },
+      renderElement,
+      () => children,
+    );
+  });
+}
 const BACKTICK_CONTENT = /^`([\s\S]+)`$/;
 
 export const DEFAULT_INLINE_HTML_RENDERERS: InlineHtmlRendererMap = {
@@ -39,7 +159,8 @@ export function renderInlineHtmlSegment(
   }
 
   const className = options.className ?? "markdown-inline-html";
-  const isInlineTag = INLINE_ELEMENTS.has(descriptor.tagName);
+  const hasCustomElement = Boolean(options.htmlElements?.[descriptor.tagName]);
+  const isInlineTag = INLINE_ELEMENTS.has(descriptor.tagName) || hasCustomElement;
 
   const defaultRender = () => {
     if (!descriptor.sanitized || descriptor.sanitized.length === 0) {
@@ -53,10 +174,25 @@ export function renderInlineHtmlSegment(
     }
 
     if (isInlineTag) {
-      const parsedElement = renderSanitizedHtmlTree(descriptor.sanitized, options.key);
+      const parsedElement = renderSanitizedHtmlTree(
+        descriptor.sanitized,
+        options.key,
+        options.htmlElements,
+        options.literalTagContent,
+        options.parseMarkdown,
+      );
       if (parsedElement) {
         return parsedElement;
       }
+    }
+
+    const customElementComp = options.htmlElements?.[descriptor.tagName];
+    if (customElementComp) {
+      const props = mapAttributesToProps(descriptor.attributes, options.urlTransform);
+      if (options.key !== undefined && options.key !== null) {
+        props.key = options.key;
+      }
+      return React.createElement(customElementComp, props, descriptor.text || descriptor.sanitizedInner || undefined);
     }
 
     const props: React.HTMLAttributes<HTMLSpanElement> & { key?: React.Key } = {
@@ -69,15 +205,17 @@ export function renderInlineHtmlSegment(
     return React.createElement("span", props);
   };
 
-  const allRenderers = options.renderers ? { ...DEFAULT_INLINE_HTML_RENDERERS, ...options.renderers } : DEFAULT_INLINE_HTML_RENDERERS;
-  const renderer = allRenderers[descriptor.tagName];
-  if (renderer) {
-    const rendered = renderer(descriptor, { key: options.key, defaultRender });
-    if (rendered) {
-      if (options.key !== undefined && options.key !== null && React.isValidElement(rendered) && rendered.key === null) {
-        return React.cloneElement(rendered, { key: options.key });
+  if (!hasCustomElement) {
+    const allRenderers = options.renderers ? { ...DEFAULT_INLINE_HTML_RENDERERS, ...options.renderers } : DEFAULT_INLINE_HTML_RENDERERS;
+    const renderer = allRenderers[descriptor.tagName];
+    if (renderer) {
+      const rendered = renderer(descriptor, { key: options.key, defaultRender });
+      if (rendered) {
+        if (options.key !== undefined && options.key !== null && React.isValidElement(rendered) && rendered.key === null) {
+          return React.cloneElement(rendered, { key: options.key });
+        }
+        return rendered;
       }
-      return rendered;
     }
   }
 
@@ -91,12 +229,26 @@ function parseInlineHtmlDescriptor(raw: string | undefined, sanitized: string | 
     return null;
   }
 
-  const match = normalizedSanitized.match(/^<([A-Za-z][\w:-]*)(\s[^>]*)?>([\s\S]*)<\/\1>$/);
-  if (!match) {
-    return null;
-  }
+  const pairedMatch = normalizedSanitized.match(/^<([A-Za-z][\w:-]*)((?:\s+[^>]*)?)>([\s\S]*)<\/\1>$/);
+  let tagNameRaw: string;
+  let attrString = "";
+  let sanitizedInner = "";
 
-  const [, tagNameRaw, attrString = "", sanitizedInner = ""] = match;
+  if (pairedMatch) {
+    tagNameRaw = pairedMatch[1];
+    attrString = pairedMatch[2] ?? "";
+    sanitizedInner = pairedMatch[3] ?? "";
+  } else {
+    const selfClosingMatch =
+      normalizedSanitized.match(/^<([A-Za-z][\w:-]*)((?:\s+[^>]*)?)\s*(?:\/?>|>)$/) ||
+      normalizedRaw.match(/^<([A-Za-z][\w:-]*)((?:\s+[^>]*)?)\s*(?:\/?>|>)$/);
+    if (!selfClosingMatch) {
+      return null;
+    }
+    tagNameRaw = selfClosingMatch[1];
+    attrString = selfClosingMatch[2] ?? "";
+    sanitizedInner = "";
+  }
   const tagName = tagNameRaw.toLowerCase();
   const attributes = parseAttributes(attrString);
 
@@ -136,9 +288,25 @@ function parseAttributes(input: string): Record<string, string> {
 
 type HtmlAttributeProps = React.HTMLAttributes<HTMLElement> & Record<string, unknown>;
 
-function mapAttributesToProps(attrs: Record<string, string>): HtmlAttributeProps & { key?: React.Key } {
+const BOOLEAN_HTML_PROPS: Record<string, true> = {
+  allowFullScreen: true, async: true, autoFocus: true, autoPlay: true, checked: true,
+  controls: true, default: true, defer: true, disabled: true, formNoValidate: true,
+  hidden: true, inert: true, loop: true, multiple: true, muted: true, noModule: true,
+  noValidate: true, open: true, playsInline: true, readOnly: true, required: true,
+  reversed: true, selected: true, itemScope: true,
+};
+
+function mapAttributesToProps(
+  attrs: Record<string, string>,
+  urlTransform?: UrlTransform,
+): HtmlAttributeProps & { key?: React.Key } {
   const props: HtmlAttributeProps = {};
+  const transform = urlTransform ?? defaultUrlTransform;
   for (const [key, value] of Object.entries(attrs)) {
+    const lower = key.toLowerCase();
+    if (isForbiddenAttribute(lower)) {
+      continue;
+    }
     if (key === "class") {
       props.className = value;
     } else if (key === "style") {
@@ -148,6 +316,35 @@ function mapAttributesToProps(attrs: Record<string, string>): HtmlAttributeProps
       if (normalized !== undefined) {
         props.tabIndex = normalized;
       }
+    } else if (lower === "href") {
+      const safe = transform(value, "href", { source: "html" });
+      if (safe != null) {
+        props.href = safe;
+      }
+    } else if (lower === "src") {
+      const safe = transform(value, "src", { source: "html" });
+      if (safe != null) {
+        props.src = safe;
+      }
+    } else if (lower === "action") {
+      const safe = transform(value, "href", { source: "html" });
+      if (safe != null) {
+        props.action = safe;
+      }
+    } else if (lower === "formaction") {
+      const safe = transform(value, "href", { source: "html" });
+      if (safe != null) {
+        props.formAction = safe;
+      }
+    } else if (lower === "xlink:href" || lower === "xlinkhref") {
+      const safe = transform(value, "href", { source: "html" });
+      if (safe != null) {
+        props.xlinkHref = safe;
+      }
+    } else if (/^(?:data|aria)[A-Z]/.test(key)) {
+      props[key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)] = value;
+    } else if (BOOLEAN_HTML_PROPS[key]) {
+      props[key] = true;
     } else {
       props[key] = value;
     }
@@ -161,10 +358,13 @@ function parseStyleAttribute(value: string): React.CSSProperties {
   const pairs = value.split(";");
   for (const pair of pairs) {
     if (!pair.trim()) continue;
-    const [property, rawVal] = pair.split(":");
-    if (!property || rawVal === undefined) continue;
-    const camelProp = property.trim().replace(/-([a-z])/g, (_, char: string) => char.toUpperCase());
-    (style as Record<string, string>)[camelProp] = rawVal.trim();
+    const separator = pair.indexOf(":");
+    if (separator <= 0) continue;
+    const property = pair.slice(0, separator).trim();
+    const rawVal = pair.slice(separator + 1).trim();
+    if (!isSafeStyleDeclaration(property, rawVal)) continue;
+    const camelProp = property.replace(/-([a-z])/g, (_, char: string) => char.toUpperCase());
+    (style as Record<string, string>)[camelProp] = rawVal;
   }
   return style;
 }
@@ -189,7 +389,15 @@ function extractPlainText(value: string): string {
   return decodeHtmlEntities(withoutTags);
 }
 
-function renderSanitizedHtmlTree(html: string, key: React.Key | undefined): React.ReactElement | null {
+const DEFAULT_LITERAL_TAGS = new Set(["code", "pre", "script", "style", "textarea"]);
+
+function renderSanitizedHtmlTree(
+  html: string,
+  key: React.Key | undefined,
+  htmlElements?: HtmlElements,
+  literalTagContent?: string[],
+  parseMarkdown?: (text: string) => React.ReactNode,
+): React.ReactElement | null {
   if (typeof DOMParser === "undefined") {
     return null;
   }
@@ -202,9 +410,13 @@ function renderSanitizedHtmlTree(html: string, key: React.Key | undefined): Reac
       return null;
     }
 
+    const literalTags = literalTagContent
+      ? new Set([...DEFAULT_LITERAL_TAGS, ...literalTagContent.map((t) => t.toLowerCase())])
+      : DEFAULT_LITERAL_TAGS;
+
     const baseKey = typeof key === "string" || typeof key === "number" ? String(key) : "inline-html";
     const children = nodes
-      .map((node, index) => convertDomNode(node, `${baseKey}-${index}`))
+      .map((node, index) => convertDomNode(node, `${baseKey}-${index}`, htmlElements, literalTags, false, parseMarkdown))
       .filter((child): child is React.ReactNode => child !== null && child !== undefined);
 
     if (children.length === 0) {
@@ -234,9 +446,20 @@ function renderSanitizedHtmlTree(html: string, key: React.Key | undefined): Reac
   }
 }
 
-function convertDomNode(node: Node, key: string): React.ReactNode | null {
+function convertDomNode(
+  node: Node,
+  key: string,
+  htmlElements?: HtmlElements,
+  literalTags?: Set<string>,
+  parentIsLiteral?: boolean,
+  parseMarkdown?: (text: string) => React.ReactNode,
+): React.ReactNode | null {
   if (node.nodeType === Node.TEXT_NODE) {
-    return node.textContent ?? "";
+    const rawText = node.textContent ?? "";
+    if (parentIsLiteral || !parseMarkdown) {
+      return rawText;
+    }
+    return parseMarkdown(rawText);
   }
   if (node.nodeType !== Node.ELEMENT_NODE) {
     return null;
@@ -246,13 +469,22 @@ function convertDomNode(node: Node, key: string): React.ReactNode | null {
   const attrs = getElementAttributes(element);
   const props = mapAttributesToProps(attrs);
   props.key = key;
+  const isLiteral = parentIsLiteral || (literalTags ? literalTags.has(tagName) : false);
   const children: React.ReactNode[] = [];
   element.childNodes.forEach((child, index) => {
-    const converted = convertDomNode(child, `${key}-${index}`);
+    const converted = convertDomNode(child, `${key}-${index}`, htmlElements, literalTags, isLiteral, parseMarkdown);
     if (converted !== null && converted !== undefined) {
       children.push(converted);
     }
   });
+
+  const customComponent = htmlElements?.[tagName];
+  if (customComponent) {
+    if (children.length === 0) {
+      return React.createElement(customComponent, props);
+    }
+    return React.createElement(customComponent, props, ...children);
+  }
 
   if (children.length === 0) {
     return React.createElement(tagName, props);
@@ -275,6 +507,11 @@ const INLINE_ELEMENTS = new Set([
   "bdi",
   "bdo",
   "br",
+  "img",
+  "input",
+  "picture",
+  "del",
+  "ins",
   "cite",
   "code",
   "data",

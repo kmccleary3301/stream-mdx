@@ -1,6 +1,6 @@
 # `@stream-mdx/theme-tailwind`
 
-`@stream-mdx/theme-tailwind` is the optional Tailwind-oriented CSS baseline for StreamMDX output. It is useful when you want the renderer to drop into a Tailwind codebase with a sensible markdown/prose/styling foundation.
+`@stream-mdx/theme-tailwind` is the optional Tailwind-oriented CSS baseline for StreamMDX output. It is useful when you want the renderer to drop into a Tailwind codebase with a markdown/prose foundation that you can adapt to your own design system.
 
 ## Install
 
@@ -27,15 +27,15 @@ Import after your Tailwind directives:
 @import "@stream-mdx/theme-tailwind/theme.css";
 ```
 
-Recommended markup structure:
+Recommended markup structure for new integrations:
 
 ```tsx
 import { StreamingMarkdown } from "stream-mdx";
 
 export function Article({ content }: { content: string }) {
   return (
-    <div className="prose markdown">
-      <StreamingMarkdown className="markdown-v2-output" text={content} worker="/workers/markdown-worker.js" />
+    <div className="prose">
+      <StreamingMarkdown text={content} worker="/workers/markdown-worker.js" />
     </div>
   );
 }
@@ -43,14 +43,16 @@ export function Article({ content }: { content: string }) {
 
 ## What It Styles
 
-- `.markdown-v2-output` for streaming-specific layout tweaks
-- `.markdown` for markdown typography helpers
-- `.prose` compatibility when used with `@tailwindcss/typography`
+- Renderer output hooks such as `.markdown-v2-output`, `.markdown-list`, `.markdown-list-item`, `.markdown-code-block`, and `.markdown-link`
+- Prose compatibility when used with `@tailwindcss/typography`
+- Legacy `.markdown` compatibility for applications that already adopted the older wrapper pattern
 
 ## Notes
 
+- Prefer one prose owner around rendered output. Do not stack `.prose markdown` in new code unless you are maintaining an older integration.
 - If you want full `prose` defaults, install and enable `@tailwindcss/typography`.
 - The theme expects CSS variables like `--foreground` and `--border`; map them into your design system or replace them.
+- Highlighted code uses Shiki's light tokens by default and dark tokens under a `.dark` ancestor (Tailwind `darkMode: "class"`, `next-themes`). Apps that switch themes another way should map `--shiki-dark` themselves.
 - StreamMDX component overrides (`components`, `inlineComponents`, `tableElements`) still work on top of the theme.
 
 ## Documentation

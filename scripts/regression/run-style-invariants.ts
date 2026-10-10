@@ -355,6 +355,53 @@ async function checkNestedListCodeIndentation(page: Page, theme: "light" | "dark
   assert.strictEqual(nestedCode[2]?.firstLine, "export const answer = 42;", `unordered nested code should keep exact first line text in ${theme}`);
 }
 
+async function checkRenderedMarkdownScope(page: Page, theme: "light" | "dark"): Promise<void> {
+  await streamFixture(page, "kitchen-sink");
+  await setTheme(page, theme);
+
+  const scope = await page.evaluate(() => {
+    const outputs = Array.from(document.querySelectorAll("#regression-root .markdown-v2-output")) as HTMLElement[];
+    const firstOutput = outputs[0] ?? null;
+    const heading = firstOutput?.querySelector("h1") as HTMLElement | null;
+    const list = firstOutput?.querySelector(".markdown-list") as HTMLElement | null;
+    const table = firstOutput?.querySelector("table") as HTMLElement | null;
+    const code = firstOutput?.querySelector(".docs-code-block, pre.markdown-code-block, pre[data-code-block='true']") as HTMLElement | null;
+
+    return {
+      outputCount: outputs.length,
+      unscopedOutputCount: outputs.filter((output) => !output.closest(".prose, .prose-stream")).length,
+      hasProseAncestor: Boolean(firstOutput?.closest(".prose, .prose-stream")),
+      heading:
+        heading
+          ? {
+              fontWeight: getComputedStyle(heading).fontWeight,
+              color: getComputedStyle(heading).color,
+            }
+          : null,
+      list:
+        list
+          ? {
+              paddingLeft: getComputedStyle(list).paddingLeft,
+              listStyleType: getComputedStyle(list).listStyleType,
+            }
+          : null,
+      hasTable: Boolean(table),
+      hasCode: Boolean(code),
+    };
+  });
+
+  assert.ok(scope.outputCount > 0, `rendered markdown output should exist in ${theme}`);
+  assert.strictEqual(scope.unscopedOutputCount, 0, `all .markdown-v2-output nodes should be inside .prose or .prose-stream in ${theme}`);
+  assert.ok(scope.hasProseAncestor, `primary markdown output should have an explicit prose wrapper in ${theme}`);
+  assert.ok(scope.heading, `kitchen-sink heading should render in ${theme}`);
+  assert.ok(Number(scope.heading.fontWeight) >= 600, `heading style should be applied through the prose wrapper in ${theme}`);
+  assert.ok(scope.heading.color !== "rgba(0, 0, 0, 0)", `heading color should resolve in ${theme}`);
+  assert.ok(scope.list, `kitchen-sink list should render in ${theme}`);
+  assert.ok(parsePx(scope.list.paddingLeft) > 0, `list marker geometry should be applied through the prose wrapper in ${theme}`);
+  assert.strictEqual(scope.list.listStyleType, "none", `custom list marker contract should remain active in ${theme}`);
+  assert.ok(scope.hasTable, `kitchen-sink table should render in ${theme}`);
+  assert.ok(scope.hasCode, `kitchen-sink code block should render in ${theme}`);
+}
 async function run(): Promise<void> {
   const browser = await chromium.launch();
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
@@ -367,6 +414,8 @@ async function run(): Promise<void> {
     await checkFootnotes(page, "dark");
     await checkNestedListCodeIndentation(page, "light");
     await checkNestedListCodeIndentation(page, "dark");
+    await checkRenderedMarkdownScope(page, "light");
+    await checkRenderedMarkdownScope(page, "dark");
     console.log("style invariants passed");
   } finally {
     await page.close();

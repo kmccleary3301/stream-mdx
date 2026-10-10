@@ -9,12 +9,41 @@
     "charRateCps": 3000,
     "maxChunkChars": 512
   },
+  "runMeta": {
+    "seed": null,
+    "schedulerMode": null,
+    "usedSplitMarkers": false,
+    "fixtureTags": [
+      "code",
+      "highlight"
+    ]
+  },
   "totalLength": 276,
   "checkpoints": [
     {
       "id": "after-first-chunk",
       "appendedChars": 24,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 4,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 1,
+        "lastPatchToDomMs": 0.09999999403953552,
+        "lastDurationMs": 0.09999999403953552,
+        "meta": {
+          "fixtureId": "code-highlight-incremental",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -50,12 +79,37 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
       "id": "progress-14",
       "appendedChars": 24,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 4,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 1,
+        "lastPatchToDomMs": 0.09999999403953552,
+        "lastDurationMs": 0.09999999403953552,
+        "meta": {
+          "fixtureId": "code-highlight-incremental",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": false,
@@ -91,12 +145,37 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": []
       }
     },
     {
       "id": "progress-28",
       "appendedChars": 48,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 5,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 2,
+        "lastPatchToDomMs": 0.10000000894069672,
+        "lastDurationMs": 0.10000000894069672,
+        "meta": {
+          "fixtureId": "code-highlight-incremental",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": true,
@@ -108,7 +187,7 @@
       },
       "counts": {
         "table": 0,
-        "pre": 2,
+        "pre": 1,
         "blockquote": 0,
         "katex": 0,
         "mdxPending": 0,
@@ -116,7 +195,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Incremental Code Highlighting\">Incremental Code Highlighting</h3><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"1ac0bc88\" data-code-virtualized=\"false\" data-code-total-lines=\"1\" data-code-mounted-lines=\"1\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"javascript\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"javascript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\">const l</span>\n</code></pre></div></div></div></div></div></div></pre></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Incremental Code Highlighting\">Incremental Code Highlighting</h3><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">const l</span></code></pre></div></div></div></div></div></div>",
       "textSample": "Incremental Code Highlighting[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{displ",
       "structure": {
         "topLevelTags": [
@@ -124,7 +203,7 @@
         ],
         "counts": {
           "table": 0,
-          "pre": 2,
+          "pre": 1,
           "blockquote": 0,
           "katex": 0,
           "mdxPending": 0,
@@ -132,12 +211,42 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": [
+          {
+            "text": "const l",
+            "lineCount": 1
+          }
+        ]
       }
     },
     {
       "id": "event-hasPre",
       "appendedChars": 48,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 5,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 2,
+        "lastPatchToDomMs": 0.10000000894069672,
+        "lastDurationMs": 0.10000000894069672,
+        "meta": {
+          "fixtureId": "code-highlight-incremental",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": true,
@@ -149,7 +258,7 @@
       },
       "counts": {
         "table": 0,
-        "pre": 2,
+        "pre": 1,
         "blockquote": 0,
         "katex": 0,
         "mdxPending": 0,
@@ -157,7 +266,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Incremental Code Highlighting\">Incremental Code Highlighting</h3><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"1ac0bc88\" data-code-virtualized=\"false\" data-code-total-lines=\"1\" data-code-mounted-lines=\"1\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"javascript\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"javascript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\">const l</span>\n</code></pre></div></div></div></div></div></div></pre></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Incremental Code Highlighting\">Incremental Code Highlighting</h3><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">const l</span></code></pre></div></div></div></div></div></div>",
       "textSample": "Incremental Code Highlighting[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{displ",
       "structure": {
         "topLevelTags": [
@@ -165,7 +274,7 @@
         ],
         "counts": {
           "table": 0,
-          "pre": 2,
+          "pre": 1,
           "blockquote": 0,
           "katex": 0,
           "mdxPending": 0,
@@ -173,12 +282,42 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": [
+          {
+            "text": "const l",
+            "lineCount": 1
+          }
+        ]
       }
     },
     {
       "id": "progress-69",
       "appendedChars": 72,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 6,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 3,
+        "lastPatchToDomMs": 2.7000000029802322,
+        "lastDurationMs": 0.9000000059604645,
+        "meta": {
+          "fixtureId": "code-highlight-incremental",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": true,
@@ -190,7 +329,7 @@
       },
       "counts": {
         "table": 0,
-        "pre": 2,
+        "pre": 1,
         "blockquote": 0,
         "katex": 0,
         "mdxPending": 0,
@@ -198,7 +337,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Incremental Code Highlighting\">Incremental Code Highlighting</h3><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"1ac0bc88\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"javascript\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"javascript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">label</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"incremental\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\">co</span>\n</code></pre></div></div></div></div></div></div></pre></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Incremental Code Highlighting\">Incremental Code Highlighting</h3><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">const label = \"incremental\";</span>\n<span class=\"line\">co</span></code></pre></div></div></div></div></div></div>",
       "textSample": "Incremental Code Highlighting[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{displ",
       "structure": {
         "topLevelTags": [
@@ -206,7 +345,7 @@
         ],
         "counts": {
           "table": 0,
-          "pre": 2,
+          "pre": 1,
           "blockquote": 0,
           "katex": 0,
           "mdxPending": 0,
@@ -214,12 +353,42 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": [
+          {
+            "text": "const label = \"incremental\";\nco",
+            "lineCount": 2
+          }
+        ]
       }
     },
     {
       "id": "progress-138",
       "appendedChars": 144,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 9,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 6,
+        "lastPatchToDomMs": 14.700000002980232,
+        "lastDurationMs": 0.7999999970197678,
+        "meta": {
+          "fixtureId": "code-highlight-incremental",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": true,
@@ -231,7 +400,7 @@
       },
       "counts": {
         "table": 0,
-        "pre": 2,
+        "pre": 1,
         "blockquote": 0,
         "katex": 0,
         "mdxPending": 0,
@@ -239,7 +408,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Incremental Code Highlighting\">Incremental Code Highlighting</h3><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"1ac0bc88\" data-code-virtualized=\"false\" data-code-total-lines=\"8\" data-code-mounted-lines=\"8\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"javascript\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"javascript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">label</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"incremental\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">items</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> [</span></span>\n<span class=\"line\" data-line=\"3\">  \"alpha\",</span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"beta\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"gamma\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"6\">];</span>\n<span class=\"line\" data-line=\"7\"></span>\n<span class=\"line\" data-line=\"8\">function format(list) </span>\n</code></pre></div></div></div></div></div></div></pre></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Incremental Code Highlighting\">Incremental Code Highlighting</h3><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">const label = \"incremental\";</span>\n<span class=\"line\">const items = [</span>\n<span class=\"line\">  \"alpha\",</span>\n<span class=\"line\">  \"beta\",</span>\n<span class=\"line\">  \"gamma\",</span>\n<span class=\"line\">];</span>\n<span class=\"line\"></span>\n<span class=\"line\">function format(list) </span></code></pre></div></div></div></div></div></div>",
       "textSample": "Incremental Code Highlighting[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{displ",
       "structure": {
         "topLevelTags": [
@@ -247,7 +416,7 @@
         ],
         "counts": {
           "table": 0,
-          "pre": 2,
+          "pre": 1,
           "blockquote": 0,
           "katex": 0,
           "mdxPending": 0,
@@ -255,12 +424,42 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": [
+          {
+            "text": "const label = \"incremental\";\nconst items = [\n  \"alpha\",\n  \"beta\",\n  \"gamma\",\n];\n\nfunction format(list) ",
+            "lineCount": 8
+          }
+        ]
       }
     },
     {
       "id": "progress-207",
       "appendedChars": 216,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 12,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 9,
+        "lastPatchToDomMs": 17.399999991059303,
+        "lastDurationMs": 0.8999999910593033,
+        "meta": {
+          "fixtureId": "code-highlight-incremental",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": true,
@@ -272,7 +471,7 @@
       },
       "counts": {
         "table": 0,
-        "pre": 2,
+        "pre": 1,
         "blockquote": 0,
         "katex": 0,
         "mdxPending": 0,
@@ -280,7 +479,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Incremental Code Highlighting\">Incremental Code Highlighting</h3><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"1ac0bc88\" data-code-virtualized=\"false\" data-code-total-lines=\"11\" data-code-mounted-lines=\"11\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"javascript\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"javascript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">label</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"incremental\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">items</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> [</span></span>\n<span class=\"line\" data-line=\"3\">  \"alpha\",</span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"beta\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"gamma\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"6\">];</span>\n<span class=\"line\" data-line=\"7\"></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">function</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">format</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">list</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) {</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  </span><span style=\"--shiki-dark:#6A737D;--shiki-light:#6A737D\">/* multi-line</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#6A737D;--shiki-light:#6A737D\">     comment */</span></span>\n<span class=\"line\" data-line=\"11\">  return list.map((value, index) =&gt; `$</span>\n</code></pre></div></div></div></div></div></div></pre></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Incremental Code Highlighting\">Incremental Code Highlighting</h3><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">const label = \"incremental\";</span>\n<span class=\"line\">const items = [</span>\n<span class=\"line\">  \"alpha\",</span>\n<span class=\"line\">  \"beta\",</span>\n<span class=\"line\">  \"gamma\",</span>\n<span class=\"line\">];</span>\n<span class=\"line\"></span>\n<span class=\"line\">function format(list) {</span>\n<span class=\"line\">  /* multi-line</span>\n<span class=\"line\">     comment */</span>\n<span class=\"line\">  return list.map((value, index) =&gt; `$</span></code></pre></div></div></div></div></div></div>",
       "textSample": "Incremental Code Highlighting[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{displ",
       "structure": {
         "topLevelTags": [
@@ -288,7 +487,7 @@
         ],
         "counts": {
           "table": 0,
-          "pre": 2,
+          "pre": 1,
           "blockquote": 0,
           "katex": 0,
           "mdxPending": 0,
@@ -296,12 +495,42 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": [
+          {
+            "text": "const label = \"incremental\";\nconst items = [\n  \"alpha\",\n  \"beta\",\n  \"gamma\",\n];\n\nfunction format(list) {\n  /* multi-line\n     comment */\n  return list.map((value, index) => `$",
+            "lineCount": 11
+          }
+        ]
       }
     },
     {
       "id": "progress-248",
       "appendedChars": 264,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 14,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 11,
+        "lastPatchToDomMs": 11.100000008940697,
+        "lastDurationMs": 1.2999999970197678,
+        "meta": {
+          "fixtureId": "code-highlight-incremental",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": true,
@@ -313,7 +542,7 @@
       },
       "counts": {
         "table": 0,
-        "pre": 2,
+        "pre": 1,
         "blockquote": 0,
         "katex": 0,
         "mdxPending": 0,
@@ -321,7 +550,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Incremental Code Highlighting\">Incremental Code Highlighting</h3><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"1ac0bc88\" data-code-virtualized=\"false\" data-code-total-lines=\"14\" data-code-mounted-lines=\"14\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"javascript\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"javascript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">label</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"incremental\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">items</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> [</span></span>\n<span class=\"line\" data-line=\"3\">  \"alpha\",</span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"beta\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"gamma\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"6\">];</span>\n<span class=\"line\" data-line=\"7\"></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">function</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">format</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">list</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) {</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  </span><span style=\"--shiki-dark:#6A737D;--shiki-light:#6A737D\">/* multi-line</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#6A737D;--shiki-light:#6A737D\">     comment */</span></span>\n<span class=\"line\" data-line=\"11\">  return list.map((value, index) =&gt; `${index + 1}: ${value}`);</span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}</span></span>\n<span class=\"line\" data-line=\"13\"></span>\n<span class=\"line\" data-line=\"14\">console.log(format(i</span>\n</code></pre></div></div></div></div></div></div></pre></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Incremental Code Highlighting\">Incremental Code Highlighting</h3><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">const label = \"incremental\";</span>\n<span class=\"line\">const items = [</span>\n<span class=\"line\">  \"alpha\",</span>\n<span class=\"line\">  \"beta\",</span>\n<span class=\"line\">  \"gamma\",</span>\n<span class=\"line\">];</span>\n<span class=\"line\"></span>\n<span class=\"line\">function format(list) {</span>\n<span class=\"line\">  /* multi-line</span>\n<span class=\"line\">     comment */</span>\n<span class=\"line\">  return list.map((value, index) =&gt; `${index + 1}: ${value}`);</span>\n<span class=\"line\">}</span>\n<span class=\"line\"></span>\n<span class=\"line\">console.log(format(i</span></code></pre></div></div></div></div></div></div>",
       "textSample": "Incremental Code Highlighting[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{displ",
       "structure": {
         "topLevelTags": [
@@ -329,7 +558,7 @@
         ],
         "counts": {
           "table": 0,
-          "pre": 2,
+          "pre": 1,
           "blockquote": 0,
           "katex": 0,
           "mdxPending": 0,
@@ -337,12 +566,42 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": [
+          {
+            "text": "const label = \"incremental\";\nconst items = [\n  \"alpha\",\n  \"beta\",\n  \"gamma\",\n];\n\nfunction format(list) {\n  /* multi-line\n     comment */\n  return list.map((value, index) => `${index + 1}: ${value}`);\n}\n\nconsole.log(format(i",
+            "lineCount": 14
+          }
+        ]
       }
     },
     {
       "id": "progress-276",
       "appendedChars": 276,
       "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 15,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 12,
+        "lastPatchToDomMs": 14.600000008940697,
+        "lastDurationMs": 1.2000000029802322,
+        "meta": {
+          "fixtureId": "code-highlight-incremental",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
       "selectors": {
         "hasTable": false,
         "hasPre": true,
@@ -354,7 +613,7 @@
       },
       "counts": {
         "table": 0,
-        "pre": 2,
+        "pre": 1,
         "blockquote": 0,
         "katex": 0,
         "mdxPending": 0,
@@ -362,7 +621,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Incremental Code Highlighting\">Incremental Code Highlighting</h3><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"1ac0bc88\" data-code-virtualized=\"false\" data-code-total-lines=\"14\" data-code-mounted-lines=\"14\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"javascript\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"javascript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">label</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"incremental\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">items</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> [</span></span>\n<span class=\"line\" data-line=\"3\">  \"alpha\",</span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"beta\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"gamma\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"6\">];</span>\n<span class=\"line\" data-line=\"7\"></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">function</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">format</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">list</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) {</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  </span><span style=\"--shiki-dark:#6A737D;--shiki-light:#6A737D\">/* multi-line</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#6A737D;--shiki-light:#6A737D\">     comment */</span></span>\n<span class=\"line\" data-line=\"11\">  return list.map((value, index) =&gt; `${index + 1}: ${value}`);</span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}</span></span>\n<span class=\"line\" data-line=\"13\"></span>\n<span class=\"line\" data-line=\"14\">console.log(format(items));</span>\n</code></pre></div></div></div></div></div></div></pre></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Incremental Code Highlighting\">Incremental Code Highlighting</h3><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">const label = \"incremental\";</span>\n<span class=\"line\">const items = [</span>\n<span class=\"line\">  \"alpha\",</span>\n<span class=\"line\">  \"beta\",</span>\n<span class=\"line\">  \"gamma\",</span>\n<span class=\"line\">];</span>\n<span class=\"line\"></span>\n<span class=\"line\">function format(list) {</span>\n<span class=\"line\">  /* multi-line</span>\n<span class=\"line\">     comment */</span>\n<span class=\"line\">  return list.map((value, index) =&gt; `${index + 1}: ${value}`);</span>\n<span class=\"line\">}</span>\n<span class=\"line\"></span>\n<span class=\"line\">console.log(format(items));</span></code></pre></div></div></div></div></div></div>",
       "textSample": "Incremental Code Highlighting[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{displ",
       "structure": {
         "topLevelTags": [
@@ -370,7 +629,7 @@
         ],
         "counts": {
           "table": 0,
-          "pre": 2,
+          "pre": 1,
           "blockquote": 0,
           "katex": 0,
           "mdxPending": 0,
@@ -378,6 +637,16 @@
           "footnotes": 0,
           "hr": 0
         }
+      },
+      "inspection": {
+        "tables": [],
+        "mdxBlocks": [],
+        "codeBlocks": [
+          {
+            "text": "const label = \"incremental\";\nconst items = [\n  \"alpha\",\n  \"beta\",\n  \"gamma\",\n];\n\nfunction format(list) {\n  /* multi-line\n     comment */\n  return list.map((value, index) => `${index + 1}: ${value}`);\n}\n\nconsole.log(format(items));",
+            "lineCount": 14
+          }
+        ]
       }
     }
   ],
@@ -394,14 +663,34 @@
       "hasBlockquote": false,
       "hasMath": false
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Incremental Code Highlighting\">Incremental Code Highlighting</h3><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"1ac0bc88\" data-code-virtualized=\"false\" data-code-total-lines=\"14\" data-code-mounted-lines=\"14\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"javascript\"><code data-language=\"javascript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> label</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"incremental\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> items</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> [</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">  \"alpha\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">  \"beta\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">  \"gamma\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">];</span></span>\n<span class=\"line\" data-line=\"7\"></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">function</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> format</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">list</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) {</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#6A737D;--shiki-light:#6A737D\">  /* multi-line</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#6A737D;--shiki-light:#6A737D\">     comment */</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  return</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> list.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">map</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">((</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">value</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">index</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=&gt;</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> `${</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">index</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> +</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 1</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">}: ${</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">value</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">}`</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">);</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}</span></span>\n<span class=\"line\" data-line=\"13\"></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">console.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">log</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">format</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(items));</span></span></code></pre></div></div></div></div></div></div></pre></div>",
+    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h3 class=\"markdown-heading markdown-h3\" data-heading-text=\"Incremental Code Highlighting\">Incremental Code Highlighting</h3><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-js\" data-language=\"js\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> label</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"incremental\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> items</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> [</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">  \"alpha\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">  \"beta\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">  \"gamma\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">];</span></span>\n<span class=\"line\" data-line=\"7\"></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">function</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> format</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">list</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) {</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#6A737D;--shiki-light:#6A737D\">  /* multi-line</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#6A737D;--shiki-light:#6A737D\">     comment */</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  return</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> list.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">map</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">((</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">value</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">index</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=&gt;</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> `${</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">index</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> +</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 1</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">}: ${</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">value</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">}`</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">);</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}</span></span>\n<span class=\"line\" data-line=\"13\"></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">console.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">log</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">format</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(items));</span></span></code></pre></div></div></div></div></div></div></div>",
+    "runtimeState": {
+      "rendererVersion": 17,
+      "queueDepth": 0,
+      "pendingBatches": 0,
+      "workerReady": true,
+      "lastTx": 14,
+      "lastPatchToDomMs": 13,
+      "lastDurationMs": 2.2999999970197678,
+      "meta": {
+        "fixtureId": "code-highlight-incremental",
+        "scenarioId": "S3_fast_reasonable",
+        "seed": null,
+        "schedulerMode": null
+      },
+      "storeCounters": {
+        "appendLineGuardRejected": 0,
+        "staleEpochRejected": 0,
+        "storeInvariantViolationCount": 0
+      }
+    },
     "structure": {
       "topLevelTags": [
         "div"
       ],
       "counts": {
         "table": 0,
-        "pre": 2,
+        "pre": 1,
         "blockquote": 0,
         "katex": 0,
         "mdxPending": 0,
@@ -414,9 +703,19 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "2a5bf1c606e1f9a7f570e48d9246e8aa99170c4f2711e6f12c635938b25b4466",
+        "hash": "ed9535711e11c3544f8033fd2f85ef71d504df0120bcd6ed0d9c777531c24017",
         "textSample": "Incremental Code Highlighting[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-over"
       }
-    ]
+    ],
+    "inspection": {
+      "tables": [],
+      "mdxBlocks": [],
+      "codeBlocks": [
+        {
+          "text": "const label = \"incremental\";\nconst items = [\n  \"alpha\",\n  \"beta\",\n  \"gamma\",\n];\n\nfunction format(list) {\n  /* multi-line\n     comment */\n  return list.map((value, index) => `${index + 1}: ${value}`);\n}\n\nconsole.log(format(items));",
+          "lineCount": 14
+        }
+      ]
+    }
   }
 }

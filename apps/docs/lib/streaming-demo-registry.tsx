@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import React, { createElement } from "react";
+import { createElement, Fragment } from "react";
 
 import type { InlineNode } from "@stream-mdx/core";
 import {
@@ -30,11 +30,9 @@ export function createDemoTableElements(): TableElements {
 export function createDemoHtmlElements(): Partial<HtmlElements> {
   return {
     table: ({ className, children, ...props }: HTMLAttributes<HTMLTableElement>) => (
-      <div className="my-6 w-full overflow-hidden overflow-y-auto">
-        <Table className={className} {...props}>
-          {children}
-        </Table>
-      </div>
+      <Table className={cn("my-6 w-full overflow-hidden overflow-y-auto", className)} {...props}>
+        {children}
+      </Table>
     ),
     thead: ({ className, children, ...props }: HTMLAttributes<HTMLTableSectionElement>) => (
       <TableHeader className={className} {...props}>
@@ -123,7 +121,10 @@ export function configureDemoRegistry(options: {
   const renderWithInline = (nodes: InlineNode[]) => renderInlineNodes(nodes, registry.getInlineComponents());
 
   registry.setBlockComponents({
-    paragraph: ({ inlines, raw }: { inlines: InlineNode[]; raw?: string }) => {
+    paragraph: ({ inlines, raw, meta, children }: { inlines: InlineNode[]; raw?: string; meta?: Record<string, unknown>; children?: ReactNode }) => {
+      if (children !== undefined && (Array.isArray(meta?.mixedSegments) || !inlines.some((node) => node.kind === "math-display"))) {
+        return <p className="markdown-paragraph">{children}</p>;
+      }
       const filteredInlines = inlines.length > 0 && raw ? inlines.filter((node) => !(node.kind === "text" && node.text === raw)) : inlines;
       const baseInlines: InlineNode[] = filteredInlines.length > 0 ? filteredInlines : raw ? ([{ kind: "text", text: raw }] as InlineNode[]) : [];
       let hasDisplayMath = false;
@@ -171,38 +172,6 @@ export function configureDemoRegistry(options: {
     blockquote: ({ inlines, renderedContent }: { inlines: InlineNode[]; renderedContent?: ReactNode }) => (
       <blockquote className="markdown-blockquote">{renderedContent ?? renderWithInline(inlines)}</blockquote>
     ),
-    list: ({ ordered, items }: { ordered: boolean; items: InlineNode[][] }) => {
-      const Tag = ordered ? "ol" : "ul";
-      return (
-        <Tag className={`markdown-list ${ordered ? "ordered" : "unordered"}`}>
-          {items.map((item, index) => {
-            const synthesizedKey = item
-              .map((node) => {
-                switch (node.kind) {
-                  case "text":
-                  case "code":
-                    return `${node.kind}:${node.text}`;
-                  case "link":
-                    return `${node.kind}:${node.href ?? ""}:${node.title ?? ""}`;
-                  case "image":
-                    return `${node.kind}:${node.src}`;
-                  case "mention":
-                    return `${node.kind}:${node.handle}`;
-                  default:
-                    return node.kind;
-                }
-              })
-              .join("|");
-            const key = synthesizedKey.length > 0 ? synthesizedKey : `list-item-${index}`;
-            return (
-              <li key={key} className="markdown-list-item">
-                {renderWithInline(item)}
-              </li>
-            );
-          })}
-        </Tag>
-      );
-    },
     code: ({
       html,
       raw,
@@ -256,18 +225,20 @@ export function configureDemoRegistry(options: {
                 <pre className="m-0" {...attrsToProps(preAttrs)}>
                   <code {...attrsToProps(codeAttrs)}>
                     {effectiveLines.map((text, idx) => (
-                      <span
-                        key={`line-${idx}`}
-                        className="line"
-                        dangerouslySetInnerHTML={{
-                          __html: text
-                            .replace(/&/g, "&amp;")
-                            .replace(/</g, "&lt;")
-                            .replace(/>/g, "&gt;")
-                            .replace(/\"/g, "&quot;")
-                            .replace(/'/g, "&#39;"),
-                        }}
-                      />
+                      <Fragment key={`line-${idx}`}>
+                        {idx > 0 ? "\n" : null}
+                        <span
+                          className="line"
+                          dangerouslySetInnerHTML={{
+                            __html: text
+                              .replace(/&/g, "&amp;")
+                              .replace(/</g, "&lt;")
+                              .replace(/>/g, "&gt;")
+                              .replace(/\"/g, "&quot;")
+                              .replace(/'/g, "&#39;"),
+                          }}
+                        />
+                      </Fragment>
                     ))}
                   </code>
                 </pre>

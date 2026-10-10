@@ -1,6 +1,6 @@
 import assert from "node:assert";
 
-import type { Patch } from "@stream-mdx/core";
+import type { Patch, TokenLineV1 } from "@stream-mdx/core";
 import type { Block } from "@stream-mdx/core";
 import { JSDOM } from "jsdom";
 import React from "react";
@@ -63,6 +63,52 @@ async function runCodeBlockLineUpdateTest(): Promise<void> {
   root.unmount();
 }
 
+function runCodeLineHtmlClearTest(): void {
+  const text = "const value = 1;";
+  const block: Block = {
+    id: "lazy-code",
+    type: "code",
+    isFinalized: true,
+    payload: {
+      raw: ["```js", text, "```"].join("\n"),
+      meta: { lang: "js", code: text, tokenLines: [null] },
+    },
+  };
+  const store = createRendererStore([block]);
+  const lineId = `${block.id}::line:0`;
+  const update = (props: Record<string, unknown>) => store.applyPatches(
+    [{ op: "setProps", at: { blockId: block.id, nodeId: lineId }, props }],
+    { captureMetrics: false },
+  );
+  const tokens: TokenLineV1 = {
+    spans: [{ t: text, v: { dark: { fg: "#ff0000" }, light: { fg: "#0000ff" } } }],
+  };
+  assert.strictEqual(store.getNode(lineId)?.props?.html, text, "untokenized rows retain a plain fallback");
+  const plainProps = store.getNode(lineId)?.props;
+  update({ index: 0, text, html: null, tokens: null });
+  assert.strictEqual(store.getNode(lineId)?.props, plainProps, "equivalent plain fallback must retain props identity");
+  update({ index: 0, text, html: null, tokens });
+  assert.strictEqual(store.getNode(lineId)?.props?.html, null, "explicit null must clear stale fallback HTML for token-only enrichment");
+  assert.deepStrictEqual(store.getNode(lineId)?.props?.tokens, tokens);
+  const tokenProps = store.getNode(lineId)?.props;
+  update({ index: 0, text, html: null, tokens });
+  assert.strictEqual(store.getNode(lineId)?.props, tokenProps, "repeated token-only normalization must retain props identity");
+
+  const highlightedHtml = `<span style="color:#ff0000">${text}</span>`;
+  update({ html: highlightedHtml, tokens });
+  const retainedHtml = store.getNode(lineId)?.props?.html;
+  assert.ok(typeof retainedHtml === "string" && retainedHtml.includes("<span"), "both-mode rows retain actual highlight HTML");
+  const nextTokens: TokenLineV1 = { spans: [{ t: text, s: { fg: "#00ff00" } }] };
+  update({ tokens: nextTokens });
+  assert.strictEqual(store.getNode(lineId)?.props?.html, retainedHtml, "omitted HTML must preserve an existing highlight");
+  update({ html: undefined, tokens });
+  assert.strictEqual(store.getNode(lineId)?.props?.html, retainedHtml, "undefined HTML must preserve an existing highlight");
+  update({ html: null, tokens });
+  assert.strictEqual(store.getNode(lineId)?.props?.html, null, "explicit null must also clear an actual highlight");
+  assert.deepStrictEqual(store.getInvariantViolations(), []);
+}
+
 await runCodeBlockLineUpdateTest();
+runCodeLineHtmlClearTest();
 console.log("code-block-line-update test passed");
 

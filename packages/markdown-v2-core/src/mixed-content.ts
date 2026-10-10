@@ -1,4 +1,4 @@
-import { buildLookaheadContainerContext, prepareSurfaceLookahead } from "./streaming/inline-streaming";
+import { buildLookaheadContainerContext, createContainerSignature, prepareSurfaceLookahead } from "./streaming/inline-streaming";
 import type { LookaheadContainerContext, LookaheadDecisionTrace } from "./streaming/lookahead-contract";
 import type { InlineNode, MixedContentSegment, ProtectedRange } from "./types";
 import { sanitizeHtmlInWorker } from "./worker-html-sanitizer";
@@ -7,6 +7,7 @@ export interface MixedContentAutoCloseHtmlOptions {
   autoClose?: boolean;
   maxNewlines?: number;
   allowTags?: Iterable<string>;
+  allowedTags?: Record<string, string[]>;
 }
 
 export interface MixedContentAutoCloseMdxOptions {
@@ -21,11 +22,25 @@ export interface MixedContentOptions {
   protectedRanges?: ReadonlyArray<ProtectedRange>;
   protectedRangeKinds?: ReadonlyArray<ProtectedRange["kind"]>;
   lookaheadContext?: Partial<LookaheadContainerContext>;
+  allowedTags?: Record<string, string[]>;
+  literalTagContent?: string[];
 }
 
 export interface MixedContentExtractionResult {
   segments: MixedContentSegment[];
   lookahead: LookaheadDecisionTrace[];
+}
+
+function mixedSurfaceContext(input: Partial<LookaheadContainerContext> | undefined, kind: "html" | "mdx", localTextField?: string): LookaheadContainerContext {
+  const context = buildLookaheadContainerContext({
+    ...input,
+    segmentOrigin: "mixed-content",
+    mixedSegmentKind: kind,
+    insideHtml: kind === "html" || input?.insideHtml === true,
+    insideMdx: kind === "mdx" || input?.insideMdx === true,
+    localTextField: localTextField ?? input?.localTextField,
+  });
+  return { ...context, containerSignature: createContainerSignature(context) };
 }
 
 const DEFAULT_INLINE_HTML_AUTOCLOSE_TAGS = new Set([
@@ -68,7 +83,7 @@ export function extractMixedContentSegmentsWithLookahead(
   const lookahead: LookaheadDecisionTrace[] = [];
   for (const segment of initial) {
     if (segment.kind === "text") {
-      const splitSegments = splitTextSegmentByExpressions(segment, parseInline);
+      const splitSegments = splitTextSegmentByExpressions(segment, parseInline, options?.lookaheadContext);
       expanded.push(...splitSegments);
       for (const splitSegment of splitSegments) {
         if (Array.isArray(splitSegment.lookahead) && splitSegment.lookahead.length > 0) {
@@ -78,7 +93,7 @@ export function extractMixedContentSegmentsWithLookahead(
     } else {
       expanded.push(segment);
     }
-    if (Array.isArray(segment.lookahead) && segment.lookahead.length > 0) {
+    if (segment.kind !== "text" && Array.isArray(segment.lookahead) && segment.lookahead.length > 0) {
       lookahead.push(...(segment.lookahead as LookaheadDecisionTrace[]));
     }
   }
@@ -97,7 +112,12 @@ function splitByTagSegments(
   let cursor = 0;
   let match: RegExpExecArray | null = tagPattern.exec(source);
   const baseIsFinite = typeof baseOffset === "number" && Number.isFinite(baseOffset);
-  const htmlAllowTags = normalizeHtmlAllowlist(options?.html?.allowTags);
+  const customAllowed = options?.allowedTags ? Object.keys(options.allowedTags) : undefined;
+  const htmlAllowTags = normalizeHtmlAllowlist(options?.html?.allowTags, customAllowed);
+  const sanitizeOptions =
+    options?.allowedTags || options?.html?.allowedTags
+      ? { allowedTags: options.allowedTags ?? options.html?.allowedTags }
+      : undefined;
   const htmlAutoClose = options?.html?.autoClose === true;
   const htmlMaxNewlines = normalizeNewlineLimit(options?.html?.maxNewlines);
   const mdxAutoClose = options?.mdx?.autoClose === true;
@@ -116,6 +136,15 @@ function splitByTagSegments(
 
   while (match !== null) {
     const start = match.index;
+    let backslashes = 0;
+    for (let i = start - 1; i >= 0 && source[i] === "\\"; i--) {
+      backslashes++;
+    }
+    if (backslashes % 2 !== 0) {
+      tagPattern.lastIndex = start + 1;
+      match = tagPattern.exec(source);
+      continue;
+    }
     const tagName = match[1];
     const matchText = match[0];
     const tagNameLower = tagName.toLowerCase();
@@ -163,11 +192,7 @@ function splitByTagSegments(
         const anticipated = prepareSurfaceLookahead("mdx-tag", rawSegment, {
           allowComponents: mdxAllowlist ?? undefined,
           maxNewlines: mdxMaxNewlines,
-          context: {
-            ...baseLookaheadContext,
-            insideMdx: true,
-            mixedSegmentKind: "mdx",
-          },
+          context: mixedSurfaceContext(baseLookaheadContext, "mdx"),
         });
         if (anticipated.prepared.kind !== "parse") {
           tagPattern.lastIndex = start + 1;
@@ -177,7 +202,7 @@ function splitByTagSegments(
         if (start > cursor) {
           const absoluteFrom = baseIsFinite ? (baseOffset as number) + cursor : undefined;
           const absoluteTo = baseIsFinite ? (baseOffset as number) + start : undefined;
-          pushTextSegment(segments, source.slice(cursor, start), absoluteFrom, absoluteTo, parseInline);
+          pushTextSegment(segments, source.slice(cursor, start), absoluteFrom, absoluteTo, parseInline, baseLookaheadContext);
         }
         const repaired = anticipated.prepared.content;
         segments.push({
@@ -197,26 +222,23 @@ function splitByTagSegments(
           const anticipated = prepareSurfaceLookahead("html-inline", rawSegment, {
             allowTags: htmlAllowTags,
             maxNewlines: htmlMaxNewlines,
-            context: {
-              ...baseLookaheadContext,
-              insideHtml: true,
-              mixedSegmentKind: "html",
-            },
+            context: mixedSurfaceContext(baseLookaheadContext, "html"),
           });
           if (anticipated.prepared.kind === "parse") {
             if (start > cursor) {
               const absoluteFrom = baseIsFinite ? (baseOffset as number) + cursor : undefined;
               const absoluteTo = baseIsFinite ? (baseOffset as number) + start : undefined;
-              pushTextSegment(segments, source.slice(cursor, start), absoluteFrom, absoluteTo, parseInline);
+              pushTextSegment(segments, source.slice(cursor, start), absoluteFrom, absoluteTo, parseInline, baseLookaheadContext);
             }
             const closedValue = anticipated.prepared.content;
             const segment: MixedContentSegment = {
               kind: "html",
               value: closedValue,
               range: createSegmentRange(baseOffset, start, source.length),
-              sanitized: sanitizeHtmlInWorker(closedValue),
+              sanitized: sanitizeHtmlInWorker(closedValue, sanitizeOptions),
               lookahead: anticipated.trace,
             };
+            setSegmentRange(segment, createSegmentRange(baseOffset, start, source.length));
             segments.push(segment);
             cursor = source.length;
             break;
@@ -233,7 +255,7 @@ function splitByTagSegments(
     if (start > cursor) {
       const absoluteFrom = baseIsFinite ? (baseOffset as number) + cursor : undefined;
       const absoluteTo = baseIsFinite ? (baseOffset as number) + start : undefined;
-      pushTextSegment(segments, source.slice(cursor, start), absoluteFrom, absoluteTo, parseInline);
+      pushTextSegment(segments, source.slice(cursor, start), absoluteFrom, absoluteTo, parseInline, baseLookaheadContext);
     }
 
     let rawSegment = source.slice(start, end);
@@ -241,10 +263,10 @@ function splitByTagSegments(
     const segment: MixedContentSegment = {
       kind,
       value: rawSegment,
-      range: createSegmentRange(baseOffset, start, end),
     };
+    setSegmentRange(segment, createSegmentRange(baseOffset, start, end));
     if (kind === "html") {
-      segment.sanitized = sanitizeHtmlInWorker(rawSegment);
+      segment.sanitized = sanitizeHtmlInWorker(rawSegment, sanitizeOptions);
     } else {
       const closingTagPattern = new RegExp(`</\\s*${escapeRegExp(tagName)}\\s*>\\s*$`, "i");
       const hasExplicitClose = closingTagPattern.test(rawSegment);
@@ -252,11 +274,7 @@ function splitByTagSegments(
         const anticipated = prepareSurfaceLookahead("mdx-tag", rawSegment, {
           allowComponents: mdxAllowlist ?? undefined,
           maxNewlines: mdxMaxNewlines,
-          context: {
-            ...baseLookaheadContext,
-            insideMdx: true,
-            mixedSegmentKind: "mdx",
-          },
+          context: mixedSurfaceContext(baseLookaheadContext, "mdx"),
         });
         if (anticipated.prepared.kind === "parse") {
           rawSegment = anticipated.prepared.content;
@@ -275,13 +293,13 @@ function splitByTagSegments(
   if (cursor < source.length) {
     const absoluteFrom = baseIsFinite ? (baseOffset as number) + cursor : undefined;
     const absoluteTo = baseIsFinite ? (baseOffset as number) + source.length : undefined;
-    pushTextSegment(segments, source.slice(cursor), absoluteFrom, absoluteTo, parseInline);
+    pushTextSegment(segments, source.slice(cursor), absoluteFrom, absoluteTo, parseInline, baseLookaheadContext);
   }
 
   return segments;
 }
 
-function splitTextSegmentByExpressions(segment: MixedContentSegment, parseInline: (content: string) => InlineNode[]): MixedContentSegment[] {
+function splitTextSegmentByExpressions(segment: MixedContentSegment, parseInline: (content: string) => InlineNode[], context?: Partial<LookaheadContainerContext>): MixedContentSegment[] {
   if (segment.kind !== "text" || !segment.value) {
     return [segment];
   }
@@ -295,6 +313,7 @@ function splitTextSegmentByExpressions(segment: MixedContentSegment, parseInline
   const results: MixedContentSegment[] = [];
   let cursor = 0;
   let match: RegExpExecArray | null = exprPattern.exec(value);
+  if (match === null) return [segment];
 
   while (match !== null) {
     const start = match.index;
@@ -302,16 +321,17 @@ function splitTextSegmentByExpressions(segment: MixedContentSegment, parseInline
     if (start > cursor) {
       const textValue = value.slice(cursor, start);
       results.push(
-        buildTextSegmentWithExpressionLookahead(textValue, createSegmentRange(rangeStart, cursor, start), parseInline),
+        buildTextSegmentWithExpressionLookahead(textValue, createSegmentRange(rangeStart, cursor, start), parseInline, context),
       );
     }
     const expressionValue = match[0];
-    results.push({
+    const expressionSegment: MixedContentSegment = {
       kind: "mdx",
       value: expressionValue,
-      range: createSegmentRange(rangeStart, start, end),
       status: "pending",
-    });
+    };
+    setSegmentRange(expressionSegment, createSegmentRange(rangeStart, start, end));
+    results.push(expressionSegment);
     cursor = end;
     match = exprPattern.exec(value);
   }
@@ -319,7 +339,7 @@ function splitTextSegmentByExpressions(segment: MixedContentSegment, parseInline
   if (cursor < value.length) {
     const textValue = value.slice(cursor);
     results.push(
-      buildTextSegmentWithExpressionLookahead(textValue, createSegmentRange(rangeStart, cursor, value.length), parseInline),
+      buildTextSegmentWithExpressionLookahead(textValue, createSegmentRange(rangeStart, cursor, value.length), parseInline, context),
     );
   }
 
@@ -373,33 +393,37 @@ function pushTextSegment(
   from: number | undefined,
   to: number | undefined,
   parseInline: (content: string) => InlineNode[],
+  context?: Partial<LookaheadContainerContext>,
 ): void {
   if (value.length === 0) return;
-  target.push(buildTextSegmentWithExpressionLookahead(value, createSegmentRange(from, 0, value.length, to), parseInline));
+  target.push(buildTextSegmentWithExpressionLookahead(value, createSegmentRange(from, 0, value.length, to), parseInline, context));
+}
+
+function setSegmentRange(segment: MixedContentSegment, range: { from: number; to: number } | undefined): void {
+  if (range) {
+    segment.range = range;
+  }
 }
 
 function buildTextSegmentWithExpressionLookahead(
   value: string,
   range: { from: number; to: number } | undefined,
   parseInline: (content: string) => InlineNode[],
+  context?: Partial<LookaheadContainerContext>,
 ): MixedContentSegment {
   const segment: MixedContentSegment = {
     kind: "text",
     value,
-    range,
     inline: parseInline(value),
   };
+  setSegmentRange(segment, range);
   const expressionStart = findTrailingMdxExpressionStart(value);
   if (expressionStart === -1) {
     return segment;
   }
   const rawCandidate = value.slice(expressionStart);
   const anticipated = prepareSurfaceLookahead("mdx-expression", rawCandidate, {
-    context: {
-      insideMdx: true,
-      mixedSegmentKind: "mdx",
-      localTextField: "mixed-text-mdx-expression-tail",
-    },
+    context: mixedSurfaceContext(context, "mdx", "mixed-text-mdx-expression-tail"),
   });
   if (anticipated.trace.length > 0) {
     segment.lookahead = anticipated.trace;
@@ -460,15 +484,19 @@ function normalizeNewlineLimit(value: number | undefined): number {
   return Math.max(0, value ?? 0);
 }
 
-function normalizeHtmlAllowlist(value: Iterable<string> | undefined): Set<string> {
-  if (!value) return DEFAULT_INLINE_HTML_AUTOCLOSE_TAGS;
-  const tags = new Set<string>();
-  for (const tag of value) {
-    if (tag) {
-      tags.add(tag.toLowerCase());
+function normalizeHtmlAllowlist(value: Iterable<string> | undefined, additional?: Iterable<string>): Set<string> {
+  const tags = new Set<string>(DEFAULT_INLINE_HTML_AUTOCLOSE_TAGS);
+  if (value) {
+    for (const tag of value) {
+      if (tag) tags.add(tag.toLowerCase());
     }
   }
-  return tags.size > 0 ? tags : DEFAULT_INLINE_HTML_AUTOCLOSE_TAGS;
+  if (additional) {
+    for (const tag of additional) {
+      if (tag) tags.add(tag.toLowerCase());
+    }
+  }
+  return tags;
 }
 
 function normalizeComponentAllowlist(value: Iterable<string> | undefined): Set<string> | null {

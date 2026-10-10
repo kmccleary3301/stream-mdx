@@ -1,5 +1,3 @@
-export * from "./plugins/registry";
-export * from "./plugins/base";
 export * from "./plugins/callouts";
 export * from "./plugins/document";
 export * from "./plugins/footnotes";

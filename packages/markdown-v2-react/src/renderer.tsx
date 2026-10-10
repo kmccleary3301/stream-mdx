@@ -2,8 +2,7 @@ import type { Block, PatchMetrics, WorkerIn, WorkerOut } from "@stream-mdx/core"
 // Main V2 Markdown Renderer
 // Client-side renderer with component registry and worker integration
 import type { PatchCommitSchedulerOptions, PatchFlushResult } from "./renderer/patch-commit-scheduler";
-import type { BlockComponents, CodeHighlightRangeRequest, InlineComponents, Renderer, RendererConfig } from "./types";
-
+import type { BlockComponents, CodeFenceRenderer, CodeHighlightRangeRequest, ControlsComponentProps, ControlsConfig, InlineComponents, MathRenderer, Renderer, RendererConfig, TableVirtualizationOptions } from "./types";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import { createDefaultWorker, releaseDefaultWorker } from "@stream-mdx/worker";
@@ -12,7 +11,7 @@ import { getMDXComponentFactory, registerMDXComponents } from "./mdx-client";
 import { CodeHighlightRequestContext } from "./renderer/code-highlight-context";
 import { getPatchKind, isHeavyPatch, splitPatchBatch } from "./renderer/patch-batching";
 import { PatchCommitScheduler } from "./renderer/patch-commit-scheduler";
-import { createRendererStore } from "./renderer/store";
+import { createRendererStore, type RendererStore } from "./renderer/store";
 import { MarkdownBlocksRenderer } from "./renderer/blocks-renderer";
 
 export { MarkdownBlocksRenderer } from "./renderer/blocks-renderer";
@@ -51,25 +50,104 @@ function getMdxComponentNames(config: RendererConfig): string[] | undefined {
   return names.length > 0 ? names : undefined;
 }
 
+interface OwnedInitialization {
+  owner?: MarkdownRenderer;
+  resolve?: (blocks: Block[]) => void;
+  reject?: (error: Error) => void;
+}
+
+interface WorkerInitializationQueue {
+  pending: OwnedInitialization[];
+  acknowledgements: WeakMap<MessageEvent<WorkerOut>, OwnedInitialization>;
+}
+
+function extractWorkerError(event: Event): Error {
+  if (event && "error" in event) {
+    const candidate = event.error;
+    if (candidate instanceof Error) {
+      return candidate;
+    }
+  }
+  if (event && "message" in event && typeof event.message === "string") {
+    return new Error(event.message);
+  }
+  return new Error("Worker error");
+}
+
+// A borrowed worker can outlive its renderer. Keep cancelled FIFO slots until
+// their native responses arrive, including while no renderer is attached.
+const workerInitializations = new WeakMap<Worker, WorkerInitializationQueue>();
+function getWorkerInitializations(worker: Worker): WorkerInitializationQueue {
+  const existing = workerInitializations.get(worker);
+  if (existing) return existing;
+  const queue: WorkerInitializationQueue = { pending: [], acknowledgements: new WeakMap() };
+  workerInitializations.set(worker, queue);
+  worker.addEventListener("message", (event: MessageEvent<WorkerOut>) => {
+    const message = event.data;
+    if (message.type === "INITIALIZED") {
+      const initialization = queue.pending.shift();
+      if (initialization) {
+        queue.acknowledgements.set(event, initialization);
+        initialization.resolve?.(message.blocks);
+      }
+    } else if (message.type === "ERROR" && message.phase === "INIT" && typeof message.meta?.rule !== "string") {
+      queue.pending.shift()?.reject?.(new Error(message.error.message));
+    }
+  });
+  worker.addEventListener("error", (event: Event) => {
+    const error = extractWorkerError(event);
+    while (queue.pending.length > 0) {
+      queue.pending.shift()?.reject?.(error);
+    }
+  });
+  return queue;
+}
+
 /**
  * Main renderer class
  */
 export class MarkdownRenderer implements Renderer {
   private worker: Worker | null = null;
+  private skipWorkerInit = false;
+  private workerHasContent = false;
+  private initializationQueue: WorkerInitializationQueue | null = null;
   private blocks: Block[] = [];
   private updateCallbacks: Array<(blocks: ReadonlyArray<Block>) => void> = [];
   private componentRegistry: ComponentRegistry;
   private config: RendererConfig;
-  private store = createRendererStore();
+  private store: RendererStore;
   private patchScheduler: PatchCommitScheduler;
   private lastPatchMetrics: PatchMetrics | null = null;
   private lastWorkerError: Extract<WorkerOut, { type: "ERROR" }> | null = null;
   private flushListeners = new Set<(result: PatchFlushResult) => void>();
   private workerMessageListener: ((event: MessageEvent<WorkerOut>) => void) | null = null;
+  private workerErrorListener: ((event: Event) => void) | null = null;
 
   constructor(config: RendererConfig = {}) {
     this.config = config;
-    this.componentRegistry = new ComponentRegistry();
+    this.store = createRendererStore([], { themes: config.themes });
+    this.componentRegistry = new ComponentRegistry(
+      {},
+      {},
+      this.config.codeRenderers ?? {},
+      {
+        artifactHtml: this.config.artifactHtml,
+        mathRenderer: this.config.mathRenderer,
+        tableVirtualization: this.config.tableVirtualization,
+        urlTransform: this.config.urlTransform,
+        blockRenderer: this.config.blockRenderer,
+        controls: this.config.controls,
+        controlsComponent: this.config.controlsComponent,
+        allowedElements: this.config.allowedElements,
+        disallowedElements: this.config.disallowedElements,
+        allowElement: this.config.allowElement,
+        unwrapDisallowed: this.config.unwrapDisallowed,
+        disableAutolinkProtocols: this.config.disableAutolinkProtocols,
+      },
+    );
+    if (this.config.html?.literalTagContent) {
+      this.componentRegistry.setLiteralTagContent(this.config.html.literalTagContent);
+    }
     if (this.config.mdx?.compileEndpoint) {
       getMDXComponentFactory(this.config.mdx.compileEndpoint);
     }
@@ -98,59 +176,86 @@ export class MarkdownRenderer implements Renderer {
    * Attach Web Worker
    */
   attachWorker(worker: Worker, options?: { skipInit?: boolean }): void {
+    if (this.worker) this.detachWorker();
     this.patchScheduler.restart();
+    this.componentRegistry.resetAnimationTimeline();
     this.store.reset([]);
     this.blocks = [];
     if (this.updateCallbacks.length > 0) {
       this.notifyUpdateCallbacks();
     }
     this.worker = worker;
+    this.skipWorkerInit = options?.skipInit ?? false;
+    this.workerHasContent = false;
+    this.initializationQueue = getWorkerInitializations(worker);
     this.workerMessageListener = this.handleWorkerMessage.bind(this);
     this.worker.addEventListener("message", this.workerMessageListener);
+    this.workerErrorListener = this.handleWorkerError.bind(this);
+    this.worker.addEventListener("error", this.workerErrorListener);
+    if (!this.skipWorkerInit) this.initializeWorker();
+  }
 
-    if (!options?.skipInit) {
-      // Initialize worker
-      const mdxComponentNames = getMdxComponentNames(this.config);
-      const codeHighlighting = this.config.plugins?.codeHighlighting;
-      const outputMode = this.config.plugins?.outputMode;
-      const liveTokenization = this.config.plugins?.liveTokenization;
-      const emitHighlightTokens = this.config.plugins?.emitHighlightTokens;
-      const emitDiffBlocks = this.config.plugins?.emitDiffBlocks;
-      const docPlugins = {
-        footnotes: this.config.plugins?.footnotes ?? true,
-        html: this.config.plugins?.html ?? true,
-        mdx: this.config.plugins?.mdx ?? true,
-        tables: this.config.plugins?.tables ?? true,
-        callouts: this.config.plugins?.callouts ?? false,
-        math: this.config.plugins?.math ?? true,
-        formatAnticipation: this.config.plugins?.formatAnticipation ?? false,
-        ...(codeHighlighting !== undefined ? { codeHighlighting } : {}),
-        ...(outputMode !== undefined ? { outputMode } : {}),
-        liveCodeHighlighting: this.config.plugins?.liveCodeHighlighting ?? false,
-        ...(liveTokenization !== undefined ? { liveTokenization } : {}),
-        ...(emitHighlightTokens !== undefined ? { emitHighlightTokens } : {}),
-        ...(emitDiffBlocks !== undefined ? { emitDiffBlocks } : {}),
-        ...(mdxComponentNames ? { mdxComponentNames } : {}),
-      };
-
+  private initializeWorker(initialContent = "", completion: OwnedInitialization = {}): void {
+    if (!this.worker) throw new Error("Worker not attached");
+    this.store.setThemes(this.config.themes);
+    const mdxComponentNames = getMdxComponentNames(this.config);
+    const codeHighlighting = this.config.plugins?.codeHighlighting;
+    const outputMode = this.config.plugins?.outputMode;
+    const liveTokenization = this.config.plugins?.liveTokenization;
+    const emitHighlightTokens = this.config.plugins?.emitHighlightTokens;
+    const emitDiffBlocks = this.config.plugins?.emitDiffBlocks;
+    const docPlugins = {
+      footnotes: this.config.plugins?.footnotes ?? true,
+      html: this.config.plugins?.html ?? true,
+      mdx: this.config.plugins?.mdx ?? true,
+      tables: this.config.plugins?.tables ?? true,
+      callouts: this.config.plugins?.callouts ?? false,
+      math: this.config.plugins?.math ?? true,
+      formatAnticipation: this.config.plugins?.formatAnticipation ?? false,
+      ...(codeHighlighting !== undefined ? { codeHighlighting } : {}),
+      ...(outputMode !== undefined ? { outputMode } : {}),
+      liveCodeHighlighting: this.config.plugins?.liveCodeHighlighting ?? false,
+      ...(liveTokenization !== undefined ? { liveTokenization } : {}),
+      ...(emitHighlightTokens !== undefined ? { emitHighlightTokens } : {}),
+      ...(emitDiffBlocks !== undefined ? { emitDiffBlocks } : {}),
+      ...(mdxComponentNames ? { mdxComponentNames } : {}),
+    };
+    this.initializationQueue?.pending.push({ ...completion, owner: this });
+    try {
       this.worker.postMessage({
         type: "INIT",
-        initialContent: "",
+        initialContent,
         prewarmLangs: this.config.highlight?.langs || [],
         docPlugins,
-        mdx: {
-          compileMode: this.config.mdx?.compileStrategy ?? "server",
-        },
+        mdx: { compileMode: this.config.mdx?.compileStrategy ?? "server" },
+        ...(this.config.themes ? { themes: this.config.themes } : {}),
+        ...(this.config.syntax ? { syntax: this.config.syntax } : {}),
+        ...(this.config.html ? { html: this.config.html } : {}),
       } as WorkerIn);
+      this.workerHasContent = initialContent.length > 0;
+    } catch (error) {
+      this.initializationQueue?.pending.pop();
+      throw error;
     }
   }
 
   detachWorker(options: { terminate?: boolean } = {}): void {
+    this.patchScheduler.clear();
     if (!this.worker) return;
     const shouldTerminate = options.terminate ?? false;
+    for (const initialization of this.initializationQueue?.pending ?? []) {
+      if (initialization.owner !== this) continue;
+      initialization.reject?.(new Error("Worker detached before initialization completed"));
+      initialization.owner = undefined;
+      initialization.resolve = undefined;
+      initialization.reject = undefined;
+    }
     try {
       if (this.workerMessageListener) {
         this.worker.removeEventListener("message", this.workerMessageListener);
+      }
+      if (this.workerErrorListener) {
+        this.worker.removeEventListener("error", this.workerErrorListener);
       }
       if (shouldTerminate && typeof this.worker.terminate === "function") {
         this.worker.terminate();
@@ -160,8 +265,31 @@ export class MarkdownRenderer implements Renderer {
     } finally {
       this.worker = null;
       this.workerMessageListener = null;
+      this.workerErrorListener = null;
+      this.workerHasContent = false;
+      this.initializationQueue = null;
     }
   }
+  private handleWorkerError(event: Event): void {
+    const error = extractWorkerError(event);
+    this.lastWorkerError = {
+      type: "ERROR",
+      phase: "UNKNOWN",
+      error: {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+      },
+    };
+    for (const initialization of this.initializationQueue?.pending ?? []) {
+      if (initialization.owner !== this) continue;
+      initialization.reject?.(error);
+      initialization.owner = undefined;
+      initialization.resolve = undefined;
+      initialization.reject = undefined;
+    }
+  }
+
 
   /**
    * Append text chunk for streaming
@@ -170,6 +298,7 @@ export class MarkdownRenderer implements Renderer {
     if (!this.worker) {
       throw new Error("Worker not attached");
     }
+    this.workerHasContent ||= text.length > 0;
 
     this.worker.postMessage({
       type: "APPEND",
@@ -187,41 +316,12 @@ export class MarkdownRenderer implements Renderer {
         return;
       }
 
-      // One-time callback for static rendering
-      const handleMessage = (event: MessageEvent<WorkerOut>) => {
-        const message = event.data;
-        if (message.type === "INITIALIZED") {
-          this.worker?.removeEventListener("message", handleMessage);
-          resolve(message.blocks);
-        }
-      };
-
-      this.worker.addEventListener("message", handleMessage);
-
-      const mdxComponentNames = getMdxComponentNames(this.config);
-      const codeHighlighting = this.config.plugins?.codeHighlighting;
-      const docPlugins = {
-        footnotes: this.config.plugins?.footnotes ?? true,
-        html: this.config.plugins?.html ?? true,
-        mdx: this.config.plugins?.mdx ?? true,
-        tables: this.config.plugins?.tables ?? true,
-        callouts: this.config.plugins?.callouts ?? false,
-        math: this.config.plugins?.math ?? true,
-        formatAnticipation: this.config.plugins?.formatAnticipation ?? false,
-        ...(codeHighlighting !== undefined ? { codeHighlighting } : {}),
-        liveCodeHighlighting: this.config.plugins?.liveCodeHighlighting ?? false,
-        ...(mdxComponentNames ? { mdxComponentNames } : {}),
-      };
-
-      this.worker.postMessage({
-        type: "INIT",
-        initialContent: text,
-        prewarmLangs: this.config.highlight?.langs || [],
-        docPlugins,
-        mdx: {
-          compileMode: this.config.mdx?.compileStrategy ?? "server",
-        },
-      } as WorkerIn);
+      this.patchScheduler.restart();
+      this.componentRegistry.resetAnimationTimeline();
+      this.store.reset([]);
+      this.blocks = [];
+      if (this.updateCallbacks.length > 0) this.notifyUpdateCallbacks();
+      this.initializeWorker(text, { resolve, reject });
     });
   }
 
@@ -260,6 +360,24 @@ export class MarkdownRenderer implements Renderer {
     }
     registerMDXComponents(map);
   }
+  setCodeRenderers(map: Record<string, CodeFenceRenderer>): void {
+    this.componentRegistry.setCodeRenderers(map);
+  }
+
+  setMathRenderer(mathRenderer: MathRenderer): void {
+    this.componentRegistry.setMathRenderer(mathRenderer);
+  }
+
+  setTableVirtualization(options: TableVirtualizationOptions): void {
+    this.componentRegistry.setTableVirtualization(options);
+  }
+  setControls(controls: ControlsConfig): void {
+    this.componentRegistry.setControls(controls);
+  }
+
+  setControlsComponent(component?: React.ComponentType<ControlsComponentProps>): void {
+    this.componentRegistry.setControlsComponent(component);
+  }
 
   /**
    * Get component registry for external access
@@ -287,14 +405,19 @@ export class MarkdownRenderer implements Renderer {
     const message = event.data;
 
     switch (message.type) {
-      case "INITIALIZED":
-        this.patchScheduler.clear();
-        this.store.reset(message.blocks);
-        if (this.updateCallbacks.length > 0) {
-          this.blocks = this.store.getBlocks() as Block[];
-          this.notifyUpdateCallbacks();
+      case "INITIALIZED": {
+        const initialization = this.initializationQueue?.acknowledgements.get(event);
+        if (initialization && initialization.owner !== this) break;
+        if (this.initializationQueue?.pending.length === 0) {
+          this.patchScheduler.clear();
+          this.store.reset(message.blocks);
+          if (this.updateCallbacks.length > 0) {
+            this.blocks = this.store.getBlocks() as Block[];
+            this.notifyUpdateCallbacks();
+          }
         }
         break;
+      }
 
       case "METRICS":
         // Handle performance metrics
@@ -305,6 +428,7 @@ export class MarkdownRenderer implements Renderer {
         break;
 
       case "PATCH": {
+        if (this.initializationQueue && this.initializationQueue.pending.length > 0) break;
         if (message.metrics) {
           this.lastPatchMetrics = message.metrics;
         }
@@ -382,10 +506,15 @@ export class MarkdownRenderer implements Renderer {
 
   restart(): void {
     this.patchScheduler.restart();
+    this.componentRegistry.resetAnimationTimeline();
     this.store.reset([]);
     this.blocks = [];
     if (this.updateCallbacks.length > 0) {
       this.notifyUpdateCallbacks();
+    }
+    if (this.workerHasContent) {
+      if (!this.skipWorkerInit) this.initializeWorker();
+      this.workerHasContent = false;
     }
   }
 

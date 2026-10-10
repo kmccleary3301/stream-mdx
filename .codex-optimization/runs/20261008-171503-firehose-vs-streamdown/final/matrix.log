@@ -1,0 +1,57 @@
+2026-10-09T06:40:53Z start after code-huge S9_firehose_20k Now drawing from 'AC Power'
+2026-10-09T06:41:00Z ok after code-huge S9_firehose_20k
+2026-10-09T06:41:00Z start streamdown code-huge S9_firehose_20k Now drawing from 'AC Power'
+2026-10-09T06:41:05Z ok streamdown code-huge S9_firehose_20k
+2026-10-09T06:41:05Z start before code-huge S9_firehose_20k Now drawing from 'AC Power'
+2026-10-09T06:41:13Z ok before code-huge S9_firehose_20k
+2026-10-09T06:41:13Z start after code-huge S8_firehose_10k Now drawing from 'AC Power'
+2026-10-09T06:41:23Z ok after code-huge S8_firehose_10k
+2026-10-09T06:41:23Z start streamdown code-huge S8_firehose_10k Now drawing from 'AC Power'
+2026-10-09T06:41:32Z ok streamdown code-huge S8_firehose_10k
+2026-10-09T06:41:32Z start after code-huge S7_firehose_5k Now drawing from 'AC Power'
+2026-10-09T06:41:49Z ok after code-huge S7_firehose_5k
+2026-10-09T06:41:49Z start streamdown code-huge S7_firehose_5k Now drawing from 'AC Power'
+2026-10-09T06:42:04Z ok streamdown code-huge S7_firehose_5k
+2026-10-09T06:42:04Z start after stress-mega S9_firehose_20k Now drawing from 'AC Power'
+2026-10-09T06:43:02Z ok after stress-mega S9_firehose_20k
+2026-10-09T06:43:02Z start streamdown stress-mega S9_firehose_20k Now drawing from 'AC Power'
+2026-10-09T06:43:57Z ok streamdown stress-mega S9_firehose_20k
+2026-10-09T06:43:57Z start before stress-mega S9_firehose_20k Now drawing from 'AC Power'
+2026-10-09T06:44:55Z ok before stress-mega S9_firehose_20k
+2026-10-09T06:44:55Z start after stress-mega S8_firehose_10k Now drawing from 'AC Power'
+2026-10-09T06:46:44Z ok after stress-mega S8_firehose_10k
+2026-10-09T06:46:44Z start streamdown stress-mega S8_firehose_10k Now drawing from 'AC Power'
+2026-10-09T06:48:30Z ok streamdown stress-mega S8_firehose_10k
+2026-10-09T06:48:30Z start after stress-mega S7_firehose_5k Now drawing from 'AC Power'
+2026-10-09T06:52:02Z ok after stress-mega S7_firehose_5k
+2026-10-09T06:52:02Z start streamdown stress-mega S7_firehose_5k Now drawing from 'AC Power'
+2026-10-09T06:55:30Z ok streamdown stress-mega S7_firehose_5k
+2026-10-09T06:55:30Z start after stress-mega-footnotes S9_firehose_20k Now drawing from 'AC Power'
+2026-10-09T06:56:29Z ok after stress-mega-footnotes S9_firehose_20k
+2026-10-09T06:56:29Z start streamdown stress-mega-footnotes S9_firehose_20k Now drawing from 'AC Power'
+2026-10-09T07:01:28Z ok streamdown stress-mega-footnotes S9_firehose_20k
+2026-10-09T07:01:28Z start before stress-mega-footnotes S9_firehose_20k Now drawing from 'AC Power'
+2026-10-09T07:02:27Z ok before stress-mega-footnotes S9_firehose_20k
+2026-10-09T07:02:27Z start after stress-mega-footnotes S8_firehose_10k Now drawing from 'AC Power'
+2026-10-09T07:04:17Z ok after stress-mega-footnotes S8_firehose_10k
+2026-10-09T07:04:17Z start streamdown stress-mega-footnotes S8_firehose_10k Now drawing from 'AC Power'
+2026-10-09T07:14:00Z ok streamdown stress-mega-footnotes S8_firehose_10k
+2026-10-09T07:14:00Z start after stress-mega-footnotes S7_firehose_5k Now drawing from 'AC Power'
+2026-10-09T07:17:34Z ok after stress-mega-footnotes S7_firehose_5k
+2026-10-09T07:17:34Z start streamdown stress-mega-footnotes S7_firehose_5k Now drawing from 'AC Power'
+2026-10-09T07:36:48Z ok streamdown stress-mega-footnotes S7_firehose_5k
+2026-10-09T07:36:48Z start after stress-xl S9_firehose_20k Now drawing from 'AC Power'
+2026-10-09T07:40:38Z ok after stress-xl S9_firehose_20k
+2026-10-09T07:40:38Z start streamdown stress-xl S9_firehose_20k Now drawing from 'AC Power'
+2026-10-09T07:44:46Z ok streamdown stress-xl S9_firehose_20k
+2026-10-09T07:44:46Z start before stress-xl S9_firehose_20k Now drawing from 'AC Power'
+2026-10-09T07:46:15Z FAIL before stress-xl S9_firehose_20k
+2026-10-09T07:46:15Z start after stress-xl S8_firehose_10k Now drawing from 'AC Power'
+2026-10-09T07:53:28Z ok after stress-xl S8_firehose_10k
+2026-10-09T07:53:28Z start streamdown stress-xl S8_firehose_10k Now drawing from 'Battery Power'
+2026-10-09T08:01:18Z ok streamdown stress-xl S8_firehose_10k
+2026-10-09T08:01:18Z start after stress-xl S7_firehose_5k Now drawing from 'Battery Power'
+2026-10-09T08:15:17Z ok after stress-xl S7_firehose_5k
+2026-10-09T08:15:17Z start streamdown stress-xl S7_firehose_5k Now drawing from 'Battery Power'
+2026-10-09T08:30:24Z ok streamdown stress-xl S7_firehose_5k
+2026-10-09T08:30:24Z done

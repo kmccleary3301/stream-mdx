@@ -12,6 +12,10 @@ export const MDXDetectionPlugin: DocumentPlugin = {
   process(ctx: DocumentContext) {
     for (const block of ctx.blocks) {
       if (block.type !== "paragraph" && block.type !== "html") continue;
+      // The engine has already assigned these paragraphs to their inline/HTML projection.
+      // Retagging them here would discard surrounding prose or compile pending JSX fragments.
+      const meta = block.payload.meta;
+      if (block.type === "paragraph" && (meta?.inlineComponentSource || meta?.htmlParagraphTree || meta?.mixedSegments)) continue;
       const raw = block.payload.raw;
       const blockRange = block.payload.range;
       const baseOffset = typeof blockRange?.from === "number" ? blockRange.from : null;

@@ -3,7 +3,6 @@
 This showcase covers the non-React path that is easy to miss if you only look at the browser demo. StreamMDX is not just a React renderer. It also exposes a worker, protocol surface, and snapshot-store model that works for terminal UIs, remote transports, and replay tooling.
 
 Use this page when you already know you want a terminal or protocol consumer and need the shortest route to the right docs and example files.
-
 ## What this showcases
 
 - worker-thread parsing in Node

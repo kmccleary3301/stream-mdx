@@ -14,14 +14,14 @@
       "selector": "#regression-root h1",
       "computed": {
         "font-family": "Inter, \"Inter Fallback\"",
-        "font-size": "28px",
+        "font-size": "35px",
         "font-weight": "700",
         "font-style": "normal",
-        "line-height": "36.4px",
-        "letter-spacing": "-0.28px",
+        "line-height": "38.5px",
+        "letter-spacing": "-0.35px",
         "color": "rgb(32, 32, 32)",
-        "margin-top": "42px",
-        "margin-bottom": "14px"
+        "margin-top": "52.5px",
+        "margin-bottom": "17.5px"
       }
     },
     "h2": {
@@ -39,7 +39,7 @@
         "letter-spacing": "-0.09px",
         "color": "rgb(32, 32, 32)",
         "margin-top": "8px",
-        "margin-bottom": "0px"
+        "margin-bottom": "17.5px"
       }
     },
     "blockquote": {
@@ -97,17 +97,41 @@
       "missing": true,
       "selector": "#regression-root ol"
     },
+    "list-nested-ol": {
+      "missing": true,
+      "selector": "#regression-root li ol"
+    },
+    "list-nested-ul": {
+      "missing": true,
+      "selector": "#regression-root li ul"
+    },
     "list-ol-li": {
       "missing": true,
       "selector": "#regression-root ol > li"
+    },
+    "list-nested-ol-li": {
+      "missing": true,
+      "selector": "#regression-root li ol > li"
     },
     "list-ul-li": {
       "missing": true,
       "selector": "#regression-root ul > li"
     },
+    "list-nested-ul-li": {
+      "missing": true,
+      "selector": "#regression-root li ul > li"
+    },
     "footnotes": {
       "missing": true,
       "selector": "#regression-root .footnotes"
+    },
+    "footnotes-ol-li": {
+      "missing": true,
+      "selector": "#regression-root .footnotes ol li"
+    },
+    "footnote-backref": {
+      "missing": true,
+      "selector": "#regression-root .footnotes .footnote-backref"
     },
     "preview-pre-adjacent": {
       "missing": true,

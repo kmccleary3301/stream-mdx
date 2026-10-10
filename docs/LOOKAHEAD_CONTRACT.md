@@ -173,6 +173,8 @@ Allowed in V1:
 
 Default:
 - block HTML anticipation is conservative and falls back to text / surface fallback on ambiguity
+- an unfinished HTML container ends at its native block boundary; following paragraphs and lists stay siblings, not speculative descendants
+- an authored balanced HTML or supported MDX component region still owns its contents across blank lines
 
 ### MDX
 
@@ -266,6 +268,8 @@ Math V1 closure:
   - macro-name inference
 - display math follows the same bounded repair subset as inline math only when the repair remains local and validates cleanly
 - unsupported display math hard-stops / falls back rather than guessing
+- an unmatched `$$` opener protects its source through the native paragraph boundary, even when lookahead rejects nested left/right repair. TeX braces and tags in that fallback cannot become MDX expressions or components. Finalization retains literal source without inventing a closing delimiter; later prose remains a separate paragraph.
+- dollars inside native inline code spans do not open math protection. Components and expressions after a completed code span remain eligible for MDX.
 
 ## No-fake-progress rule
 

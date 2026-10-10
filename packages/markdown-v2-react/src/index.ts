@@ -1,4 +1,5 @@
 export * from "./components";
+export { STREAM_MDX_ANIMATION_CSS } from "./animation";
 export * from "./mdx-client";
 export * from "./mdx-coordinator";
 export * from "./mdx-prefetch";
@@ -13,7 +14,34 @@ export * from "./renderer/patch-commit-scheduler";
 export * from "./renderer/store";
 export * from "./renderer/use-deferred-render";
 export * from "./renderer/virtualized-code";
+export { DEFAULT_TABLE_VIRTUALIZATION_CONFIG } from "./renderer/virtualized-table";
 export * from "./streaming-markdown";
 export type { RendererMetrics } from "./streaming-markdown";
 export type { AdaptiveBudgetState } from "./renderer/patch-commit-scheduler";
-export type { BlockComponents, HtmlElements, InlineComponents, InlineHtmlRenderer, InlineHtmlRendererMap, Renderer, RendererConfig, TableElements } from "./types";
+export type {
+  AllowElementFn,
+  AnimatedAnimationName,
+  AnimatedOptions,
+  AnimatedProp,
+  BlockComponents,
+  BlockRendererOverride,
+  CodeFenceRenderer,
+  CodeFenceRendererConfig,
+  CodeFenceRendererProps,
+  ElementFilterContext,
+  ElementFilterDescriptor,
+  ElementFilterOptions,
+  FinalizedBlockRenderProps,
+  HtmlElements,
+  HtmlOptions,
+  InlineComponents,
+  InlineHtmlRenderer,
+  InlineHtmlRendererMap,
+  MathRenderer,
+  MathRendererProps,
+  Renderer,
+  RendererConfig,
+  SyntaxRuleSpec,
+  TableElements,
+  TableVirtualizationOptions,
+} from "./types";

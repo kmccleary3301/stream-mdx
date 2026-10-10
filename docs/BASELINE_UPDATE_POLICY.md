@@ -40,6 +40,14 @@ Refreshing snapshots without adding the missing guard is not sufficient.
 
 ## HTML snapshot policy
 
+HTML baselines lock the complete final HTML bytes, root-child hashes, and final structural signatures. Provisional checkpoint captures are diagnostic evidence, not count/order/HTML/structure equality assertions. Do not refresh snapshots to re-pin incidental partial classes, event timing, or older invalid KaTeX states.
+
+Removing a provisional byte assertion does not remove a behavior lock. Keep streaming security/math error bans, code-prefix and table/list guards, MDX state expectations, required rendered text/selectors, and explicit split-boundary assertions. The display-checkpoint fixture must render its formula at the ordinary S5 marker and converge to the complete formula and prose.
+
+Seeded replay must actually vary marker-stripped chunks using the existing seed options. Split-marker seeded S2 requests use the ordinary S5 final oracle; unseeded S5 still tests the authored critical boundary. Same-build seed and scheduler final comparisons stay exact. Zero executed requested cases are failures, not coverage.
+
+Missing entries in the ordinary scenario matrix must be recorded from reviewed, repaired behavior. Do not narrow eligibility, copy another scenario's snapshot, normalize final HTML broadly, or promote semantic rendering failures. Repair source behavior first, inspect final DOM/text/topology and styles, then selectively record accepted or missing baselines. Existing byte-identical finals need no re-pin just because their diagnostic checkpoints changed.
+
 Before updating HTML snapshots, the following must be green against the intended serving model:
 
 ```bash

@@ -132,3 +132,19 @@ export function diffContext(value: string, index: number, span = 80): string {
   const end = Math.min(value.length, index + span);
   return value.slice(start, end);
 }
+
+/**
+ * Required text fragments are rendered *text*, so they are validated against the DOM text of the
+ * regression root - never the serialized HTML string. Syntax highlighting splits source lines into
+ * per-token <span>s, which makes an HTML substring match incidental to the highlighter markup rather
+ * than evidence of rendered content. Matching stays verbatim: meaningful characters, newlines and
+ * protocols are not normalized away, so text that is genuinely absent still fails.
+ * `renderedText === null` means the root did not render at all and every fragment is missing.
+ */
+export function findMissingRequiredTextFragments(
+  requiredFragments: readonly string[],
+  renderedText: string | null,
+): string[] {
+  if (renderedText === null) return [...requiredFragments];
+  return requiredFragments.filter((fragment) => !renderedText.includes(fragment));
+}

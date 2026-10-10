@@ -13,10 +13,12 @@ const clientEntries = [
   "src/renderer/patch-batching.ts",
   "src/renderer/patch-coalescing.ts",
   "src/renderer/store.ts",
-  "src/renderer/node-views.tsx",
   "src/renderer/virtualized-code.tsx",
   "src/components/index.ts",
   "src/components/bottom-stick-scroll-area.tsx",
+  "src/components/artifact-frame.tsx",
+  "src/components/diff-renderer.tsx",
+  "src/components/katex-math.tsx",
   "src/mdx-client.ts",
   "src/mdx-coordinator.ts",
   "src/utils/inline-html.ts",
@@ -34,7 +36,7 @@ const sharedConfig = {
   outDir: join(__dirname, "dist"),
   target: "es2020",
   tsconfig: join(__dirname, "tsconfig.build.json"),
-  external: ["react", "react-dom", "@stream-mdx/core", "@stream-mdx/worker"],
+  external: ["react", "react-dom", "@stream-mdx/core", "@stream-mdx/worker", "katex"],
   outExtension({ format }: { format: "cjs" | "esm" }) {
     return {
       js: format === "cjs" ? ".cjs" : ".mjs",

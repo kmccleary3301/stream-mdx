@@ -1,3 +1,13 @@
-export { MermaidBlock } from "./mermaid-block";
-export type { MermaidBlockProps } from "./mermaid-block";
-
+export {
+  MermaidBlock,
+  createMermaidBlock,
+} from "./mermaid-block";
+export type {
+  CreateMermaidBlockOptions,
+  MermaidBlockComponent,
+  MermaidBlockProps,
+  MermaidConfig,
+  MermaidErrorComponentProps,
+  MermaidModule,
+  MermaidModuleLoader,
+} from "./mermaid-block";

@@ -28,8 +28,6 @@ When you *do* need the plugin primitives (custom worker bundles, custom tokenize
 - `stream-mdx/plugins/tables`
 - `stream-mdx/plugins/html`
 - `stream-mdx/plugins/mdx`
-- `stream-mdx/plugins/math`
-- `stream-mdx/plugins/math/renderer`
 
 Scoped equivalents are available at `@stream-mdx/plugins/*`.
 
@@ -150,13 +148,13 @@ The recommended approach is:
 2. Host it and pass it via the `worker` prop.
 3. Render any emitted nodes via `inlineComponents` / `components`.
 
-If you control the worker bundle, plugin primitives live under `@stream-mdx/plugins/base` and `@stream-mdx/plugins/registry`.
+If you control the worker bundle, plugin primitives live under `@stream-mdx/plugins/document` (and native extensions via `docs/PLUGIN_ABI.md`).
 
 ---
 
 ## 7) Tree-shaking and bundle size
 
-If you import plugin utilities in your app code, prefer subpath imports (`stream-mdx/plugins/math`) over the root barrel (`stream-mdx/plugins`) so bundlers can exclude unused modules.
+If you import plugin utilities in your app code, prefer subpath imports (`stream-mdx/plugins/tables`) over the root barrel (`stream-mdx/plugins`) so bundlers can exclude unused modules.
 
 Quick sanity check:
 

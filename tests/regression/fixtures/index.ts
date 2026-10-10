@@ -269,6 +269,7 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
     file: "math-left-right-nested-negative.md",
     tags: ["anticipation", "math", "display", "negative"],
     requiredTextFragments: [
+      "\\left( \\frac{\\left[a+b}{c}",
       "Trailing prose must remain visible after the nested left-right negative case.",
       "Final paragraph after the nested left-right negative case.",
     ],
@@ -376,6 +377,7 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
     tags: ["anticipation", "html", "inline"],
     requiredSelectors: ["kbd", "sup", "sub", "span", "a", "code"],
     forbidHtmlFragments: ["&lt;kbd", "&lt;sup", "&lt;sub", "&lt;span"],
+    requiredTextFragments: ["Blockquote with nested inline HTML:", "npm run docs:dev", "and trailing prose."],
   },
   {
     id: "block-html-no-swallow",
@@ -395,7 +397,14 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
     tags: ["anticipation", "mdx", "inline"],
     waitForMdxCompiled: false,
     requiredSelectors: [".markdown-mdx-inline", "ul", "blockquote"],
-    requiredTextFragments: ["Prefix text with", "trailing prose that must remain visible", "Final paragraph after the inline MDX tags."],
+    requiredTextFragments: [
+      "Prefix text with",
+      "trailing prose that must remain visible",
+      "sibling text afterward.",
+      "Blockquote with",
+      "and trailing content.",
+      "Final paragraph after the inline MDX tags.",
+    ],
   },
   {
     id: "mdx-tag-no-swallow-negative",

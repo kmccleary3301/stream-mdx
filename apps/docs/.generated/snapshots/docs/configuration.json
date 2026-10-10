@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-02-11T20:25:44.623Z",
-  "hash": "c2f2482df1a6fc1858d076959fbdce2672cd78ecadbb20c386265dc43accb629",
-  "contentHash": "9248b2972039815f5ec22366d659d6288b20fcbc7c1f5037899dfd3941a1a942",
-  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
-  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "createdAt": "2026-10-10T04:53:41.029Z",
+  "hash": "30e1623eb81dc9db702e59b7143ff4146b48d18333af1e874223fdeac9a4e7c0",
+  "contentHash": "26989200cf3efbd46450c05ecffc84b82042ad54277e2e4ced9827935505d6c1",
+  "configHash": "a4b31dc6e15c2cd96906124ef06fadc77e60ad148c40ed5ba066e3518a02e37b",
+  "hashSalt": "docs-snapshots-v2:42a0722c827a5ff05bc7f9b0b2c880b732fb655e91e2b7c5196767915dd07177",
   "blocks": [
     {
       "id": "db082c0",
@@ -13,14 +13,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Configuration",
-        "range": {
-          "from": 0,
-          "to": 15
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading1",
           "headingLevel": 1,
           "headingText": "Configuration",
           "headingId": "configuration"
+        },
+        "range": {
+          "from": 0,
+          "to": 15
         },
         "inline": [
           {
@@ -36,6 +37,48 @@
       "isFinalized": true,
       "payload": {
         "raw": "This page summarizes the configuration surface exposed by `<StreamingMarkdown />`.",
+        "meta": {
+          "lezerNodeType": "Paragraph",
+          "mixedSegments": [
+            {
+              "kind": "text",
+              "value": "This page summarizes the configuration surface exposed by `",
+              "inline": [
+                {
+                  "kind": "text",
+                  "text": "This page summarizes the configuration surface exposed by `"
+                }
+              ],
+              "range": {
+                "from": 17,
+                "to": 76
+              }
+            },
+            {
+              "kind": "mdx",
+              "value": "<StreamingMarkdown />",
+              "range": {
+                "from": 76,
+                "to": 97
+              },
+              "status": "pending"
+            },
+            {
+              "kind": "text",
+              "value": "`.",
+              "inline": [
+                {
+                  "kind": "text",
+                  "text": "`."
+                }
+              ],
+              "range": {
+                "from": 97,
+                "to": 99
+              }
+            }
+          ]
+        },
         "range": {
           "from": 17,
           "to": 99
@@ -53,48 +96,7 @@
             "kind": "text",
             "text": "."
           }
-        ],
-        "meta": {
-          "mixedSegments": [
-            {
-              "kind": "text",
-              "value": "This page summarizes the configuration surface exposed by `",
-              "range": {
-                "from": 17,
-                "to": 76
-              },
-              "inline": [
-                {
-                  "kind": "text",
-                  "text": "This page summarizes the configuration surface exposed by `"
-                }
-              ]
-            },
-            {
-              "kind": "mdx",
-              "value": "<StreamingMarkdown />",
-              "range": {
-                "from": 76,
-                "to": 97
-              },
-              "status": "pending"
-            },
-            {
-              "kind": "text",
-              "value": "`.",
-              "range": {
-                "from": 97,
-                "to": 99
-              },
-              "inline": [
-                {
-                  "kind": "text",
-                  "text": "`."
-                }
-              ]
-            }
-          ]
-        }
+        ]
       }
     },
     {
@@ -103,14 +105,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Feature flags",
-        "range": {
-          "from": 101,
-          "to": 117
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Feature flags",
           "headingId": "feature-flags"
+        },
+        "range": {
+          "from": 101,
+          "to": 117
         },
         "inline": [
           {
@@ -126,6 +129,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "`features` toggles built-in domains in the worker + renderer:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 119,
           "to": 180
@@ -148,15 +154,18 @@
       "isFinalized": true,
       "payload": {
         "raw": "```tsx\n<StreamingMarkdown\n  text={text}\n  features={{ tables: true, html: true, mdx: true, math: true, footnotes: true, callouts: false, formatAnticipation: false }}\n/>;\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "<StreamingMarkdown\n  text={text}\n  features={{ tables: true, html: true, mdx: true, math: true, footnotes: true, callouts: false, formatAnticipation: false }}\n/>;",
+          "info": "tsx",
+          "lang": "tsx",
+          "highlightLang": "tsx"
+        },
         "range": {
           "from": 182,
           "to": 355
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{text}</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ tables: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, math: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, footnotes: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, callouts: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">false</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, formatAnticipation: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">false</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }}</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/>;</span></span></code></pre>",
-        "meta": {
-          "lang": "tsx",
-          "code": "<StreamingMarkdown\n  text={text}\n  features={{ tables: true, html: true, mdx: true, math: true, footnotes: true, callouts: false, formatAnticipation: false }}\n/>;"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{text}</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ tables: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, math: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, footnotes: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, callouts: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">false</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, formatAnticipation: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">false</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }}</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/>;</span></span></code></pre>"
       }
     },
     {
@@ -165,14 +174,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "`formatAnticipation`",
-        "range": {
-          "from": 357,
-          "to": 381
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading3",
           "headingLevel": 3,
           "headingText": "`formatAnticipation`",
           "headingId": "formatanticipation"
+        },
+        "range": {
+          "from": 357,
+          "to": 381
         },
         "inline": [
           {
@@ -188,6 +198,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "When `features.formatAnticipation` is enabled, StreamMDX will attempt to **withhold formatting markers while streaming** (initial support: `*`, `**`, `` ` ``, `~~`). This is strictly a *streaming UX* improvement; finalized output remains unchanged.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 383,
           "to": 631
@@ -232,23 +245,23 @@
           },
           {
             "kind": "text",
-            "text": ", `"
-          },
-          {
-            "kind": "code",
-            "text": " "
-          },
-          {
-            "kind": "text",
-            "text": " `"
-          },
-          {
-            "kind": "code",
             "text": ", "
           },
           {
+            "kind": "code",
+            "text": "`"
+          },
+          {
             "kind": "text",
-            "text": "~~`). This is strictly a "
+            "text": ", "
+          },
+          {
+            "kind": "code",
+            "text": "~~"
+          },
+          {
+            "kind": "text",
+            "text": "). This is strictly a "
           },
           {
             "kind": "em",
@@ -272,14 +285,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Worker",
-        "range": {
-          "from": 633,
-          "to": 642
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Worker",
           "headingId": "worker"
+        },
+        "range": {
+          "from": 633,
+          "to": 642
         },
         "inline": [
           {
@@ -295,6 +309,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "Recommended: host the worker and pass a URL string:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 644,
           "to": 695
@@ -313,15 +330,18 @@
       "isFinalized": true,
       "payload": {
         "raw": "```tsx\n<StreamingMarkdown worker=\"/workers/markdown-worker.js\" />\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "<StreamingMarkdown worker=\"/workers/markdown-worker.js\" />",
+          "info": "tsx",
+          "lang": "tsx",
+          "highlightLang": "tsx"
+        },
         "range": {
           "from": 697,
           "to": 766
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> /></span></span></code></pre>",
-        "meta": {
-          "lang": "tsx",
-          "code": "<StreamingMarkdown worker=\"/workers/markdown-worker.js\" />"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> /></span></span></code></pre>"
       }
     },
     {
@@ -330,6 +350,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "If you omit `worker`, StreamMDX uses the default worker strategy and falls back to `/workers/markdown-worker.js`.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 768,
           "to": 881
@@ -364,14 +387,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "MDX",
-        "range": {
-          "from": 883,
-          "to": 889
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "MDX",
           "headingId": "mdx"
+        },
+        "range": {
+          "from": 883,
+          "to": 889
         },
         "inline": [
           {
@@ -387,6 +411,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "To render MDX blocks:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 891,
           "to": 912
@@ -405,12 +432,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- set `features={{ mdx: true }}`\n- set `mdxCompileMode=\"worker\"` (no server), or `\"server\"` (requires `/api/mdx-compile-v2`)\n- provide `mdxComponents` if you use custom MDX components",
-        "range": {
-          "from": 914,
-          "to": 1097
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -467,7 +501,379 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "70035f68::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 914,
+                  "to": 946
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "70035f68::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- set `features={{ mdx: true }}`",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "set "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "features={{ mdx: true }}"
+                        }
+                      ],
+                      "range": {
+                        "from": 914,
+                        "to": 946
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "set "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "features={{ mdx: true }}"
+                              }
+                            ],
+                            "text": "set features={{ mdx: true }}",
+                            "raw": "- set `features={{ mdx: true }}`"
+                          },
+                          "children": [
+                            {
+                              "id": "70035f68::item:0::list-item:segment:0",
+                              "type": "list-item-text",
+                              "props": {
+                                "inline": [
+                                  {
+                                    "kind": "text",
+                                    "text": "set `features={"
+                                  }
+                                ],
+                                "text": "set `features={"
+                              },
+                              "children": []
+                            },
+                            {
+                              "id": "70035f68::item:0::list-item:segment:1",
+                              "type": "list-item-mdx",
+                              "props": {
+                                "raw": "{ mdx: true }",
+                                "status": "pending"
+                              },
+                              "children": []
+                            },
+                            {
+                              "id": "70035f68::item:0::list-item:segment:2",
+                              "type": "list-item-text",
+                              "props": {
+                                "inline": [
+                                  {
+                                    "kind": "text",
+                                    "text": "}`"
+                                  }
+                                ],
+                                "text": "}`"
+                              },
+                              "children": []
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "set "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "features={{ mdx: true }}"
+                    }
+                  ],
+                  "text": "set features={{ mdx: true }}",
+                  "raw": "- set `features={{ mdx: true }}`"
+                },
+                "children": [
+                  {
+                    "id": "70035f68::item:0::list-item:segment:0",
+                    "type": "list-item-text",
+                    "props": {
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "set `features={"
+                        }
+                      ],
+                      "text": "set `features={"
+                    },
+                    "children": []
+                  },
+                  {
+                    "id": "70035f68::item:0::list-item:segment:1",
+                    "type": "list-item-mdx",
+                    "props": {
+                      "raw": "{ mdx: true }",
+                      "status": "pending"
+                    },
+                    "children": []
+                  },
+                  {
+                    "id": "70035f68::item:0::list-item:segment:2",
+                    "type": "list-item-text",
+                    "props": {
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "}`"
+                        }
+                      ],
+                      "text": "}`"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "id": "70035f68::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 947,
+                  "to": 1038
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "70035f68::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- set `mdxCompileMode=\"worker\"` (no server), or `\"server\"` (requires `/api/mdx-compile-v2`)",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "set "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "mdxCompileMode=\"worker\""
+                        },
+                        {
+                          "kind": "text",
+                          "text": " (no server), or "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "\"server\""
+                        },
+                        {
+                          "kind": "text",
+                          "text": " (requires "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "/api/mdx-compile-v2"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ")"
+                        }
+                      ],
+                      "range": {
+                        "from": 947,
+                        "to": 1038
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "set "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "mdxCompileMode=\"worker\""
+                              },
+                              {
+                                "kind": "text",
+                                "text": " (no server), or "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "\"server\""
+                              },
+                              {
+                                "kind": "text",
+                                "text": " (requires "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "/api/mdx-compile-v2"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ")"
+                              }
+                            ],
+                            "text": "set mdxCompileMode=\"worker\" (no server), or \"server\" (requires /api/mdx-compile-v2)",
+                            "raw": "- set `mdxCompileMode=\"worker\"` (no server), or `\"server\"` (requires `/api/mdx-compile-v2`)"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "set "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "mdxCompileMode=\"worker\""
+                    },
+                    {
+                      "kind": "text",
+                      "text": " (no server), or "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "\"server\""
+                    },
+                    {
+                      "kind": "text",
+                      "text": " (requires "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "/api/mdx-compile-v2"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ")"
+                    }
+                  ],
+                  "text": "set mdxCompileMode=\"worker\" (no server), or \"server\" (requires /api/mdx-compile-v2)",
+                  "raw": "- set `mdxCompileMode=\"worker\"` (no server), or `\"server\"` (requires `/api/mdx-compile-v2`)"
+                },
+                "children": []
+              },
+              {
+                "id": "70035f68::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 1039,
+                  "to": 1097
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "70035f68::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- provide `mdxComponents` if you use custom MDX components",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "provide "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "mdxComponents"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " if you use custom MDX components"
+                        }
+                      ],
+                      "range": {
+                        "from": 1039,
+                        "to": 1097
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "provide "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "mdxComponents"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " if you use custom MDX components"
+                              }
+                            ],
+                            "text": "provide mdxComponents if you use custom MDX components",
+                            "raw": "- provide `mdxComponents` if you use custom MDX components"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "provide "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "mdxComponents"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " if you use custom MDX components"
+                    }
+                  ],
+                  "text": "provide mdxComponents if you use custom MDX components",
+                  "raw": "- provide `mdxComponents` if you use custom MDX components"
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 914,
+          "to": 1097
         }
       }
     },
@@ -477,14 +883,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Rendering overrides",
-        "range": {
-          "from": 1099,
-          "to": 1121
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Rendering overrides",
           "headingId": "rendering-overrides"
+        },
+        "range": {
+          "from": 1099,
+          "to": 1121
         },
         "inline": [
           {
@@ -499,13 +906,20 @@
       "type": "list",
       "isFinalized": true,
       "payload": {
-        "raw": "- `components`: override block renders (heading/code/table/etc).\n- `inlineComponents`: override inline renders (strong/em/link/code/etc).\n- `tableElements`: override table tags (Shadcn table wrappers).\n- `htmlElements`: override HTML tag renders (when HTML is enabled).",
-        "range": {
-          "from": 1123,
-          "to": 1392
-        },
+        "raw": "- `components`: override block renders (heading/code/table/etc).\n- `inlineComponents`: override inline renders (strong/em/link/code/etc).\n- `tableElements`: override table tags (Shadcn table wrappers).\n- `htmlElements`: override HTML tag renders (when HTML is enabled).\n- `codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `artifact`, `diff`, custom languages) keyed by language; `{ component, aliases }` entries add alias languages, resolved case-insensitively.\n- `allowedElements`: whitelist of permitted HTML tag names (mutually exclusive with `disallowedElements`).\n- `disallowedElements`: blacklist of HTML tag names to drop (mutually exclusive with `allowedElements`).\n- `unwrapDisallowed`: when `true`, render children of disallowed tags instead of dropping the subtree.\n- `allowElement`: callback predicate `(element, context) => boolean` for dynamic tag filtering.\n- `disableAutolinkProtocols`: protocols (e.g. `[\"mailto\"]`) whose autolinks render as plain text while explicit markdown links remain active.\n- `mathRenderer`: provide custom inline and display math renderers (KaTeX is built-in default; MathJax supported).\n- `artifactHtml`: opt-in flag (`true` to render standard ````html ```` code fences via `ArtifactFrame`).",
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -546,44 +960,1483 @@
                 "kind": "text",
                 "text": ": override HTML tag renders (when HTML is enabled)."
               }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "codeRenderers"
+              },
+              {
+                "kind": "text",
+                "text": ": map fenced code languages to custom renderers (e.g. "
+              },
+              {
+                "kind": "code",
+                "text": "mermaid"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "artifact"
+              },
+              {
+                "kind": "text",
+                "text": ", "
+              },
+              {
+                "kind": "code",
+                "text": "diff"
+              },
+              {
+                "kind": "text",
+                "text": ", custom languages) keyed by language; "
+              },
+              {
+                "kind": "code",
+                "text": "{ component, aliases }"
+              },
+              {
+                "kind": "text",
+                "text": " entries add alias languages, resolved case-insensitively."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "allowedElements"
+              },
+              {
+                "kind": "text",
+                "text": ": whitelist of permitted HTML tag names (mutually exclusive with "
+              },
+              {
+                "kind": "code",
+                "text": "disallowedElements"
+              },
+              {
+                "kind": "text",
+                "text": ")."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "disallowedElements"
+              },
+              {
+                "kind": "text",
+                "text": ": blacklist of HTML tag names to drop (mutually exclusive with "
+              },
+              {
+                "kind": "code",
+                "text": "allowedElements"
+              },
+              {
+                "kind": "text",
+                "text": ")."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "unwrapDisallowed"
+              },
+              {
+                "kind": "text",
+                "text": ": when "
+              },
+              {
+                "kind": "code",
+                "text": "true"
+              },
+              {
+                "kind": "text",
+                "text": ", render children of disallowed tags instead of dropping the subtree."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "allowElement"
+              },
+              {
+                "kind": "text",
+                "text": ": callback predicate "
+              },
+              {
+                "kind": "code",
+                "text": "(element, context) => boolean"
+              },
+              {
+                "kind": "text",
+                "text": " for dynamic tag filtering."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "disableAutolinkProtocols"
+              },
+              {
+                "kind": "text",
+                "text": ": protocols (e.g. "
+              },
+              {
+                "kind": "code",
+                "text": "[\"mailto\"]"
+              },
+              {
+                "kind": "text",
+                "text": ") whose autolinks render as plain text while explicit markdown links remain active."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "mathRenderer"
+              },
+              {
+                "kind": "text",
+                "text": ": provide custom inline and display math renderers (KaTeX is built-in default; MathJax supported)."
+              }
+            ],
+            [
+              {
+                "kind": "code",
+                "text": "artifactHtml"
+              },
+              {
+                "kind": "text",
+                "text": ": opt-in flag ("
+              },
+              {
+                "kind": "code",
+                "text": "true"
+              },
+              {
+                "kind": "text",
+                "text": " to render standard "
+              },
+              {
+                "kind": "code",
+                "text": "html "
+              },
+              {
+                "kind": "text",
+                "text": " code fences via "
+              },
+              {
+                "kind": "code",
+                "text": "ArtifactFrame"
+              },
+              {
+                "kind": "text",
+                "text": ")."
+              }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "54f6383b::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 1123,
+                  "to": 1187
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "54f6383b::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `components`: override block renders (heading/code/table/etc).",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "components"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": override block renders (heading/code/table/etc)."
+                        }
+                      ],
+                      "range": {
+                        "from": 1123,
+                        "to": 1187
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "components"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": override block renders (heading/code/table/etc)."
+                              }
+                            ],
+                            "text": "components: override block renders (heading/code/table/etc).",
+                            "raw": "- `components`: override block renders (heading/code/table/etc)."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "components"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": override block renders (heading/code/table/etc)."
+                    }
+                  ],
+                  "text": "components: override block renders (heading/code/table/etc).",
+                  "raw": "- `components`: override block renders (heading/code/table/etc)."
+                },
+                "children": []
+              },
+              {
+                "id": "54f6383b::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 1188,
+                  "to": 1260
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "54f6383b::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `inlineComponents`: override inline renders (strong/em/link/code/etc).",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "inlineComponents"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": override inline renders (strong/em/link/code/etc)."
+                        }
+                      ],
+                      "range": {
+                        "from": 1188,
+                        "to": 1260
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "inlineComponents"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": override inline renders (strong/em/link/code/etc)."
+                              }
+                            ],
+                            "text": "inlineComponents: override inline renders (strong/em/link/code/etc).",
+                            "raw": "- `inlineComponents`: override inline renders (strong/em/link/code/etc)."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "inlineComponents"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": override inline renders (strong/em/link/code/etc)."
+                    }
+                  ],
+                  "text": "inlineComponents: override inline renders (strong/em/link/code/etc).",
+                  "raw": "- `inlineComponents`: override inline renders (strong/em/link/code/etc)."
+                },
+                "children": []
+              },
+              {
+                "id": "54f6383b::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 1261,
+                  "to": 1324
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "54f6383b::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `tableElements`: override table tags (Shadcn table wrappers).",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "tableElements"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": override table tags (Shadcn table wrappers)."
+                        }
+                      ],
+                      "range": {
+                        "from": 1261,
+                        "to": 1324
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "tableElements"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": override table tags (Shadcn table wrappers)."
+                              }
+                            ],
+                            "text": "tableElements: override table tags (Shadcn table wrappers).",
+                            "raw": "- `tableElements`: override table tags (Shadcn table wrappers)."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "tableElements"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": override table tags (Shadcn table wrappers)."
+                    }
+                  ],
+                  "text": "tableElements: override table tags (Shadcn table wrappers).",
+                  "raw": "- `tableElements`: override table tags (Shadcn table wrappers)."
+                },
+                "children": []
+              },
+              {
+                "id": "54f6383b::item:3",
+                "type": "list-item",
+                "range": {
+                  "from": 1325,
+                  "to": 1392
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "54f6383b::item:3",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `htmlElements`: override HTML tag renders (when HTML is enabled).",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "htmlElements"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": override HTML tag renders (when HTML is enabled)."
+                        }
+                      ],
+                      "range": {
+                        "from": 1325,
+                        "to": 1392
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 3,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "htmlElements"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": override HTML tag renders (when HTML is enabled)."
+                              }
+                            ],
+                            "text": "htmlElements: override HTML tag renders (when HTML is enabled).",
+                            "raw": "- `htmlElements`: override HTML tag renders (when HTML is enabled)."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 3,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "htmlElements"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": override HTML tag renders (when HTML is enabled)."
+                    }
+                  ],
+                  "text": "htmlElements: override HTML tag renders (when HTML is enabled).",
+                  "raw": "- `htmlElements`: override HTML tag renders (when HTML is enabled)."
+                },
+                "children": []
+              },
+              {
+                "id": "54f6383b::item:4",
+                "type": "list-item",
+                "range": {
+                  "from": 1393,
+                  "to": 1614
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "54f6383b::item:4",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `artifact`, `diff`, custom languages) keyed by language; `{ component, aliases }` entries add alias languages, resolved case-insensitively.",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "codeRenderers"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": map fenced code languages to custom renderers (e.g. "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "mermaid"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "artifact"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "diff"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", custom languages) keyed by language; "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "{ component, aliases }"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " entries add alias languages, resolved case-insensitively."
+                        }
+                      ],
+                      "range": {
+                        "from": 1393,
+                        "to": 1614
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 4,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "codeRenderers"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": map fenced code languages to custom renderers (e.g. "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "mermaid"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "artifact"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "diff"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", custom languages) keyed by language; "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "{ component, aliases }"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " entries add alias languages, resolved case-insensitively."
+                              }
+                            ],
+                            "text": "codeRenderers: map fenced code languages to custom renderers (e.g. mermaid, artifact, diff, custom languages) keyed by language; { component, aliases } entries add alias languages, resolved case-insensitively.",
+                            "raw": "- `codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `artifact`, `diff`, custom languages) keyed by language; `{ component, aliases }` entries add alias languages, resolved case-insensitively."
+                          },
+                          "children": [
+                            {
+                              "id": "54f6383b::item:4::list-item:segment:0",
+                              "type": "list-item-text",
+                              "props": {
+                                "inline": [
+                                  {
+                                    "kind": "code",
+                                    "text": "codeRenderers"
+                                  },
+                                  {
+                                    "kind": "text",
+                                    "text": ": map fenced code languages to custom renderers (e.g. "
+                                  },
+                                  {
+                                    "kind": "code",
+                                    "text": "mermaid"
+                                  },
+                                  {
+                                    "kind": "text",
+                                    "text": ", "
+                                  },
+                                  {
+                                    "kind": "code",
+                                    "text": "artifact"
+                                  },
+                                  {
+                                    "kind": "text",
+                                    "text": ", "
+                                  },
+                                  {
+                                    "kind": "code",
+                                    "text": "diff"
+                                  },
+                                  {
+                                    "kind": "text",
+                                    "text": ", custom languages) keyed by language; `"
+                                  }
+                                ],
+                                "text": "`codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `artifact`, `diff`, custom languages) keyed by language; `"
+                              },
+                              "children": []
+                            },
+                            {
+                              "id": "54f6383b::item:4::list-item:segment:1",
+                              "type": "list-item-mdx",
+                              "props": {
+                                "raw": "{ component, aliases }",
+                                "status": "pending"
+                              },
+                              "children": []
+                            },
+                            {
+                              "id": "54f6383b::item:4::list-item:segment:2",
+                              "type": "list-item-text",
+                              "props": {
+                                "inline": [
+                                  {
+                                    "kind": "text",
+                                    "text": "` entries add alias languages, resolved case-insensitively."
+                                  }
+                                ],
+                                "text": "` entries add alias languages, resolved case-insensitively."
+                              },
+                              "children": []
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "index": 4,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "codeRenderers"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": map fenced code languages to custom renderers (e.g. "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "mermaid"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "artifact"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "diff"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", custom languages) keyed by language; "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "{ component, aliases }"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " entries add alias languages, resolved case-insensitively."
+                    }
+                  ],
+                  "text": "codeRenderers: map fenced code languages to custom renderers (e.g. mermaid, artifact, diff, custom languages) keyed by language; { component, aliases } entries add alias languages, resolved case-insensitively.",
+                  "raw": "- `codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `artifact`, `diff`, custom languages) keyed by language; `{ component, aliases }` entries add alias languages, resolved case-insensitively."
+                },
+                "children": [
+                  {
+                    "id": "54f6383b::item:4::list-item:segment:0",
+                    "type": "list-item-text",
+                    "props": {
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "codeRenderers"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": map fenced code languages to custom renderers (e.g. "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "mermaid"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "artifact"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "diff"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", custom languages) keyed by language; `"
+                        }
+                      ],
+                      "text": "`codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `artifact`, `diff`, custom languages) keyed by language; `"
+                    },
+                    "children": []
+                  },
+                  {
+                    "id": "54f6383b::item:4::list-item:segment:1",
+                    "type": "list-item-mdx",
+                    "props": {
+                      "raw": "{ component, aliases }",
+                      "status": "pending"
+                    },
+                    "children": []
+                  },
+                  {
+                    "id": "54f6383b::item:4::list-item:segment:2",
+                    "type": "list-item-text",
+                    "props": {
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "` entries add alias languages, resolved case-insensitively."
+                        }
+                      ],
+                      "text": "` entries add alias languages, resolved case-insensitively."
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "id": "54f6383b::item:5",
+                "type": "list-item",
+                "range": {
+                  "from": 1615,
+                  "to": 1721
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "54f6383b::item:5",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `allowedElements`: whitelist of permitted HTML tag names (mutually exclusive with `disallowedElements`).",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "allowedElements"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": whitelist of permitted HTML tag names (mutually exclusive with "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "disallowedElements"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ")."
+                        }
+                      ],
+                      "range": {
+                        "from": 1615,
+                        "to": 1721
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 5,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "allowedElements"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": whitelist of permitted HTML tag names (mutually exclusive with "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "disallowedElements"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ")."
+                              }
+                            ],
+                            "text": "allowedElements: whitelist of permitted HTML tag names (mutually exclusive with disallowedElements).",
+                            "raw": "- `allowedElements`: whitelist of permitted HTML tag names (mutually exclusive with `disallowedElements`)."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 5,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "allowedElements"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": whitelist of permitted HTML tag names (mutually exclusive with "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "disallowedElements"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ")."
+                    }
+                  ],
+                  "text": "allowedElements: whitelist of permitted HTML tag names (mutually exclusive with disallowedElements).",
+                  "raw": "- `allowedElements`: whitelist of permitted HTML tag names (mutually exclusive with `disallowedElements`)."
+                },
+                "children": []
+              },
+              {
+                "id": "54f6383b::item:6",
+                "type": "list-item",
+                "range": {
+                  "from": 1722,
+                  "to": 1826
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "54f6383b::item:6",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `disallowedElements`: blacklist of HTML tag names to drop (mutually exclusive with `allowedElements`).",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "disallowedElements"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": blacklist of HTML tag names to drop (mutually exclusive with "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "allowedElements"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ")."
+                        }
+                      ],
+                      "range": {
+                        "from": 1722,
+                        "to": 1826
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 6,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "disallowedElements"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": blacklist of HTML tag names to drop (mutually exclusive with "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "allowedElements"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ")."
+                              }
+                            ],
+                            "text": "disallowedElements: blacklist of HTML tag names to drop (mutually exclusive with allowedElements).",
+                            "raw": "- `disallowedElements`: blacklist of HTML tag names to drop (mutually exclusive with `allowedElements`)."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 6,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "disallowedElements"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": blacklist of HTML tag names to drop (mutually exclusive with "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "allowedElements"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ")."
+                    }
+                  ],
+                  "text": "disallowedElements: blacklist of HTML tag names to drop (mutually exclusive with allowedElements).",
+                  "raw": "- `disallowedElements`: blacklist of HTML tag names to drop (mutually exclusive with `allowedElements`)."
+                },
+                "children": []
+              },
+              {
+                "id": "54f6383b::item:7",
+                "type": "list-item",
+                "range": {
+                  "from": 1827,
+                  "to": 1929
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "54f6383b::item:7",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `unwrapDisallowed`: when `true`, render children of disallowed tags instead of dropping the subtree.",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "unwrapDisallowed"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": when "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "true"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", render children of disallowed tags instead of dropping the subtree."
+                        }
+                      ],
+                      "range": {
+                        "from": 1827,
+                        "to": 1929
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 7,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "unwrapDisallowed"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": when "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "true"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", render children of disallowed tags instead of dropping the subtree."
+                              }
+                            ],
+                            "text": "unwrapDisallowed: when true, render children of disallowed tags instead of dropping the subtree.",
+                            "raw": "- `unwrapDisallowed`: when `true`, render children of disallowed tags instead of dropping the subtree."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 7,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "unwrapDisallowed"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": when "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "true"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", render children of disallowed tags instead of dropping the subtree."
+                    }
+                  ],
+                  "text": "unwrapDisallowed: when true, render children of disallowed tags instead of dropping the subtree.",
+                  "raw": "- `unwrapDisallowed`: when `true`, render children of disallowed tags instead of dropping the subtree."
+                },
+                "children": []
+              },
+              {
+                "id": "54f6383b::item:8",
+                "type": "list-item",
+                "range": {
+                  "from": 1930,
+                  "to": 2025
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "54f6383b::item:8",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `allowElement`: callback predicate `(element, context) => boolean` for dynamic tag filtering.",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "allowElement"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": callback predicate "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "(element, context) => boolean"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " for dynamic tag filtering."
+                        }
+                      ],
+                      "range": {
+                        "from": 1930,
+                        "to": 2025
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 8,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "allowElement"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": callback predicate "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "(element, context) => boolean"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " for dynamic tag filtering."
+                              }
+                            ],
+                            "text": "allowElement: callback predicate (element, context) => boolean for dynamic tag filtering.",
+                            "raw": "- `allowElement`: callback predicate `(element, context) => boolean` for dynamic tag filtering."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 8,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "allowElement"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": callback predicate "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "(element, context) => boolean"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " for dynamic tag filtering."
+                    }
+                  ],
+                  "text": "allowElement: callback predicate (element, context) => boolean for dynamic tag filtering.",
+                  "raw": "- `allowElement`: callback predicate `(element, context) => boolean` for dynamic tag filtering."
+                },
+                "children": []
+              },
+              {
+                "id": "54f6383b::item:9",
+                "type": "list-item",
+                "range": {
+                  "from": 2026,
+                  "to": 2167
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "54f6383b::item:9",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `disableAutolinkProtocols`: protocols (e.g. `[\"mailto\"]`) whose autolinks render as plain text while explicit markdown links remain active.",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "disableAutolinkProtocols"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": protocols (e.g. "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "[\"mailto\"]"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ") whose autolinks render as plain text while explicit markdown links remain active."
+                        }
+                      ],
+                      "range": {
+                        "from": 2026,
+                        "to": 2167
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 9,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "disableAutolinkProtocols"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": protocols (e.g. "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "[\"mailto\"]"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ") whose autolinks render as plain text while explicit markdown links remain active."
+                              }
+                            ],
+                            "text": "disableAutolinkProtocols: protocols (e.g. [\"mailto\"]) whose autolinks render as plain text while explicit markdown links remain active.",
+                            "raw": "- `disableAutolinkProtocols`: protocols (e.g. `[\"mailto\"]`) whose autolinks render as plain text while explicit markdown links remain active."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 9,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "disableAutolinkProtocols"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": protocols (e.g. "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "[\"mailto\"]"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ") whose autolinks render as plain text while explicit markdown links remain active."
+                    }
+                  ],
+                  "text": "disableAutolinkProtocols: protocols (e.g. [\"mailto\"]) whose autolinks render as plain text while explicit markdown links remain active.",
+                  "raw": "- `disableAutolinkProtocols`: protocols (e.g. `[\"mailto\"]`) whose autolinks render as plain text while explicit markdown links remain active."
+                },
+                "children": []
+              },
+              {
+                "id": "54f6383b::item:10",
+                "type": "list-item",
+                "range": {
+                  "from": 2168,
+                  "to": 2282
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "54f6383b::item:10",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `mathRenderer`: provide custom inline and display math renderers (KaTeX is built-in default; MathJax supported).",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "mathRenderer"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": provide custom inline and display math renderers (KaTeX is built-in default; MathJax supported)."
+                        }
+                      ],
+                      "range": {
+                        "from": 2168,
+                        "to": 2282
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 10,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "mathRenderer"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": provide custom inline and display math renderers (KaTeX is built-in default; MathJax supported)."
+                              }
+                            ],
+                            "text": "mathRenderer: provide custom inline and display math renderers (KaTeX is built-in default; MathJax supported).",
+                            "raw": "- `mathRenderer`: provide custom inline and display math renderers (KaTeX is built-in default; MathJax supported)."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 10,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "mathRenderer"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": provide custom inline and display math renderers (KaTeX is built-in default; MathJax supported)."
+                    }
+                  ],
+                  "text": "mathRenderer: provide custom inline and display math renderers (KaTeX is built-in default; MathJax supported).",
+                  "raw": "- `mathRenderer`: provide custom inline and display math renderers (KaTeX is built-in default; MathJax supported)."
+                },
+                "children": []
+              },
+              {
+                "id": "54f6383b::item:11",
+                "type": "list-item",
+                "range": {
+                  "from": 2283,
+                  "to": 2387
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "54f6383b::item:11",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `artifactHtml`: opt-in flag (`true` to render standard ````html ```` code fences via `ArtifactFrame`).",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "artifactHtml"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": opt-in flag ("
+                        },
+                        {
+                          "kind": "code",
+                          "text": "true"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " to render standard "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "html "
+                        },
+                        {
+                          "kind": "text",
+                          "text": " code fences via "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "ArtifactFrame"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ")."
+                        }
+                      ],
+                      "range": {
+                        "from": 2283,
+                        "to": 2387
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 11,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "artifactHtml"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": opt-in flag ("
+                              },
+                              {
+                                "kind": "code",
+                                "text": "true"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " to render standard "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "html "
+                              },
+                              {
+                                "kind": "text",
+                                "text": " code fences via "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "ArtifactFrame"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ")."
+                              }
+                            ],
+                            "text": "artifactHtml: opt-in flag (true to render standard html  code fences via ArtifactFrame).",
+                            "raw": "- `artifactHtml`: opt-in flag (`true` to render standard ````html ```` code fences via `ArtifactFrame`)."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 11,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "artifactHtml"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": opt-in flag ("
+                    },
+                    {
+                      "kind": "code",
+                      "text": "true"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " to render standard "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "html "
+                    },
+                    {
+                      "kind": "text",
+                      "text": " code fences via "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "ArtifactFrame"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ")."
+                    }
+                  ],
+                  "text": "artifactHtml: opt-in flag (true to render standard html  code fences via ArtifactFrame).",
+                  "raw": "- `artifactHtml`: opt-in flag (`true` to render standard ````html ```` code fences via `ArtifactFrame`)."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 1123,
+          "to": 2387
         }
       }
     },
     {
-      "id": "5c230943",
-      "type": "heading",
-      "isFinalized": true,
-      "payload": {
-        "raw": "Mermaid diagrams (optional)",
-        "range": {
-          "from": 1394,
-          "to": 1424
-        },
-        "meta": {
-          "headingLevel": 2,
-          "headingText": "Mermaid diagrams (optional)",
-          "headingId": "mermaid-diagrams-optional"
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "Mermaid diagrams (optional)"
-          }
-        ]
-      }
-    },
-    {
-      "id": "4a32b19",
+      "id": "24706f7e",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Mermaid is an **opt-in add-on** that renders fenced ` ```mermaid ` code blocks as diagrams (with a Diagram/Code toggle).",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
-          "from": 1426,
-          "to": 1546
+          "from": 2389,
+          "to": 2509
         },
         "inline": [
           {
@@ -605,15 +2458,7 @@
           },
           {
             "kind": "code",
-            "text": " "
-          },
-          {
-            "kind": "text",
-            "text": "`"
-          },
-          {
-            "kind": "code",
-            "text": "mermaid "
+            "text": "```mermaid"
           },
           {
             "kind": "text",
@@ -623,53 +2468,60 @@
       }
     },
     {
-      "id": "1fbd7ece",
+      "id": "361dade9",
       "type": "code",
       "isFinalized": true,
       "payload": {
         "raw": "```bash\nnpm install @stream-mdx/mermaid\n```",
-        "range": {
-          "from": 1548,
-          "to": 1591
-        },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"bash\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> install</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> @stream-mdx/mermaid</span></span></code></pre>",
         "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "npm install @stream-mdx/mermaid",
+          "info": "bash",
           "lang": "bash",
-          "code": "npm install @stream-mdx/mermaid"
-        }
+          "highlightLang": "bash"
+        },
+        "range": {
+          "from": 2511,
+          "to": 2554
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-bash\" data-language=\"bash\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> install</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> @stream-mdx/mermaid</span></span></code></pre>"
       }
     },
     {
-      "id": "1fc691a4",
+      "id": "59fc85ca",
       "type": "code",
       "isFinalized": true,
       "payload": {
-        "raw": "```tsx\nimport { MermaidBlock } from \"@stream-mdx/mermaid\";\n\n<StreamingMarkdown\n  text={text}\n  components={{ mermaid: MermaidBlock }}\n/>;\n```",
-        "range": {
-          "from": 1593,
-          "to": 1734
-        },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { MermaidBlock } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/mermaid\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{text}</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  components</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ mermaid: MermaidBlock }}</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/>;</span></span></code></pre>",
+        "raw": "```tsx\nimport { MermaidBlock } from \"@stream-mdx/mermaid\";\n\n<StreamingMarkdown\n  text={text}\n  codeRenderers={{ mermaid: MermaidBlock }}\n/>;\n```",
         "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "import { MermaidBlock } from \"@stream-mdx/mermaid\";\n\n<StreamingMarkdown\n  text={text}\n  codeRenderers={{ mermaid: MermaidBlock }}\n/>;",
+          "info": "tsx",
           "lang": "tsx",
-          "code": "import { MermaidBlock } from \"@stream-mdx/mermaid\";\n\n<StreamingMarkdown\n  text={text}\n  components={{ mermaid: MermaidBlock }}\n/>;"
-        }
+          "highlightLang": "tsx"
+        },
+        "range": {
+          "from": 2556,
+          "to": 2700
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { MermaidBlock } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/mermaid\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{text}</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  codeRenderers</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ mermaid: MermaidBlock }}</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/>;</span></span></code></pre>"
       }
     },
     {
-      "id": "663ff909",
+      "id": "40038f07",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Scheduling and metrics",
-        "range": {
-          "from": 1736,
-          "to": 1761
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Scheduling and metrics",
           "headingId": "scheduling-and-metrics"
+        },
+        "range": {
+          "from": 2702,
+          "to": 2727
         },
         "inline": [
           {
@@ -680,17 +2532,24 @@
       }
     },
     {
-      "id": "6829cd87",
+      "id": "62bec830",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- `scheduling`: patch scheduler/backpressure knobs (frame budget, batch caps, history size).\n- `onMetrics`: flush metrics callback (queue depth, timings, adaptive throttling state).",
-        "range": {
-          "from": 1763,
-          "to": 1944
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -713,19 +2572,175 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "62bec830::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 2729,
+                  "to": 2821
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "62bec830::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `scheduling`: patch scheduler/backpressure knobs (frame budget, batch caps, history size).",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "scheduling"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": patch scheduler/backpressure knobs (frame budget, batch caps, history size)."
+                        }
+                      ],
+                      "range": {
+                        "from": 2729,
+                        "to": 2821
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "scheduling"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": patch scheduler/backpressure knobs (frame budget, batch caps, history size)."
+                              }
+                            ],
+                            "text": "scheduling: patch scheduler/backpressure knobs (frame budget, batch caps, history size).",
+                            "raw": "- `scheduling`: patch scheduler/backpressure knobs (frame budget, batch caps, history size)."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "scheduling"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": patch scheduler/backpressure knobs (frame budget, batch caps, history size)."
+                    }
+                  ],
+                  "text": "scheduling: patch scheduler/backpressure knobs (frame budget, batch caps, history size).",
+                  "raw": "- `scheduling`: patch scheduler/backpressure knobs (frame budget, batch caps, history size)."
+                },
+                "children": []
+              },
+              {
+                "id": "62bec830::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 2822,
+                  "to": 2910
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "62bec830::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `onMetrics`: flush metrics callback (queue depth, timings, adaptive throttling state).",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "onMetrics"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": flush metrics callback (queue depth, timings, adaptive throttling state)."
+                        }
+                      ],
+                      "range": {
+                        "from": 2822,
+                        "to": 2910
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "onMetrics"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": flush metrics callback (queue depth, timings, adaptive throttling state)."
+                              }
+                            ],
+                            "text": "onMetrics: flush metrics callback (queue depth, timings, adaptive throttling state).",
+                            "raw": "- `onMetrics`: flush metrics callback (queue depth, timings, adaptive throttling state)."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "onMetrics"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": flush metrics callback (queue depth, timings, adaptive throttling state)."
+                    }
+                  ],
+                  "text": "onMetrics: flush metrics callback (queue depth, timings, adaptive throttling state).",
+                  "raw": "- `onMetrics`: flush metrics callback (queue depth, timings, adaptive throttling state)."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 2729,
+          "to": 2910
         }
       }
     },
     {
-      "id": "4cb0bfd6",
+      "id": "2a854ea8",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "For exact types and defaults, see `docs/PUBLIC_API.md`.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
-          "from": 1946,
-          "to": 2001
+          "from": 2912,
+          "to": 2967
         },
         "inline": [
           {
@@ -747,51 +2762,45 @@
   "tocHeadings": [
     {
       "id": "configuration",
-      "text": "Configuration",
+      "blockId": "db082c0",
       "level": 1,
-      "blockId": "db082c0"
+      "text": "Configuration"
     },
     {
       "id": "feature-flags",
-      "text": "Feature flags",
+      "blockId": "338fa8fe",
       "level": 2,
-      "blockId": "338fa8fe"
+      "text": "Feature flags"
     },
     {
       "id": "formatanticipation",
-      "text": "`formatAnticipation`",
+      "blockId": "35438c25",
       "level": 3,
-      "blockId": "35438c25"
+      "text": "`formatAnticipation`"
     },
     {
       "id": "worker",
-      "text": "Worker",
+      "blockId": "45b2f9da",
       "level": 2,
-      "blockId": "45b2f9da"
+      "text": "Worker"
     },
     {
       "id": "mdx",
-      "text": "MDX",
+      "blockId": "567a5ebd",
       "level": 2,
-      "blockId": "567a5ebd"
+      "text": "MDX"
     },
     {
       "id": "rendering-overrides",
-      "text": "Rendering overrides",
+      "blockId": "357af681",
       "level": 2,
-      "blockId": "357af681"
-    },
-    {
-      "id": "mermaid-diagrams-optional",
-      "text": "Mermaid diagrams (optional)",
-      "level": 2,
-      "blockId": "5c230943"
+      "text": "Rendering overrides"
     },
     {
       "id": "scheduling-and-metrics",
-      "text": "Scheduling and metrics",
+      "blockId": "40038f07",
       "level": 2,
-      "blockId": "663ff909"
+      "text": "Scheduling and metrics"
     }
   ],
   "init": {

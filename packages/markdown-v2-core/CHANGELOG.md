@@ -1,5 +1,10 @@
 # @stream-mdx/core
 
+## Unreleased
+
+- Preserve unclosed fence content by default and after finalization. Provisional code rendering hides only unfinished closing markers that match the opening fence.
+- Keep outer emphasis, strong, and strikethrough previews when repairing incomplete math.
+
 ## 0.5.0
 
 ### Minor Changes

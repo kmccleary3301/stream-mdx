@@ -15,6 +15,7 @@ import {
 } from "@stream-mdx/core";
 import { getPatchKind } from "@stream-mdx/core/perf/patch-batching";
 import { normalizeAllListDepths, normalizeListDepthsForIds } from "./list-utils";
+import { registerNodeSubscriptions } from "./node-subscriptions";
 import { type CoalescingMetrics, DEFAULT_COALESCE_CONFIG, coalescePatchesWithMetrics } from "./patch-coalescing";
 
 export interface NodeRecord {
@@ -37,6 +38,10 @@ export interface ApplyPatchesOptions {
   allowEmpty?: boolean;
 }
 
+export interface RendererStoreOptions {
+  themes?: { light: string; dark: string };
+}
+
 export interface RendererStore {
   reset(blocks: Block[]): void;
   applyPatches(patches: Patch[], options?: ApplyPatchesOptions): Set<string>;
@@ -50,6 +55,8 @@ export interface RendererStore {
   getDebugCounters(): Readonly<Record<string, number>>;
   subscribe(listener: () => void): () => void;
   getLastCoalescingMetrics(): CoalescingMetrics | null;
+  getThemes(): { light: string; dark: string } | undefined;
+  setThemes(themes?: { light: string; dark: string }): void;
 }
 
 function snapshotToBlock(node: NodeSnapshot): Block | null {
@@ -57,10 +64,35 @@ function snapshotToBlock(node: NodeSnapshot): Block | null {
   if (candidate && typeof candidate === "object") {
     return cloneBlock(candidate as Block);
   }
+  if (node.type && node.id) {
+    return {
+      id: node.id,
+      type: node.type as Block["type"],
+      isFinalized: true,
+      payload: {
+        raw: typeof node.props?.raw === "string" ? node.props.raw : typeof node.props?.text === "string" ? node.props.text : "",
+        inline: Array.isArray(node.props?.inline) ? (node.props.inline as any) : undefined,
+        meta: node.props ?? {},
+      },
+    };
+  }
   return null;
 }
 
 type NodeMap = Map<string, NodeRecord>;
+
+// Ids whose record object or version changed during the current synchronous store mutation. Keyed node
+// subscriptions wake exactly these ids: the same condition `getNodeWithVersion` snapshots change on.
+let activeChangedIds: Set<string> | null = null;
+
+function markRecordChanged(id: string): void {
+  activeChangedIds?.add(id);
+}
+
+function bumpVersion(record: NodeRecord): void {
+  record.version++;
+  activeChangedIds?.add(record.id);
+}
 
 const nodeSnapshotCacheByMap = new WeakMap<NodeMap, Map<string, { version: number; node?: NodeRecord }>>();
 const childrenSnapshotCacheByMap = new WeakMap<NodeMap, Map<string, { version: number; children: ReadonlyArray<string> }>>();
@@ -100,6 +132,7 @@ function pruneCache<T>(cache: Map<string, T>, max: number, buffer: number) {
 function deleteSnapshotCacheEntry(map: NodeMap, id: string) {
   getNodeSnapshotCacheForMap(map).delete(id);
   getChildrenSnapshotCacheForMap(map).delete(id);
+  markRecordChanged(id);
 }
 
 function clearSnapshotCaches(map: NodeMap) {
@@ -388,7 +421,7 @@ function assignSubtreeBlockEpoch(map: NodeMap, rootId: string, blockEpoch: numbe
     if (!node) continue;
     if (node.blockEpoch !== blockEpoch) {
       node.blockEpoch = blockEpoch;
-      node.version += 1;
+      bumpVersion(node);
       touched?.add(node.id);
     }
     for (const childId of node.children) {
@@ -440,7 +473,7 @@ function ensureUniqueChildren(parent: NodeRecord, touched?: Set<string>) {
   }
   if (mutated) {
     parent.children = deduped;
-    parent.version++;
+    bumpVersion(parent);
     if (touched) {
       touched.add(parent.id);
     }
@@ -532,7 +565,7 @@ function normalizeCodeBlockChildren(nodes: NodeMap, parent: NodeRecord, touched:
     }
     if (node.parentId !== parent.id) {
       node.parentId = parent.id;
-      node.version++;
+      bumpVersion(node);
       touched.add(node.id);
     }
     if (node.type !== "code-line") {
@@ -597,15 +630,17 @@ function normalizeCodeBlockChildren(nodes: NodeMap, parent: NodeRecord, touched:
       deleteSnapshotCacheEntry(nodes, previousId);
       node.id = desiredId;
       nodes.set(desiredId, node);
+      markRecordChanged(desiredId);
       touched.add(desiredId);
       mutated = true;
     } else if (!nodes.has(desiredId)) {
       nodes.set(desiredId, node);
+      markRecordChanged(desiredId);
     }
 
     if (node.parentId !== parent.id) {
       node.parentId = parent.id;
-      node.version++;
+      bumpVersion(node);
       touched.add(node.id);
       mutated = true;
     }
@@ -617,7 +652,7 @@ function normalizeCodeBlockChildren(nodes: NodeMap, parent: NodeRecord, touched:
     const normalizedProps = normalizeCodeLineProps(incoming, node.props);
     if (normalizedProps !== node.props) {
       node.props = normalizedProps;
-      node.version++;
+      bumpVersion(node);
       touched.add(node.id);
       mutated = true;
     }
@@ -637,7 +672,7 @@ function normalizeCodeBlockChildren(nodes: NodeMap, parent: NodeRecord, touched:
 
   if (!arraysEqual(previousChildren, nextChildren)) {
     parent.children = nextChildren;
-    parent.version++;
+    bumpVersion(parent);
     touched.add(parent.id);
     mutated = true;
   }
@@ -690,18 +725,21 @@ function normalizeCodeLineProps(incoming: Record<string, unknown>, previous?: Re
   const previousHtml = typeof previous?.html === "string" ? (previous?.html as string) : null;
   const previousTokens = Object.prototype.hasOwnProperty.call(previous ?? {}, "tokens") ? (previous?.tokens as TokenLineV1 | null) : undefined;
   const hasIncomingText = typeof incoming.text === "string";
-  const hasIncomingHtml = typeof incoming.html === "string";
+  const hasIncomingHtml = typeof incoming.html === "string" || incoming.html === null;
   const hasIncomingTokens = Object.prototype.hasOwnProperty.call(incoming, "tokens");
   const incomingTokens = hasIncomingTokens ? (incoming.tokens as TokenLineV1 | null) : undefined;
   const rawText = hasIncomingText ? (incoming.text as string) : previousText;
+  // Re-normalizing a line with its own props (code-block normalization) must keep the props object: re-running
+  // the sanitizer on already-sanitized html cannot change it, and a new object re-renders every line.
+  const tokensUnchanged = !hasIncomingTokens || incomingTokens === previousTokens;
 
-  if (previous && !hasIncomingHtml && !hasIncomingTokens && index === previousIndex && (!hasIncomingText || rawText === previousText)) {
+  if (previous && !hasIncomingHtml && tokensUnchanged && index === previousIndex && (!hasIncomingText || rawText === previousText)) {
     return previous;
   }
   if (
     previous &&
     hasIncomingHtml &&
-    !hasIncomingTokens &&
+    tokensUnchanged &&
     incoming.html === previousHtml &&
     index === previousIndex &&
     (!hasIncomingText || rawText === previousText)
@@ -711,7 +749,7 @@ function normalizeCodeLineProps(incoming: Record<string, unknown>, previous?: Re
 
   let highlight: string | null = null;
   if (hasIncomingHtml) {
-    highlight = incoming.html as string;
+    highlight = incoming.html as string | null;
   } else if (!hasIncomingText || rawText === previousText) {
     highlight = previousHtml;
   }
@@ -726,7 +764,8 @@ function normalizeCodeLineProps(incoming: Record<string, unknown>, previous?: Re
   } else {
     tokens = null;
   }
-  return createCodeLineProps(index, rawText, highlight, tokens);
+  const normalized = createCodeLineProps(index, rawText, highlight, tokens);
+  return previous && shallowEqualRecords(previous, normalized) ? previous : normalized;
 }
 
 function createCodeLineProps(index: number, text: string, highlight: string | null, tokens?: TokenLineV1 | null): Record<string, unknown> {
@@ -791,7 +830,7 @@ function mergeInlineSegmentProps(previous: Record<string, unknown> | undefined, 
   return result;
 }
 
-function applyCodeBlockMetadata(record: NodeRecord) {
+function applyCodeBlockMetadata(record: NodeRecord, themes?: { light?: string; dark?: string }) {
   const block = record.block;
   const highlightedHtml = block?.payload.highlightedHtml ?? "";
   const lang = typeof block?.payload.meta?.lang === "string" ? (block?.payload.meta?.lang as string) : record.props?.lang;
@@ -801,7 +840,7 @@ function applyCodeBlockMetadata(record: NodeRecord) {
       : highlightedHtml;
   let { preAttrs, codeAttrs } = extractCodeWrapperAttributes(wrapperProbe);
   if (!preAttrs || !codeAttrs) {
-    const defaults = getDefaultCodeWrapperAttributes(typeof lang === "string" ? lang : undefined);
+    const defaults = getDefaultCodeWrapperAttributes(typeof lang === "string" ? lang : undefined, themes);
     preAttrs = preAttrs ?? defaults.preAttrs;
     codeAttrs = codeAttrs ?? defaults.codeAttrs;
   }
@@ -917,7 +956,7 @@ function rebuildCodeBlockFromSnapshot(nodes: NodeMap, parent: NodeRecord, touche
   for (const id of inserted.insertedIds) {
     touched.add(id);
   }
-  ancestor.version++;
+  bumpVersion(ancestor);
   touched.add(ancestor.id);
   console.warn("[renderer-store] rebuilt code block from snapshot", {
     parentId: parent.id,
@@ -989,13 +1028,21 @@ function collectStoreInvariantViolations(nodes: NodeMap): string[] {
 
   return violations;
 }
-function buildNodeFromSnapshot(map: NodeMap, snapshot: NodeSnapshot, parentId: string | null, blockEpoch: number): NodeRecord {
+function buildNodeFromSnapshot(
+  map: NodeMap,
+  snapshot: NodeSnapshot,
+  parentId: string | null,
+  blockEpoch: number,
+  themes?: { light?: string; dark?: string },
+  previous?: ReadonlyMap<string, NodeRecord>,
+): NodeRecord {
+  const prior = previous?.get(snapshot.id);
   const record: NodeRecord = {
     id: snapshot.id,
     type: snapshot.type,
     parentId,
     children: [],
-    props: normalizeNodeProps(snapshot),
+    props: prior && codeLineSnapshotMatches(snapshot, prior) ? prior.props : normalizeNodeProps(snapshot),
     meta: snapshot.meta ? { ...snapshot.meta } : undefined,
     range: snapshot.range ? { ...snapshot.range } : undefined,
     version: 0,
@@ -1004,18 +1051,100 @@ function buildNodeFromSnapshot(map: NodeMap, snapshot: NodeSnapshot, parentId: s
   };
 
   if (record.type === "code") {
-    applyCodeBlockMetadata(record);
+    applyCodeBlockMetadata(record, themes);
   }
 
   map.set(record.id, record);
+  markRecordChanged(record.id);
 
   const childSnapshots = ensureArray(snapshot.children);
   for (const child of childSnapshots) {
-    const childRecord = buildNodeFromSnapshot(map, child, record.id, blockEpoch);
+    const childRecord = buildNodeFromSnapshot(map, child, record.id, blockEpoch, themes, previous);
     record.children.push(childRecord.id);
   }
 
+  if (prior && previous && recordMatchesPrior(map, record, prior, previous)) {
+    // Same derived content as the record being replaced: keep its identity so views bail out.
+    prior.blockEpoch = blockEpoch;
+    map.set(prior.id, prior);
+    return prior;
+  }
+  if (prior) {
+    // Share unchanged leaves of a changed record (props and block are replaced wholesale, never mutated).
+    if (plainDataEqual(record.props, prior.props)) record.props = prior.props;
+    if (record.block && prior.block && plainDataEqual(record.block, prior.block)) record.block = prior.block;
+  }
   return record;
+}
+
+/**
+ * Mirrors `normalizeCodeLineProps`: a line whose text, index, tokens and html are unchanged keeps its props.
+ * Streamed lines store `tokens: null` where a snapshot omits the key; views read tokens by truthiness only.
+ */
+function codeLineSnapshotMatches(snapshot: NodeSnapshot, prior: NodeRecord): boolean {
+  if (snapshot.type !== "code-line" || prior.type !== "code-line") return false;
+  const props = snapshot.props ?? {};
+  const priorProps = prior.props;
+  const index = typeof props.index === "number" ? props.index : 0;
+  if (index !== priorProps.index || props.text !== priorProps.text) return false;
+  if (typeof props.html !== "string" || props.html !== priorProps.html) return false;
+  return plainDataEqual(props.tokens ?? null, priorProps.tokens ?? null);
+}
+
+/**
+ * A rebuilt record equals the record it replaces when every derived field matches and every child resolved to
+ * the prior child object. List `depth` is the only store-derived prop: list normalization recomputes it after
+ * the replace, so it is ignored here. Code lines are rendered from props alone (a snapshot also attaches a
+ * per-line `block` that streamed lines never carry), so their props decide.
+ */
+function recordMatchesPrior(map: NodeMap, record: NodeRecord, prior: NodeRecord, previous: ReadonlyMap<string, NodeRecord>): boolean {
+  if (prior.type !== record.type || prior.parentId !== record.parentId) return false;
+  if (record.type === "code-line") return record.props === prior.props && record.children.length === 0 && prior.children.length === 0;
+  if (!arraysEqual(prior.children, record.children)) return false;
+  for (const childId of record.children) {
+    if (map.get(childId) !== previous.get(childId)) return false;
+  }
+  if (!plainDataEqual(record.meta, prior.meta) || !plainDataEqual(record.range, prior.range)) return false;
+  if (!plainDataEqual(record.block, prior.block)) return false;
+  if (record.type === "list" || record.type === "list-item") {
+    const { depth: _priorDepth, ...priorProps } = prior.props;
+    return plainDataEqual(record.props, priorProps);
+  }
+  return plainDataEqual(record.props, prior.props);
+}
+
+/** Strict structural equality for structured-clone data (snapshot props, blocks, meta). */
+function plainDataEqual(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
+  if (Array.isArray(a)) {
+    if (!Array.isArray(b) || a.length !== b.length) return false;
+    for (let index = 0; index < a.length; index++) {
+      if (!plainDataEqual(a[index], b[index])) return false;
+    }
+    return true;
+  }
+  if (Array.isArray(b)) return false;
+  const recordA = a as Record<string, unknown>;
+  const recordB = b as Record<string, unknown>;
+  const keys = Object.keys(recordA);
+  if (keys.length !== Object.keys(recordB).length) return false;
+  for (const key of keys) {
+    if (!Object.prototype.hasOwnProperty.call(recordB, key) || !plainDataEqual(recordA[key], recordB[key])) return false;
+  }
+  return true;
+}
+
+function collectSubtreeRecords(map: NodeMap, rootId: string): Map<string, NodeRecord> {
+  const records = new Map<string, NodeRecord>();
+  const stack = [rootId];
+  while (stack.length > 0) {
+    const record = map.get(stack.pop() as string);
+    if (!record || records.has(record.id)) continue;
+    records.set(record.id, record);
+    for (const childId of record.children) stack.push(childId);
+  }
+  return records;
 }
 
 function removeSubtree(map: NodeMap, id: string, touched: Set<string>) {
@@ -1034,7 +1163,7 @@ function removeSubtree(map: NodeMap, id: string, touched: Set<string>) {
         const idx = parent.children.indexOf(node.id);
         if (idx !== -1) {
           parent.children.splice(idx, 1);
-          parent.version++;
+          bumpVersion(parent);
           touched.add(parent.id);
           affectedParents.add(parent.id);
         }
@@ -1056,12 +1185,19 @@ function removeSubtree(map: NodeMap, id: string, touched: Set<string>) {
   }
 }
 
-function convertNodeToBlocks(map: NodeMap, root: NodeRecord): Block[] {
+// Internal records are copy-on-write (every block change assigns a new `record.block`), so one public clone per
+// internal block object stays valid until that record changes; unchanged blocks keep their identity across reads.
+function convertNodeToBlocks(map: NodeMap, root: NodeRecord, publicBlocks: WeakMap<Block, Block>): Block[] {
   const result: Block[] = [];
   for (const childId of root.children) {
     const child = map.get(childId);
     if (!child || !child.block) continue;
-    result.push(cloneBlock(child.block));
+    let block = publicBlocks.get(child.block);
+    if (!block) {
+      block = cloneBlock(child.block);
+      publicBlocks.set(child.block, block);
+    }
+    result.push(block);
   }
   return result;
 }
@@ -1083,13 +1219,15 @@ function insertSnapshotAt(
   snapshot: NodeSnapshot,
   touched?: Set<string>,
   blockEpoch?: number,
+  themes?: { light?: string; dark?: string },
+  previous?: ReadonlyMap<string, NodeRecord>,
 ): { record: NodeRecord; insertedIds: string[] } | null {
   if (!parent) return null;
   const existingIndex = parent.children.indexOf(snapshot.id);
   if (existingIndex !== -1) {
     removeSubtree(map, parent.children[existingIndex], touched ?? new Set<string>());
   }
-  const record = buildNodeFromSnapshot(map, snapshot, parent.id, blockEpoch ?? readSnapshotBlockEpoch(snapshot) ?? parent.blockEpoch);
+  const record = buildNodeFromSnapshot(map, snapshot, parent.id, blockEpoch ?? readSnapshotBlockEpoch(snapshot) ?? parent.blockEpoch, themes, previous);
   const insertedIds: string[] = [];
 
   const queue = [record];
@@ -1105,7 +1243,7 @@ function insertSnapshotAt(
 
   const clampedIndex = Math.min(Math.max(index, 0), parent.children.length);
   parent.children.splice(clampedIndex, 0, record.id);
-  parent.version++;
+  bumpVersion(parent);
   ensureUniqueChildren(parent, touched);
   return { record, insertedIds };
 }
@@ -1117,13 +1255,34 @@ function replaceSnapshotAt(
   snapshot: NodeSnapshot,
   touched: Set<string>,
   blockEpoch?: number,
+  themes?: { light?: string; dark?: string },
 ) {
   if (!parent) return;
   if (index < 0 || index >= parent.children.length) return;
   const targetId = parent.children[index];
+  // Rebuild from the snapshot, but let unchanged records keep their identity (and their React snapshots), so a
+  // canonical replace of an already-correct block re-renders nothing.
+  const previous = collectSubtreeRecords(map, targetId);
+  const nodeSnapshots = getNodeSnapshotCacheForMap(map);
+  const childrenSnapshots = getChildrenSnapshotCacheForMap(map);
+  const previousNodeSnapshots = new Map<string, { version: number; node?: NodeRecord }>();
+  const previousChildrenSnapshots = new Map<string, { version: number; children: ReadonlyArray<string> }>();
+  for (const id of previous.keys()) {
+    const nodeSnapshot = nodeSnapshots.get(id);
+    if (nodeSnapshot) previousNodeSnapshots.set(id, nodeSnapshot);
+    const childrenSnapshot = childrenSnapshots.get(id);
+    if (childrenSnapshot) previousChildrenSnapshots.set(id, childrenSnapshot);
+  }
   parent.children.splice(index, 1);
   removeSubtree(map, targetId, touched);
-  const inserted = insertSnapshotAt(map, parent, index, snapshot, touched, blockEpoch);
+  const inserted = insertSnapshotAt(map, parent, index, snapshot, touched, blockEpoch, themes, previous);
+  for (const [id, record] of previous) {
+    if (map.get(id) !== record) continue;
+    const nodeSnapshot = previousNodeSnapshots.get(id);
+    if (nodeSnapshot) nodeSnapshots.set(id, nodeSnapshot);
+    const childrenSnapshot = previousChildrenSnapshots.get(id);
+    if (childrenSnapshot) childrenSnapshots.set(id, childrenSnapshot);
+  }
   if (inserted) {
     for (const id of inserted.insertedIds) {
       touched.add(id);
@@ -1136,15 +1295,21 @@ function replaceSnapshotAt(
   }
 }
 
-export function createRendererStore(initialBlocks: Block[] = []): RendererStore {
+export function createRendererStore(initialBlocks: Block[] = [], options?: RendererStoreOptions): RendererStore {
+  let currentThemes = options?.themes;
   let nodes: NodeMap = new Map();
   let version = 0;
   let blocksCache: Block[] = [];
   let blocksDirty = true;
+  const publicBlocks = new WeakMap<Block, Block>();
   const listeners = new Set<() => void>();
+  const nodeListeners = new Map<string, Set<() => void>>();
+  let pendingChangedIds = new Set<string>();
+  let notifyAllNodes = true;
   let notifyScheduled = false;
   let lastCoalescingMetrics: CoalescingMetrics | null = null;
-  let invariantViolations: string[] = [];
+  // Structural invariants are scanned lazily on read; `null` marks the tree changed since the last scan.
+  let structuralViolations: string[] | null = null;
   let transientDiagnostics: string[] = [];
   let nextBlockEpoch = 1;
   const debugCounters: StoreDebugCounters = {
@@ -1191,19 +1356,36 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
     }
   }
 
+  function callListener(listener: () => void) {
+    try {
+      listener();
+    } catch (error) {
+      console.error("RendererStore listener failed", error);
+    }
+  }
+
   function notify() {
-    for (const listener of listeners) {
-      try {
-        listener();
-      } catch (error) {
-        console.error("RendererStore listener failed", error);
+    const changedIds = pendingChangedIds;
+    const wakeAllNodes = notifyAllNodes;
+    pendingChangedIds = new Set();
+    notifyAllNodes = false;
+    for (const listener of listeners) callListener(listener);
+    if (wakeAllNodes) {
+      for (const nodeSet of nodeListeners.values()) {
+        for (const listener of nodeSet) callListener(listener);
       }
+      return;
+    }
+    for (const id of changedIds) {
+      const nodeSet = nodeListeners.get(id);
+      if (!nodeSet) continue;
+      for (const listener of nodeSet) callListener(listener);
     }
   }
 
   function appendDiagnostic(message: string) {
     transientDiagnostics = [...transientDiagnostics, message];
-    invariantViolations = [...invariantViolations, message];
+    debugCounters.storeInvariantViolationCount += 1;
   }
 
   function rebuildFromBlocks(blocks: Block[]) {
@@ -1220,10 +1402,10 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
     }
     normalizeAllListDepths(nodes, new Set<string>(), PATCH_ROOT_ID);
     transientDiagnostics = [];
-    invariantViolations = collectStoreInvariantViolations(nodes);
-    debugCounters.storeInvariantViolationCount += invariantViolations.length;
+    structuralViolations = null;
     version++;
     blocksDirty = true;
+    notifyAllNodes = true;
     // Defer notification to avoid React "Cannot update a component while rendering" warning
     // Use rAF (or fallback) to align with frame updates
     scheduleNotify();
@@ -1242,7 +1424,7 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
         lastCoalescingMetrics = options?.metrics ?? null;
         return touched;
       }
-
+      activeChangedIds = pendingChangedIds;
       const perfEnabled = isPatchPerfDebugEnabled();
       const perfStart = perfEnabled ? getPerfNow() : 0;
       const opStats: Record<string, PatchPerfOpSummary> = perfEnabled ? {} : {};
@@ -1265,6 +1447,7 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
       const root = nodes.get(PATCH_ROOT_ID);
       if (!root) {
         nodes.set(PATCH_ROOT_ID, createRootRecord());
+        markRecordChanged(PATCH_ROOT_ID);
       }
 
       let mutatedBlocks = false;
@@ -1397,11 +1580,11 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
             if (semanticUpdate) {
               advanceBlockEpoch(at.blockId, touched, preferredEpoch, tx);
             }
-            target.version++;
+            bumpVersion(target);
             touched.add(target.id);
             const parent = target.parentId ? nodes.get(target.parentId) : undefined;
             if (parent) {
-              parent.version++;
+              bumpVersion(parent);
               touched.add(parent.id);
               if (parent.type === "code") {
                 normalizeCodeBlockChildren(nodes, parent, touched);
@@ -1477,12 +1660,13 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
             }
           }
           if (target.type === "code") {
-            applyCodeBlockMetadata(target);
+            applyCodeBlockMetadata(target, currentThemes);
           }
           if (semanticUpdate) {
             advanceBlockEpoch(at.blockId, touched, preferredEpoch, tx);
             blockEpochAdvanced = true;
           }
+
           const shouldRebuildFinalizedTree =
             !at.nodeId &&
             target.id === at.blockId &&
@@ -1518,7 +1702,7 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
             advanceBlockEpoch(at.blockId, touched, preferredEpoch, tx);
             blockEpochAdvanced = true;
           }
-          target.version++;
+          bumpVersion(target);
           touched.add(target.id);
 
           let parentForNormalization: NodeRecord | undefined;
@@ -1526,7 +1710,7 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
             const parent = nodes.get(target.parentId);
             if (parent) {
               if (target.type === "code-line") {
-                parent.version++;
+                bumpVersion(parent);
                 touched.add(parent.id);
               }
               if (parent.type === "code") {
@@ -1608,7 +1792,7 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
             if (childId) {
               const removedNode = nodes.get(childId);
               removeSubtree(nodes, childId, touched);
-              parent.version++;
+              bumpVersion(parent);
               touched.add(parent.id);
               ensureUniqueChildren(parent, touched);
               mutatedBlocks = true;
@@ -1644,7 +1828,8 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
             touched.add(parent.id);
             mutatedBlocks = true;
             advanceBlockEpoch(patch.at.blockId, touched, readPatchParseEpoch(patch), readPatchTx(patch));
-            if (isListRelated(parent.type)) {
+            if (isListRelated(parent.type) || isListRelated(patch.node.type)) {
+              markListDepthDirty(patch.node.id);
               markListDepthDirty(parent.id);
             }
             if (debugListPatches && isListRelated(parent.type)) {
@@ -1692,7 +1877,7 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
             if (!target.block.isFinalized) {
               target.block = cloneBlock(target.block);
               target.block.isFinalized = true;
-              target.version++;
+              bumpVersion(target);
               touched.add(target.id);
               mutatedBlocks = true;
 
@@ -1734,7 +1919,7 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
             }
             const moved = parent.children.splice(from, count);
             parent.children.splice(to, 0, ...moved);
-            parent.version++;
+            bumpVersion(parent);
             touched.add(parent.id);
             if (getPatchKind(patch) === "semantic") {
               advanceBlockEpoch(patch.at.blockId, touched, readPatchParseEpoch(patch), readPatchTx(patch));
@@ -1808,13 +1993,13 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
                 }
                 if (existing.parentId !== parent.id) {
                   existing.parentId = parent.id;
-                  existing.version++;
+                  bumpVersion(existing);
                   touched.add(lineId);
                   codeLinesMutated = true;
                 }
                 if (!shallowEqualRecords(existing.props as Record<string, unknown> | undefined, nextLineProps)) {
                   existing.props = nextLineProps;
-                  existing.version++;
+                  bumpVersion(existing);
                   touched.add(lineId);
                   codeLinesMutated = true;
                 }
@@ -1829,6 +2014,7 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
                   blockEpoch: parent.blockEpoch,
                 };
                 nodes.set(lineId, record);
+                markRecordChanged(lineId);
                 touched.add(lineId);
                 codeLinesMutated = true;
               }
@@ -1861,7 +2047,7 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
                   const normalized = normalizeCodeLineProps(incoming, child.props);
                   if (normalized !== child.props) {
                     child.props = normalized;
-                    child.version++;
+                    bumpVersion(child);
                     touched.add(child.id);
                     codeLinesMutated = true;
                   }
@@ -1870,7 +2056,7 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
             }
 
             if (parentChildrenChanged || codeLinesMutated) {
-              parent.version++;
+              bumpVersion(parent);
               touched.add(parent.id);
               if (!isTrailingAppend) {
                 normalizeCodeBlockChildren(nodes, parent, touched);
@@ -1900,8 +2086,12 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
               mutatedBlocks = true;
             }
 
-            target.version++;
+            bumpVersion(target);
             touched.add(target.id);
+            // Like semantic setProps: the next patch for this block expects the epoch this one establishes.
+            if (getPatchKind(patch) === "semantic") {
+              advanceBlockEpoch(patch.at.blockId, touched, readPatchParseEpoch(patch), readPatchTx(patch));
+            }
             break;
           }
           default:
@@ -1974,8 +2164,10 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
         }
       }
 
-      invariantViolations = [...collectStoreInvariantViolations(nodes), ...transientDiagnostics];
-      debugCounters.storeInvariantViolationCount += invariantViolations.length;
+      structuralViolations = null;
+
+      for (const id of touched) pendingChangedIds.add(id);
+      activeChangedIds = null;
 
       if (touched.size > 0 || mutatedBlocks) {
         version++;
@@ -2014,7 +2206,7 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
       if (!root) {
         blocksCache = [];
       } else {
-        blocksCache = convertNodeToBlocks(nodes, root);
+        blocksCache = convertNodeToBlocks(nodes, root, publicBlocks);
       }
       blocksDirty = false;
       return blocksCache;
@@ -2070,7 +2262,11 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
     },
 
     getInvariantViolations() {
-      return invariantViolations.slice();
+      if (structuralViolations === null) {
+        structuralViolations = collectStoreInvariantViolations(nodes);
+        debugCounters.storeInvariantViolationCount += structuralViolations.length;
+      }
+      return [...structuralViolations, ...transientDiagnostics];
     },
 
     getDebugCounters() {
@@ -2087,7 +2283,30 @@ export function createRendererStore(initialBlocks: Block[] = []): RendererStore 
         listeners.delete(listener);
       };
     },
+
+    getThemes() {
+      return currentThemes;
+    },
+
+    setThemes(themes?: { light: string; dark: string }) {
+      currentThemes = themes;
+    },
   };
+
+  registerNodeSubscriptions(store, (id, listener) => {
+    let nodeSet = nodeListeners.get(id);
+    if (!nodeSet) {
+      nodeSet = new Set();
+      nodeListeners.set(id, nodeSet);
+    }
+    nodeSet.add(listener);
+    return () => {
+      const current = nodeListeners.get(id);
+      if (!current) return;
+      current.delete(listener);
+      if (current.size === 0) nodeListeners.delete(id);
+    };
+  });
 
   return store;
 }

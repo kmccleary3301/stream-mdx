@@ -5,7 +5,7 @@ import path from "node:path";
 import { existsSync, promises as fs } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-import { compileMarkdownSnapshot, computeSnapshotHash } from "../src/node/index";
+import { compileMarkdownSnapshot, computeSnapshotHash, type CompileMarkdownSnapshotOptions, type SnapshotArtifactV1 } from "../src/node/index";
 
 async function readJsonEventually<T>(filePath: string, predicate: (value: unknown) => value is T, timeoutMs = 2000): Promise<T> {
   const deadline = Date.now() + timeoutMs;
@@ -35,7 +35,14 @@ async function runLegacyCacheCompatibilityTest(): Promise<void> {
   const cacheDir = await fs.mkdtemp(path.join(os.tmpdir(), "stream-mdx-legacy-cache-"));
   try {
     const text = ["# Title", "", "body"].join("\n");
-    const init = { docPlugins: { html: true, tables: true, footnotes: true }, prewarmLangs: [] };
+    const init = {
+      docPlugins: { html: true, tables: true, footnotes: true },
+      mdx: { compileMode: "server" },
+      prewarmLangs: [],
+      themes: { light: "min-light", dark: "nord" },
+      syntax: [{ name: "ticket", pattern: { source: "#([A-Z]+-\\d+)" }, attrs: { id: 1 } }],
+      html: { allowRaw: true, allowedTags: { kbd: [] }, literalTagContent: ["kbd"] },
+    } satisfies NonNullable<CompileMarkdownSnapshotOptions["init"]>;
     const hashSalt = "legacy-cache-compat";
     const key = "legacy-cache-key";
     const hash = computeSnapshotHash(text, init, hashSalt);
@@ -81,6 +88,33 @@ async function runLegacyCacheCompatibilityTest(): Promise<void> {
     assert.strictEqual(parsed.schemaId, "streammdx.snapshot.v1", "cache should include the current schema id");
     assert.strictEqual(parsed.hash, hash, "rewritten cache should preserve compile hash");
     assert.ok(Array.isArray(parsed.blocks) && parsed.blocks.length > 0, "rewritten cache should include compiled blocks");
+
+    // A matching v1 cache written before init metadata preservation must remain a hit.
+    const cachedArtifact: SnapshotArtifactV1 = {
+      ...result.artifact,
+      createdAt: "2025-01-01T00:00:00.000Z",
+      init: {
+        docPlugins: init.docPlugins,
+        mdx: init.mdx,
+        prewarmLangs: init.prewarmLangs,
+      },
+    };
+    await fs.writeFile(cachePath, JSON.stringify(cachedArtifact), "utf8");
+    const cachedResult = await compileMarkdownSnapshot({
+      text,
+      init,
+      hashSalt,
+      cache: { dir: cacheDir, key, readOnly: true },
+    });
+    assert.strictEqual(cachedResult.fromCache, true, "matching v1 metadata repair must not recompile");
+    assert.deepStrictEqual(cachedResult.artifact.init, result.artifact.init, "cache-hit and fresh artifacts must use the same public-init projection");
+    assert.deepStrictEqual(JSON.parse(JSON.stringify(cachedResult.artifact)).init, init, "cache-hit artifact serialization must preserve every actual public init field");
+    assert.strictEqual(cachedResult.artifact.hash, cachedArtifact.hash, "metadata repair must preserve the compile hash");
+    assert.strictEqual(cachedResult.artifact.contentHash, cachedArtifact.contentHash, "metadata repair must preserve the content hash");
+    assert.strictEqual(cachedResult.artifact.configHash, cachedArtifact.configHash, "metadata repair must preserve the config hash");
+    assert.strictEqual(cachedResult.artifact.createdAt, cachedArtifact.createdAt, "metadata repair must preserve the cached creation time");
+    assert.deepStrictEqual(cachedResult.blocks, result.blocks, "metadata repair must preserve cached content");
+    assert.deepStrictEqual(JSON.parse(await fs.readFile(cachePath, "utf8")), JSON.parse(JSON.stringify(cachedArtifact)), "read-only cache hits must not rewrite the cached artifact");
   } finally {
     await fs.rm(cacheDir, { recursive: true, force: true });
   }

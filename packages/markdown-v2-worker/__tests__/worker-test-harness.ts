@@ -54,6 +54,10 @@ export async function createWorkerHarness(): Promise<WorkerHarness> {
   const scope = await ensureWorkerLoaded();
   return {
     async send(message: WorkerIn) {
+      // A real postMessage delivers every WorkerIn as its own task. Without that boundary a long
+      // send loop is one job, and jsdom's WeakRef-backed node-iterator set (DOMPurify creates one
+      // per sanitize) keeps every sanitized document alive until the job ends.
+      await new Promise<void>((resolve) => setImmediate(resolve));
       const queue: WorkerOut[] = [];
       activeQueue = queue;
       try {

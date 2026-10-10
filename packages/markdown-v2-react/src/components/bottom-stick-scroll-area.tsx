@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode, UIEvent } from "react";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 export type BottomStickMode = "STICKY_INSTANT" | "DETACHED" | "RETURNING_SMOOTH";
 

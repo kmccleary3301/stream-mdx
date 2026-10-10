@@ -7,6 +7,7 @@ import { readShowcaseSnapshot } from "@/lib/snapshot-artifacts";
 import { SnapshotArticle } from "@/components/articles/snapshot-article";
 import { StreamingArticle } from "@/components/articles/streaming-article";
 import { CollectionNavigation } from "@/components/collection-navigation";
+import { Button } from "@/components/ui/button";
 
 export function generateStaticParams() {
   return getAllShowcaseSlugs().map((slug) => ({ slug }));
@@ -24,29 +25,30 @@ export default async function ShowcasePage({ params }: { params: Promise<{ slug:
   const tags = item.tags.length > 0 ? item.tags : ["streaming"];
 
   return (
-    <div className="mx-auto flex w-full max-w-screen-xl flex-col gap-6 px-4 py-10">
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-10">
       <div className="flex flex-col gap-3">
-        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">Showcase</div>
-        <h1 className="text-3xl font-semibold text-foreground">{item.title}</h1>
-        {item.description ? <p className="max-w-2xl text-sm text-muted">{item.description}</p> : null}
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
+        <div className="route-kicker">Showcase</div>
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">{item.title}</h1>
+        {item.description ? <p className="max-w-2xl text-[15px] leading-relaxed text-muted">{item.description}</p> : null}
+        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
           {tags.map((tag) => (
-            <span key={tag} className="rounded-full border border-border/60 bg-background/40 px-3 py-1">
+            <span key={tag} className="rounded-full border border-border/70 bg-muted/15 px-2.5 py-0.5 font-medium">
               {tag}
             </span>
           ))}
-          <div className="ml-auto flex flex-wrap items-center gap-2 text-xs">
-            <Link className="underline decoration-1 decoration-gray-a4 underline-offset-2" href="/demo">
-              Open demo
-            </Link>
-            <Link className="underline decoration-1 decoration-gray-a4 underline-offset-2" href="/docs">
-              View docs
-            </Link>
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <Button asChild size="sm" variant="outline" className="h-8 rounded-full px-3 text-xs">
+              <Link href="/demo">Open demo</Link>
+            </Button>
+            <Button asChild size="sm" variant="outline" className="h-8 rounded-full px-3 text-xs">
+              <Link href="/docs">View docs</Link>
+            </Button>
           </div>
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-background p-6 shadow-sm">
+      {/* The page header owns the title; the article's own leading h1 would repeat it. */}
+      <div className="rounded-xl border border-border bg-background p-6 shadow-sm md:p-8 [&_.markdown-v2-output>h1:first-child]:hidden [&_.markdown-v2-output>:first-child:not(h1)]:mt-0 [&_.markdown-v2-output>h1:first-child+*]:mt-0">
         {snapshot ? <SnapshotArticle blocks={snapshot.blocks} /> : <StreamingArticle content={markdown} />}
       </div>
 

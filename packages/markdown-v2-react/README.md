@@ -55,6 +55,10 @@ export function Demo({ text }: { text: string }) {
 }
 ```
 
+`engine` defaults to `"auto"`. It tries a browser Worker and dynamically imports the in-process engine only when Worker creation is unavailable or fails. `"worker"` requires a Worker; `"main-thread"` skips the Worker and runs parsing on the browser thread. Engine setup runs after mounting, not during SSR. Use compiled snapshots and the server entry for server markup.
+
+Custom inline regex syntax uses `syntax` plus named `inlineComponents`. Code fences use `codeRenderers`, with optional `aliases` per entry and case-insensitive resolution. Element filtering is configured with `allowedElements`, `disallowedElements`, `allowElement`, and `unwrapDisallowed`. `disableAutolinkProtocols` disables autolinking for specific URL protocols (e.g. `["mailto"]`) while preserving explicit markdown links. `mathRenderer` replaces math views; `features.math: false` disables math parsing. See the [public API](../../docs/PUBLIC_API.md) for HTML policy, artifact sandbox/CSP, and optional finalized-block unified routing.
+
 ## Typical Uses
 
 | Use case | API |
@@ -86,6 +90,27 @@ Behavior notes:
 - detaches on upward user scroll
 - supports smooth return-to-bottom behavior
 - exposes debug hooks used by deterministic checks in the repo
+
+### Table row virtualization
+
+```tsx
+import { StreamingMarkdown } from "@stream-mdx/react";
+
+<StreamingMarkdown
+  text={content}
+  tableVirtualization={{
+    enabled: true,
+    minRows: 40,
+    estimatedRowHeight: 44,
+    overscan: 8,
+    maxHeight: "600px",
+  }}
+/>
+```
+
+Table virtualization is disabled by default. Only finalized tables meeting `minRows` virtualize after mounting in a browser and after the surrounding stream ends. SSR, unfinished tables, and active streams render every row.
+
+Virtualized tables retain native table elements, a sticky header, measured variable row heights, and `aria-hidden` spacer rows. The last row remains reachable by scrolling.
 
 ## When To Use This Package Directly
 

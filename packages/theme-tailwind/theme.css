@@ -117,7 +117,9 @@
   content: open-quote;
 }
 
-.prose :where(blockquote p:last-of-type):not(:where([class~="not-prose"] *))::after {
+/* `p:is(blockquote *)` must precede `:last-of-type`: Chrome flags the parent of every `p` that reaches the
+   positional check, then restyles all of that parent's children on each append (O(blocks) per streamed block). */
+.prose :where(p:is(blockquote *):last-of-type):not(:where([class~="not-prose"] *))::after {
   content: close-quote;
 }
 
@@ -1343,6 +1345,24 @@
   .markdown-v2-output pre {
     margin-top: 0.75rem;
     margin-bottom: 0.75rem;
+  }
+
+  /* Highlighted code carries token colors only as Shiki CSS variables (`defaultColor: false`).
+     Light tokens apply by default; a `.dark` ancestor (Tailwind `darkMode: "class"`) switches to dark tokens. */
+  .markdown-v2-output .shiki,
+  .markdown-v2-output .shiki span {
+    color: var(--shiki-light);
+    font-style: var(--shiki-light-font-style);
+    font-weight: var(--shiki-light-font-weight);
+    text-decoration: var(--shiki-light-text-decoration);
+  }
+
+  .dark .markdown-v2-output .shiki,
+  .dark .markdown-v2-output .shiki span {
+    color: var(--shiki-dark);
+    font-style: var(--shiki-dark-font-style);
+    font-weight: var(--shiki-dark-font-weight);
+    text-decoration: var(--shiki-dark-text-decoration);
   }
 
   .markdown-v2-output .markdown-hr {

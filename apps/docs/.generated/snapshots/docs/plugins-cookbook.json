@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-02-11T20:25:49.813Z",
-  "hash": "8ef9d26f72a067d5aa1527e2856082d06ee2aac59ea43c347be53394505d3ba2",
-  "contentHash": "708ae5bd7727c0b171b672424b71d8d649fc3e4d64921d7f079ce19f6358790a",
-  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
-  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "createdAt": "2026-10-10T04:53:43.738Z",
+  "hash": "3c118036d2cbab9ac4ceb4805ac6b6490dd92bece132e52931da1e98a2b91f3a",
+  "contentHash": "9c29527be8d79deb8511df7dbb5648bac666c432eb95df40e581f77126462047",
+  "configHash": "a4b31dc6e15c2cd96906124ef06fadc77e60ad148c40ed5ba066e3518a02e37b",
+  "hashSalt": "docs-snapshots-v2:42a0722c827a5ff05bc7f9b0b2c880b732fb655e91e2b7c5196767915dd07177",
   "blocks": [
     {
       "id": "db082c0",
@@ -13,14 +13,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "StreamMDX — Plugins & Worker Customization Cookbook",
-        "range": {
-          "from": 0,
-          "to": 53
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading1",
           "headingLevel": 1,
           "headingText": "StreamMDX — Plugins & Worker Customization Cookbook",
           "headingId": "streammdx-plugins-worker-customization-cookbook"
+        },
+        "range": {
+          "from": 0,
+          "to": 53
         },
         "inline": [
           {
@@ -36,14 +37,22 @@
       "isFinalized": true,
       "payload": {
         "raw": "_Last updated: 2025-12-17_",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 55,
           "to": 81
         },
         "inline": [
           {
-            "kind": "text",
-            "text": "_Last updated: 2025-12-17_"
+            "kind": "em",
+            "children": [
+              {
+                "kind": "text",
+                "text": "Last updated: 2025-12-17"
+              }
+            ]
           }
         ]
       }
@@ -54,6 +63,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "This cookbook focuses on the parts of the “plugins” story that are relevant to **real app integration**:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 83,
           "to": 187
@@ -85,12 +97,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- How built-in plugin domains (tables/html/mdx/math/footnotes/callouts) are toggled.\n- How the worker is configured (`docPlugins`, `mdxCompileMode`).\n- How to keep MDX compilation parity (server vs worker).\n- Where “custom plugins” actually live in the architecture (worker bundle customization).",
-        "range": {
-          "from": 189,
-          "to": 485
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -133,7 +152,302 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "3438ec7e::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 189,
+                  "to": 273
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "3438ec7e::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- How built-in plugin domains (tables/html/mdx/math/footnotes/callouts) are toggled.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "How built-in plugin domains (tables/html/mdx/math/footnotes/callouts) are toggled."
+                        }
+                      ],
+                      "range": {
+                        "from": 189,
+                        "to": 273
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "How built-in plugin domains (tables/html/mdx/math/footnotes/callouts) are toggled."
+                              }
+                            ],
+                            "text": "How built-in plugin domains (tables/html/mdx/math/footnotes/callouts) are toggled.",
+                            "raw": "- How built-in plugin domains (tables/html/mdx/math/footnotes/callouts) are toggled."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "How built-in plugin domains (tables/html/mdx/math/footnotes/callouts) are toggled."
+                    }
+                  ],
+                  "text": "How built-in plugin domains (tables/html/mdx/math/footnotes/callouts) are toggled.",
+                  "raw": "- How built-in plugin domains (tables/html/mdx/math/footnotes/callouts) are toggled."
+                },
+                "children": []
+              },
+              {
+                "id": "3438ec7e::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 274,
+                  "to": 338
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "3438ec7e::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- How the worker is configured (`docPlugins`, `mdxCompileMode`).",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "How the worker is configured ("
+                        },
+                        {
+                          "kind": "code",
+                          "text": "docPlugins"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "mdxCompileMode"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ")."
+                        }
+                      ],
+                      "range": {
+                        "from": 274,
+                        "to": 338
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "How the worker is configured ("
+                              },
+                              {
+                                "kind": "code",
+                                "text": "docPlugins"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "mdxCompileMode"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ")."
+                              }
+                            ],
+                            "text": "How the worker is configured (docPlugins, mdxCompileMode).",
+                            "raw": "- How the worker is configured (`docPlugins`, `mdxCompileMode`)."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "How the worker is configured ("
+                    },
+                    {
+                      "kind": "code",
+                      "text": "docPlugins"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "mdxCompileMode"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ")."
+                    }
+                  ],
+                  "text": "How the worker is configured (docPlugins, mdxCompileMode).",
+                  "raw": "- How the worker is configured (`docPlugins`, `mdxCompileMode`)."
+                },
+                "children": []
+              },
+              {
+                "id": "3438ec7e::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 339,
+                  "to": 395
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "3438ec7e::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- How to keep MDX compilation parity (server vs worker).",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "How to keep MDX compilation parity (server vs worker)."
+                        }
+                      ],
+                      "range": {
+                        "from": 339,
+                        "to": 395
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "How to keep MDX compilation parity (server vs worker)."
+                              }
+                            ],
+                            "text": "How to keep MDX compilation parity (server vs worker).",
+                            "raw": "- How to keep MDX compilation parity (server vs worker)."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "How to keep MDX compilation parity (server vs worker)."
+                    }
+                  ],
+                  "text": "How to keep MDX compilation parity (server vs worker).",
+                  "raw": "- How to keep MDX compilation parity (server vs worker)."
+                },
+                "children": []
+              },
+              {
+                "id": "3438ec7e::item:3",
+                "type": "list-item",
+                "range": {
+                  "from": 396,
+                  "to": 485
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "3438ec7e::item:3",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Where “custom plugins” actually live in the architecture (worker bundle customization).",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Where “custom plugins” actually live in the architecture (worker bundle customization)."
+                        }
+                      ],
+                      "range": {
+                        "from": 396,
+                        "to": 485
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 3,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Where “custom plugins” actually live in the architecture (worker bundle customization)."
+                              }
+                            ],
+                            "text": "Where “custom plugins” actually live in the architecture (worker bundle customization).",
+                            "raw": "- Where “custom plugins” actually live in the architecture (worker bundle customization)."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 3,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Where “custom plugins” actually live in the architecture (worker bundle customization)."
+                    }
+                  ],
+                  "text": "Where “custom plugins” actually live in the architecture (worker bundle customization).",
+                  "raw": "- Where “custom plugins” actually live in the architecture (worker bundle customization)."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 189,
+          "to": 485
         }
       }
     },
@@ -143,6 +457,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "If you are looking for the top-level React API, start with `docs/PUBLIC_API.md` and `docs/REACT_INTEGRATION_GUIDE.md`.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 487,
           "to": 605
@@ -177,6 +494,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "---",
+        "meta": {
+          "lezerNodeType": "HorizontalRule"
+        },
         "range": {
           "from": 607,
           "to": 610
@@ -189,14 +509,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "1) Package overview",
-        "range": {
-          "from": 612,
-          "to": 634
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "1) Package overview",
           "headingId": "1-package-overview"
+        },
+        "range": {
+          "from": 612,
+          "to": 634
         },
         "inline": [
           {
@@ -212,6 +533,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "StreamMDX publishes plugin primitives under:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 636,
           "to": 680
@@ -230,12 +554,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- `@stream-mdx/plugins` (scoped)\n- `stream-mdx/plugins` (convenience wrapper)",
-        "range": {
-          "from": 682,
-          "to": 759
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -258,7 +589,160 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "38c4f87c::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 682,
+                  "to": 714
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "38c4f87c::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `@stream-mdx/plugins` (scoped)",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "@stream-mdx/plugins"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " (scoped)"
+                        }
+                      ],
+                      "range": {
+                        "from": 682,
+                        "to": 714
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "@stream-mdx/plugins"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " (scoped)"
+                              }
+                            ],
+                            "text": "@stream-mdx/plugins (scoped)",
+                            "raw": "- `@stream-mdx/plugins` (scoped)"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "@stream-mdx/plugins"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " (scoped)"
+                    }
+                  ],
+                  "text": "@stream-mdx/plugins (scoped)",
+                  "raw": "- `@stream-mdx/plugins` (scoped)"
+                },
+                "children": []
+              },
+              {
+                "id": "38c4f87c::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 715,
+                  "to": 759
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "38c4f87c::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `stream-mdx/plugins` (convenience wrapper)",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "stream-mdx/plugins"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " (convenience wrapper)"
+                        }
+                      ],
+                      "range": {
+                        "from": 715,
+                        "to": 759
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "stream-mdx/plugins"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " (convenience wrapper)"
+                              }
+                            ],
+                            "text": "stream-mdx/plugins (convenience wrapper)",
+                            "raw": "- `stream-mdx/plugins` (convenience wrapper)"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "stream-mdx/plugins"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " (convenience wrapper)"
+                    }
+                  ],
+                  "text": "stream-mdx/plugins (convenience wrapper)",
+                  "raw": "- `stream-mdx/plugins` (convenience wrapper)"
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 682,
+          "to": 759
         }
       }
     },
@@ -268,6 +752,61 @@
       "isFinalized": true,
       "payload": {
         "raw": "Most apps do **not** need to import plugin registries directly. Start with `<StreamingMarkdown features={...} />`.",
+        "meta": {
+          "lezerNodeType": "Paragraph",
+          "mixedSegments": [
+            {
+              "kind": "text",
+              "value": "Most apps do **not** need to import plugin registries directly. Start with `",
+              "inline": [
+                {
+                  "kind": "text",
+                  "text": "Most apps do "
+                },
+                {
+                  "kind": "strong",
+                  "children": [
+                    {
+                      "kind": "text",
+                      "text": "not"
+                    }
+                  ]
+                },
+                {
+                  "kind": "text",
+                  "text": " need to import plugin registries directly. Start with `"
+                }
+              ],
+              "range": {
+                "from": 761,
+                "to": 837
+              }
+            },
+            {
+              "kind": "mdx",
+              "value": "<StreamingMarkdown features={...} />",
+              "range": {
+                "from": 837,
+                "to": 873
+              },
+              "status": "pending"
+            },
+            {
+              "kind": "text",
+              "value": "`.",
+              "inline": [
+                {
+                  "kind": "text",
+                  "text": "`."
+                }
+              ],
+              "range": {
+                "from": 873,
+                "to": 875
+              }
+            }
+          ]
+        },
         "range": {
           "from": 761,
           "to": 875
@@ -298,61 +837,7 @@
             "kind": "text",
             "text": "."
           }
-        ],
-        "meta": {
-          "mixedSegments": [
-            {
-              "kind": "text",
-              "value": "Most apps do **not** need to import plugin registries directly. Start with `",
-              "range": {
-                "from": 761,
-                "to": 837
-              },
-              "inline": [
-                {
-                  "kind": "text",
-                  "text": "Most apps do "
-                },
-                {
-                  "kind": "strong",
-                  "children": [
-                    {
-                      "kind": "text",
-                      "text": "not"
-                    }
-                  ]
-                },
-                {
-                  "kind": "text",
-                  "text": " need to import plugin registries directly. Start with `"
-                }
-              ]
-            },
-            {
-              "kind": "mdx",
-              "value": "<StreamingMarkdown features={...} />",
-              "range": {
-                "from": 837,
-                "to": 873
-              },
-              "status": "pending"
-            },
-            {
-              "kind": "text",
-              "value": "`.",
-              "range": {
-                "from": 873,
-                "to": 875
-              },
-              "inline": [
-                {
-                  "kind": "text",
-                  "text": "`."
-                }
-              ]
-            }
-          ]
-        }
+        ]
       }
     },
     {
@@ -361,6 +846,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "When you *do* need the plugin primitives (custom worker bundles, custom tokenizers/matchers), import subpaths:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 877,
           "to": 987
@@ -391,13 +879,20 @@
       "type": "list",
       "isFinalized": true,
       "payload": {
-        "raw": "- `stream-mdx/plugins/document`\n- `stream-mdx/plugins/tables`\n- `stream-mdx/plugins/html`\n- `stream-mdx/plugins/mdx`\n- `stream-mdx/plugins/math`\n- `stream-mdx/plugins/math/renderer`",
-        "range": {
-          "from": 989,
-          "to": 1170
-        },
+        "raw": "- `stream-mdx/plugins/document`\n- `stream-mdx/plugins/tables`\n- `stream-mdx/plugins/html`\n- `stream-mdx/plugins/mdx`",
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -422,33 +917,271 @@
                 "kind": "code",
                 "text": "stream-mdx/plugins/mdx"
               }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "stream-mdx/plugins/math"
-              }
-            ],
-            [
-              {
-                "kind": "code",
-                "text": "stream-mdx/plugins/math/renderer"
-              }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "ad07a7a::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 989,
+                  "to": 1020
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "ad07a7a::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `stream-mdx/plugins/document`",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "stream-mdx/plugins/document"
+                        }
+                      ],
+                      "range": {
+                        "from": 989,
+                        "to": 1020
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "stream-mdx/plugins/document"
+                              }
+                            ],
+                            "text": "stream-mdx/plugins/document",
+                            "raw": "- `stream-mdx/plugins/document`"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "stream-mdx/plugins/document"
+                    }
+                  ],
+                  "text": "stream-mdx/plugins/document",
+                  "raw": "- `stream-mdx/plugins/document`"
+                },
+                "children": []
+              },
+              {
+                "id": "ad07a7a::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 1021,
+                  "to": 1050
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "ad07a7a::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `stream-mdx/plugins/tables`",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "stream-mdx/plugins/tables"
+                        }
+                      ],
+                      "range": {
+                        "from": 1021,
+                        "to": 1050
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "stream-mdx/plugins/tables"
+                              }
+                            ],
+                            "text": "stream-mdx/plugins/tables",
+                            "raw": "- `stream-mdx/plugins/tables`"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "stream-mdx/plugins/tables"
+                    }
+                  ],
+                  "text": "stream-mdx/plugins/tables",
+                  "raw": "- `stream-mdx/plugins/tables`"
+                },
+                "children": []
+              },
+              {
+                "id": "ad07a7a::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 1051,
+                  "to": 1078
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "ad07a7a::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `stream-mdx/plugins/html`",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "stream-mdx/plugins/html"
+                        }
+                      ],
+                      "range": {
+                        "from": 1051,
+                        "to": 1078
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "stream-mdx/plugins/html"
+                              }
+                            ],
+                            "text": "stream-mdx/plugins/html",
+                            "raw": "- `stream-mdx/plugins/html`"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "stream-mdx/plugins/html"
+                    }
+                  ],
+                  "text": "stream-mdx/plugins/html",
+                  "raw": "- `stream-mdx/plugins/html`"
+                },
+                "children": []
+              },
+              {
+                "id": "ad07a7a::item:3",
+                "type": "list-item",
+                "range": {
+                  "from": 1079,
+                  "to": 1105
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "ad07a7a::item:3",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `stream-mdx/plugins/mdx`",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "stream-mdx/plugins/mdx"
+                        }
+                      ],
+                      "range": {
+                        "from": 1079,
+                        "to": 1105
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 3,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "stream-mdx/plugins/mdx"
+                              }
+                            ],
+                            "text": "stream-mdx/plugins/mdx",
+                            "raw": "- `stream-mdx/plugins/mdx`"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 3,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "stream-mdx/plugins/mdx"
+                    }
+                  ],
+                  "text": "stream-mdx/plugins/mdx",
+                  "raw": "- `stream-mdx/plugins/mdx`"
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 989,
+          "to": 1105
         }
       }
     },
     {
-      "id": "2b9313b",
+      "id": "4aaad699",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Scoped equivalents are available at `@stream-mdx/plugins/*`.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
-          "from": 1172,
-          "to": 1232
+          "from": 1107,
+          "to": 1167
         },
         "inline": [
           {
@@ -467,31 +1200,35 @@
       }
     },
     {
-      "id": "459e6cd2",
+      "id": "44162091",
       "type": "hr",
       "isFinalized": true,
       "payload": {
         "raw": "---",
+        "meta": {
+          "lezerNodeType": "HorizontalRule"
+        },
         "range": {
-          "from": 1234,
-          "to": 1237
+          "from": 1169,
+          "to": 1172
         }
       }
     },
     {
-      "id": "3a95c847",
+      "id": "6e7f5103",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "2) Built-in “plugin domains” (most common path)",
-        "range": {
-          "from": 1239,
-          "to": 1289
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "2) Built-in “plugin domains” (most common path)",
           "headingId": "2-built-in-plugin-domains-most-common-path"
+        },
+        "range": {
+          "from": 1174,
+          "to": 1224
         },
         "inline": [
           {
@@ -502,14 +1239,64 @@
       }
     },
     {
-      "id": "6bbacfb9",
+      "id": "1e56c7e5",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Built-in capabilities are toggled via `features` on `<StreamingMarkdown />`:",
+        "meta": {
+          "lezerNodeType": "Paragraph",
+          "mixedSegments": [
+            {
+              "kind": "text",
+              "value": "Built-in capabilities are toggled via `features` on `",
+              "inline": [
+                {
+                  "kind": "text",
+                  "text": "Built-in capabilities are toggled via "
+                },
+                {
+                  "kind": "code",
+                  "text": "features"
+                },
+                {
+                  "kind": "text",
+                  "text": " on `"
+                }
+              ],
+              "range": {
+                "from": 1226,
+                "to": 1279
+              }
+            },
+            {
+              "kind": "mdx",
+              "value": "<StreamingMarkdown />",
+              "range": {
+                "from": 1279,
+                "to": 1300
+              },
+              "status": "pending"
+            },
+            {
+              "kind": "text",
+              "value": "`:",
+              "inline": [
+                {
+                  "kind": "text",
+                  "text": "`:"
+                }
+              ],
+              "range": {
+                "from": 1300,
+                "to": 1302
+              }
+            }
+          ]
+        },
         "range": {
-          "from": 1291,
-          "to": 1367
+          "from": 1226,
+          "to": 1302
         },
         "inline": [
           {
@@ -532,84 +1319,41 @@
             "kind": "text",
             "text": ":"
           }
-        ],
-        "meta": {
-          "mixedSegments": [
-            {
-              "kind": "text",
-              "value": "Built-in capabilities are toggled via `features` on `",
-              "range": {
-                "from": 1291,
-                "to": 1344
-              },
-              "inline": [
-                {
-                  "kind": "text",
-                  "text": "Built-in capabilities are toggled via "
-                },
-                {
-                  "kind": "code",
-                  "text": "features"
-                },
-                {
-                  "kind": "text",
-                  "text": " on `"
-                }
-              ]
-            },
-            {
-              "kind": "mdx",
-              "value": "<StreamingMarkdown />",
-              "range": {
-                "from": 1344,
-                "to": 1365
-              },
-              "status": "pending"
-            },
-            {
-              "kind": "text",
-              "value": "`:",
-              "range": {
-                "from": 1365,
-                "to": 1367
-              },
-              "inline": [
-                {
-                  "kind": "text",
-                  "text": "`:"
-                }
-              ]
-            }
-          ]
-        }
+        ]
       }
     },
     {
-      "id": "7c017695",
+      "id": "3613d7f4",
       "type": "code",
       "isFinalized": true,
       "payload": {
         "raw": "```tsx\nimport { StreamingMarkdown } from \"stream-mdx\";\n\n<StreamingMarkdown\n  text={text}\n  worker=\"/workers/markdown-worker.js\"\n  features={{\n    tables: true,\n    html: true,\n    mdx: true,\n    math: true,\n    footnotes: true,\n    callouts: false,\n  }}\n  mdxCompileMode=\"worker\"\n/>;\n```",
-        "range": {
-          "from": 1369,
-          "to": 1656
-        },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { StreamingMarkdown } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{text}</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    tables: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    math: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    footnotes: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    callouts: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">false</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }}</span></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  mdxCompileMode</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"worker\"</span></span>\n<span class=\"line\" data-line=\"15\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/>;</span></span></code></pre>",
         "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "import { StreamingMarkdown } from \"stream-mdx\";\n\n<StreamingMarkdown\n  text={text}\n  worker=\"/workers/markdown-worker.js\"\n  features={{\n    tables: true,\n    html: true,\n    mdx: true,\n    math: true,\n    footnotes: true,\n    callouts: false,\n  }}\n  mdxCompileMode=\"worker\"\n/>;",
+          "info": "tsx",
           "lang": "tsx",
-          "code": "import { StreamingMarkdown } from \"stream-mdx\";\n\n<StreamingMarkdown\n  text={text}\n  worker=\"/workers/markdown-worker.js\"\n  features={{\n    tables: true,\n    html: true,\n    mdx: true,\n    math: true,\n    footnotes: true,\n    callouts: false,\n  }}\n  mdxCompileMode=\"worker\"\n/>;"
-        }
+          "highlightLang": "tsx"
+        },
+        "range": {
+          "from": 1304,
+          "to": 1591
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { StreamingMarkdown } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{text}</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    tables: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    math: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    footnotes: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    callouts: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">false</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }}</span></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  mdxCompileMode</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"worker\"</span></span>\n<span class=\"line\" data-line=\"15\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/>;</span></span></code></pre>"
       }
     },
     {
-      "id": "19413788",
+      "id": "610d48be",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Notes:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
-          "from": 1658,
-          "to": 1664
+          "from": 1593,
+          "to": 1599
         },
         "inline": [
           {
@@ -620,17 +1364,24 @@
       }
     },
     {
-      "id": "35138f77",
+      "id": "10da0f2a",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- `features` configures both the worker and the renderer.\n- `mdxCompileMode` enables MDX compilation/hydration and selects `\"server\"` vs `\"worker\"`.",
-        "range": {
-          "from": 1666,
-          "to": 1814
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -669,36 +1420,241 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "10da0f2a::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 1601,
+                  "to": 1658
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "10da0f2a::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `features` configures both the worker and the renderer.",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "features"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " configures both the worker and the renderer."
+                        }
+                      ],
+                      "range": {
+                        "from": 1601,
+                        "to": 1658
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "features"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " configures both the worker and the renderer."
+                              }
+                            ],
+                            "text": "features configures both the worker and the renderer.",
+                            "raw": "- `features` configures both the worker and the renderer."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "features"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " configures both the worker and the renderer."
+                    }
+                  ],
+                  "text": "features configures both the worker and the renderer.",
+                  "raw": "- `features` configures both the worker and the renderer."
+                },
+                "children": []
+              },
+              {
+                "id": "10da0f2a::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 1659,
+                  "to": 1749
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "10da0f2a::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `mdxCompileMode` enables MDX compilation/hydration and selects `\"server\"` vs `\"worker\"`.",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "mdxCompileMode"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " enables MDX compilation/hydration and selects "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "\"server\""
+                        },
+                        {
+                          "kind": "text",
+                          "text": " vs "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "\"worker\""
+                        },
+                        {
+                          "kind": "text",
+                          "text": "."
+                        }
+                      ],
+                      "range": {
+                        "from": 1659,
+                        "to": 1749
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "mdxCompileMode"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " enables MDX compilation/hydration and selects "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "\"server\""
+                              },
+                              {
+                                "kind": "text",
+                                "text": " vs "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "\"worker\""
+                              },
+                              {
+                                "kind": "text",
+                                "text": "."
+                              }
+                            ],
+                            "text": "mdxCompileMode enables MDX compilation/hydration and selects \"server\" vs \"worker\".",
+                            "raw": "- `mdxCompileMode` enables MDX compilation/hydration and selects `\"server\"` vs `\"worker\"`."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "mdxCompileMode"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " enables MDX compilation/hydration and selects "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "\"server\""
+                    },
+                    {
+                      "kind": "text",
+                      "text": " vs "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "\"worker\""
+                    },
+                    {
+                      "kind": "text",
+                      "text": "."
+                    }
+                  ],
+                  "text": "mdxCompileMode enables MDX compilation/hydration and selects \"server\" vs \"worker\".",
+                  "raw": "- `mdxCompileMode` enables MDX compilation/hydration and selects `\"server\"` vs `\"worker\"`."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 1601,
+          "to": 1749
         }
       }
     },
     {
-      "id": "4fc03a48",
+      "id": "4e4179d2",
       "type": "hr",
       "isFinalized": true,
       "payload": {
         "raw": "---",
+        "meta": {
+          "lezerNodeType": "HorizontalRule"
+        },
         "range": {
-          "from": 1816,
-          "to": 1819
+          "from": 1751,
+          "to": 1754
         }
       }
     },
     {
-      "id": "21850fa6",
+      "id": "4ed2db47",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "3) Manual worker initialization (`docPlugins`)",
-        "range": {
-          "from": 1821,
-          "to": 1870
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "3) Manual worker initialization (`docPlugins`)",
           "headingId": "3-manual-worker-initialization-docplugins"
+        },
+        "range": {
+          "from": 1756,
+          "to": 1805
         },
         "inline": [
           {
@@ -717,14 +1673,56 @@
       }
     },
     {
-      "id": "77b1a13e",
+      "id": "3aea56ee",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "If you are not using `<StreamingMarkdown />` (e.g. you build a custom renderer loop), initialize the worker with matching flags:",
+        "meta": {
+          "lezerNodeType": "Paragraph",
+          "mixedSegments": [
+            {
+              "kind": "text",
+              "value": "If you are not using `",
+              "inline": [
+                {
+                  "kind": "text",
+                  "text": "If you are not using `"
+                }
+              ],
+              "range": {
+                "from": 1807,
+                "to": 1829
+              }
+            },
+            {
+              "kind": "mdx",
+              "value": "<StreamingMarkdown />",
+              "range": {
+                "from": 1829,
+                "to": 1850
+              },
+              "status": "pending"
+            },
+            {
+              "kind": "text",
+              "value": "` (e.g. you build a custom renderer loop), initialize the worker with matching flags:",
+              "inline": [
+                {
+                  "kind": "text",
+                  "text": "` (e.g. you build a custom renderer loop), initialize the worker with matching flags:"
+                }
+              ],
+              "range": {
+                "from": 1850,
+                "to": 1935
+              }
+            }
+          ]
+        },
         "range": {
-          "from": 1872,
-          "to": 2000
+          "from": 1807,
+          "to": 1935
         },
         "inline": [
           {
@@ -739,76 +1737,41 @@
             "kind": "text",
             "text": " (e.g. you build a custom renderer loop), initialize the worker with matching flags:"
           }
-        ],
-        "meta": {
-          "mixedSegments": [
-            {
-              "kind": "text",
-              "value": "If you are not using `",
-              "range": {
-                "from": 1872,
-                "to": 1894
-              },
-              "inline": [
-                {
-                  "kind": "text",
-                  "text": "If you are not using `"
-                }
-              ]
-            },
-            {
-              "kind": "mdx",
-              "value": "<StreamingMarkdown />",
-              "range": {
-                "from": 1894,
-                "to": 1915
-              },
-              "status": "pending"
-            },
-            {
-              "kind": "text",
-              "value": "` (e.g. you build a custom renderer loop), initialize the worker with matching flags:",
-              "range": {
-                "from": 1915,
-                "to": 2000
-              },
-              "inline": [
-                {
-                  "kind": "text",
-                  "text": "` (e.g. you build a custom renderer loop), initialize the worker with matching flags:"
-                }
-              ]
-            }
-          ]
-        }
+        ]
       }
     },
     {
-      "id": "70b4f0e6",
+      "id": "492c20ce",
       "type": "code",
       "isFinalized": true,
       "payload": {
         "raw": "```ts\nworker.postMessage({\n  type: \"INIT\",\n  initialContent: \"\",\n  prewarmLangs: [\"typescript\", \"bash\"],\n  docPlugins: {\n    footnotes: true,\n    html: true,\n    mdx: true,\n    tables: true,\n    callouts: false,\n    math: true,\n  },\n  mdx: { compileMode: \"worker\" },\n});\n```",
-        "range": {
-          "from": 2002,
-          "to": 2276
-        },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"typescript\"><code data-language=\"typescript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">worker.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">postMessage</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">({</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  type: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"INIT\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  initialContent: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  prewarmLangs: [</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"typescript\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"bash\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">],</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  docPlugins: {</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    footnotes: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    tables: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    callouts: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">false</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    math: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  },</span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  mdx: { compileMode: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"worker\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> },</span></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">});</span></span></code></pre>",
         "meta": {
-          "lang": "typescript",
-          "code": "worker.postMessage({\n  type: \"INIT\",\n  initialContent: \"\",\n  prewarmLangs: [\"typescript\", \"bash\"],\n  docPlugins: {\n    footnotes: true,\n    html: true,\n    mdx: true,\n    tables: true,\n    callouts: false,\n    math: true,\n  },\n  mdx: { compileMode: \"worker\" },\n});"
-        }
+          "lezerNodeType": "FencedCode",
+          "code": "worker.postMessage({\n  type: \"INIT\",\n  initialContent: \"\",\n  prewarmLangs: [\"typescript\", \"bash\"],\n  docPlugins: {\n    footnotes: true,\n    html: true,\n    mdx: true,\n    tables: true,\n    callouts: false,\n    math: true,\n  },\n  mdx: { compileMode: \"worker\" },\n});",
+          "info": "ts",
+          "lang": "ts",
+          "highlightLang": "typescript"
+        },
+        "range": {
+          "from": 1937,
+          "to": 2211
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-ts\" data-language=\"ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">worker.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">postMessage</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">({</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  type: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"INIT\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  initialContent: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  prewarmLangs: [</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"typescript\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"bash\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">],</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  docPlugins: {</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    footnotes: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    tables: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    callouts: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">false</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    math: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  },</span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  mdx: { compileMode: </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"worker\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> },</span></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">});</span></span></code></pre>"
       }
     },
     {
-      "id": "507631e1",
+      "id": "39d4d3e2",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "The hosted worker bundle already includes StreamMDX’s built-in implementations for those domains. `docPlugins` controls what is enabled during parsing/aggregation.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
-          "from": 2278,
-          "to": 2441
+          "from": 2213,
+          "to": 2376
         },
         "inline": [
           {
@@ -827,31 +1790,35 @@
       }
     },
     {
-      "id": "7dfbfc73",
+      "id": "7c73b032",
       "type": "hr",
       "isFinalized": true,
       "payload": {
         "raw": "---",
+        "meta": {
+          "lezerNodeType": "HorizontalRule"
+        },
         "range": {
-          "from": 2443,
-          "to": 2446
+          "from": 2378,
+          "to": 2381
         }
       }
     },
     {
-      "id": "33ea2aba",
+      "id": "2300bbfc",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "4) MDX parity (server vs worker)",
-        "range": {
-          "from": 2448,
-          "to": 2483
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "4) MDX parity (server vs worker)",
           "headingId": "4-mdx-parity-server-vs-worker"
+        },
+        "range": {
+          "from": 2383,
+          "to": 2418
         },
         "inline": [
           {
@@ -862,14 +1829,17 @@
       }
     },
     {
-      "id": "767fcbff",
+      "id": "5fde6e00",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "StreamMDX is designed to keep server and worker compilation **equivalent**. For server compilation, use:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
-          "from": 2485,
-          "to": 2589
+          "from": 2420,
+          "to": 2524
         },
         "inline": [
           {
@@ -893,31 +1863,37 @@
       }
     },
     {
-      "id": "71142c1f",
+      "id": "750c873",
       "type": "code",
       "isFinalized": true,
       "payload": {
         "raw": "```ts\nimport { compileMdxContent } from \"stream-mdx/worker/mdx-compile\";\n```",
-        "range": {
-          "from": 2591,
-          "to": 2667
-        },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"typescript\"><code data-language=\"typescript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { compileMdxContent } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx/worker/mdx-compile\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span></code></pre>",
         "meta": {
-          "lang": "typescript",
-          "code": "import { compileMdxContent } from \"stream-mdx/worker/mdx-compile\";"
-        }
+          "lezerNodeType": "FencedCode",
+          "code": "import { compileMdxContent } from \"stream-mdx/worker/mdx-compile\";",
+          "info": "ts",
+          "lang": "ts",
+          "highlightLang": "typescript"
+        },
+        "range": {
+          "from": 2526,
+          "to": 2602
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-ts\" data-language=\"ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { compileMdxContent } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx/worker/mdx-compile\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span></code></pre>"
       }
     },
     {
-      "id": "684aa6b9",
+      "id": "7eec04b8",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "This is the same pipeline used by the worker compilation path (remark/rehype stack + `@mdx-js/mdx` output as `function-body`).",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
-          "from": 2669,
-          "to": 2795
+          "from": 2604,
+          "to": 2730
         },
         "inline": [
           {
@@ -944,19 +1920,20 @@
       }
     },
     {
-      "id": "44114bdd",
+      "id": "1cdfe264",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "Next.js route example",
-        "range": {
-          "from": 2797,
-          "to": 2822
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading3",
           "headingLevel": 3,
           "headingText": "Next.js route example",
           "headingId": "next-js-route-example"
+        },
+        "range": {
+          "from": 2732,
+          "to": 2757
         },
         "inline": [
           {
@@ -967,48 +1944,55 @@
       }
     },
     {
-      "id": "3b8a9dd2",
+      "id": "7ae45dd1",
       "type": "code",
       "isFinalized": true,
       "payload": {
         "raw": "```ts\nimport { NextRequest, NextResponse } from \"next/server\";\nimport { compileMdxContent } from \"stream-mdx/worker/mdx-compile\";\n\nexport async function POST(request: NextRequest) {\n  const { content, blockId } = await request.json();\n  const compiled = await compileMdxContent(content);\n  return NextResponse.json({\n    id: blockId,\n    code: compiled.code,\n    dependencies: compiled.dependencies,\n  });\n}\n```",
-        "range": {
-          "from": 2824,
-          "to": 3235
-        },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"typescript\"><code data-language=\"typescript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { NextRequest, NextResponse } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"next/server\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { compileMdxContent } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx/worker/mdx-compile\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">export</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> async</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> function</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> POST</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">request</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> NextRequest</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) {</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  const</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">content</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">blockId</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> await</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> request.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">json</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">();</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> compiled</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> await</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> compileMdxContent</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(content);</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  return</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> NextResponse.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">json</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">({</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    id: blockId,</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    code: compiled.code,</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    dependencies: compiled.dependencies,</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  });</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}</span></span></code></pre>",
         "meta": {
-          "lang": "typescript",
-          "code": "import { NextRequest, NextResponse } from \"next/server\";\nimport { compileMdxContent } from \"stream-mdx/worker/mdx-compile\";\n\nexport async function POST(request: NextRequest) {\n  const { content, blockId } = await request.json();\n  const compiled = await compileMdxContent(content);\n  return NextResponse.json({\n    id: blockId,\n    code: compiled.code,\n    dependencies: compiled.dependencies,\n  });\n}"
-        }
+          "lezerNodeType": "FencedCode",
+          "code": "import { NextRequest, NextResponse } from \"next/server\";\nimport { compileMdxContent } from \"stream-mdx/worker/mdx-compile\";\n\nexport async function POST(request: NextRequest) {\n  const { content, blockId } = await request.json();\n  const compiled = await compileMdxContent(content);\n  return NextResponse.json({\n    id: blockId,\n    code: compiled.code,\n    dependencies: compiled.dependencies,\n  });\n}",
+          "info": "ts",
+          "lang": "ts",
+          "highlightLang": "typescript"
+        },
+        "range": {
+          "from": 2759,
+          "to": 3170
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-ts\" data-language=\"ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { NextRequest, NextResponse } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"next/server\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { compileMdxContent } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx/worker/mdx-compile\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">export</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> async</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> function</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> POST</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">request</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> NextRequest</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">) {</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  const</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">content</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">blockId</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> await</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> request.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">json</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">();</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> compiled</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> await</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> compileMdxContent</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(content);</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  return</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> NextResponse.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">json</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">({</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    id: blockId,</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    code: compiled.code,</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    dependencies: compiled.dependencies,</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  });</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}</span></span></code></pre>"
       }
     },
     {
-      "id": "5093bf8f",
+      "id": "52128005",
       "type": "hr",
       "isFinalized": true,
       "payload": {
         "raw": "---",
+        "meta": {
+          "lezerNodeType": "HorizontalRule"
+        },
         "range": {
-          "from": 3237,
-          "to": 3240
+          "from": 3172,
+          "to": 3175
         }
       }
     },
     {
-      "id": "30637b1d",
+      "id": "5db146be",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "5) Tables (Shadcn wrappers)",
-        "range": {
-          "from": 3242,
-          "to": 3272
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "5) Tables (Shadcn wrappers)",
           "headingId": "5-tables-shadcn-wrappers"
+        },
+        "range": {
+          "from": 3177,
+          "to": 3207
         },
         "inline": [
           {
@@ -1019,14 +2003,17 @@
       }
     },
     {
-      "id": "213ecf84",
+      "id": "6ea2d758",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Tables are rendered via the table “elements” map, not by overriding raw HTML tags:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
-          "from": 3274,
-          "to": 3356
+          "from": 3209,
+          "to": 3291
         },
         "inline": [
           {
@@ -1037,48 +2024,55 @@
       }
     },
     {
-      "id": "6def40b7",
+      "id": "2ee13a3f",
       "type": "code",
       "isFinalized": true,
       "payload": {
         "raw": "```tsx\nimport { StreamingMarkdown } from \"stream-mdx\";\nimport { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from \"@/components/ui/table\";\n\nconst tableElements = {\n  Table,\n  Thead: TableHeader,\n  Tbody: TableBody,\n  Tr: TableRow,\n  Th: TableHead,\n  Td: TableCell,\n};\n\n<StreamingMarkdown text={text} tableElements={tableElements} />;\n```",
-        "range": {
-          "from": 3358,
-          "to": 3714
-        },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { StreamingMarkdown } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@/components/ui/table\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> tableElements</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  Table,</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  Thead: TableHeader,</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  Tbody: TableBody,</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  Tr: TableRow,</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  Th: TableHead,</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  Td: TableCell,</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">};</span></span>\n<span class=\"line\" data-line=\"12\"></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{text} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">tableElements</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{tableElements} />;</span></span></code></pre>",
         "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "import { StreamingMarkdown } from \"stream-mdx\";\nimport { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from \"@/components/ui/table\";\n\nconst tableElements = {\n  Table,\n  Thead: TableHeader,\n  Tbody: TableBody,\n  Tr: TableRow,\n  Th: TableHead,\n  Td: TableCell,\n};\n\n<StreamingMarkdown text={text} tableElements={tableElements} />;",
+          "info": "tsx",
           "lang": "tsx",
-          "code": "import { StreamingMarkdown } from \"stream-mdx\";\nimport { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from \"@/components/ui/table\";\n\nconst tableElements = {\n  Table,\n  Thead: TableHeader,\n  Tbody: TableBody,\n  Tr: TableRow,\n  Th: TableHead,\n  Td: TableCell,\n};\n\n<StreamingMarkdown text={text} tableElements={tableElements} />;"
-        }
+          "highlightLang": "tsx"
+        },
+        "range": {
+          "from": 3293,
+          "to": 3649
+        },
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { StreamingMarkdown } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"stream-mdx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@/components/ui/table\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> tableElements</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  Table,</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  Thead: TableHeader,</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  Tbody: TableBody,</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  Tr: TableRow,</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  Th: TableHead,</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  Td: TableCell,</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">};</span></span>\n<span class=\"line\" data-line=\"12\"></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{text} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">tableElements</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{tableElements} />;</span></span></code></pre>"
       }
     },
     {
-      "id": "482827d5",
+      "id": "49a6e84b",
       "type": "hr",
       "isFinalized": true,
       "payload": {
         "raw": "---",
+        "meta": {
+          "lezerNodeType": "HorizontalRule"
+        },
         "range": {
-          "from": 3716,
-          "to": 3719
+          "from": 3651,
+          "to": 3654
         }
       }
     },
     {
-      "id": "63fc585d",
+      "id": "36ae8cbc",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "6) “Custom plugins” (custom syntax)",
-        "range": {
-          "from": 3721,
-          "to": 3759
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "6) “Custom plugins” (custom syntax)",
           "headingId": "6-custom-plugins-custom-syntax"
+        },
+        "range": {
+          "from": 3656,
+          "to": 3694
         },
         "inline": [
           {
@@ -1089,14 +2083,17 @@
       }
     },
     {
-      "id": "3f0f6ca1",
+      "id": "2e060540",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Custom syntax (citations, mentions, bespoke tags) is a **worker-side concern**. The default hosted worker bundle only knows about built-in domains.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
-          "from": 3761,
-          "to": 3908
+          "from": 3696,
+          "to": 3843
         },
         "inline": [
           {
@@ -1120,14 +2117,17 @@
       }
     },
     {
-      "id": "1d664d3b",
+      "id": "c5ce5da",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "The recommended approach is:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
-          "from": 3910,
-          "to": 3938
+          "from": 3845,
+          "to": 3873
         },
         "inline": [
           {
@@ -1138,17 +2138,24 @@
       }
     },
     {
-      "id": "213669da",
+      "id": "609029d9",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "1. Build a custom worker bundle that registers your tokenizers/matchers.\n2. Host it and pass it via the `worker` prop.\n3. Render any emitted nodes via `inlineComponents` / `components`.",
-        "range": {
-          "from": 3940,
-          "to": 4125
-        },
         "meta": {
+          "lezerNodeType": "OrderedList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": true,
+          "loose": false,
           "items": [
             [
               {
@@ -1193,19 +2200,282 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": true,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "609029d9::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 3875,
+                  "to": 3947
+                },
+                "props": {
+                  "ordered": true,
+                  "loose": false,
+                  "block": {
+                    "id": "609029d9::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "1. Build a custom worker bundle that registers your tokenizers/matchers.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Build a custom worker bundle that registers your tokenizers/matchers."
+                        }
+                      ],
+                      "range": {
+                        "from": 3875,
+                        "to": 3947
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": true,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Build a custom worker bundle that registers your tokenizers/matchers."
+                              }
+                            ],
+                            "text": "Build a custom worker bundle that registers your tokenizers/matchers.",
+                            "raw": "1. Build a custom worker bundle that registers your tokenizers/matchers."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Build a custom worker bundle that registers your tokenizers/matchers."
+                    }
+                  ],
+                  "text": "Build a custom worker bundle that registers your tokenizers/matchers.",
+                  "raw": "1. Build a custom worker bundle that registers your tokenizers/matchers."
+                },
+                "children": []
+              },
+              {
+                "id": "609029d9::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 3948,
+                  "to": 3993
+                },
+                "props": {
+                  "ordered": true,
+                  "loose": false,
+                  "block": {
+                    "id": "609029d9::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "2. Host it and pass it via the `worker` prop.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Host it and pass it via the "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "worker"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " prop."
+                        }
+                      ],
+                      "range": {
+                        "from": 3948,
+                        "to": 3993
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": true,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Host it and pass it via the "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "worker"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " prop."
+                              }
+                            ],
+                            "text": "Host it and pass it via the worker prop.",
+                            "raw": "2. Host it and pass it via the `worker` prop."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Host it and pass it via the "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "worker"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " prop."
+                    }
+                  ],
+                  "text": "Host it and pass it via the worker prop.",
+                  "raw": "2. Host it and pass it via the `worker` prop."
+                },
+                "children": []
+              },
+              {
+                "id": "609029d9::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 3994,
+                  "to": 4060
+                },
+                "props": {
+                  "ordered": true,
+                  "loose": false,
+                  "block": {
+                    "id": "609029d9::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "3. Render any emitted nodes via `inlineComponents` / `components`.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Render any emitted nodes via "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "inlineComponents"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " / "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "components"
+                        },
+                        {
+                          "kind": "text",
+                          "text": "."
+                        }
+                      ],
+                      "range": {
+                        "from": 3994,
+                        "to": 4060
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": true,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Render any emitted nodes via "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "inlineComponents"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " / "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "components"
+                              },
+                              {
+                                "kind": "text",
+                                "text": "."
+                              }
+                            ],
+                            "text": "Render any emitted nodes via inlineComponents / components.",
+                            "raw": "3. Render any emitted nodes via `inlineComponents` / `components`."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Render any emitted nodes via "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "inlineComponents"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " / "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "components"
+                    },
+                    {
+                      "kind": "text",
+                      "text": "."
+                    }
+                  ],
+                  "text": "Render any emitted nodes via inlineComponents / components.",
+                  "raw": "3. Render any emitted nodes via `inlineComponents` / `components`."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 3875,
+          "to": 4060
         }
       }
     },
     {
-      "id": "6a51d102",
+      "id": "4de21dc8",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "If you control the worker bundle, plugin primitives live under `@stream-mdx/plugins/base` and `@stream-mdx/plugins/registry`.",
+        "raw": "If you control the worker bundle, plugin primitives live under `@stream-mdx/plugins/document` (and native extensions via `docs/PLUGIN_ABI.md`).",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
-          "from": 4127,
-          "to": 4252
+          "from": 4062,
+          "to": 4205
         },
         "inline": [
           {
@@ -1214,49 +2484,53 @@
           },
           {
             "kind": "code",
-            "text": "@stream-mdx/plugins/base"
+            "text": "@stream-mdx/plugins/document"
           },
           {
             "kind": "text",
-            "text": " and "
+            "text": " (and native extensions via "
           },
           {
             "kind": "code",
-            "text": "@stream-mdx/plugins/registry"
+            "text": "docs/PLUGIN_ABI.md"
           },
           {
             "kind": "text",
-            "text": "."
+            "text": ")."
           }
         ]
       }
     },
     {
-      "id": "1b92b269",
+      "id": "1bd7cad1",
       "type": "hr",
       "isFinalized": true,
       "payload": {
         "raw": "---",
+        "meta": {
+          "lezerNodeType": "HorizontalRule"
+        },
         "range": {
-          "from": 4254,
-          "to": 4257
+          "from": 4207,
+          "to": 4210
         }
       }
     },
     {
-      "id": "3a3d9aa2",
+      "id": "5b38cd1f",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "7) Tree-shaking and bundle size",
-        "range": {
-          "from": 4259,
-          "to": 4293
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "7) Tree-shaking and bundle size",
           "headingId": "7-tree-shaking-and-bundle-size"
+        },
+        "range": {
+          "from": 4212,
+          "to": 4246
         },
         "inline": [
           {
@@ -1267,14 +2541,17 @@
       }
     },
     {
-      "id": "64e6f79a",
+      "id": "2e32afe",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "If you import plugin utilities in your app code, prefer subpath imports (`stream-mdx/plugins/math`) over the root barrel (`stream-mdx/plugins`) so bundlers can exclude unused modules.",
+        "raw": "If you import plugin utilities in your app code, prefer subpath imports (`stream-mdx/plugins/tables`) over the root barrel (`stream-mdx/plugins`) so bundlers can exclude unused modules.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
-          "from": 4295,
-          "to": 4478
+          "from": 4248,
+          "to": 4433
         },
         "inline": [
           {
@@ -1283,7 +2560,7 @@
           },
           {
             "kind": "code",
-            "text": "stream-mdx/plugins/math"
+            "text": "stream-mdx/plugins/tables"
           },
           {
             "kind": "text",
@@ -1301,14 +2578,17 @@
       }
     },
     {
-      "id": "51c3e178",
+      "id": "13c32462",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Quick sanity check:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
-          "from": 4480,
-          "to": 4499
+          "from": 4435,
+          "to": 4454
         },
         "inline": [
           {
@@ -1319,17 +2599,24 @@
       }
     },
     {
-      "id": "441210fa",
+      "id": "12c7b885",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- `npm pack --dry-run` should include only `dist/**` and no `*.map` files.\n- Your app bundle should not pull worker-only dependencies into the main thread unless you imported them intentionally.",
-        "range": {
-          "from": 4501,
-          "to": 4695
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -1364,36 +2651,229 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "12c7b885::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 4456,
+                  "to": 4530
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "12c7b885::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- `npm pack --dry-run` should include only `dist/**` and no `*.map` files.",
+                      "inline": [
+                        {
+                          "kind": "code",
+                          "text": "npm pack --dry-run"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " should include only "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "dist/**"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " and no "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "*.map"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " files."
+                        }
+                      ],
+                      "range": {
+                        "from": 4456,
+                        "to": 4530
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "code",
+                                "text": "npm pack --dry-run"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " should include only "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "dist/**"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " and no "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "*.map"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " files."
+                              }
+                            ],
+                            "text": "npm pack --dry-run should include only dist/** and no *.map files.",
+                            "raw": "- `npm pack --dry-run` should include only `dist/**` and no `*.map` files."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "code",
+                      "text": "npm pack --dry-run"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " should include only "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "dist/**"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " and no "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "*.map"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " files."
+                    }
+                  ],
+                  "text": "npm pack --dry-run should include only dist/** and no *.map files.",
+                  "raw": "- `npm pack --dry-run` should include only `dist/**` and no `*.map` files."
+                },
+                "children": []
+              },
+              {
+                "id": "12c7b885::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 4531,
+                  "to": 4650
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "12c7b885::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Your app bundle should not pull worker-only dependencies into the main thread unless you imported them intentionally.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Your app bundle should not pull worker-only dependencies into the main thread unless you imported them intentionally."
+                        }
+                      ],
+                      "range": {
+                        "from": 4531,
+                        "to": 4650
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Your app bundle should not pull worker-only dependencies into the main thread unless you imported them intentionally."
+                              }
+                            ],
+                            "text": "Your app bundle should not pull worker-only dependencies into the main thread unless you imported them intentionally.",
+                            "raw": "- Your app bundle should not pull worker-only dependencies into the main thread unless you imported them intentionally."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Your app bundle should not pull worker-only dependencies into the main thread unless you imported them intentionally."
+                    }
+                  ],
+                  "text": "Your app bundle should not pull worker-only dependencies into the main thread unless you imported them intentionally.",
+                  "raw": "- Your app bundle should not pull worker-only dependencies into the main thread unless you imported them intentionally."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 4456,
+          "to": 4650
         }
       }
     },
     {
-      "id": "148594cc",
+      "id": "14c038ab",
       "type": "hr",
       "isFinalized": true,
       "payload": {
         "raw": "---",
+        "meta": {
+          "lezerNodeType": "HorizontalRule"
+        },
         "range": {
-          "from": 4697,
-          "to": 4700
+          "from": 4652,
+          "to": 4655
         }
       }
     },
     {
-      "id": "4f66d9c5",
+      "id": "654787a4",
       "type": "heading",
       "isFinalized": true,
       "payload": {
         "raw": "8) Troubleshooting",
-        "range": {
-          "from": 4702,
-          "to": 4723
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "8) Troubleshooting",
           "headingId": "8-troubleshooting"
+        },
+        "range": {
+          "from": 4657,
+          "to": 4678
         },
         "inline": [
           {
@@ -1404,17 +2884,24 @@
       }
     },
     {
-      "id": "7b8bbc4a",
+      "id": "51703f42",
       "type": "list",
       "isFinalized": true,
       "payload": {
         "raw": "- **MDX blocks show raw content**: set `features={{ mdx: true }}` and `mdxCompileMode=\"worker\"` (or implement `/api/mdx-compile-v2` for `\"server\"`).\n- **Worker fails under strict CSP**: host the worker bundle and use `worker=\"/workers/markdown-worker.js\"` (avoid `blob:`).\n- **Tables render as plain HTML**: provide `tableElements` (or ensure your CSS covers default table classes).\n- **Import errors on pnpm**: prefer `stream-mdx/plugins/*` / `stream-mdx/worker/*` / `stream-mdx/core/*` rather than importing transitive `@stream-mdx/*` deps.",
-        "range": {
-          "from": 4725,
-          "to": 5267
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -1565,7 +3052,768 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "51703f42::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 4680,
+                  "to": 4828
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "51703f42::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **MDX blocks show raw content**: set `features={{ mdx: true }}` and `mdxCompileMode=\"worker\"` (or implement `/api/mdx-compile-v2` for `\"server\"`).",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "MDX blocks show raw content"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": set "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "features={{ mdx: true }}"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " and "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "mdxCompileMode=\"worker\""
+                        },
+                        {
+                          "kind": "text",
+                          "text": " (or implement "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "/api/mdx-compile-v2"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " for "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "\"server\""
+                        },
+                        {
+                          "kind": "text",
+                          "text": ")."
+                        }
+                      ],
+                      "range": {
+                        "from": 4680,
+                        "to": 4828
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "MDX blocks show raw content"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": set "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "features={{ mdx: true }}"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " and "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "mdxCompileMode=\"worker\""
+                              },
+                              {
+                                "kind": "text",
+                                "text": " (or implement "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "/api/mdx-compile-v2"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " for "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "\"server\""
+                              },
+                              {
+                                "kind": "text",
+                                "text": ")."
+                              }
+                            ],
+                            "text": "MDX blocks show raw content: set features={{ mdx: true }} and mdxCompileMode=\"worker\" (or implement /api/mdx-compile-v2 for \"server\").",
+                            "raw": "- **MDX blocks show raw content**: set `features={{ mdx: true }}` and `mdxCompileMode=\"worker\"` (or implement `/api/mdx-compile-v2` for `\"server\"`)."
+                          },
+                          "children": [
+                            {
+                              "id": "51703f42::item:0::list-item:segment:0",
+                              "type": "list-item-text",
+                              "props": {
+                                "inline": [
+                                  {
+                                    "kind": "strong",
+                                    "children": [
+                                      {
+                                        "kind": "text",
+                                        "text": "MDX blocks show raw content"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "kind": "text",
+                                    "text": ": set `features={"
+                                  }
+                                ],
+                                "text": "**MDX blocks show raw content**: set `features={"
+                              },
+                              "children": []
+                            },
+                            {
+                              "id": "51703f42::item:0::list-item:segment:1",
+                              "type": "list-item-mdx",
+                              "props": {
+                                "raw": "{ mdx: true }",
+                                "status": "pending"
+                              },
+                              "children": []
+                            },
+                            {
+                              "id": "51703f42::item:0::list-item:segment:2",
+                              "type": "list-item-text",
+                              "props": {
+                                "inline": [
+                                  {
+                                    "kind": "text",
+                                    "text": "}"
+                                  },
+                                  {
+                                    "kind": "code",
+                                    "text": "and"
+                                  },
+                                  {
+                                    "kind": "text",
+                                    "text": "mdxCompileMode=\"worker\""
+                                  },
+                                  {
+                                    "kind": "code",
+                                    "text": "(or implement"
+                                  },
+                                  {
+                                    "kind": "text",
+                                    "text": "/api/mdx-compile-v2"
+                                  },
+                                  {
+                                    "kind": "code",
+                                    "text": "for"
+                                  },
+                                  {
+                                    "kind": "text",
+                                    "text": "\"server\"`)."
+                                  }
+                                ],
+                                "text": "}` and `mdxCompileMode=\"worker\"` (or implement `/api/mdx-compile-v2` for `\"server\"`)."
+                              },
+                              "children": []
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "MDX blocks show raw content"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": set "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "features={{ mdx: true }}"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " and "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "mdxCompileMode=\"worker\""
+                    },
+                    {
+                      "kind": "text",
+                      "text": " (or implement "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "/api/mdx-compile-v2"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " for "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "\"server\""
+                    },
+                    {
+                      "kind": "text",
+                      "text": ")."
+                    }
+                  ],
+                  "text": "MDX blocks show raw content: set features={{ mdx: true }} and mdxCompileMode=\"worker\" (or implement /api/mdx-compile-v2 for \"server\").",
+                  "raw": "- **MDX blocks show raw content**: set `features={{ mdx: true }}` and `mdxCompileMode=\"worker\"` (or implement `/api/mdx-compile-v2` for `\"server\"`)."
+                },
+                "children": [
+                  {
+                    "id": "51703f42::item:0::list-item:segment:0",
+                    "type": "list-item-text",
+                    "props": {
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "MDX blocks show raw content"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": set `features={"
+                        }
+                      ],
+                      "text": "**MDX blocks show raw content**: set `features={"
+                    },
+                    "children": []
+                  },
+                  {
+                    "id": "51703f42::item:0::list-item:segment:1",
+                    "type": "list-item-mdx",
+                    "props": {
+                      "raw": "{ mdx: true }",
+                      "status": "pending"
+                    },
+                    "children": []
+                  },
+                  {
+                    "id": "51703f42::item:0::list-item:segment:2",
+                    "type": "list-item-text",
+                    "props": {
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "}"
+                        },
+                        {
+                          "kind": "code",
+                          "text": "and"
+                        },
+                        {
+                          "kind": "text",
+                          "text": "mdxCompileMode=\"worker\""
+                        },
+                        {
+                          "kind": "code",
+                          "text": "(or implement"
+                        },
+                        {
+                          "kind": "text",
+                          "text": "/api/mdx-compile-v2"
+                        },
+                        {
+                          "kind": "code",
+                          "text": "for"
+                        },
+                        {
+                          "kind": "text",
+                          "text": "\"server\"`)."
+                        }
+                      ],
+                      "text": "}` and `mdxCompileMode=\"worker\"` (or implement `/api/mdx-compile-v2` for `\"server\"`)."
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "id": "51703f42::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 4829,
+                  "to": 4952
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "51703f42::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **Worker fails under strict CSP**: host the worker bundle and use `worker=\"/workers/markdown-worker.js\"` (avoid `blob:`).",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Worker fails under strict CSP"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": host the worker bundle and use "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "worker=\"/workers/markdown-worker.js\""
+                        },
+                        {
+                          "kind": "text",
+                          "text": " (avoid "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "blob:"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ")."
+                        }
+                      ],
+                      "range": {
+                        "from": 4829,
+                        "to": 4952
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Worker fails under strict CSP"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": host the worker bundle and use "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "worker=\"/workers/markdown-worker.js\""
+                              },
+                              {
+                                "kind": "text",
+                                "text": " (avoid "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "blob:"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ")."
+                              }
+                            ],
+                            "text": "Worker fails under strict CSP: host the worker bundle and use worker=\"/workers/markdown-worker.js\" (avoid blob:).",
+                            "raw": "- **Worker fails under strict CSP**: host the worker bundle and use `worker=\"/workers/markdown-worker.js\"` (avoid `blob:`)."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Worker fails under strict CSP"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": host the worker bundle and use "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "worker=\"/workers/markdown-worker.js\""
+                    },
+                    {
+                      "kind": "text",
+                      "text": " (avoid "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "blob:"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ")."
+                    }
+                  ],
+                  "text": "Worker fails under strict CSP: host the worker bundle and use worker=\"/workers/markdown-worker.js\" (avoid blob:).",
+                  "raw": "- **Worker fails under strict CSP**: host the worker bundle and use `worker=\"/workers/markdown-worker.js\"` (avoid `blob:`)."
+                },
+                "children": []
+              },
+              {
+                "id": "51703f42::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 4953,
+                  "to": 5062
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "51703f42::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **Tables render as plain HTML**: provide `tableElements` (or ensure your CSS covers default table classes).",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Tables render as plain HTML"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": provide "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "tableElements"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " (or ensure your CSS covers default table classes)."
+                        }
+                      ],
+                      "range": {
+                        "from": 4953,
+                        "to": 5062
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Tables render as plain HTML"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": provide "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "tableElements"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " (or ensure your CSS covers default table classes)."
+                              }
+                            ],
+                            "text": "Tables render as plain HTML: provide tableElements (or ensure your CSS covers default table classes).",
+                            "raw": "- **Tables render as plain HTML**: provide `tableElements` (or ensure your CSS covers default table classes)."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Tables render as plain HTML"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": provide "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "tableElements"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " (or ensure your CSS covers default table classes)."
+                    }
+                  ],
+                  "text": "Tables render as plain HTML: provide tableElements (or ensure your CSS covers default table classes).",
+                  "raw": "- **Tables render as plain HTML**: provide `tableElements` (or ensure your CSS covers default table classes)."
+                },
+                "children": []
+              },
+              {
+                "id": "51703f42::item:3",
+                "type": "list-item",
+                "range": {
+                  "from": 5063,
+                  "to": 5222
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "51703f42::item:3",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **Import errors on pnpm**: prefer `stream-mdx/plugins/*` / `stream-mdx/worker/*` / `stream-mdx/core/*` rather than importing transitive `@stream-mdx/*` deps.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Import errors on pnpm"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": prefer "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "stream-mdx/plugins/*"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " / "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "stream-mdx/worker/*"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " / "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "stream-mdx/core/*"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " rather than importing transitive "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "@stream-mdx/*"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " deps."
+                        }
+                      ],
+                      "range": {
+                        "from": 5063,
+                        "to": 5222
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 3,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Import errors on pnpm"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": prefer "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "stream-mdx/plugins/*"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " / "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "stream-mdx/worker/*"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " / "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "stream-mdx/core/*"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " rather than importing transitive "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "@stream-mdx/*"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " deps."
+                              }
+                            ],
+                            "text": "Import errors on pnpm: prefer stream-mdx/plugins/* / stream-mdx/worker/* / stream-mdx/core/* rather than importing transitive @stream-mdx/* deps.",
+                            "raw": "- **Import errors on pnpm**: prefer `stream-mdx/plugins/*` / `stream-mdx/worker/*` / `stream-mdx/core/*` rather than importing transitive `@stream-mdx/*` deps."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 3,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Import errors on pnpm"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": prefer "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "stream-mdx/plugins/*"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " / "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "stream-mdx/worker/*"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " / "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "stream-mdx/core/*"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " rather than importing transitive "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "@stream-mdx/*"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " deps."
+                    }
+                  ],
+                  "text": "Import errors on pnpm: prefer stream-mdx/plugins/* / stream-mdx/worker/* / stream-mdx/core/* rather than importing transitive @stream-mdx/* deps.",
+                  "raw": "- **Import errors on pnpm**: prefer `stream-mdx/plugins/*` / `stream-mdx/worker/*` / `stream-mdx/core/*` rather than importing transitive `@stream-mdx/*` deps."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 4680,
+          "to": 5222
         }
       }
     }
@@ -1573,63 +3821,63 @@
   "tocHeadings": [
     {
       "id": "streammdx-plugins-worker-customization-cookbook",
-      "text": "StreamMDX — Plugins & Worker Customization Cookbook",
+      "blockId": "db082c0",
       "level": 1,
-      "blockId": "db082c0"
+      "text": "StreamMDX — Plugins & Worker Customization Cookbook"
     },
     {
       "id": "1-package-overview",
-      "text": "1) Package overview",
+      "blockId": "3d75b4e7",
       "level": 2,
-      "blockId": "3d75b4e7"
+      "text": "1) Package overview"
     },
     {
       "id": "2-built-in-plugin-domains-most-common-path",
-      "text": "2) Built-in “plugin domains” (most common path)",
+      "blockId": "6e7f5103",
       "level": 2,
-      "blockId": "3a95c847"
+      "text": "2) Built-in “plugin domains” (most common path)"
     },
     {
       "id": "3-manual-worker-initialization-docplugins",
-      "text": "3) Manual worker initialization (`docPlugins`)",
+      "blockId": "4ed2db47",
       "level": 2,
-      "blockId": "21850fa6"
+      "text": "3) Manual worker initialization (`docPlugins`)"
     },
     {
       "id": "4-mdx-parity-server-vs-worker",
-      "text": "4) MDX parity (server vs worker)",
+      "blockId": "2300bbfc",
       "level": 2,
-      "blockId": "33ea2aba"
+      "text": "4) MDX parity (server vs worker)"
     },
     {
       "id": "next-js-route-example",
-      "text": "Next.js route example",
+      "blockId": "1cdfe264",
       "level": 3,
-      "blockId": "44114bdd"
+      "text": "Next.js route example"
     },
     {
       "id": "5-tables-shadcn-wrappers",
-      "text": "5) Tables (Shadcn wrappers)",
+      "blockId": "5db146be",
       "level": 2,
-      "blockId": "30637b1d"
+      "text": "5) Tables (Shadcn wrappers)"
     },
     {
       "id": "6-custom-plugins-custom-syntax",
-      "text": "6) “Custom plugins” (custom syntax)",
+      "blockId": "36ae8cbc",
       "level": 2,
-      "blockId": "63fc585d"
+      "text": "6) “Custom plugins” (custom syntax)"
     },
     {
       "id": "7-tree-shaking-and-bundle-size",
-      "text": "7) Tree-shaking and bundle size",
+      "blockId": "5b38cd1f",
       "level": 2,
-      "blockId": "3a3d9aa2"
+      "text": "7) Tree-shaking and bundle size"
     },
     {
       "id": "8-troubleshooting",
-      "text": "8) Troubleshooting",
+      "blockId": "654787a4",
       "level": 2,
-      "blockId": "4f66d9c5"
+      "text": "8) Troubleshooting"
     }
   ],
   "init": {

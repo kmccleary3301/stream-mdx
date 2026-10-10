@@ -105,12 +105,7 @@ export default function BenchmarksPage() {
       </section>
 
       <section className="route-panel p-6">
-        <div className="route-section-heading">
-          <div>
-            <div className="route-kicker">Benchmark frame</div>
-            <div className="mt-2 text-sm font-semibold text-foreground">Metric definitions</div>
-          </div>
-        </div>
+        <div className="text-sm font-semibold text-foreground">Metric definitions</div>
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           {metricDefinitions.map((metric) => (
             <div key={metric.name} className="route-panel-soft p-4">
@@ -126,8 +121,7 @@ export default function BenchmarksPage() {
 
       <section className="grid gap-4 lg:grid-cols-[1fr_1fr]">
         <div className="route-panel p-6">
-          <div className="route-kicker">Fixture classes</div>
-          <div className="mt-2 text-sm font-semibold text-foreground">Static content classes</div>
+          <div className="text-sm font-semibold text-foreground">Static content classes</div>
           <div className="mt-4 grid gap-3">
             {BENCHMARK_STATIC_CONTENT_CLASSES.map((contentClass) => (
               <div key={contentClass.id} className="route-panel-soft p-4">
@@ -138,8 +132,7 @@ export default function BenchmarksPage() {
           </div>
         </div>
         <div className="route-panel p-6">
-          <div className="route-kicker">Runtime cost</div>
-          <div className="mt-2 text-sm font-semibold text-foreground">Memory and bundle terminology</div>
+          <div className="text-sm font-semibold text-foreground">Memory and bundle terminology</div>
           <div className="mt-4 grid gap-3">
             {BENCHMARK_RUNTIME_COST_TERMS.map((term) => (
               <div key={term.name} className="route-panel-soft p-4">
@@ -152,8 +145,7 @@ export default function BenchmarksPage() {
       </section>
 
       <section className="route-panel p-6">
-        <div className="route-kicker">Scheduling</div>
-        <div className="mt-2 text-sm font-semibold text-foreground">Scheduler / jitter modes</div>
+        <div className="text-sm font-semibold text-foreground">Scheduler / jitter modes</div>
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           {BENCHMARK_SCHEDULER_MODES.map((mode) => (
             <div key={mode.id} className="route-panel-soft p-4">

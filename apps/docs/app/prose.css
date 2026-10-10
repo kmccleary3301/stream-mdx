@@ -1,3 +1,9 @@
+/*
+  Frontend V1 integration ownership note:
+  prose.css is the intended authority for rendered markdown and snapshot output.
+  Keep route-shell/card styling out of this layer.
+*/
+
 .prose :where([class~="lead"]):not(:where([class~="not-prose"] *)) {
   margin-top: 1.2em;
   margin-bottom: 1.2em;
@@ -114,7 +120,9 @@
   content: open-quote;
 }
 
-.prose :where(blockquote p:last-of-type):not(:where([class~="not-prose"] *))::after {
+/* `p:is(blockquote *)` must precede `:last-of-type`: Chrome flags the parent of every `p` that reaches the
+   positional check, then restyles all of that parent's children on each append (O(blocks) per streamed block). */
+.prose :where(p:is(blockquote *):last-of-type):not(:where([class~="not-prose"] *))::after {
   content: close-quote;
 }
 
@@ -610,332 +618,382 @@
   margin-bottom: 0;
 }
 
+
+/* Legacy .markdown compatibility is intentionally non-visual. */
 .markdown {
   max-width: none;
-  line-height: 1.5rem;
 }
 
-.markdown h1 {
-  margin-top: 1.5rem;
-  font-weight: 600;
-}
 
-/* .markdown h1:first-child {
-  margin-top: 0;
-} */
+/* Rendered StreamMDX output. Keep route shell/card primitives out of this layer. */
+  :where(.prose, .prose-stream) .markdown-v2-output h1,
+  :where(.prose, .prose-stream) .markdown-v2-output h2,
+  :where(.prose, .prose-stream) .markdown-v2-output h3,
+  :where(.prose, .prose-stream) .markdown-v2-output h4,
+  :where(.prose, .prose-stream) .markdown-v2-output h5,
+  :where(.prose, .prose-stream) .markdown-v2-output h6 {
+    font-weight: 700;
+    color: var(--tw-prose-headings, var(--foreground));
+    letter-spacing: -0.01em;
+  }
 
-.markdown h2 {
-  margin-top: 1.25rem;
-  margin-bottom: 1rem;
-  font-weight: 600;
-}
+  :where(.prose, .prose-stream) .markdown-v2-output h1 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    font-size: 2.5rem;
+    line-height: 1.1;
+  }
 
-.markdown h2:first-child {
-  margin-top: 0;
-}
+  :where(.prose, .prose-stream) .markdown-v2-output h2 {
+    margin-top: 1.5em;
+    margin-bottom: 0.75em;
+    font-size: 1.75rem;
+    line-height: 1.2;
+  }
 
-.markdown h3 {
-  margin-top: 1rem;
-  margin-bottom: 0.5rem;
-  font-weight: 600;
-}
+  :where(.prose, .prose-stream) .markdown-v2-output h3 {
+    margin-top: 1.5em;
+    margin-bottom: 0.75em;
+    font-size: 1.25rem;
+    line-height: 1.4;
+  }
 
-.markdown h3:first-child {
-  margin-top: 0;
-}
+  :where(.prose, .prose-stream) .markdown-v2-output h4 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    font-size: 1.125rem;
+    line-height: 1.45;
+  }
 
-.markdown h4 {
-  margin-top: 1rem;
-  margin-bottom: 0.5rem;
-  font-weight: 600;
-}
+  :where(.prose, .prose-stream) .markdown-v2-output h5 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
 
-.markdown h4:first-child {
-  margin-top: 0;
-}
+  :where(.prose, .prose-stream) .markdown-v2-output h6 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    font-size: 1em;
+    line-height: 1.5;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
 
-.markdown h5 {
-  font-weight: 600;
-}
+  :where(.prose, .prose-stream) .markdown-v2-output .markdown-link {
+    padding: 0;
+    font: inherit;
+    color: var(--tw-prose-links, var(--foreground));
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+  }
 
-.markdown h5:first-child {
-  margin-top: 0;
-}
+  :where(.prose, .prose-stream) .markdown-v2-output .footnote-ref a,
+  :where(.prose, .prose-stream) .markdown-v2-output .footnotes a,
+  :where(.prose, .prose-stream) .markdown-v2-output .footnotes .footnote-backref {
+    color: var(--foreground) !important;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+  }
 
-.markdown blockquote {
-  --tw-border-opacity: 1;
+  :where(.prose, .prose-stream) .markdown-v2-output .footnote-ref a:visited,
+  :where(.prose, .prose-stream) .markdown-v2-output .footnotes a:visited,
+  :where(.prose, .prose-stream) .markdown-v2-output .footnotes .footnote-backref:visited {
+    color: var(--foreground) !important;
+  }
 
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-  padding-left: 1rem;
-  margin: 0;
-  line-height: 1.5rem;
-  border-color: rgb(155 155 155 / var(--tw-border-opacity));
-  border-left-width: 2px;
-}
+  :where(.prose, .prose-stream) .markdown-v2-output h1 + h2,
+  :where(.prose, .prose-stream) .markdown-v2-output h2 + h3,
+  :where(.prose, .prose-stream) .markdown-v2-output h3 + h4 {
+    margin-top: 0.75em;
+  }
 
-.markdown blockquote > p {
-  margin: 0;
-}
+  :where(.prose, .prose-stream) .markdown-v2-output p + h1,
+  :where(.prose, .prose-stream) .markdown-v2-output p + h2,
+  :where(.prose, .prose-stream) .markdown-v2-output p + h3,
+  :where(.prose, .prose-stream) .markdown-v2-output p + h4,
+  :where(.prose, .prose-stream) .markdown-v2-output p + h5,
+  :where(.prose, .prose-stream) .markdown-v2-output p + h6 {
+    margin-top: 1.5em;
+  }
 
-.markdown blockquote > p::after,
-.markdown blockquote > p::before {
-  display: none;
-}
+  :where(.prose, .prose-stream) .markdown-v2-output .markdown-list {
+    --list-indent: 2rem;
 
-.markdown p {
-  margin-top: 0;
-  margin-bottom: 0;
-}
+    display: flex;
+    flex-direction: column;
+    padding-left: var(--list-indent, 2rem);
+    margin: 1.25em 0;
+    list-style: none;
+    list-style-type: none;
+  }
 
-.markdown ol {
-  display: flex;
-  flex-direction: column;
-  padding-left: 0;
-}
+  :where(.prose, .prose-stream) .markdown-v2-output .markdown-list[data-list-depth="1"] {
+    --list-indent: 1.75rem;
+  }
 
-.markdown blockquote {
-  margin-top: 1rem;
-  margin-bottom: 1rem;
-}
+  :where(.prose, .prose-stream) .markdown-v2-output .markdown-list[data-list-depth="2"],
+  :where(.prose, .prose-stream) .markdown-v2-output .markdown-list[data-list-depth="3"] {
+    --list-indent: 1.5rem;
+  }
 
-/* .markdown ol:first-child>li {
-    padding-left: 1.25rem
-} */
+  :where(.prose, .prose-stream) .markdown-v2-output .markdown-list .markdown-list {
+    margin-top: 0.25rem;
+    margin-left: 1rem;
+  }
 
-.markdown ol > li:first-child {
-  padding-top: 0;
-}
-
-.markdown ol {
-  display: flex;
-  flex-direction: column;
-  padding-left: 0;
-  list-style-type: none;
-  counter-reset: list-number;
-}
-
-.markdown ol > li {
-  /* min-height: 1.75rem; */
-
-  position: relative; /* Added to position the ::before pseudo-element relative to the li element */
-
-  /* counter-increment: list-number; */
-
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  width: 100%;
-  max-width: 100%;
-  margin-top: 0.25rem;
-
-  /* justify-content: start; */
-
-  margin-bottom: 0.25rem;
-}
-
-.markdown ol > li::before {
-  --tw-numeric-spacing: tabular-nums;
-
-  position: absolute; /* Added to position the ::before pseudo-element */
-  right: 100%; /* Added to push the ::before pseudo-element to the left */
-  width: 2.5rem;
-  padding-right: 0.5rem;
-  font-variant-numeric: var(--tw-ordinal) var(--tw-slashed-zero) var(--tw-numeric-figure) var(--tw-numeric-spacing) var(--tw-numeric-fraction);
-  text-align: right; /* Added to justify the text of the ::before pseudo-element to the right */
-
-  /* content: counters(list-number, ".") "."; */
-
-  content: attr(data-counter-text) " ";
-
-  /* height: 0; */
-
-  opacity: 0.5;
-
-  /* border-width: 1px; */
-}
-
-.markdown ul {
-  display: flex;
-  flex-direction: column;
-  padding-left: 0;
-}
-
-/* .markdown ul:first-child>li {
-    padding-left: 1.25rem
-} */
-
-.markdown ul > li:first-child {
-  padding-top: 0.15rem;
-}
-
-.markdown ul > li:first-child::before {
-  padding-top: 0.15rem;
-}
-
-/* .markdown ul>li {
+  :where(.prose, .prose-stream) .markdown-v2-output .markdown-list-item {
+    position: relative;
     display: block;
-    margin: 0;
-    min-height: 28px
-}
+    padding-left: 0;
+    margin: 0.1rem 0;
+  }
 
-.markdown ul>li:before {
-    --tw-translate-x: -100%;
-    content: "\2022";
-    font-size: .875rem;
-    line-height: 1.25rem;
-    padding-right: .5rem;
+  :where(.prose, .prose-stream) .markdown-v2-output .markdown-list-item::before {
+    --tw-numeric-spacing: tabular-nums;
+
     position: absolute;
-    -webkit-transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
-    transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))
-} */
+    top: 0;
+    right: 100%;
+    width: var(--list-indent, 2rem);
+    padding-right: 0.5rem;
+    font-variant-numeric: var(--tw-ordinal) var(--tw-slashed-zero) var(--tw-numeric-figure) var(--tw-numeric-spacing) var(--tw-numeric-fraction);
+    text-align: right;
+    content: attr(data-counter-text) " ";
+    opacity: 0.5;
+  }
 
-.markdown ul > li {
-  /* min-height: 1.75rem; */
+  :where(.prose, .prose-stream) .markdown-v2-output .markdown-list-item::marker {
+    content: none;
+  }
 
-  position: relative; /* Added to position the ::before pseudo-element relative to the li element */
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  width: 100%;
-  max-width: 100%;
-  margin-top: 0.125rem;
+  :where(.prose, .prose-stream) .markdown-v2-output .markdown-list.ordered > .markdown-list-item::before {
+    content: attr(data-counter-text) " ";
+  }
 
-  /* justify-content: start; */
+  :where(.prose, .prose-stream) .markdown-v2-output .markdown-list.unordered > .markdown-list-item::before {
+    --tw-numeric-spacing: tabular-nums;
 
-  margin-bottom: 0.125rem;
-  counter-increment: list-number;
-}
+    display: block;
+    width: var(--list-indent, 2rem);
+    padding-right: 0.5rem;
+    margin-top: -0.05rem;
+    font-size: 1.25rem;
+    text-align: right;
+    content: "\2022";
+    opacity: 0.7;
+  }
 
-.markdown ul > li::before {
-  --tw-numeric-spacing: tabular-nums;
+  :where(.prose, .prose-stream) .markdown-v2-output .markdown-list-item.markdown-list-item-task::before {
+    content: none;
+  }
 
-  position: absolute; /* Keeps the ::before pseudo-element positioned absolutely */
-  top: 0; /* Aligns the bullet to the top */
-  right: 100%; /* Pushes the ::before pseudo-element to the left */
-  display: flex; /* Added to center the bullet */
-  align-items: flex-start; /* Aligns the bullet to the top */
-  justify-content: center; /* Centers the bullet horizontally */
-  width: 1.5rem;
-  height: 1.5rem;
-  margin-top: -0.1rem;
+  :where(.prose, .prose-stream) .markdown-v2-output .markdown-list-item > * {
+    width: 100%;
+    max-width: 100%;
+  }
 
-  /* padding-right: .65rem; */
+  :where(.prose, .prose-stream) .markdown-v2-output {
+    --shiki-light-bg: transparent;
+    --shiki-dark-bg: transparent;
+  }
 
-  font-size: 1.25rem;
+  :where(.prose, .prose-stream) .markdown-v2-output .markdown-mdx:has(> figure[data-with-codeblock="true"]) + pre,
+  :where(.prose, .prose-stream) .markdown-v2-output .markdown-mdx:has(> figure[data-with-codeblock="true"]) + figure {
+    margin-top: 0 !important;
+    border-top-width: 0 !important;
+    border-top-left-radius: 0 !important;
+    border-top-right-radius: 0 !important;
+  }
 
-  /* content: attr(counter-text) " "; */
+  :where(.prose, .prose-stream) .markdown-v2-output figure[data-with-codeblock="true"] {
+    margin-bottom: 0;
+  }
 
-  font-variant-numeric: var(--tw-ordinal) var(--tw-slashed-zero) var(--tw-numeric-figure) var(--tw-numeric-spacing) var(--tw-numeric-fraction);
-  content: "\2022";
+  :where(.prose, .prose-stream) .markdown-v2-output pre {
+    margin-top: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
 
-  /* height: 0; */
+  :where(.prose, .prose-stream) .markdown-v2-output .markdown-code-block,
+  :where(.prose, .prose-stream) .markdown-v2-output pre.markdown-code-block {
+    position: relative;
+    margin: 0.75rem 0;
+    overflow: hidden;
+    border: 1px solid var(--code-border);
+    border-radius: 0.75rem;
+    background: var(--code-bg);
+  }
 
-  opacity: 0.7;
+  :where(.prose, .prose-stream) .markdown-v2-output .markdown-code-block pre,
+  :where(.prose, .prose-stream) .markdown-v2-output pre.markdown-code-block {
+    margin: 0;
+    padding: 0.85rem 1rem;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    background: transparent;
+    border: 0;
+  }
 
-  /* border-width: 1px; */
-}
+  :where(.prose, .prose-stream) .markdown-v2-output .markdown-code-block code,
+  :where(.prose, .prose-stream) .markdown-v2-output pre.markdown-code-block code {
+    font-family: var(--code-font, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace);
+    font-size: inherit;
+    background: transparent;
+  }
 
-.markdown ol > li > *,
-.markdown ul > li > * {
-  width: 100%;
-  max-width: 100%;
-}
+  :where(.prose, .prose-stream) .markdown-v2-output .markdown-code-block pre[data-language]:not([data-language=\"text\"]):not([data-language=\"plaintext\"]),
+  :where(.prose, .prose-stream) .markdown-v2-output pre.markdown-code-block[data-language]:not([data-language=\"text\"]):not([data-language=\"plaintext\"]) {
+    padding-top: 2.25rem;
+  }
 
-/* Ensure ScrollArea components inside list items respect container width */
+  :where(.prose, .prose-stream) .markdown-v2-output .markdown-code-block pre[data-language]:not([data-language=\"text\"]):not([data-language=\"plaintext\"])::before,
+  :where(.prose, .prose-stream) .markdown-v2-output pre.markdown-code-block[data-language]:not([data-language=\"text\"]):not([data-language=\"plaintext\"])::before {
+    position: absolute;
+    top: 0.6rem;
+    left: 0.9rem;
+    padding: 0.2rem 0.45rem;
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--code-label);
+    border: 1px solid var(--code-border);
+    border-radius: 999px;
+    background: var(--gray-a2);
+    content: attr(data-language);
+  }
 
-.markdown ol > li [data-radix-scroll-area-viewport],
-.markdown ul > li [data-radix-scroll-area-viewport] {
-  width: 100%;
-  max-width: 100%;
-}
+  :where(.prose, .prose-stream) .markdown-v2-output .docs-code-block {
+    margin: 0.9rem 0;
+    border-radius: 0.85rem;
+    background: var(--code-bg);
+  }
 
-.markdown ol li > p,
-.markdown ul li > p {
-  margin: 0;
-}
+  :where(.prose, .prose-stream) .markdown-v2-output .docs-code-block__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.35rem 0.65rem;
+    border-bottom: 1px solid var(--code-border);
+    background: var(--gray-a2);
+    color: var(--foreground);
+  }
 
-.markdown ol li > pre,
-.markdown ul li > pre {
-  margin-top: 0.25rem;
-  margin-bottom: 0.5rem;
-}
+  :where(.prose, .prose-stream) .markdown-v2-output .docs-code-block__lang {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--foreground) 70%, transparent);
+  }
 
-.markdown ol ol,
-.markdown ol ul,
-.markdown ul ol,
-.markdown ul ul {
-  margin-top: 0;
-  margin-bottom: 0;
-  margin-left: 1rem;
-}
+  :where(.prose, .prose-stream) .markdown-v2-output .docs-code-block__copy {
+    height: 1.7rem;
+    width: 1.7rem;
+    border-radius: 0.55rem;
+  }
 
-.markdown br {
-  display: block;
-  margin: 5px 0;
-  line-height: 2.5rem;
-}
+  :where(.prose, .prose-stream) .markdown-v2-output .docs-code-block__body {
+    overflow-x: auto;
+  }
 
-/* .markdown table {
-    --tw-border-spacing-x: 0px;
-    --tw-border-spacing-y: 0px;
-    border-collapse: separate;
-    border-spacing: var(--tw-border-spacing-x) var(--tw-border-spacing-y);
-    margin-bottom: .25rem;
-    margin-top: .25rem;
-    width: 100%
-}
+  :where(.prose, .prose-stream) .markdown-v2-output .docs-code-block__body pre {
+    min-width: 100%;
+  }
 
-.markdown th {
-    background-color: hsla(0, 0%, 93%, .2);
-    border-bottom-width: 1px;
-    border-left-width: 1px;
-    border-top-width: 1px;
-    padding: .25rem .75rem
-}
+  :where(.prose, .prose-stream) .markdown-v2-output .docs-code-block__body pre code {
+    display: block;
+    min-width: max-content;
+  }
 
-.markdown th:first-child {
-    border-top-left-radius: .375rem
-}
+  :where(.prose, .prose-stream) .markdown-v2-output .docs-code-block pre[data-language]::before {
+    content: none;
+  }
 
-.markdown th:last-child {
-    border-right-width: 1px;
-    border-top-right-radius: .375rem
-}
+  :where(.prose, .prose-stream) .markdown-v2-output .docs-code-block pre[data-language]:not([data-language=\"text\"]):not([data-language=\"plaintext\"]) {
+    padding-top: 0.85rem;
+  }
 
-.markdown td {
-    border-bottom-width: 1px;
-    border-left-width: 1px;
-    padding: .25rem .75rem
-}
+  .code-panel-block {
+    --code-bg: transparent;
+    --code-border: transparent;
+  }
 
-.markdown td:last-child {
-    border-right-width: 1px
-}
+  .code-panel-block .markdown-code-block,
+  .code-panel-block pre.markdown-code-block {
+    border: 0;
+    background: transparent;
+  }
 
-.markdown tbody tr:last-child td:first-child {
-    border-bottom-left-radius: .375rem
-}
+  .code-panel-block .markdown-code-block pre,
+  .code-panel-block pre.markdown-code-block {
+    padding: 0.25rem 0;
+  }
 
-.markdown tbody tr:last-child td:last-child {
-    border-bottom-right-radius: .375rem
-}
+  .code-panel-block .markdown-code-block pre[data-language]::before,
+  .code-panel-block pre.markdown-code-block[data-language]::before {
+    content: none;
+  }
 
-.markdown a {
-    color: #2964aa;
-    color: var(--link);
-    font-weight: 400;
-    text-decoration-line: none
-}
+  .code-panel-block .markdown-code-block pre[data-language],
+  .code-panel-block pre.markdown-code-block[data-language] {
+    padding-top: 0.25rem;
+  }
 
-.markdown a:hover {
-    color: #749ac8;
-    color: var(--link-hover)
-} */
+  .code-panel-block .docs-code-block {
+    margin: 0;
+    border: 0;
+    background: transparent;
+  }
 
-/* 
-.gizmo .markdown>:not(pre),
-.gizmo .markdown>:not(pre)>:not(a) {
-    color: #0d0d0d;
-    color: var(--text-primary)
-} */
+  .code-panel-block .docs-code-block__header {
+    padding: 0.1rem 0.1rem 0.45rem;
+    border-bottom: 0;
+    background: transparent;
+  }
+
+  .code-panel-block .docs-code-block__body {
+    border: 1px solid var(--code-border);
+    border-radius: 0.75rem;
+    background: var(--code-bg);
+  }
+
+  .code-panel-block .docs-code-block__body pre,
+  .code-panel-block .docs-code-block__body pre code {
+    color: var(--foreground);
+  }
+
+  :where(.prose, .prose-stream) .markdown-v2-output .markdown-hr {
+    margin: 2rem 0;
+    clear: both;
+    border: 0;
+    border-top: 1px solid var(--border);
+  }
+
+  :where(.prose, .prose-stream) .markdown-v2-output .markdown-list-virtualization-sentinel {
+    height: 1px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    visibility: hidden;
+  }
+
+  :where(.prose, .prose-stream) .markdown-v2-output .shiki,
+  :where(.prose, .prose-stream) .markdown-v2-output .shiki span {
+    background-color: transparent !important;
+  }
+
+  :where(.prose, .prose-stream) .markdown-v2-output pre,
+  :where(.prose, .prose-stream) .markdown-v2-output pre code,
+  :where(.prose, .prose-stream) .markdown-v2-output pre [data-line],
+  :where(.prose, .prose-stream) .markdown-v2-output pre span {
+    background: transparent !important;
+  }

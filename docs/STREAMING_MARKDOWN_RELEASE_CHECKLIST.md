@@ -1,6 +1,6 @@
 # StreamMDX Release Checklist
 
-_Last updated: 2026-04-10_
+_Last updated: 2026-10-07_
 
 Use this checklist when cutting releases from `stream-mdx/`. This file is the operational release path, not a historical note.
 
@@ -21,8 +21,12 @@ Use this checklist when cutting releases from `stream-mdx/`. This file is the op
 3. Build the exported docs site.
 
    ```bash
-   npm run docs:build
+   NEXT_PUBLIC_STREAMING_DEMO_API=true npm run docs:build
    ```
+
+   The demo automation API must be enabled during the Next.js build. Setting this variable only on the static server does not change the exported JavaScript.
+
+   After streaming finishes, confirm the demo shows `Completed` and `window.__STREAMING_DEMO__.getState().isFinalizing` is `false`. The snapshot's pending and scheduling preset values must also reflect state-only changes, without requiring another renderer patch.
 
 4. Check documentation links and anchors.
 
@@ -66,6 +70,12 @@ These are the high-signal release gates and should be green before publishing.
    npm run ci:pack-smoke
    ```
 
+6. CommonMark conformance against the committed baseline.
+
+   ```bash
+   npm run test:conformance
+   ```
+
 ## 3. Merge-time local checks
 
 These are not all CI-required, but they should be run before a release if the touched surface warrants it.
@@ -82,6 +92,55 @@ Use the exported docs server model:
 cd apps/docs/out
 python3 -m http.server 3012 --bind 127.0.0.1
 ```
+
+### 3.1. Pack and external install gate
+
+This is the most reliable “will npm users succeed?” gate.
+
+#### 3.1.1. CI-equivalent smoke test
+
+Runs a fully automated pack+install smoke test across Node sandbox, Next.js starter, and Vite:
+- Packs `stream-mdx`, core, plugins, worker, React, theme, and the optional `@stream-mdx/mermaid` and `@stream-mdx/unified` packages.
+- Installs the optional packages explicitly alongside the worker engine, with the local package graph resolved through tarball dependencies and overrides. The temporary apps use no workspace links, source imports, or compatibility shims.
+- Loads every advertised ESM and CJS JavaScript export on the running supported Node version, which must be >=20. This checks that runtime, not every version in the supported range.
+- Executes `MermaidBlock` through React SSR in code view. Executes `createUnifiedRenderer` with `remark-gfm` and `rehype-slug`, asserting transformed HTML. Direct and inline engines parse and finalize a heading and paragraph through both public engine entries.
+- Builds Next.js and Vite apps using Mermaid `codeRenderers`, the unified `blockRenderer` with those plugins, and `engine="main-thread"`. These are production bundling checks, not browser runtime proof. Mermaid SVG generation and hydrated main-thread rendering need a separate real-browser smoke.
+
+```bash
+npm run ci:pack-smoke
+# Select one target:
+# npm run ci:pack-smoke -- --only node
+# npm run ci:pack-smoke -- --only next
+# npm run ci:pack-smoke -- --only vite
+# Keep successful sandboxes for browser inspection:
+# KEEP_PACK_SMOKE_TMP=1 npm run ci:pack-smoke
+```
+
+If a declared export fails, compare its manifest target with the packed `dist` files. Preserve the public subpath when correcting the target. The unified adapter bundles its ESM-only pipeline dependencies so its advertised CJS entry can execute plugins, not just load a module object. Failed runs retain the sandboxes and generated verifiers for diagnosis.
+
+#### 3.1.2. Manual pack
+
+1. **Pack tarballs locally**
+     ```bash
+     mkdir -p tmp/release-packs
+     (cd packages/markdown-v2-core && npm pack --pack-destination ../../tmp/release-packs)
+     (cd packages/markdown-v2-plugins && npm pack --pack-destination ../../tmp/release-packs)
+     (cd packages/markdown-v2-protocol && npm pack --pack-destination ../../tmp/release-packs)
+     (cd packages/markdown-v2-worker && npm pack --pack-destination ../../tmp/release-packs)
+     (cd packages/markdown-v2-react && npm pack --pack-destination ../../tmp/release-packs)
+     (cd packages/markdown-v2-mermaid && npm pack --pack-destination ../../tmp/release-packs)
+     (cd packages/markdown-v2-unified && npm pack --pack-destination ../../tmp/release-packs)
+     (cd packages/markdown-v2-tui && npm pack --pack-destination ../../tmp/release-packs)
+     (cd packages/theme-tailwind && npm pack --pack-destination ../../tmp/release-packs)
+     (cd packages/stream-mdx && npm pack --pack-destination ../../tmp/release-packs)
+     ```
+2. **In a clean scratch dir, install from tarballs and build**
+   - Minimum expectation:
+     - `npm install ./tmp/release-packs/*.tgz` (or explicit paths)
+     - `next build` succeeds for a simple Next app using `stream-mdx` (or `@stream-mdx/react`)
+   - If you use the included starter:
+     - point the starter deps at the tarballs (no workspace/file links)
+     - ensure it can `npm install`, `npm run worker:build`, and `npm run build`
 
 ## 4. Snapshot and baseline policy
 
@@ -129,11 +188,37 @@ Preferred release path for the `0.5.0` cut:
    npm run release:prepare:v0.5.0
    ```
 
+   Prepare-only validates every public package at `0.5.0`, including `@stream-mdx/unified`, using the publish helper's shared version assertion. It then runs `release:gates`, `npm test`, `test:conformance`, workspace pack dry-runs, and `ci:pack-smoke` without npm authentication or publishing.
+
+   To check version alignment without running the other gates:
+
+   ```bash
+   STREAM_MDX_EXPECT_VERSION=0.5.0 bash scripts/publish-release.sh --check-versions
+   ```
+
 2. Confirm npm auth.
 
    ```bash
    npm whoami
    ```
+
+   For CI publishing, configure npm Trusted Publishing:
+   - Configure npm “Trusted Publisher” for:
+     - `@stream-mdx/core`
+     - `@stream-mdx/plugins`
+     - `@stream-mdx/protocol`
+     - `@stream-mdx/worker`
+     - `@stream-mdx/react`
+     - `@stream-mdx/mermaid`
+     - `@stream-mdx/unified`
+     - `@stream-mdx/tui`
+     - `@stream-mdx/theme-tailwind`
+     - `stream-mdx`
+   - Required workflow permissions:
+     - `id-token: write`
+   - Workflows:
+     - `.github/workflows/release.yml` (auto release PRs / publish)
+     - `.github/workflows/publish.yml` (manual workflow_dispatch)
 
 3. Publish all public packages in dependency order.
 
@@ -155,6 +240,7 @@ Preferred release path for the `0.5.0` cut:
 - `@stream-mdx/worker`
 - `@stream-mdx/react`
 - `@stream-mdx/mermaid`
+- `@stream-mdx/unified`
 - `@stream-mdx/tui`
 - `@stream-mdx/theme-tailwind`
 - `stream-mdx`

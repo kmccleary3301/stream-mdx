@@ -13,10 +13,10 @@ import { prefetchMdxRuntime } from "./mdx-runtime";
 import type { AdaptiveBudgetState, PatchFlushResult } from "./renderer/patch-commit-scheduler";
 import { DeferredRenderContext, type DeferredRenderConfig } from "./renderer/deferred-render-context";
 import { useRendererBlocks } from "./renderer/hooks";
+import { StreamingActivityContext } from "./renderer/streaming-activity-context";
 import type { RendererStore } from "./renderer/store";
 import { createDefaultWorker, releaseDefaultWorker } from "@stream-mdx/worker";
-import type { BlockComponents, HtmlElements, InlineComponents, RendererConfig, TableElements } from "./types";
-
+import { defaultUrlTransform, type AnimatedProp, type BlockComponents, type BlockRendererOverride, type CodeFenceRenderer, type ControlsComponentProps, type ControlsConfig, type ElementFilterOptions, type HtmlElements, type HtmlOptions, type InlineComponents, type MathRenderer, type RendererConfig, type SyntaxRuleSpec, type TableElements, type TableVirtualizationOptions, type UrlTransform } from "./types";
 const EMPTY_BLOCKS: ReadonlyArray<Block> = [];
 
 function createConfigSignature(input: StreamingMarkdownConfigSignature): string {
@@ -30,6 +30,9 @@ interface StreamingMarkdownConfigSignature {
   mdxStrategy?: "server" | "worker";
   mdxComponentKeys: string[];
   mdxHydration?: MdxHydrationOptions;
+  syntax?: SyntaxRuleSpec[];
+  html?: HtmlOptions;
+  themes?: { light: string; dark: string };
 }
 
 export interface StreamingSchedulerOptions {
@@ -60,6 +63,7 @@ export interface StreamingFeatureFlags {
   liveTokenization?: boolean;
   emitHighlightTokens?: boolean;
   emitDiffBlocks?: boolean;
+  themes?: { light: string; dark: string };
 }
 
 /**
@@ -121,13 +125,17 @@ export type LinkSafetyConfig = {
   renderModal?: (props: LinkSafetyModalProps) => React.ReactNode;
 };
 
-export interface StreamingMarkdownProps {
+export type MarkdownEngineMode = "worker" | "main-thread" | "auto";
+
+export interface StreamingMarkdownProps extends ElementFilterOptions {
   text?: string;
   stream?: AsyncIterable<string>;
   worker?: Worker | URL | (() => Worker) | string;
+  engine?: MarkdownEngineMode;
   managedWorker?: boolean;
   prewarmLangs?: string[];
   features?: StreamingFeatureFlags;
+  themes?: { light: string; dark: string };
   components?: Partial<BlockComponents>;
   tableElements?: Partial<TableElements>;
   htmlElements?: Partial<HtmlElements>;
@@ -142,7 +150,18 @@ export interface StreamingMarkdownProps {
   style?: React.CSSProperties;
   caret?: StreamingCaret;
   linkSafety?: LinkSafetyConfig;
+  codeRenderers?: Record<string, CodeFenceRenderer>;
+  mathRenderer?: MathRenderer;
+  artifactHtml?: boolean;
   deferHeavyBlocks?: boolean | DeferredRenderConfig;
+  blockRenderer?: BlockRendererOverride;
+  syntax?: SyntaxRuleSpec[];
+  html?: HtmlOptions;
+  tableVirtualization?: TableVirtualizationOptions;
+  urlTransform?: UrlTransform;
+  controls?: ControlsConfig;
+  controlsComponent?: React.ComponentType<ControlsComponentProps>;
+  animated?: AnimatedProp;
 }
 
 const MdxCoordinatorBridge: React.FC<{ store: RendererStore; mode: "server" | "worker" }> = ({ store, mode }) => {
@@ -273,8 +292,10 @@ function StreamingMarkdownComponent(
     text,
     stream,
     worker: workerSource,
+    engine = "auto",
     prewarmLangs = [],
     features = {},
+    themes,
     components,
     tableElements,
     htmlElements,
@@ -290,7 +311,23 @@ function StreamingMarkdownComponent(
     style,
     caret,
     linkSafety,
+    codeRenderers,
+    allowedElements,
+    disallowedElements,
+    allowElement,
+    unwrapDisallowed,
+    disableAutolinkProtocols,
+    mathRenderer,
+    artifactHtml,
     deferHeavyBlocks,
+    blockRenderer,
+    syntax,
+    html,
+    tableVirtualization,
+    urlTransform,
+    controls,
+    controlsComponent,
+    animated,
   }: StreamingMarkdownProps,
   ref: React.ForwardedRef<StreamingMarkdownHandle>,
 ) {
@@ -306,6 +343,7 @@ function StreamingMarkdownComponent(
     (typeof effectiveScheduling.maxBatchesPerFlush === "number"
       ? effectiveScheduling.maxBatchesPerFlush
       : DEFAULT_ADAPTIVE_QUEUE_THRESHOLD);
+  const effectiveThemes = themes ?? features?.themes;
   const configSignature = useMemo(
     () =>
       createConfigSignature({
@@ -315,8 +353,11 @@ function StreamingMarkdownComponent(
         mdxStrategy: mdxCompileMode,
         mdxComponentKeys: mdxComponents ? Object.keys(mdxComponents).sort() : [],
         mdxHydration,
+        syntax,
+        html,
+        themes: effectiveThemes,
       }),
-    [features, prewarmLangs, effectiveScheduling, mdxCompileMode, mdxComponents, mdxHydration],
+    [features, prewarmLangs, effectiveScheduling, mdxCompileMode, mdxComponents, mdxHydration, syntax, html, effectiveThemes],
   );
 
   const mdxHydrationController = useMemo(() => createMdxHydrationController(mdxHydration), [mdxHydration]);
@@ -327,9 +368,15 @@ function StreamingMarkdownComponent(
     }),
     [mdxHydrationController, mdxHydration],
   );
+  // Stable indirection so renderers built once (artifact frames) always reach the current linkSafety handler.
+  const linkHandlerRef = useRef<(url: string) => Promise<void>>();
   const rendererRef = useRef<{ renderer: MarkdownRenderer; signature: string }>();
   const [session, setSession] = useState(0);
   const rendererKey = `${configSignature}:${session}`;
+  const onErrorRef = useRef(onError);
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
 
   const historyLimit = effectiveScheduling.historyLimit ?? DEFAULT_HISTORY_LIMIT;
 
@@ -342,6 +389,20 @@ function StreamingMarkdownComponent(
           }
         : undefined;
     const rendererConfig: RendererConfig = {
+      themes: effectiveThemes,
+      codeRenderers,
+      allowedElements,
+      disallowedElements,
+      allowElement,
+      unwrapDisallowed,
+      disableAutolinkProtocols,
+      mathRenderer,
+      artifactHtml,
+      tableVirtualization,
+      urlTransform,
+      blockRenderer,
+      controls,
+      controlsComponent,
       highlight: prewarmLangs.length > 0 ? { langs: prewarmLangs } : undefined,
       plugins: features,
       performance: {
@@ -357,9 +418,15 @@ function StreamingMarkdownComponent(
         adaptiveBudgeting: effectiveScheduling.adaptiveBudgeting,
       },
       mdx: mdxConfig,
+      syntax,
+      html,
     };
+    const nextRenderer = new MarkdownRenderer(rendererConfig);
+    nextRenderer.getComponentRegistry().setLinkHandler((url) => {
+      void linkHandlerRef.current?.(url);
+    });
     rendererRef.current = {
-      renderer: new MarkdownRenderer(rendererConfig),
+      renderer: nextRenderer,
       signature: rendererKey,
     };
   }
@@ -378,7 +445,12 @@ function StreamingMarkdownComponent(
   const mdxMode: "server" | "worker" = mdxCompileMode ?? "server";
   const [workerReady, setWorkerReady] = useState(false);
   const workerReadyRef = useRef(false);
+  const readyRendererRef = useRef<MarkdownRenderer | null>(null);
   const [streamStatus, setStreamStatus] = useState<"idle" | "streaming" | "done">("idle");
+  const iteratorSequenceRef = useRef(0);
+  const activeIteratorRef = useRef<number | null>(null);
+  const consumedIteratorsRef = useRef<WeakSet<AsyncIterator<string>>>();
+  const imperativeActivityRef = useRef(false);
   const lastMetricsRef = useRef<RendererMetrics | null>(null);
   const patchHistoryRef = useRef<RendererMetrics[]>([]);
 
@@ -407,22 +479,6 @@ function StreamingMarkdownComponent(
     };
   }, []);
 
-  const previousTextRef = useRef<string | undefined>();
-  useEffect(() => {
-    if (text !== undefined && text !== previousTextRef.current) {
-      previousTextRef.current = text;
-      setSession((prev) => prev + 1);
-    }
-  }, [text]);
-
-  const previousStreamRef = useRef<AsyncIterable<string> | undefined>();
-  useEffect(() => {
-    if (stream && stream !== previousStreamRef.current) {
-      previousStreamRef.current = stream;
-      setSession((prev) => prev + 1);
-    }
-  }, [stream]);
-
   const linkSafetyEnabled = Boolean(linkSafety?.enabled);
   const [linkModalState, setLinkModalState] = useState<{ url: string; isOpen: boolean; isChecking: boolean }>({
     url: "",
@@ -433,27 +489,33 @@ function StreamingMarkdownComponent(
   const openLink = useMemo(() => {
     return (url: string) => {
       if (typeof window === "undefined") return;
-      if (url.startsWith("http://") || url.startsWith("https://")) {
-        window.open(url, "_blank", "noopener,noreferrer");
+      const transform = urlTransform ?? defaultUrlTransform;
+      const safe = transform(url, "href", { source: "markdown" });
+      if (!safe) return;
+      if (safe.startsWith("http://") || safe.startsWith("https://")) {
+        window.open(safe, "_blank", "noopener,noreferrer");
       } else {
-        window.location.assign(url);
+        window.location.assign(safe);
       }
     };
-  }, []);
+  }, [urlTransform]);
 
   const handleLinkClick = useMemo(() => {
     return async (url: string) => {
+      const transform = urlTransform ?? defaultUrlTransform;
+      const safe = transform(url, "href", { source: "markdown" });
+      if (!safe) return;
       if (!linkSafetyEnabled) {
-        openLink(url);
+        openLink(safe);
         return;
       }
       if (linkSafety?.onLinkCheck) {
         setLinkModalState((prev) => ({ ...prev, isChecking: true }));
         try {
-          const allowed = await linkSafety.onLinkCheck(url);
+          const allowed = await linkSafety.onLinkCheck(safe);
           if (allowed) {
             setLinkModalState((prev) => ({ ...prev, isChecking: false }));
-            openLink(url);
+            openLink(safe);
             return;
           }
         } catch {
@@ -461,9 +523,10 @@ function StreamingMarkdownComponent(
         }
         setLinkModalState((prev) => ({ ...prev, isChecking: false }));
       }
-      setLinkModalState({ url, isOpen: true, isChecking: false });
+      setLinkModalState({ url: safe, isOpen: true, isChecking: false });
     };
-  }, [linkSafety, linkSafetyEnabled, openLink]);
+  }, [linkSafety, linkSafetyEnabled, openLink, urlTransform]);
+  linkHandlerRef.current = handleLinkClick;
 
   const handleLinkClose = useMemo(() => {
     return () => setLinkModalState((prev) => ({ ...prev, isOpen: false }));
@@ -586,7 +649,18 @@ function StreamingMarkdownComponent(
     if (htmlElements) {
       renderer.getComponentRegistry().setHtmlElements(htmlElements);
     }
-  }, [renderer, components, mdxComponents, inlineComponents, resolvedInlineComponents, tableElements, htmlElements]);
+    if (codeRenderers) {
+      renderer.setCodeRenderers(codeRenderers);
+    }
+    const reg = renderer.getComponentRegistry();
+    if (mathRenderer) {
+      renderer.setMathRenderer(mathRenderer);
+    }
+    if (artifactHtml !== undefined) {
+      reg.setArtifactHtml(artifactHtml);
+    }
+    reg.setTableVirtualization(tableVirtualization);
+  }, [renderer, components, mdxComponents, inlineComponents, resolvedInlineComponents, tableElements, htmlElements, codeRenderers, mathRenderer, artifactHtml, tableVirtualization]);
 
   useEffect(() => {
     const removeListener = renderer.addFlushListener((result) => {
@@ -613,71 +687,156 @@ function StreamingMarkdownComponent(
     }
   }, [historyLimit]);
 
+  const activeInstanceRef = useRef<{ worker: Worker; owned: boolean; release?: () => void; source: unknown; engine: string; session: number } | null>(null);
+
   useEffect(() => {
-    const restartToken = session;
-    void restartToken;
+    let cancelled = false;
+
     if (process.env.NODE_ENV !== "production" && DEBUG_WORKER) {
       // eslint-disable-next-line no-console
       console.info("[debug] instantiate worker effect");
     }
-    if (typeof window === "undefined" || typeof Worker === "undefined") {
-      return undefined;
-    }
+
     setWorkerReady(false);
     workerReadyRef.current = false;
-    const { worker, owned, release } = instantiateWorker(workerSource);
-    if (process.env.NODE_ENV !== "production" && DEBUG_WORKER) {
-      // eslint-disable-next-line no-console
-      console.info("[debug] instantiate worker result", Boolean(worker));
-    }
-    if (!worker) {
-      if (onError) {
-        onError(new Error("Failed to create markdown worker instance"));
+
+    const setupWorker = (inst: WorkerInstance) => {
+      if (cancelled) {
+        if (inst.owned && inst.worker) {
+          try {
+            inst.worker.terminate();
+          } catch {}
+          inst.release?.();
+        }
+        return;
       }
-      return undefined;
-    }
-    renderer.detachWorker();
-    renderer.attachWorker(worker, { skipInit: managedWorker });
-    if (managedWorker) {
+
+      if (!inst.worker) {
+        onErrorRef.current?.(new Error("Failed to create markdown worker instance"));
+        return;
+      }
+
+      activeInstanceRef.current = {
+        worker: inst.worker,
+        owned: managedWorker ? false : inst.owned,
+        release: inst.release,
+        source: workerSource,
+        engine,
+        session,
+      };
+
+      renderer.detachWorker();
+      renderer.attachWorker(inst.worker, { skipInit: managedWorker });
+      readyRendererRef.current = renderer;
+      setWorkerReady(true);
+      workerReadyRef.current = true;
+    };
+
+    // If an existing worker instance matches the current (workerSource, engine, session), reuse it
+    const existing = activeInstanceRef.current;
+    if (existing && existing.source === workerSource && existing.engine === engine && (managedWorker || existing.session === session)) {
+      renderer.attachWorker(existing.worker, { skipInit: managedWorker });
+      readyRendererRef.current = renderer;
       setWorkerReady(true);
       workerReadyRef.current = true;
       return () => {
         setWorkerReady(false);
         workerReadyRef.current = false;
+        if (readyRendererRef.current === renderer) readyRendererRef.current = null;
         renderer.detachWorker();
-        if (owned) {
-          try {
-            worker.terminate();
-          } catch (error) {
-            console.warn("Unable to terminate markdown worker", error);
-          }
-          release?.();
-        }
       };
     }
-    setWorkerReady(true);
-    workerReadyRef.current = true;
+
+    // Terminate old instance if source/engine/session changed
+    if (existing?.owned && existing.worker) {
+      try {
+        existing.worker.terminate();
+      } catch {}
+      existing.release?.();
+      activeInstanceRef.current = null;
+    }
+
+    const resolveAndSetup = async () => {
+      if (engine === "main-thread") {
+        try {
+          // Dynamic import: avoids bundling @stream-mdx/worker/engine into consumer bundles unless main-thread is explicitly selected
+          const { createInlineEngineWorker } = await import("@stream-mdx/worker/engine");
+          if (cancelled) return;
+          const inlineWorker = createInlineEngineWorker();
+          setupWorker({ worker: inlineWorker as unknown as Worker, owned: true });
+        } catch (error) {
+          onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
+        }
+        return;
+      }
+
+      if (engine === "worker") {
+        if (typeof window === "undefined" || typeof Worker === "undefined") {
+          onErrorRef.current?.(new Error("Worker is not supported in this environment"));
+          return;
+        }
+        const inst = instantiateWorker(workerSource);
+        setupWorker(inst);
+        return;
+      }
+
+      // Default: "auto"
+      let inst: WorkerInstance = { worker: null, owned: false };
+      if (typeof window !== "undefined" && typeof Worker !== "undefined") {
+        try {
+          inst = instantiateWorker(workerSource);
+        } catch {
+          inst = { worker: null, owned: false };
+        }
+      }
+
+      if (inst.worker) {
+        setupWorker(inst);
+        return;
+      }
+
+      // Worker unavailable or failed in auto mode -> fall back to main-thread inline engine
+      try {
+        // Dynamic import: avoids bundling @stream-mdx/worker/engine into consumer bundles unless auto-fallback activates
+        const { createInlineEngineWorker } = await import("@stream-mdx/worker/engine");
+        if (cancelled) return;
+        const inlineWorker = createInlineEngineWorker();
+        setupWorker({ worker: inlineWorker as unknown as Worker, owned: true });
+      } catch (error) {
+        onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
+      }
+    };
+
+    void resolveAndSetup();
 
     return () => {
+      cancelled = true;
       setWorkerReady(false);
       workerReadyRef.current = false;
+      if (readyRendererRef.current === renderer) readyRendererRef.current = null;
       renderer.detachWorker();
-      if (owned) {
+    };
+  }, [renderer, workerSource, engine, session, managedWorker]);
+
+  useEffect(() => {
+    return () => {
+      const current = activeInstanceRef.current;
+      if (current?.owned && current.worker) {
         try {
-          worker.terminate();
+          current.worker.terminate();
         } catch (error) {
           console.warn("Unable to terminate markdown worker", error);
         }
-        release?.();
+        current.release?.();
+        activeInstanceRef.current = null;
       }
     };
-  }, [renderer, workerSource, session, onError, managedWorker]);
-
+  }, []);
   useEffect(() => {
     const restartToken = session;
     void restartToken;
     let cancelled = false;
-    if (!workerReady) {
+    if (!workerReady || readyRendererRef.current !== renderer) {
       return () => {
         cancelled = true;
       };
@@ -690,18 +849,17 @@ function StreamingMarkdownComponent(
     }
 
     if (text !== undefined) {
-      try {
-        setStreamStatus("streaming");
-        renderer.restart();
-        renderer.append(text);
+      imperativeActivityRef.current = false;
+      setStreamStatus("streaming");
+      void renderer.renderStatic(text).then(() => {
+        if (cancelled || readyRendererRef.current !== renderer) return;
         renderer.finalize();
-        setStreamStatus("done");
-      } catch (error) {
-        setStreamStatus("done");
-        if (onError) {
-          onError(error instanceof Error ? error : new Error(String(error)));
-        }
-      }
+        setStreamStatus(imperativeActivityRef.current ? "streaming" : "done");
+      }).catch((error: unknown) => {
+        if (cancelled || readyRendererRef.current !== renderer) return;
+        setStreamStatus(imperativeActivityRef.current ? "streaming" : "done");
+        onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
+      });
       return () => {
         cancelled = true;
       };
@@ -712,13 +870,27 @@ function StreamingMarkdownComponent(
         cancelled = true;
       };
     }
+    let iterator: AsyncIterator<string>;
+    // Different iterable wrappers can return the same single-use iterator.
+    try {
+      iterator = stream[Symbol.asyncIterator]();
+      const consumedIterators = consumedIteratorsRef.current ??= new WeakSet<AsyncIterator<string>>();
+      if (consumedIterators.has(iterator)) return;
+      consumedIterators.add(iterator);
+    } catch (error) {
+      onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
+      return;
+    }
 
+    const iteratorOwner = ++iteratorSequenceRef.current;
+    activeIteratorRef.current = iteratorOwner;
     (async () => {
       try {
+        imperativeActivityRef.current = false;
         setStreamStatus("streaming");
         renderer.restart();
-        for await (const chunk of stream) {
-          if (cancelled) {
+        for await (const chunk of { [Symbol.asyncIterator]: () => iterator }) {
+          if (cancelled || activeIteratorRef.current !== iteratorOwner) {
             break;
           }
           renderer.append(chunk);
@@ -727,21 +899,28 @@ function StreamingMarkdownComponent(
             console.info("[debug] streaming chunk", chunk.length);
           }
         }
-        if (!cancelled) {
-          setStreamStatus("done");
+        if (!cancelled && activeIteratorRef.current === iteratorOwner) {
+          renderer.finalize();
+          setStreamStatus(imperativeActivityRef.current ? "streaming" : "done");
         }
       } catch (error) {
-        if (onError && !cancelled) {
-          setStreamStatus("done");
-          onError(error instanceof Error ? error : new Error(String(error)));
+        if (!cancelled && activeIteratorRef.current === iteratorOwner) {
+          setStreamStatus(imperativeActivityRef.current ? "streaming" : "done");
+          onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
         }
+      } finally {
+        if (activeIteratorRef.current === iteratorOwner) activeIteratorRef.current = null;
       }
     })();
 
     return () => {
       cancelled = true;
+      if (activeIteratorRef.current === iteratorOwner) {
+        activeIteratorRef.current = null;
+        setStreamStatus(imperativeActivityRef.current ? "streaming" : "idle");
+      }
     };
-  }, [renderer, text, stream, workerReady, session, onError, managedWorker]);
+  }, [renderer, text, stream, workerReady, session, managedWorker]);
 
   useImperativeHandle(
     ref,
@@ -753,13 +932,20 @@ function StreamingMarkdownComponent(
         renderer.resume();
       },
       restart() {
+        imperativeActivityRef.current = false;
+        activeIteratorRef.current = null;
+        setStreamStatus("idle");
         setSession((prev) => prev + 1);
       },
       finalize() {
         renderer.finalize();
+        imperativeActivityRef.current = false;
+        setStreamStatus(activeIteratorRef.current === null ? "done" : "streaming");
       },
       append(text: string) {
         if (!text || !workerReadyRef.current) return;
+        imperativeActivityRef.current = true;
+        setStreamStatus("streaming");
         renderer.append(text);
       },
       setCredits(value: number) {
@@ -848,13 +1034,26 @@ function StreamingMarkdownComponent(
         <MdxPrefetchBridge store={store} />
         {mdxMode === "server" ? <MdxCoordinatorBridge store={store} mode={mdxMode} /> : null}
         <CodeHighlightRequestContext.Provider value={highlightRequester}>
+        <StreamingActivityContext.Provider value={streamStatus === "streaming" || hasActiveBlocks}>
           <MarkdownBlocksRenderer
             blocks={EMPTY_BLOCKS}
             componentRegistry={renderer.getComponentRegistry()}
+            codeRenderers={codeRenderers}
+            blockRenderer={blockRenderer}
+            urlTransform={urlTransform}
+            controls={controls}
+            controlsComponent={controlsComponent}
+            animated={animated}
+            allowedElements={allowedElements}
+            disallowedElements={disallowedElements}
+            allowElement={allowElement}
+            unwrapDisallowed={unwrapDisallowed}
+            disableAutolinkProtocols={disableAutolinkProtocols}
             className={resolvedClassName}
             style={resolvedStyle}
             store={store}
           />
+        </StreamingActivityContext.Provider>
         </CodeHighlightRequestContext.Provider>
         {linkModal}
       </DeferredRenderContext.Provider>
@@ -869,17 +1068,28 @@ export const StreamingMarkdown = StreamingMarkdownWithRef as React.ForwardRefExo
   StreamingMarkdownProps & React.RefAttributes<StreamingMarkdownHandle>
 >;
 
+function isWorkerInstance(value: unknown): value is Worker {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !(value instanceof URL) &&
+    (value instanceof Worker ||
+      (typeof (value as Worker).postMessage === "function" &&
+        typeof (value as Worker).addEventListener === "function"))
+  );
+}
+
 function instantiateWorker(source?: Worker | URL | (() => Worker) | string): WorkerInstance {
   if (typeof window === "undefined" || typeof Worker === "undefined") {
     return { worker: null, owned: false };
   }
-  if (source instanceof Worker) {
+  if (isWorkerInstance(source)) {
     return { worker: source, owned: false };
   }
   if (typeof source === "function") {
     try {
       const worker = source();
-      return { worker, owned: false };
+      return { worker, owned: true };
     } catch (error) {
       console.warn("StreamingMarkdown: worker factory failed", error);
       return { worker: null, owned: false };

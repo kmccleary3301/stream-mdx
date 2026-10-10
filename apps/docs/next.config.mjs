@@ -9,16 +9,20 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const nextConfig = {
   reactStrictMode: true,
   outputFileTracingRoot: path.resolve(__dirname, "../../.."),
-  output: "export",
+  output: process.env.NEXT_EXPORT === "0" ? undefined : "export",
   trailingSlash: true,
   basePath: basePath || undefined,
   assetPrefix: basePath || undefined,
   images: { unoptimized: true },
-  webpack(config) {
+  webpack(config, { isServer }) {
     config.resolve.alias = {
       ...(config.resolve.alias ?? {}),
       streamdown: path.resolve(__dirname, "../../node_modules/streamdown/dist/index.js"),
     };
+    // Profiling builds only: keep client function names readable in CPU profiles. Never set for published builds.
+    if (process.env.STREAM_MDX_DOCS_PROFILE_BUILD === "1" && !isServer) {
+      config.optimization.minimize = false;
+    }
     return config;
   },
 };

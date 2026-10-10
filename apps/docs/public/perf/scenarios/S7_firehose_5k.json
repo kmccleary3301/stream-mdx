@@ -1,0 +1,8 @@
+{
+  "id": "S7_firehose_5k",
+  "label": "Firehose 5k cps (16 ms network frames)",
+  "updateIntervalMs": 16,
+  "charRateCps": 5000,
+  "maxChunkChars": 4096,
+  "includeTags": ["perf-firehose"]
+}

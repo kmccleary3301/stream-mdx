@@ -134,7 +134,7 @@ export function StreamRenderWidget({
         style={containerStyle}
       >
         <BottomStickScrollArea className="h-full w-full" contentClassName="p-4" showJumpToBottom showScrollBar>
-          <div className="prose markdown max-w-none text-theme-primary">
+          <div className="prose max-w-none text-theme-primary">
             <StreamingMarkdown
               text={displayText}
               className="markdown-v2-output"

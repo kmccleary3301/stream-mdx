@@ -1,10 +1,11 @@
 import assert from "node:assert";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { analyzeMathTailShadowReport } from "../src/streaming/math-tail-shadow";
 
-const FIXTURES_DIR = path.resolve(process.cwd(), "tests/regression/fixtures");
+const FIXTURES_DIR = fileURLToPath(new URL("../../../tests/regression/fixtures", import.meta.url));
 
 function readFixture(name: string): string {
   return fs.readFileSync(path.join(FIXTURES_DIR, name), "utf8");

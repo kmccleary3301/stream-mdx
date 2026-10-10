@@ -1,38 +1,80 @@
-import { getDefaultCodeWrapperAttributes, stripCodeFence, type Block, type InlineNode, type MixedContentSegment, type TokenLineV1 } from "@stream-mdx/core";
+import { trimProvisionalFenceTail } from "../code-fence-streaming";
+import { dedentIndentedCode, getDefaultCodeWrapperAttributes, normalizeBlockquoteText, stripCodeFence, type Block, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type TokenLineV1, type UrlTransform } from "@stream-mdx/core";
 import React from "react";
-import { renderInlineNodes, renderParagraphMixedSegments } from "../components";
+import { DefaultDiffRenderer } from "../components/diff-renderer";
+import type { CodeFenceRendererProps, InlineComponents, TableElements } from "../types";
+import {
+  CodeControlsBar,
+  TableControlsBar,
+  copyToClipboard,
+  downloadFile,
+  getCodeSnippetFilename,
+  inlineToPlainText,
+  renderInlineNodes,
+  renderParagraphMixedSegments,
+  resolveCodeControls,
+  resolveTableControls,
+  tableToCsv,
+  tableToMarkdown,
+  tableToTsv,
+} from "../components";
 import type { ComponentRegistry } from "../components";
-import { DEFAULT_INLINE_HTML_RENDERERS, renderInlineHtmlSegment } from "../utils/inline-html";
-import { useRendererChildren, useRendererNode } from "./hooks";
+import { DEFAULT_INLINE_HTML_RENDERERS, renderHtmlOwnershipTree, renderInlineHtmlSegment } from "../utils/inline-html";
+import { RenderConfigVersionContext, useRendererChildren, useRendererNode } from "./hooks";
 import { useCodeHighlightRequester } from "./code-highlight-context";
 import { DeferredRenderContext } from "./deferred-render-context";
-import { isListPatchDebugEnabled, type RendererStore } from "./store";
+import { createRendererStore, isListPatchDebugEnabled, type RendererStore } from "./store";
 import { useDeferredRender } from "./use-deferred-render";
 import { DEFAULT_VIRTUALIZED_CODE_CONFIG, type VirtualizedLine, useVirtualizedCode } from "./virtualized-code";
+import { useVirtualizedTable, type TableVirtualizationProps } from "./virtualized-table";
+import { StreamingActivityContext } from "./streaming-activity-context";
 
 export const BlockNodeRenderer: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = ({ store, blockId, registry }) => {
   const node = useRendererNode(store, blockId);
   const block = node?.block;
-  if (!node || !block) return null;
+  if (!node) return null;
+  if (!block) {
+    const parentTagName = node.type.startsWith("list-item-") ? "li" : node.type.startsWith("blockquote-") ? "blockquote" : "p";
+    return <MixedSegmentView store={store} nodeId={blockId} inlineComponents={registry.getInlineComponents()} urlTransform={registry.getUrlTransform()} registry={registry} parentTagName={parentTagName} />;
+  }
 
+  // The native quote view still invokes the registered wrapper, but supplies its prepared children.
+  const preparedQuote = block.type === "blockquote" && Boolean(block.payload.meta?.preparedNested);
+  const mixedParagraph = block.type === "paragraph" && Array.isArray(block.payload.meta?.mixedSegments);
+  if ((registry.hasCustomBlockComponent(block.type) || mixedParagraph) && !preparedQuote) {
+    return <>{registry.renderFinalizedBlock(block, registry.renderBlock(block))}</>;
+  }
+
+  let element: React.ReactElement | null;
   switch (block.type) {
     case "paragraph":
-      return <ParagraphBlockView store={store} blockId={block.id} registry={registry} />;
+      element = <ParagraphBlockView store={store} blockId={block.id} registry={registry} />;
+      break;
     case "blockquote":
-      return <BlockquoteBlockView store={store} blockId={block.id} registry={registry} />;
+      element = <BlockquoteBlockView store={store} blockId={block.id} registry={registry} />;
+      break;
     case "list":
-      return <ListBlockView store={store} blockId={block.id} registry={registry} depth={0} />;
+      element = <ListBlockView store={store} blockId={block.id} registry={registry} depth={0} />;
+      break;
     case "table":
-      return <TableBlockView store={store} blockId={block.id} registry={registry} />;
+      element = <TableBlockView store={store} blockId={block.id} registry={registry} />;
+      break;
     case "code":
-      return <CodeBlockView store={store} blockId={block.id} registry={registry} />;
+      element = <CodeBlockView store={store} blockId={block.id} registry={registry} />;
+      break;
     case "html":
-      return <HtmlBlockView store={store} blockId={block.id} registry={registry} />;
+      element = <HtmlBlockView store={store} blockId={block.id} registry={registry} />;
+      break;
     case "mdx":
-      return <MdxBlockView store={store} blockId={block.id} registry={registry} />;
+      element = <MdxBlockView store={store} blockId={block.id} registry={registry} />;
+      break;
     default:
-      return registry.renderBlock(block);
+      element = registry.renderBlock(block);
+      break;
   }
+
+  if (element === null) return null;
+  return <>{registry.renderFinalizedBlock(block, element)}</>;
 };
 
 const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
@@ -44,6 +86,11 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
   }
 
   const inlineComponents = registry.getInlineComponents();
+  const htmlElements = registry.getHtmlElements();
+  const literalTagContent = registry.getLiteralTagContent();
+  if (block.payload.meta?.htmlParagraphTree) {
+    return <>{registry.renderHtmlTree(block.payload.meta.htmlParagraphTree, undefined, block)}</>;
+  }
 
   if (!block.isFinalized) {
     const raw = typeof block.payload.raw === "string" ? block.payload.raw : "";
@@ -55,7 +102,7 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
       if (!allowMixedStreaming) {
         return <p className="markdown-paragraph streaming-partial">{raw}</p>;
       }
-      const structured = renderParagraphMixedSegments(segments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS);
+      const structured = renderParagraphMixedSegments(segments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS, htmlElements, literalTagContent, registry.getUrlTransform());
       if (structured.length === 1) {
         const [single] = structured;
         return React.isValidElement(single) ? single : single;
@@ -63,8 +110,8 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
       return structured;
     }
 
-    if (meta.inlineStatus === "complete" || meta.inlineStatus === "anticipated") {
-      const inlineNodes = block.payload.inline ?? [];
+    if (meta.inlineStatus === "complete" || meta.inlineStatus === "anticipated" || registry.getAnimatedOptions()) {
+      const inlineNodes = Array.isArray(block.payload.inline) && block.payload.inline.length > 0 ? block.payload.inline : (raw ? [{ kind: "text" as const, text: raw }] : []);
       const containsDisplayMath = inlineNodes.some((node) => node.kind === "math-display");
       if (containsDisplayMath) {
         const derivedSegments: MixedContentSegment[] = [
@@ -74,7 +121,7 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
             inline: inlineNodes,
           },
         ];
-        const structured = renderParagraphMixedSegments(derivedSegments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS);
+        const structured = renderParagraphMixedSegments(derivedSegments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS, htmlElements, literalTagContent, registry.getUrlTransform());
         if (structured.length === 1) {
           const [single] = structured;
           return React.isValidElement(single) ? single : single;
@@ -82,10 +129,27 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
         return structured;
       }
 
-      return <p className="markdown-paragraph streaming-partial">{renderInlineNodes(inlineNodes, inlineComponents)}</p>;
+      const partialInline = renderInlineNodes(inlineNodes, inlineComponents, registry.getUrlTransform(), registry, "p", registry.getRenderInlineContext(block.isFinalized, block.id));
+      if (!registry.hasElementFilters()) {
+        return <p className="markdown-paragraph streaming-partial">{partialInline}</p>;
+      }
+      return registry.filterElement(
+        { tagName: "p", properties: { className: "markdown-paragraph streaming-partial" }, blockType: "paragraph" },
+        { source: "markdown" },
+        () => <p className="markdown-paragraph streaming-partial">{partialInline}</p>,
+        () => partialInline,
+      ) as React.ReactElement | null;
     }
 
-    return <p className="markdown-paragraph streaming-partial">{raw}</p>;
+    if (!registry.hasElementFilters()) {
+      return <p className="markdown-paragraph streaming-partial">{raw}</p>;
+    }
+    return registry.filterElement(
+      { tagName: "p", properties: { className: "markdown-paragraph streaming-partial" }, blockType: "paragraph" },
+      { source: "markdown" },
+      () => <p className="markdown-paragraph streaming-partial">{raw}</p>,
+      () => raw,
+    ) as React.ReactElement | null;
   }
 
   const propsBlock = node.props?.block as Block | undefined;
@@ -95,7 +159,15 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
     (node.props?.inlineStatus as string | undefined);
   if (inlineStatus && inlineStatus !== "complete") {
     const raw = typeof block.payload.raw === "string" ? block.payload.raw : "";
-    return <p className="markdown-paragraph">{raw}</p>;
+    if (!registry.hasElementFilters()) {
+      return <p className="markdown-paragraph">{raw}</p>;
+    }
+    return registry.filterElement(
+      { tagName: "p", properties: { className: "markdown-paragraph" }, blockType: "paragraph" },
+      { source: "markdown" },
+      () => <p className="markdown-paragraph">{raw}</p>,
+      () => raw,
+    ) as React.ReactElement | null;
   }
 
   const segments = Array.isArray((block.payload.meta as { mixedSegments?: MixedContentSegment[] } | undefined)?.mixedSegments)
@@ -103,7 +175,7 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
     : undefined;
 
   if (segments && segments.length > 0) {
-    const structured = renderParagraphMixedSegments(segments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS);
+    const structured = renderParagraphMixedSegments(segments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS, htmlElements, literalTagContent);
     if (structured.length === 1) {
       const [single] = structured;
       return React.isValidElement(single) ? single : single;
@@ -121,7 +193,7 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
         inline: inlineNodes,
       },
     ];
-    const structured = renderParagraphMixedSegments(derivedSegments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS);
+    const structured = renderParagraphMixedSegments(derivedSegments, inlineComponents, DEFAULT_INLINE_HTML_RENDERERS, htmlElements, literalTagContent, registry.getUrlTransform());
     if (structured.length === 1) {
       const [single] = structured;
       return React.isValidElement(single) ? single : single;
@@ -129,30 +201,47 @@ const ParagraphBlockView: React.FC<{ store: RendererStore; blockId: string; regi
     return structured;
   }
 
+  const inlines = renderInlineNodes(block.payload.inline ?? [], inlineComponents, registry.getUrlTransform(), registry, "p");
   const ParagraphComponent = registry.getBlockComponent("paragraph");
   const baseElement = React.createElement(ParagraphComponent, {
     inlines: block.payload.inline ?? [],
     raw: block.payload.raw,
     meta: block.payload.meta,
+    children: inlines,
   });
 
-  if (childIds.length > 0) {
-    const renderedChildren = childIds.map((childId) => <MixedSegmentView key={childId} store={store} nodeId={childId} inlineComponents={inlineComponents} />);
-    if (React.isValidElement(baseElement)) {
-      const { children: _ignored, className = "markdown-paragraph", inlines: _inlines, raw: _raw, meta: _meta, ...rest } = baseElement.props ?? {};
-      return React.createElement("p", { ...rest, className }, renderedChildren);
+  const renderParagraph = () => {
+    if (childIds.length > 0) {
+      const renderedChildren = childIds.map((childId) => <MixedSegmentView key={childId} store={store} nodeId={childId} inlineComponents={inlineComponents} urlTransform={registry.getUrlTransform()} registry={registry} parentTagName="p" />);
+      if (React.isValidElement(baseElement)) {
+        const { children: _ignored, className = "markdown-paragraph", inlines: _inlines, raw: _raw, meta: _meta, ...rest } = (baseElement.props as Record<string, unknown>) ?? {};
+        return React.createElement("p", { ...rest, className }, renderedChildren);
+      }
+      return <p className="markdown-paragraph">{renderedChildren}</p>;
     }
-    return <p className="markdown-paragraph">{renderedChildren}</p>;
+    if (React.isValidElement(baseElement)) {
+      return baseElement;
+    }
+    return <p className="markdown-paragraph">{inlines}</p>;
+  };
+  if (!registry.hasElementFilters()) {
+    return renderParagraph();
   }
-
-  if (React.isValidElement(baseElement)) {
-    return baseElement;
-  }
-
-  return <p className="markdown-paragraph">{renderInlineNodes(block.payload.inline ?? [], inlineComponents)}</p>;
+  const renderChildren = () => {
+    if (childIds.length > 0) {
+      return childIds.map((childId) => <MixedSegmentView key={childId} store={store} nodeId={childId} inlineComponents={inlineComponents} urlTransform={registry.getUrlTransform()} registry={registry} parentTagName="p" />);
+    }
+    return inlines;
+  };
+  const filtered = registry.filterElement(
+    { tagName: "p", properties: { className: "markdown-paragraph" }, blockType: "paragraph" },
+    { source: "markdown" },
+    renderParagraph,
+    renderChildren,
+  );
+  if (filtered === null || filtered === undefined) return null;
+  return React.isValidElement(filtered) ? filtered : <>{filtered}</>;
 });
-
-ParagraphBlockView.displayName = "ParagraphBlockView";
 
 const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
   const node = useRendererNode(store, blockId);
@@ -174,12 +263,9 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
   };
   const mixedSegments = Array.isArray(meta.mixedSegments) ? meta.mixedSegments : [];
   const normalizedText =
-    typeof meta.normalizedText === "string" && meta.normalizedText.length > 0
+    typeof meta.normalizedText === "string"
       ? meta.normalizedText
-      : typeof block.payload.raw === "string"
-        ? block.payload.raw
-        : "";
-
+    : normalizeBlockquoteText(typeof block.payload.raw === "string" ? block.payload.raw : "");
   const inlineComponents = registry.getInlineComponents();
 
   const renderTextWithBreaks = (text: string, keyPrefix: string) => {
@@ -200,7 +286,7 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
 
   const renderInlineContent = (inline: InlineNode[] | undefined, keyPrefix: string) => {
     if (inline && inline.length > 0) {
-      return renderInlineNodes(inline, inlineComponents);
+      return renderInlineNodes(inline, inlineComponents, registry.getUrlTransform(), registry, "div", registry.getRenderInlineContext(block.isFinalized, `${block.id}:${keyPrefix}`));
     }
     return null;
   };
@@ -216,6 +302,7 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
           const htmlNode = renderInlineHtmlSegment(segment.value, segment.sanitized ?? segment.value, {
             key: `blockquote-html-${block.id}-${segmentIndex}`,
             renderers: DEFAULT_INLINE_HTML_RENDERERS,
+            urlTransform: registry.getUrlTransform(),
           });
           if (htmlNode) {
             elements.push(htmlNode);
@@ -261,26 +348,69 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
   const fallbackElements = normalizedText ? renderTextWithBreaks(normalizedText, `blockquote-fallback-${block.id}-`) : null;
 
   const inlineNodes = block.payload.inline ?? [];
-  const inlineElements = inlineNodes.length > 0 ? renderInlineNodes(inlineNodes, inlineComponents) : null;
+  const inlineElements = inlineNodes.length > 0 ? renderInlineNodes(inlineNodes, inlineComponents, registry.getUrlTransform(), registry, "blockquote", registry.getRenderInlineContext(block.isFinalized, block.id)) : null;
 
+  const childContent = childIds.map((childId) => {
+    const childNode = store.getNode(childId);
+    if (!childNode) return null;
+    if (childNode.type?.startsWith("blockquote-")) {
+      return <MixedSegmentView key={childId} store={store} nodeId={childId} inlineComponents={inlineComponents} urlTransform={registry.getUrlTransform()} registry={registry} parentTagName="blockquote" />;
+    }
+    if (childNode.type === "list") {
+      return <ListBlockView key={childId} store={store} blockId={childId} registry={registry} depth={0} />;
+    }
+    return <BlockNodeRenderer key={childId} store={store} blockId={childId} registry={registry} />;
+  });
+
+  if (block.payload.meta?.preparedNested && childIds.length === 0) {
+    const emptyQuote = registry.hasCustomBlockComponent("blockquote")
+      ? React.createElement(registry.getBlockComponent("blockquote"), { inlines: block.payload.inline ?? [], renderedContent: null })
+      : <blockquote className="markdown-blockquote" />;
+    if (!registry.hasElementFilters()) {
+      return emptyQuote;
+    }
+    return registry.filterElement(
+      { tagName: "blockquote", properties: { className: "markdown-blockquote" }, blockType: "blockquote" },
+      { source: "markdown" },
+      () => emptyQuote,
+      () => null,
+    ) as React.ReactElement | null;
+  }
   if (!block.isFinalized) {
-    const streamingContent = mixedSegmentElements.length ? mixedSegmentElements : inlineElements ? inlineElements : fallbackElements;
+    const streamingContent = childIds.length
+      ? childContent.filter((c) => c !== null)
+      : mixedSegmentElements.length
+        ? mixedSegmentElements
+        : inlineElements
+          ? inlineElements
+          : fallbackElements;
     const shouldShowStreaming = !block.isFinalized && (!streamingContent || (Array.isArray(streamingContent) && streamingContent.length === 0));
     const className = shouldShowStreaming ? "markdown-blockquote streaming-partial" : "markdown-blockquote";
-    return <blockquote className={className}>{streamingContent}</blockquote>;
-  }
-
-  const childContent = childIds.map((childId) => <MixedSegmentView key={childId} store={store} nodeId={childId} inlineComponents={inlineComponents} />);
-
-  const renderedContent = (() => {
-    if (mixedSegmentElements.length > 0) {
-      return mixedSegmentElements;
+    const streamingQuote = registry.hasCustomBlockComponent("blockquote")
+      ? React.createElement(registry.getBlockComponent("blockquote"), { inlines: block.payload.inline ?? [], renderedContent: streamingContent }, streamingContent)
+      : <blockquote className={className}>{streamingContent}</blockquote>;
+    if (!registry.hasElementFilters()) {
+      return streamingQuote;
     }
+    return registry.filterElement(
+      { tagName: "blockquote", properties: { className }, blockType: "blockquote" },
+      { source: "markdown" },
+      () => streamingQuote,
+      () => streamingContent,
+    ) as React.ReactElement | null;
+  }
+  const renderedContent = (() => {
     if (childIds.length > 0) {
       const resolved = childContent.filter((child) => child !== null);
       if (resolved.length > 0) {
         return resolved;
       }
+    }
+    if (mixedSegmentElements.length > 0) {
+      return mixedSegmentElements;
+    }
+    if (normalizedText.trim().length === 0) {
+      return null;
     }
     if (inlineElements) {
       return inlineElements;
@@ -301,11 +431,18 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
     renderedContent,
   );
 
-  if (React.isValidElement(baseElement)) {
-    return baseElement;
+  const base = React.isValidElement(baseElement) ? baseElement : <blockquote className="markdown-blockquote">{renderedContent}</blockquote>;
+  if (!registry.hasElementFilters()) {
+    return base;
   }
-
-  return <blockquote className="markdown-blockquote">{renderedContent}</blockquote>;
+  const filtered = registry.filterElement(
+    { tagName: "blockquote", properties: { className: "markdown-blockquote" }, blockType: "blockquote" },
+    { source: "markdown" },
+    () => base,
+    () => renderedContent,
+  );
+  if (filtered === null || filtered === undefined) return null;
+  return React.isValidElement(filtered) ? filtered : <>{filtered}</>;
 });
 
 BlockquoteBlockView.displayName = "BlockquoteBlockView";
@@ -313,8 +450,11 @@ BlockquoteBlockView.displayName = "BlockquoteBlockView";
 const MixedSegmentView: React.FC<{
   store: RendererStore;
   nodeId: string;
-  inlineComponents: ReturnType<ComponentRegistry["getInlineComponents"]>;
-}> = React.memo(({ store, nodeId, inlineComponents }) => {
+  inlineComponents: InlineComponents;
+  urlTransform?: UrlTransform;
+  registry?: ComponentRegistry;
+  parentTagName?: string;
+}> = React.memo(({ store, nodeId, inlineComponents, urlTransform, registry, parentTagName }) => {
   const node = useRendererNode(store, nodeId);
   if (!node) return null;
 
@@ -324,7 +464,7 @@ const MixedSegmentView: React.FC<{
     case "list-item-text": {
       const inline = (node.props?.inline as InlineNode[] | undefined) ?? [];
       if (inline.length > 0) {
-        return renderInlineNodes(inline, inlineComponents);
+        return renderInlineNodes(inline, inlineComponents, urlTransform, registry, parentTagName);
       }
       const text = typeof node.props?.text === "string" ? (node.props?.text as string) : "";
       if (!text) return null;
@@ -333,11 +473,22 @@ const MixedSegmentView: React.FC<{
     case "paragraph-html":
     case "blockquote-html":
     case "list-item-html": {
+      const htmlTree = node.props?.htmlTree as HtmlTreeNode[] | undefined;
+      if (registry && htmlTree !== undefined) {
+        return <>{renderHtmlOwnershipTree(
+          htmlTree, registry.getHtmlElements(), (block) => registry.renderBlock(block),
+          (nodes, parentTag) => renderInlineNodes(nodes, inlineComponents, urlTransform, registry, parentTag),
+          undefined, undefined, urlTransform,
+          registry.hasElementFilters() ? (element, context, renderElement, renderChildren) => registry.filterElement(element, context, renderElement, renderChildren) : undefined,
+          parentTagName,
+        )}</>;
+      }
       const raw = typeof node.props?.raw === "string" ? (node.props.raw as string) : undefined;
       const html = typeof node.props?.html === "string" ? (node.props?.html as string) : "";
       const rendered = renderInlineHtmlSegment(raw, html, {
         key: node.id,
         renderers: DEFAULT_INLINE_HTML_RENDERERS,
+        urlTransform,
       });
       if (rendered) {
         return rendered;
@@ -381,10 +532,20 @@ MixedSegmentView.displayName = "MixedSegmentView";
 const HtmlBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
   const node = useRendererNode(store, blockId);
   if (!node || !node.block) return null;
+  const tree = node.block.payload.meta?.htmlTree as HtmlTreeNode[] | undefined;
+  if (tree) {
+    return <>{registry.renderHtmlTree(tree, (block) =>
+      <OwnedHtmlBlock key={block.id} block={block} registry={registry} />)}</>;
+  }
   return registry.renderBlock(node.block);
 });
 
 HtmlBlockView.displayName = "HtmlBlockView";
+
+const OwnedHtmlBlock: React.FC<{ block: Block; registry: ComponentRegistry }> = ({ block, registry }) => {
+  const store = React.useMemo(() => createRendererStore([block]), [block]);
+  return <BlockNodeRenderer store={store} blockId={block.id} registry={registry} />;
+};
 
 const MdxBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
   const node = useRendererNode(store, blockId);
@@ -433,14 +594,17 @@ const ListBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
         return { listStyle: undefined, markerDigits: 1 };
       }
       let maxDigits = 1;
+      const startNum = typeof node?.props?.start === "number" ? node.props.start : 1;
       listItemIds.forEach((childId, index) => {
         const childNode = store.getNode(childId);
         const raw = typeof childNode?.block?.payload?.raw === "string" ? childNode.block.payload.raw : undefined;
-        const markerMatch = raw ? raw.match(/^([^\s]+)\s+/) : null;
-        const marker = markerMatch?.[1]?.trim();
-        const text = marker ?? `${index + 1}.`;
-        const digitMatch = text.match(/\d/g);
-        const digits = digitMatch ? digitMatch.length : text.length;
+        const markerMatch = raw ? raw.match(/^(\d+)[.)]\s+/) : null;
+        let digits: number;
+        if (markerMatch) {
+          digits = markerMatch[1].length;
+        } else {
+          digits = String(startNum + index).length;
+        }
         if (digits > maxDigits) maxDigits = digits;
       });
       const baseIndent = depth === 0 ? "2rem" : depth === 1 ? "1.75rem" : "1.5rem";
@@ -454,14 +618,9 @@ const ListBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
       };
     }, [ordered, listItemIds, store, depth]);
     if (listItemIds.length === 0) return null;
-    return (
-      <Tag
-        className={`markdown-list ${ordered ? "ordered" : "unordered"}`}
-        data-list-depth={depth}
-        data-marker-digits={ordered ? markerDigits : undefined}
-        data-list-id={listDebugEnabled ? blockId : undefined}
-        style={listStyle}
-      >
+    const start = typeof node?.props?.start === "number" ? node.props.start : undefined;
+    const renderChildren = () => (
+      <>
         {listItemIds.map((childId, index) => (
           <ListItemView
             key={childId}
@@ -474,8 +633,31 @@ const ListBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
             depth={depth}
           />
         ))}
+      </>
+    );
+    const renderElement = () => (
+      <Tag
+        className={`markdown-list ${ordered ? "ordered" : "unordered"}`}
+        data-list-depth={depth}
+        data-marker-digits={ordered ? markerDigits : undefined}
+        data-list-id={listDebugEnabled ? blockId : undefined}
+        style={listStyle}
+        start={ordered && start !== undefined && start !== 1 ? start : undefined}
+      >
+        {renderChildren()}
       </Tag>
     );
+    if (!registry.hasElementFilters()) {
+      return renderElement();
+    }
+    const filtered = registry.filterElement(
+      { tagName: Tag, properties: { className: `markdown-list ${ordered ? "ordered" : "unordered"}` }, blockType: "list" },
+      { source: "markdown" },
+      renderElement,
+      renderChildren,
+    );
+    if (filtered === null || filtered === undefined) return null;
+    return React.isValidElement(filtered) ? filtered : <>{filtered}</>;
   },
 );
 
@@ -501,10 +683,14 @@ const ListItemView: React.FC<{
   const marker = markerMatch?.[1]?.trim();
   const inferredIndex = typeof node?.props?.index === "number" ? Number(node?.props?.index) : index;
   const isOrdered = Boolean(node?.props?.ordered ?? ordered);
-  const counterText = !isTask ? (isOrdered ? (marker ? marker : `${inferredIndex + 1}.`) : "\u2022") : undefined;
+  const start = typeof node?.props?.start === "number" ? node.props.start : 1;
+  const itemNumber = start + inferredIndex;
+  const counterText = !isTask ? (isOrdered ? `${itemNumber}.` : "\u2022") : undefined;
   const listDebugEnabled = isListPatchDebugEnabled();
   const inlineLength = inline.length;
-
+  const animCtx = registry.getRenderInlineContext(Boolean(block?.isFinalized), nodeId);
+  // Inline output below is memoized on registry identity; filter/URL changes bump this version instead.
+  const renderConfigVersion = React.useContext(RenderConfigVersionContext);
   const [segmentChildIds, contentChildIds] = React.useMemo(() => {
     const segments: string[] = [];
     const structural: string[] = [];
@@ -521,15 +707,15 @@ const ListItemView: React.FC<{
   }, [childIds, store]);
 
   const segmentElements = React.useMemo(() => {
-    return segmentChildIds.map((childId) => <MixedSegmentView key={childId} store={store} nodeId={childId} inlineComponents={inlineComponents} />);
-  }, [segmentChildIds, store, inlineComponents]);
+    return segmentChildIds.map((childId) => <MixedSegmentView key={childId} store={store} nodeId={childId} inlineComponents={inlineComponents} urlTransform={registry.getUrlTransform()} registry={registry} parentTagName="li" />);
+  }, [segmentChildIds, store, inlineComponents, registry]);
 
   const primaryContent = React.useMemo(() => {
     if (segmentChildIds.length > 0) {
       return segmentElements;
     }
-    return renderInlineNodes(inline, inlineComponents);
-  }, [segmentChildIds, segmentElements, inline, inlineComponents]);
+    return renderInlineNodes(inline, inlineComponents, registry.getUrlTransform(), registry, "li", animCtx);
+  }, [segmentChildIds, segmentElements, inline, inlineComponents, registry, renderConfigVersion]);
 
   const trailingChildren = React.useMemo(() => {
     return contentChildIds.map((childId) => {
@@ -537,11 +723,28 @@ const ListItemView: React.FC<{
       if (!childNode) return null;
       switch (childNode.type) {
         case "paragraph": {
-          const childInline = (childNode.props?.inline as InlineNode[] | undefined) ?? [];
-          return (
-            <p key={childId} className="markdown-list-item-paragraph">
-              {renderInlineNodes(childInline, inlineComponents)}
-            </p>
+          const childInline = childNode.block?.payload.inline ?? (childNode.props?.inline as InlineNode[] | undefined) ?? [];
+          const childAnimCtx = registry.getRenderInlineContext(Boolean(childNode.block?.isFinalized), childId);
+          const childInlines = renderInlineNodes(childInline, inlineComponents, registry.getUrlTransform(), registry, "p", childAnimCtx);
+          if (childNode.props?.tight) {
+            return <React.Fragment key={childId}>{childInlines}</React.Fragment>;
+          }
+          if (!registry.hasElementFilters()) {
+            return (
+              <p key={childId} className="markdown-list-item-paragraph">
+                {childInlines}
+              </p>
+            );
+          }
+          return registry.filterElement(
+            { tagName: "p", properties: { className: "markdown-list-item-paragraph" }, blockType: "paragraph" },
+            { source: "markdown", parentTagName: "li" },
+            () => (
+              <p key={childId} className="markdown-list-item-paragraph">
+                {childInlines}
+              </p>
+            ),
+            () => childInlines,
           );
         }
         case "list":
@@ -550,7 +753,7 @@ const ListItemView: React.FC<{
           return <BlockNodeRenderer key={childId} store={store} blockId={childId} registry={registry} />;
       }
     });
-  }, [contentChildIds, store, inlineComponents, registry, depth]);
+  }, [contentChildIds, store, inlineComponents, registry, depth, renderConfigVersion]);
 
   const filteredChildren = trailingChildren.filter((child): child is NonNullable<typeof child> => Boolean(child));
   const hasChildren = filteredChildren.length > 0;
@@ -591,53 +794,326 @@ const ListItemView: React.FC<{
     block?.isFinalized,
   ]);
 
-  return (
+  const isLoose = Boolean(node?.props?.loose);
+  const hasPrimaryContent = isTask || segmentChildIds.length > 0 || inline.length > 0;
+  const renderedPrimary = !hasPrimaryContent ? null : isLoose ? (
+    <p className="markdown-paragraph">
+      {isTask ? (
+        <input type="checkbox" className="markdown-task-checkbox" checked={isChecked} readOnly disabled tabIndex={-1} />
+      ) : null}
+      {isTask ? " " : null}
+      {primaryContent}
+    </p>
+  ) : (
+    <>
+      {isTask ? (
+        <input type="checkbox" className="markdown-task-checkbox" checked={isChecked} readOnly disabled tabIndex={-1} />
+      ) : null}
+      {isTask ? " " : null}
+      {primaryContent}
+    </>
+  );
+
+  const renderChildren = () => (
+    <>
+      {renderedPrimary}
+      {hasChildren ? <div className="markdown-list-item-children">{filteredChildren}</div> : null}
+    </>
+  );
+  const renderElement = () => (
     <li
       className={`markdown-list-item${isTask ? " markdown-list-item-task" : ""}`}
       data-counter-text={counterText}
       data-list-depth={depth}
       data-list-item-id={listDebugEnabled ? nodeId : undefined}
     >
-      {isTask ? (
-        <div className="markdown-task">
-          <input type="checkbox" className="markdown-task-checkbox" checked={isChecked} readOnly disabled tabIndex={-1} aria-checked={isChecked} />
-          <span className="markdown-task-content">{primaryContent}</span>
-        </div>
-      ) : (
-        primaryContent
-      )}
-      {hasChildren ? <div className="markdown-list-item-children">{filteredChildren}</div> : null}
+      {renderChildren()}
     </li>
   );
+  if (!registry.hasElementFilters()) {
+    return renderElement();
+  }
+  const filtered = registry.filterElement(
+    { tagName: "li", properties: { className: `markdown-list-item${isTask ? " markdown-list-item-task" : ""}` } },
+    { source: "markdown", parentTagName: ordered ? "ol" : "ul" },
+    renderElement,
+    renderChildren,
+  );
+  if (filtered === null || filtered === undefined) return null;
+  return React.isValidElement(filtered) ? filtered : <>{filtered}</>;
 });
 
 ListItemView.displayName = "ListItemView";
 
 const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
+  const node = useRendererNode(store, blockId);
   const tableElements = registry.getTableElements();
   const childIds = useRendererChildren(store, blockId);
-  return (
-    <tableElements.Table className="markdown-table w-full caption-bottom text-base">
+
+  const subscribeVirtualization = React.useCallback(
+    (listener: () => void) => registry.subscribeTableVirtualization(listener),
+    [registry],
+  );
+  const getVirtualization = React.useCallback(() => registry.getTableVirtualization(), [registry]);
+  const virtualizationConfig = React.useSyncExternalStore(subscribeVirtualization, getVirtualization, getVirtualization);
+  const virtualizationDisabled =
+    typeof process !== "undefined" && typeof process.env === "object" && process.env.STREAM_MDX_DISABLE_VIRTUALIZED_TABLE === "true";
+
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const tbodyId = React.useMemo(() => {
+    for (const childId of childIds) {
+      const childNode = store.getNode(childId);
+      if (childNode?.type === "table-body") {
+        return childId;
+      }
+    }
+    return null;
+  }, [childIds, store]);
+
+  const rowIds = useRendererChildren(store, tbodyId ?? "");
+  const rowCount = rowIds.length;
+
+  const theadId = React.useMemo(() => {
+    for (const childId of childIds) {
+      const childNode = store.getNode(childId);
+      if (childNode?.type === "table-header") {
+        return childId;
+      }
+    }
+    return null;
+  }, [childIds, store]);
+
+  const theadCellIds = useRendererChildren(store, theadId ?? "");
+  const columnCount = React.useMemo(() => {
+    if (theadCellIds.length > 0) return theadCellIds.length;
+    if (rowIds.length > 0) {
+      const firstRowCells = store.getChildren(rowIds[0]);
+      if (firstRowCells.length > 0) return firstRowCells.length;
+    }
+    return 1;
+  }, [theadCellIds.length, rowIds, store]);
+
+  const sessionActive = React.useContext(StreamingActivityContext);
+  const isFinalized = Boolean(node?.block?.isFinalized);
+  const canVirtualize = mounted && typeof window !== "undefined" && isFinalized && !sessionActive && !virtualizationDisabled;
+
+  const virtualization = useVirtualizedTable(rowIds, virtualizationConfig, canVirtualize);
+  const { isEligible, isVirtualized, containerRef, handleScroll, window: virtualWindow, config, naturalLayout, headerBackgroundColor } = virtualization;
+
+  const virtualizationProps: TableVirtualizationProps | undefined = React.useMemo(() => {
+    if (!isVirtualized) return undefined;
+    return {
+      isVirtualized: true,
+      startIndex: virtualWindow.startIndex,
+      endIndex: virtualWindow.endIndex,
+      topSpacerHeight: virtualWindow.topSpacerHeight,
+      bottomSpacerHeight: virtualWindow.bottomSpacerHeight,
+      columnCount,
+      headerBackgroundColor,
+    };
+  }, [isVirtualized, virtualWindow, columnCount, headerBackgroundColor]);
+
+  const tableAttrs = {
+    "data-table-block": "true",
+    "data-block-id": blockId,
+    "data-table-virtualized": isVirtualized ? "true" : "false",
+    "data-table-total-rows": String(rowCount),
+    "data-table-mounted-rows": String(isVirtualized ? virtualWindow.mountedRows : rowCount),
+    "data-table-start-index": String(isVirtualized ? virtualWindow.startIndex : 0),
+    "data-table-end-index": String(isVirtualized ? virtualWindow.endIndex : rowCount),
+  };
+
+  const tableElement = (
+    <tableElements.Table
+      className="markdown-table w-full caption-bottom text-base"
+      style={isVirtualized && naturalLayout?.columnWidths.length
+        ? { tableLayout: "fixed", width: naturalLayout.tableWidth }
+        : undefined}
+      {...(!isEligible ? tableAttrs : {})}
+    >
+      {isVirtualized && naturalLayout?.columnWidths.length ? (
+        <colgroup>
+          {naturalLayout.columnWidths.map((width, index) => <col key={index} style={{ width }} />)}
+        </colgroup>
+      ) : null}
       {childIds.map((sectionId) => (
-        <TableSectionView key={sectionId} store={store} nodeId={sectionId} registry={registry} />
+        <TableSectionView
+          key={sectionId}
+          store={store}
+          nodeId={sectionId}
+          registry={registry}
+          tableElements={tableElements}
+          virtualization={virtualizationProps}
+        />
       ))}
     </tableElements.Table>
   );
+
+  const resolvedTableControls = resolveTableControls(registry.getControls());
+  const ControlsComponent = registry.getControlsComponent();
+  const tableMeta = node?.block?.payload?.meta;
+  // Cell text is only needed for copy/download; skip the walk on the streaming hot path when controls are off.
+  const tableData = React.useMemo(
+    () => (resolvedTableControls.enabled ? collectTableText(tableMeta, theadCellIds, rowIds, store) : null),
+    [resolvedTableControls.enabled, tableMeta, theadCellIds, rowIds, store],
+  );
+
+  const filteredTable = registry.hasElementFilters()
+    ? registry.filterElement(
+        { tagName: "table", properties: { className: "markdown-table" }, blockType: "table" },
+        { source: "markdown" },
+        () => tableElement,
+        () => (
+          <>
+            {childIds.map((sectionId) => (
+              <TableSectionView
+                key={sectionId}
+                store={store}
+                nodeId={sectionId}
+                registry={registry}
+                tableElements={tableElements}
+                virtualization={virtualizationProps}
+              />
+            ))}
+          </>
+        ),
+      )
+    : tableElement;
+  if (filteredTable === null || filteredTable === undefined) return null;
+
+  const renderedContent = isEligible ? (
+    <div
+      ref={containerRef}
+      className="markdown-table-container relative w-full"
+      style={{
+        overflowY: "auto",
+        overflowX: "auto",
+        maxHeight: typeof config.maxHeight === "number" ? `${config.maxHeight}px` : config.maxHeight,
+        overflowAnchor: "none",
+      }}
+      onScroll={handleScroll}
+      tabIndex={0}
+      role="region"
+      aria-label="Scrollable table"
+      {...tableAttrs}
+    >
+      {filteredTable}
+    </div>
+  ) : React.isValidElement(filteredTable) ? (
+    filteredTable
+  ) : (
+    <>{filteredTable}</>
+  );
+
+  if (tableData) {
+    const tableControlsElement = ControlsComponent ? (
+      <ControlsComponent
+        type="table"
+        blockId={blockId}
+        headers={tableData.headers}
+        rows={tableData.rows}
+        align={tableData.align}
+        isFinalized={isFinalized}
+        onCopy={(format) => {
+          if (!isFinalized) return;
+          const text = format === "markdown" ? tableToMarkdown(tableData.headers, tableData.rows, tableData.align) : tableToTsv(tableData.headers, tableData.rows);
+          return copyToClipboard(text);
+        }}
+        onDownload={(format) => {
+          if (!isFinalized) return;
+          if (format === "tsv") {
+            downloadFile(tableToTsv(tableData.headers, tableData.rows), "table.tsv", "text/tab-separated-values;charset=utf-8");
+          } else if (format === "markdown") {
+            downloadFile(tableToMarkdown(tableData.headers, tableData.rows, tableData.align), "table.md", "text/markdown;charset=utf-8");
+          } else {
+            downloadFile(tableToCsv(tableData.headers, tableData.rows), "table.csv", "text/csv;charset=utf-8");
+          }
+        }}
+        labels={resolvedTableControls.labels}
+      />
+    ) : (
+      <TableControlsBar
+        headers={tableData.headers}
+        rows={tableData.rows}
+        align={tableData.align}
+        isFinalized={isFinalized}
+        config={resolvedTableControls}
+      />
+    );
+
+    return (
+      <div className="stream-mdx-table-wrapper relative">
+        {tableControlsElement}
+        {renderedContent}
+      </div>
+    );
+  }
+
+  return renderedContent;
 });
 
 TableBlockView.displayName = "TableBlockView";
 
-const TableSectionView: React.FC<{ store: RendererStore; nodeId: string; registry: ComponentRegistry }> = React.memo(({ store, nodeId, registry }) => {
+type TableText = { headers: string[]; rows: string[][]; align?: Array<"left" | "center" | "right" | null> };
+
+function cellNodeText(store: RendererStore, cellId: string): string {
+  const cellProps = store.getNode(cellId)?.props;
+  if (cellProps && typeof cellProps === "object") {
+    if ("inline" in cellProps && Array.isArray(cellProps.inline)) {
+      return inlineToPlainText(cellProps.inline as InlineNode[]);
+    }
+    if ("text" in cellProps && typeof cellProps.text === "string") {
+      return cellProps.text;
+    }
+  }
+  return "";
+}
+
+function collectTableText(rawMeta: unknown, theadCellIds: readonly string[], rowIds: readonly string[], store: RendererStore): TableText {
+  const meta = (rawMeta && typeof rawMeta === "object" ? rawMeta : {}) as {
+    header?: InlineNode[][];
+    rows?: InlineNode[][][];
+    align?: Array<"left" | "center" | "right" | null>;
+  };
+  const headers =
+    Array.isArray(meta.header) && meta.header.length > 0
+      ? meta.header.map((cell) => inlineToPlainText(cell))
+      : theadCellIds.map((cellId) => cellNodeText(store, cellId));
+  const rows =
+    Array.isArray(meta.rows) && meta.rows.length > 0
+      ? meta.rows.map((row) => row.map((cell) => inlineToPlainText(cell)))
+      : rowIds.map((rowId) => store.getChildren(rowId).map((cellId) => cellNodeText(store, cellId)));
+  return { headers, rows, align: Array.isArray(meta.align) ? meta.align : undefined };
+}
+
+const TableSectionView: React.FC<{
+  store: RendererStore;
+  nodeId: string;
+  registry: ComponentRegistry;
+  tableElements: TableElements;
+  virtualization?: TableVirtualizationProps;
+}> = React.memo(({ store, nodeId, registry, tableElements, virtualization }) => {
   const node = useRendererNode(store, nodeId);
   if (!node) return null;
-  const tableElements = registry.getTableElements();
   if (node.type === "table-header") {
     const childIds = useRendererChildren(store, nodeId);
     return (
-      <tableElements.Thead>
+      <tableElements.Thead
+        className={virtualization?.isVirtualized ? "sticky top-0 z-10" : undefined}
+        style={virtualization?.isVirtualized ? {
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+          backgroundColor: `var(--stream-mdx-table-header-background, ${virtualization.headerBackgroundColor})`,
+        } : undefined}
+      >
         <tableElements.Tr>
           {childIds.map((cellId) => (
-            <TableCellView key={cellId} store={store} nodeId={cellId} registry={registry} />
+            <TableCellView key={cellId} store={store} nodeId={cellId} registry={registry} tableElements={tableElements} />
           ))}
         </tableElements.Tr>
       </tableElements.Thead>
@@ -645,11 +1121,54 @@ const TableSectionView: React.FC<{ store: RendererStore; nodeId: string; registr
   }
   if (node.type === "table-body") {
     const rowIds = useRendererChildren(store, nodeId);
+    if (!virtualization?.isVirtualized) {
+      return (
+        <tableElements.Tbody>
+          {rowIds.map((rowId) => (
+            <TableRowView key={rowId} store={store} nodeId={rowId} registry={registry} tableElements={tableElements} />
+          ))}
+        </tableElements.Tbody>
+      );
+    }
+
+    const { startIndex, endIndex, topSpacerHeight, bottomSpacerHeight, columnCount } = virtualization;
+    const visibleRowIds = rowIds.slice(startIndex, endIndex);
+
     return (
       <tableElements.Tbody>
-        {rowIds.map((rowId) => (
-          <TableRowView key={rowId} store={store} nodeId={rowId} registry={registry} />
+        {topSpacerHeight > 0 && (
+          <tableElements.Tr
+            key={`${nodeId}::spacer-top`}
+            aria-hidden="true"
+            className="markdown-table-spacer markdown-table-spacer-top"
+            style={{ height: `${topSpacerHeight}px`, padding: 0, border: 0 }}
+          >
+            <tableElements.Td
+              colSpan={columnCount}
+              style={{ height: `${topSpacerHeight}px`, padding: 0, border: 0, margin: 0, lineHeight: 0 }}
+            />
+          </tableElements.Tr>
+        )}
+        {visibleRowIds.map((rowId, offset) => (
+          <TableRowView key={rowId}
+          store={store}
+          nodeId={rowId}
+          registry={registry}
+          rowIndex={startIndex + offset} tableElements={tableElements} />
         ))}
+        {bottomSpacerHeight > 0 && (
+          <tableElements.Tr
+            key={`${nodeId}::spacer-bottom`}
+            aria-hidden="true"
+            className="markdown-table-spacer markdown-table-spacer-bottom"
+            style={{ height: `${bottomSpacerHeight}px`, padding: 0, border: 0 }}
+          >
+            <tableElements.Td
+              colSpan={columnCount}
+              style={{ height: `${bottomSpacerHeight}px`, padding: 0, border: 0, margin: 0, lineHeight: 0 }}
+            />
+          </tableElements.Tr>
+        )}
       </tableElements.Tbody>
     );
   }
@@ -658,13 +1177,21 @@ const TableSectionView: React.FC<{ store: RendererStore; nodeId: string; registr
 
 TableSectionView.displayName = "TableSectionView";
 
-const TableRowView: React.FC<{ store: RendererStore; nodeId: string; registry: ComponentRegistry }> = React.memo(({ store, nodeId, registry }) => {
-  const tableElements = registry.getTableElements();
+const TableRowView: React.FC<{
+  store: RendererStore;
+  nodeId: string;
+  registry: ComponentRegistry;
+  tableElements: TableElements;
+  rowIndex?: number;
+}> = React.memo(({ store, nodeId, registry, tableElements, rowIndex }) => {
   const cellIds = useRendererChildren(store, nodeId);
   return (
-    <tableElements.Tr>
+    <tableElements.Tr
+      data-row-id={nodeId}
+      {...(rowIndex !== undefined ? { "data-row-index": rowIndex } : {})}
+    >
       {cellIds.map((cellId) => (
-        <TableCellView key={cellId} store={store} nodeId={cellId} registry={registry} />
+        <TableCellView key={cellId} store={store} nodeId={cellId} registry={registry} tableElements={tableElements} />
       ))}
     </tableElements.Tr>
   );
@@ -672,19 +1199,31 @@ const TableRowView: React.FC<{ store: RendererStore; nodeId: string; registry: C
 
 TableRowView.displayName = "TableRowView";
 
-const TableCellView: React.FC<{ store: RendererStore; nodeId: string; registry: ComponentRegistry }> = React.memo(({ store, nodeId, registry }) => {
+const TableCellView: React.FC<{ store: RendererStore; nodeId: string; registry: ComponentRegistry; tableElements: TableElements }> = React.memo(({ store, nodeId, registry, tableElements }) => {
   const node = useRendererNode(store, nodeId);
   const inlineComponents = registry.getInlineComponents();
-  const tableElements = registry.getTableElements();
   if (!node) return null;
-  const Tag = node.type === "table-header-cell" ? tableElements.Th : tableElements.Td;
+  const isHeader = node.type === "table-header-cell";
+  const Tag = isHeader ? tableElements.Th : tableElements.Td;
+  const tag = isHeader ? "th" : "td";
   const inline = (node.props?.inline as InlineNode[] | undefined) ?? [];
   const align = node.props?.align as string | undefined;
-  const content = renderInlineNodes(inline, inlineComponents);
+  const animCtx = registry.getRenderInlineContext(Boolean(node.block?.isFinalized), nodeId);
+  const content = renderInlineNodes(inline, inlineComponents, registry.getUrlTransform(), registry, tag, animCtx);
   const alignProps = align ? { align } : undefined;
-  return <Tag {...alignProps}>{content}</Tag>;
+  const renderElement = () => <Tag {...alignProps}>{content}</Tag>;
+  if (!registry.hasElementFilters()) {
+    return renderElement();
+  }
+  const filtered = registry.filterElement(
+    { tagName: tag, properties: alignProps ?? {} },
+    { source: "markdown", parentTagName: "tr" },
+    renderElement,
+    () => content,
+  );
+  if (filtered === null || filtered === undefined) return null;
+  return React.isValidElement(filtered) ? filtered : <>{filtered}</>;
 });
-
 TableCellView.displayName = "TableCellView";
 
 const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
@@ -750,10 +1289,10 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
   const lazySourceTextLineCount = React.useMemo(() => {
     const raw = typeof node.block?.payload.raw === "string" ? node.block.payload.raw : "";
     const metaCode = typeof blockMeta?.code === "string" ? (blockMeta.code as string) : null;
-    const sourceText = resolveCodeSourceText(raw, metaCode);
+    const sourceText = resolveCodeSourceText(raw, metaCode, !blockIsFinalized);
     if (sourceText.length === 0) return 0;
     return sourceText.split("\n").length;
-  }, [blockMeta, node.block?.payload.raw]);
+  }, [blockMeta, node.block?.payload.raw, blockIsFinalized]);
   const totalLazyLineCount = Math.max(lines.length, lazyHighlightedLines, lazyTokenLines, lazySourceTextLineCount);
 
   // Use virtualization if enabled and lines exceed threshold
@@ -916,13 +1455,14 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
       typeof (node.block?.payload.meta as Record<string, unknown> | undefined)?.code === "string"
         ? ((node.block?.payload.meta as Record<string, unknown>).code as string)
         : null;
-    const sourceText = resolveCodeSourceText(raw, metaCode);
+    const sourceText = resolveCodeSourceText(raw, metaCode, !blockIsFinalized);
     const sourceEndsWithNewline = sourceText.endsWith("\n");
     const sourceLines = sourceText.length > 0 ? sourceText.split("\n") : [];
-    const rawFallbackLines = buildCodeFallbackLines(raw);
-    const deterministicWrapperAttrs = getDefaultCodeWrapperAttributes(lang);
-    const composedPreAttrs = deterministicWrapperAttrs.preAttrs;
-    const composedCodeAttrs = deterministicWrapperAttrs.codeAttrs;
+    const rawFallbackLines = buildCodeFallbackLines(raw, !blockIsFinalized);
+    const storeThemes = store.getThemes?.();
+    const deterministicWrapperAttrs = getDefaultCodeWrapperAttributes(lang, storeThemes);
+    const composedPreAttrs = preAttrs ?? deterministicWrapperAttrs.preAttrs;
+    const composedCodeAttrs = codeAttrs ?? deterministicWrapperAttrs.codeAttrs;
     const shouldAppendTerminalNewline = (
       renderedLines: ReadonlyArray<{ index: number; text: string; html?: string | null; id?: string }>,
     ) => {
@@ -999,7 +1539,7 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
       );
     }
     return blockHtml;
-  }, [blockIsFinalized, shouldVirtualize, node.block?.payload.highlightedHtml, node.block?.payload.meta, lines, lang, virtualization.window.visibleLines, node.block?.payload.raw]);
+  }, [blockIsFinalized, shouldVirtualize, node.block?.payload.highlightedHtml, node.block?.payload.meta, lines, lang, preAttrs, codeAttrs, store, virtualization.window.visibleLines, node.block?.payload.raw]);
 
   const rendered = (
     <CodeComponent
@@ -1031,6 +1571,37 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
     "data-code-window-size": String(virtualization.config.windowSize),
   };
 
+  const normalizedLang = (lang ?? "").trim().toLowerCase();
+  const codeRenderer = registry.getCodeRenderer(normalizedLang);
+  const raw = typeof node.block.payload.raw === "string" ? node.block.payload.raw : "";
+  const metaCode = typeof blockMeta?.code === "string" ? (blockMeta.code as string) : null;
+  const sourceText = resolveCodeSourceText(raw, metaCode, !blockIsFinalized);
+  const infoText = typeof blockMeta?.info === "string" ? (blockMeta.info as string) : (lang ?? "");
+
+  const resolvedCodeControls = resolveCodeControls(registry.getControls());
+  const ControlsComponent = registry.getControlsComponent();
+
+  const codeControlsElement = resolvedCodeControls.enabled ? (
+    ControlsComponent ? (
+      <ControlsComponent
+        type="code"
+        blockId={blockId}
+        code={sourceText}
+        language={lang}
+        isFinalized={blockIsFinalized}
+        onCopy={() => copyToClipboard(sourceText)}
+        onDownload={() => downloadFile(sourceText, getCodeSnippetFilename(lang))}
+        labels={resolvedCodeControls.labels}
+      />
+    ) : (
+      <CodeControlsBar
+        code={sourceText}
+        language={lang}
+        config={resolvedCodeControls}
+      />
+    )
+  ) : null;
+
   const codeView = shouldVirtualize ? (
     (() => {
       const { containerRef, window, handleScroll, lineHeight } = virtualization;
@@ -1057,39 +1628,90 @@ const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; registry:
     </pre>
   );
 
-  const blockComponentMap = registry.getBlockComponentMap() as Record<string, unknown>;
-  const MermaidComponent = Object.prototype.hasOwnProperty.call(blockComponentMap, "mermaid") ? (blockComponentMap as any).mermaid : null;
-  if ((lang ?? "").toLowerCase() === "mermaid" && MermaidComponent) {
-    const raw = typeof node.block.payload.raw === "string" ? node.block.payload.raw : "";
-    const fenced = stripCodeFence(raw);
-    const code = fenced.hadFence ? fenced.code : raw;
-    if (deferredConfig) {
-      return (
-        <div ref={deferredRef}>
-          {shouldRenderDeferred
-            ? React.createElement(MermaidComponent as React.ComponentType<any>, {
-                code,
-                renderCode: codeView,
-                meta: node.block.payload.meta,
-                isFinalized: node.block.isFinalized,
-              })
-            : codeView}
-        </div>
+  const elementToFilter = (() => {
+    if (codeRenderer) {
+      const CustomComponent = typeof codeRenderer === "function" ? codeRenderer : codeRenderer.component;
+      const shouldOptInDefer = Boolean(
+        (typeof codeRenderer === "object" && codeRenderer !== null && codeRenderer.defer) ||
+          (CustomComponent && typeof CustomComponent === "function" && "defer" in CustomComponent && Boolean(CustomComponent.defer)),
       );
-    }
-    return React.createElement(MermaidComponent as React.ComponentType<any>, {
-      code,
-      renderCode: codeView,
-      meta: node.block.payload.meta,
-      isFinalized: node.block.isFinalized,
-    });
-  }
+      const rendererProps: CodeFenceRendererProps = {
+        code: sourceText,
+        language: lang ?? "",
+        meta: node.block.payload.meta,
+        info: infoText,
+        isFinalized: node.block.isFinalized,
+        blockId,
+        renderCode: codeView,
+        openLink: registry.getLinkHandler(),
+        controls: {
+          copy: resolvedCodeControls.copy,
+          download: resolvedCodeControls.download,
+        },
+        copy: () => copyToClipboard(sourceText),
+        download: () => downloadFile(sourceText, getCodeSnippetFilename(lang)),
+      };
 
-  return codeView;
+      if (shouldOptInDefer && deferredConfig) {
+        return (
+          <div ref={deferredRef}>
+            {shouldRenderDeferred
+              ? React.createElement(CustomComponent, rendererProps)
+              : codeView}
+          </div>
+        );
+      }
+
+      return React.createElement(CustomComponent, rendererProps);
+    }
+
+    // Structured diff fallback when meta.diffBlocks is present
+    if (Array.isArray(blockMeta?.diffBlocks) && blockMeta.diffBlocks.length > 0) {
+      const diffView = React.createElement(DefaultDiffRenderer, {
+        code: sourceText,
+        language: lang ?? "",
+        meta: node.block.payload.meta,
+        info: infoText,
+        isFinalized: node.block.isFinalized,
+        blockId,
+        renderCode: codeView,
+        controls: {
+          copy: resolvedCodeControls.copy,
+          download: resolvedCodeControls.download,
+        },
+        copy: () => copyToClipboard(sourceText),
+        download: () => downloadFile(sourceText, getCodeSnippetFilename(lang)),
+      });
+      return codeControlsElement ? wrapWithCodeControls(codeControlsElement, diffView) : diffView;
+    }
+
+    // Controls sit beside `<pre>`, never inside it, so selecting or copying code text excludes button labels.
+    return codeControlsElement ? wrapWithCodeControls(codeControlsElement, codeView) : codeView;
+  })();
+
+  if (!registry.hasElementFilters()) {
+    return React.isValidElement(elementToFilter) ? elementToFilter : <>{elementToFilter}</>;
+  }
+  const filtered = registry.filterElement(
+    { tagName: "pre", properties: { className: codeFrameClass }, blockType: "code" },
+    { source: "markdown" },
+    () => elementToFilter,
+    () => sourceText,
+  );
+  if (filtered === null || filtered === undefined) return null;
+  return React.isValidElement(filtered) ? filtered : <>{filtered}</>;
 });
 
 CodeBlockView.displayName = "CodeBlockView";
 
+function wrapWithCodeControls(controls: React.ReactNode, content: React.ReactNode): React.ReactElement {
+  return (
+    <div className="stream-mdx-code-wrapper relative">
+      {controls}
+      {content}
+    </div>
+  );
+}
 function composeHighlightedHtml(
   lines: ReadonlyArray<{ index: number; text: string; html?: string | null; id?: string; tokens?: TokenLineV1 | null }>,
   preAttrs?: Record<string, string>,
@@ -1223,13 +1845,13 @@ function sameTokenSpanStyle(a: TokenLineV1["spans"][number], b: TokenLineV1["spa
   return true;
 }
 
-function resolveCodeSourceText(raw: string, metaCode: string | null): string {
+function resolveCodeSourceText(raw: string, metaCode: string | null, provisional: boolean): string {
   if (metaCode !== null) {
     return metaCode.replace(/\r\n?/g, "\n");
   }
   if (!raw) return "";
   const normalized = raw.replace(/\r\n?/g, "\n");
-  const fenced = stripCodeFence(normalized);
+  const fenced = stripCodeFence(provisional ? trimProvisionalFenceTail(normalized) : normalized);
   return fenced.hadFence ? fenced.code : normalized;
 }
 
@@ -1240,8 +1862,8 @@ function attrsToString(attrs?: Record<string, string>): string {
     .join("");
 }
 
-function buildCodeFallbackLines(raw: string): Array<{ index: number; text: string; html: null; id: string }> {
-  const normalized = normalizeCodeFallbackRaw(raw);
+function buildCodeFallbackLines(raw: string, provisional: boolean): Array<{ index: number; text: string; html: null; id: string }> {
+  const normalized = normalizeCodeFallbackRaw(raw, provisional);
   if (normalized.length === 0) {
     // When only an opening fence is available (e.g. "```lang\\n"), keep one
     // placeholder line so incremental snapshots do not render an empty code shell.
@@ -1258,16 +1880,12 @@ function buildCodeFallbackLines(raw: string): Array<{ index: number; text: strin
   }));
 }
 
-function normalizeCodeFallbackRaw(raw: string): string {
+function normalizeCodeFallbackRaw(raw: string, provisional: boolean): string {
   if (!raw) return "";
   const normalized = raw.replace(/\r\n?/g, "\n");
-  const fenced = stripCodeFence(normalized);
-  if (!fenced.hadFence) {
-    return normalized.replace(/\n+$/, "");
-  }
-  let code = fenced.code;
-  code = code.replace(/\n+$/, "");
-  return code;
+  const { code, hadFence } = stripCodeFence(provisional ? trimProvisionalFenceTail(normalized) : normalized);
+  if (hadFence) return code;
+  return dedentIndentedCode(raw);
 }
 
 function escapeHtml(value: string): string {

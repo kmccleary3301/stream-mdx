@@ -5,10 +5,14 @@ const BLOCK_NODE_TYPES = new Set([
   "Paragraph",
   "Blockquote",
   "FencedCode",
+  "CodeBlock",
   "IndentedCode",
   "BulletList",
   "OrderedList",
   "HTMLBlock",
+  "CommentBlock",
+  "ProcessingInstructionBlock",
+  "Table",
   "ThematicBreak",
   "HorizontalRule",
   "ATXHeading",
@@ -43,6 +47,7 @@ export function mapLezerNodeToBlockType(nodeType: string): string {
     case "Paragraph":
       return "paragraph";
     case "FencedCode":
+    case "CodeBlock":
     case "IndentedCode":
       return "code";
     case "Blockquote":
@@ -51,7 +56,11 @@ export function mapLezerNodeToBlockType(nodeType: string): string {
     case "OrderedList":
       return "list";
     case "HTMLBlock":
+    case "CommentBlock":
+    case "ProcessingInstructionBlock":
       return "html";
+    case "Table":
+      return "table";
     case "ThematicBreak":
     case "HorizontalRule":
       return "hr";

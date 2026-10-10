@@ -1,5 +1,6 @@
 import assert from "node:assert";
 
+import { InlineParser } from "../src/inline-parser";
 import { prepareInlineStreamingContent, prepareInlineStreamingLookahead } from "../src/streaming/inline-streaming";
 
 function testWithoutAnticipation() {
@@ -94,6 +95,57 @@ function testMathAnticipation() {
   assert.strictEqual(sqrtRepair.kind, "parse");
   if (sqrtRepair.kind !== "parse") throw new Error("expected parse result");
   assert.strictEqual(sqrtRepair.content, "$\\sqrt{x}$");
+}
+
+function testMathRepairsKeepOuterFormatting(): void {
+  const parser = new InlineParser({ maxCacheEntries: 0 });
+  for (const marker of ["**", "*", "~~"]) {
+    const kind = marker === "**" ? "strong" : marker === "*" ? "em" : "strike";
+    for (const [tail, repaired, tex] of [
+      ["$x", "$x$", "x"],
+      ["$x^", "$x^{}$", "x^{}"],
+      ["$x + \\gam", "$x + $", "x +"],
+      ["$\\sqrt{x", "$\\sqrt{x}$", "\\sqrt{x}"],
+    ]) {
+      const raw = `${marker}value ${tail}`;
+      const result = prepareInlineStreamingLookahead(raw, { formatAnticipation: { inline: true, mathInline: true } });
+      assert.strictEqual(result.prepared.kind, "parse");
+      if (result.prepared.kind !== "parse") throw new Error("expected formatted math preview");
+      assert.strictEqual(result.prepared.content, `${marker}value ${repaired}${marker}`);
+      assert.strictEqual(result.prepared.status, "anticipated");
+      assert.strictEqual(result.trace[0]?.validation?.valid, true);
+      assert.deepStrictEqual(parser.parse(result.prepared.content, { cache: false }), [
+        { kind, children: [{ kind: "text", text: "value " }, { kind: "math-inline", tex }] },
+      ]);
+      const completed = prepareInlineStreamingContent(`${marker}value $x$${marker}`, {
+        formatAnticipation: { inline: true, mathInline: true },
+      });
+      assert.strictEqual(completed.kind, "parse");
+      if (completed.kind !== "parse") throw new Error("expected completed formatted math");
+      assert.strictEqual(completed.status, "complete");
+      assert.strictEqual(completed.appended, "");
+    }
+  }
+
+  const nested = prepareInlineStreamingContent("**outer *value $x", {
+    formatAnticipation: { inline: true, mathInline: true },
+  });
+  assert.strictEqual(nested.kind, "parse");
+  if (nested.kind !== "parse") throw new Error("expected nested formatted math preview");
+  assert.strictEqual(nested.content, "**outer *value $x$***");
+  assert.strictEqual(nested.appended, "$***", "math must close before inner emphasis and outer strong");
+  assert.deepStrictEqual(parser.parse(nested.content, { cache: false }), [
+    { kind: "strong", children: [
+      { kind: "text", text: "outer " },
+      { kind: "em", children: [{ kind: "text", text: "value " }, { kind: "math-inline", tex: "x" }] },
+    ] },
+  ]);
+
+  assert.deepStrictEqual(prepareInlineStreamingContent("**value $x", { formatAnticipation: { mathInline: true } }),
+    { kind: "raw", status: "raw", reason: "incomplete-formatting" });
+  assert.deepStrictEqual(prepareInlineStreamingContent("**value $\\left(x", {
+    formatAnticipation: { inline: true, mathInline: true },
+  }), { kind: "raw", status: "raw", reason: "incomplete-math" });
 }
 
 function testCurrencyLikeDollarDoesNotAnticipateMath() {
@@ -251,6 +303,7 @@ testWithAnticipation();
 testComplete();
 testMathAlwaysRaw();
 testMathAnticipation();
+testMathRepairsKeepOuterFormatting();
 testCurrencyLikeDollarDoesNotAnticipateMath();
 testMathBlockNewlineBoundary();
 testMathDisplayAnticipation();

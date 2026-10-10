@@ -1,10 +1,11 @@
 import assert from "node:assert";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { createContainerSignature, prepareInlineStreamingLookahead, prepareSurfaceLookahead } from "../src/streaming/inline-streaming";
 
-const FIXTURES_DIR = path.resolve(process.cwd(), "tests/regression/fixtures");
+const FIXTURES_DIR = fileURLToPath(new URL("../../../tests/regression/fixtures", import.meta.url));
 
 const baseContext = {
   blockType: "paragraph",

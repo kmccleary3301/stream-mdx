@@ -1,25 +1,19 @@
-import { parser as mdParser } from "@lezer/markdown";
+import { parser as baseMdParser, GFM } from "@lezer/markdown";
 import {
   extractCodeLines,
   extractCodeWrapperAttributes,
   extractHighlightedLines,
   getDefaultCodeWrapperAttributes,
   normalizeHighlightedLines,
-  stripCodeFence,
   type HighlightedLine,
 } from "./code-highlighting";
 import { InlineParser } from "./inline-parser";
-import {
-  createContainerSignature,
-  normalizeFormatAnticipation,
-  prepareInlineStreamingContent,
-  prepareInlineStreamingLookahead,
-} from "./streaming/inline-streaming";
-import type { FormatAnticipationConfig } from "./types";
-import { extractMixedContentSegments, extractMixedContentSegmentsWithLookahead } from "./mixed-content";
+import { prepareNestedBlockSnapshot, type PreparedNestedSnapshot } from "./nested-block-snapshot";
+import { createBlockCompatibilityExtension } from "./block-compatibility";
 import type {
   Block,
-  DiffKind,
+  DiffLineKind,
+  HtmlTreeNode,
   InlineNode,
   MixedContentSegment,
   NodeSnapshot,
@@ -29,8 +23,6 @@ import type {
   TokenLineV1,
 } from "./types";
 import { PATCH_ROOT_ID } from "./types";
-import { normalizeBlockquoteText, parseCodeFenceInfo } from "./utils";
-
 export function cloneBlock(block: Block): Block {
   return {
     ...block,
@@ -55,12 +47,16 @@ export function cloneBlock(block: Block): Block {
 }
 
 export function blocksStructurallyEqual(a: Block, b: Block): boolean {
+  if (a === b) return true;
   if (a.type !== b.type) return false;
   if (a.isFinalized !== b.isFinalized) return false;
   if (a.payload.raw !== b.payload.raw) return false;
   const metaA = a.payload.meta ?? null;
   const metaB = b.payload.meta ?? null;
   if (!deepEqual(metaA, metaB)) return false;
+  const inlineA = a.payload.inline ?? null;
+  const inlineB = b.payload.inline ?? null;
+  if (!deepEqual(inlineA, inlineB)) return false;
   return true;
 }
 
@@ -80,9 +76,12 @@ export function createBlockSnapshot(block: Block): NodeSnapshot {
     case "paragraph":
       return enrichParagraphSnapshot(block, base);
     case "blockquote":
-      return enrichBlockquoteSnapshot(block, base);
+      return enrichContainerSnapshot(block, base);
     case "list":
-      return enrichListSnapshot(block, base);
+      return enrichContainerSnapshot(block, base);
+    case "list-item":
+      if (block.payload.meta?.preparedNested) return enrichContainerSnapshot(block, base);
+      return base;
     case "table":
       return enrichTableSnapshot(block, base);
     case "code":
@@ -92,463 +91,32 @@ export function createBlockSnapshot(block: Block): NodeSnapshot {
   }
 }
 
-const listInlineParser = new InlineParser();
-const LIST_STREAMING_ANTICIPATION = {
-  inline: true,
-  mathInline: true,
-  mathBlock: true,
-  regex: true,
-} as const;
-
-function enrichListSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot {
-  const raw = block.payload.raw ?? "";
-  const baseOffset = block.payload.range?.from ?? 0;
-  const listTree = mdParser.parse(raw);
-  const listNode = findListNode(listTree.topNode);
-  if (!listNode) {
-    return fallbackListSnapshot(block, snapshot);
-  }
-
-  const ordered = listNode.type.name === "OrderedList" || Boolean((block.payload.meta as { ordered?: boolean } | undefined)?.ordered);
-  snapshot.props = { ...(snapshot.props ?? {}), ordered, items: undefined };
-  snapshot.children = buildListItemSnapshots(block, listNode, ordered, block.id, baseOffset, raw, {
-    listDepth: 1,
-    blockquoteDepth: 0,
-    ancestorTypes: ["list"],
-  });
+function enrichContainerSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot {
+  const prepared = block.payload.meta?.preparedNested as PreparedNestedSnapshot | undefined;
+  const nested = prepared ?? prepareNestedBlockSnapshot(block, new InlineParser(), baseMdParser.configure([GFM, createBlockCompatibilityExtension()]));
+  snapshot.props = { ...snapshot.props, ...structuredCloneIfPossible(nested.props) };
+  snapshot.children = structuredCloneIfPossible(nested.children);
   return snapshot;
-}
-
-function findListNode(node: any | null | undefined): any | null {
-  if (!node) return null;
-  const name = node.type.name;
-  if (name === "BulletList" || name === "OrderedList") {
-    return node;
-  }
-  const cursor = node.cursor();
-  if (cursor.firstChild()) {
-    do {
-      const childName = cursor.type.name;
-      if (childName === "BulletList" || childName === "OrderedList") {
-        return cursor.node;
-      }
-    } while (cursor.nextSibling());
-  }
-  return null;
-}
-
-function buildListItemSnapshots(
-  block: Block,
-  listNode: any,
-  ordered: boolean,
-  idPrefix: string,
-  baseOffset: number,
-  raw: string,
-  context?: { listDepth: number; blockquoteDepth: number; ancestorTypes: readonly string[] },
-): NodeSnapshot[] {
-  const items: NodeSnapshot[] = [];
-  const cursor = listNode.cursor();
-  let index = 0;
-  if (cursor.firstChild()) {
-    do {
-      if (cursor.type.name === "ListItem") {
-        const itemId = `${idPrefix}::item:${index}`;
-        items.push(
-          buildListItemSnapshot(block, cursor.node, ordered, index, itemId, baseOffset, raw, {
-            listDepth: context?.listDepth ?? 1,
-            blockquoteDepth: context?.blockquoteDepth ?? 0,
-            ancestorTypes: context?.ancestorTypes ?? ["list"],
-          }),
-        );
-        index++;
-      }
-    } while (cursor.nextSibling());
-  }
-  return items;
-}
-
-function buildListItemSnapshot(
-  block: Block,
-  listItemNode: any,
-  ordered: boolean,
-  index: number,
-  id: string,
-  baseOffset: number,
-  raw: string,
-  context?: { listDepth: number; blockquoteDepth: number; ancestorTypes: readonly string[] },
-): NodeSnapshot {
-  const childSnapshots: NodeSnapshot[] = [];
-  const segmentSnapshots: NodeSnapshot[] = [];
-  let inlineNodes: InlineNode[] = [];
-  let plainText = "";
-  let paragraphHandled = false;
-  let paragraphIndex = 0;
-  let subListIndex = 0;
-  let blockquoteIndex = 0;
-  let codeIndex = 0;
-  let htmlIndex = 0;
-  let headingIndex = 0;
-  let isTask = false;
-  let taskChecked: boolean | undefined;
-
-  const cursor = listItemNode.cursor();
-  if (cursor.firstChild()) {
-    do {
-      const name = cursor.type.name;
-      if (name === "ListMark") {
-        continue;
-      }
-      if (name === "Paragraph") {
-        const paragraphRaw = raw.slice(cursor.from, cursor.to);
-        const meta = (block.payload.meta ?? {}) as { formatAnticipation?: FormatAnticipationConfig; mathEnabled?: boolean };
-        const paragraphData = processListItemParagraph(paragraphRaw, {
-          formatAnticipation: meta.formatAnticipation,
-          math: meta.mathEnabled,
-          streaming: !block.isFinalized,
-          listDepth: context?.listDepth ?? 1,
-          blockquoteDepth: context?.blockquoteDepth ?? 0,
-          ancestorTypes: context?.ancestorTypes ?? ["list"],
-          blockType: "list-item",
-          localTextField: "list-item-paragraph",
-        });
-        const parsedInline = paragraphData.inline;
-        if (!paragraphHandled) {
-          inlineNodes = parsedInline;
-          plainText = inlineNodesToPlainText(parsedInline);
-          if (paragraphData.segments.length > 0) {
-            paragraphData.segments.forEach((segment, segmentIndex) => {
-              segmentSnapshots.push(createSegmentSnapshot(id, segment, segmentIndex, "list-item"));
-            });
-          }
-          if (paragraphData.task) {
-            isTask = true;
-            taskChecked = paragraphData.task.checked;
-          }
-          paragraphHandled = true;
-        } else {
-          const paraId = `${id}::paragraph:${paragraphIndex++}`;
-          const nestedSegments = paragraphData.segments;
-          childSnapshots.push({
-            id: paraId,
-            type: "paragraph",
-            props: {
-              inline: cloneInlineNodes(parsedInline),
-              text: inlineNodesToPlainText(parsedInline),
-            },
-            range: createRange(baseOffset + cursor.from, baseOffset + cursor.to),
-            children: nestedSegments.map((segment, segmentIndex) => createSegmentSnapshot(paraId, segment, segmentIndex, "paragraph")),
-          });
-        }
-      } else if (name === "BulletList" || name === "OrderedList") {
-        const nestedId = `${id}::list:${subListIndex++}`;
-        const nestedOrdered = name === "OrderedList";
-        const nestedSnapshot = buildListNodeSnapshot(block, cursor.node, nestedOrdered, nestedId, baseOffset, raw, {
-          listDepth: (context?.listDepth ?? 1) + 1,
-          blockquoteDepth: context?.blockquoteDepth ?? 0,
-          ancestorTypes: [...(context?.ancestorTypes ?? ["list"]), "list-item"],
-        });
-        if (nestedSnapshot && Array.isArray(nestedSnapshot.children) && nestedSnapshot.children.length > 0) {
-          childSnapshots.push(nestedSnapshot);
-        }
-      } else if (name === "Blockquote") {
-        const quoteId = `${id}::blockquote:${blockquoteIndex++}`;
-        childSnapshots.push(
-          buildBlockquoteSnapshot(block, cursor.node, quoteId, baseOffset, raw, {
-            listDepth: context?.listDepth ?? 1,
-            blockquoteDepth: (context?.blockquoteDepth ?? 0) + 1,
-            ancestorTypes: [...(context?.ancestorTypes ?? ["list"]), "list-item"],
-          }),
-        );
-      } else if (name === "FencedCode" || name === "IndentedCode") {
-        const codeId = `${id}::code:${codeIndex++}`;
-        const isFenced = name === "FencedCode";
-        const snapshot = buildCodeBlockSnapshot(block, cursor.node, codeId, baseOffset, raw, isFenced);
-        if (snapshot) {
-          childSnapshots.push(snapshot);
-        }
-      } else if (name === "HTMLBlock") {
-        const htmlId = `${id}::html:${htmlIndex++}`;
-        childSnapshots.push(buildHtmlSnapshot(block, cursor.node, htmlId, baseOffset, raw));
-      } else if (name === "ATXHeading" || name === "SetextHeading") {
-        const headingId = `${id}::heading:${headingIndex++}`;
-        childSnapshots.push(buildHeadingSnapshot(block, cursor.node, headingId, baseOffset, raw));
-      }
-    } while (cursor.nextSibling());
-  }
-
-  const itemSnapshot: NodeSnapshot = {
-    id,
-    type: "list-item",
-    props: {
-      index,
-      ordered,
-      inline: cloneInlineNodes(inlineNodes),
-      text: plainText,
-      task: isTask,
-      checked: isTask ? Boolean(taskChecked) : undefined,
-    },
-    range: createRange(baseOffset + listItemNode.from, baseOffset + listItemNode.to),
-    children: [...segmentSnapshots, ...childSnapshots],
-  };
-
-  return itemSnapshot;
-}
-
-interface ListItemParagraphData {
-  inline: InlineNode[];
-  segments: MixedContentSegment[];
-  task?: { checked: boolean };
-}
-
-type ListItemInlineOptions = {
-  formatAnticipation?: FormatAnticipationConfig;
-  math?: boolean;
-  streaming?: boolean;
-  listDepth?: number;
-  blockquoteDepth?: number;
-  ancestorTypes?: readonly string[];
-  blockType?: string;
-  localTextField?: string;
-};
-
-function parseListInline(raw: string, options?: ListItemInlineOptions): InlineNode[] {
-  if (!options?.streaming) {
-    return listInlineParser.parse(raw);
-  }
-  const effectiveFormatAnticipation = options.formatAnticipation ?? LIST_STREAMING_ANTICIPATION;
-  const containerSignature = createContainerSignature({
-    blockType: options?.blockType ?? "list-item",
-    ancestorTypes: options?.ancestorTypes ?? ["list"],
-    listDepth: options?.listDepth ?? 1,
-    blockquoteDepth: options?.blockquoteDepth ?? 0,
-    provisional: true,
-    localTextField: options?.localTextField ?? "list-item-inline",
-  });
-  const prepared = prepareInlineStreamingLookahead(raw, {
-    formatAnticipation: effectiveFormatAnticipation,
-    math: options.math ?? true,
-    regexAppend: normalizeFormatAnticipation(effectiveFormatAnticipation).regex ? listInlineParser.getRegexAnticipationAppend(raw) : null,
-    context: {
-      blockType: options?.blockType ?? "list-item",
-      ancestorTypes: options?.ancestorTypes ?? ["list"],
-      listDepth: options?.listDepth ?? 1,
-      blockquoteDepth: options?.blockquoteDepth ?? 0,
-      provisional: true,
-      containerSignature,
-    },
-  }).prepared;
-  if (prepared.kind === "raw") {
-    return [{ kind: "text", text: raw }];
-  }
-  return listInlineParser.parse(prepared.content, { cache: false });
-}
-
-function processListItemParagraph(raw: string, options?: ListItemInlineOptions): ListItemParagraphData {
-  const normalized = normalizeParagraphText(raw);
-  const { content, task } = stripTaskMarker(normalized);
-  const inline = parseListInline(content, options);
-  const { segments } = extractMixedContentSegmentsWithLookahead(content, undefined, (value) => parseListInline(value, options), {
-    html: normalizeFormatAnticipation(options?.formatAnticipation).html ? { autoClose: true, maxNewlines: 2 } : undefined,
-    mdx: normalizeFormatAnticipation(options?.formatAnticipation).mdx ? { autoClose: true, maxNewlines: 2 } : undefined,
-    lookaheadContext: {
-      blockType: options?.blockType ?? "list-item",
-      ancestorTypes: options?.ancestorTypes ?? ["list"],
-      listDepth: options?.listDepth ?? 1,
-      blockquoteDepth: options?.blockquoteDepth ?? 0,
-      localTextField: options?.localTextField ?? "list-item-paragraph",
-      insideHtml: false,
-      insideMdx: false,
-      segmentOrigin: "mixed-content",
-      mixedSegmentKind: "text",
-      provisional: options?.streaming !== false,
-    },
-  });
-  return {
-    inline,
-    segments,
-    task,
-  };
-}
-
-function stripTaskMarker(input: string): { content: string; task?: { checked: boolean } } {
-  const taskMatch = input.match(/^\s*\[( |x|X|-)\][ \t]?/);
-  if (!taskMatch) {
-    return { content: input };
-  }
-
-  const marker = taskMatch[1];
-  const checked = marker.toLowerCase() === "x";
-  const remainder = input.slice(taskMatch[0].length).replace(/^\s+/, "");
-  return {
-    content: remainder,
-    task: { checked },
-  };
-}
-
-function buildBlockquoteSnapshot(
-  block: Block,
-  quoteNode: any,
-  id: string,
-  baseOffset: number,
-  raw: string,
-  context?: { listDepth: number; blockquoteDepth: number; ancestorTypes: readonly string[] },
-): NodeSnapshot {
-  const quoteRaw = raw.slice(quoteNode.from, quoteNode.to);
-  const normalized = normalizeBlockquoteText(quoteRaw);
-  const inline = parseListInline(normalized, {
-    streaming: !block.isFinalized,
-    listDepth: context?.listDepth ?? 0,
-    blockquoteDepth: context?.blockquoteDepth ?? 1,
-    ancestorTypes: [...(context?.ancestorTypes ?? []), "blockquote"],
-    blockType: "blockquote",
-    localTextField: "blockquote-inline",
-  });
-  const { segments } = extractMixedContentSegmentsWithLookahead(normalized, undefined, (value) =>
-    parseListInline(value, {
-      streaming: !block.isFinalized,
-      listDepth: context?.listDepth ?? 0,
-      blockquoteDepth: context?.blockquoteDepth ?? 1,
-      ancestorTypes: [...(context?.ancestorTypes ?? []), "blockquote"],
-      blockType: "blockquote",
-      localTextField: "blockquote-inline",
-    }),
-    {
-      html: normalizeFormatAnticipation(LIST_STREAMING_ANTICIPATION).html ? { autoClose: true, maxNewlines: 2 } : undefined,
-      mdx: normalizeFormatAnticipation(LIST_STREAMING_ANTICIPATION).mdx ? { autoClose: true, maxNewlines: 2 } : undefined,
-      lookaheadContext: {
-        blockType: "blockquote",
-        ancestorTypes: [...(context?.ancestorTypes ?? []), "blockquote"],
-        listDepth: context?.listDepth ?? 0,
-        blockquoteDepth: context?.blockquoteDepth ?? 1,
-        localTextField: "blockquote-inline",
-        segmentOrigin: "mixed-content",
-        mixedSegmentKind: "text",
-        provisional: !block.isFinalized,
-      },
-    },
-  );
-
-  const quoteBlock: Block = {
-    id,
-    type: "blockquote",
-    isFinalized: true,
-    payload: {
-      raw: normalized,
-      inline: cloneInlineNodes(inline),
-      meta: segments.some((segment) => segment.kind !== "text")
-        ? {
-            mixedSegments: segments,
-          }
-        : undefined,
-      range: createRange(baseOffset + quoteNode.from, baseOffset + quoteNode.to),
-    },
-  };
-
-  return createBlockSnapshot(quoteBlock);
-}
-
-function buildCodeBlockSnapshot(block: Block, codeNode: any, id: string, baseOffset: number, raw: string, _isFenced: boolean): NodeSnapshot | null {
-  const segment = raw.slice(codeNode.from, codeNode.to);
-  const normalized = stripListIndentation(segment);
-  const { code, info: infoString, hadFence } = stripCodeFence(normalized);
-  const body = hadFence ? dedentFencedCodeByClosingIndent(normalized, code) : dedentIndentedCode(normalized);
-  const { lang, meta } = parseCodeFenceInfo(infoString);
-  const codeBlock: Block = {
-    id,
-    type: "code",
-    isFinalized: true,
-    payload: {
-      raw: normalized,
-      meta: { ...meta, lang: lang || "text", code: body },
-      range: createRange(baseOffset + codeNode.from, baseOffset + codeNode.to),
-    },
-  };
-  return createBlockSnapshot(codeBlock);
-}
-
-function buildHtmlSnapshot(block: Block, htmlNode: any, id: string, baseOffset: number, raw: string): NodeSnapshot {
-  const htmlRaw = stripListIndentation(raw.slice(htmlNode.from, htmlNode.to));
-  const htmlBlock: Block = {
-    id,
-    type: "html",
-    isFinalized: true,
-    payload: {
-      raw: htmlRaw,
-      sanitizedHtml: undefined,
-      meta: undefined,
-      range: createRange(baseOffset + htmlNode.from, baseOffset + htmlNode.to),
-    },
-  };
-  return createBlockSnapshot(htmlBlock);
-}
-
-function buildHeadingSnapshot(block: Block, headingNode: any, id: string, baseOffset: number, raw: string): NodeSnapshot {
-  const headingRaw = stripListIndentation(raw.slice(headingNode.from, headingNode.to));
-  const inline = listInlineParser.parse(removeHeadingMarkers(headingRaw));
-  const headingBlock: Block = {
-    id,
-    type: "heading",
-    isFinalized: true,
-    payload: {
-      raw: headingRaw,
-      inline: cloneInlineNodes(inline),
-      range: createRange(baseOffset + headingNode.from, baseOffset + headingNode.to),
-    },
-  };
-  return createBlockSnapshot(headingBlock);
-}
-
-function buildListNodeSnapshot(
-  block: Block,
-  listNode: any,
-  ordered: boolean,
-  id: string,
-  baseOffset: number,
-  raw: string,
-  context?: { listDepth: number; blockquoteDepth: number; ancestorTypes: readonly string[] },
-): NodeSnapshot | null {
-  const children = buildListItemSnapshots(block, listNode, ordered, id, baseOffset, raw, context);
-  if (children.length === 0) {
-    return null;
-  }
-  return {
-    id,
-    type: "list",
-    props: {
-      ordered,
-    },
-    range: createRange(baseOffset + listNode.from, baseOffset + listNode.to),
-    children,
-  };
 }
 
 function enrichParagraphSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot {
-  const meta = block.payload.meta as { mixedSegments?: MixedContentSegment[] } | undefined;
+  const meta = block.payload.meta as { mixedSegments?: MixedContentSegment[]; mixedHtmlTrees?: Record<number, HtmlTreeNode[]> } | undefined;
   const segments = Array.isArray(meta?.mixedSegments) ? (meta?.mixedSegments ?? []) : [];
   if (!segments.length) {
     return snapshot;
   }
 
-  snapshot.children = segments.map((segment, index) => createSegmentSnapshot(block.id, segment, index, "paragraph"));
+  snapshot.children = segments.map((segment, index) => createSegmentSnapshot(block.id, segment, index, "paragraph", meta?.mixedHtmlTrees?.[index]));
   return snapshot;
 }
 
-function enrichBlockquoteSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot {
-  const meta = block.payload.meta as { mixedSegments?: MixedContentSegment[] } | undefined;
-  const segments = Array.isArray(meta?.mixedSegments) ? (meta?.mixedSegments ?? []) : [];
-  if (!segments.length) {
-    return snapshot;
-  }
-
-  snapshot.children = segments.map((segment, index) => createSegmentSnapshot(block.id, segment, index, "blockquote"));
-  return snapshot;
-}
 
 function createSegmentSnapshot(
   parentId: string,
   segment: MixedContentSegment,
   index: number,
   parentType: "paragraph" | "blockquote" | "list-item",
+  htmlTree?: HtmlTreeNode[],
 ): NodeSnapshot {
   const id = `${parentId}::${parentType}:segment:${index}`;
   const range = segment.range ? { ...segment.range } : undefined;
@@ -560,6 +128,7 @@ function createSegmentSnapshot(
         props: {
           html: segment.sanitized ?? segment.value,
           raw: segment.value,
+          ...(htmlTree !== undefined ? { htmlTree } : {}),
         },
         meta: segment.sanitized ? { sanitized: true } : undefined,
         range,
@@ -591,186 +160,6 @@ function createSegmentSnapshot(
   }
 }
 
-function fallbackListSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot {
-  const meta = block.payload.meta as { ordered?: boolean; items?: InlineNode[][] } | undefined;
-  const ordered = Boolean(meta?.ordered);
-  const items = Array.isArray(meta?.items) ? (meta?.items as InlineNode[][]) : [];
-  snapshot.props = { ...(snapshot.props ?? {}), ordered, items: undefined };
-  snapshot.children = items.map((inlineNodes, index) => ({
-    id: `${block.id}::item:${index}`,
-    type: "list-item",
-    props: {
-      index,
-      ordered,
-      inline: cloneInlineNodes(inlineNodes),
-      text: inlineNodesToPlainText(inlineNodes),
-    },
-    children: [],
-  }));
-  return snapshot;
-}
-
-function normalizeParagraphText(input: string): string {
-  if (!input) return "";
-  const lines = input.split("\n");
-  let minIndent = Number.POSITIVE_INFINITY;
-  for (const line of lines) {
-    const trimmed = line.trimEnd();
-    if (trimmed.length === 0) continue;
-    const match = line.match(/^(\s*)/);
-    const indent = match ? match[1].length : 0;
-    minIndent = Math.min(minIndent, indent);
-  }
-  if (!Number.isFinite(minIndent)) {
-    return "";
-  }
-  return lines
-    .map((line) => (line.length >= minIndent ? line.slice(minIndent) : line))
-    .join("\n")
-    .trim();
-}
-
-function stripListIndentation(input: string): string {
-  if (!input) return "";
-  const lines = input.split("\n");
-  let minIndent = Number.POSITIVE_INFINITY;
-  for (const line of lines) {
-    const trimmed = line.trimEnd();
-    if (trimmed.length === 0) continue;
-    const match = line.match(/^(\s*)/);
-    const indent = match ? match[1].length : 0;
-    minIndent = Math.min(minIndent, indent);
-  }
-  if (!Number.isFinite(minIndent) || minIndent === 0) {
-    return input.trim();
-  }
-  return lines
-    .map((line) => (line.length >= minIndent ? line.slice(minIndent) : ""))
-    .join("\n")
-    .trim();
-}
-
-function parseFencedCodeSegment(input: string): { infoString: string; code: string } | null {
-  const normalized = input.replace(/\r\n/g, "\n").trim();
-  const match = normalized.match(/^```([^\n]*)\n([\s\S]*?)\n?```$/);
-  if (!match) return null;
-  const infoString = match[1] ? match[1].trim() : "";
-  const code = match[2] ? match[2].replace(/\n?$/, "") : "";
-  return { infoString, code };
-}
-
-function dedentIndentedCode(input: string): string {
-  if (!input) return "";
-  const lines = input.split("\n");
-  let minIndent = Number.POSITIVE_INFINITY;
-  for (const line of lines) {
-    if (line.trim().length === 0) continue;
-    const match = line.match(/^(\s*)/);
-    const indent = match ? match[1].length : 0;
-    minIndent = Math.min(minIndent, indent);
-  }
-  if (!Number.isFinite(minIndent)) {
-    return input.trim();
-  }
-  return lines
-    .map((line) => (line.length >= minIndent ? line.slice(minIndent) : ""))
-    .join("\n")
-    .trimEnd();
-}
-
-function dedentFencedCodeByClosingIndent(fencedRaw: string, extractedCode: string): string {
-  if (!fencedRaw || !extractedCode) {
-    return extractedCode;
-  }
-
-  const lines = fencedRaw.replace(/\r\n?/g, "\n").split("\n");
-  if (lines.length < 2) {
-    return extractedCode;
-  }
-
-  let closingIndex = lines.length - 1;
-  while (closingIndex > 0 && lines[closingIndex].trim().length === 0) {
-    closingIndex -= 1;
-  }
-  if (closingIndex <= 0) {
-    return extractedCode;
-  }
-
-  const closingMatch = lines[closingIndex].match(/^([ \t]*)```/);
-  const closingIndent = closingMatch?.[1] ?? "";
-  if (closingIndent.length === 0) {
-    return extractedCode;
-  }
-
-  return extractedCode
-    .split("\n")
-    .map((line) => stripIndentPrefix(line, closingIndent))
-    .join("\n");
-}
-
-function stripIndentPrefix(line: string, prefix: string): string {
-  if (!line || !prefix) {
-    return line;
-  }
-  if (line.startsWith(prefix)) {
-    return line.slice(prefix.length);
-  }
-
-  const targetColumns = measureIndentColumns(prefix);
-  if (targetColumns <= 0) {
-    return line;
-  }
-
-  let index = 0;
-  let columns = 0;
-  while (index < line.length && columns < targetColumns) {
-    const ch = line[index];
-    if (ch === " ") {
-      columns += 1;
-      index += 1;
-      continue;
-    }
-    if (ch === "\t") {
-      columns += 4;
-      index += 1;
-      continue;
-    }
-    break;
-  }
-
-  return columns >= targetColumns ? line.slice(index) : line;
-}
-
-function measureIndentColumns(value: string): number {
-  let columns = 0;
-  for (let i = 0; i < value.length; i += 1) {
-    const ch = value[i];
-    if (ch === " ") {
-      columns += 1;
-      continue;
-    }
-    if (ch === "\t") {
-      columns += 4;
-      continue;
-    }
-    break;
-  }
-  return columns;
-}
-
-function removeHeadingMarkers(input: string): string {
-  return input
-    .replace(/^#{1,6}\s+/, "")
-    .replace(/\s+={2,}\s*$|\s+-{2,}\s*$/m, "")
-    .trim();
-}
-
-function createRange(from: number, to: number): { from: number; to: number } | undefined {
-  if (!Number.isFinite(from) || !Number.isFinite(to) || to < from) {
-    return undefined;
-  }
-  return { from, to };
-}
 
 function enrichTableSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot {
   const meta = block.payload.meta as
@@ -823,44 +212,55 @@ function enrichTableSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot
     })),
   }));
 
-  children.push({
-    id: `${block.id}::tbody`,
-    type: "table-body",
-    props: { rows: rows.length },
-    children: bodyChildren,
-  });
+  if (bodyChildren.length > 0) {
+    children.push({
+      id: `${block.id}::tbody`,
+      type: "table-body",
+      props: { rows: rows.length },
+      children: bodyChildren,
+    });
+  }
 
   snapshot.children = children;
   return snapshot;
 }
 
+// Boundary-local policy: public fence extraction preserves all content. This
+// provisional-only helper is duplicated in worker/React to keep their package APIs unchanged.
+function trimProvisionalFenceTail(raw: string): string {
+  if (raw.endsWith("\n")) return raw;
+  const opening = raw.match(/^ {0,3}(`{3,}|~{3,})[^\n]*\n/);
+  if (!opening) return raw;
+  const lastNewline = raw.lastIndexOf("\n");
+  const tail = raw.slice(lastNewline + 1).match(/^ {0,3}(`+|~+)[\t ]*$/);
+  return tail && tail[1][0] === opening[1][0] && tail[1].length < opening[1].length ? raw.slice(0, lastNewline) : raw;
+}
+
 function enrichCodeSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot {
   const metaCode = typeof block.payload.meta?.code === "string" ? (block.payload.meta?.code as string) : null;
-  const source = metaCode ?? (block.payload.raw ?? "");
+  const source = (metaCode ?? (block.payload.raw ?? "")).replace(/\r\n?/g, "\n");
   // Worker-provided meta.code is already normalized code body (no fences),
   // so preserve its leading indentation verbatim instead of re-running
   // extractCodeLines() heuristics for indented markdown blocks.
-  const lines = metaCode !== null ? (source.length > 0 ? source.replace(/\r\n?/g, "\n").split("\n") : []) : extractCodeLines(source);
+  const lines = metaCode !== null ? source.split("\n") : extractCodeLines(block.isFinalized ? source : trimProvisionalFenceTail(source));
   const meta = block.payload.meta as
     | {
         highlightedLines?: HighlightedLine[];
         lang?: string;
         tokenLines?: Array<TokenLineV1 | null>;
-        diffKind?: Array<DiffKind | null>;
+        diffKind?: Array<DiffLineKind | null>;
         oldNo?: Array<number | null>;
         newNo?: Array<number | null>;
       }
     | undefined;
   const highlightedHtml = block.payload.highlightedHtml ?? "";
-  const hasBlockHighlight = typeof block.payload.highlightedHtml === "string" && block.payload.highlightedHtml.length > 0;
   const metaLines = Array.isArray(meta?.highlightedLines) ? (meta?.highlightedLines as HighlightedLine[]) : null;
-  const includeLineHtml = metaLines ? true : !hasBlockHighlight || lines.length >= 200;
   const highlightedLines = metaLines
     ? normalizeHighlightedLines(metaLines, lines.length)
     : extractHighlightedLines(highlightedHtml, lines.length);
   const metaTokenLines = Array.isArray(meta?.tokenLines) ? (meta?.tokenLines as Array<TokenLineV1 | null>) : null;
   const tokenLines = metaTokenLines ? normalizeTokenLines(metaTokenLines, lines.length) : null;
-  const metaDiffKind = Array.isArray(meta?.diffKind) ? (meta?.diffKind as Array<DiffKind | null>) : null;
+  const metaDiffKind = Array.isArray(meta?.diffKind) ? (meta?.diffKind as Array<DiffLineKind | null>) : null;
   const diffKindLines = metaDiffKind ? normalizeOptionalArray(metaDiffKind, lines.length) : null;
   const metaOldNo = Array.isArray(meta?.oldNo) ? (meta?.oldNo as Array<number | null>) : null;
   const oldNoLines = metaOldNo ? normalizeOptionalArray(metaOldNo, lines.length) : null;
@@ -883,7 +283,7 @@ function enrichCodeSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot 
     const props: Record<string, unknown> = {
       index,
       text: line,
-      html: includeLineHtml ? (highlightedLines[index] ?? null) : null,
+      html: highlightedLines[index] ?? null,
     };
     if (tokenLines) {
       props.tokens = tokenLines[index] ?? null;
@@ -951,6 +351,7 @@ export function inlineNodesToPlainText(nodes: InlineNode[]): string {
         result += node.text;
         break;
       case "link":
+      case "html":
       case "strong":
       case "em":
       case "mention":
@@ -961,6 +362,13 @@ export function inlineNodesToPlainText(nodes: InlineNode[]): string {
           result += inlineNodesToPlainText(node.children);
         } else if ("text" in node && typeof node.text === "string") {
           result += node.text;
+        }
+        break;
+      case "plugin":
+        if (node.children && Array.isArray(node.children)) {
+          result += inlineNodesToPlainText(node.children);
+        } else {
+          result += node.raw;
         }
         break;
       case "footnote-ref":
@@ -1286,7 +694,7 @@ function appendLinesToCodeNode(
   lines: string[],
   highlights: Array<string | null>,
   tokens?: Array<TokenLineV1 | null>,
-  diffKind?: Array<DiffKind | null>,
+  diffKind?: Array<DiffLineKind | null>,
   oldNo?: Array<number | null>,
   newNo?: Array<number | null>,
 ) {

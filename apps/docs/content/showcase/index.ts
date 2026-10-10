@@ -8,6 +8,13 @@ export type ShowcaseItem = {
 
 export const SHOWCASE_ITEMS: ShowcaseItem[] = [
   {
+    slug: "assistant-stream",
+    title: "Streaming Assistant & Sandboxed Artifacts",
+    file: "assistant-stream.md",
+    description: "Executable chat thread demonstrating dual-engine streaming, math, Mermaid, link safety, and sandboxed ArtifactFrame visualizations.",
+    tags: ["rendering", "safety", "extensibility"],
+  },
+  {
     slug: "stream-mdx-devx-catalog",
     title: "Stream-MDX DevX Catalog",
     file: "stream-mdx-devx-catalog.mdx",
@@ -20,6 +27,13 @@ export const SHOWCASE_ITEMS: ShowcaseItem[] = [
     file: "html-overrides.md",
     description: "Demonstrates HTML rendering mapped onto ShadCN components (tables, blockquotes, etc.).",
     tags: ["rendering", "extensibility", "components"],
+  },
+  {
+    slug: "table-virtualization",
+    title: "Table Row Virtualization",
+    file: "table-virtualization.md",
+    description: "Executable showcase demonstrating configurable table row virtualization, sticky headers, variable height rows, and multiline content.",
+    tags: ["rendering", "performance", "components"],
   },
   {
     slug: "custom-regex",

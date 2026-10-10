@@ -23,7 +23,7 @@ import { MermaidBlock } from "@stream-mdx/mermaid";
 <StreamingMarkdown
   text={content}
   worker="/workers/markdown-worker.js"
-  components={{
+  codeRenderers={{
     mermaid: MermaidBlock,
   }}
   features={{
@@ -55,9 +55,26 @@ graph TD
 - Set `defaultView="diagram"` only where diagrams are primary content.
 
 ```tsx
-components={{
+codeRenderers={{
   mermaid: (props) => <MermaidBlock {...props} defaultView="diagram" />,
 }}
+```
+
+For custom themes, debouncing, or error retry UI, use `createMermaidBlock`:
+
+```tsx
+import { createMermaidBlock } from "@stream-mdx/mermaid";
+
+const ConfiguredMermaidBlock = createMermaidBlock({
+  config: { theme: "neutral" },
+  defaultView: "diagram",
+  errorComponent: ({ error, retry }) => (
+    <div className="mermaid-error">
+      <span>{error}</span>
+      <button type="button" onClick={retry}>Retry</button>
+    </div>
+  ),
+});
 ```
 
 ## Operational guidance
@@ -68,7 +85,7 @@ components={{
 
 ## Failure mode checklist
 
-- Diagram not rendering: verify addon installed and `components.mermaid` registered.
+- Diagram not rendering: verify addon installed and `codeRenderers.mermaid` registered.
 - Layout overflow: wrap diagram container with horizontal overflow control.
 - Hydration drift: avoid non-serializable props in surrounding MDX components.
 

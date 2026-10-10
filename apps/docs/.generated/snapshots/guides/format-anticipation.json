@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-02-11T20:25:56.450Z",
-  "hash": "5eccfe4fa149aca2aa716d0d99d1b681fe34f2786548659d53fe677d35449d54",
+  "createdAt": "2026-10-10T04:53:48.250Z",
+  "hash": "8d3b65b9a2b569fbd8c90e4cb63f45f66ed74ef3255e961164bd5534f4633362",
   "contentHash": "a3b6c0c5ec64693f8a237c919acc1886fbaf7869cd549b5228a513fc378996bd",
-  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
-  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "configHash": "a4b31dc6e15c2cd96906124ef06fadc77e60ad148c40ed5ba066e3518a02e37b",
+  "hashSalt": "docs-snapshots-v2:42a0722c827a5ff05bc7f9b0b2c880b732fb655e91e2b7c5196767915dd07177",
   "blocks": [
     {
       "id": "db082c0",
@@ -13,14 +13,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Format Anticipation",
-        "range": {
-          "from": 0,
-          "to": 21
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading1",
           "headingLevel": 1,
           "headingText": "Format Anticipation",
           "headingId": "format-anticipation"
+        },
+        "range": {
+          "from": 0,
+          "to": 21
         },
         "inline": [
           {
@@ -36,6 +37,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "Format anticipation lets StreamMDX render inline formatting *before* closing delimiters arrive. The goal is a smoother, more \"live\" feel while still avoiding runaway parsing.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 23,
           "to": 197
@@ -67,14 +71,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "What it does",
-        "range": {
-          "from": 199,
-          "to": 214
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "What it does",
           "headingId": "what-it-does"
+        },
+        "range": {
+          "from": 199,
+          "to": 214
         },
         "inline": [
           {
@@ -90,12 +95,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- Allows partial emphasis/strong/strike to render as soon as the opening marker is seen.\n- Lets inline and block math render early (within safe bounds).\n- Can be toggled per feature, so you keep the strict behavior where you need it.",
-        "range": {
-          "from": 216,
-          "to": 449
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -116,7 +128,195 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "43c1e843::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 216,
+                  "to": 304
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "43c1e843::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Allows partial emphasis/strong/strike to render as soon as the opening marker is seen.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Allows partial emphasis/strong/strike to render as soon as the opening marker is seen."
+                        }
+                      ],
+                      "range": {
+                        "from": 216,
+                        "to": 304
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Allows partial emphasis/strong/strike to render as soon as the opening marker is seen."
+                              }
+                            ],
+                            "text": "Allows partial emphasis/strong/strike to render as soon as the opening marker is seen.",
+                            "raw": "- Allows partial emphasis/strong/strike to render as soon as the opening marker is seen."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Allows partial emphasis/strong/strike to render as soon as the opening marker is seen."
+                    }
+                  ],
+                  "text": "Allows partial emphasis/strong/strike to render as soon as the opening marker is seen.",
+                  "raw": "- Allows partial emphasis/strong/strike to render as soon as the opening marker is seen."
+                },
+                "children": []
+              },
+              {
+                "id": "43c1e843::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 305,
+                  "to": 368
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "43c1e843::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Lets inline and block math render early (within safe bounds).",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Lets inline and block math render early (within safe bounds)."
+                        }
+                      ],
+                      "range": {
+                        "from": 305,
+                        "to": 368
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Lets inline and block math render early (within safe bounds)."
+                              }
+                            ],
+                            "text": "Lets inline and block math render early (within safe bounds).",
+                            "raw": "- Lets inline and block math render early (within safe bounds)."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Lets inline and block math render early (within safe bounds)."
+                    }
+                  ],
+                  "text": "Lets inline and block math render early (within safe bounds).",
+                  "raw": "- Lets inline and block math render early (within safe bounds)."
+                },
+                "children": []
+              },
+              {
+                "id": "43c1e843::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 369,
+                  "to": 449
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "43c1e843::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Can be toggled per feature, so you keep the strict behavior where you need it.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Can be toggled per feature, so you keep the strict behavior where you need it."
+                        }
+                      ],
+                      "range": {
+                        "from": 369,
+                        "to": 449
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Can be toggled per feature, so you keep the strict behavior where you need it."
+                              }
+                            ],
+                            "text": "Can be toggled per feature, so you keep the strict behavior where you need it.",
+                            "raw": "- Can be toggled per feature, so you keep the strict behavior where you need it."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Can be toggled per feature, so you keep the strict behavior where you need it."
+                    }
+                  ],
+                  "text": "Can be toggled per feature, so you keep the strict behavior where you need it.",
+                  "raw": "- Can be toggled per feature, so you keep the strict behavior where you need it."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 216,
+          "to": 449
         }
       }
     },
@@ -126,14 +326,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Enable it",
-        "range": {
-          "from": 451,
-          "to": 463
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Enable it",
           "headingId": "enable-it"
+        },
+        "range": {
+          "from": 451,
+          "to": 463
         },
         "inline": [
           {
@@ -149,15 +350,18 @@
       "isFinalized": true,
       "payload": {
         "raw": "```tsx\n<StreamingMarkdown\n  text={content}\n  features={{\n    formatAnticipation: {\n      inline: true,\n      mathInline: true,\n      mathBlock: true,\n      html: true,\n      mdx: true,\n      regex: false,\n    },\n  }}\n/>\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "<StreamingMarkdown\n  text={content}\n  features={{\n    formatAnticipation: {\n      inline: true,\n      mathInline: true,\n      mathBlock: true,\n      html: true,\n      mdx: true,\n      regex: false,\n    },\n  }}\n/>",
+          "info": "tsx",
+          "lang": "tsx",
+          "highlightLang": "tsx"
+        },
         "range": {
           "from": 465,
           "to": 688
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content}</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    formatAnticipation: {</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      inline: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      mathInline: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      mathBlock: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      regex: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">false</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    },</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }}</span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/></span></span></code></pre>",
-        "meta": {
-          "lang": "tsx",
-          "code": "<StreamingMarkdown\n  text={content}\n  features={{\n    formatAnticipation: {\n      inline: true,\n      mathInline: true,\n      mathBlock: true,\n      html: true,\n      mdx: true,\n      regex: false,\n    },\n  }}\n/>"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content}</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    formatAnticipation: {</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      inline: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      mathInline: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      mathBlock: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      regex: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">false</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    },</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }}</span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/></span></span></code></pre>"
       }
     },
     {
@@ -166,14 +370,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Inline and block math",
-        "range": {
-          "from": 690,
-          "to": 714
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Inline and block math",
           "headingId": "inline-and-block-math"
+        },
+        "range": {
+          "from": 690,
+          "to": 714
         },
         "inline": [
           {
@@ -189,6 +394,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "The block math toggle is guarded by a newline threshold so unclosed blocks do not \"capture\" the rest of the article. Inline math is scoped to a single line.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 716,
           "to": 872
@@ -207,15 +415,18 @@
       "isFinalized": true,
       "payload": {
         "raw": "```md\nInline: $E = mc^2$ and $f(x) = x^2$\n\nBlock:\n\n$$\n\\mathbf{J}_f(\\mathbf{x}) = \\nabla f(\\mathbf{x})\n$$\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "Inline: $E = mc^2$ and $f(x) = x^2$\n\nBlock:\n\n$$\n\\mathbf{J}_f(\\mathbf{x}) = \\nabla f(\\mathbf{x})\n$$",
+          "info": "md",
+          "lang": "md",
+          "highlightLang": "md"
+        },
         "range": {
           "from": 874,
           "to": 982
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"md\"><code data-language=\"md\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">Inline: $E = mc^2$ and $f(x) = x^2$</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">Block:</span></span>\n<span class=\"line\" data-line=\"4\"></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">$$</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">\\mathbf{J}_f(\\mathbf{x}) = \\nabla f(\\mathbf{x})</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">$$</span></span></code></pre>",
-        "meta": {
-          "lang": "md",
-          "code": "Inline: $E = mc^2$ and $f(x) = x^2$\n\nBlock:\n\n$$\n\\mathbf{J}_f(\\mathbf{x}) = \\nabla f(\\mathbf{x})\n$$"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-md\" data-language=\"md\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">Inline: $E = mc^2$ and $f(x) = x^2$</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">Block:</span></span>\n<span class=\"line\" data-line=\"4\"></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">$$</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">\\mathbf{J}_f(\\mathbf{x}) = \\nabla f(\\mathbf{x})</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">$$</span></span></code></pre>"
       }
     },
     {
@@ -224,14 +435,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "HTML and MDX",
-        "range": {
-          "from": 984,
-          "to": 999
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "HTML and MDX",
           "headingId": "html-and-mdx"
+        },
+        "range": {
+          "from": 984,
+          "to": 999
         },
         "inline": [
           {
@@ -247,12 +459,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- HTML: only allowlisted tags are eligible for anticipation.\n- MDX: anticipation applies to known component tags provided in `mdxComponents`.",
-        "range": {
-          "from": 1001,
-          "to": 1142
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -275,7 +494,160 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "7fdee39c::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 1001,
+                  "to": 1061
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "7fdee39c::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- HTML: only allowlisted tags are eligible for anticipation.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "HTML: only allowlisted tags are eligible for anticipation."
+                        }
+                      ],
+                      "range": {
+                        "from": 1001,
+                        "to": 1061
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "HTML: only allowlisted tags are eligible for anticipation."
+                              }
+                            ],
+                            "text": "HTML: only allowlisted tags are eligible for anticipation.",
+                            "raw": "- HTML: only allowlisted tags are eligible for anticipation."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "HTML: only allowlisted tags are eligible for anticipation."
+                    }
+                  ],
+                  "text": "HTML: only allowlisted tags are eligible for anticipation.",
+                  "raw": "- HTML: only allowlisted tags are eligible for anticipation."
+                },
+                "children": []
+              },
+              {
+                "id": "7fdee39c::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 1062,
+                  "to": 1142
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "7fdee39c::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- MDX: anticipation applies to known component tags provided in `mdxComponents`.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "MDX: anticipation applies to known component tags provided in "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "mdxComponents"
+                        },
+                        {
+                          "kind": "text",
+                          "text": "."
+                        }
+                      ],
+                      "range": {
+                        "from": 1062,
+                        "to": 1142
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "MDX: anticipation applies to known component tags provided in "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "mdxComponents"
+                              },
+                              {
+                                "kind": "text",
+                                "text": "."
+                              }
+                            ],
+                            "text": "MDX: anticipation applies to known component tags provided in mdxComponents.",
+                            "raw": "- MDX: anticipation applies to known component tags provided in `mdxComponents`."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "MDX: anticipation applies to known component tags provided in "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "mdxComponents"
+                    },
+                    {
+                      "kind": "text",
+                      "text": "."
+                    }
+                  ],
+                  "text": "MDX: anticipation applies to known component tags provided in mdxComponents.",
+                  "raw": "- MDX: anticipation applies to known component tags provided in `mdxComponents`."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 1001,
+          "to": 1142
         }
       }
     },
@@ -285,6 +657,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "This keeps the streaming state stable while letting rich components appear as early as possible.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 1144,
           "to": 1240
@@ -303,14 +678,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "When to keep it off",
-        "range": {
-          "from": 1242,
-          "to": 1264
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "When to keep it off",
           "headingId": "when-to-keep-it-off"
+        },
+        "range": {
+          "from": 1242,
+          "to": 1264
         },
         "inline": [
           {
@@ -326,12 +702,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- Content with ambiguous markers (e.g., heavy use of stray `*` or `$`).\n- Strict Markdown pipelines where you want the renderer to wait for a full, valid token.",
-        "range": {
-          "from": 1266,
-          "to": 1426
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -362,7 +745,184 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "6a712405::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 1266,
+                  "to": 1337
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "6a712405::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Content with ambiguous markers (e.g., heavy use of stray `*` or `$`).",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Content with ambiguous markers (e.g., heavy use of stray "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "*"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " or "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "$"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ")."
+                        }
+                      ],
+                      "range": {
+                        "from": 1266,
+                        "to": 1337
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Content with ambiguous markers (e.g., heavy use of stray "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "*"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " or "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "$"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ")."
+                              }
+                            ],
+                            "text": "Content with ambiguous markers (e.g., heavy use of stray * or $).",
+                            "raw": "- Content with ambiguous markers (e.g., heavy use of stray `*` or `$`)."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Content with ambiguous markers (e.g., heavy use of stray "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "*"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " or "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "$"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ")."
+                    }
+                  ],
+                  "text": "Content with ambiguous markers (e.g., heavy use of stray * or $).",
+                  "raw": "- Content with ambiguous markers (e.g., heavy use of stray `*` or `$`)."
+                },
+                "children": []
+              },
+              {
+                "id": "6a712405::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 1338,
+                  "to": 1426
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "6a712405::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Strict Markdown pipelines where you want the renderer to wait for a full, valid token.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Strict Markdown pipelines where you want the renderer to wait for a full, valid token."
+                        }
+                      ],
+                      "range": {
+                        "from": 1338,
+                        "to": 1426
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Strict Markdown pipelines where you want the renderer to wait for a full, valid token."
+                              }
+                            ],
+                            "text": "Strict Markdown pipelines where you want the renderer to wait for a full, valid token.",
+                            "raw": "- Strict Markdown pipelines where you want the renderer to wait for a full, valid token."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Strict Markdown pipelines where you want the renderer to wait for a full, valid token."
+                    }
+                  ],
+                  "text": "Strict Markdown pipelines where you want the renderer to wait for a full, valid token.",
+                  "raw": "- Strict Markdown pipelines where you want the renderer to wait for a full, valid token."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 1266,
+          "to": 1426
         }
       }
     },
@@ -372,14 +932,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Toggles and caveats",
-        "range": {
-          "from": 1428,
-          "to": 1450
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Toggles and caveats",
           "headingId": "toggles-and-caveats"
+        },
+        "range": {
+          "from": 1428,
+          "to": 1450
         },
         "inline": [
           {
@@ -395,12 +956,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- **Inline emphasis/strong**: safest to enable; closes at line boundaries.\n- **Math blocks**: guarded by a newline threshold (default 2) so unclosed blocks don’t swallow the document.\n- **HTML/MDX**: limited to allowlisted tags/components to avoid invalid nesting.\n- **Regex plugins**: require start/partial/full definitions to anticipate safely.",
-        "range": {
-          "from": 1452,
-          "to": 1798
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -463,7 +1031,362 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "299797fc::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 1452,
+                  "to": 1526
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "299797fc::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **Inline emphasis/strong**: safest to enable; closes at line boundaries.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Inline emphasis/strong"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": safest to enable; closes at line boundaries."
+                        }
+                      ],
+                      "range": {
+                        "from": 1452,
+                        "to": 1526
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Inline emphasis/strong"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": safest to enable; closes at line boundaries."
+                              }
+                            ],
+                            "text": "Inline emphasis/strong: safest to enable; closes at line boundaries.",
+                            "raw": "- **Inline emphasis/strong**: safest to enable; closes at line boundaries."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Inline emphasis/strong"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": safest to enable; closes at line boundaries."
+                    }
+                  ],
+                  "text": "Inline emphasis/strong: safest to enable; closes at line boundaries.",
+                  "raw": "- **Inline emphasis/strong**: safest to enable; closes at line boundaries."
+                },
+                "children": []
+              },
+              {
+                "id": "299797fc::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 1527,
+                  "to": 1635
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "299797fc::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **Math blocks**: guarded by a newline threshold (default 2) so unclosed blocks don’t swallow the document.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Math blocks"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": guarded by a newline threshold (default 2) so unclosed blocks don’t swallow the document."
+                        }
+                      ],
+                      "range": {
+                        "from": 1527,
+                        "to": 1635
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Math blocks"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": guarded by a newline threshold (default 2) so unclosed blocks don’t swallow the document."
+                              }
+                            ],
+                            "text": "Math blocks: guarded by a newline threshold (default 2) so unclosed blocks don’t swallow the document.",
+                            "raw": "- **Math blocks**: guarded by a newline threshold (default 2) so unclosed blocks don’t swallow the document."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Math blocks"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": guarded by a newline threshold (default 2) so unclosed blocks don’t swallow the document."
+                    }
+                  ],
+                  "text": "Math blocks: guarded by a newline threshold (default 2) so unclosed blocks don’t swallow the document.",
+                  "raw": "- **Math blocks**: guarded by a newline threshold (default 2) so unclosed blocks don’t swallow the document."
+                },
+                "children": []
+              },
+              {
+                "id": "299797fc::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 1636,
+                  "to": 1716
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "299797fc::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **HTML/MDX**: limited to allowlisted tags/components to avoid invalid nesting.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "HTML/MDX"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": limited to allowlisted tags/components to avoid invalid nesting."
+                        }
+                      ],
+                      "range": {
+                        "from": 1636,
+                        "to": 1716
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "HTML/MDX"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": limited to allowlisted tags/components to avoid invalid nesting."
+                              }
+                            ],
+                            "text": "HTML/MDX: limited to allowlisted tags/components to avoid invalid nesting.",
+                            "raw": "- **HTML/MDX**: limited to allowlisted tags/components to avoid invalid nesting."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "HTML/MDX"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": limited to allowlisted tags/components to avoid invalid nesting."
+                    }
+                  ],
+                  "text": "HTML/MDX: limited to allowlisted tags/components to avoid invalid nesting.",
+                  "raw": "- **HTML/MDX**: limited to allowlisted tags/components to avoid invalid nesting."
+                },
+                "children": []
+              },
+              {
+                "id": "299797fc::item:3",
+                "type": "list-item",
+                "range": {
+                  "from": 1717,
+                  "to": 1798
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "299797fc::item:3",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **Regex plugins**: require start/partial/full definitions to anticipate safely.",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Regex plugins"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": require start/partial/full definitions to anticipate safely."
+                        }
+                      ],
+                      "range": {
+                        "from": 1717,
+                        "to": 1798
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 3,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Regex plugins"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": require start/partial/full definitions to anticipate safely."
+                              }
+                            ],
+                            "text": "Regex plugins: require start/partial/full definitions to anticipate safely.",
+                            "raw": "- **Regex plugins**: require start/partial/full definitions to anticipate safely."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 3,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Regex plugins"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": require start/partial/full definitions to anticipate safely."
+                    }
+                  ],
+                  "text": "Regex plugins: require start/partial/full definitions to anticipate safely.",
+                  "raw": "- **Regex plugins**: require start/partial/full definitions to anticipate safely."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 1452,
+          "to": 1798
         }
       }
     },
@@ -473,14 +1396,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Debugging tips",
-        "range": {
-          "from": 1800,
-          "to": 1817
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Debugging tips",
           "headingId": "debugging-tips"
+        },
+        "range": {
+          "from": 1800,
+          "to": 1817
         },
         "inline": [
           {
@@ -496,12 +1420,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- Toggle one flag at a time to see the effect.\n- Use the demo page to compare strict vs anticipated rendering.",
-        "range": {
-          "from": 1819,
-          "to": 1929
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -516,7 +1447,136 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "1754acd::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 1819,
+                  "to": 1865
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "1754acd::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Toggle one flag at a time to see the effect.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Toggle one flag at a time to see the effect."
+                        }
+                      ],
+                      "range": {
+                        "from": 1819,
+                        "to": 1865
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Toggle one flag at a time to see the effect."
+                              }
+                            ],
+                            "text": "Toggle one flag at a time to see the effect.",
+                            "raw": "- Toggle one flag at a time to see the effect."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Toggle one flag at a time to see the effect."
+                    }
+                  ],
+                  "text": "Toggle one flag at a time to see the effect.",
+                  "raw": "- Toggle one flag at a time to see the effect."
+                },
+                "children": []
+              },
+              {
+                "id": "1754acd::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 1866,
+                  "to": 1929
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "1754acd::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- Use the demo page to compare strict vs anticipated rendering.",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "Use the demo page to compare strict vs anticipated rendering."
+                        }
+                      ],
+                      "range": {
+                        "from": 1866,
+                        "to": 1929
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Use the demo page to compare strict vs anticipated rendering."
+                              }
+                            ],
+                            "text": "Use the demo page to compare strict vs anticipated rendering.",
+                            "raw": "- Use the demo page to compare strict vs anticipated rendering."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Use the demo page to compare strict vs anticipated rendering."
+                    }
+                  ],
+                  "text": "Use the demo page to compare strict vs anticipated rendering.",
+                  "raw": "- Use the demo page to compare strict vs anticipated rendering."
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 1819,
+          "to": 1929
         }
       }
     }
@@ -524,51 +1584,51 @@
   "tocHeadings": [
     {
       "id": "format-anticipation",
-      "text": "Format Anticipation",
+      "blockId": "db082c0",
       "level": 1,
-      "blockId": "db082c0"
+      "text": "Format Anticipation"
     },
     {
       "id": "what-it-does",
-      "text": "What it does",
+      "blockId": "528c921",
       "level": 2,
-      "blockId": "528c921"
+      "text": "What it does"
     },
     {
       "id": "enable-it",
-      "text": "Enable it",
+      "blockId": "508da4e0",
       "level": 2,
-      "blockId": "508da4e0"
+      "text": "Enable it"
     },
     {
       "id": "inline-and-block-math",
-      "text": "Inline and block math",
+      "blockId": "48c7a023",
       "level": 2,
-      "blockId": "48c7a023"
+      "text": "Inline and block math"
     },
     {
       "id": "html-and-mdx",
-      "text": "HTML and MDX",
+      "blockId": "2d513cfb",
       "level": 2,
-      "blockId": "2d513cfb"
+      "text": "HTML and MDX"
     },
     {
       "id": "when-to-keep-it-off",
-      "text": "When to keep it off",
+      "blockId": "2100305f",
       "level": 2,
-      "blockId": "2100305f"
+      "text": "When to keep it off"
     },
     {
       "id": "toggles-and-caveats",
-      "text": "Toggles and caveats",
+      "blockId": "242eb257",
       "level": 2,
-      "blockId": "242eb257"
+      "text": "Toggles and caveats"
     },
     {
       "id": "debugging-tips",
-      "text": "Debugging tips",
+      "blockId": "5b524199",
       "level": 2,
-      "blockId": "5b524199"
+      "text": "Debugging tips"
     }
   ],
   "init": {

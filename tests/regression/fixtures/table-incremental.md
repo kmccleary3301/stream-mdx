@@ -16,3 +16,8 @@ We want to see the table element materialize before the final checkpoint.
 Additional filler text continues here to extend the document length. The goal is to
 ensure the table is fully described before roughly one quarter of the stream has
 been appended so that the regression harness can verify incremental visibility.
+
+The remaining prose deliberately extends the fixture after the table instead of
+changing the table itself. That keeps the table early in the stream and makes
+the twenty-five percent visibility assertion mechanically reachable across the
+small, typical, and fast chunking scenarios.

@@ -30,8 +30,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 3.3999999910593033,
-        "lastDurationMs": 3,
+        "lastPatchToDomMs": 0.09999999403953552,
+        "lastDurationMs": 0.09999999403953552,
         "meta": {
           "fixtureId": "list-code-nested",
           "scenarioId": "S2_typical",
@@ -96,8 +96,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 3.3999999910593033,
-        "lastDurationMs": 3,
+        "lastPatchToDomMs": 0.09999999403953552,
+        "lastDurationMs": 0.09999999403953552,
         "meta": {
           "fixtureId": "list-code-nested",
           "scenarioId": "S2_typical",
@@ -162,8 +162,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 2,
-        "lastPatchToDomMs": 0.4000000059604645,
-        "lastDurationMs": 0.4000000059604645,
+        "lastPatchToDomMs": 0.20000000298023224,
+        "lastDurationMs": 0.10000000894069672,
         "meta": {
           "fixtureId": "list-code-nested",
           "scenarioId": "S2_typical",
@@ -195,8 +195,8 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Nested List Code Blocks\">Nested List Code Blocks</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">Ordered</li></ol></div>",
-      "textSample": "Nested List Code BlocksOrdered",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Nested List Code Blocks\">Nested List Code Blocks</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">Ordered </li></ol></div>",
+      "textSample": "Nested List Code BlocksOrdered ",
       "structure": {
         "topLevelTags": [
           "div"
@@ -220,16 +220,16 @@
     },
     {
       "id": "event-hasPre",
-      "appendedChars": 76,
+      "appendedChars": 95,
       "rootChildCount": 1,
       "runtimeState": {
-        "rendererVersion": 7,
+        "rendererVersion": 8,
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 4,
-        "lastPatchToDomMs": 8.599999994039536,
-        "lastDurationMs": 1.4000000059604645,
+        "lastTx": 5,
+        "lastPatchToDomMs": 14.599999994039536,
+        "lastDurationMs": 0.5999999940395355,
         "meta": {
           "fixtureId": "list-code-nested",
           "scenarioId": "S2_typical",
@@ -253,7 +253,7 @@
       },
       "counts": {
         "table": 0,
-        "pre": 2,
+        "pre": 1,
         "blockquote": 0,
         "katex": 0,
         "mdxPending": 0,
@@ -261,7 +261,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Nested List Code Blocks\">Nested List Code Blocks</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">Ordered item with nested TypeScript:<div class=\"markdown-list-item-children\"><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"7bf97dd7::item:0::code:0\" data-code-virtualized=\"false\" data-code-total-lines=\"1\" data-code-mounted-lines=\"1\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"typescript\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"typescript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"></span></code></pre></div></div></div></div></div></div></pre></div></li></ol></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Nested List Code Blocks\">Nested List Code Blocks</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\"><p class=\"markdown-paragraph\">Ordered item with nested TypeScript:</p><div class=\"markdown-list-item-children\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">const value = 1</span></code></pre></div></div></div></div></div></div></li></ol></div>",
       "textSample": "Nested List Code BlocksOrdered item with nested TypeScript:[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-view",
       "structure": {
         "topLevelTags": [
@@ -269,7 +269,7 @@
         ],
         "counts": {
           "table": 0,
-          "pre": 2,
+          "pre": 1,
           "blockquote": 0,
           "katex": 0,
           "mdxPending": 0,
@@ -283,8 +283,8 @@
         "mdxBlocks": [],
         "codeBlocks": [
           {
-            "text": "",
-            "lineCount": 0
+            "text": "const value = 1",
+            "lineCount": 1
           }
         ]
       }
@@ -299,8 +299,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 6,
-        "lastPatchToDomMs": 12.5,
-        "lastDurationMs": 3.0999999940395355,
+        "lastPatchToDomMs": 3.9000000059604645,
+        "lastDurationMs": 0.6000000089406967,
         "meta": {
           "fixtureId": "list-code-nested",
           "scenarioId": "S2_typical",
@@ -324,7 +324,7 @@
       },
       "counts": {
         "table": 0,
-        "pre": 2,
+        "pre": 1,
         "blockquote": 0,
         "katex": 0,
         "mdxPending": 0,
@@ -332,7 +332,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Nested List Code Blocks\">Nested List Code Blocks</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">Ordered item with nested TypeScript:<div class=\"markdown-list-item-children\"><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"7bf97dd7::item:0::code:0\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"typescript\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"typescript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\">   const value = 1;</span>\n<span class=\"line\" data-line=\"2\">   console.log(va</span></code></pre></div></div></div></div></div></div></pre></div></li></ol></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Nested List Code Blocks\">Nested List Code Blocks</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\"><p class=\"markdown-paragraph\">Ordered item with nested TypeScript:</p><div class=\"markdown-list-item-children\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">const value = 1;</span>\n<span class=\"line\">console.log(va</span></code></pre></div></div></div></div></div></div></li></ol></div>",
       "textSample": "Nested List Code BlocksOrdered item with nested TypeScript:[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-view",
       "structure": {
         "topLevelTags": [
@@ -340,7 +340,7 @@
         ],
         "counts": {
           "table": 0,
-          "pre": 2,
+          "pre": 1,
           "blockquote": 0,
           "katex": 0,
           "mdxPending": 0,
@@ -354,7 +354,7 @@
         "mdxBlocks": [],
         "codeBlocks": [
           {
-            "text": "   const value = 1;\n   console.log(va",
+            "text": "const value = 1;\nconsole.log(va",
             "lineCount": 2
           }
         ]
@@ -370,7 +370,7 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 11,
-        "lastPatchToDomMs": 11.700000002980232,
+        "lastPatchToDomMs": 16.299999997019768,
         "lastDurationMs": 0.20000000298023224,
         "meta": {
           "fixtureId": "list-code-nested",
@@ -395,7 +395,7 @@
       },
       "counts": {
         "table": 0,
-        "pre": 2,
+        "pre": 1,
         "blockquote": 0,
         "katex": 0,
         "mdxPending": 0,
@@ -403,7 +403,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Nested List Code Blocks\">Nested List Code Blocks</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">Ordered item with nested TypeScript:<div class=\"markdown-list-item-children\"><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"7bf97dd7::item:0::code:0\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"typescript\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"typescript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\">const value = 1;</span>\n<span class=\"line\" data-line=\"2\">console.log(value);</span></code></pre></div></div></div></div></div></div></pre></div></li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Ordered item with nested bullets:<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Bullet child with nested shell snippet:</li></ul></div></li></ol></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Nested List Code Blocks\">Nested List Code Blocks</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\"><p class=\"markdown-paragraph\">Ordered item with nested TypeScript:</p><div class=\"markdown-list-item-children\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">const value = 1;</span>\n<span class=\"line\">console.log(value);</span></code></pre></div></div></div></div></div></div></li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\"><p class=\"markdown-paragraph\">Ordered item with nested bullets:</p><div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Bullet child with nested shell snippet:</li></ul></div></li></ol></div>",
       "textSample": "Nested List Code BlocksOrdered item with nested TypeScript:[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-view",
       "structure": {
         "topLevelTags": [
@@ -411,7 +411,7 @@
         ],
         "counts": {
           "table": 0,
-          "pre": 2,
+          "pre": 1,
           "blockquote": 0,
           "katex": 0,
           "mdxPending": 0,
@@ -441,8 +441,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 16,
-        "lastPatchToDomMs": 13,
-        "lastDurationMs": 0.29999999701976776,
+        "lastPatchToDomMs": 16.099999994039536,
+        "lastDurationMs": 0.09999999403953552,
         "meta": {
           "fixtureId": "list-code-nested",
           "scenarioId": "S2_typical",
@@ -466,7 +466,7 @@
       },
       "counts": {
         "table": 0,
-        "pre": 4,
+        "pre": 2,
         "blockquote": 0,
         "katex": 0,
         "mdxPending": 0,
@@ -474,7 +474,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Nested List Code Blocks\">Nested List Code Blocks</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">Ordered item with nested TypeScript:<div class=\"markdown-list-item-children\"><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"7bf97dd7::item:0::code:0\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"typescript\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"typescript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\">const value = 1;</span>\n<span class=\"line\" data-line=\"2\">console.log(value);</span></code></pre></div></div></div></div></div></div></pre></div></li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Ordered item with nested bullets:<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Bullet child with nested shell snippet:<div class=\"markdown-list-item-children\"><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"7bf97dd7::item:1::list:0::item:0::code:0\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"bash\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\">echo \"nested\"</span>\n<span class=\"line\" data-line=\"2\">printf '%s\\n' done</span></code></pre></div></div></div></div></div></div></pre></div></li></ul></div></li></ol><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Unordered item with neste</li></ul></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Nested List Code Blocks\">Nested List Code Blocks</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\"><p class=\"markdown-paragraph\">Ordered item with nested TypeScript:</p><div class=\"markdown-list-item-children\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-ts\" data-language=\"ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> value</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 1</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">console.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">log</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(value);</span></span></code></pre></div></div></div></div></div></div></div></li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\"><p class=\"markdown-paragraph\">Ordered item with nested bullets:</p><div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\"><p class=\"markdown-paragraph\">Bullet child with nested shell snippet:</p><div class=\"markdown-list-item-children\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-bash\" data-language=\"bash\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">echo</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"nested\"</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">printf</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> '%s\\n'</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> done</span></span></code></pre></div></div></div></div></div></div></div></li></ul></div></li></ol><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Unordered item with neste</li></ul></div>",
       "textSample": "Nested List Code BlocksOrdered item with nested TypeScript:[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-view",
       "structure": {
         "topLevelTags": [
@@ -482,7 +482,7 @@
         ],
         "counts": {
           "table": 0,
-          "pre": 4,
+          "pre": 2,
           "blockquote": 0,
           "katex": 0,
           "mdxPending": 0,
@@ -516,8 +516,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 19,
-        "lastPatchToDomMs": 7,
-        "lastDurationMs": 2.2000000029802322,
+        "lastPatchToDomMs": 4.699999988079071,
+        "lastDurationMs": 0.5,
         "meta": {
           "fixtureId": "list-code-nested",
           "scenarioId": "S2_typical",
@@ -541,7 +541,7 @@
       },
       "counts": {
         "table": 0,
-        "pre": 6,
+        "pre": 3,
         "blockquote": 0,
         "katex": 0,
         "mdxPending": 0,
@@ -549,7 +549,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Nested List Code Blocks\">Nested List Code Blocks</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">Ordered item with nested TypeScript:<div class=\"markdown-list-item-children\"><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"7bf97dd7::item:0::code:0\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"typescript\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"typescript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\">const value = 1;</span>\n<span class=\"line\" data-line=\"2\">console.log(value);</span></code></pre></div></div></div></div></div></div></pre></div></li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Ordered item with nested bullets:<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Bullet child with nested shell snippet:<div class=\"markdown-list-item-children\"><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"7bf97dd7::item:1::list:0::item:0::code:0\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"bash\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\">echo \"nested\"</span>\n<span class=\"line\" data-line=\"2\">printf '%s\\n' done</span></code></pre></div></div></div></div></div></div></pre></div></li></ul></div></li></ol><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Unordered item with nested JavaScript:<div class=\"markdown-list-item-children\"><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"4a7ac1e::item:0::code:0\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"javascript\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"javascript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\">  export const answer = 42;</span>\n<span class=\"line\" data-line=\"2\">  cons</span></code></pre></div></div></div></div></div></div></pre></div></li></ul></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Nested List Code Blocks\">Nested List Code Blocks</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\"><p class=\"markdown-paragraph\">Ordered item with nested TypeScript:</p><div class=\"markdown-list-item-children\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-ts\" data-language=\"ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> value</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 1</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">console.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">log</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(value);</span></span></code></pre></div></div></div></div></div></div></div></li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\"><p class=\"markdown-paragraph\">Ordered item with nested bullets:</p><div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\"><p class=\"markdown-paragraph\">Bullet child with nested shell snippet:</p><div class=\"markdown-list-item-children\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-bash\" data-language=\"bash\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">echo</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"nested\"</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">printf</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> '%s\\n'</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> done</span></span></code></pre></div></div></div></div></div></div></div></li></ul></div></li></ol><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\"><p class=\"markdown-paragraph\">Unordered item with nested JavaScript:</p><div class=\"markdown-list-item-children\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">export const answer = 42;</span>\n<span class=\"line\">cons</span></code></pre></div></div></div></div></div></div></li></ul></div>",
       "textSample": "Nested List Code BlocksOrdered item with nested TypeScript:[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-view",
       "structure": {
         "topLevelTags": [
@@ -557,7 +557,7 @@
         ],
         "counts": {
           "table": 0,
-          "pre": 6,
+          "pre": 3,
           "blockquote": 0,
           "katex": 0,
           "mdxPending": 0,
@@ -579,7 +579,7 @@
             "lineCount": 2
           },
           {
-            "text": "  export const answer = 42;\n  cons",
+            "text": "export const answer = 42;\ncons",
             "lineCount": 2
           }
         ]
@@ -595,8 +595,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 21,
-        "lastPatchToDomMs": 12.299999997019768,
-        "lastDurationMs": 1,
+        "lastPatchToDomMs": 14.100000008940697,
+        "lastDurationMs": 0.4000000059604645,
         "meta": {
           "fixtureId": "list-code-nested",
           "scenarioId": "S2_typical",
@@ -620,7 +620,7 @@
       },
       "counts": {
         "table": 0,
-        "pre": 6,
+        "pre": 3,
         "blockquote": 0,
         "katex": 0,
         "mdxPending": 0,
@@ -628,7 +628,7 @@
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Nested List Code Blocks\">Nested List Code Blocks</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">Ordered item with nested TypeScript:<div class=\"markdown-list-item-children\"><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"7bf97dd7::item:0::code:0\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"typescript\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"typescript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\">const value = 1;</span>\n<span class=\"line\" data-line=\"2\">console.log(value);</span></code></pre></div></div></div></div></div></div></pre></div></li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Ordered item with nested bullets:<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Bullet child with nested shell snippet:<div class=\"markdown-list-item-children\"><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"7bf97dd7::item:1::list:0::item:0::code:0\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"bash\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\">echo \"nested\"</span>\n<span class=\"line\" data-line=\"2\">printf '%s\\n' done</span></code></pre></div></div></div></div></div></div></pre></div></li></ul></div></li></ol><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Unordered item with nested JavaScript:<div class=\"markdown-list-item-children\"><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"4a7ac1e::item:0::code:0\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"javascript\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"javascript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\">export const answer = 42;</span>\n<span class=\"line\" data-line=\"2\">console.log(answer);</span></code></pre></div></div></div></div></div></div></pre></div></li></ul></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Nested List Code Blocks\">Nested List Code Blocks</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\"><p class=\"markdown-paragraph\">Ordered item with nested TypeScript:</p><div class=\"markdown-list-item-children\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-ts\" data-language=\"ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> value</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 1</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">console.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">log</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(value);</span></span></code></pre></div></div></div></div></div></div></div></li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\"><p class=\"markdown-paragraph\">Ordered item with nested bullets:</p><div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\"><p class=\"markdown-paragraph\">Bullet child with nested shell snippet:</p><div class=\"markdown-list-item-children\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-bash\" data-language=\"bash\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">echo</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"nested\"</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">printf</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> '%s\\n'</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> done</span></span></code></pre></div></div></div></div></div></div></div></li></ul></div></li></ol><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\"><p class=\"markdown-paragraph\">Unordered item with nested JavaScript:</p><div class=\"markdown-list-item-children\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">export const answer = 42;</span>\n<span class=\"line\">console.log(answer);</span></code></pre></div></div></div></div></div></div></li></ul></div>",
       "textSample": "Nested List Code BlocksOrdered item with nested TypeScript:[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-view",
       "structure": {
         "topLevelTags": [
@@ -636,7 +636,7 @@
         ],
         "counts": {
           "table": 0,
-          "pre": 6,
+          "pre": 3,
           "blockquote": 0,
           "katex": 0,
           "mdxPending": 0,
@@ -678,15 +678,15 @@
       "hasBlockquote": false,
       "hasMath": false
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Nested List Code Blocks\">Nested List Code Blocks</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\">Ordered item with nested TypeScript:<div class=\"markdown-list-item-children\"><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"7bf97dd7::item:0::code:0\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"typescript\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"typescript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\">const value = 1;</span>\n<span class=\"line\" data-line=\"2\">console.log(value);</span></code></pre></div></div></div></div></div></div></pre></div></li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\">Ordered item with nested bullets:<div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\">Bullet child with nested shell snippet:<div class=\"markdown-list-item-children\"><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"7bf97dd7::item:1::list:0::item:0::code:0\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"bash\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"bash\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\">echo \"nested\"</span>\n<span class=\"line\" data-line=\"2\">printf '%s\\n' done</span></code></pre></div></div></div></div></div></div></pre></div></li></ul></div></li></ol><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Unordered item with nested JavaScript:<div class=\"markdown-list-item-children\"><pre class=\"not-prose flex flex-col rounded-lg border border-input pt-1 font-mono text-sm\" data-code-block=\"true\" data-block-id=\"4a7ac1e::item:0::code:0\" data-code-virtualized=\"false\" data-code-total-lines=\"2\" data-code-mounted-lines=\"2\" data-code-window-size=\"100\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" data-language=\"javascript\" style=\"--shiki-dark-bg: transparent; --shiki-light-bg: transparent\"><code data-language=\"javascript\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\">export const answer = 42;</span>\n<span class=\"line\" data-line=\"2\">console.log(answer);</span></code></pre></div></div></div></div></div></div></pre></div></li></ul></div>",
+    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"Nested List Code Blocks\">Nested List Code Blocks</h1><ol class=\"markdown-list ordered\" data-list-depth=\"0\" data-marker-digits=\"1\" style=\"--list-indent: 2rem; --list-marker-digits: 1;\"><li class=\"markdown-list-item\" data-counter-text=\"1.\" data-list-depth=\"0\"><p class=\"markdown-paragraph\">Ordered item with nested TypeScript:</p><div class=\"markdown-list-item-children\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-ts\" data-language=\"ts\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> value</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 1</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">console.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">log</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(value);</span></span></code></pre></div></div></div></div></div></div></div></li><li class=\"markdown-list-item\" data-counter-text=\"2.\" data-list-depth=\"0\"><p class=\"markdown-paragraph\">Ordered item with nested bullets:</p><div class=\"markdown-list-item-children\"><ul class=\"markdown-list unordered\" data-list-depth=\"1\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"1\"><p class=\"markdown-paragraph\">Bullet child with nested shell snippet:</p><div class=\"markdown-list-item-children\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-bash\" data-language=\"bash\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">echo</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"nested\"</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">printf</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> '%s\\n'</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> done</span></span></code></pre></div></div></div></div></div></div></div></li></ul></div></li></ol><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\"><p class=\"markdown-paragraph\">Unordered item with nested JavaScript:</p><div class=\"markdown-list-item-children\"><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-js\" data-language=\"js\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">export</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> answer</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> 42</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">console.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">log</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(answer);</span></span></code></pre></div></div></div></div></div></div></div></li></ul></div>",
     "runtimeState": {
-      "rendererVersion": 25,
+      "rendererVersion": 26,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
-      "lastTx": 22,
-      "lastPatchToDomMs": 6.200000002980232,
-      "lastDurationMs": 5.5,
+      "lastTx": 23,
+      "lastPatchToDomMs": 13.099999994039536,
+      "lastDurationMs": 0.699999988079071,
       "meta": {
         "fixtureId": "list-code-nested",
         "scenarioId": "S2_typical",
@@ -705,7 +705,7 @@
       ],
       "counts": {
         "table": 0,
-        "pre": 6,
+        "pre": 3,
         "blockquote": 0,
         "katex": 0,
         "mdxPending": 0,
@@ -718,7 +718,7 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "ca83c55619a1290cad71e2285bdc7336eeb712f51f844403304753db8cd6f41b",
+        "hash": "7a13d97d186446773b7dfd2beff00393973be291eb29d017a0f3b718b835a2ca",
         "textSample": "Nested List Code BlocksOrdered item with nested TypeScript:[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-ov"
       }
     ],

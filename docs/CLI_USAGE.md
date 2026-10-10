@@ -168,7 +168,7 @@ docPlugins: {
 Then render `code-line` nodes with `diffKind`, `oldNo`, `newNo`, and `tokens`:
 
 ```ts
-import type { TokenLineV1, DiffKind } from "@stream-mdx/core";
+import type { TokenLineV1, DiffLineKind } from "@stream-mdx/core";
 
 const ANSI_RESET = "\u001b[0m";
 const BG_ADD = "\u001b[42m";
@@ -192,8 +192,8 @@ function renderTokenLine(tokens: TokenLineV1 | null): string {
     .join("");
 }
 
-function renderDiffLine(text: string, tokens: TokenLineV1 | null, kind?: DiffKind | null): string {
-  const bg = kind === "add" ? BG_ADD : kind === "remove" ? BG_DEL : "";
+function renderDiffLine(text: string, tokens: TokenLineV1 | null, kind?: DiffLineKind | null): string {
+  const bg = kind === "add" ? BG_ADD : kind === "del" ? BG_DEL : "";
   return `${bg}${renderTokenLine(tokens) || text}${ANSI_RESET}`;
 }
 ```

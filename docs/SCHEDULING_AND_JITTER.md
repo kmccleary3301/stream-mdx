@@ -18,7 +18,6 @@ For the active plan, only two public methodology labels are supported:
 - `Explore`
 
 Lower-level knobs and preset names still exist for engineering work, but they are not separate public benchmark categories. If a result is described publicly, it should map back to one of those two labels.
-
 ## Two modes that matter
 
 ### CI locked
@@ -52,7 +51,6 @@ Use this mode when:
 - experimenting with repeat count, order mode, or workload profile
 
 Do not turn Explore runs into public claim language without restating the exact non-default inputs.
-
 ## What counts as acceptable variance
 
 These should be treated as expected performance variance, not correctness failures:

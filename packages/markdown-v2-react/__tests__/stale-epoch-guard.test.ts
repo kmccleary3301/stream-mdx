@@ -1,14 +1,10 @@
 import assert from "node:assert";
 
 import { PATCH_ROOT_ID, type Block, type Patch } from "@stream-mdx/core";
-import DOMPurifyFactory from "dompurify";
 
 import { createRendererStore } from "../src/renderer/store";
 
-const dompurifyShim = DOMPurifyFactory as unknown as { sanitize?: (html: string, config?: unknown) => string };
-if (typeof dompurifyShim.sanitize !== "function") {
-  dompurifyShim.sanitize = (html: string) => html;
-}
+
 
 function createParagraphBlock(raw: string): Block {
   return {
@@ -142,6 +138,66 @@ async function main() {
     store.getDebugCounters().staleEpochRejected,
     1,
     "root insertChild should not increment stale epoch rejection count",
+  );
+
+  // Streaming an HTML block: each setHTML expects the epoch the previous one established (worker sequence).
+  const htmlBlock = (raw: string, html: string): Block => ({
+    id: "html-block",
+    type: "html",
+    isFinalized: false,
+    payload: { raw, sanitizedHtml: html, meta: { sanitized: true } },
+  });
+  const htmlStore = createRendererStore([]);
+  htmlStore.applyPatches([
+    {
+      op: "insertChild",
+      at: { blockId: PATCH_ROOT_ID },
+      index: 0,
+      node: { id: "html-block", type: "html", props: { block: htmlBlock("<table>", "") } },
+      meta: { kind: "semantic", parseEpoch: 6, tx: 6 },
+    } satisfies Patch,
+  ]);
+  const steps: Array<[raw: string, html: string, expectedEpoch: number, parseEpoch: number]> = [
+    ["<table>", "<table></table>", 6, 7],
+    ["<table>\n  <tr>", "<table><tbody><tr></tr></tbody></table>", 7, 11],
+    ["<table>\n  <tr>\n  </tr>\n</table>", "<table><tbody><tr>\n  </tr></tbody></table>", 11, 12],
+  ];
+  const htmlPatches = steps.map(([raw, html, expectedEpoch, parseEpoch]) => ({
+    op: "setHTML",
+    at: { blockId: "html-block" },
+    html,
+    sanitized: true,
+    policy: "markdown-renderer-v2",
+    block: htmlBlock(raw, html),
+    patchMeta: { kind: "semantic", parseEpoch, tx: parseEpoch, blockEpoch: expectedEpoch },
+  } satisfies Patch));
+  for (const patch of htmlPatches) {
+    htmlStore.applyPatches([patch]);
+  }
+  const streamedHtml = htmlStore.getNode("html-block");
+  assert.ok(streamedHtml, "expected the streamed HTML block");
+  const finalRaw = "<table>\n  <tr>\n  </tr>\n</table>";
+  const finalHtml = "<table><tbody><tr>\n  </tr></tbody></table>";
+  assert.strictEqual(streamedHtml.block?.payload.raw, finalRaw, "every streamed setHTML must apply");
+  assert.strictEqual(streamedHtml.block?.payload.sanitizedHtml, finalHtml, "the newest sanitized HTML must be stored");
+  assert.strictEqual(streamedHtml.props.html, finalHtml, "the renderer must receive the newest sanitized HTML");
+  assert.strictEqual(streamedHtml.blockEpoch, 12, "valid HTML updates must advance the block epoch");
+  const finalEpoch = streamedHtml.blockEpoch;
+  const rejectionCount = htmlStore.getDebugCounters().staleEpochRejected;
+  assert.strictEqual(rejectionCount, 0, "in-order setHTML patches are not stale");
+
+  // Replay an older semantic result with its original HTML-specific epoch metadata.
+  htmlStore.applyPatches([htmlPatches[0]]);
+  const afterStaleHtml = htmlStore.getNode("html-block");
+  assert.ok(afterStaleHtml, "expected the HTML block after stale replay");
+  assert.strictEqual(afterStaleHtml.block?.payload.raw, finalRaw, "stale HTML must not overwrite the newest raw content");
+  assert.strictEqual(afterStaleHtml.block?.payload.sanitizedHtml, finalHtml, "stale HTML must not overwrite sanitized content");
+  assert.strictEqual(afterStaleHtml.props.html, finalHtml, "stale HTML must not overwrite renderer HTML");
+  assert.strictEqual(afterStaleHtml.blockEpoch, finalEpoch, "stale HTML must not advance or reset the block epoch");
+  assert.strictEqual(
+    htmlStore.getDebugCounters().staleEpochRejected,
+    rejectionCount + 1,
+    "replaying an old setHTML patch must increment the stale rejection counter",
   );
 }
 

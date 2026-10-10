@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 import { motion } from "framer-motion";
 import { usePathname } from "next/navigation";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useTocContext } from "@/components/on-this-page/toc-context";
 

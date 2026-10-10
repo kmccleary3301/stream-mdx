@@ -16,6 +16,11 @@ export function StreamingArticle({ content }: { content: string }) {
   const components = useMemo<Partial<BlockComponents>>(
     () => ({
       code: DocsCodeBlock,
+    }),
+    [],
+  );
+  const codeRenderers = useMemo(
+    () => ({
       mermaid: MermaidBlock,
     }),
     [],
@@ -46,12 +51,13 @@ export function StreamingArticle({ content }: { content: string }) {
   return (
     <div
       id="article-content-wrapper"
-      className="prose markdown flex w-full max-w-3xl flex-col space-y-3 text-theme-primary"
+      className="prose flex w-full max-w-3xl flex-col space-y-3 text-theme-primary"
     >
       <StreamingMarkdown
         text={content}
         className="markdown-v2-output"
         components={components}
+        codeRenderers={codeRenderers}
         worker="/workers/markdown-worker.js"
         ref={handleRef}
         mdxCompileMode="worker"

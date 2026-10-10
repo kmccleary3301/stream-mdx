@@ -1,6 +1,9 @@
 import assert from "node:assert";
+import { readFileSync } from "node:fs";
+import { runInNewContext } from "node:vm";
+import ts from "typescript";
 
-import { applyPatchBatch, createInitialSnapshot, type Patch, type WorkerOut } from "@stream-mdx/core";
+import { applyPatchBatch, createInitialSnapshot, type DiffLineKind, type Patch, type TokenLineV1, type WorkerOut } from "@stream-mdx/core";
 
 import { createWorkerHarness } from "./worker-test-harness";
 
@@ -55,6 +58,21 @@ async function runDiffTokenizationTest(): Promise<void> {
   const tokenLine = target.props?.tokens as { spans: Array<{ t: string }> } | undefined;
   const tokenText = tokenLine ? tokenLine.spans.map((span) => span.t).join("") : "";
   assert.strictEqual(tokenText, "+const a = 2;", "expected tokens to reconstruct full diff line");
+
+  const deleted = Array.from(snapshot.nodes.values()).find((node) => node.type === "code-line" && node.props?.text === "-const a = 1;");
+  assert.ok(deleted, "serialized diff must retain its deletion row");
+  assert.strictEqual(deleted.props?.diffKind, "del");
+  const docs = readFileSync(new URL("../../../docs/CLI_USAGE.md", import.meta.url), "utf8");
+  const ansiExample = [...docs.matchAll(/```ts\n([\s\S]*?)\n```/g)].find((match) => match[1].includes("function renderDiffLine("))?.[1];
+  assert.ok(ansiExample, "the authored public CLI ANSI consumer must be exercised");
+  const compiled = ts.transpileModule(ansiExample, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText;
+  const renderDiffLine = runInNewContext(`${compiled}\nrenderDiffLine;`, { exports: {} }) as (text: string, tokens: TokenLineV1 | null, kind?: DiffLineKind | null) => string;
+  const deletion = renderDiffLine(String(deleted.props?.text), deleted.props?.tokens as TokenLineV1, deleted.props?.diffKind as DiffLineKind);
+  assert.ok(deletion.startsWith("\u001b[41m"), "the copied CLI consumer must apply deletion background to the actual serialized del row");
+  assert.strictEqual(deletion.replace(/\u001b\[[0-9;]*m/g, ""), "-const a = 1;", "the copied CLI consumer must retain actual deletion content");
+  assert.ok(deletion.endsWith("\u001b[0m"), "the copied CLI consumer must reset deletion styling");
+  const addition = renderDiffLine(String(target.props?.text), target.props?.tokens as TokenLineV1, target.props?.diffKind as DiffLineKind);
+  assert.ok(addition.startsWith("\u001b[42m"), "the same consumer must keep addition background distinct");
 }
 
 await runDiffTokenizationTest();

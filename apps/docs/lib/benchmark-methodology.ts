@@ -101,7 +101,6 @@ export const BENCHMARK_CONTENT_CLASS_DECISION = {
   rationale:
     "The current five-class public set is intentionally final for the active plan: four parity-friendly classes (prose, tables, code, mixed) plus one explicitly marked capability stress class (rich). Adding more public classes is deferred until a distinct behavior family appears that the current set does not already expose.",
 } as const;
-
 export function getLiveBenchmarkScheduling(mode: MethodologyMode): StreamingSchedulerOptions {
   return {
     batch: "rAF",

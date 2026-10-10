@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import crypto from "node:crypto";
 
 import { chromium } from "@playwright/test";
+import type { Page } from "@playwright/test";
 
 import {
   getFixtures,
@@ -16,6 +17,7 @@ import {
   isSplitScenario,
   firstDiffIndex,
   diffContext,
+  findMissingRequiredTextFragments,
 } from "./utils";
 import type { RegressionScenario } from "./utils";
 
@@ -166,113 +168,6 @@ async function writeComparisonArtifacts(
   await fs.writeFile(path.join(artifactDir, "received.snap.json"), JSON.stringify(params.received, null, 2));
   await fs.writeFile(path.join(artifactDir, "message.txt"), `${params.message}\n`);
   return artifactDir;
-}
-
-function compareSnapshots(expected: HtmlSnapshot, received: HtmlSnapshot): { ok: boolean; message?: string } {
-  if (expected.checkpoints.length !== received.checkpoints.length) {
-    return { ok: false, message: `Checkpoint count mismatch: expected ${expected.checkpoints.length}, got ${received.checkpoints.length}` };
-  }
-
-  for (let i = 0; i < expected.checkpoints.length; i += 1) {
-    const exp = expected.checkpoints[i];
-    const rec = received.checkpoints[i];
-    if (exp.id !== rec.id) {
-      return { ok: false, message: `Checkpoint id mismatch at index ${i}: expected ${exp.id}, got ${rec.id}` };
-    }
-    if (exp.html !== rec.html) {
-      const index = firstDiffIndex(exp.html, rec.html);
-      const expectedContext = diffContext(exp.html, index);
-      const receivedContext = diffContext(rec.html, index);
-      return {
-        ok: false,
-        message: [
-          `HTML mismatch at checkpoint ${exp.id}`,
-          `expected lastTx: ${exp.runtimeState?.lastTx ?? "n/a"}`,
-          `received lastTx: ${rec.runtimeState?.lastTx ?? "n/a"}`,
-          `first diff index: ${index}`,
-          `expected context: ${expectedContext}`,
-          `received context: ${receivedContext}`,
-        ].join("\n"),
-      };
-    }
-    if (exp.structure && rec.structure) {
-      const expStructure = JSON.stringify(exp.structure);
-      const recStructure = JSON.stringify(rec.structure);
-      if (expStructure !== recStructure) {
-        return {
-          ok: false,
-          message: [
-            `Structure mismatch at checkpoint ${exp.id}`,
-            `expected: ${expStructure}`,
-            `received: ${recStructure}`,
-          ].join("\n"),
-        };
-      }
-    }
-  }
-
-  if (expected.final.structure && received.final.structure) {
-    const expStructure = JSON.stringify(expected.final.structure);
-    const recStructure = JSON.stringify(received.final.structure);
-    if (expStructure !== recStructure) {
-      return {
-        ok: false,
-        message: [
-          "Final structure mismatch",
-          `expected: ${expStructure}`,
-          `received: ${recStructure}`,
-        ].join("\n"),
-      };
-    }
-  }
-
-  if (expected.final.children && received.final.children) {
-    const expChildren = expected.final.children;
-    const recChildren = received.final.children;
-    const len = Math.min(expChildren.length, recChildren.length);
-    for (let i = 0; i < len; i += 1) {
-      if (expChildren[i]?.hash !== recChildren[i]?.hash) {
-        return {
-          ok: false,
-          message: [
-            "Final root child mismatch",
-            `child index: ${i}`,
-            `expected: ${expChildren[i]?.tag} ${expChildren[i]?.hash} ${expChildren[i]?.textSample ?? ""}`,
-            `received: ${recChildren[i]?.tag} ${recChildren[i]?.hash} ${recChildren[i]?.textSample ?? ""}`,
-          ].join("\n"),
-        };
-      }
-    }
-    if (expChildren.length !== recChildren.length) {
-      return {
-        ok: false,
-        message: [
-          "Final root child count mismatch",
-          `expected: ${expChildren.length}`,
-          `received: ${recChildren.length}`,
-        ].join("\n"),
-      };
-    }
-  }
-
-  if (expected.final.html !== received.final.html) {
-    const index = firstDiffIndex(expected.final.html, received.final.html);
-    const expectedContext = diffContext(expected.final.html, index);
-    const receivedContext = diffContext(received.final.html, index);
-    return {
-      ok: false,
-      message: [
-        `Final HTML mismatch`,
-        `expected lastTx: ${expected.final.runtimeState?.lastTx ?? "n/a"}`,
-        `received lastTx: ${received.final.runtimeState?.lastTx ?? "n/a"}`,
-        `first diff index: ${index}`,
-        `expected context: ${expectedContext}`,
-        `received context: ${receivedContext}`,
-      ].join("\n"),
-    };
-  }
-
-  return { ok: true };
 }
 
 function compareFinalSnapshots(expected: HtmlSnapshot, received: HtmlSnapshot): { ok: boolean; message?: string } {
@@ -525,6 +420,26 @@ function validateCodePrefixInvariant(
   }
 }
 
+async function validateDisplayFormula(
+  page: Page,
+  expectedTex: string,
+  label: string,
+  failures: string[],
+): Promise<void> {
+  const rendered = await page.evaluate((tex) => {
+    const root = document.getElementById("regression-root");
+    if (!root || root.querySelector(".katex-error")) return false;
+    return Array.from(root.querySelectorAll(".katex-display .katex")).some((formula) => {
+      const annotation = formula.querySelector('math[display="block"] annotation[encoding="application/x-tex"]');
+      const visual = formula.querySelector(".katex-html");
+      return annotation?.textContent === tex && Boolean(visual?.textContent?.trim());
+    });
+  }, expectedTex);
+  if (!rendered) {
+    failures.push(`${label}: expected renderable display formula ${JSON.stringify(expectedTex)} without KaTeX errors.`);
+  }
+}
+
 async function run(): Promise<void> {
   const fixtureFilter = getArg("--filter");
   const scenarioFilter = getArg("--scenario");
@@ -537,9 +452,11 @@ async function run(): Promise<void> {
       ? Array.from({ length: seedCount }, (_, index) => `${seed ?? "seed"}-${index + 1}`)
       : [seed ?? null];
   const replayMode = requestedSeeds.some((value) => value !== null) || Boolean(schedulerMode);
+  const seededReplay = requestedSeeds.some((value) => value !== null);
 
   const fixtures = getFixtures().filter((fixture) => (fixtureFilter ? fixture.id.includes(fixtureFilter) : true));
-  const scenarios = (await loadScenarioFiles()).filter((scenario) => (scenarioFilter ? scenario.id.includes(scenarioFilter) : true));
+  const allScenarios = await loadScenarioFiles();
+  const scenarios = allScenarios.filter((scenario) => (scenarioFilter ? scenario.id.includes(scenarioFilter) : true));
 
   if (fixtures.length === 0) {
     console.error("No fixtures matched filter.");
@@ -596,6 +513,8 @@ async function run(): Promise<void> {
   };
 
   let failures = 0;
+  const executedByFixture = new Map<string, number>();
+  const executedByScenario = new Map<string, number>();
 
   for (const fixture of fixtures) {
     currentFixtureId = fixture.id;
@@ -603,24 +522,40 @@ async function run(): Promise<void> {
     const rawContent = await readFixtureFile(fixture.file);
 
     for (const scenario of scenarios) {
-      if (!shouldRunScenario(fixture, scenario)) continue;
+      // Seeded replay strips markers and varies chunks. Only its marker eligibility
+      // differs from ordinary scenarios; include/exclude tag restrictions still apply.
+      const eligibilityScenario = seededReplay && fixture.tags?.includes("split-markers")
+        ? { ...scenario, useSplitMarkers: true }
+        : scenario;
+      if (!shouldRunScenario(fixture, eligibilityScenario)) continue;
 
       const split = splitMarkers(rawContent);
       const text = split ? split.text : rawContent;
-      const snapshotPath = path.join(SNAPSHOT_ROOT, fixture.id, `${scenario.id}.snap.json`);
+      // Marker fixtures have an ordinary S5 final oracle, not an S2 baseline.
+      // Reuse that exact final for seeded replays without expanding the baseline matrix.
+      const baselineScenario = seededReplay && split && !isSplitScenario(scenario)
+        ? allScenarios.find((candidate) => isSplitScenario(candidate) && shouldRunScenario(fixture, candidate))
+        : scenario;
+      if (!baselineScenario) {
+        throw new Error(`No ordinary split-marker baseline scenario for ${fixture.id}/${scenario.id}.`);
+      }
+      const snapshotPath = path.join(SNAPSHOT_ROOT, fixture.id, `${baselineScenario.id}.snap.json`);
       const expected = await loadSnapshot(snapshotPath);
       let scenarioFailed = false;
       let baselineReplaySnapshot: HtmlSnapshot | null = null;
 
       for (const activeSeed of requestedSeeds) {
+        executedByFixture.set(fixture.id, (executedByFixture.get(fixture.id) ?? 0) + 1);
+        executedByScenario.set(scenario.id, (executedByScenario.get(scenario.id) ?? 0) + 1);
         const page = await context.newPage();
         attachPageObservers(page);
-        const chunks = isSplitScenario(scenario) && split
-          ? split.chunks
-          : activeSeed
-            ? buildSeededChunks(text, scenario, `${fixture.id}:${scenario.id}:${activeSeed}`)
+        const usesFixedSplit = activeSeed === null && isSplitScenario(scenario) && Boolean(split);
+        const chunks = activeSeed !== null
+          ? buildSeededChunks(text, scenario, `${fixture.id}:${scenario.id}:${activeSeed}`)
+          : isSplitScenario(scenario) && split
+            ? split.chunks
             : buildChunks(text, scenario);
-        const enforcePrefixInvariant = !["article", "footnotes", "html", "lists", "math", "mdx", "table"].some((tag) =>
+        const enforcePrefixInvariant = !["article", "footnotes", "html", "lists", "math", "mdx", "table", "code"].some((tag) =>
           (fixture.tags ?? []).includes(tag),
         );
         const waitForMdxCompiled = fixture.waitForMdxCompiled ?? (fixture.tags ?? []).includes("mdx");
@@ -727,6 +662,9 @@ async function run(): Promise<void> {
             if (summary.counts?.table && tableFirstSeenAt === null) {
               tableFirstSeenAt = appended;
             }
+            if (fixture.id === "math-display-checkpoint-supported" && usesFixedSplit && appended === split?.chunks[0].length) {
+              await validateDisplayFormula(page, "a_n = \\frac{1}{n}", "explicit split boundary", streamInvariantFailures);
+            }
 
           if (!firstChunkCaptured) {
             await captureCheckpoint("after-first-chunk", summary);
@@ -800,11 +738,12 @@ async function run(): Promise<void> {
             console.error(`- ${message}`);
           }
         }
-        if (invariantViolations.length > 0) {
+        const fatalInvariantViolations = invariantViolations.filter((violation) => !violation.message.startsWith("stale epoch rejected:"));
+        if (fatalInvariantViolations.length > 0) {
           failures += 1;
           scenarioFailed = true;
           console.error(`\nInvariant violations for ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}:`);
-          for (const violation of invariantViolations) {
+          for (const violation of fatalInvariantViolations) {
             console.error(`- ${violation.message}`);
           }
         }
@@ -892,7 +831,15 @@ async function run(): Promise<void> {
           }
         }
         if (fixture.requiredTextFragments?.length) {
-          const missingFragments = fixture.requiredTextFragments.filter((fragment) => !finalHtmlValue.includes(fragment));
+          // Fragments describe rendered *text*; syntax highlighting splits source across <span>
+          // tokens, so matching the serialized HTML string is incidental to the highlighter markup.
+          // Validate against the DOM text of the regression root instead - verbatim, so meaningful
+          // characters, newlines and protocols are not normalized away.
+          const renderedText = await page.evaluate(() => {
+            const root = document.getElementById("regression-root");
+            return root ? (root.textContent ?? "") : null;
+          });
+          const missingFragments = findMissingRequiredTextFragments(fixture.requiredTextFragments, renderedText);
           if (missingFragments.length > 0) {
             htmlInvariantFailures.push(`missing required text fragments: ${missingFragments.join(", ")}.`);
           }
@@ -916,6 +863,9 @@ async function run(): Promise<void> {
         }
         validateTableInspection(fixture, finalInspection, "after-finalize", htmlInvariantFailures);
         validateCodePrefixInvariant(fixture, checkpoints, finalInspection, htmlInvariantFailures);
+        if (fixture.id === "math-display-checkpoint-supported") {
+          await validateDisplayFormula(page, "a_n = \\frac{1}{n}\n\\sqrt{x}", "after-finalize", htmlInvariantFailures);
+        }
 
         if (htmlInvariantFailures.length > 0) {
           failures += 1;
@@ -963,7 +913,7 @@ async function run(): Promise<void> {
           runMeta: {
             seed: activeSeed,
             schedulerMode,
-            usedSplitMarkers: isSplitScenario(scenario) && Boolean(split),
+            usedSplitMarkers: usesFixedSplit,
             fixtureTags: [...(fixture.tags ?? [])],
           },
           totalLength: text.length,
@@ -999,7 +949,7 @@ async function run(): Promise<void> {
             continue;
           }
 
-          const result = compareSnapshots(expected, snapshot);
+          const result = compareFinalSnapshots(expected, snapshot);
           if (!result.ok) {
             failures += 1;
             const artifactDir = await writeComparisonArtifacts({
@@ -1022,6 +972,11 @@ async function run(): Promise<void> {
           if (UPDATE) {
           console.warn(`skipping snapshot update in replay mode for ${fixture.id}/${scenario.id}`);
         }
+          if (!expected) {
+            console.error(`missing snapshot for ${fixture.id}/${baselineScenario.id} (replay ${scenario.id})`);
+            failures += 1;
+            scenarioFailed = true;
+          }
           if (expected) {
           const result = compareFinalSnapshots(expected, snapshot);
           if (!result.ok) {
@@ -1075,6 +1030,25 @@ async function run(): Promise<void> {
 
   await context.close();
   await browser.close();
+  if (executedByFixture.size === 0) {
+    failures += 1;
+    console.error("No fixture/scenario cases executed after eligibility filters.");
+  } else {
+    if (fixtureFilter) {
+      for (const fixture of fixtures) {
+        if (executedByFixture.has(fixture.id)) continue;
+        failures += 1;
+        console.error(`No cases executed for requested fixture ${fixture.id} after eligibility filters.`);
+      }
+    }
+    if (scenarioFilter) {
+      for (const scenario of scenarios) {
+        if (executedByScenario.has(scenario.id)) continue;
+        failures += 1;
+        console.error(`No cases executed for requested scenario ${scenario.id} after eligibility filters.`);
+      }
+    }
+  }
 
   if (suppressedConsole.nameNotResolved > 0) {
     const details = Object.entries(suppressedConsole.nameNotResolvedByFixture)

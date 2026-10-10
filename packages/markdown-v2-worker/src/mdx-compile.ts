@@ -26,7 +26,12 @@ function collectMdxDependencies(source: string): string[] {
  * worker compilation strategies produce equivalent component code and HTML.
  */
 export async function compileMdxContent(source: string): Promise<{ code: string; dependencies: string[] }> {
-  const isDev = typeof process !== "undefined" && typeof process.env !== "undefined" && process.env?.NODE_ENV === "development";
+  // Read `process.env` through a binding: bundlers that target browsers
+  // (esbuild `--platform=browser`) substitute the literal
+  // `process.env.NODE_ENV` expression at build time, which would force
+  // development MDX output regardless of the consumer's runtime environment.
+  const runtimeEnv = typeof process === "undefined" ? undefined : process.env;
+  const isDev = runtimeEnv?.NODE_ENV === "development";
 
   const compiled = await compileMdx(source, {
     outputFormat: "function-body",

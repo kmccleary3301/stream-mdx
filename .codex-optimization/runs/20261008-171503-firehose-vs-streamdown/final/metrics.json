@@ -1,0 +1,893 @@
+[
+ {
+  "dir": "streammdx-code-huge-S7_firehose_5k-2026-10-09T06-41-32-857Z",
+  "power": "AC Power",
+  "fixture": "code-huge",
+  "scenario": "S7_firehose_5k",
+  "task": [
+   787.2090000000001,
+   760.855,
+   777.438
+  ],
+  "script": [
+   323.68399999999997,
+   314.838,
+   318.524
+  ],
+  "layout": [
+   123.94200000000001,
+   114.855,
+   123.04400000000001
+  ],
+  "style": [
+   184.771,
+   178.218,
+   181.28
+  ],
+  "dur": 3564.5,
+  "first": 68.0,
+  "lt": 60.0,
+  "raf": 16.8,
+  "heap": 13.64,
+  "renderer": "after",
+  "canonicalSha256": "7ce0b8898327362ef2e8600b64df806dd5df12a0b4f3f5a6755afad0fe103c7d"
+ },
+ {
+  "dir": "streamdown-code-huge-S7_firehose_5k-2026-10-09T06-41-50-137Z",
+  "power": "AC Power",
+  "fixture": "code-huge",
+  "scenario": "S7_firehose_5k",
+  "task": [
+   584.177,
+   604.021,
+   617.4159999999999
+  ],
+  "script": [
+   313.361,
+   319.235,
+   327.29200000000003
+  ],
+  "layout": [
+   34.257999999999996,
+   36.83,
+   38.093
+  ],
+  "style": [
+   17.957,
+   18.982000000000003,
+   20.191999999999997
+  ],
+  "dur": 3380.6,
+  "first": 24.8,
+  "lt": null,
+  "raf": 16.8,
+  "heap": 22.03,
+  "renderer": "streamdown",
+  "canonicalSha256": "7ce0b8898327362ef2e8600b64df806dd5df12a0b4f3f5a6755afad0fe103c7d"
+ },
+ {
+  "dir": "streammdx-code-huge-S8_firehose_10k-2026-10-09T06-41-13-989Z",
+  "power": "AC Power",
+  "fixture": "code-huge",
+  "scenario": "S8_firehose_10k",
+  "task": [
+   427.45300000000003,
+   438.43899999999996,
+   446.56199999999995
+  ],
+  "script": [
+   194.06900000000002,
+   201.215,
+   205.323
+  ],
+  "layout": [
+   59.866,
+   60.864000000000004,
+   61.61099999999999
+  ],
+  "style": [
+   90.99799999999999,
+   91.46700000000001,
+   91.916
+  ],
+  "dur": 1882.0,
+  "first": 84.4,
+  "lt": 60.0,
+  "raf": 16.8,
+  "heap": 14.5,
+  "renderer": "after",
+  "canonicalSha256": "7ce0b8898327362ef2e8600b64df806dd5df12a0b4f3f5a6755afad0fe103c7d"
+ },
+ {
+  "dir": "streamdown-code-huge-S8_firehose_10k-2026-10-09T06-41-24-310Z",
+  "power": "AC Power",
+  "fixture": "code-huge",
+  "scenario": "S8_firehose_10k",
+  "task": [
+   328.88700000000006,
+   327.38,
+   326.49
+  ],
+  "script": [
+   162.933,
+   163.802,
+   162.17900000000003
+  ],
+  "layout": [
+   15.83,
+   15.525,
+   15.343000000000002
+  ],
+  "style": [
+   9.405,
+   9.286,
+   9.256
+  ],
+  "dur": 1732.0,
+  "first": 24.7,
+  "lt": 55.0,
+  "raf": 16.8,
+  "heap": 23.37,
+  "renderer": "streamdown",
+  "canonicalSha256": "7ce0b8898327362ef2e8600b64df806dd5df12a0b4f3f5a6755afad0fe103c7d"
+ },
+ {
+  "dir": "streammdx-code-huge-S9_firehose_20k-2026-10-09T06-40-54-619Z",
+  "power": "AC Power",
+  "fixture": "code-huge",
+  "scenario": "S9_firehose_20k",
+  "task": [
+   258.41600000000005,
+   257.82899999999995,
+   269.58099999999996
+  ],
+  "script": [
+   137.53300000000002,
+   136.72299999999998,
+   140.608
+  ],
+  "layout": [
+   31.025999999999996,
+   30.9,
+   33.072
+  ],
+  "style": [
+   45.167,
+   45.822,
+   48.17
+  ],
+  "dur": 1031.5,
+  "first": 84.5,
+  "lt": 61.0,
+  "raf": 16.8,
+  "heap": 14.5,
+  "renderer": "after",
+  "canonicalSha256": "7ce0b8898327362ef2e8600b64df806dd5df12a0b4f3f5a6755afad0fe103c7d"
+ },
+ {
+  "dir": "streammdx-code-huge-S9_firehose_20k-2026-10-09T06-41-06-381Z",
+  "power": "AC Power",
+  "fixture": "code-huge",
+  "scenario": "S9_firehose_20k",
+  "task": [
+   964.7969999999999,
+   960.4590000000001,
+   995.2829999999999
+  ],
+  "script": [
+   810.542,
+   823.393,
+   828.935
+  ],
+  "layout": [
+   30.172000000000004,
+   28.061000000000003,
+   31.502999999999997
+  ],
+  "style": [
+   44.095,
+   41.482,
+   44.273
+  ],
+  "dur": 1265.0,
+  "first": 86.1,
+  "lt": 105.0,
+  "raf": 50.0,
+  "heap": 15.35,
+  "renderer": "before",
+  "canonicalSha256": "7ce0b8898327362ef2e8600b64df806dd5df12a0b4f3f5a6755afad0fe103c7d"
+ },
+ {
+  "dir": "streamdown-code-huge-S9_firehose_20k-2026-10-09T06-41-01-308Z",
+  "power": "AC Power",
+  "fixture": "code-huge",
+  "scenario": "S9_firehose_20k",
+  "task": [
+   207.908,
+   205.51599999999996,
+   210.43099999999998
+  ],
+  "script": [
+   89.487,
+   87.23100000000001,
+   88.974
+  ],
+  "layout": [
+   8.452000000000002,
+   8.203,
+   8.733999999999998
+  ],
+  "style": [
+   5.503,
+   5.443999999999999,
+   5.849
+  ],
+  "dur": 899.0,
+  "first": 24.0,
+  "lt": 64.0,
+  "raf": 16.8,
+  "heap": 24.8,
+  "renderer": "streamdown",
+  "canonicalSha256": "7ce0b8898327362ef2e8600b64df806dd5df12a0b4f3f5a6755afad0fe103c7d"
+ },
+ {
+  "dir": "streammdx-stress-mega-S7_firehose_5k-2026-10-09T06-48-31-409Z",
+  "power": "AC Power",
+  "fixture": "stress-mega",
+  "scenario": "S7_firehose_5k",
+  "task": [
+   9015.494999999999,
+   9280.863,
+   10360.008
+  ],
+  "script": [
+   2605.16,
+   2594.9680000000003,
+   2597.029
+  ],
+  "layout": [
+   1078.466,
+   1081.223,
+   1064.2730000000001
+  ],
+  "style": [
+   500.904,
+   503.5409999999999,
+   497.01099999999997
+  ],
+  "dur": 51116.7,
+  "first": 32.9,
+  "lt": 1405.0,
+  "raf": 16.8,
+  "heap": 13.64,
+  "renderer": "after",
+  "canonicalSha256": "1b7c3075ded91060e95461a2d3d3a303cab6ff1d44181edc269e9ed2a4ca2250"
+ },
+ {
+  "dir": "streamdown-stress-mega-S7_firehose_5k-2026-10-09T06-52-03-598Z",
+  "power": "AC Power",
+  "fixture": "stress-mega",
+  "scenario": "S7_firehose_5k",
+  "task": [
+   14177.926000000001,
+   13831.139000000001,
+   14123.49
+  ],
+  "script": [
+   9052.958999999999,
+   8870.164,
+   9036.731
+  ],
+  "layout": [
+   761.8580000000001,
+   745.803,
+   796.3199999999999
+  ],
+  "style": [
+   255.368,
+   248.61900000000003,
+   266.698
+  ],
+  "dur": 50715.2,
+  "first": 25.1,
+  "lt": 127.0,
+  "raf": 16.8,
+  "heap": 16.31,
+  "renderer": "streamdown",
+  "canonicalSha256": "1b7c3075ded91060e95461a2d3d3a303cab6ff1d44181edc269e9ed2a4ca2250"
+ },
+ {
+  "dir": "streammdx-stress-mega-S8_firehose_10k-2026-10-09T06-44-56-445Z",
+  "power": "AC Power",
+  "fixture": "stress-mega",
+  "scenario": "S8_firehose_10k",
+  "task": [
+   5231.325999999999,
+   5014.425,
+   4937.522999999999
+  ],
+  "script": [
+   1631.858,
+   1575.731,
+   1558.549
+  ],
+  "layout": [
+   613.987,
+   601.773,
+   605.274
+  ],
+  "style": [
+   353.129,
+   342.808,
+   339.58
+  ],
+  "dur": 25734.7,
+  "first": 33.4,
+  "lt": 198.0,
+  "raf": 16.8,
+  "heap": 14.5,
+  "renderer": "after",
+  "canonicalSha256": "1b7c3075ded91060e95461a2d3d3a303cab6ff1d44181edc269e9ed2a4ca2250"
+ },
+ {
+  "dir": "streamdown-stress-mega-S8_firehose_10k-2026-10-09T06-46-45-140Z",
+  "power": "AC Power",
+  "fixture": "stress-mega",
+  "scenario": "S8_firehose_10k",
+  "task": [
+   8127.052000000001,
+   7925.674000000001,
+   7734.547999999999
+  ],
+  "script": [
+   4966.162,
+   4884.353,
+   4781.754999999999
+  ],
+  "layout": [
+   462.399,
+   452.073,
+   448.81100000000004
+  ],
+  "style": [
+   201.699,
+   198.708,
+   193.71099999999998
+  ],
+  "dur": 25399.8,
+  "first": 25.2,
+  "lt": null,
+  "raf": 16.8,
+  "heap": 19.55,
+  "renderer": "streamdown",
+  "canonicalSha256": "1b7c3075ded91060e95461a2d3d3a303cab6ff1d44181edc269e9ed2a4ca2250"
+ },
+ {
+  "dir": "streammdx-stress-mega-S9_firehose_20k-2026-10-09T06-42-05-759Z",
+  "power": "AC Power",
+  "fixture": "stress-mega",
+  "scenario": "S9_firehose_20k",
+  "task": [
+   3092.6959999999995,
+   2954.1199999999994,
+   2952.332
+  ],
+  "script": [
+   1075.5159999999998,
+   1029.0739999999998,
+   1027.142
+  ],
+  "layout": [
+   370.81600000000003,
+   351.117,
+   347.20300000000003
+  ],
+  "style": [
+   255.979,
+   247.929,
+   248.193
+  ],
+  "dur": 13035.2,
+  "first": 33.0,
+  "lt": 188.0,
+  "raf": 16.8,
+  "heap": 15.35,
+  "renderer": "after",
+  "canonicalSha256": "1b7c3075ded91060e95461a2d3d3a303cab6ff1d44181edc269e9ed2a4ca2250"
+ },
+ {
+  "dir": "streammdx-stress-mega-S9_firehose_20k-2026-10-09T06-43-58-565Z",
+  "power": "AC Power",
+  "fixture": "stress-mega",
+  "scenario": "S9_firehose_20k",
+  "task": [
+   5783.988000000001,
+   5862.455,
+   5976.357999999999
+  ],
+  "script": [
+   3535.7279999999996,
+   3558.5240000000003,
+   3657.699
+  ],
+  "layout": [
+   318.914,
+   313.043,
+   326.363
+  ],
+  "style": [
+   530.608,
+   526.726,
+   536.231
+  ],
+  "dur": 13168.5,
+  "first": 32.9,
+  "lt": 297.0,
+  "raf": 16.8,
+  "heap": 15.35,
+  "renderer": "before",
+  "canonicalSha256": "4e8a0257a331e8c1d36d963baac9b9bb250e203db3784f49d9df96b27835f3ee"
+ },
+ {
+  "dir": "streamdown-stress-mega-S9_firehose_20k-2026-10-09T06-43-03-239Z",
+  "power": "AC Power",
+  "fixture": "stress-mega",
+  "scenario": "S9_firehose_20k",
+  "task": [
+   4270.31,
+   4318.087,
+   4397.454
+  ],
+  "script": [
+   2526.5,
+   2554.926,
+   2571.724
+  ],
+  "layout": [
+   271.75,
+   273.99,
+   285.222
+  ],
+  "style": [
+   150.606,
+   150.80599999999998,
+   152.108
+  ],
+  "dur": 12733.0,
+  "first": 25.6,
+  "lt": null,
+  "raf": 16.7,
+  "heap": 28.04,
+  "renderer": "streamdown",
+  "canonicalSha256": "1b7c3075ded91060e95461a2d3d3a303cab6ff1d44181edc269e9ed2a4ca2250"
+ },
+ {
+  "dir": "streammdx-stress-mega-footnotes-S7_firehose_5k-2026-10-09T07-14-01-131Z",
+  "power": "AC Power",
+  "fixture": "stress-mega-footnotes",
+  "scenario": "S7_firehose_5k",
+  "task": [
+   9787.339000000002,
+   9014.436,
+   9647.333
+  ],
+  "script": [
+   2880.382,
+   2653.118,
+   2782.2929999999997
+  ],
+  "layout": [
+   1185.0400000000002,
+   1086.965,
+   1120.559
+  ],
+  "style": [
+   549.0129999999999,
+   518.987,
+   525.826
+  ],
+  "dur": 51585.7,
+  "first": 33.2,
+  "lt": 187.0,
+  "raf": 16.8,
+  "heap": 13.64,
+  "renderer": "after",
+  "canonicalSha256": "f156e55cff30bbfec35f2c437dde9b09ff867e7d3d198988d2dfe753f3c96fb0"
+ },
+ {
+  "dir": "streamdown-stress-mega-footnotes-S7_firehose_5k-2026-10-09T07-17-35-306Z",
+  "power": "AC Power",
+  "fixture": "stress-mega-footnotes",
+  "scenario": "S7_firehose_5k",
+  "task": [
+   287732.76800000004,
+   283157.547,
+   282051.807
+  ],
+  "script": [
+   280784.891,
+   276288.48,
+   275279.90400000004
+  ],
+  "layout": [
+   821.6320000000001,
+   812.6220000000001,
+   808.775
+  ],
+  "style": [
+   383.654,
+   372.53700000000003,
+   376.81600000000003
+  ],
+  "dur": 285822.7,
+  "first": 24.7,
+  "lt": 182.0,
+  "raf": 150.0,
+  "heap": 16.31,
+  "renderer": "streamdown",
+  "canonicalSha256": "aa194e505119b264ecfda36b875e2590ee846e9d4f253953b48e30b082baf6a9"
+ },
+ {
+  "dir": "streammdx-stress-mega-footnotes-S8_firehose_10k-2026-10-09T07-02-28-206Z",
+  "power": "AC Power",
+  "fixture": "stress-mega-footnotes",
+  "scenario": "S8_firehose_10k",
+  "task": [
+   5219.869,
+   5030.098,
+   5036.423
+  ],
+  "script": [
+   1661.9599999999998,
+   1605.373,
+   1604.08
+  ],
+  "layout": [
+   618.712,
+   611.405,
+   598.0470000000001
+  ],
+  "style": [
+   357.39400000000006,
+   344.90500000000003,
+   346.021
+  ],
+  "dur": 25951.3,
+  "first": 32.6,
+  "lt": 184.0,
+  "raf": 16.8,
+  "heap": 14.5,
+  "renderer": "after",
+  "canonicalSha256": "f156e55cff30bbfec35f2c437dde9b09ff867e7d3d198988d2dfe753f3c96fb0"
+ },
+ {
+  "dir": "streamdown-stress-mega-footnotes-S8_firehose_10k-2026-10-09T07-04-17-981Z",
+  "power": "AC Power",
+  "fixture": "stress-mega-footnotes",
+  "scenario": "S8_firehose_10k",
+  "task": [
+   142697.559,
+   141277.058,
+   142211.771
+  ],
+  "script": [
+   138799.97499999998,
+   137480.787,
+   138370.541
+  ],
+  "layout": [
+   484.107,
+   475.16200000000003,
+   483.66600000000005
+  ],
+  "style": [
+   260.69,
+   256.067,
+   259.23400000000004
+  ],
+  "dur": 143378.2,
+  "first": 25.4,
+  "lt": 180.0,
+  "raf": 150.0,
+  "heap": 19.55,
+  "renderer": "streamdown",
+  "canonicalSha256": "aa194e505119b264ecfda36b875e2590ee846e9d4f253953b48e30b082baf6a9"
+ },
+ {
+  "dir": "streammdx-stress-mega-footnotes-S9_firehose_20k-2026-10-09T06-55-31-680Z",
+  "power": "AC Power",
+  "fixture": "stress-mega-footnotes",
+  "scenario": "S9_firehose_20k",
+  "task": [
+   2965.46,
+   3101.395,
+   3081.9030000000002
+  ],
+  "script": [
+   1040.067,
+   1083.863,
+   1086.601
+  ],
+  "layout": [
+   358.068,
+   372.2049999999999,
+   367.91200000000003
+  ],
+  "style": [
+   249.329,
+   255.774,
+   256.17699999999996
+  ],
+  "dur": 13168.7,
+  "first": 33.3,
+  "lt": 193.0,
+  "raf": 16.8,
+  "heap": 15.35,
+  "renderer": "after",
+  "canonicalSha256": "f156e55cff30bbfec35f2c437dde9b09ff867e7d3d198988d2dfe753f3c96fb0"
+ },
+ {
+  "dir": "streammdx-stress-mega-footnotes-S9_firehose_20k-2026-10-09T07-01-28-781Z",
+  "power": "AC Power",
+  "fixture": "stress-mega-footnotes",
+  "scenario": "S9_firehose_20k",
+  "task": [
+   6295.473999999999,
+   6223.121000000001,
+   6337.108
+  ],
+  "script": [
+   3822.1809999999996,
+   3873.2090000000003,
+   3892.986
+  ],
+  "layout": [
+   342.601,
+   343.34299999999996,
+   344.49399999999997
+  ],
+  "style": [
+   516.205,
+   520.8660000000001,
+   522.889
+  ],
+  "dur": 13319.5,
+  "first": 32.4,
+  "lt": 309.0,
+  "raf": 16.8,
+  "heap": 15.35,
+  "renderer": "before",
+  "canonicalSha256": "f6733a301678dc5e68da8ee295a5c596417bf09e431645c31c85744ef2d23f14"
+ },
+ {
+  "dir": "streamdown-stress-mega-footnotes-S9_firehose_20k-2026-10-09T06-56-30-753Z",
+  "power": "AC Power",
+  "fixture": "stress-mega-footnotes",
+  "scenario": "S9_firehose_20k",
+  "task": [
+   75178.277,
+   71402.648,
+   71219.65
+  ],
+  "script": [
+   72709.092,
+   69089.111,
+   68982.12000000001
+  ],
+  "layout": [
+   331.805,
+   318.462,
+   296.098
+  ],
+  "style": [
+   199.17700000000002,
+   184.28399999999996,
+   181.085
+  ],
+  "dur": 71698.0,
+  "first": 24.8,
+  "lt": 184.0,
+  "raf": 166.6,
+  "heap": 28.04,
+  "renderer": "streamdown",
+  "canonicalSha256": "aa194e505119b264ecfda36b875e2590ee846e9d4f253953b48e30b082baf6a9"
+ },
+ {
+  "dir": "streammdx-stress-xl-S7_firehose_5k-2026-10-09T08-01-19-282Z",
+  "power": "Battery Power",
+  "fixture": "stress-xl",
+  "scenario": "S7_firehose_5k",
+  "task": [
+   105811.28700000001,
+   107410.036,
+   102872.62700000001
+  ],
+  "script": [
+   21372.686999999998,
+   21842.736,
+   21335.937
+  ],
+  "layout": [
+   10846.507000000001,
+   10856.743,
+   10581.506000000001
+  ],
+  "style": [
+   2448.754,
+   2468.932,
+   2474.0629999999996
+  ],
+  "dur": 205126.0,
+  "first": 32.5,
+  "lt": 508.0,
+  "raf": 16.8,
+  "heap": 16.31,
+  "renderer": "after",
+  "canonicalSha256": "c3197c3d44a7140e46f98684b2081c020e02ac6e8ecd9614f0c9bccc72f379ef"
+ },
+ {
+  "dir": "streamdown-stress-xl-S7_firehose_5k-2026-10-09T08-15-18-859Z",
+  "power": "Battery Power",
+  "fixture": "stress-xl",
+  "scenario": "S7_firehose_5k",
+  "task": [
+   167326.337,
+   172266.013,
+   174853.87099999998
+  ],
+  "script": [
+   106386.58000000002,
+   109802.27100000001,
+   109343.93
+  ],
+  "layout": [
+   7612.793,
+   7839.486,
+   8236.364
+  ],
+  "style": [
+   1631.31,
+   1695.353,
+   1748.5049999999999
+  ],
+  "dur": 223375.7,
+  "first": 24.2,
+  "lt": 1362.0,
+  "raf": 16.8,
+  "heap": 19.55,
+  "renderer": "streamdown",
+  "canonicalSha256": "c3197c3d44a7140e46f98684b2081c020e02ac6e8ecd9614f0c9bccc72f379ef"
+ },
+ {
+  "dir": "streammdx-stress-xl-S8_firehose_10k-2026-10-09T07-46-16-714Z",
+  "power": "Battery Power",
+  "fixture": "stress-xl",
+  "scenario": "S8_firehose_10k",
+  "task": [
+   50566.924999999996,
+   57619.872,
+   57739.979
+  ],
+  "script": [
+   12012.034,
+   13061.422999999999,
+   13330.378999999999
+  ],
+  "layout": [
+   4983.705000000001,
+   5559.749,
+   5613.7699999999995
+  ],
+  "style": [
+   1646.153,
+   1754.273,
+   1777.229
+  ],
+  "dur": 104848.6,
+  "first": 33.1,
+  "lt": 553.0,
+  "raf": 16.8,
+  "heap": 16.31,
+  "renderer": "after",
+  "canonicalSha256": "c3197c3d44a7140e46f98684b2081c020e02ac6e8ecd9614f0c9bccc72f379ef"
+ },
+ {
+  "dir": "streamdown-stress-xl-S8_firehose_10k-2026-10-09T07-53-28-832Z",
+  "power": "Battery Power",
+  "fixture": "stress-xl",
+  "scenario": "S8_firehose_10k",
+  "task": [
+   90540.956,
+   92049.266,
+   87109.848
+  ],
+  "script": [
+   55845.776,
+   56580.016,
+   54548.274
+  ],
+  "layout": [
+   4400.024,
+   4539.438999999999,
+   4179.5070000000005
+  ],
+  "style": [
+   1286.322,
+   1308.206,
+   1253.8990000000001
+  ],
+  "dur": 115090.2,
+  "first": 25.2,
+  "lt": 50.0,
+  "raf": 16.8,
+  "heap": 20.69,
+  "renderer": "streamdown",
+  "canonicalSha256": "c3197c3d44a7140e46f98684b2081c020e02ac6e8ecd9614f0c9bccc72f379ef"
+ },
+ {
+  "dir": "streammdx-stress-xl-S9_firehose_20k-2026-10-09T07-36-49-249Z",
+  "power": "AC Power",
+  "fixture": "stress-xl",
+  "scenario": "S9_firehose_20k",
+  "task": [
+   29338.168,
+   30942.125999999997,
+   31444.407
+  ],
+  "script": [
+   7988.3330000000005,
+   8373.801,
+   8462.490000000002
+  ],
+  "layout": [
+   2698.7999999999997,
+   2817.0009999999997,
+   2843.074
+  ],
+  "style": [
+   1263.804,
+   1296.9859999999999,
+   1312.734
+  ],
+  "dur": 53582.1,
+  "first": 31.7,
+  "lt": 529.0,
+  "raf": 16.8,
+  "heap": 18.41,
+  "renderer": "after",
+  "canonicalSha256": "c3197c3d44a7140e46f98684b2081c020e02ac6e8ecd9614f0c9bccc72f379ef"
+ },
+ {
+  "dir": "streamdown-stress-xl-S9_firehose_20k-2026-10-09T07-40-39-228Z",
+  "power": "AC Power",
+  "fixture": "stress-xl",
+  "scenario": "S9_firehose_20k",
+  "task": [
+   48135.96,
+   49099.877,
+   48511.184
+  ],
+  "script": [
+   29054.727,
+   29670.421,
+   29199.881
+  ],
+  "layout": [
+   2454.499,
+   2454.732,
+   2473.5869999999995
+  ],
+  "style": [
+   962.74,
+   973.802,
+   972.855
+  ],
+  "dur": 59277.1,
+  "first": 25.9,
+  "lt": 58.0,
+  "raf": 16.8,
+  "heap": 22.03,
+  "renderer": "streamdown",
+  "canonicalSha256": "c3197c3d44a7140e46f98684b2081c020e02ac6e8ecd9614f0c9bccc72f379ef"
+ }
+]

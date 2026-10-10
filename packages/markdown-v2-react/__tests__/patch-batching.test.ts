@@ -38,12 +38,22 @@ function runPatchBatchingSuite(): void {
   const lightB = createLightPatch("p-2");
   const lightC = createLightPatch("p-3");
 
-  const groups = splitPatchBatch([lightA, lightB, heavySetProps, lightC, htmlPatch], 2);
-  assert.strictEqual(groups.length, 4, "mixed batches should be chunked based on light/heavy operations");
-  assert.deepStrictEqual(groups[0], [lightA, lightB], "first chunk should include light pairs");
-  assert.deepStrictEqual(groups[1], [heavySetProps], "heavy setProps should stand alone");
-  assert.deepStrictEqual(groups[2], [lightC], "light patch following heavy chunk should form its own batch");
-  assert.deepStrictEqual(groups[3], [htmlPatch], "setHTML should form its own chunk");
+  const semanticGroups = splitPatchBatch([lightA, lightB, heavySetProps, lightC, htmlPatch], 2);
+  assert.strictEqual(semanticGroups.length, 1, "default semantic patches should stay in one correctness-preserving batch");
+  assert.deepStrictEqual(semanticGroups[0], [lightA, lightB, heavySetProps, lightC, htmlPatch], "semantic batch order should be preserved");
+
+  const enrichmentLightA: Patch = { ...lightA, meta: { kind: "enrichment" } };
+  const enrichmentLightB: Patch = { ...lightB, meta: { kind: "enrichment" } };
+  const enrichmentHeavySetProps: Patch = { ...heavySetProps, meta: { kind: "enrichment" } };
+  const enrichmentLightC: Patch = { ...lightC, meta: { kind: "enrichment" } };
+  const enrichmentHtmlPatch: Patch = { ...htmlPatch, patchMeta: { kind: "enrichment" } };
+
+  const groups = splitPatchBatch([enrichmentLightA, enrichmentLightB, enrichmentHeavySetProps, enrichmentLightC, enrichmentHtmlPatch], 2);
+  assert.strictEqual(groups.length, 4, "enrichment batches should be chunked based on light/heavy operations");
+  assert.deepStrictEqual(groups[0], [enrichmentLightA, enrichmentLightB], "first chunk should include light pairs");
+  assert.deepStrictEqual(groups[1], [enrichmentHeavySetProps], "heavy setProps should stand alone");
+  assert.deepStrictEqual(groups[2], [enrichmentLightC], "light patch following heavy chunk should form its own batch");
+  assert.deepStrictEqual(groups[3], [enrichmentHtmlPatch], "setHTML should form its own chunk");
 }
 
 runPatchBatchingSuite();

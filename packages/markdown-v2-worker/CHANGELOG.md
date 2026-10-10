@@ -1,5 +1,10 @@
 # @stream-mdx/worker
 
+## Unreleased
+
+- Keep unmatched display-math source protected from MDX compilation through its native paragraph boundary. Unsupported nested left/right tails stay visible as literal text during streaming and after finalization instead of producing speculative KaTeX errors.
+- Exclude native inline code spans from math protection so literal dollars in code cannot hide following MDX components or expressions.
+
 ## 0.5.0
 
 ### Minor Changes

@@ -121,9 +121,11 @@ async function run(): Promise<void> {
   const page = await context.newPage();
 
   let failures = 0;
+  const executedFixtureIds = new Set<string>();
 
   for (const fixture of fixtures) {
     if (!shouldRunScenario(fixture, scenario)) continue;
+    executedFixtureIds.add(fixture.id);
 
     const rawContent = await readFixtureFile(fixture.file);
     const split = splitMarkers(rawContent);
@@ -144,7 +146,7 @@ async function run(): Promise<void> {
 
     await page.evaluate(() => window.__streammdxRegression?.finalizeAndFlush());
 
-    if (fixture.tags?.includes("mdx")) {
+    if (fixture.waitForMdxCompiled ?? fixture.tags?.includes("mdx")) {
       try {
         await page.waitForFunction(() => {
           const summary = window.__streammdxRegression?.getSummary();
@@ -201,6 +203,17 @@ async function run(): Promise<void> {
   await page.close();
   await context.close();
   await browser.close();
+
+  if (executedFixtureIds.size === 0) {
+    failures += 1;
+    console.error("No fixture/scenario cases executed after eligibility filters.");
+  } else if (fixtureFilter) {
+    for (const fixture of fixtures) {
+      if (executedFixtureIds.has(fixture.id)) continue;
+      failures += 1;
+      console.error(`No cases executed for requested fixture ${fixture.id}/${scenario.id} after eligibility filters.`);
+    }
+  }
 
   if (failures > 0) {
     process.exitCode = 1;

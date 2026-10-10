@@ -8,13 +8,13 @@ This plugin adds footnote support to the V2 Markdown pipeline while preserving @
 
 ## Rules
 
-- Numbering: assigned in order of first reference appearance (stable across streaming updates).
+- Numbering follows the current rendered document: root references first, then reachable definition bodies in footer order. Defined footnotes receive dense numbers; unresolved labels create no visible holes. Final numbers and occurrence IDs match a fresh complete parse regardless of chunking or earlier finalization.
 - Definitions:
   - Syntax: `[^label]: text...`
   - Continuation: subsequent indented lines (4 spaces or tab) and blank lines are included.
   - Duplicate labels: first definition wins; subsequent definitions are ignored.
 - Scoping:
-  - References inside `code` or `html` blocks are ignored for numbering.
+  - Code and literal HTML contents are ignored. Typed inline nodes in HTML ownership slots participate.
   - Definition paragraphs are retagged to `footnote-def` (rendered as nothing).
 - Streaming:
   - The synthetic `footnotes` block is always the last block and updates as content grows.
@@ -22,27 +22,32 @@ This plugin adds footnote support to the V2 Markdown pipeline while preserving @
 
 ## Rendering
 
-- Inline reference: `<sup class="footnote-ref"><a id="fnref:n" href="#fn:n">n</a></sup>`
-- Footnotes list: `<section class="footnotes"><hr /><ol><li id="fn:n">… <a class="footnote-backref" href="#fnref:n">↩</a></li>…</ol></section>`
+- Inline reference: `<sup class="footnote-ref"><a id="fnref:n" href="#fn:n">n</a></sup>`. The second occurrence uses `fnref:n:2`, then `fnref:n:3`, and so on.
+- Footnotes list: `<section class="footnotes"><hr /><ol><li id="fn:n">… <a class="footnote-backref" href="#fnref:n">↩</a> <a class="footnote-backref" href="#fnref:n:2">↩<sup>2</sup></a></li>…</ol></section>`. Every defined occurrence has its own backlink.
+- Missing definitions render their references literally as `[^label]`, without an anchor or an empty footer item. References also remain literal while a dirty tail suppresses footer publication.
 
 ## Integration Points
 
 - Inline parser adds `footnote-ref` nodes via a regex plugin.
 - Document-phase plugin:
   - Collects definitions from paragraph blocks, retagging them as `footnote-def`.
-  - Assigns numbers by scanning textual blocks (paragraph, heading, blockquote, list) for `[^label]`.
+  - The engine retains native `LinkReference` spans beginning with a supported footnote label when the footnotes document plugin is enabled. Single-word definitions reach this phase instead of disappearing as ordinary link-reference definitions.
+  - Counts canonical rendered snapshot/HTML paths once in document order. Serialized `props.inline`, `props.block.payload.inline`, container compatibility fields, and HTML marker descriptors mirror those assignments without creating extra occurrences.
   - Appends a synthetic `footnotes` block with items.
   - Uses the `InlineParser` from worker state to parse definition content for better rendering.
+  - Numbers every serialized child inline representation and existing HTML ownership inline descriptor, and derives blockquote compatibility inline from those actual children. JSON snapshots, direct/worker PATCH consumers, and finalized roots carry the same numbers.
+  - Copies only changed footnote-owned paths. Reused roots and unrelated prepared code/HTML artifacts remain unchanged, so incremental diffs retain their old numbered snapshots.
 
 ## Edge Cases
 
-- Reference before definition: number reserved on first occurrence; when the definition appears later, the item content is populated.
-- Multiple references to the same label: reuse the same number.
+- Reference before definition: resolving it can renumber later defined footnotes. A late root reference precedes existing body-only references and may renumber them; reference links and footer items update together.
+- Multiple references to the same label: reuse the same display number, but have distinct occurrence IDs and backlinks.
 - Duplicate definitions: first definition wins (later duplicates ignored).
-- References inside code fences or HTML blocks: ignored for numbering.
+- References in code or literal HTML contents are ignored. References inside a rendered definition body are included, using the owning inline parser.
 
 ## Types
 
-- Inline: `{ kind: 'footnote-ref', label: string, number?: number }`
+- Inline: `{ kind: 'footnote-ref', label: string, number?: number, occurrence?: number, defined?: boolean }`
+- Footer item: `FootnoteItem` contains `{ number, label, inlines, refCount? }`; the producer always writes the actual rendered occurrence count, not metadata aliases. An omitted count retains the single-reference default.
 - Blocks: `footnote-def` (hidden), `footnotes` (final ordered list)
 

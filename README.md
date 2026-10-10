@@ -133,6 +133,8 @@ npm -w stream-mdx-docs run dev
 > [!NOTE]
 > `StreamingMarkdown` is a client component. In Next.js App Router, import it behind a `"use client"` boundary.
 
+`engine` defaults to `"auto"`, which tries a browser Worker and falls back to a dynamically imported in-process engine only when Worker creation is unavailable or fails. Use `engine="worker"` to require a Worker or `engine="main-thread"` to run parsing on the browser thread without hosting a worker asset. This does not change SSR behavior; use snapshot compilation for server markup. See [execution modes](docs/PUBLIC_API.md#execution-modes-and-ssr).
+
 ## Usage Patterns
 
 ### Next.js App Router: minimal client boundary
@@ -155,7 +157,6 @@ export function Article({ markdown }: { markdown: string }) {
 ```
 
 ### Append-only streaming with imperative control
-
 ```tsx
 "use client";
 
@@ -222,18 +223,33 @@ import { MermaidBlock } from "@stream-mdx/mermaid";
 import { StreamingMarkdown } from "stream-mdx";
 
 export function DiagramDoc({ text }: { text: string }) {
-  return <StreamingMarkdown text={text} worker="/workers/markdown-worker.js" components={{ mermaid: MermaidBlock }} />;
+  return <StreamingMarkdown text={text} worker="/workers/markdown-worker.js" codeRenderers={{ mermaid: MermaidBlock }} />;
 }
 ```
 
 ### Plugin-oriented imports
 
 ```ts
-import { createDocumentPluginPreset } from "@stream-mdx/plugins/document";
-import { createTablesPlugin } from "@stream-mdx/plugins/tables";
-import { createMathPlugin } from "@stream-mdx/plugins/math";
+import type { DocumentPlugin } from "@stream-mdx/plugins/document";
+import { serveMarkdownWorker } from "@stream-mdx/worker/engine";
+
+const headingMetadata: DocumentPlugin = {
+  name: "heading-metadata",
+  process(ctx) {
+    for (const block of ctx.blocks) {
+      if (block.type === "heading") {
+        block.payload.meta = { ...block.payload.meta, documentPlugin: "heading-metadata" };
+      }
+    }
+    return undefined;
+  },
+};
+
+// Bundle this as a worker entry, not as application UI code.
+serveMarkdownWorker({ extensions: { documentPlugins: [headingMetadata] } });
 ```
 
+The [plugin ABI](docs/PLUGIN_ABI.md#3-custom-bundled-worker-entry) includes a complete bundled entry with native Lezer markdown and inline extensions. App-level regex rules use the serializable `syntax` prop and named `inlineComponents`.
 If you are deciding between package layers:
 
 1. Use `stream-mdx` unless you have a concrete reason not to.

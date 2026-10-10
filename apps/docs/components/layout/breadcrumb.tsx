@@ -7,44 +7,64 @@ import { Link } from "next-view-transitions";
 import { usePathname } from "next/navigation";
 import React from "react";
 
+const SEGMENT_WORDS: Record<string, string> = {
+  api: "API",
+  cli: "CLI",
+  css: "CSS",
+  devx: "DevX",
+  html: "HTML",
+  json: "JSON",
+  mdx: "MDX",
+  tui: "TUI",
+};
+
+const MINOR_WORDS = new Set(["and", "or", "of", "in", "the", "to", "for", "vs"]);
+
+function segmentLabel(segment: string): string {
+  return segment
+    .split("-")
+    .map((word, index) => {
+      const known = SEGMENT_WORDS[word];
+      if (known) return known;
+      if (index > 0 && MINOR_WORDS.has(word)) return word;
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join(" ");
+}
+
 export function Breadcrumb() {
   const pathname = usePathname();
+  const segments = pathname.split("/").filter((segment) => segment !== "");
 
-  const paths = pathname
-    .split("/")
-    .filter((path) => path !== "")
-    .map((path) => path.replace(/-/g, " ").replace(/\b\w/g, (char) => char.toUpperCase()));
-
-  if (paths.length === 0) return null;
+  if (segments.length === 0) return null;
 
   return (
-    <div className={cn("mt-0 mb-4 flex w-full items-center gap-1 align-middle font-normal text-small")}>
-      <Link className="text-muted-old" href="/">
+    <nav aria-label="Breadcrumb" className={cn("mt-0 mb-4 flex w-full flex-wrap items-center gap-1 align-middle font-normal text-small")}>
+      <Link className="text-muted-old hover:text-foreground" href="/">
         Home
       </Link>
-      <ChevronRightIcon className="text-muted-old" />
-      {paths.map((path, index) => {
-        const href = `/${paths
-          .slice(0, index + 1)
-          .join("/")
-          .toLowerCase()}`;
-
-        const isLast = index === paths.length - 1;
+      <ChevronRightIcon className="text-muted-old" aria-hidden />
+      {segments.map((segment, index) => {
+        const href = `/${segments.slice(0, index + 1).join("/")}`;
+        const label = segmentLabel(segment);
+        const isLast = index === segments.length - 1;
 
         return (
-          <React.Fragment key={`${path}-${index}`}>
+          <React.Fragment key={href}>
             {isLast ? (
-              <span className="text-muted-old">{path}</span>
+              <span className="text-foreground" aria-current="page">
+                {label}
+              </span>
             ) : (
-              <Link className="text-muted-old" href={href}>
-                {path}
+              <Link className="text-muted-old hover:text-foreground" href={href}>
+                {label}
               </Link>
             )}
-            {index < paths.length - 1 && <ChevronRightIcon className="text-muted-old" />}
+            {!isLast && <ChevronRightIcon className="text-muted-old" aria-hidden />}
           </React.Fragment>
         );
       })}
-    </div>
+    </nav>
   );
 }
 

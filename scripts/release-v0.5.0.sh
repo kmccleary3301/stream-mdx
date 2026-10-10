@@ -16,12 +16,18 @@ export STREAM_MDX_EXPECT_VERSION="0.5.0"
 echo "[stream-mdx] Release 0.5.0 preflight"
 echo
 echo "- Enforcing package version: $STREAM_MDX_EXPECT_VERSION"
+echo "- Running package tests and CommonMark conformance"
 echo "- Running release gates"
 echo "- Running workspace pack dry-run"
+echo "- Running external pack and install smoke"
 echo
 
+bash "$ROOT_DIR/scripts/publish-release.sh" --check-versions
 npm run release:gates
+npm test
+npm run test:conformance
 npm -ws --if-present pack --dry-run
+npm run ci:pack-smoke
 
 if [[ "$PREPARE_ONLY" == "1" ]]; then
   echo

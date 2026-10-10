@@ -1,0 +1,70 @@
+{
+  "gitSha": "1669abb14b9fa72abb900e7a20622fdc29f57e57",
+  "worktree": "/Users/kylemccleary/projects/ql_homepage/stream-mdx/.worktrees/engine-v2",
+  "renderer": "streammdx",
+  "rendererVersion": "0.4.0",
+  "profile": "parity",
+  "policy": {
+    "profile": "parity",
+    "mdx": false,
+    "callouts": false,
+    "math": {
+      "singleDollar": true,
+      "output": "htmlAndMathml"
+    },
+    "syntaxHighlighting": {
+      "code": true,
+      "diff": "grammar_only",
+      "mode": "incremental"
+    },
+    "streamdownControls": false,
+    "streamdownAnimation": false,
+    "html": true,
+    "linkSafety": false,
+    "gfm": true,
+    "footnotes": true,
+    "customMarkupOverrides": false
+  },
+  "fixtureHash": "53ad638564877fb46836f9348b59dd4a2dddeb923132c4eae820478c28a25121",
+  "chunkTraceHash": "e006d5f35660ef2dedc57d5e9d30a07f00b54b3a54beb0e5a171848fe72a96cc",
+  "chunkCount": 799,
+  "rendererVersions": {
+    "streammdx": "0.4.0",
+    "streamdown": "2.7.0"
+  },
+  "chromeVersion": "153.0.8010.12",
+  "os": {
+    "platform": "darwin",
+    "release": "25.6.0",
+    "type": "Darwin",
+    "arch": "arm64"
+  },
+  "cpu": {
+    "brand": "Apple M5 Pro",
+    "ncpu": 18
+  },
+  "ram": {
+    "totalBytes": 51539607552,
+    "totalGB": 48
+  },
+  "powerState": "Battery Power",
+  "nodeEnv": "production",
+  "scenarioParams": {
+    "fixture": "stress-mega",
+    "scenario": "S9_firehose_20k",
+    "scheduling": "aggressive",
+    "overrides": {
+      "batch": "",
+      "frameBudgetMs": "",
+      "maxBatchesPerFlush": "",
+      "lowPriorityFrameBudgetMs": "",
+      "maxLowPriorityBatchesPerFlush": "",
+      "urgentQueueThreshold": "",
+      "historyLimit": "",
+      "startupMicrotaskFlushes": "",
+      "adaptiveBudgeting": "",
+      "adaptiveSwitch": "",
+      "adaptiveQueueThreshold": ""
+    }
+  }
+}

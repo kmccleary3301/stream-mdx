@@ -1,13 +1,16 @@
 import assert from "node:assert";
 
 import type { Block, TokenLineV1 } from "@stream-mdx/core";
+import { PATCH_ROOT_ID } from "@stream-mdx/core";
 import { JSDOM } from "jsdom";
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { renderToStaticMarkup } from "react-dom/server";
 
 import { ComponentRegistry } from "../src/components";
 import { BlockNodeRenderer } from "../src/renderer/node-views";
 import { createRendererStore } from "../src/renderer/store";
+import type { CodeFenceRendererProps } from "../src/types";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -70,5 +73,60 @@ async function main(): Promise<void> {
   root.unmount();
 }
 
+function testUnclosedFenceRendering(): void {
+  const dom = new JSDOM();
+  try {
+    for (const opening of ["```", "~~~"]) {
+      for (const tail of ["`", "``", "~", "~~"]) {
+        for (const isFinalized of [false, true]) {
+          const block: Block = {
+            id: "unclosed-code",
+            type: "code",
+            isFinalized,
+            payload: { raw: `${opening}text\nvalue\n${tail}`, meta: { lang: "text" } },
+          };
+          const hidesTail = !isFinalized && tail[0] === opening[0];
+          const expected = hidesTail ? "value" : `value\n${tail}`;
+          const registry = new ComponentRegistry();
+
+          for (const sparse of [false, true]) {
+            const store = createRendererStore(sparse ? [] : [block]);
+            if (sparse) {
+              // A code shell can arrive before code-line children.
+              store.applyPatches([{
+                op: "insertChild",
+                at: { blockId: PATCH_ROOT_ID },
+                index: 0,
+                node: { id: block.id, type: "code", props: { block }, children: [] },
+              }]);
+            }
+            const html = renderToStaticMarkup(React.createElement(BlockNodeRenderer, { store, blockId: block.id, registry }));
+            const wrapper = dom.window.document.createElement("div");
+            wrapper.innerHTML = html;
+            assert.deepStrictEqual(
+              Array.from(wrapper.querySelectorAll("code .line"), (line) => line.textContent),
+              expected.split("\n"),
+              `code rendering must preserve fence content, sparse=${sparse}, finalized=${isFinalized}`,
+            );
+          }
+
+          registry.setCodeRenderers({
+            text: (props: CodeFenceRendererProps) => React.createElement("pre", null, React.createElement("code", null, props.code)),
+          });
+          const direct = dom.window.document.createElement("div");
+          direct.innerHTML = renderToStaticMarkup(registry.renderBlock(block));
+          assert.strictEqual(direct.querySelector("code")?.textContent, expected, "registry fallback source must respect finalization");
+          const store = createRendererStore([block]);
+          direct.innerHTML = renderToStaticMarkup(React.createElement(BlockNodeRenderer, { store, blockId: block.id, registry }));
+          assert.strictEqual(direct.querySelector("code")?.textContent, expected, "node renderer source must respect finalization");
+        }
+      }
+    }
+  } finally {
+    dom.window.close();
+  }
+}
+
 await main();
+testUnclosedFenceRendering();
 console.log("finalized-code-token-fallback test passed");

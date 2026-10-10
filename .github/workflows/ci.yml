@@ -60,6 +60,7 @@ jobs:
 
       - name: Build docs site (static export)
         env:
+          NEXT_EXPORT: "1"
           NEXT_PUBLIC_BASE_PATH: ""
         run: npm run docs:build
 

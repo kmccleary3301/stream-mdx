@@ -1,0 +1,36 @@
+(node:20082) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+perf harness output: /Users/kylemccleary/projects/ql_homepage/stream-mdx/.worktrees/engine-v2/.codex-optimization/runs/20261008-171503-firehose-vs-streamdown/final/after/streammdx-code-huge-S9_firehose_20k-2026-10-09T06-40-54-619Z
+(node:20574) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+perf harness output: /Users/kylemccleary/projects/ql_homepage/stream-mdx/.worktrees/engine-v2/.codex-optimization/runs/20261008-171503-firehose-vs-streamdown/final/after/streammdx-code-huge-S8_firehose_10k-2026-10-09T06-41-13-989Z
+(node:21012) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+perf harness output: /Users/kylemccleary/projects/ql_homepage/stream-mdx/.worktrees/engine-v2/.codex-optimization/runs/20261008-171503-firehose-vs-streamdown/final/after/streammdx-code-huge-S7_firehose_5k-2026-10-09T06-41-32-857Z
+(node:21663) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+perf harness output: /Users/kylemccleary/projects/ql_homepage/stream-mdx/.worktrees/engine-v2/.codex-optimization/runs/20261008-171503-firehose-vs-streamdown/final/after/streammdx-stress-mega-S9_firehose_20k-2026-10-09T06-42-05-759Z
+(node:25645) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+perf harness output: /Users/kylemccleary/projects/ql_homepage/stream-mdx/.worktrees/engine-v2/.codex-optimization/runs/20261008-171503-firehose-vs-streamdown/final/after/streammdx-stress-mega-S8_firehose_10k-2026-10-09T06-44-56-445Z
+(node:35966) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+perf harness output: /Users/kylemccleary/projects/ql_homepage/stream-mdx/.worktrees/engine-v2/.codex-optimization/runs/20261008-171503-firehose-vs-streamdown/final/after/streammdx-stress-mega-S7_firehose_5k-2026-10-09T06-48-31-409Z
+(node:44447) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+perf harness output: /Users/kylemccleary/projects/ql_homepage/stream-mdx/.worktrees/engine-v2/.codex-optimization/runs/20261008-171503-firehose-vs-streamdown/final/after/streammdx-stress-mega-footnotes-S9_firehose_20k-2026-10-09T06-55-31-680Z
+(node:52728) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+perf harness output: /Users/kylemccleary/projects/ql_homepage/stream-mdx/.worktrees/engine-v2/.codex-optimization/runs/20261008-171503-firehose-vs-streamdown/final/after/streammdx-stress-mega-footnotes-S8_firehose_10k-2026-10-09T07-02-28-206Z
+(node:66020) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+perf harness output: /Users/kylemccleary/projects/ql_homepage/stream-mdx/.worktrees/engine-v2/.codex-optimization/runs/20261008-171503-firehose-vs-streamdown/final/after/streammdx-stress-mega-footnotes-S7_firehose_5k-2026-10-09T07-14-01-131Z
+(node:3286) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+perf harness output: /Users/kylemccleary/projects/ql_homepage/stream-mdx/.worktrees/engine-v2/.codex-optimization/runs/20261008-171503-firehose-vs-streamdown/final/after/streammdx-stress-xl-S9_firehose_20k-2026-10-09T07-36-49-249Z
+(node:18526) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+perf harness output: /Users/kylemccleary/projects/ql_homepage/stream-mdx/.worktrees/engine-v2/.codex-optimization/runs/20261008-171503-firehose-vs-streamdown/final/after/streammdx-stress-xl-S8_firehose_10k-2026-10-09T07-46-16-714Z
+(node:39550) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+perf harness output: /Users/kylemccleary/projects/ql_homepage/stream-mdx/.worktrees/engine-v2/.codex-optimization/runs/20261008-171503-firehose-vs-streamdown/final/after/streammdx-stress-xl-S7_firehose_5k-2026-10-09T08-01-19-282Z

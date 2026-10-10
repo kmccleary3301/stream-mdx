@@ -45,6 +45,21 @@ function createOrderedListBlock(): Block {
   };
 }
 
+function createShortOrderedListBlock(): Block {
+  return {
+    id: "ordered-list-width-short",
+    type: "list",
+    isFinalized: true,
+    payload: {
+      raw: "1. Alpha\n2. Beta",
+      meta: {
+        ordered: true,
+        items: [[textNode("Alpha")], [textNode("Beta")]],
+      },
+    },
+  };
+}
+
 function createUnorderedListBlock(): Block {
   return {
     id: "unordered-list-width",
@@ -78,6 +93,14 @@ async function renderBlockAndGetListElement(block: Block): Promise<HTMLElement> 
 }
 
 async function runListMarkerWidthTest(): Promise<void> {
+  const shortOrdered = await renderBlockAndGetListElement(createShortOrderedListBlock());
+  assert.strictEqual(shortOrdered.getAttribute("data-marker-digits"), "1", "single-digit ordered list should advertise 1-digit marker width");
+  assert.strictEqual(
+    shortOrdered.style.getPropertyValue("--list-marker-digits").trim(),
+    "1",
+    "single-digit ordered list should expose marker-digit CSS variable",
+  );
+
   const ordered = await renderBlockAndGetListElement(createOrderedListBlock());
   assert.strictEqual(ordered.getAttribute("data-marker-digits"), "2", "ordered list should advertise 2-digit marker width");
   assert.strictEqual(
@@ -87,11 +110,11 @@ async function runListMarkerWidthTest(): Promise<void> {
   );
 
   const unordered = await renderBlockAndGetListElement(createUnorderedListBlock());
-  assert.strictEqual(unordered.getAttribute("data-marker-digits"), "1", "unordered list should stay on 1-digit marker width");
+  assert.strictEqual(unordered.getAttribute("data-marker-digits"), null, "unordered bullet lists should not advertise ordered marker width metadata");
   assert.strictEqual(
     unordered.style.getPropertyValue("--list-marker-digits").trim(),
-    "1",
-    "unordered list should expose 1-digit marker CSS variable",
+    "",
+    "unordered bullet lists should leave marker sizing to the prose CSS contract",
   );
 }
 

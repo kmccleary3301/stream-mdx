@@ -1,0 +1,32 @@
+stream-mdx perf harness summary
+renderer: streamdown (2.7.0)
+profile: parity
+policy: mdx=false, callouts=false, math={"singleDollar":true,"output":"htmlAndMathml"}, controls=false
+git SHA: 1669abb14b9fa72abb900e7a20622fdc29f57e57
+worktree: /Users/kylemccleary/projects/ql_homepage/stream-mdx/.worktrees/engine-v2
+CPU: Apple M5 Pro (18 cores)
+RAM: 48 GB
+OS: darwin 25.6.0 (arm64)
+Chrome: 153.0.8010.12
+Power: Battery Power
+fixture: stress-mega
+scenario: S9_firehose_20k
+scheduling: aggressive
+runs: 1 (warmup 0)
+duration p50/p95: 12732.60 / 12732.60 ms
+first flush p50/p95: 25.70 / 25.70 ms
+raf delta p95 (run p95s): 16.80 / 16.80 ms
+memory peak p50/p95: 23.37 / 23.37 MB
+cdp task p50/p95: 4616.91 / 4616.91 ms
+cdp script p50/p95: 2589.39 / 2589.39 ms
+--- Live Document Subtree (Attached DOM Nodes) ---
+live elements p50/p95: 45320 / 45320
+live pre/code p50: 104 / 869 (fenced: 104, inline: 765)
+live table/tr/li p50: 35 / 625 / 598
+live math p50: 282
+visible semantic text length p50: 226935 chars
+canonical semantic records SHA-256: 15f222f7d761e368e1935798c6c8fb74f084256a613337043b68892d7e2381e1
+--- Browser Heap / CDP DOM Counters (Includes Detached Nodes) ---
+cdp heap total nodes p50/p95: 75263 / 75263
+cdp heap total nodes delta p50/p95: 75062 / 75062
+cdp heap listeners p50/p95: 540 / 540

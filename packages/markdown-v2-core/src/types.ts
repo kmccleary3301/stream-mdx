@@ -1,6 +1,24 @@
 // Core contracts (public types) - V2 Markdown Renderer
 // Based on final_spec.md architecture
 
+export interface BlockResolvedLinkReference {
+  label: string;
+  href: string;
+  title?: string;
+}
+
+export interface BlockMeta {
+  /**
+   * Link reference definitions resolved and referenced by this block's inline content.
+   * Omitted when no reference definitions were used.
+   */
+  linkReferences?: BlockResolvedLinkReference[];
+  /** Sanitized HTML ownership with inline text prepared by the owning engine parser. */
+  htmlTree?: HtmlTreeNode[];
+  htmlParagraphTree?: HtmlTreeNode[];
+  [key: string]: unknown;
+}
+
 /**
  * Core Block representation for streaming markdown
  */
@@ -15,10 +33,16 @@ export interface Block {
     sanitizedHtml?: string; // sanitized HTML (html blocks)
     compiledMdxRef?: { id: string } | null; // server-compiled artifact key
     compiledMdxModule?: CompiledMdxModule | null; // inline compiled module (worker/client side)
-    meta?: Record<string, unknown>; // e.g., code fence info, table align
+    meta?: BlockMeta; // e.g., code fence info, table align, linkReferences
     range?: { from: number; to: number }; // original source offsets
   };
 }
+
+/** Sanitized HTML ownership tree. Block leaves retain the engine's prepared markdown. */
+export type HtmlTreeNode =
+  | { kind: "text"; text: string; inline?: InlineNode[] }
+  | { kind: "element"; tagName: string; attributes: Record<string, string>; children: HtmlTreeNode[]; inlineNode?: InlineNode; paragraphRoot?: boolean }
+  | { kind: "block"; block: Block };
 
 export interface CompiledMdxModule {
   id: string;
@@ -52,6 +76,11 @@ export type FormatAnticipationConfig =
 export type CodeHighlightingMode = "final" | "incremental" | "live";
 export type CodeHighlightOutputMode = "html" | "tokens" | "both";
 
+export interface CodeHighlightThemes {
+  light: string;
+  dark: string;
+}
+
 export interface InlineHtmlDescriptor {
   tagName: string;
   attributes: Record<string, string>;
@@ -79,15 +108,56 @@ export type InlineNode =
   | { kind: "em"; children: InlineNode[] }
   | { kind: "strike"; children: InlineNode[] }
   | { kind: "code"; text: string }
-  | { kind: "link"; href?: string; title?: string; children: InlineNode[] }
+  | { kind: "link"; href?: string; title?: string; children: InlineNode[]; autolink?: boolean }
   | { kind: "image"; src: string; alt?: string; title?: string }
   | { kind: "br" }
+  | {
+      kind: "html";
+      raw: string;
+      openingRaw?: string;
+      closingRaw?: string;
+      sanitized?: string;
+      tagName?: string;
+      isClose?: boolean;
+      isSelfClosing?: boolean;
+      attributes?: Record<string, string>;
+      children?: InlineNode[];
+    }
   // extensible:
   | { kind: "mention"; handle: string }
   | { kind: "citation"; id: string }
   | { kind: "math-inline"; tex: string }
   | { kind: "math-display"; tex: string }
-  | { kind: "footnote-ref"; label: string; number?: number };
+  | { kind: "footnote-ref"; label: string; number?: number; occurrence?: number; defined?: boolean }
+  | {
+      kind: "plugin";
+      name: string;
+      attrs: Record<string, string>;
+      children?: InlineNode[];
+      raw: string;
+    };
+
+export interface FootnoteItem {
+  number: number;
+  label: string;
+  inlines: InlineNode[];
+  refCount?: number;
+}
+
+export interface SyntaxRuleSpec {
+  name: string;
+  pattern: { source: string; flags?: string };
+  trigger?: string /* first char(s) for fast dispatch */;
+  before?: string /* Lezer inline parser to precede, e.g. 'Emphasis' */;
+  attrs?: Record<string, number | string> /* capture group index or literal */;
+  content?: number /* capture group parsed as inline children */;
+  anticipation?: { open: string; close: string };
+}
+
+export interface HtmlOptions {
+  allowedTags?: Record<string, string[]>;
+  literalTagContent?: string[];
+}
 
 export type TokenStyle = {
   fg?: string;
@@ -144,6 +214,7 @@ export type WorkerIn =
       type: "INIT";
       initialContent?: string;
       prewarmLangs?: string[];
+      themes?: CodeHighlightThemes;
       docPlugins?: {
         footnotes?: boolean;
         html?: boolean;
@@ -163,8 +234,11 @@ export type WorkerIn =
           enabled?: boolean;
           thresholdLines?: number;
         };
+        themes?: CodeHighlightThemes;
       };
       mdx?: { compileMode?: "server" | "worker" };
+      syntax?: SyntaxRuleSpec[];
+      html?: HtmlOptions;
     }
   | { type: "APPEND"; text: string }
   | { type: "FINALIZE" }
@@ -213,7 +287,7 @@ export type WorkerOut =
 export interface InlinePlugin {
   id: string;
   priority: number; // lower runs earlier
-  apply(nodes: InlineNode[]): InlineNode[];
+  apply?: (nodes: InlineNode[]) => InlineNode[];
 }
 
 export interface RegexInlinePlugin extends InlinePlugin {
@@ -359,7 +433,7 @@ export type Patch =
       lines: string[];
       highlight?: Array<string | null>;
       tokens?: Array<TokenLineV1 | null>;
-      diffKind?: Array<DiffKind | null>;
+      diffKind?: Array<DiffLineKind | null>;
       oldNo?: Array<number | null>;
       newNo?: Array<number | null>;
       meta?: PatchMeta;

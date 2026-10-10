@@ -25,6 +25,4 @@
 
 - 47d1374: Add opt-in streaming format anticipation and an optional Mermaid diagram addon for ` ```mermaid ` code blocks.
 
-## Unreleased
-
 - Initial release.

@@ -21,16 +21,6 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
     },
-    "./registry": {
-      "types": "./dist/plugins/registry.d.ts",
-      "import": "./dist/plugins/registry.mjs",
-      "require": "./dist/plugins/registry.cjs"
-    },
-    "./base": {
-      "types": "./dist/plugins/base.d.ts",
-      "import": "./dist/plugins/base.mjs",
-      "require": "./dist/plugins/base.cjs"
-    },
     "./callouts": {
       "types": "./dist/plugins/callouts/index.d.ts",
       "import": "./dist/plugins/callouts/index.mjs",
@@ -50,16 +40,6 @@
       "types": "./dist/plugins/html/index.d.ts",
       "import": "./dist/plugins/html/index.mjs",
       "require": "./dist/plugins/html/index.cjs"
-    },
-    "./math": {
-      "types": "./dist/plugins/math/index.d.ts",
-      "import": "./dist/plugins/math/index.mjs",
-      "require": "./dist/plugins/math/index.cjs"
-    },
-    "./math/renderer": {
-      "types": "./dist/plugins/math/renderer.d.ts",
-      "import": "./dist/plugins/math/renderer.mjs",
-      "require": "./dist/plugins/math/renderer.cjs"
     },
     "./mdx": {
       "types": "./dist/plugins/mdx/index.d.ts",

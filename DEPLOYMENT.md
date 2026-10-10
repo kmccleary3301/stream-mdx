@@ -12,7 +12,7 @@ This project deploys the docs site as a static export.
 
 ## Notes
 
-- The docs app uses `output: "export"` in `apps/docs/next.config.mjs`, so Vercel must serve the exported static output.
+- The docs app defaults to `output: "export"` in `apps/docs/next.config.mjs`, so Vercel must serve the exported static output. Set `NEXT_EXPORT=0` for both build and start commands only when you need a Next.js server instead, such as `NEXT_EXPORT=0 npm run docs:build` followed by `NEXT_EXPORT=0 npm run docs:start`. That mode does not produce `apps/docs/out` for static-export checks.
 - `docs:build` runs:
   - `docs:worker:build` to build + copy the hosted worker into `apps/docs/public/workers/markdown-worker.js`
   - `docs:snapshots:build` to precompile markdown into snapshot artifacts

@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-02-11T20:25:54.614Z",
-  "hash": "8185cb41fb6efdd5004eed70a3676df93c871b2257b5953977d6ae1e70716a6a",
+  "createdAt": "2026-10-10T04:53:47.319Z",
+  "hash": "4629d96147ba238473fc0525bc90ca476ae268850399c86b7fca8972b82535dd",
   "contentHash": "85e1603d391d43fd36416feff36054573349a08edc485d53f00b8ef6f1e809c3",
-  "configHash": "5bf7cb1869ac5e61e7413c355f3d9a0ee6aa384e6f0e17335aa19e78fb663148",
-  "hashSalt": "docs-snapshots-v2:d595d42fa42edd94a867f74c48612ab7e5f488b9044579d7358c74b59edc856d",
+  "configHash": "a4b31dc6e15c2cd96906124ef06fadc77e60ad148c40ed5ba066e3518a02e37b",
+  "hashSalt": "docs-snapshots-v2:42a0722c827a5ff05bc7f9b0b2c880b732fb655e91e2b7c5196767915dd07177",
   "blocks": [
     {
       "id": "db082c0",
@@ -13,14 +13,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "MDX and HTML in StreamMDX",
-        "range": {
-          "from": 0,
-          "to": 27
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading1",
           "headingLevel": 1,
           "headingText": "MDX and HTML in StreamMDX",
           "headingId": "mdx-and-html-in-streammdx"
+        },
+        "range": {
+          "from": 0,
+          "to": 27
         },
         "inline": [
           {
@@ -36,14 +37,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Why MDX is optional",
-        "range": {
-          "from": 29,
-          "to": 51
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Why MDX is optional",
           "headingId": "why-mdx-is-optional"
+        },
+        "range": {
+          "from": 29,
+          "to": 51
         },
         "inline": [
           {
@@ -59,6 +61,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "StreamMDX treats MDX as an opt-in feature. Plain Markdown streams fast and predictably. MDX adds custom components, but requires compilation. You can enable it only where you need it:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 53,
           "to": 236
@@ -77,15 +82,18 @@
       "isFinalized": true,
       "payload": {
         "raw": "```tsx\n<StreamingMarkdown\n  text={content}\n  features={{ mdx: true, html: true }}\n  mdxCompileMode=\"worker\"\n/>\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "<StreamingMarkdown\n  text={content}\n  features={{ mdx: true, html: true }}\n  mdxCompileMode=\"worker\"\n/>",
+          "info": "tsx",
+          "lang": "tsx",
+          "highlightLang": "tsx"
+        },
         "range": {
           "from": 238,
           "to": 352
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content}</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }}</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  mdxCompileMode</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"worker\"</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/></span></span></code></pre>",
-        "meta": {
-          "lang": "tsx",
-          "code": "<StreamingMarkdown\n  text={content}\n  features={{ mdx: true, html: true }}\n  mdxCompileMode=\"worker\"\n/>"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content}</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }}</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  mdxCompileMode</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"worker\"</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/></span></span></code></pre>"
       }
     },
     {
@@ -94,6 +102,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "If you do not need MDX, leave it off for the simplest and fastest path.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 354,
           "to": 425
@@ -112,14 +123,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Compile strategies",
-        "range": {
-          "from": 427,
-          "to": 448
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Compile strategies",
           "headingId": "compile-strategies"
+        },
+        "range": {
+          "from": 427,
+          "to": 448
         },
         "inline": [
           {
@@ -135,14 +147,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Worker mode (default recommendation)",
-        "range": {
-          "from": 450,
-          "to": 490
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading3",
           "headingLevel": 3,
           "headingText": "Worker mode (default recommendation)",
           "headingId": "worker-mode-default-recommendation"
+        },
+        "range": {
+          "from": 450,
+          "to": 490
         },
         "inline": [
           {
@@ -158,12 +171,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- all compilation happens in the worker\n- no server endpoint needed\n- worker and server behavior are identical",
-        "range": {
-          "from": 492,
-          "to": 602
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -184,7 +204,195 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "2c5ee907::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 492,
+                  "to": 531
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "2c5ee907::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- all compilation happens in the worker",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "all compilation happens in the worker"
+                        }
+                      ],
+                      "range": {
+                        "from": 492,
+                        "to": 531
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "all compilation happens in the worker"
+                              }
+                            ],
+                            "text": "all compilation happens in the worker",
+                            "raw": "- all compilation happens in the worker"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "all compilation happens in the worker"
+                    }
+                  ],
+                  "text": "all compilation happens in the worker",
+                  "raw": "- all compilation happens in the worker"
+                },
+                "children": []
+              },
+              {
+                "id": "2c5ee907::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 532,
+                  "to": 559
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "2c5ee907::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- no server endpoint needed",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "no server endpoint needed"
+                        }
+                      ],
+                      "range": {
+                        "from": 532,
+                        "to": 559
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "no server endpoint needed"
+                              }
+                            ],
+                            "text": "no server endpoint needed",
+                            "raw": "- no server endpoint needed"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "no server endpoint needed"
+                    }
+                  ],
+                  "text": "no server endpoint needed",
+                  "raw": "- no server endpoint needed"
+                },
+                "children": []
+              },
+              {
+                "id": "2c5ee907::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 560,
+                  "to": 602
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "2c5ee907::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- worker and server behavior are identical",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "worker and server behavior are identical"
+                        }
+                      ],
+                      "range": {
+                        "from": 560,
+                        "to": 602
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "worker and server behavior are identical"
+                              }
+                            ],
+                            "text": "worker and server behavior are identical",
+                            "raw": "- worker and server behavior are identical"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "worker and server behavior are identical"
+                    }
+                  ],
+                  "text": "worker and server behavior are identical",
+                  "raw": "- worker and server behavior are identical"
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 492,
+          "to": 602
         }
       }
     },
@@ -194,15 +402,18 @@
       "isFinalized": true,
       "payload": {
         "raw": "```tsx\n<StreamingMarkdown mdxCompileMode=\"worker\" />\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "<StreamingMarkdown mdxCompileMode=\"worker\" />",
+          "info": "tsx",
+          "lang": "tsx",
+          "highlightLang": "tsx"
+        },
         "range": {
           "from": 604,
           "to": 660
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> mdxCompileMode</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"worker\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> /></span></span></code></pre>",
-        "meta": {
-          "lang": "tsx",
-          "code": "<StreamingMarkdown mdxCompileMode=\"worker\" />"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> mdxCompileMode</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"worker\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> /></span></span></code></pre>"
       }
     },
     {
@@ -211,14 +422,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Server mode",
-        "range": {
-          "from": 662,
-          "to": 677
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading3",
           "headingLevel": 3,
           "headingText": "Server mode",
           "headingId": "server-mode"
+        },
+        "range": {
+          "from": 662,
+          "to": 677
         },
         "inline": [
           {
@@ -234,12 +446,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- you host a compile endpoint (useful for stricter build control)\n- the worker requests compiled output\n- you must keep server and worker compile settings aligned",
-        "range": {
-          "from": 679,
-          "to": 841
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -260,7 +479,195 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "61b94764::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 679,
+                  "to": 744
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "61b94764::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- you host a compile endpoint (useful for stricter build control)",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "you host a compile endpoint (useful for stricter build control)"
+                        }
+                      ],
+                      "range": {
+                        "from": 679,
+                        "to": 744
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "you host a compile endpoint (useful for stricter build control)"
+                              }
+                            ],
+                            "text": "you host a compile endpoint (useful for stricter build control)",
+                            "raw": "- you host a compile endpoint (useful for stricter build control)"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "you host a compile endpoint (useful for stricter build control)"
+                    }
+                  ],
+                  "text": "you host a compile endpoint (useful for stricter build control)",
+                  "raw": "- you host a compile endpoint (useful for stricter build control)"
+                },
+                "children": []
+              },
+              {
+                "id": "61b94764::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 745,
+                  "to": 782
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "61b94764::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- the worker requests compiled output",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "the worker requests compiled output"
+                        }
+                      ],
+                      "range": {
+                        "from": 745,
+                        "to": 782
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "the worker requests compiled output"
+                              }
+                            ],
+                            "text": "the worker requests compiled output",
+                            "raw": "- the worker requests compiled output"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "the worker requests compiled output"
+                    }
+                  ],
+                  "text": "the worker requests compiled output",
+                  "raw": "- the worker requests compiled output"
+                },
+                "children": []
+              },
+              {
+                "id": "61b94764::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 783,
+                  "to": 841
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "61b94764::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- you must keep server and worker compile settings aligned",
+                      "inline": [
+                        {
+                          "kind": "text",
+                          "text": "you must keep server and worker compile settings aligned"
+                        }
+                      ],
+                      "range": {
+                        "from": 783,
+                        "to": 841
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "you must keep server and worker compile settings aligned"
+                              }
+                            ],
+                            "text": "you must keep server and worker compile settings aligned",
+                            "raw": "- you must keep server and worker compile settings aligned"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "you must keep server and worker compile settings aligned"
+                    }
+                  ],
+                  "text": "you must keep server and worker compile settings aligned",
+                  "raw": "- you must keep server and worker compile settings aligned"
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 679,
+          "to": 841
         }
       }
     },
@@ -270,15 +677,18 @@
       "isFinalized": true,
       "payload": {
         "raw": "```tsx\n<StreamingMarkdown mdxCompileMode=\"server\" />\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "<StreamingMarkdown mdxCompileMode=\"server\" />",
+          "info": "tsx",
+          "lang": "tsx",
+          "highlightLang": "tsx"
+        },
         "range": {
           "from": 843,
           "to": 899
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> mdxCompileMode</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"server\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> /></span></span></code></pre>",
-        "meta": {
-          "lang": "tsx",
-          "code": "<StreamingMarkdown mdxCompileMode=\"server\" />"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> mdxCompileMode</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"server\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> /></span></span></code></pre>"
       }
     },
     {
@@ -287,14 +697,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "MDX component registry",
-        "range": {
-          "from": 901,
-          "to": 926
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "MDX component registry",
           "headingId": "mdx-component-registry"
+        },
+        "range": {
+          "from": 901,
+          "to": 926
         },
         "inline": [
           {
@@ -310,6 +721,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "MDX components are passed separately from block overrides:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 928,
           "to": 986
@@ -328,15 +742,18 @@
       "isFinalized": true,
       "payload": {
         "raw": "```tsx\nconst mdxComponents = {\n  Callout: ({ title, children }: { title: string; children: React.ReactNode }) => (\n    <div className=\"rounded border border-border p-4\">\n      <div className=\"font-semibold\">{title}</div>\n      <div className=\"mt-2\">{children}</div>\n    </div>\n  ),\n};\n\n<StreamingMarkdown text={content} mdxComponents={mdxComponents} />\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "const mdxComponents = {\n  Callout: ({ title, children }: { title: string; children: React.ReactNode }) => (\n    <div className=\"rounded border border-border p-4\">\n      <div className=\"font-semibold\">{title}</div>\n      <div className=\"mt-2\">{children}</div>\n    </div>\n  ),\n};\n\n<StreamingMarkdown text={content} mdxComponents={mdxComponents} />",
+          "info": "tsx",
+          "lang": "tsx",
+          "highlightLang": "tsx"
+        },
         "range": {
           "from": 988,
           "to": 1344
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> mdxComponents</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  Callout</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: ({ </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">title</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">children</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">title</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">; </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">children</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> React</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">ReactNode</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> (</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    &#x3C;</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> className</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"rounded border border-border p-4\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      &#x3C;</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> className</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"font-semibold\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>{title}&#x3C;/</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      &#x3C;</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> className</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"mt-2\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>{children}&#x3C;/</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    &#x3C;/</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  ),</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">};</span></span>\n<span class=\"line\" data-line=\"9\"></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">mdxComponents</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{mdxComponents} /></span></span></code></pre>",
-        "meta": {
-          "lang": "tsx",
-          "code": "const mdxComponents = {\n  Callout: ({ title, children }: { title: string; children: React.ReactNode }) => (\n    <div className=\"rounded border border-border p-4\">\n      <div className=\"font-semibold\">{title}</div>\n      <div className=\"mt-2\">{children}</div>\n    </div>\n  ),\n};\n\n<StreamingMarkdown text={content} mdxComponents={mdxComponents} />"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> mdxComponents</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  Callout</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: ({ </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">title</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">children</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">title</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">; </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">children</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> React</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">ReactNode</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> (</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    &#x3C;</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> className</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"rounded border border-border p-4\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      &#x3C;</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> className</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"font-semibold\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>{title}&#x3C;/</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      &#x3C;</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> className</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"mt-2\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>{children}&#x3C;/</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    &#x3C;/</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  ),</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">};</span></span>\n<span class=\"line\" data-line=\"9\"></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">mdxComponents</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{mdxComponents} /></span></span></code></pre>"
       }
     },
     {
@@ -345,14 +762,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "HTML blocks",
-        "range": {
-          "from": 1346,
-          "to": 1360
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "HTML blocks",
           "headingId": "html-blocks"
+        },
+        "range": {
+          "from": 1346,
+          "to": 1360
         },
         "inline": [
           {
@@ -368,6 +786,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "When HTML is enabled, raw HTML blocks are sanitized and rendered with a configurable allowlist. You can also swap HTML tags for your own components:",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 1362,
           "to": 1510
@@ -386,15 +807,18 @@
       "isFinalized": true,
       "payload": {
         "raw": "```tsx\nconst htmlElements = {\n  blockquote: ({ children }: { children: React.ReactNode }) => (\n    <blockquote className=\"border-l-2 border-border pl-4 text-muted-old\">{children}</blockquote>\n  ),\n};\n\n<StreamingMarkdown text={content} htmlElements={htmlElements} features={{ html: true }} />\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "const htmlElements = {\n  blockquote: ({ children }: { children: React.ReactNode }) => (\n    <blockquote className=\"border-l-2 border-border pl-4 text-muted-old\">{children}</blockquote>\n  ),\n};\n\n<StreamingMarkdown text={content} htmlElements={htmlElements} features={{ html: true }} />",
+          "info": "tsx",
+          "lang": "tsx",
+          "highlightLang": "tsx"
+        },
         "range": {
           "from": 1512,
           "to": 1807
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"tsx\"><code data-language=\"tsx\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> htmlElements</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  blockquote</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: ({ </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">children</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">children</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> React</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">ReactNode</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> (</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    &#x3C;</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">blockquote</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> className</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"border-l-2 border-border pl-4 text-muted-old\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>{children}&#x3C;/</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">blockquote</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  ),</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">};</span></span>\n<span class=\"line\" data-line=\"6\"></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">htmlElements</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{htmlElements} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }} /></span></span></code></pre>",
-        "meta": {
-          "lang": "tsx",
-          "code": "const htmlElements = {\n  blockquote: ({ children }: { children: React.ReactNode }) => (\n    <blockquote className=\"border-l-2 border-border pl-4 text-muted-old\">{children}</blockquote>\n  ),\n};\n\n<StreamingMarkdown text={content} htmlElements={htmlElements} features={{ html: true }} />"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> htmlElements</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  blockquote</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: ({ </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">children</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">children</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> React</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">ReactNode</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> (</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    &#x3C;</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">blockquote</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> className</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"border-l-2 border-border pl-4 text-muted-old\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>{children}&#x3C;/</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">blockquote</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  ),</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">};</span></span>\n<span class=\"line\" data-line=\"6\"></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">htmlElements</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{htmlElements} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }} /></span></span></code></pre>"
       }
     },
     {
@@ -403,14 +827,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "When to use each feature",
-        "range": {
-          "from": 1809,
-          "to": 1836
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "When to use each feature",
           "headingId": "when-to-use-each-feature"
+        },
+        "range": {
+          "from": 1809,
+          "to": 1836
         },
         "inline": [
           {
@@ -426,12 +851,19 @@
       "isFinalized": true,
       "payload": {
         "raw": "- **Markdown only**: most content, best performance\n- **HTML**: when you need raw HTML tags (tables, custom spans)\n- **MDX**: when you need React components in content",
-        "range": {
-          "from": 1838,
-          "to": 2005
-        },
         "meta": {
+          "lezerNodeType": "BulletList",
+          "mathEnabled": true,
+          "formatAnticipation": {
+            "inline": false,
+            "mathInline": false,
+            "mathBlock": false,
+            "html": false,
+            "mdx": false,
+            "regex": false
+          },
           "ordered": false,
+          "loose": false,
           "items": [
             [
               {
@@ -479,7 +911,276 @@
               }
             ]
           ],
-          "mathEnabled": true
+          "preparedNested": {
+            "props": {
+              "ordered": false,
+              "loose": false
+            },
+            "children": [
+              {
+                "id": "698ce8b0::item:0",
+                "type": "list-item",
+                "range": {
+                  "from": 1838,
+                  "to": 1889
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "698ce8b0::item:0",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **Markdown only**: most content, best performance",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "Markdown only"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": most content, best performance"
+                        }
+                      ],
+                      "range": {
+                        "from": 1838,
+                        "to": 1889
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 0,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "Markdown only"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": most content, best performance"
+                              }
+                            ],
+                            "text": "Markdown only: most content, best performance",
+                            "raw": "- **Markdown only**: most content, best performance"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 0,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "Markdown only"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": most content, best performance"
+                    }
+                  ],
+                  "text": "Markdown only: most content, best performance",
+                  "raw": "- **Markdown only**: most content, best performance"
+                },
+                "children": []
+              },
+              {
+                "id": "698ce8b0::item:1",
+                "type": "list-item",
+                "range": {
+                  "from": 1890,
+                  "to": 1952
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "698ce8b0::item:1",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **HTML**: when you need raw HTML tags (tables, custom spans)",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "HTML"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": when you need raw HTML tags (tables, custom spans)"
+                        }
+                      ],
+                      "range": {
+                        "from": 1890,
+                        "to": 1952
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "HTML"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": when you need raw HTML tags (tables, custom spans)"
+                              }
+                            ],
+                            "text": "HTML: when you need raw HTML tags (tables, custom spans)",
+                            "raw": "- **HTML**: when you need raw HTML tags (tables, custom spans)"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "HTML"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": when you need raw HTML tags (tables, custom spans)"
+                    }
+                  ],
+                  "text": "HTML: when you need raw HTML tags (tables, custom spans)",
+                  "raw": "- **HTML**: when you need raw HTML tags (tables, custom spans)"
+                },
+                "children": []
+              },
+              {
+                "id": "698ce8b0::item:2",
+                "type": "list-item",
+                "range": {
+                  "from": 1953,
+                  "to": 2005
+                },
+                "props": {
+                  "ordered": false,
+                  "loose": false,
+                  "block": {
+                    "id": "698ce8b0::item:2",
+                    "type": "list-item",
+                    "isFinalized": true,
+                    "payload": {
+                      "raw": "- **MDX**: when you need React components in content",
+                      "inline": [
+                        {
+                          "kind": "strong",
+                          "children": [
+                            {
+                              "kind": "text",
+                              "text": "MDX"
+                            }
+                          ]
+                        },
+                        {
+                          "kind": "text",
+                          "text": ": when you need React components in content"
+                        }
+                      ],
+                      "range": {
+                        "from": 1953,
+                        "to": 2005
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": false,
+                            "loose": false,
+                            "index": 2,
+                            "inline": [
+                              {
+                                "kind": "strong",
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "text": "MDX"
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "text",
+                                "text": ": when you need React components in content"
+                              }
+                            ],
+                            "text": "MDX: when you need React components in content",
+                            "raw": "- **MDX**: when you need React components in content"
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 2,
+                  "inline": [
+                    {
+                      "kind": "strong",
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "MDX"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "text",
+                      "text": ": when you need React components in content"
+                    }
+                  ],
+                  "text": "MDX: when you need React components in content",
+                  "raw": "- **MDX**: when you need React components in content"
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        "range": {
+          "from": 1838,
+          "to": 2005
         }
       }
     },
@@ -489,14 +1190,15 @@
       "isFinalized": true,
       "payload": {
         "raw": "Example MDX snippet",
-        "range": {
-          "from": 2007,
-          "to": 2029
-        },
         "meta": {
+          "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
           "headingText": "Example MDX snippet",
           "headingId": "example-mdx-snippet"
+        },
+        "range": {
+          "from": 2007,
+          "to": 2029
         },
         "inline": [
           {
@@ -512,15 +1214,17 @@
       "isFinalized": true,
       "payload": {
         "raw": "```\n<Callout title=\"Heads up\">\n  This is a custom component rendered inside the stream.\n</Callout>\n\nHere is a YouTube embed:\n\n<YouTube videoId=\"dQw4w9WgXcQ\" />\n```",
+        "meta": {
+          "lezerNodeType": "FencedCode",
+          "code": "<Callout title=\"Heads up\">\n  This is a custom component rendered inside the stream.\n</Callout>\n\nHere is a YouTube embed:\n\n<YouTube videoId=\"dQw4w9WgXcQ\" />",
+          "info": "",
+          "highlightLang": "text"
+        },
         "range": {
           "from": 2031,
           "to": 2194
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg: transparent;--shiki-light-bg: transparent\" tabindex=\"undefined\" data-language=\"text\"><code data-language=\"text\" data-theme=\"github-dark github-light\" style=\"display: grid;\"><span class=\"line\" data-line=\"1\"><span>&#x3C;Callout title=\"Heads up\"></span></span>\n<span class=\"line\" data-line=\"2\"><span>  This is a custom component rendered inside the stream.</span></span>\n<span class=\"line\" data-line=\"3\"><span>&#x3C;/Callout></span></span>\n<span class=\"line\" data-line=\"4\"><span></span></span>\n<span class=\"line\" data-line=\"5\"><span>Here is a YouTube embed:</span></span>\n<span class=\"line\" data-line=\"6\"><span></span></span>\n<span class=\"line\" data-line=\"7\"><span>&#x3C;YouTube videoId=\"dQw4w9WgXcQ\" /></span></span></code></pre>",
-        "meta": {
-          "lang": "text",
-          "code": "<Callout title=\"Heads up\">\n  This is a custom component rendered inside the stream.\n</Callout>\n\nHere is a YouTube embed:\n\n<YouTube videoId=\"dQw4w9WgXcQ\" />"
-        }
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code><span class=\"line\" data-line=\"1\"><span>&#x3C;Callout title=\"Heads up\"></span></span>\n<span class=\"line\" data-line=\"2\"><span>  This is a custom component rendered inside the stream.</span></span>\n<span class=\"line\" data-line=\"3\"><span>&#x3C;/Callout></span></span>\n<span class=\"line\" data-line=\"4\"><span></span></span>\n<span class=\"line\" data-line=\"5\"><span>Here is a YouTube embed:</span></span>\n<span class=\"line\" data-line=\"6\"><span></span></span>\n<span class=\"line\" data-line=\"7\"><span>&#x3C;YouTube videoId=\"dQw4w9WgXcQ\" /></span></span></code></pre>"
       }
     },
     {
@@ -529,6 +1233,9 @@
       "isFinalized": true,
       "payload": {
         "raw": "In worker mode, this compiles inside the worker and renders as soon as the block completes.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
         "range": {
           "from": 2196,
           "to": 2287
@@ -545,57 +1252,57 @@
   "tocHeadings": [
     {
       "id": "mdx-and-html-in-streammdx",
-      "text": "MDX and HTML in StreamMDX",
+      "blockId": "db082c0",
       "level": 1,
-      "blockId": "db082c0"
+      "text": "MDX and HTML in StreamMDX"
     },
     {
       "id": "why-mdx-is-optional",
-      "text": "Why MDX is optional",
+      "blockId": "592dfbb9",
       "level": 2,
-      "blockId": "592dfbb9"
+      "text": "Why MDX is optional"
     },
     {
       "id": "compile-strategies",
-      "text": "Compile strategies",
+      "blockId": "12b41477",
       "level": 2,
-      "blockId": "12b41477"
+      "text": "Compile strategies"
     },
     {
       "id": "worker-mode-default-recommendation",
-      "text": "Worker mode (default recommendation)",
+      "blockId": "43b6ca21",
       "level": 3,
-      "blockId": "43b6ca21"
+      "text": "Worker mode (default recommendation)"
     },
     {
       "id": "server-mode",
-      "text": "Server mode",
+      "blockId": "2e4ea82",
       "level": 3,
-      "blockId": "2e4ea82"
+      "text": "Server mode"
     },
     {
       "id": "mdx-component-registry",
-      "text": "MDX component registry",
+      "blockId": "7395ed0a",
       "level": 2,
-      "blockId": "7395ed0a"
+      "text": "MDX component registry"
     },
     {
       "id": "html-blocks",
-      "text": "HTML blocks",
+      "blockId": "6f69f24",
       "level": 2,
-      "blockId": "6f69f24"
+      "text": "HTML blocks"
     },
     {
       "id": "when-to-use-each-feature",
-      "text": "When to use each feature",
+      "blockId": "24ea5a90",
       "level": 2,
-      "blockId": "24ea5a90"
+      "text": "When to use each feature"
     },
     {
       "id": "example-mdx-snippet",
-      "text": "Example MDX snippet",
+      "blockId": "1318d6c5",
       "level": 2,
-      "blockId": "1318d6c5"
+      "text": "Example MDX snippet"
     }
   ],
   "init": {

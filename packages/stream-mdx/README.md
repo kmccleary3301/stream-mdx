@@ -19,6 +19,7 @@
 | `stream-mdx/worker` | `@stream-mdx/worker` | You need worker helpers or hosted worker utilities. |
 | `stream-mdx/worker/node` | `@stream-mdx/worker/node` | You want Node `worker_threads` snapshot compilation. |
 | `stream-mdx/worker/direct` | `@stream-mdx/worker/direct` | You need direct compile helpers in runtimes without `worker_threads`. |
+| `stream-mdx/worker/engine` | `@stream-mdx/worker/engine` | You need isolated engines, a Worker adapter, or a custom bundled worker entry. |
 | `stream-mdx/core` | `@stream-mdx/core` | You need lower-level types or perf helpers. |
 | `stream-mdx/plugins/*` | `@stream-mdx/plugins/*` | You are customizing the worker/plugin layer. |
 
@@ -72,11 +73,13 @@ export function Demo({ text }: { text: string }) {
 import { MermaidBlock } from "@stream-mdx/mermaid";
 import { StreamingMarkdown } from "stream-mdx";
 
-<StreamingMarkdown text={content} worker="/workers/markdown-worker.js" components={{ mermaid: MermaidBlock }} />;
+<StreamingMarkdown text={content} worker="/workers/markdown-worker.js" codeRenderers={{ mermaid: MermaidBlock }} />;
 ```
 
 > [!NOTE]
 > `StreamingMarkdown` is a client component. In Next.js App Router, keep the import behind a `"use client"` boundary.
+
+`engine` defaults to `"auto"` and falls back to a dynamically imported in-process engine only when browser Worker creation is unavailable or fails. `"worker"` requires a Worker; `"main-thread"` runs parsing on the browser thread and ignores `worker`. These modes do not compile during SSR. Use snapshot compilation for server markup. See the [execution modes](../../docs/PUBLIC_API.md#execution-modes-and-ssr).
 
 ## Package-Specific Guidance
 
@@ -95,7 +98,6 @@ import { StreamingMarkdown } from "stream-mdx";
 ```tsx
 <StreamingMarkdown text="# Hello\n\nStreaming **markdown**" worker="/workers/markdown-worker.js" />
 ```
-
 ### Append-only stream
 
 ```tsx

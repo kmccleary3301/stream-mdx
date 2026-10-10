@@ -6,7 +6,7 @@ This document covers the HTML/style regression harnesses, the seeded replay guar
 
 The regression stack currently locks in:
 
-- HTML snapshots for curated fixtures and streaming scenarios
+- exact final HTML, root-child hashes, and final structural signatures for curated fixtures and streaming scenarios
 - deterministic seeded final-HTML convergence for promoted high-risk fixtures
 - scheduler-mode final-HTML parity for representative fixtures
 - computed style snapshots and explicit geometry/color invariants for high-risk surfaces
@@ -25,12 +25,30 @@ Failure artifacts are written under:
 
 | Guard | What it owns | Typical command |
 | --- | --- | --- |
-| HTML regression | checkpoint/final HTML and structural signatures | `npm run test:regression:html` |
+| HTML regression | exact final output and live consumer-behavior invariants; provisional captures are diagnostics | `npm run test:regression:html` |
 | Style regression | computed-style snapshots for curated selectors | `npm run test:regression:styles` |
 | Style invariants | explicit geometry/color/layout assertions | `npm run test:regression:style-invariants` |
 | Seeded smoke | final-HTML convergence for promoted high-risk fixtures | `npm run test:regression:seeded-smoke` |
 | Scheduler parity | final-HTML equivalence across supported scheduler modes | `npm run test:regression:scheduler-parity` |
 | Docs quality audit | route-level content and shell sanity on the built site | `npm run docs:quality:audit` |
+
+### Diagnostics and behavior locks
+
+The HTML runner captures first-chunk, progress, and first-seen selector checkpoints for debugging. Their count, order, serialized HTML, and broad structural signatures are not baseline assertions. Event timing, provisional wrappers, and generated partial-math markup may change without changing the consumer contract.
+
+Final HTML remains byte-for-byte compared, including root-child hashes and final structure. There is no blanket KaTeX, whitespace, or wrapper normalization. Live guards still enforce text/code prefixes, code line order, table integrity and visibility deadlines, list integrity, security restrictions, MDX state, and fixture-specific selectors/text.
+
+`math-display-checkpoint-supported` retains a dedicated ordinary S5 boundary assertion. Immediately after its explicit marker, the open display formula `a_n = \frac{1}{n}` must have renderable display KaTeX with matching TeX/MathML and no KaTeX error. After finalize, the formula must include the `\sqrt{x}` tail, and the fixture's trailing prose must remain present. An eventual `.katex` selector alone does not satisfy the boundary contract.
+
+### Seed coverage and eligibility
+
+The existing `--seed` and `--seed-count` replay options generate varied deterministic chunks from marker-stripped text, including for split-marker fixtures. Seeded replay has an internal exception to the ordinary marker-only scenario restriction; scenario include/exclude tags still apply. The seeded smoke's S2 requests for `imaginary-empty-list` and `math-display-checkpoint-supported` therefore execute real varied chunks and compare exact finals against their ordinary S5 baselines and against the other seeds.
+
+Unseeded S5 still uses the authored fixed split boundaries. Seeded S5 does not repeat those fixed chunks. Scheduler-only replays retain the ordinary eligibility and split behavior.
+
+HTML and style runners fail when eligibility filters execute no cases. Explicit fixture/scenario filters also cannot silently skip every case for a matched requested fixture or scenario. Missing ordinary baselines remain failures; seeded replays also require their final-output oracle. Do not exclude missing S1/S3/S4 entries from the ordinary matrix or copy S2 snapshots into those slots.
+
+The style runner honors `waitForMdxCompiled: false`, just like the HTML runner. Fixtures for bounded inline shells or unsupported MDX do not wait for an unsupported compiled-inline state.
 
 ## CI vs local
 
@@ -96,6 +114,12 @@ Read the full policy before doing this:
 - [`BASELINE_UPDATE_POLICY.md`](./BASELINE_UPDATE_POLICY.md)
 
 ## Failure artifacts and how to read them
+
+- HTML failures report the **first diff index** and show a small context slice for expected vs received.
+- Style failures list the first handful of computed property changes.
+- Invariant failures list the offending blocks or state values after finalize.
+- `requiredTextFragments` are validated against the **rendered DOM text** of `#regression-root`, not the serialized HTML string. Syntax highlighting splits source lines into per-token `<span>`s, so an HTML substring match is incidental to the highlighter markup. Matching stays verbatim (meaningful characters, newlines and protocols are not normalized away), so a fragment that is genuinely missing from the rendered text still fails. Add fragments as the text a reader sees, not as HTML markup.
+- Full expected/received payloads are written under `tests/regression/artifacts/<timestamp>/...`.
 
 ### HTML regression artifacts
 

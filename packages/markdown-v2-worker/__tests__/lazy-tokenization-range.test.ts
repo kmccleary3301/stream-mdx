@@ -12,6 +12,8 @@ function buildSnippet(lineCount: number): string {
 async function main() {
   const dom = new JSDOM("<!doctype html><html><body></body></html>");
   (globalThis as any).window = dom.window;
+    // React DOM reads the bare global navigator once a window exists (Node 20 has no global navigator).
+    Object.defineProperty(globalThis, "navigator", { configurable: true, writable: true, value: dom.window.navigator });
   (globalThis as any).document = dom.window.document;
   (globalThis as any).HTMLElement = dom.window.HTMLElement;
   (globalThis as any).Node = dom.window.Node;
