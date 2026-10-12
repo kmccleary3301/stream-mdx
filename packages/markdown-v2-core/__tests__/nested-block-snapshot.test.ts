@@ -36,6 +36,33 @@ const quoted: Block = { id: "quote", type: "blockquote", isFinalized: true, payl
 const paragraph = flatten(createBlockSnapshot(quoted)).find((node) => node.type === "paragraph");
 assert.equal((paragraph?.props?.block as Block).payload.raw, "foo\nbar\nbaz");
 
+for (const type of ["list", "blockquote"] as const) {
+  for (const isFinalized of [false, true]) {
+    for (const mathEnabled of [false, true, undefined]) {
+      const text = "$x$ and $$y$$";
+      const block: Block = {
+        id: `math-${type}-${isFinalized}-${mathEnabled}`,
+        type,
+        isFinalized,
+        payload: {
+          raw: `${type === "list" ? "-" : ">"} ${text}`,
+          meta: { mathEnabled },
+        },
+      };
+      const node = flatten(createBlockSnapshot(block)).find((child) => child.type === (type === "list" ? "list-item" : "paragraph"));
+      assert.ok(node, "expected visible container content");
+      const inline = node.props?.inline as Array<{ kind: string; text?: string }>;
+      if (mathEnabled === false) {
+        assert.deepEqual(inline, [{ kind: "text", text }], "fallback must preserve disabled math as visible literal text");
+        assert.equal(node.props?.text, text);
+      } else {
+        assert.ok(inline.some((child) => child.kind === "math-inline"), "fallback must retain enabled inline math");
+        assert.ok(inline.some((child) => child.kind === "math-display"), "fallback must retain enabled display math");
+      }
+    }
+  }
+}
+
 const instance = new InlineParser({ syntax: [{ name: "ticket", pattern: { source: "#([A-Z]+-\\d+)" }, attrs: { id: 1 } }] });
 const custom: Block = { id: "custom", type: "list", isFinalized: true, payload: { raw: "- #ABC-12" } };
 custom.payload.meta = { preparedNested: prepareNestedBlockSnapshot(custom, instance, parser.configure([GFM, createBlockCompatibilityExtension()])) };

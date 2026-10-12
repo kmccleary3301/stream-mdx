@@ -93,7 +93,11 @@ export function createBlockSnapshot(block: Block): NodeSnapshot {
 
 function enrichContainerSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot {
   const prepared = block.payload.meta?.preparedNested as PreparedNestedSnapshot | undefined;
-  const nested = prepared ?? prepareNestedBlockSnapshot(block, new InlineParser(), baseMdParser.configure([GFM, createBlockCompatibilityExtension()]));
+  const nested = prepared ?? prepareNestedBlockSnapshot(
+    block,
+    new InlineParser({ enableMath: block.payload.meta?.mathEnabled !== false }),
+    baseMdParser.configure([GFM, createBlockCompatibilityExtension()]),
+  );
   snapshot.props = { ...snapshot.props, ...structuredCloneIfPossible(nested.props) };
   snapshot.children = structuredCloneIfPossible(nested.children);
   return snapshot;

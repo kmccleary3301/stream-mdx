@@ -184,7 +184,7 @@ Cache note:
 | `htmlElements` | `object` | Override HTML tag renders (when HTML is enabled). |
 | `prewarmLangs` | `string[]` | Shiki languages to load upfront. |
 | `scheduling` | `object` | Patch scheduler/backpressure knobs. |
-| `managedWorker` | `boolean` | When `true`, you drive `append/finalize` via the ref handle. |
+| `managedWorker` | `boolean` | Requires a caller-initialized supplied Worker or caller-accessible factory. Drive document commands yourself or through the ref handle. URL/default sources and `engine="main-thread"` are rejected through `onError`, with no inline fallback. Factory workers terminate on detach; supplied instances remain caller-owned. |
 | `onMetrics` | `function` | Performance metrics callback after each flush. |
 | `onError` | `function` | Render-time error callback. |
 

@@ -1,6 +1,6 @@
 {
   "name": "@stream-mdx/unified",
-  "version": "0.5.0",
+  "version": "1.0.0",
   "description": "Remark and Rehype unified plugin adapter for StreamMDX",
   "license": "MIT",
   "repository": {
@@ -43,8 +43,8 @@
     "unified": "^11.0.5"
   },
   "peerDependencies": {
-    "@stream-mdx/core": ">=0.5.0",
-    "@stream-mdx/react": ">=0.5.0",
+    "@stream-mdx/core": "^1.0.0",
+    "@stream-mdx/react": "^1.0.0",
     "react": ">=18.2.0",
     "react-dom": ">=18.2.0"
   },

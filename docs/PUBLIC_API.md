@@ -24,6 +24,14 @@ When you install `stream-mdx`, you can also import:
 - `stream-mdx/worker/engine` or `@stream-mdx/worker/engine` for isolated engines, an in-process Worker adapter, and custom worker entries
 - `stream-mdx/plugins/*` (common plugin entrypoints; useful for pnpm users)
 
+### Core parser and snapshot contracts
+
+`@stream-mdx/core` retains `InlineParser`, its extension/configuration types, the streaming preparation APIs, and `prepareNestedBlockSnapshot`. Worker integrations also retain `createBlockCompatibilityExtension`, `extractLezerCode`, `collectLinkReferences`, and `diffLinkReferences`. `compileSyntaxRuleToExtension` remains available for native inline extension registration.
+
+The Lezer converter, math extension factory, link-label normalization, entity decoder, and default/regex plugin adapter helpers are implementation details, not root exports.
+
+`createBlockSnapshot(block)` uses `block.payload.meta.preparedNested` when present, preserving the owning parser's registered extensions. Without prepared data, container snapshots use the built-in parser and honor `block.payload.meta.mathEnabled`, including `false`. This fallback cannot recover registered extensions or reference definitions that were not stored in the block. Prepare nested snapshots with the owning parsers before serialization when those settings matter; the snapshot function takes no additional parser/configuration argument.
+
 ## Runtime Context Matrix
 
 | Context | Primary API | Compile path | Determinism status |
@@ -75,7 +83,7 @@ export function Example() {
 | `stream` | `AsyncIterable<string>` | Append-only stream; provide **either** `text` or `stream`. |
 | `worker` | `WorkerLike` | Worker instance/URL/factory. When omitted, the component uses the default worker strategy and falls back to `/workers/markdown-worker.js`. |
 | `engine` | `"worker" \| "main-thread" \| "auto"` | Default `"auto"`. Selects the browser worker or dynamically imported in-process engine. See execution modes below. |
-| `managedWorker` | `boolean` | When `true`, the component attaches the worker but does not auto-`restart/append/finalize` for you (use the ref handle). |
+| `managedWorker` | `boolean` | Requires a supplied Worker instance or caller-accessible factory. The caller sends `INIT` and document commands; automatic commands are disabled. URL/default workers and internally created main-thread engines are rejected. Factory workers remain component-owned; supplied instances remain caller-owned. |
 | `prewarmLangs` | `string[]` | Shiki languages to load inside the worker. |
 | `features` | `StreamingFeatureFlags` | Built-in parsing/highlighting flags, including `emitDiffBlocks`, `outputMode`, and `lazyTokenization`. |
 | `themes` | `{ light: string; dark: string }` | Configures light and dark Shiki theme IDs (e.g. `{ light: "min-light", dark: "nord" }`). Changing themes re-initializes the engine. Unknown themes report an INIT error and fall back to GitHub light/dark. |
@@ -171,6 +179,10 @@ Worker ownership semantics:
   - StreamMDX treats an existing Worker instance as externally managed and will not terminate it.
 - `worker={undefined}`
   - StreamMDX uses the default worker strategy and falls back to `/workers/markdown-worker.js`.
+
+`managedWorker={true}` requires `worker={existingWorker}` or a stable caller-accessible factory. Initialize that worker yourself with `INIT` and send document commands yourself or through the ref handle. Managed mode does not change lifecycle ownership: StreamMDX terminates factory-created workers on detach but never terminates a borrowed instance. Worker URL strings, URL objects, omitted/default workers, and `engine="main-thread"` internal adapters are rejected in managed mode because the caller cannot initialize them through an accessible handle. Do not rely on an automatic engine fallback for managed workers.
+Invalid managed sources and unavailable or failed worker creation report an error through `onError`; they do not silently create an inline engine.
+Managed mode rejects `engine="main-thread"` even when a Worker instance or factory is supplied. Use `engine="worker"` or `"auto"` with the caller-accessible worker source.
 
 For advanced worker instantiation (CSP overrides, shared worker instances), see `createDefaultWorker()` in `stream-mdx/worker`.
 

@@ -1,6 +1,6 @@
 # StreamMDX Release Checklist
 
-_Last updated: 2026-10-07_
+_Last updated: 2026-10-12_
 
 Use this checklist when cutting releases from `stream-mdx/`. This file is the operational release path, not a historical note.
 
@@ -100,10 +100,12 @@ This is the most reliable “will npm users succeed?” gate.
 #### 3.1.1. CI-equivalent smoke test
 
 Runs a fully automated pack+install smoke test across Node sandbox, Next.js starter, and Vite:
-- Packs `stream-mdx`, core, plugins, worker, React, theme, and the optional `@stream-mdx/mermaid` and `@stream-mdx/unified` packages.
+- Packs all ten public packages: `stream-mdx`, core, plugins, worker, React, protocol, TUI, theme, and the optional `@stream-mdx/mermaid` and `@stream-mdx/unified` packages.
 - Installs the optional packages explicitly alongside the worker engine, with the local package graph resolved through tarball dependencies and overrides. The temporary apps use no workspace links, source imports, or compatibility shims.
 - Loads every advertised ESM and CJS JavaScript export on the running supported Node version, which must be >=20. This checks that runtime, not every version in the supported range.
 - Executes `MermaidBlock` through React SSR in code view. Executes `createUnifiedRenderer` with `remark-gfm` and `rehype-slug`, asserting transformed HTML. Direct and inline engines parse and finalize a heading and paragraph through both public engine entries.
+- Installs protocol and TUI in the Node sandbox only. Both ESM and CJS consumers assert the exported protocol ID/schema version, replay real engine patches through chunked NDJSON decoding and the TUI snapshot store, compare finalized blocks with the engine renderer store, and verify snapshot replacement. Protocol and TUI are not added to the browser apps.
+- Executes `@stream-mdx/worker/node`'s `compileMarkdownSnapshot` with its default physical worker, asserting authored heading/paragraph text and finalized snapshot/artifact blocks. This exercises the installed hosted bundle and thread asset with automatic compiler-owned cleanup.
 - Builds Next.js and Vite apps using Mermaid `codeRenderers`, the unified `blockRenderer` with those plugins, and `engine="main-thread"`. These are production bundling checks, not browser runtime proof. Mermaid SVG generation and hydrated main-thread rendering need a separate real-browser smoke.
 
 ```bash
@@ -180,78 +182,62 @@ When capturing new public-claim baselines, update the related docs:
 
 ## 6. Packaging and publish gates
 
-Preferred release path for the `0.5.0` cut:
+Changesets is the canonical release path for the coordinated `1.0.0` cut.
 
-1. Run the full release preflight.
+1. Read every pending `.changeset/*.md` file and the [0.5-to-1.0 migration notes](../README.md#migrating-from-050-to-100). A single major changeset must include all ten public packages listed below.
 
-   ```bash
-   npm run release:prepare:v0.5.0
-   ```
-
-   Prepare-only validates every public package at `0.5.0`, including `@stream-mdx/unified`, using the publish helper's shared version assertion. It then runs `release:gates`, `npm test`, `test:conformance`, workspace pack dry-runs, and `ci:pack-smoke` without npm authentication or publishing.
-
-   To check version alignment without running the other gates:
+2. Apply versions and changelogs, then synchronize the lockfile without package lifecycle scripts:
 
    ```bash
-   STREAM_MDX_EXPECT_VERSION=0.5.0 bash scripts/publish-release.sh --check-versions
-   ```
-
-2. Confirm npm auth.
-
-   ```bash
-   npm whoami
-   ```
-
-   For CI publishing, configure npm Trusted Publishing:
-   - Configure npm “Trusted Publisher” for:
-     - `@stream-mdx/core`
-     - `@stream-mdx/plugins`
-     - `@stream-mdx/protocol`
-     - `@stream-mdx/worker`
-     - `@stream-mdx/react`
-     - `@stream-mdx/mermaid`
-     - `@stream-mdx/unified`
-     - `@stream-mdx/tui`
-     - `@stream-mdx/theme-tailwind`
-     - `stream-mdx`
-   - Required workflow permissions:
-     - `id-token: write`
-   - Workflows:
-     - `.github/workflows/release.yml` (auto release PRs / publish)
-     - `.github/workflows/publish.yml` (manual workflow_dispatch)
-
-3. Publish all public packages in dependency order.
-
-   ```bash
-   npm run release:publish:v0.5.0
-   ```
-
-4. Or run the combined gate + publish flow in one interactive terminal.
-
-   ```bash
-   npm run release:v0.5.0
-   ```
-
-5. Confirm the expected packages are published:
-
-- `@stream-mdx/core`
-- `@stream-mdx/plugins`
-- `@stream-mdx/protocol`
-- `@stream-mdx/worker`
-- `@stream-mdx/react`
-- `@stream-mdx/mermaid`
-- `@stream-mdx/unified`
-- `@stream-mdx/tui`
-- `@stream-mdx/theme-tailwind`
-- `stream-mdx`
-
-6. Changesets remains the fallback/manual path if you intentionally need to cut a different version line:
-
-   ```bash
-   npm run changeset
    npm run changeset:version
-   npm run changeset:publish
+   npm install --package-lock-only --ignore-scripts --no-audit --no-fund
    ```
+
+   This release's version mutation consumes all pending changesets. Do not apply the major changeset again to an already-versioned `1.0.0` branch. Commit the resulting manifests, generated changelogs, deleted changesets, and lockfile together.
+
+3. Check the release invariants before merging:
+
+   - All ten public package `version` fields are `1.0.0`.
+   - Internal `dependencies` remain exact `1.0.0`, not workspace links or ranges.
+   - `@stream-mdx/unified` declares optional peer dependencies on `@stream-mdx/core` and `@stream-mdx/react`, both at `^1.0.0`. Core and React do not declare peers on unified.
+   - The lockfile records the same workspace versions and internal dependency fields. Private docs/starter workspace links remain local.
+   - The generated package changelogs include both the major migration notes and the consumed feature/fix changesets.
+   - Recopied hosted worker assets must come from the matching release. Mixing 0.5 workers and 1.0 renderers is not a supported upgrade.
+
+   The version-only helper can check public package alignment without publishing:
+
+   ```bash
+   STREAM_MDX_EXPECT_VERSION=1.0.0 bash scripts/publish-release.sh --check-versions
+   ```
+
+   Version mutation is not evidence that the build, tests, or consumer gates pass. Complete the earlier checklist gates and require independent review of the exact release commit.
+
+4. Use `.github/workflows/release.yml` on the reviewed `main` commit. It runs the configured release gates, then `changesets/action` creates a version PR when changesets remain, or runs `npm run changeset:publish` when the versioned packages are unpublished. For this already-consumed release, the latter is the intended path. Do not also dispatch a competing publisher.
+
+   npm Trusted Publishing must be configured for each of the ten packages, with the repository, workflow filename, and `npm-publish` environment matching the selected workflow. The jobs use Node 22, npm 11, `id-token: write`, and provenance. Local npm authentication is not required for this CI path. The `release.yml` job also needs its GitHub token permissions for Changesets PRs and releases.
+
+5. `.github/workflows/publish.yml` is a manually approved recovery path. Dispatch it only for the same reviewed, versioned commit after determining whether the normal release job already published any packages. It also uses Changesets and Trusted Publishing; authorize its workflow identity in npm before relying on it.
+
+6. After CI publication, confirm `1.0.0` and the intended dist-tag for every package, plus the matching GitHub release/tags:
+
+   - `@stream-mdx/core`
+   - `@stream-mdx/plugins`
+   - `@stream-mdx/protocol`
+   - `@stream-mdx/worker`
+   - `@stream-mdx/react`
+   - `@stream-mdx/mermaid`
+   - `@stream-mdx/unified`
+   - `@stream-mdx/tui`
+   - `@stream-mdx/theme-tailwind`
+   - `stream-mdx`
+
+The `release:*:v0.5.0` npm commands and `scripts/*v0.5.0.sh` wrappers stay as historical commands for the 0.5.0 cut. They assert that version and are not the 1.0 release path. Do not repoint them, alias them to 1.0, or add another version-specific wrapper. Future versions use the same Changesets commands and CI workflows.
+
+### Scope of the historical correctness contract
+
+The 1.0 release does not claim complete implementation of every requirement in [`STREAMING_CORRECTNESS_CONTRACT.md`](./STREAMING_CORRECTNESS_CONTRACT.md). Strict monotonic `streamSeq`/`parseEpoch`/`tx` tuple validation, the complete automatic safety-mode trigger model, and all enumerated safety/correctness metrics remain inherited contract gaps, not newly proven guarantees. Record those separately from introduced behavior and API regressions during review.
+
+The approved lookahead behavior is a bounded provisional scan with fixed declared caps, raw fallback for all provisional inputs over 512 characters, and preserved oversized finalized/nonprovisional complete content. Within-budget finalized projection retains its existing behavior. Do not describe this as "finalized content never repairs," full historical-contract compliance, or a measured speed improvement. See the [configuration notes](./CONFIGURATION.md#formatanticipation) for the declared limits.
 
 ## 7. Public surface verification
 

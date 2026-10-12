@@ -27,7 +27,7 @@ jobs:
         run: npm run test
 
       - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+        run: node node_modules/playwright/cli.js install --with-deps chromium
 
       - name: Worker regression guards
         run: |
@@ -121,8 +121,8 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+      - name: Install Playwright Chromium
+        run: node node_modules/playwright/cli.js install --with-deps chromium
 
       - name: Seeded regression smoke (managed docs server)
         run: npm run test:regression:seeded-smoke:server

@@ -21,17 +21,42 @@ class HostedWorker extends EventTarget {
   readonly thread = createWorkerThread();
   readonly input: WorkerIn[] = [];
   readonly output: WorkerOut[] = [];
+  private heldMessages: WorkerOut[] = [];
+  private heldInitialization: { heading: string; replacementSource: string } | null = null;
   constructor() {
     super();
     this.thread.on("message", (data: WorkerOut) => {
       this.output.push(data);
-      const event = new TransportEvent("message");
-      Object.defineProperty(event, "data", { value: data });
-      this.dispatchEvent(event);
+      if (this.heldMessages.length > 0 ||
+        (this.heldInitialization !== null && data.type === "INITIALIZED" && this.heldInitialization.heading === data.blocks[0]?.payload.raw)) {
+        this.heldMessages.push(data);
+        return;
+      }
+      this.deliver(data);
     });
     this.thread.on("error", (error) => { throw error; });
   }
-  postMessage(message: WorkerIn) { this.input.push(message); this.thread.postMessage(message); }
+  private deliver(data: WorkerOut): void {
+    const event = new TransportEvent("message");
+    Object.defineProperty(event, "data", { value: data });
+    this.dispatchEvent(event);
+  }
+  holdInitializationUntilReplacement(heading: string, replacementSource: string): void {
+    this.heldInitialization = { heading, replacementSource };
+  }
+  hasHeldInitialization(): boolean {
+    return this.heldMessages[0]?.type === "INITIALIZED";
+  }
+  postMessage(message: WorkerIn) {
+    this.input.push(message);
+    this.thread.postMessage(message);
+    if (this.heldInitialization !== null && message.type === "INIT" && message.initialContent === this.heldInitialization.replacementSource) {
+      this.heldInitialization = null;
+      const heldMessages = this.heldMessages;
+      this.heldMessages = [];
+      for (const held of heldMessages) this.deliver(held);
+    }
+  }
   terminate() { return this.thread.terminate(); }
   asBrowserWorker(): Worker { return this as unknown as Worker; }
 }
@@ -89,14 +114,16 @@ try {
     assert.equal(renderer.getStore().getBlocks()[0].payload.raw, "Second FIFO document");
     assert.equal(worker.input.filter((message) => message.type === "APPEND").length, 0);
     assert.ok(renderer.getStore().getBlocks().find((block) => block.type === "table")?.payload.raw.includes("PK-0499"));
+    const ownSource = source(250, "Reattached owner document");
+    worker.holdInitializationUntilReplacement("Cancelled detached document", ownSource);
     const cancelled = renderer.renderStatic(source(500, "Cancelled detached document"));
-    const rejection = assert.rejects(cancelled, /Worker detached/);
+    const rejection = assert.rejects(cancelled);
+    await waitFor(() => worker.hasHeldInitialization(), "detached static operation has a received but withheld ACK");
     renderer.detachWorker();
     await rejection;
     const reusedRenderer = new MarkdownRenderer({ plugins: features });
     reusedRenderer.attachWorker(worker.asBrowserWorker());
     try {
-      const ownSource = source(250, "Reattached owner document");
       const ownBlocks = await reusedRenderer.renderStatic(ownSource);
       assert.equal(ownBlocks[0]?.payload.raw, "Reattached owner document",
         "pending detached INIT acknowledgment cannot resolve the new attachment's full-content promise");
@@ -106,6 +133,17 @@ try {
       assert.equal(reusedRenderer.getStore().getBlocks()[0]?.payload.raw, "Reattached owner document");
     } finally {
       reusedRenderer.detachWorker();
+    }
+    const managedRenderer = new MarkdownRenderer({ plugins: features });
+    managedRenderer.attachWorker(worker.asBrowserWorker(), { skipInit: true });
+    try {
+      const beforeManagedRestart = worker.input.length;
+      managedRenderer.append("\n\nExternally managed continuation\n\n");
+      managedRenderer.restart();
+      assert.equal(worker.input.slice(beforeManagedRestart).some((message) => message.type === "INIT"), false,
+        "managed restart leaves caller-initialized hosted worker state untouched");
+    } finally {
+      managedRenderer.detachWorker();
     }
   } finally {
     renderer.detachWorker();
@@ -144,8 +182,13 @@ try {
     const obsolete = source(250, "Obsolete in-flight consumer document");
     const latest = source(500, "Latest in-flight consumer document");
     const beforeRapid = hosted.input.length;
+    // Hold the real worker's obsolete ACK until replacement INIT is sent, so the
+    // pending-generation race does not depend on worker speed or polling timing.
+    // Subsequent transport messages are released in their original FIFO order.
+    hosted.holdInitializationUntilReplacement("Obsolete in-flight consumer document", latest);
     root.render(<StreamingMarkdown ref={handle} engine="worker" worker={factory} text={obsolete} features={features} tableVirtualization={true} caret={false} />);
     await waitFor(() => hosted.input.slice(beforeRapid).some((message) => message.type === "INIT" && message.initialContent === obsolete), "obsolete INIT is genuinely in flight");
+    await waitFor(() => hosted.hasHeldInitialization(), "obsolete INITIALIZED is received but held before replacement");
     root.render(<StreamingMarkdown ref={handle} engine="worker" worker={factory} text={latest} features={features} tableVirtualization={true} caret={false} />);
     await waitFor(() => container.querySelector("h1")?.textContent === "Latest in-flight consumer document" && Boolean(container.querySelector('[data-table-virtualized="true"]')), "latest rapid replacement owns finalization");
     assert.equal(hosted.input.slice(beforeRapid).filter((message) => message.type === "FINALIZE").length, 1, "stale static generation cannot finalize replacement");

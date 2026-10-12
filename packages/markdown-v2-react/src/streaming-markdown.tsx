@@ -15,7 +15,8 @@ import { DeferredRenderContext, type DeferredRenderConfig } from "./renderer/def
 import { useRendererBlocks } from "./renderer/hooks";
 import { StreamingActivityContext } from "./renderer/streaming-activity-context";
 import type { RendererStore } from "./renderer/store";
-import { createDefaultWorker, releaseDefaultWorker } from "@stream-mdx/worker";
+import { useWorkerSession } from "./worker-session";
+import { useStreamInputSession } from "./stream-input-session";
 import { defaultUrlTransform, type AnimatedProp, type BlockComponents, type BlockRendererOverride, type CodeFenceRenderer, type ControlsComponentProps, type ControlsConfig, type ElementFilterOptions, type HtmlElements, type HtmlOptions, type InlineComponents, type MathRenderer, type RendererConfig, type SyntaxRuleSpec, type TableElements, type TableVirtualizationOptions, type UrlTransform } from "./types";
 const EMPTY_BLOCKS: ReadonlyArray<Block> = [];
 
@@ -233,11 +234,6 @@ const MdxPrefetchBridge: React.FC<{ store: RendererStore }> = ({ store }) => {
   return null;
 };
 
-interface WorkerInstance {
-  worker: Worker | null;
-  owned: boolean;
-  release?: () => void;
-}
 
 const DEFAULT_HISTORY_LIMIT =
   typeof process !== "undefined" && process.env && process.env.NODE_ENV === "production" ? 80 : 200;
@@ -443,13 +439,6 @@ function StreamingMarkdownComponent(
   const adaptiveSwitchedRef = useRef(false);
   const adaptiveFirstFlushRef = useRef(false);
   const mdxMode: "server" | "worker" = mdxCompileMode ?? "server";
-  const [workerReady, setWorkerReady] = useState(false);
-  const workerReadyRef = useRef(false);
-  const readyRendererRef = useRef<MarkdownRenderer | null>(null);
-  const [streamStatus, setStreamStatus] = useState<"idle" | "streaming" | "done">("idle");
-  const iteratorSequenceRef = useRef(0);
-  const activeIteratorRef = useRef<number | null>(null);
-  const consumedIteratorsRef = useRef<WeakSet<AsyncIterator<string>>>();
   const imperativeActivityRef = useRef(false);
   const lastMetricsRef = useRef<RendererMetrics | null>(null);
   const patchHistoryRef = useRef<RendererMetrics[]>([]);
@@ -594,10 +583,6 @@ function StreamingMarkdownComponent(
   }, [handleLinkClick, inlineComponents, linkSafetyEnabled]);
 
   useEffect(() => {
-    setStreamStatus("idle");
-  }, [session]);
-
-  useEffect(() => {
     adaptiveSwitchedRef.current = false;
     adaptiveFirstFlushRef.current = false;
   }, [renderer]);
@@ -687,241 +672,14 @@ function StreamingMarkdownComponent(
     }
   }, [historyLimit]);
 
-  const activeInstanceRef = useRef<{ worker: Worker; owned: boolean; release?: () => void; source: unknown; engine: string; session: number } | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    if (process.env.NODE_ENV !== "production" && DEBUG_WORKER) {
-      // eslint-disable-next-line no-console
-      console.info("[debug] instantiate worker effect");
-    }
-
-    setWorkerReady(false);
-    workerReadyRef.current = false;
-
-    const setupWorker = (inst: WorkerInstance) => {
-      if (cancelled) {
-        if (inst.owned && inst.worker) {
-          try {
-            inst.worker.terminate();
-          } catch {}
-          inst.release?.();
-        }
-        return;
-      }
-
-      if (!inst.worker) {
-        onErrorRef.current?.(new Error("Failed to create markdown worker instance"));
-        return;
-      }
-
-      activeInstanceRef.current = {
-        worker: inst.worker,
-        owned: managedWorker ? false : inst.owned,
-        release: inst.release,
-        source: workerSource,
-        engine,
-        session,
-      };
-
-      renderer.detachWorker();
-      renderer.attachWorker(inst.worker, { skipInit: managedWorker });
-      readyRendererRef.current = renderer;
-      setWorkerReady(true);
-      workerReadyRef.current = true;
-    };
-
-    // If an existing worker instance matches the current (workerSource, engine, session), reuse it
-    const existing = activeInstanceRef.current;
-    if (existing && existing.source === workerSource && existing.engine === engine && (managedWorker || existing.session === session)) {
-      renderer.attachWorker(existing.worker, { skipInit: managedWorker });
-      readyRendererRef.current = renderer;
-      setWorkerReady(true);
-      workerReadyRef.current = true;
-      return () => {
-        setWorkerReady(false);
-        workerReadyRef.current = false;
-        if (readyRendererRef.current === renderer) readyRendererRef.current = null;
-        renderer.detachWorker();
-      };
-    }
-
-    // Terminate old instance if source/engine/session changed
-    if (existing?.owned && existing.worker) {
-      try {
-        existing.worker.terminate();
-      } catch {}
-      existing.release?.();
-      activeInstanceRef.current = null;
-    }
-
-    const resolveAndSetup = async () => {
-      if (engine === "main-thread") {
-        try {
-          // Dynamic import: avoids bundling @stream-mdx/worker/engine into consumer bundles unless main-thread is explicitly selected
-          const { createInlineEngineWorker } = await import("@stream-mdx/worker/engine");
-          if (cancelled) return;
-          const inlineWorker = createInlineEngineWorker();
-          setupWorker({ worker: inlineWorker as unknown as Worker, owned: true });
-        } catch (error) {
-          onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
-        }
-        return;
-      }
-
-      if (engine === "worker") {
-        if (typeof window === "undefined" || typeof Worker === "undefined") {
-          onErrorRef.current?.(new Error("Worker is not supported in this environment"));
-          return;
-        }
-        const inst = instantiateWorker(workerSource);
-        setupWorker(inst);
-        return;
-      }
-
-      // Default: "auto"
-      let inst: WorkerInstance = { worker: null, owned: false };
-      if (typeof window !== "undefined" && typeof Worker !== "undefined") {
-        try {
-          inst = instantiateWorker(workerSource);
-        } catch {
-          inst = { worker: null, owned: false };
-        }
-      }
-
-      if (inst.worker) {
-        setupWorker(inst);
-        return;
-      }
-
-      // Worker unavailable or failed in auto mode -> fall back to main-thread inline engine
-      try {
-        // Dynamic import: avoids bundling @stream-mdx/worker/engine into consumer bundles unless auto-fallback activates
-        const { createInlineEngineWorker } = await import("@stream-mdx/worker/engine");
-        if (cancelled) return;
-        const inlineWorker = createInlineEngineWorker();
-        setupWorker({ worker: inlineWorker as unknown as Worker, owned: true });
-      } catch (error) {
-        onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
-      }
-    };
-
-    void resolveAndSetup();
-
-    return () => {
-      cancelled = true;
-      setWorkerReady(false);
-      workerReadyRef.current = false;
-      if (readyRendererRef.current === renderer) readyRendererRef.current = null;
-      renderer.detachWorker();
-    };
-  }, [renderer, workerSource, engine, session, managedWorker]);
-
-  useEffect(() => {
-    return () => {
-      const current = activeInstanceRef.current;
-      if (current?.owned && current.worker) {
-        try {
-          current.worker.terminate();
-        } catch (error) {
-          console.warn("Unable to terminate markdown worker", error);
-        }
-        current.release?.();
-        activeInstanceRef.current = null;
-      }
-    };
-  }, []);
-  useEffect(() => {
-    const restartToken = session;
-    void restartToken;
-    let cancelled = false;
-    if (!workerReady || readyRendererRef.current !== renderer) {
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    if (managedWorker) {
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    if (text !== undefined) {
-      imperativeActivityRef.current = false;
-      setStreamStatus("streaming");
-      void renderer.renderStatic(text).then(() => {
-        if (cancelled || readyRendererRef.current !== renderer) return;
-        renderer.finalize();
-        setStreamStatus(imperativeActivityRef.current ? "streaming" : "done");
-      }).catch((error: unknown) => {
-        if (cancelled || readyRendererRef.current !== renderer) return;
-        setStreamStatus(imperativeActivityRef.current ? "streaming" : "done");
-        onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
-      });
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    if (!stream) {
-      return () => {
-        cancelled = true;
-      };
-    }
-    let iterator: AsyncIterator<string>;
-    // Different iterable wrappers can return the same single-use iterator.
-    try {
-      iterator = stream[Symbol.asyncIterator]();
-      const consumedIterators = consumedIteratorsRef.current ??= new WeakSet<AsyncIterator<string>>();
-      if (consumedIterators.has(iterator)) return;
-      consumedIterators.add(iterator);
-    } catch (error) {
-      onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
-      return;
-    }
-
-    const iteratorOwner = ++iteratorSequenceRef.current;
-    activeIteratorRef.current = iteratorOwner;
-    (async () => {
-      try {
-        imperativeActivityRef.current = false;
-        setStreamStatus("streaming");
-        renderer.restart();
-        for await (const chunk of { [Symbol.asyncIterator]: () => iterator }) {
-          if (cancelled || activeIteratorRef.current !== iteratorOwner) {
-            break;
-          }
-          renderer.append(chunk);
-          if (process.env.NODE_ENV !== "production" && DEBUG_WORKER) {
-            // eslint-disable-next-line no-console
-            console.info("[debug] streaming chunk", chunk.length);
-          }
-        }
-        if (!cancelled && activeIteratorRef.current === iteratorOwner) {
-          renderer.finalize();
-          setStreamStatus(imperativeActivityRef.current ? "streaming" : "done");
-        }
-      } catch (error) {
-        if (!cancelled && activeIteratorRef.current === iteratorOwner) {
-          setStreamStatus(imperativeActivityRef.current ? "streaming" : "done");
-          onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
-        }
-      } finally {
-        if (activeIteratorRef.current === iteratorOwner) activeIteratorRef.current = null;
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      if (activeIteratorRef.current === iteratorOwner) {
-        activeIteratorRef.current = null;
-        setStreamStatus(imperativeActivityRef.current ? "streaming" : "idle");
-      }
-    };
-  }, [renderer, text, stream, workerReady, session, managedWorker]);
-
+  const { workerReady, workerReadyRef, readyRendererRef } = useWorkerSession({
+    renderer, workerSource, engine, session, managedWorker, onErrorRef, debug: DEBUG_WORKER,
+  });
+  const { streamStatus, setStreamStatus, activeIteratorRef } = useStreamInputSession({
+    renderer, text, stream, workerReady, session, managedWorker, readyRendererRef,
+    imperativeActivityRef, onErrorRef, debug: DEBUG_WORKER,
+  });
   useImperativeHandle(
     ref,
     () => ({
@@ -1068,55 +826,6 @@ export const StreamingMarkdown = StreamingMarkdownWithRef as React.ForwardRefExo
   StreamingMarkdownProps & React.RefAttributes<StreamingMarkdownHandle>
 >;
 
-function isWorkerInstance(value: unknown): value is Worker {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    !(value instanceof URL) &&
-    (value instanceof Worker ||
-      (typeof (value as Worker).postMessage === "function" &&
-        typeof (value as Worker).addEventListener === "function"))
-  );
-}
-
-function instantiateWorker(source?: Worker | URL | (() => Worker) | string): WorkerInstance {
-  if (typeof window === "undefined" || typeof Worker === "undefined") {
-    return { worker: null, owned: false };
-  }
-  if (isWorkerInstance(source)) {
-    return { worker: source, owned: false };
-  }
-  if (typeof source === "function") {
-    try {
-      const worker = source();
-      return { worker, owned: true };
-    } catch (error) {
-      console.warn("StreamingMarkdown: worker factory failed", error);
-      return { worker: null, owned: false };
-    }
-  }
-  const name = "markdown-v2";
-  const createWorkerFromUrl = (url: string | URL): WorkerInstance => {
-    try {
-      return { worker: new Worker(url, { type: "module", name }), owned: true };
-    } catch (error) {
-      console.warn("StreamingMarkdown: unable to instantiate worker", error);
-      return { worker: null, owned: false };
-    }
-  };
-  if (source instanceof URL || typeof source === "string") {
-    return createWorkerFromUrl(source);
-  }
-  const autoWorker = createDefaultWorker();
-  if (autoWorker) {
-    return {
-      worker: autoWorker,
-      owned: true,
-      release: () => releaseDefaultWorker(autoWorker),
-    };
-  }
-  return createWorkerFromUrl("/workers/markdown-worker.js");
-}
 
 function summarizeFlush(result: PatchFlushResult): RendererMetrics {
   const batches = result.batches;
