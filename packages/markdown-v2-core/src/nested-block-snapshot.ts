@@ -22,10 +22,10 @@ export function prepareNestedBlockSnapshot(block: Block, inlineParser: InlinePar
     if (block.isFinalized) return inlineParser.parse(text);
     if (streamingInline) return streamingInline(text);
     const formatAnticipation = meta?.formatAnticipation ?? { inline: true, mathInline: true, mathBlock: true, regex: true };
-    const prepared = prepareInlineStreamingContent(text, { formatAnticipation, math: meta?.mathEnabled !== false });
+    const regexAppend = normalizeFormatAnticipation(formatAnticipation).regex ? inlineParser.getRegexAnticipationAppend(text) : "";
+    const prepared = prepareInlineStreamingContent(text, { formatAnticipation, math: meta?.mathEnabled !== false, regexAppend });
     if (prepared.kind === "raw") return [{ kind: "text", text }];
-    const append = normalizeFormatAnticipation(formatAnticipation).regex ? inlineParser.getRegexAnticipationAppend(text) : "";
-    return inlineParser.parse(prepared.content + append, { cache: false });
+    return inlineParser.parse(prepared.content, { cache: false });
   };
   const childrenOf = (node: SyntaxNode): SyntaxNode[] => {
     const children: SyntaxNode[] = [];

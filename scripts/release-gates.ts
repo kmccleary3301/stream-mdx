@@ -1,5 +1,5 @@
 import { execFileSync, spawn } from "node:child_process";
-import { createWriteStream, mkdirSync } from "node:fs";
+import { closeSync, mkdirSync, openSync } from "node:fs";
 import path from "node:path";
 
 const HOST = process.env.STREAM_MDX_GATE_HOST ?? "127.0.0.1";
@@ -38,20 +38,21 @@ async function waitForServer(
 
 function startServer(): ReturnType<typeof spawn> {
   mkdirSync(TMP_DIR, { recursive: true });
-  const logStream = createWriteStream(LOG_PATH, { flags: "a" });
-  const child = spawn(
-    "python3",
-    ["-m", "http.server", String(PORT), "--bind", HOST],
-    {
-      cwd: path.resolve(process.cwd(), "apps/docs/out"),
-      env: process.env,
-      stdio: ["ignore", "pipe", "pipe"],
-    },
-  );
-  child.stdout.on("data", (chunk) => logStream.write(chunk));
-  child.stderr.on("data", (chunk) => logStream.write(chunk));
-  child.on("close", () => logStream.end());
-  return child;
+  // Gate commands block this event loop; write server logs directly to disk.
+  const logFd = openSync(LOG_PATH, "a");
+  try {
+    return spawn(
+      "python3",
+      ["-m", "http.server", String(PORT), "--bind", HOST],
+      {
+        cwd: path.resolve(process.cwd(), "apps/docs/out"),
+        env: process.env,
+        stdio: ["ignore", logFd, logFd],
+      },
+    );
+  } finally {
+    closeSync(logFd);
+  }
 }
 
 async function stopServer(child: ReturnType<typeof spawn>): Promise<void> {

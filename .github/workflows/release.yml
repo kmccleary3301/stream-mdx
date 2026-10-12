@@ -21,17 +21,18 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
-      - name: Update npm (for trusted publishing)
-        run: npm install -g npm@latest
+      # OIDC requires npm >=11.5.1 and Node >=22.14; never float across npm majors.
+      - name: Install npm 11 (for trusted publishing)
+        run: npm install -g npm@11
 
       - name: Install
         run: npm ci
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+      - name: Install Playwright Chromium
+        run: node node_modules/playwright/cli.js install --with-deps chromium
 
       - name: Build
         run: npm run build

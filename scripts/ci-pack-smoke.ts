@@ -311,6 +311,7 @@ function verifyInstalledNodeSandbox(options: {
   scopedTarballs: Record<string, string>;
   optionalTarballs: Record<string, string>;
   themeTarball: string;
+  nodeTarballs: Record<string, string>;
 }) {
   fs.mkdirSync(options.sandboxDir, { recursive: true });
 
@@ -323,6 +324,9 @@ function verifyInstalledNodeSandbox(options: {
       Object.entries(options.optionalTarballs).map(([name, tarball]) => [name, `file:${tarball}`]),
     ),
     "@stream-mdx/theme-tailwind": `file:${options.themeTarball}`,
+    ...Object.fromEntries(
+      Object.entries(options.nodeTarballs).map(([name, tarball]) => [name, `file:${tarball}`]),
+    ),
   };
 
   writeJson(path.join(options.sandboxDir, "package.json"), {
@@ -336,6 +340,10 @@ function verifyInstalledNodeSandbox(options: {
       ...smokePlugins,
       ...Object.fromEntries(
         Object.entries(options.scopedTarballs).map(([name, tarball]) => [name, `file:${tarball}`]),
+      ),
+      "@stream-mdx/theme-tailwind": `file:${options.themeTarball}`,
+      ...Object.fromEntries(
+        Object.entries(options.nodeTarballs).map(([name, tarball]) => [name, `file:${tarball}`]),
       ),
     },
     optionalDependencies: {
@@ -363,6 +371,7 @@ module.exports = async function verify(load, format) {
     "stream-mdx", "@stream-mdx/core", "@stream-mdx/plugins",
     "@stream-mdx/worker", "@stream-mdx/react",
     "@stream-mdx/mermaid", "@stream-mdx/unified",
+    "@stream-mdx/protocol", "@stream-mdx/tui", "@stream-mdx/theme-tailwind",
   ];
   for (const name of packages) {
     const packageDir = path.resolve("node_modules", name);
@@ -419,6 +428,34 @@ module.exports = async function verify(load, format) {
   renderer.clearCache();
   console.log("[pack-smoke:" + format + "] Unified remark-gfm and rehype-slug transformed rendered HTML");
 
+  const { STREAM_MDX_PROTOCOL_ID, STREAM_MDX_SCHEMA_VERSION } = await load("@stream-mdx/protocol");
+  assert.equal(STREAM_MDX_PROTOCOL_ID, "streammdx");
+  assert.equal(STREAM_MDX_SCHEMA_VERSION, "1.0");
+  const { createSnapshotStore, encodeNdjsonEvent, encodeNdjsonEvents, decodeNdjson, NdjsonDecoder } =
+    await load("@stream-mdx/tui");
+  const envelope = {
+    protocol: STREAM_MDX_PROTOCOL_ID, schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+    streamId: "pack-smoke-" + format,
+  };
+
+  const { compileMarkdownSnapshot } = await load("@stream-mdx/worker/node");
+  // Default worker ownership exercises the installed hosted bundle and thread asset,
+  // and lets the public compiler clean up its own physical worker.
+  const physicalResult = await compileMarkdownSnapshot({
+    text: "# Hosted asset smoke\\n\\nPhysical worker body.\\n",
+  });
+  assert.equal(physicalResult.fromCache, false);
+  assert.equal(physicalResult.blocks.length, 2);
+  assert.equal(physicalResult.blocks[0].type, "heading");
+  assert.equal(physicalResult.blocks[0].payload.raw.trim(), "Hosted asset smoke");
+  assert.equal(physicalResult.blocks[1].type, "paragraph");
+  assert.equal(physicalResult.blocks[1].payload.raw.trim(), "Physical worker body.");
+  assert(physicalResult.blocks.every((block) => block.isFinalized),
+    "The installed physical worker must finalize every compiled block");
+  assert.deepEqual(physicalResult.snapshot.blocks, physicalResult.blocks);
+  assert.deepEqual(physicalResult.artifact.blocks, physicalResult.blocks);
+  console.log("[pack-smoke:" + format + "] Installed physical worker compiled finalized snapshot");
+
   const { createRendererStore } = await load("@stream-mdx/react/renderer/store");
   const init = { type: "INIT", initialContent: "", prewarmLangs: [], docPlugins: {} };
   const append = { type: "APPEND", text: "# Installed engine\\n\\nEngine body.\\n" };
@@ -441,12 +478,63 @@ module.exports = async function verify(load, format) {
     const { MarkdownEngine, createInlineEngineWorker, serveMarkdownWorker } = await load(specifier);
     assert.equal(typeof serveMarkdownWorker, "function");
     const store = createRendererStore();
-    const engine = new MarkdownEngine({ post: (message) => apply(store, message) });
+    const events = [{ ...envelope, event: "init" }];
+    const engine = new MarkdownEngine({ post: (message) => {
+      apply(store, message);
+      if (message.type === "INITIALIZED") {
+        events.push(JSON.parse(JSON.stringify({ ...envelope, event: "snapshot", blocks: message.blocks })));
+      }
+      if (message.type === "PATCH") {
+        // Serialize at emission time so later engine mutations cannot alter the replay.
+        events.push(JSON.parse(JSON.stringify({
+          ...envelope, event: "patch", tx: message.tx, patches: message.patches,
+        })));
+      }
+    } });
     try {
       await engine.handle(init);
+      assert.equal(events[1].event, "snapshot");
+      assert.deepEqual(events[1].blocks, []);
       await engine.handle(append);
       await engine.handle({ type: "FINALIZE" });
       assertBlocks(store);
+      const patches = events.filter((event) => event.event === "patch");
+      assert(patches.length > 0, "TUI replay must consume actual engine patches");
+      const finalTx = patches[patches.length - 1].tx;
+      events.push({ ...envelope, event: "done", finalTx, status: "ok" });
+      const ndjson = encodeNdjsonEvent(events[0]) + encodeNdjsonEvents(events.slice(1));
+      const decoder = new NdjsonDecoder();
+      const tuiStore = createSnapshotStore();
+      assert.deepEqual(tuiStore.getBlocks(), []);
+      const firstLine = ndjson.indexOf("\\n") + 1;
+      assert.deepEqual(decoder.push(ndjson.slice(0, firstLine - 1)), [],
+        "NDJSON must buffer an incomplete event");
+      tuiStore.applyEvents(decoder.push(ndjson.slice(firstLine - 1, firstLine)));
+      assert.equal(tuiStore.getMeta().init.protocol, STREAM_MDX_PROTOCOL_ID);
+      assert.equal(tuiStore.getMeta().init.schemaVersion, STREAM_MDX_SCHEMA_VERSION);
+      // Leave the done event unterminated to exercise flush as well as chunk ingestion.
+      const bytes = new TextEncoder().encode(ndjson.slice(firstLine, -1));
+      for (let offset = 0; offset < bytes.length; offset += 17) {
+        tuiStore.applyEvents(decoder.push(bytes.subarray(offset, offset + 17)));
+      }
+      assert.equal(tuiStore.getMeta().done, undefined);
+      tuiStore.applyEvents(decoder.flush());
+      assertBlocks(tuiStore);
+      assert.equal(tuiStore.getMeta().lastTx, finalTx);
+      assert.deepEqual(tuiStore.getMeta().done, events[events.length - 1]);
+      assert.deepEqual(tuiStore.getBlocks(), store.getBlocks(),
+        "NDJSON replay must materialize the same blocks as the installed engine");
+      const replayStore = createSnapshotStore();
+      replayStore.applyEvents(decodeNdjson(ndjson));
+      assert.deepEqual(replayStore.getBlocks(), tuiStore.getBlocks());
+      const finalBlocks = tuiStore.getBlocks();
+      tuiStore.applyEvent({ ...envelope, event: "snapshot", blocks: [] });
+      assert.deepEqual(tuiStore.getBlocks(), [], "A snapshot must replace previous engine state");
+      tuiStore.applyEvent({ ...envelope, event: "snapshot", blocks: finalBlocks });
+      assertBlocks(tuiStore);
+      assert.deepEqual(tuiStore.getSnapshot().blocks, finalBlocks);
+      console.log("[pack-smoke:" + format + "] " + specifier +
+        " protocol envelope and TUI chunked NDJSON patch replay/snapshot replacement passed");
     } finally {
       engine.dispose();
     }
@@ -528,6 +616,8 @@ function main() {
   run("npm", ["-w", "@stream-mdx/mermaid", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
   run("npm", ["-w", "@stream-mdx/unified", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
   run("npm", ["-w", "@stream-mdx/theme-tailwind", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
+  run("npm", ["-w", "@stream-mdx/protocol", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
+  run("npm", ["-w", "@stream-mdx/tui", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
   run("npm", ["-w", "stream-mdx", "pack", "--pack-destination", packsDir], { cwd: repoRoot });
 
   const tarStream = findSinglePack(packsDir, (name) => /^stream-mdx-\d/.test(name));
@@ -538,6 +628,8 @@ function main() {
   const tarMermaid = findSinglePack(packsDir, (name) => name.startsWith("stream-mdx-mermaid-"));
   const tarUnified = findSinglePack(packsDir, (name) => name.startsWith("stream-mdx-unified-"));
   const tarTheme = findSinglePack(packsDir, (name) => name.startsWith("stream-mdx-theme-tailwind-"));
+  const tarProtocol = findSinglePack(packsDir, (name) => name.startsWith("stream-mdx-protocol-"));
+  const tarTui = findSinglePack(packsDir, (name) => name.startsWith("stream-mdx-tui-"));
 
   const scopedTarballs: Record<string, string> = {
     "@stream-mdx/core": tarCore,
@@ -560,6 +652,10 @@ function main() {
         scopedTarballs,
         optionalTarballs,
         themeTarball: tarTheme,
+        nodeTarballs: {
+          "@stream-mdx/protocol": tarProtocol,
+          "@stream-mdx/tui": tarTui,
+        },
       });
     } catch (error) {
       console.error("[pack-smoke:node] Failed", error);

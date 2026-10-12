@@ -17,6 +17,10 @@ This page summarizes the configuration surface exposed by `<StreamingMarkdown />
 
 When `features.formatAnticipation` is enabled, StreamMDX will attempt to **withhold formatting markers while streaming** (initial support: `*`, `**`, `` ` ``, `~~`). This is strictly a *streaming UX* improvement; finalized output remains unchanged.
 
+Provisional lookahead has fixed internal budgets, not additional React configuration props. The declared defaults are `maxScanChars: 512`, `maxNewlines: 2`, `maxSyntheticOps: 6`, `maxNestingDepth: 8`, `maxValidationFailures: 1`, and `maxProviderMs: 5`. Provider timers start before scanning; the time limit is a cooperative guard, not a latency guarantee.
+
+Every provisional input longer than 512 characters falls back to raw text before a completeness scan, including a string whose delimiters are already closed. Scanning an unbounded string to decide whether it is complete would defeat the guard. Oversized finalized or otherwise nonprovisional complete content is preserved. Within the budgets, the existing finalized projection remains available; finalization does not categorically disable every repair or projection path. Math-disabled owning parser contexts keep dollar text literal, including nested snapshot fallbacks.
+
 ## Worker
 
 Recommended: host the worker and pass a URL string:

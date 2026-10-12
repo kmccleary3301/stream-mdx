@@ -178,6 +178,12 @@ It may not:
 
 Nested contexts such as list item + emphasis + math + MDX are governed by the same rule: ambiguous tails stay provisional.
 
+### Bounded provisional input in 1.0
+
+The provisional scanner checks source length before completeness scanning and starts its provider timer before the scanning pass. All provisional inputs over `maxScanChars: 512` fall back to raw text, including closed strings. It does not scan an oversized provisional input merely to determine whether delimiters are complete. Oversized finalized/nonprovisional complete content is preserved; within-budget finalized projection keeps its existing behavior rather than globally forbidding repairs.
+
+Declared default caps are `maxNewlines: 2`, `maxSyntheticOps: 6`, `maxNestingDepth: 8`, `maxValidationFailures: 1`, and `maxProviderMs: 5`, alongside `maxScanChars: 512`. The cooperative timer is not a measured latency guarantee. These bounds do not establish the separate ordering-tuple, automatic safety-mode, or metrics requirements elsewhere in this historical contract.
+
 ## 9) Scheduler Rules
 
 The scheduler is a correctness-preserving dispatcher, not a semantic arbiter.

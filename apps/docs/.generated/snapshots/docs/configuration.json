@@ -1,9 +1,9 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-10T04:53:41.029Z",
-  "hash": "30e1623eb81dc9db702e59b7143ff4146b48d18333af1e874223fdeac9a4e7c0",
-  "contentHash": "26989200cf3efbd46450c05ecffc84b82042ad54277e2e4ced9827935505d6c1",
+  "createdAt": "2026-10-12T20:37:05.683Z",
+  "hash": "3d825b161d27ec997fcfb0e3513f27e038cf8a6200258ab95e0a836227150f81",
+  "contentHash": "05ba6628aea76298d54166d7e15c530fe4fe4700b82e2082d7ca05096ce08785",
   "configHash": "a4b31dc6e15c2cd96906124ef06fadc77e60ad148c40ed5ba066e3518a02e37b",
   "hashSalt": "docs-snapshots-v2:42a0722c827a5ff05bc7f9b0b2c880b732fb655e91e2b7c5196767915dd07177",
   "blocks": [
@@ -39,43 +39,11 @@
         "raw": "This page summarizes the configuration surface exposed by `<StreamingMarkdown />`.",
         "meta": {
           "lezerNodeType": "Paragraph",
-          "mixedSegments": [
+          "protectedRanges": [
             {
-              "kind": "text",
-              "value": "This page summarizes the configuration surface exposed by `",
-              "inline": [
-                {
-                  "kind": "text",
-                  "text": "This page summarizes the configuration surface exposed by `"
-                }
-              ],
-              "range": {
-                "from": 17,
-                "to": 76
-              }
-            },
-            {
-              "kind": "mdx",
-              "value": "<StreamingMarkdown />",
-              "range": {
-                "from": 76,
-                "to": 97
-              },
-              "status": "pending"
-            },
-            {
-              "kind": "text",
-              "value": "`.",
-              "inline": [
-                {
-                  "kind": "text",
-                  "text": "`."
-                }
-              ],
-              "range": {
-                "from": 97,
-                "to": 99
-              }
+              "from": 58,
+              "to": 81,
+              "kind": "code-inline"
             }
           ]
         },
@@ -130,7 +98,14 @@
       "payload": {
         "raw": "`features` toggles built-in domains in the worker + renderer:",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 0,
+              "to": 10,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 119,
@@ -199,7 +174,34 @@
       "payload": {
         "raw": "When `features.formatAnticipation` is enabled, StreamMDX will attempt to **withhold formatting markers while streaming** (initial support: `*`, `**`, `` ` ``, `~~`). This is strictly a *streaming UX* improvement; finalized output remains unchanged.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 5,
+              "to": 34,
+              "kind": "code-inline"
+            },
+            {
+              "from": 139,
+              "to": 142,
+              "kind": "code-inline"
+            },
+            {
+              "from": 144,
+              "to": 148,
+              "kind": "code-inline"
+            },
+            {
+              "from": 150,
+              "to": 157,
+              "kind": "code-inline"
+            },
+            {
+              "from": 159,
+              "to": 163,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 383,
@@ -280,7 +282,129 @@
       }
     },
     {
-      "id": "45b2f9da",
+      "id": "534db6fe",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Provisional lookahead has fixed internal budgets, not additional React configuration props. The declared defaults are `maxScanChars: 512`, `maxNewlines: 2`, `maxSyntheticOps: 6`, `maxNestingDepth: 8`, `maxValidationFailures: 1`, and `maxProviderMs: 5`. Provider timers start before scanning; the time limit is a cooperative guard, not a latency guarantee.",
+        "meta": {
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 118,
+              "to": 137,
+              "kind": "code-inline"
+            },
+            {
+              "from": 139,
+              "to": 155,
+              "kind": "code-inline"
+            },
+            {
+              "from": 157,
+              "to": 177,
+              "kind": "code-inline"
+            },
+            {
+              "from": 179,
+              "to": 199,
+              "kind": "code-inline"
+            },
+            {
+              "from": 201,
+              "to": 227,
+              "kind": "code-inline"
+            },
+            {
+              "from": 233,
+              "to": 251,
+              "kind": "code-inline"
+            }
+          ]
+        },
+        "range": {
+          "from": 633,
+          "to": 988
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Provisional lookahead has fixed internal budgets, not additional React configuration props. The declared defaults are "
+          },
+          {
+            "kind": "code",
+            "text": "maxScanChars: 512"
+          },
+          {
+            "kind": "text",
+            "text": ", "
+          },
+          {
+            "kind": "code",
+            "text": "maxNewlines: 2"
+          },
+          {
+            "kind": "text",
+            "text": ", "
+          },
+          {
+            "kind": "code",
+            "text": "maxSyntheticOps: 6"
+          },
+          {
+            "kind": "text",
+            "text": ", "
+          },
+          {
+            "kind": "code",
+            "text": "maxNestingDepth: 8"
+          },
+          {
+            "kind": "text",
+            "text": ", "
+          },
+          {
+            "kind": "code",
+            "text": "maxValidationFailures: 1"
+          },
+          {
+            "kind": "text",
+            "text": ", and "
+          },
+          {
+            "kind": "code",
+            "text": "maxProviderMs: 5"
+          },
+          {
+            "kind": "text",
+            "text": ". Provider timers start before scanning; the time limit is a cooperative guard, not a latency guarantee."
+          }
+        ]
+      }
+    },
+    {
+      "id": "71ad6d88",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Every provisional input longer than 512 characters falls back to raw text before a completeness scan, including a string whose delimiters are already closed. Scanning an unbounded string to decide whether it is complete would defeat the guard. Oversized finalized or otherwise nonprovisional complete content is preserved. Within the budgets, the existing finalized projection remains available; finalization does not categorically disable every repair or projection path. Math-disabled owning parser contexts keep dollar text literal, including nested snapshot fallbacks.",
+        "meta": {
+          "lezerNodeType": "Paragraph"
+        },
+        "range": {
+          "from": 990,
+          "to": 1562
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Every provisional input longer than 512 characters falls back to raw text before a completeness scan, including a string whose delimiters are already closed. Scanning an unbounded string to decide whether it is complete would defeat the guard. Oversized finalized or otherwise nonprovisional complete content is preserved. Within the budgets, the existing finalized projection remains available; finalization does not categorically disable every repair or projection path. Math-disabled owning parser contexts keep dollar text literal, including nested snapshot fallbacks."
+          }
+        ]
+      }
+    },
+    {
+      "id": "f35f71e",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -292,8 +416,8 @@
           "headingId": "worker"
         },
         "range": {
-          "from": 633,
-          "to": 642
+          "from": 1564,
+          "to": 1573
         },
         "inline": [
           {
@@ -304,7 +428,7 @@
       }
     },
     {
-      "id": "101bf0e2",
+      "id": "7b736382",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -313,8 +437,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 644,
-          "to": 695
+          "from": 1575,
+          "to": 1626
         },
         "inline": [
           {
@@ -325,7 +449,7 @@
       }
     },
     {
-      "id": "397ff940",
+      "id": "21a8c871",
       "type": "code",
       "isFinalized": true,
       "payload": {
@@ -338,24 +462,36 @@
           "highlightLang": "tsx"
         },
         "range": {
-          "from": 697,
-          "to": 766
+          "from": 1628,
+          "to": 1697
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> worker</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"/workers/markdown-worker.js\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> /></span></span></code></pre>"
       }
     },
     {
-      "id": "415d2b61",
+      "id": "3313803b",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "If you omit `worker`, StreamMDX uses the default worker strategy and falls back to `/workers/markdown-worker.js`.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 12,
+              "to": 20,
+              "kind": "code-inline"
+            },
+            {
+              "from": 83,
+              "to": 112,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
-          "from": 768,
-          "to": 881
+          "from": 1699,
+          "to": 1812
         },
         "inline": [
           {
@@ -382,7 +518,7 @@
       }
     },
     {
-      "id": "567a5ebd",
+      "id": "15f71476",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -394,8 +530,8 @@
           "headingId": "mdx"
         },
         "range": {
-          "from": 883,
-          "to": 889
+          "from": 1814,
+          "to": 1820
         },
         "inline": [
           {
@@ -406,7 +542,7 @@
       }
     },
     {
-      "id": "34b43eb8",
+      "id": "61d623e7",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -415,8 +551,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 891,
-          "to": 912
+          "from": 1822,
+          "to": 1843
         },
         "inline": [
           {
@@ -427,7 +563,7 @@
       }
     },
     {
-      "id": "70035f68",
+      "id": "66ab65ec",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -508,17 +644,17 @@
             },
             "children": [
               {
-                "id": "70035f68::item:0",
+                "id": "66ab65ec::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 914,
-                  "to": 946
+                  "from": 1845,
+                  "to": 1877
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "70035f68::item:0",
+                    "id": "66ab65ec::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -534,8 +670,8 @@
                         }
                       ],
                       "range": {
-                        "from": 914,
-                        "to": 946
+                        "from": 1845,
+                        "to": 1877
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -557,45 +693,7 @@
                             "text": "set features={{ mdx: true }}",
                             "raw": "- set `features={{ mdx: true }}`"
                           },
-                          "children": [
-                            {
-                              "id": "70035f68::item:0::list-item:segment:0",
-                              "type": "list-item-text",
-                              "props": {
-                                "inline": [
-                                  {
-                                    "kind": "text",
-                                    "text": "set `features={"
-                                  }
-                                ],
-                                "text": "set `features={"
-                              },
-                              "children": []
-                            },
-                            {
-                              "id": "70035f68::item:0::list-item:segment:1",
-                              "type": "list-item-mdx",
-                              "props": {
-                                "raw": "{ mdx: true }",
-                                "status": "pending"
-                              },
-                              "children": []
-                            },
-                            {
-                              "id": "70035f68::item:0::list-item:segment:2",
-                              "type": "list-item-text",
-                              "props": {
-                                "inline": [
-                                  {
-                                    "kind": "text",
-                                    "text": "}`"
-                                  }
-                                ],
-                                "text": "}`"
-                              },
-                              "children": []
-                            }
-                          ]
+                          "children": []
                         }
                       }
                     }
@@ -614,58 +712,20 @@
                   "text": "set features={{ mdx: true }}",
                   "raw": "- set `features={{ mdx: true }}`"
                 },
-                "children": [
-                  {
-                    "id": "70035f68::item:0::list-item:segment:0",
-                    "type": "list-item-text",
-                    "props": {
-                      "inline": [
-                        {
-                          "kind": "text",
-                          "text": "set `features={"
-                        }
-                      ],
-                      "text": "set `features={"
-                    },
-                    "children": []
-                  },
-                  {
-                    "id": "70035f68::item:0::list-item:segment:1",
-                    "type": "list-item-mdx",
-                    "props": {
-                      "raw": "{ mdx: true }",
-                      "status": "pending"
-                    },
-                    "children": []
-                  },
-                  {
-                    "id": "70035f68::item:0::list-item:segment:2",
-                    "type": "list-item-text",
-                    "props": {
-                      "inline": [
-                        {
-                          "kind": "text",
-                          "text": "}`"
-                        }
-                      ],
-                      "text": "}`"
-                    },
-                    "children": []
-                  }
-                ]
+                "children": []
               },
               {
-                "id": "70035f68::item:1",
+                "id": "66ab65ec::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 947,
-                  "to": 1038
+                  "from": 1878,
+                  "to": 1969
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "70035f68::item:1",
+                    "id": "66ab65ec::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -701,8 +761,8 @@
                         }
                       ],
                       "range": {
-                        "from": 947,
-                        "to": 1038
+                        "from": 1878,
+                        "to": 1969
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -786,17 +846,17 @@
                 "children": []
               },
               {
-                "id": "70035f68::item:2",
+                "id": "66ab65ec::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 1039,
-                  "to": 1097
+                  "from": 1970,
+                  "to": 2028
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "70035f68::item:2",
+                    "id": "66ab65ec::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -816,8 +876,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1039,
-                        "to": 1097
+                        "from": 1970,
+                        "to": 2028
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -872,13 +932,13 @@
           }
         },
         "range": {
-          "from": 914,
-          "to": 1097
+          "from": 1845,
+          "to": 2028
         }
       }
     },
     {
-      "id": "357af681",
+      "id": "1de9dee5",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -890,8 +950,8 @@
           "headingId": "rendering-overrides"
         },
         "range": {
-          "from": 1099,
-          "to": 1121
+          "from": 2030,
+          "to": 2052
         },
         "inline": [
           {
@@ -902,7 +962,7 @@
       }
     },
     {
-      "id": "54f6383b",
+      "id": "21c104bf",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -1145,17 +1205,17 @@
             },
             "children": [
               {
-                "id": "54f6383b::item:0",
+                "id": "21c104bf::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 1123,
-                  "to": 1187
+                  "from": 2054,
+                  "to": 2118
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "54f6383b::item:0",
+                    "id": "21c104bf::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1171,8 +1231,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1123,
-                        "to": 1187
+                        "from": 2054,
+                        "to": 2118
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1216,17 +1276,17 @@
                 "children": []
               },
               {
-                "id": "54f6383b::item:1",
+                "id": "21c104bf::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 1188,
-                  "to": 1260
+                  "from": 2119,
+                  "to": 2191
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "54f6383b::item:1",
+                    "id": "21c104bf::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1242,8 +1302,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1188,
-                        "to": 1260
+                        "from": 2119,
+                        "to": 2191
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1287,17 +1347,17 @@
                 "children": []
               },
               {
-                "id": "54f6383b::item:2",
+                "id": "21c104bf::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 1261,
-                  "to": 1324
+                  "from": 2192,
+                  "to": 2255
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "54f6383b::item:2",
+                    "id": "21c104bf::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1313,8 +1373,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1261,
-                        "to": 1324
+                        "from": 2192,
+                        "to": 2255
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1358,17 +1418,17 @@
                 "children": []
               },
               {
-                "id": "54f6383b::item:3",
+                "id": "21c104bf::item:3",
                 "type": "list-item",
                 "range": {
-                  "from": 1325,
-                  "to": 1392
+                  "from": 2256,
+                  "to": 2323
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "54f6383b::item:3",
+                    "id": "21c104bf::item:3",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1384,8 +1444,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1325,
-                        "to": 1392
+                        "from": 2256,
+                        "to": 2323
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1429,17 +1489,17 @@
                 "children": []
               },
               {
-                "id": "54f6383b::item:4",
+                "id": "21c104bf::item:4",
                 "type": "list-item",
                 "range": {
-                  "from": 1393,
-                  "to": 1614
+                  "from": 2324,
+                  "to": 2545
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "54f6383b::item:4",
+                    "id": "21c104bf::item:4",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1487,8 +1547,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1393,
-                        "to": 1614
+                        "from": 2324,
+                        "to": 2545
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1542,73 +1602,7 @@
                             "text": "codeRenderers: map fenced code languages to custom renderers (e.g. mermaid, artifact, diff, custom languages) keyed by language; { component, aliases } entries add alias languages, resolved case-insensitively.",
                             "raw": "- `codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `artifact`, `diff`, custom languages) keyed by language; `{ component, aliases }` entries add alias languages, resolved case-insensitively."
                           },
-                          "children": [
-                            {
-                              "id": "54f6383b::item:4::list-item:segment:0",
-                              "type": "list-item-text",
-                              "props": {
-                                "inline": [
-                                  {
-                                    "kind": "code",
-                                    "text": "codeRenderers"
-                                  },
-                                  {
-                                    "kind": "text",
-                                    "text": ": map fenced code languages to custom renderers (e.g. "
-                                  },
-                                  {
-                                    "kind": "code",
-                                    "text": "mermaid"
-                                  },
-                                  {
-                                    "kind": "text",
-                                    "text": ", "
-                                  },
-                                  {
-                                    "kind": "code",
-                                    "text": "artifact"
-                                  },
-                                  {
-                                    "kind": "text",
-                                    "text": ", "
-                                  },
-                                  {
-                                    "kind": "code",
-                                    "text": "diff"
-                                  },
-                                  {
-                                    "kind": "text",
-                                    "text": ", custom languages) keyed by language; `"
-                                  }
-                                ],
-                                "text": "`codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `artifact`, `diff`, custom languages) keyed by language; `"
-                              },
-                              "children": []
-                            },
-                            {
-                              "id": "54f6383b::item:4::list-item:segment:1",
-                              "type": "list-item-mdx",
-                              "props": {
-                                "raw": "{ component, aliases }",
-                                "status": "pending"
-                              },
-                              "children": []
-                            },
-                            {
-                              "id": "54f6383b::item:4::list-item:segment:2",
-                              "type": "list-item-text",
-                              "props": {
-                                "inline": [
-                                  {
-                                    "kind": "text",
-                                    "text": "` entries add alias languages, resolved case-insensitively."
-                                  }
-                                ],
-                                "text": "` entries add alias languages, resolved case-insensitively."
-                              },
-                              "children": []
-                            }
-                          ]
+                          "children": []
                         }
                       }
                     }
@@ -1659,86 +1653,20 @@
                   "text": "codeRenderers: map fenced code languages to custom renderers (e.g. mermaid, artifact, diff, custom languages) keyed by language; { component, aliases } entries add alias languages, resolved case-insensitively.",
                   "raw": "- `codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `artifact`, `diff`, custom languages) keyed by language; `{ component, aliases }` entries add alias languages, resolved case-insensitively."
                 },
-                "children": [
-                  {
-                    "id": "54f6383b::item:4::list-item:segment:0",
-                    "type": "list-item-text",
-                    "props": {
-                      "inline": [
-                        {
-                          "kind": "code",
-                          "text": "codeRenderers"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ": map fenced code languages to custom renderers (e.g. "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "mermaid"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ", "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "artifact"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ", "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "diff"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ", custom languages) keyed by language; `"
-                        }
-                      ],
-                      "text": "`codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `artifact`, `diff`, custom languages) keyed by language; `"
-                    },
-                    "children": []
-                  },
-                  {
-                    "id": "54f6383b::item:4::list-item:segment:1",
-                    "type": "list-item-mdx",
-                    "props": {
-                      "raw": "{ component, aliases }",
-                      "status": "pending"
-                    },
-                    "children": []
-                  },
-                  {
-                    "id": "54f6383b::item:4::list-item:segment:2",
-                    "type": "list-item-text",
-                    "props": {
-                      "inline": [
-                        {
-                          "kind": "text",
-                          "text": "` entries add alias languages, resolved case-insensitively."
-                        }
-                      ],
-                      "text": "` entries add alias languages, resolved case-insensitively."
-                    },
-                    "children": []
-                  }
-                ]
+                "children": []
               },
               {
-                "id": "54f6383b::item:5",
+                "id": "21c104bf::item:5",
                 "type": "list-item",
                 "range": {
-                  "from": 1615,
-                  "to": 1721
+                  "from": 2546,
+                  "to": 2652
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "54f6383b::item:5",
+                    "id": "21c104bf::item:5",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1762,8 +1690,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1615,
-                        "to": 1721
+                        "from": 2546,
+                        "to": 2652
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1823,17 +1751,17 @@
                 "children": []
               },
               {
-                "id": "54f6383b::item:6",
+                "id": "21c104bf::item:6",
                 "type": "list-item",
                 "range": {
-                  "from": 1722,
-                  "to": 1826
+                  "from": 2653,
+                  "to": 2757
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "54f6383b::item:6",
+                    "id": "21c104bf::item:6",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1857,8 +1785,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1722,
-                        "to": 1826
+                        "from": 2653,
+                        "to": 2757
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1918,17 +1846,17 @@
                 "children": []
               },
               {
-                "id": "54f6383b::item:7",
+                "id": "21c104bf::item:7",
                 "type": "list-item",
                 "range": {
-                  "from": 1827,
-                  "to": 1929
+                  "from": 2758,
+                  "to": 2860
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "54f6383b::item:7",
+                    "id": "21c104bf::item:7",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1952,8 +1880,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1827,
-                        "to": 1929
+                        "from": 2758,
+                        "to": 2860
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2013,17 +1941,17 @@
                 "children": []
               },
               {
-                "id": "54f6383b::item:8",
+                "id": "21c104bf::item:8",
                 "type": "list-item",
                 "range": {
-                  "from": 1930,
-                  "to": 2025
+                  "from": 2861,
+                  "to": 2956
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "54f6383b::item:8",
+                    "id": "21c104bf::item:8",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2047,8 +1975,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1930,
-                        "to": 2025
+                        "from": 2861,
+                        "to": 2956
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2108,17 +2036,17 @@
                 "children": []
               },
               {
-                "id": "54f6383b::item:9",
+                "id": "21c104bf::item:9",
                 "type": "list-item",
                 "range": {
-                  "from": 2026,
-                  "to": 2167
+                  "from": 2957,
+                  "to": 3098
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "54f6383b::item:9",
+                    "id": "21c104bf::item:9",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2142,8 +2070,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2026,
-                        "to": 2167
+                        "from": 2957,
+                        "to": 3098
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2203,17 +2131,17 @@
                 "children": []
               },
               {
-                "id": "54f6383b::item:10",
+                "id": "21c104bf::item:10",
                 "type": "list-item",
                 "range": {
-                  "from": 2168,
-                  "to": 2282
+                  "from": 3099,
+                  "to": 3213
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "54f6383b::item:10",
+                    "id": "21c104bf::item:10",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2229,8 +2157,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2168,
-                        "to": 2282
+                        "from": 3099,
+                        "to": 3213
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2274,17 +2202,17 @@
                 "children": []
               },
               {
-                "id": "54f6383b::item:11",
+                "id": "21c104bf::item:11",
                 "type": "list-item",
                 "range": {
-                  "from": 2283,
-                  "to": 2387
+                  "from": 3214,
+                  "to": 3318
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "54f6383b::item:11",
+                    "id": "21c104bf::item:11",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2324,8 +2252,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2283,
-                        "to": 2387
+                        "from": 3214,
+                        "to": 3318
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2420,23 +2348,30 @@
           }
         },
         "range": {
-          "from": 1123,
-          "to": 2387
+          "from": 2054,
+          "to": 3318
         }
       }
     },
     {
-      "id": "24706f7e",
+      "id": "5339311e",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "Mermaid is an **opt-in add-on** that renders fenced ` ```mermaid ` code blocks as diagrams (with a Diagram/Code toggle).",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 52,
+              "to": 66,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
-          "from": 2389,
-          "to": 2509
+          "from": 3320,
+          "to": 3440
         },
         "inline": [
           {
@@ -2468,7 +2403,7 @@
       }
     },
     {
-      "id": "361dade9",
+      "id": "6952e165",
       "type": "code",
       "isFinalized": true,
       "payload": {
@@ -2481,14 +2416,14 @@
           "highlightLang": "bash"
         },
         "range": {
-          "from": 2511,
-          "to": 2554
+          "from": 3442,
+          "to": 3485
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-bash\" data-language=\"bash\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">npm</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> install</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> @stream-mdx/mermaid</span></span></code></pre>"
       }
     },
     {
-      "id": "59fc85ca",
+      "id": "72ce46ba",
       "type": "code",
       "isFinalized": true,
       "payload": {
@@ -2501,14 +2436,14 @@
           "highlightLang": "tsx"
         },
         "range": {
-          "from": 2556,
-          "to": 2700
+          "from": 3487,
+          "to": 3631
         },
         "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { MermaidBlock } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/mermaid\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{text}</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  codeRenderers</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ mermaid: MermaidBlock }}</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/>;</span></span></code></pre>"
       }
     },
     {
-      "id": "40038f07",
+      "id": "23f14403",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -2520,8 +2455,8 @@
           "headingId": "scheduling-and-metrics"
         },
         "range": {
-          "from": 2702,
-          "to": 2727
+          "from": 3633,
+          "to": 3658
         },
         "inline": [
           {
@@ -2532,7 +2467,7 @@
       }
     },
     {
-      "id": "62bec830",
+      "id": "535f59bf",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -2579,17 +2514,17 @@
             },
             "children": [
               {
-                "id": "62bec830::item:0",
+                "id": "535f59bf::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 2729,
-                  "to": 2821
+                  "from": 3660,
+                  "to": 3752
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "62bec830::item:0",
+                    "id": "535f59bf::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2605,8 +2540,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2729,
-                        "to": 2821
+                        "from": 3660,
+                        "to": 3752
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2650,17 +2585,17 @@
                 "children": []
               },
               {
-                "id": "62bec830::item:1",
+                "id": "535f59bf::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 2822,
-                  "to": 2910
+                  "from": 3753,
+                  "to": 3841
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "62bec830::item:1",
+                    "id": "535f59bf::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -2676,8 +2611,8 @@
                         }
                       ],
                       "range": {
-                        "from": 2822,
-                        "to": 2910
+                        "from": 3753,
+                        "to": 3841
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2724,23 +2659,30 @@
           }
         },
         "range": {
-          "from": 2729,
-          "to": 2910
+          "from": 3660,
+          "to": 3841
         }
       }
     },
     {
-      "id": "2a854ea8",
+      "id": "36264b5c",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "For exact types and defaults, see `docs/PUBLIC_API.md`.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 34,
+              "to": 54,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
-          "from": 2912,
-          "to": 2967
+          "from": 3843,
+          "to": 3898
         },
         "inline": [
           {
@@ -2780,25 +2722,25 @@
     },
     {
       "id": "worker",
-      "blockId": "45b2f9da",
+      "blockId": "f35f71e",
       "level": 2,
       "text": "Worker"
     },
     {
       "id": "mdx",
-      "blockId": "567a5ebd",
+      "blockId": "15f71476",
       "level": 2,
       "text": "MDX"
     },
     {
       "id": "rendering-overrides",
-      "blockId": "357af681",
+      "blockId": "1de9dee5",
       "level": 2,
       "text": "Rendering overrides"
     },
     {
       "id": "scheduling-and-metrics",
-      "blockId": "40038f07",
+      "blockId": "23f14403",
       "level": 2,
       "text": "Scheduling and metrics"
     }
