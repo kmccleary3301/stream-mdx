@@ -35,6 +35,16 @@ function nodePathKey(path: NodePath): string {
   return `${path.blockId}::${nodePart}${indexPart}`;
 }
 
+// An owned metadata array affects every line in its patch; mixed ownership cannot be merged losslessly.
+const APPEND_LINE_METADATA_KEYS = ["tokens", "diffKind", "oldNo", "newNo"] as const;
+
+function hasSameAppendLineMetadataPresence(base: AppendLinesPatch, next: AppendLinesPatch): boolean {
+  return APPEND_LINE_METADATA_KEYS.every(
+    (key) =>
+      Object.prototype.hasOwnProperty.call(base, key) === Object.prototype.hasOwnProperty.call(next, key),
+  );
+}
+
 function runCoalescer(patches: Patch[], config: CoalesceConfig = DEFAULT_COALESCE_CONFIG): Patch[] {
   if (USE_LINEAR_COALESCING) {
     return coalescePatchesLinear(patches, config);
@@ -116,25 +126,6 @@ export function coalescePatchesLinear(patches: Patch[], config: CoalesceConfig =
     i++;
   }
 
-  if (result.length > 1) {
-    const dedup: Patch[] = [];
-    const seenSetProps = new Set<string>();
-    for (let idx = result.length - 1; idx >= 0; idx--) {
-      const current = result[idx];
-      if (current.op === "setProps") {
-        const key = `${current.at.blockId}::$${current.at.nodeId ?? ""}`;
-        if (seenSetProps.has(key)) {
-          continue;
-        }
-        seenSetProps.add(key);
-      }
-      dedup.push(current);
-    }
-    dedup.reverse();
-    result.length = 0;
-    result.push(...dedup);
-  }
-
   return [...result, ...rest];
 }
 
@@ -163,6 +154,7 @@ function mergeAppendLines(window: Patch[], startIndex: number): { patch: Patch; 
     const next = window[j];
     if (
       next.op === "appendLines" &&
+      hasSameAppendLineMetadataPresence(base, next) &&
       next.at.blockId === base.at.blockId &&
       next.at.nodeId === base.at.nodeId &&
       typeof next.startIndex === "number" &&
@@ -238,11 +230,12 @@ function mergeAppendLines(window: Patch[], startIndex: number): { patch: Patch; 
     ...base,
     lines,
     highlight: highlight.length > 0 ? highlight : undefined,
-    tokens: includeTokens && tokens.length > 0 ? (tokens as AppendLinesPatch["tokens"]) : undefined,
-    diffKind: includeDiffKind && diffKind.length > 0 ? (diffKind as AppendLinesPatch["diffKind"]) : undefined,
-    oldNo: includeOldNo && oldNo.length > 0 ? (oldNo as AppendLinesPatch["oldNo"]) : undefined,
-    newNo: includeNewNo && newNo.length > 0 ? (newNo as AppendLinesPatch["newNo"]) : undefined,
   };
+  // Preserve absent keys: the renderer treats an owned `tokens` field as explicit null per line.
+  if (includeTokens && tokens.length > 0) combined.tokens = tokens as AppendLinesPatch["tokens"];
+  if (includeDiffKind && diffKind.length > 0) combined.diffKind = diffKind as AppendLinesPatch["diffKind"];
+  if (includeOldNo && oldNo.length > 0) combined.oldNo = oldNo as AppendLinesPatch["oldNo"];
+  if (includeNewNo && newNo.length > 0) combined.newNo = newNo as AppendLinesPatch["newNo"];
 
   return { patch: combined, nextIndex: j };
 }
@@ -359,13 +352,13 @@ function countOps(patches: Patch[]): Record<string, number> {
 }
 
 /**
- * Coalesce adjacent patches that target the same parent and can be batched together.
- * This reduces the number of DOM operations and React re-renders.
+ * Coalesce adjacent compatible patches without moving operations across barriers.
  *
  * Currently coalesces:
- * - Multiple `appendLines` for the same code block → single `appendLines` with combined lines
- * - Multiple `insertChild` for the same parent at consecutive indices → single batch insert
- * - Multiple `setProps` for the same node → single `setProps` with merged props
+ * - Consecutive `appendLines` for the same code block into one patch with combined lines
+ * - Consecutive `insertChild` operations for the same parent at consecutive indices, while preserving
+ *   individual inserts because the patch protocol has no batch-insert operation
+ * - Consecutive `setProps` operations for the same node into one merged update or `setPropsBatch`
  */
 export function coalescePatchesQuadratic(patches: Patch[], config: CoalesceConfig = DEFAULT_COALESCE_CONFIG): Patch[] {
   if (!config.enabled || patches.length === 0) {
@@ -392,43 +385,15 @@ export function coalescePatchesQuadratic(patches: Patch[], config: CoalesceConfi
     let coalescedCount = 0;
 
     if (current.op === "appendLines") {
-      // Coalesce multiple appendLines for the same block
-      const lines: string[] = [...current.lines];
-      const highlights: Array<string | null> = current.highlight ? [...current.highlight] : [];
-      let j = i + 1;
-
-      while (j < window.length && coalescedCount < 10) {
-        const next = window[j];
-        if (
-          next.op === "appendLines" &&
-          next.at.blockId === current.at.blockId &&
-          next.at.nodeId === current.at.nodeId &&
-          typeof next.startIndex === "number" &&
-          typeof current.startIndex === "number" &&
-          next.startIndex === (current.startIndex ?? 0) + lines.length
-        ) {
-          lines.push(...next.lines);
-          if (next.highlight) {
-            highlights.push(...next.highlight);
-          } else {
-            highlights.push(...new Array(next.lines.length).fill(null));
-          }
-          coalescedCount++;
-          j++;
-        } else {
-          break;
-        }
+      const merged = mergeAppendLines(window, i);
+      if (merged.nextIndex > i + 1) {
+        coalesced.push(merged.patch);
+        i = merged.nextIndex;
+      } else {
+        coalesced.push(current);
+        i++;
       }
-
-      if (coalescedCount > 0) {
-        coalesced.push({
-          ...current,
-          lines,
-          highlight: highlights.length > 0 ? highlights : undefined,
-        });
-        i = j;
-        continue;
-      }
+      continue;
     } else if (current.op === "insertChild") {
       // Coalesce multiple insertChild for the same parent at consecutive indices
       const inserts: Array<{ index: number; node: typeof current.node }> = [{ index: current.index, node: current.node }];
@@ -542,26 +507,6 @@ export function coalescePatchesQuadratic(patches: Patch[], config: CoalesceConfi
     // No coalescing found, add current patch
     coalesced.push(current);
     i++;
-  }
-
-  // Deduplicate sequential setProps so only the latest per node survives within the window
-  if (coalesced.length > 1) {
-    const deduped: Patch[] = [];
-    const seenSetProps = new Set<string>();
-    for (let idx = coalesced.length - 1; idx >= 0; idx--) {
-      const patch = coalesced[idx];
-      if (patch.op === "setProps") {
-        const key = `${patch.at.blockId}::$${patch.at.nodeId ?? ""}`;
-        if (seenSetProps.has(key)) {
-          continue;
-        }
-        seenSetProps.add(key);
-      }
-      deduped.push(patch);
-    }
-    deduped.reverse();
-    coalesced.length = 0;
-    coalesced.push(...deduped);
   }
 
   // Add remaining patches that weren't in the coalescing window

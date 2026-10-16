@@ -3,7 +3,12 @@
  * Comprehensive analysis script for markdown test snippets
  * Runs each snippet through V2 renderer, captures HTML, and performs detailed analysis
  */
-import type { Page } from "@playwright/test";
+import type { Browser, Page } from "@playwright/test";
+import type { PerformanceMetrics } from "@stream-mdx/core";
+import type {
+  FlushBatchSample as StreamingFlushBatchSample,
+  StreamingDemoAutomationApiV2,
+} from "../apps/docs/components/screens/streaming-markdown-demo-v2/automation-api";
 import type {
   LookaheadDecisionTrace,
   LookaheadFeatureFamily,
@@ -11,12 +16,15 @@ import type {
   LookaheadTraceFocus,
   LookaheadTraceStep,
 } from "../packages/markdown-v2-core/src/streaming/lookahead-contract";
+import type { PerfWindow } from "./perf/demo-worker-lifecycle-browser";
 
 import { promises as fs } from "fs";
 import path from "path";
+import { fileURLToPath } from "node:url";
 
 import { JSDOM } from "jsdom";
 import { chromium } from "@playwright/test";
+import { build } from "esbuild";
 
 const TEST_PAGE_URL = process.env.SNIPPET_TEST_URL ?? "http://localhost:3000/regression/snippet-test";
 const SNIPPETS_DIR = process.env.SNIPPET_DIR ?? "tests/regression/fixtures";
@@ -27,6 +35,7 @@ const ARTIFACT_MANIFEST_PATH = path.join(OUTPUT_DIR, "artifacts.json");
 const GUARDRAIL_SUMMARY_PATH = path.join(OUTPUT_DIR, "guardrails.json");
 const STREAM_RATE = Number(process.env.SNIPPET_STREAM_RATE ?? 600);
 const STREAM_TICK_MS = Number(process.env.SNIPPET_STREAM_TICK_MS ?? 30);
+const SCHEDULING_PRESET = "throughput" as const;
 const NAVIGATION_TIMEOUT_MS = Number(process.env.SNIPPET_NAVIGATION_TIMEOUT_MS ?? 90000);
 const INITIAL_RENDER_TIMEOUT_MS = Number(process.env.SNIPPET_INITIAL_RENDER_TIMEOUT_MS ?? 30000);
 const STREAM_COMPLETE_TIMEOUT_MS = Number(process.env.SNIPPET_STREAM_TIMEOUT_MS ?? 60000);
@@ -84,7 +93,6 @@ function getNumericFlag(flag: string, fallback: number): number {
   return parsed === null ? fallback : parsed;
 }
 
-const MIN_COALESCING_REDUCTION_PCT = getNumericFlag("min-coalescing-reduction", 10);
 const MAX_COALESCING_DURATION_P95_MS = getNumericFlag("max-coalescing-duration", 8);
 const TRACE_LOOKAHEAD = hasFlag("trace-lookahead");
 const TRACE_MODE = (readStringFlag("trace-mode") ?? "chunk").toLowerCase() === "char" ? "char" : "chunk";
@@ -105,7 +113,7 @@ type AnalyzerSuppressionEntry = {
 };
 
 type LoadedAnalyzerSuppression = AnalyzerSuppressionEntry & {
-  expiresAt?: number | null;
+  expiresAt: number | null;
 };
 
 type GuardrailResult = {
@@ -117,13 +125,21 @@ type GuardrailResult = {
   suppression?: LoadedAnalyzerSuppression | null;
 };
 
+type SerializedGuardrailResult = Omit<GuardrailResult, "suppression"> & {
+  suppression: {
+    reason: string;
+    expiresOn: string | null;
+    addedBy: string | null;
+  } | null;
+};
+
 type GuardrailSummary = {
   generatedAt: string;
   total: number;
-  unsuppressedFailures: GuardrailResult[];
-  unsuppressedWarnings: GuardrailResult[];
-  suppressed: GuardrailResult[];
-  results: GuardrailResult[];
+  unsuppressedFailures: SerializedGuardrailResult[];
+  unsuppressedWarnings: SerializedGuardrailResult[];
+  suppressed: SerializedGuardrailResult[];
+  results: SerializedGuardrailResult[];
 };
 
 let analyzerSuppressions: LoadedAnalyzerSuppression[] = [];
@@ -179,7 +195,7 @@ function findActiveSuppression(snippet: string, rule: string): LoadedAnalyzerSup
   return null;
 }
 
-function serializeGuardrailResult(result: GuardrailResult) {
+function serializeGuardrailResult(result: GuardrailResult): SerializedGuardrailResult {
   return {
     snippet: result.snippet,
     rule: result.rule,
@@ -289,33 +305,7 @@ type FlushBatchSample = {
   } | null;
 };
 
-type WorkerPerfMetrics = {
-  tx?: number;
-  timestamp?: number;
-  parseMs?: number;
-  parseTime?: number;
-  enrichMs?: number;
-  diffMs?: number;
-  serializeMs?: number;
-  highlightTime?: number;
-  shikiMs?: number;
-  mdxDetectMs?: number;
-  patchBytes?: number;
-  patchCount?: number;
-  queueDepth?: number;
-  blocksProduced?: number;
-  grammarEngine?: "js" | "wasm";
-  blockCountByType?: Record<string, number>;
-  blockEnrichMsByType?: Record<string, number>;
-  blockSizeByType?: Record<string, number>;
-  highlightByLanguage?: Record<string, { count: number; totalMs: number; avgMs: number }>;
-  appendLineBatches?: number;
-  appendLineTotalLines?: number;
-  appendLineMaxLines?: number;
-  appendLineBatchesTotal?: number;
-  appendLineTotalLinesTotal?: number;
-  appendLineMaxLinesTotal?: number;
-};
+type WorkerPerfMetrics = PerformanceMetrics;
 
 type StreamMetrics = {
   firstMeaningfulMs?: number | null;
@@ -350,6 +340,19 @@ type TelemetrySnapshot = {
   flushBatches?: FlushBatchSample[] | null;
 };
 
+type RawTelemetrySnapshot = {
+  summary: TelemetrySnapshot["summary"];
+  samples: TelemetrySnapshot["samples"];
+  worker: TelemetrySnapshot["worker"];
+  workerTotals: TelemetrySnapshot["workerTotals"];
+  stream: TelemetrySnapshot["stream"];
+  patchTotals: TelemetrySnapshot["patchTotals"];
+  coalescingTotals: TelemetrySnapshot["coalescingTotals"];
+  flushBatches: StreamingFlushBatchSample[] | null;
+};
+
+type LookaheadTraceBlock = NonNullable<LookaheadTraceStep["blocks"]>[number];
+
 type RuntimeStateSnapshot = {
   demoState: Record<string, unknown> | null;
   blocks: Array<{
@@ -358,8 +361,8 @@ type RuntimeStateSnapshot = {
     isFinalized: boolean;
     rawLength: number;
     inlineStatus?: unknown;
-    inlineLookahead?: LookaheadTraceStep["blocks"][number]["inlineLookahead"];
-    mixedLookahead?: LookaheadTraceStep["blocks"][number]["mixedLookahead"];
+    inlineLookahead?: LookaheadTraceBlock["inlineLookahead"];
+    mixedLookahead?: LookaheadTraceBlock["mixedLookahead"];
     mixedSegmentKinds?: string[];
   }>;
 };
@@ -461,6 +464,7 @@ interface SnippetAnalysis {
       warnings: string[];
       suggestions: string[];
     };
+    telemetry?: TelemetrySnapshot | null;
   };
   telemetry?: TelemetrySnapshot | null;
 }
@@ -533,17 +537,45 @@ function computePercentile(values: number[], percentile: number): number | null 
   return sorted[index];
 }
 
-function collectCoalescingDurations(batches?: FlushBatchSample[] | null): number[] {
+function collectCoalescingDurations(batches?: FlushBatchSample[] | null): number[] | null {
   if (!Array.isArray(batches)) return [];
   const durations: number[] = [];
   for (const batch of batches) {
     if (!batch || !batch.coalescing) continue;
     const duration = batch.coalescing.durationMs;
-    if (typeof duration === "number" && Number.isFinite(duration) && duration >= 0) {
-      durations.push(duration);
-    }
+    if (typeof duration !== "number" || !Number.isFinite(duration) || duration < 0) return null;
+    durations.push(duration);
   }
   return durations;
+}
+
+function normalizeTelemetrySnapshot(raw: RawTelemetrySnapshot | null): TelemetrySnapshot | null {
+  if (!raw) return null;
+
+  const ensureArray = (value: number[] | null | undefined): number[] =>
+    value?.map((num) => Number(num)).filter((num) => Number.isFinite(num)) ?? [];
+  const flushBatches: FlushBatchSample[] = (raw.flushBatches ?? []).filter(
+    (batch) => Number.isFinite(batch.queueDelayMs) && Number.isFinite(batch.durationMs),
+  );
+
+  return {
+    summary: raw.summary,
+    samples: {
+      recvToFlushMs: ensureArray(raw.samples.recvToFlushMs),
+      flushApplyMs: ensureArray(raw.samples.flushApplyMs),
+      reactCommitMs: ensureArray(raw.samples.reactCommitMs),
+      paintMs: ensureArray(raw.samples.paintMs),
+      queueDepth: ensureArray(raw.samples.queueDepth),
+      patchApplyMs: ensureArray(raw.samples.patchApplyMs),
+      longTasksMs: ensureArray(raw.samples.longTasksMs),
+    },
+    worker: raw.worker ?? null,
+    workerTotals: raw.workerTotals ?? null,
+    stream: raw.stream ?? null,
+    patchTotals: raw.patchTotals ?? null,
+    coalescingTotals: raw.coalescingTotals ?? null,
+    flushBatches,
+  };
 }
 
 function csvEscape(value: string): string {
@@ -679,59 +711,75 @@ function recordCoalescingGuardrailResult(
   }
 }
 
-function recordCoalescingGuardrailSkip(snippetName: string, ruleId: string, message: string, issues: SnippetAnalysis["analysis"]["issues"]): void {
-  // Some snippets are intentionally too small (or don't produce coalescable patch streams). Treat these
-  // guardrails as informational so CI stays focused on true regressions.
-  console.warn(`[coalescing][SKIP] ${snippetName} [${ruleId}] ${message}`);
-  issues.suggestions.push(`[Coalescing:${ruleId}] ${message} (skipped)`);
-}
 
 function evaluateCoalescingGuardrails(snippetName: string, analysis: SnippetAnalysis["analysis"], telemetry: TelemetrySnapshot | null): void {
   const issues = analysis.issues;
-  if (MIN_COALESCING_REDUCTION_PCT > 0) {
-    const totals = analysis.performance.coalescingTotals;
-    if (!totals || typeof totals.input !== "number" || totals.input <= 0) {
+  const totals = telemetry?.coalescingTotals;
+  if (!totals) {
+    recordCoalescingGuardrailResult(
+      snippetName,
+      "coalescing/totals/missing",
+      "fail",
+      "Coalescing totals unavailable",
+      issues,
+    );
+  } else {
+    const counts = [totals.input, totals.output, totals.coalesced, totals.appendLines, totals.setProps, totals.insertChild];
+    const countsAreValid = counts.every(
+      (value) => typeof value === "number" && Number.isFinite(value) && Number.isInteger(value) && value >= 0,
+    );
+    const durationIsValid = typeof totals.durationMs === "number" && Number.isFinite(totals.durationMs) && totals.durationMs >= 0;
+    if (!countsAreValid || !durationIsValid) {
       recordCoalescingGuardrailResult(
         snippetName,
-        "coalescing/reduction/missing-totals",
-        "warn",
-        "Coalescing totals unavailable; reduction threshold skipped",
+        "coalescing/totals/invalid",
+        "fail",
+        "Coalescing totals must contain non-negative integer counts and a finite non-negative duration",
         issues,
       );
-    } else {
-      const reductionPct = typeof totals.reductionPct === "number" ? totals.reductionPct : totals.input > 0 ? (totals.coalesced / totals.input) * 100 : null;
-      if (reductionPct === null || !Number.isFinite(reductionPct)) {
-        recordCoalescingGuardrailResult(snippetName, "coalescing/reduction/invalid", "warn", "Invalid coalescing reduction metric", issues);
-      } else if (totals.coalesced <= 0 && totals.setProps <= 0 && totals.appendLines <= 0 && totals.insertChild <= 0) {
-        recordCoalescingGuardrailSkip(
-          snippetName,
-          "coalescing/reduction/no-coalescable",
-          "No coalescable operations detected; reduction threshold skipped",
-          issues,
-        );
-      } else if (totals.input < 50) {
-        recordCoalescingGuardrailSkip(
-          snippetName,
-          "coalescing/reduction/sample-too-small",
-          `Coalescing sample size ${totals.input} too small to enforce reduction threshold`,
-          issues,
-        );
-      } else if (reductionPct + Number.EPSILON < MIN_COALESCING_REDUCTION_PCT) {
-        recordCoalescingGuardrailResult(
-          snippetName,
-          "coalescing/reduction/threshold",
-          "fail",
-          `Coalescing reduction ${reductionPct.toFixed(2)}% below threshold ${MIN_COALESCING_REDUCTION_PCT}%`,
-          issues,
-        );
-      }
+    } else if (
+      totals.input !== totals.output + totals.coalesced ||
+      totals.appendLines + totals.setProps + totals.insertChild > totals.input
+    ) {
+      recordCoalescingGuardrailResult(
+        snippetName,
+        "coalescing/totals/inconsistent",
+        "fail",
+        "Coalescing totals do not reconcile input and output counts or operation counts exceed input patches",
+        issues,
+      );
     }
   }
 
+
   if (MAX_COALESCING_DURATION_P95_MS > 0) {
     const durations = collectCoalescingDurations(telemetry?.flushBatches ?? null);
-    if (durations.length === 0) {
-      recordCoalescingGuardrailResult(snippetName, "coalescing/duration/no-samples", "warn", "No coalescing duration samples available", issues);
+    if (durations === null) {
+      recordCoalescingGuardrailResult(
+        snippetName,
+        "coalescing/duration/invalid",
+        "fail",
+        "Every reported coalescing duration sample must be finite and non-negative",
+        issues,
+      );
+    } else if (durations.length === 0) {
+      const noWork =
+        totals?.input === 0 &&
+        totals.output === 0 &&
+        totals.coalesced === 0 &&
+        totals.appendLines === 0 &&
+        totals.setProps === 0 &&
+        totals.insertChild === 0 &&
+        totals.durationMs === 0;
+      recordCoalescingGuardrailResult(
+        snippetName,
+        noWork ? "coalescing/duration/not-applicable" : "coalescing/duration/no-samples",
+        noWork ? "warn" : "fail",
+        noWork
+          ? "No coalescing work was recorded; its duration guard is not applicable"
+          : "No duration samples are available for reported or unverified coalescing work",
+        issues,
+      );
     } else {
       const durationP95 = computePercentile(durations, 0.95);
       if (durationP95 !== null && durationP95 > MAX_COALESCING_DURATION_P95_MS) {
@@ -814,18 +862,163 @@ async function captureRuntimeState(page: Page): Promise<RuntimeStateSnapshot> {
     return { demoState, blocks };
   });
 }
+type SnippetRuntimeState = {
+  idx: number;
+  total: number;
+  isRunning: boolean;
+  mode: "classic" | "worker";
+  schedulingPreset?: "latency" | "throughput";
+  rate: number;
+  tickMs: number;
+  finished?: boolean;
+  isFinalizing?: boolean;
+  timerActive?: boolean;
+  streamLimit?: number | null;
+  fullTextLength?: number;
+  workerSentIdx?: number;
+};
+
+type SnippetWorkerRun = {
+  workerId: number;
+  generation: number;
+};
+
+async function rejectIncompleteRun(
+  page: Page,
+  snippetName: string,
+  phase: string,
+  expected: { rate: number; tickMs: number; sourceMode: "worker" | "server"; workerRun: SnippetWorkerRun | null },
+  cause: unknown,
+): Promise<never> {
+  const diagnostic = await page
+    .evaluate((details) => {
+      const root = window as typeof window &
+        PerfWindow & {
+          __TEST_SNIPPET_CONFIG__?: { initialMdxStrategy?: "server" | "worker" };
+        };
+      const api = root.__STREAMING_DEMO__ as StreamingDemoAutomationApiV2 | undefined;
+      const state = api?.getState?.() as (Record<string, unknown> & {
+        workerSentIdx?: number;
+        total?: number;
+      }) | undefined;
+      const observer = root.__STREAM_MDX_WORKER_LIFECYCLE__;
+      const rendererState = api?.getHandle?.()?.getState?.() as
+        | { queueDepth?: number; pendingBatches?: number }
+        | undefined;
+      const store = root.__STREAMING_RENDERER_STORE__;
+      const perf = api?.getPerf?.() ?? null;
+      const flushBatches = perf?.flushBatches ?? [];
+      const latestFlushBatch = flushBatches[flushBatches.length - 1];
+      const output = document.querySelector('[data-testid="markdown-output"]');
+      return {
+        phase: details.phase,
+        expected: details.expected,
+        sourceMode: root.__TEST_SNIPPET_CONFIG__?.initialMdxStrategy ?? null,
+        state: state ?? null,
+        currentWorkerId: observer?.workerIdFor(api?.getWorker?.() ?? null) ?? null,
+        workerLifecycle: observer?.events ?? [],
+        renderer: {
+          queueDepth: rendererState?.queueDepth ?? null,
+          pendingBatches: rendererState?.pendingBatches ?? null,
+          remainingQueue: latestFlushBatch?.remainingQueue ?? null,
+          remainingSource: state && typeof state.total === "number" && typeof state.workerSentIdx === "number"
+            ? Math.max(0, state.total - state.workerSentIdx)
+            : null,
+          blocks: store?.getBlocks?.().map((block) => ({
+            id: block.id,
+            type: block.type,
+            isFinalized: block.isFinalized,
+          })) ?? [],
+        },
+        perf,
+        partialHtml: output?.outerHTML ?? null,
+      };
+    }, { phase, expected })
+    .catch((captureError: unknown) => ({
+      phase,
+      expected,
+      captureError: captureError instanceof Error ? captureError.message : String(captureError),
+    }));
+  const diagnosticPath = path.join(
+    OUTPUT_DIR,
+    `${path.basename(snippetName, path.extname(snippetName))}.incomplete.json`,
+  );
+  await fs.writeFile(diagnosticPath, JSON.stringify(diagnostic, null, 2), "utf-8");
+  const causeMessage = cause instanceof Error ? cause.message : String(cause);
+  throw new Error(`[analyze] ${snippetName} did not complete during ${phase}: ${causeMessage}. Diagnostics: ${diagnosticPath}`);
+}
+
+async function waitForSnippetWorker(
+  page: Page,
+  afterSequence: number,
+  requireNewGeneration: boolean,
+  timeoutMs: number,
+): Promise<SnippetWorkerRun> {
+  const options = { afterSequence, requireNewGeneration };
+  await page.waitForFunction(
+    ({ afterSequence: after, requireNewGeneration: requireNew }) => {
+      const api = window.__STREAMING_DEMO__;
+      const observer = (window as PerfWindow).__STREAM_MDX_WORKER_LIFECYCLE__;
+      if (!api || !observer) return false;
+      const workerId = observer.workerIdFor(api.getWorker?.() ?? null);
+      if (workerId === null) return false;
+      const init = [...observer.events].reverse().find(
+        (event) =>
+          event.workerId === workerId &&
+          event.direction === "input" &&
+          event.type === "INIT" &&
+          event.generation !== null &&
+          (!requireNew || event.sequence > after),
+      );
+      if (!init || init.generation === null) return false;
+      return observer.events.some(
+        (event) =>
+          event.workerId === workerId &&
+          event.generation === init.generation &&
+          event.direction === "output" &&
+          event.type === "INITIALIZED",
+      );
+    },
+    options,
+    { timeout: timeoutMs },
+  );
+  return await page.evaluate((waitOptions) => {
+    const api = window.__STREAMING_DEMO__;
+    const observer = (window as PerfWindow).__STREAM_MDX_WORKER_LIFECYCLE__;
+    if (!api || !observer) throw new Error("Worker lifecycle observer disappeared after initialization.");
+    const workerId = observer.workerIdFor(api.getWorker?.() ?? null);
+    if (workerId === null) throw new Error("Current streaming worker has no observed identity.");
+    const init = [...observer.events].reverse().find(
+      (event) =>
+        event.workerId === workerId &&
+        event.direction === "input" &&
+        event.type === "INIT" &&
+        event.generation !== null &&
+        (!waitOptions.requireNewGeneration || event.sequence > waitOptions.afterSequence),
+    );
+    if (!init || init.generation === null) throw new Error("Current streaming worker INIT generation was not observed.");
+    return { workerId, generation: init.generation };
+  }, options);
+}
 
 async function renderSnippet(
   page: Page,
   snippetContent: string,
-  options?: { traceFast?: boolean; streamLimit?: number },
+  options?: { traceFast?: boolean; streamLimit?: number; workerLifecycleScript?: string; snippetName?: string },
 ): Promise<{ html: string; telemetry: TelemetrySnapshot | null; state: RuntimeStateSnapshot }> {
   const minVisibleLength = Math.min(10, Math.max(1, normalizeWhitespace(snippetContent).length));
-  const compileMode = process.env.MDX_COMPILE_MODE && process.env.MDX_COMPILE_MODE.toLowerCase() === "worker" ? "worker" : "server";
+  const diagnosticSnippetName = options?.snippetName ?? "snippet";
+  const compileMode: "worker" | "server" =
+    process.env.MDX_COMPILE_MODE && process.env.MDX_COMPILE_MODE.toLowerCase() === "worker" ? "worker" : "server";
+  if (!options?.traceFast) {
+    if (!options?.workerLifecycleScript) {
+      throw new Error("Snippet worker lifecycle observer bundle was not provided.");
+    }
+    await page.addInitScript({ content: options.workerLifecycleScript });
+  }
   await page.addInitScript(
     ({ content, config }) => {
       const runtimeWindow = window as typeof window & {
-        __name?: (target: unknown) => unknown;
         __TEST_SNIPPET_CONTENT__?: string;
         __TEST_SNIPPET_CONFIG__?: {
           initialStreamLimit?: number | null;
@@ -833,12 +1026,6 @@ async function renderSnippet(
           initialMdxStrategy?: "server" | "worker";
         };
       };
-      // Some MDX fixtures expect this helper to exist in the browser.
-      if (typeof runtimeWindow.__name !== "function") {
-        runtimeWindow.__name = function (target) {
-          return target;
-        };
-      }
       runtimeWindow.__TEST_SNIPPET_CONTENT__ = content;
       runtimeWindow.__TEST_SNIPPET_CONFIG__ = config;
     },
@@ -852,7 +1039,7 @@ async function renderSnippet(
           }
         : {
             initialStreamLimit: null,
-            initialIsRunning: true,
+            initialIsRunning: false,
             initialMdxStrategy: compileMode,
           },
     },
@@ -869,22 +1056,16 @@ async function renderSnippet(
   await page.waitForTimeout(options?.traceFast ? 250 : 1500);
 
   // Wait for API
-  await page.waitForFunction(() => typeof window.__STREAMING_DEMO__ !== "undefined" && window.__STREAMING_DEMO__?.getState !== undefined, { timeout: 30000 });
+  await page.waitForFunction(
+    () => typeof window.__STREAMING_DEMO__ !== "undefined" && window.__STREAMING_DEMO__?.getState !== undefined,
+    undefined,
+    { timeout: 30000 },
+  );
 
-  if (!options?.traceFast) {
-    // Wait for component to render with our content in the normal interactive path.
-    await page.waitForFunction(
-      ({ minVisible }) => {
-        const output = document.querySelector('[data-testid="markdown-output"]');
-        if (!output) return false;
-        const text = output.textContent || "";
-        return text !== "Waiting for snippet content... (set via window.__TEST_SNIPPET_CONTENT__ or ?snippet= param)" && text.length >= minVisible;
-      },
-      { minVisible: minVisibleLength },
-      { timeout: INITIAL_RENDER_TIMEOUT_MS },
-    );
-  }
 
+  let workerRun: SnippetWorkerRun | null = null;
+  const resolvedRate = Math.min(20_000, Math.max(50, Math.round(STREAM_RATE)));
+  const resolvedTickMs = Math.min(200, Math.max(1, Math.round(STREAM_TICK_MS)));
   if (options?.traceFast) {
     await page.evaluate(async () => {
       const api = window.__STREAMING_DEMO__;
@@ -892,18 +1073,134 @@ async function renderSnippet(
       await api.waitForWorker?.();
     });
   } else {
-    await page.evaluate(
-      ({ mode, streamLimit }) => {
-        const api = window.__STREAMING_DEMO__;
-        if (!api) return;
-        if (typeof streamLimit === "number") {
-          api.setStreamLimit?.(streamLimit);
+    try {
+      workerRun = await waitForSnippetWorker(page, 0, false, INITIAL_RENDER_TIMEOUT_MS);
+      const presetChange = await page.evaluate((preset) => {
+        const root = window as typeof window &
+          PerfWindow & {
+            __TEST_SNIPPET_CONFIG__?: { initialMdxStrategy?: "server" | "worker" };
+          };
+        const api = root.__STREAMING_DEMO__;
+        const state = api?.getState?.() as Record<string, unknown> | undefined;
+        const observer = root.__STREAM_MDX_WORKER_LIFECYCLE__;
+        if (!api || !state || !observer) {
+          throw new Error("Streaming API or worker lifecycle observer is unavailable during configuration.");
         }
-        api.setMdxStrategy?.(mode === "worker" ? "worker" : "server");
-        api.restart?.();
-      },
-      { mode: compileMode, streamLimit: options?.streamLimit ?? null },
-    );
+        if (root.__TEST_SNIPPET_CONFIG__?.initialMdxStrategy === undefined) {
+          throw new Error("Snippet source mode was not configured before hydration.");
+        }
+        if (typeof api.setMode !== "function" || typeof api.setSchedulingPreset !== "function") {
+          throw new Error("Streaming API does not expose mode and scheduling-preset configuration.");
+        }
+        api.setMode("worker");
+        const changed = state.schedulingPreset !== preset;
+        const boundary = observer.sequence;
+        if (changed) api.setSchedulingPreset(preset);
+        return { changed, boundary };
+      }, SCHEDULING_PRESET);
+      await page.waitForFunction(
+        ({ sourceMode, preset }) => {
+          const root = window as typeof window & {
+            __TEST_SNIPPET_CONFIG__?: { initialMdxStrategy?: "server" | "worker" };
+          };
+          const state = window.__STREAMING_DEMO__?.getState?.() as Record<string, unknown> | undefined;
+          return Boolean(
+            state &&
+              state.mode === "worker" &&
+              state.schedulingPreset === preset &&
+              root.__TEST_SNIPPET_CONFIG__?.initialMdxStrategy === sourceMode,
+          );
+        },
+        { sourceMode: compileMode, preset: SCHEDULING_PRESET },
+        { timeout: INITIAL_RENDER_TIMEOUT_MS },
+      );
+      if (presetChange.changed) {
+        workerRun = await waitForSnippetWorker(page, presetChange.boundary, true, INITIAL_RENDER_TIMEOUT_MS);
+      }
+
+      await page.evaluate(({ rate, tickMs }) => {
+        const api = window.__STREAMING_DEMO__;
+        if (!api || typeof api.setRate !== "function" || typeof api.setTick !== "function") {
+          throw new Error("Streaming API does not expose rate and tick configuration.");
+        }
+        api.setRate(rate);
+        api.setTick(tickMs);
+      }, { rate: resolvedRate, tickMs: resolvedTickMs });
+      await page.waitForFunction(
+        ({ sourceMode, preset, rate, tickMs, total, workerId, generation }) => {
+          const root = window as typeof window &
+            PerfWindow & {
+              __TEST_SNIPPET_CONFIG__?: { initialMdxStrategy?: "server" | "worker" };
+            };
+          const api = root.__STREAMING_DEMO__;
+          const state = api?.getState?.() as SnippetRuntimeState | undefined;
+          const observer = root.__STREAM_MDX_WORKER_LIFECYCLE__;
+          if (
+            !api ||
+            !state ||
+            !observer ||
+            state.mode !== "worker" ||
+            state.schedulingPreset !== preset ||
+            state.rate !== rate ||
+            state.tickMs !== tickMs ||
+            state.idx !== 0 ||
+            state.total !== total ||
+            state.fullTextLength !== total ||
+            state.streamLimit !== null ||
+            state.workerSentIdx !== 0 ||
+            state.isRunning !== false ||
+            root.__TEST_SNIPPET_CONFIG__?.initialMdxStrategy !== sourceMode ||
+            observer.workerIdFor(api.getWorker?.() ?? null) !== workerId
+          ) {
+            return false;
+          }
+          return observer.events.some(
+            (event) =>
+              event.workerId === workerId &&
+              event.generation === generation &&
+              event.direction === "output" &&
+              event.type === "INITIALIZED",
+          );
+        },
+        {
+          sourceMode: compileMode,
+          preset: SCHEDULING_PRESET,
+          rate: resolvedRate,
+          tickMs: resolvedTickMs,
+          total: snippetContent.length,
+          workerId: workerRun.workerId,
+          generation: workerRun.generation,
+        },
+        { timeout: INITIAL_RENDER_TIMEOUT_MS },
+      );
+      await page.evaluate(() => {
+        const api = window.__STREAMING_DEMO__;
+        if (!api || typeof api.resume !== "function") {
+          throw new Error("Streaming API does not expose resume after configuration.");
+        }
+        api.resume();
+      });
+      // The source starts paused so configuration is observable at idx=0.
+      // First content can only be required after resume.
+      await page.waitForFunction(
+        ({ minVisible }) => {
+          const output = document.querySelector('[data-testid="markdown-output"]');
+          if (!output) return false;
+          const text = output.textContent || "";
+          return text !== "Waiting for snippet content... (set via window.__TEST_SNIPPET_CONTENT__ or ?snippet= param)" && text.length >= minVisible;
+        },
+        { minVisible: minVisibleLength },
+        { timeout: INITIAL_RENDER_TIMEOUT_MS },
+      );
+    } catch (error) {
+      await rejectIncompleteRun(
+        page,
+        diagnosticSnippetName,
+        "stream setup",
+        { rate: resolvedRate, tickMs: resolvedTickMs, sourceMode: compileMode, workerRun },
+        error,
+      );
+    }
   }
 
   if (options?.traceFast && typeof options.streamLimit === "number") {
@@ -918,96 +1215,142 @@ async function renderSnippet(
     );
   }
 
-  // Wait for streaming to complete
-  const completed = options?.traceFast
-    ? await page
-        .evaluate(async () => {
-          const api = window.__STREAMING_DEMO__;
-          if (!api) return false;
-          await api.fastForward?.();
-          await api.flushPending?.();
-          return false;
-        })
-    : await page
-        .waitForFunction(
-          () => {
-            const api = window.__STREAMING_DEMO__;
-            if (!api) return false;
-            const state = api.getState?.();
-            if (!state || typeof state.total !== "number" || state.total <= 0) {
-              return false;
-            }
-            return state.idx === state.total;
-          },
-          { timeout: STREAM_COMPLETE_TIMEOUT_MS },
-        )
-        .then(() => true)
-        .catch(async () => {
-          console.warn("[analyze] Streaming did not complete within timeout");
-          const state = await page
-            .evaluate(() => {
-              const api = window.__STREAMING_DEMO__;
-              if (!api || typeof api.getState !== "function") return null;
-              return api.getState();
-            })
-            .catch(() => null);
-          if (state) {
-            console.warn("[analyze] Stream state at timeout", state);
-          }
-          return false;
-        });
-
-  // Trigger finalization and give it a moment to settle
-  if (!options?.traceFast) {
+  if (options?.traceFast) {
     await page.evaluate(async () => {
       const api = window.__STREAMING_DEMO__;
       if (!api) return;
-      await api.finalize?.();
+      await api.fastForward?.();
       await api.flushPending?.();
-      await api.waitForIdle?.();
     });
-  }
-  let storeFinalized = completed;
-  if (!options?.traceFast && !storeFinalized) {
-    storeFinalized = await page
-      .waitForFunction(
-        () => {
-          const api = window.__STREAMING_DEMO__;
-          const state = api?.getState?.();
-          const streamDone = Boolean(state && state.idx === state.total);
-          const store = window.__STREAMING_RENDERER_STORE__;
-          if (!store || typeof store.getBlocks !== "function") {
-            return streamDone;
-          }
-          const blocks = store.getBlocks();
-          if (!Array.isArray(blocks) || blocks.length === 0) {
-            return streamDone;
-          }
-          const allFinal = blocks.every((block: any) => block && block.isFinalized === true);
-          if (!allFinal) {
-            return false;
-          }
-          if (document.querySelector(".streaming-partial")) {
-            return false;
-          }
-          return true;
-        },
-        { timeout: FINALIZE_TIMEOUT_MS },
-      )
-      .then(() => true)
-      .catch(() => false);
-  }
+  } else {
+        const run = workerRun;
+        if (!run) {
+          await rejectIncompleteRun(
+            page,
+            diagnosticSnippetName,
+            "worker identity resolution",
+            { rate: resolvedRate, tickMs: resolvedTickMs, sourceMode: compileMode, workerRun },
+            new Error("Current worker identity was not resolved before streaming."),
+          );
+        }
+        try {
+          await page.waitForFunction(
+            ({ workerId, generation, total }) => {
+              const api = window.__STREAMING_DEMO__;
+              const state = api?.getState?.() as SnippetRuntimeState | undefined;
+              const observer = (window as PerfWindow).__STREAM_MDX_WORKER_LIFECYCLE__;
+              return Boolean(
+                api &&
+                  state &&
+                  observer &&
+                  observer.workerIdFor(api.getWorker?.() ?? null) === workerId &&
+                  state.finished === true &&
+                  state.timerActive === false &&
+                  state.idx === total &&
+                  state.total === total &&
+                  state.fullTextLength === total &&
+                  state.streamLimit === null &&
+                  typeof state.workerSentIdx === "number" &&
+                  state.workerSentIdx >= total &&
+                  observer.events.some(
+                    (event) =>
+                      event.workerId === workerId &&
+                      event.generation === generation &&
+                      event.direction === "output" &&
+                      event.type === "INITIALIZED",
+                  ),
+              );
+            },
+            { ...run, total: snippetContent.length },
+            { timeout: STREAM_COMPLETE_TIMEOUT_MS },
+          );
+        } catch (error) {
+          await rejectIncompleteRun(
+            page,
+            diagnosticSnippetName,
+            "source EOF",
+            { rate: resolvedRate, tickMs: resolvedTickMs, sourceMode: compileMode, workerRun: run },
+            error,
+          );
+        }
 
-  if (!options?.traceFast && !storeFinalized) {
-    console.warn("[analyze] Store did not report all blocks finalized before timeout; falling back to DOM check");
-    await page
-      .waitForFunction(() => !document.querySelector(".streaming-partial"), {
-        timeout: Math.max(1000, Math.floor(FINALIZE_TIMEOUT_MS / 2)),
-      })
-      .catch(() => {
-        console.warn("[analyze] Finalization wait timed out; proceeding with current DOM state");
-      });
-  }
+        try {
+          await page.waitForFunction(
+            ({ workerId, generation, total }) => {
+              const api = window.__STREAMING_DEMO__;
+              const state = api?.getState?.() as SnippetRuntimeState | undefined;
+              const observer = (window as PerfWindow).__STREAM_MDX_WORKER_LIFECYCLE__;
+              if (
+                !api ||
+                !state ||
+                !observer ||
+                observer.workerIdFor(api.getWorker?.() ?? null) !== workerId ||
+                state.finished !== true ||
+                state.timerActive !== false ||
+                state.isFinalizing !== false ||
+                state.idx !== total ||
+                state.total !== total ||
+                state.fullTextLength !== total ||
+                state.streamLimit !== null ||
+                typeof state.workerSentIdx !== "number" ||
+                state.workerSentIdx < total
+              ) {
+                return false;
+              }
+              const events = observer.events;
+              const initialized = events.find(
+                (event) =>
+                  event.workerId === workerId &&
+                  event.generation === generation &&
+                  event.direction === "output" &&
+                  event.type === "INITIALIZED",
+              );
+              if (!initialized) return false;
+              const finalizeSent = events.find(
+                (event) =>
+                  event.sequence > initialized.sequence &&
+                  event.workerId === workerId &&
+                  event.generation === generation &&
+                  event.direction === "input" &&
+                  event.type === "FINALIZE",
+              );
+              if (!finalizeSent) return false;
+              const finalized = events.some(
+                (event) =>
+                  event.sequence > finalizeSent.sequence &&
+                  event.workerId === workerId &&
+                  event.generation === generation &&
+                  event.direction === "output" &&
+                  event.type === "FINALIZED",
+              );
+              if (!finalized) return false;
+              const rendererState = api.getHandle?.()?.getState?.() as
+                | { queueDepth?: number; pendingBatches?: number }
+                | undefined;
+              if (!rendererState || rendererState.queueDepth !== 0 || rendererState.pendingBatches !== 0) {
+                return false;
+              }
+              const store = window.__STREAMING_RENDERER_STORE__;
+              if (store && typeof store.getBlocks === "function") {
+                const blocks = store.getBlocks();
+                if (blocks.length > 0 && !blocks.every((block) => block.isFinalized === true)) return false;
+              }
+              return !document.querySelector(".streaming-partial");
+            },
+            { ...run, total: snippetContent.length },
+            { timeout: FINALIZE_TIMEOUT_MS },
+          );
+        } catch (error) {
+          await rejectIncompleteRun(
+            page,
+            diagnosticSnippetName,
+            "worker finalization and renderer queue drain",
+            { rate: resolvedRate, tickMs: resolvedTickMs, sourceMode: compileMode, workerRun: run },
+            error,
+          );
+        }
+      }
+
   await page.waitForTimeout(options?.traceFast ? Math.min(250, STREAM_TICK_MS * 2) : 50);
 
   if (process.env.DEBUG_SNIPPET_BLOCKS === "1") {
@@ -1051,7 +1394,7 @@ async function renderSnippet(
 
   // Capture HTML
   const html = await outputHandle.evaluate((node) => (node as HTMLElement).outerHTML);
-  const telemetry = await page.evaluate<TelemetrySnapshot | null>(() => {
+  const rawTelemetry = await page.evaluate<RawTelemetrySnapshot | null>(() => {
     const api = window.__STREAMING_DEMO__;
     if (!api || typeof api.getPerf !== "function") {
       return null;
@@ -1060,72 +1403,18 @@ async function renderSnippet(
     if (!perf) return null;
     const state = api.getState?.();
 
-    const ensureArray = (value: unknown): number[] => {
-      return Array.isArray(value) ? value.map((num) => Number(num)).filter((num) => Number.isFinite(num)) : [];
-    };
-
-    const normalizeBatch = (value: any) => {
-      if (!value || typeof value !== "object") return null;
-      const queueDelay = Number((value as any).queueDelayMs);
-      const duration = Number((value as any).durationMs);
-      if (!Number.isFinite(queueDelay) || !Number.isFinite(duration)) {
-        return null;
-      }
-      const patchCount = Number((value as any).patchCount ?? 0);
-      const appliedPatchCount = Number((value as any).appliedPatchCount ?? 0);
-      const txValue = (value as any).tx;
-      const priority = (value as any).priority;
-      const coalescing = (value as any).coalescing;
-      return {
-        tx: typeof txValue === "number" ? txValue : txValue === null ? null : Number.isFinite(Number(txValue)) ? Number(txValue) : null,
-        patchCount: Number.isFinite(patchCount) ? patchCount : 0,
-        appliedPatchCount: Number.isFinite(appliedPatchCount) ? appliedPatchCount : undefined,
-        queueDelayMs: queueDelay,
-        durationMs: duration,
-        priority: priority === "low" ? "low" : "high",
-        receivedAt: Number.isFinite(Number((value as any).receivedAt)) ? Number((value as any).receivedAt) : null,
-        appliedAt: Number.isFinite(Number((value as any).appliedAt)) ? Number((value as any).appliedAt) : null,
-        queueDepthBefore: Number.isFinite(Number((value as any).queueDepthBefore)) ? Number((value as any).queueDepthBefore) : null,
-        remainingQueue: Number.isFinite(Number((value as any).remainingQueue)) ? Number((value as any).remainingQueue) : null,
-        effectiveQueueDepth: Number.isFinite(Number((value as any).effectiveQueueDepth)) ? Number((value as any).effectiveQueueDepth) : null,
-        flushStartedAt: Number.isFinite(Number((value as any).flushStartedAt)) ? Number((value as any).flushStartedAt) : null,
-        flushCompletedAt: Number.isFinite(Number((value as any).flushCompletedAt)) ? Number((value as any).flushCompletedAt) : null,
-        coalescing:
-          coalescing && typeof coalescing === "object"
-            ? {
-                inputPatchCount: Number((coalescing as any).inputPatchCount ?? undefined) || 0,
-                outputPatchCount: Number((coalescing as any).outputPatchCount ?? undefined) || 0,
-                coalescedCount: Number((coalescing as any).coalescedCount ?? undefined) || 0,
-                durationMs: Number((coalescing as any).durationMs ?? undefined) || 0,
-                appendLinesCoalesced: Number((coalescing as any).appendLinesCoalesced ?? undefined) || 0,
-                setPropsCoalesced: Number((coalescing as any).setPropsCoalesced ?? undefined) || 0,
-                insertChildCoalesced: Number((coalescing as any).insertChildCoalesced ?? undefined) || 0,
-              }
-            : null,
-      };
-    };
-
-    const flushBatches = Array.isArray((perf as any).flushBatches) ? (perf as any).flushBatches.map(normalizeBatch).filter((entry: any) => entry !== null) : [];
-
     return {
-      summary: perf.summary ?? {},
-      samples: {
-        recvToFlushMs: ensureArray(perf.samples?.recvToFlushMs),
-        flushApplyMs: ensureArray(perf.samples?.flushApplyMs),
-        reactCommitMs: ensureArray(perf.samples?.reactCommitMs),
-        paintMs: ensureArray(perf.samples?.paintMs),
-        queueDepth: ensureArray(perf.samples?.queueDepth),
-        patchApplyMs: ensureArray(perf.samples?.patchApplyMs),
-        longTasksMs: ensureArray(perf.samples?.longTasksMs),
-      },
+      summary: perf.summary,
+      samples: perf.samples,
       worker: perf.worker ?? null,
       workerTotals: perf.workerTotals ?? null,
       stream: perf.stream ?? null,
       patchTotals: state?.patchStats?.totals ?? null,
       coalescingTotals: perf.coalescingTotals ?? null,
-      flushBatches,
+      flushBatches: perf.flushBatches ?? null,
     };
   });
+  const telemetry = normalizeTelemetrySnapshot(rawTelemetry);
   const state = await captureRuntimeState(page);
   return { html, telemetry, state };
 }
@@ -1339,7 +1628,7 @@ function buildStepDiff(previous: LookaheadTraceStep | null, current: LookaheadTr
   };
 }
 
-async function writeLookaheadTrace(browser: typeof chromium, snippetName: string): Promise<void> {
+async function writeLookaheadTrace(browser: Browser, snippetName: string): Promise<void> {
   const snippetContent = await readSnippet(snippetName);
   const traceFocus = buildTraceFocus(snippetContent);
   const prefixLengths = applyTraceFocus(buildTracePrefixLengths(snippetContent, TRACE_MODE, TRACE_MAX_STEPS), snippetContent.length, traceFocus);
@@ -1614,6 +1903,11 @@ function analyzeHtml(html: string, snippetContent: string, snippetName: string):
       performance: {
         patchApply: null,
         longTasks: null,
+        recvToFlush: null,
+        flushApply: null,
+        reactCommit: null,
+        paint: null,
+        queueDepth: null,
       },
       issues: {
         critical: ["Root element '[data-testid=\"markdown-output\"]' not found"],
@@ -1887,13 +2181,16 @@ function stripMarkdownLinePrefix(line: string): string {
   return result.trimStart();
 }
 
-async function analyzeSnippet(browser: typeof chromium, snippetName: string): Promise<SnippetAnalysis> {
+async function analyzeSnippet(browser: Browser, snippetName: string, workerLifecycleScript: string): Promise<SnippetAnalysis> {
   console.log(`[analyze] Processing ${snippetName}...`);
   const snippetContent = await readSnippet(snippetName);
   const page = await browser.newPage();
 
   try {
-    const { html: renderedHtml, telemetry } = await renderSnippet(page, snippetContent);
+    const { html: renderedHtml, telemetry } = await renderSnippet(page, snippetContent, {
+      workerLifecycleScript,
+      snippetName,
+    });
     const analysis = analyzeHtml(renderedHtml, snippetContent, snippetName);
 
     if (telemetry) {
@@ -2026,6 +2323,17 @@ async function main() {
     "utf-8",
   );
 
+  const workerLifecycleScript = (
+    await build({
+      entryPoints: [fileURLToPath(new URL("./perf/demo-worker-lifecycle-browser.ts", import.meta.url))],
+      platform: "browser",
+      bundle: true,
+      write: false,
+      format: "iife",
+      keepNames: false,
+      target: "es2020",
+    })
+  ).outputFiles[0].text;
   const browser = await chromium.launch({ headless: true });
   const results: SnippetAnalysis[] = [];
   const snippetArtifacts: Array<{ snippet: string; htmlPath: string }> = [];
@@ -2033,7 +2341,7 @@ async function main() {
 
   try {
     for (const snippet of snippets) {
-      const result = await analyzeSnippet(browser, snippet);
+      const result = await analyzeSnippet(browser, snippet, workerLifecycleScript);
       results.push(result);
 
       // Save individual HTML
@@ -2125,7 +2433,17 @@ async function main() {
     await fs.writeFile(ARTIFACT_MANIFEST_PATH, JSON.stringify(manifest, null, 2), "utf-8");
     console.log(`[analyze] Saved artifact manifest to ${ARTIFACT_MANIFEST_PATH}`);
   } finally {
-    await browser.close();
+    try {
+      await browser.close();
+    } finally {
+      if (guardrailSummary === null) {
+        guardrailSummary = buildGuardrailSummary();
+        await fs.writeFile(GUARDRAIL_SUMMARY_PATH, JSON.stringify(guardrailSummary, null, 2), "utf-8");
+        if (results.length > 0) {
+          await fs.writeFile(path.join(OUTPUT_DIR, "analysis-partial-report.json"), JSON.stringify(results, null, 2), "utf-8");
+        }
+      }
+    }
   }
 
   const summaryForExit = guardrailSummary ?? buildGuardrailSummary();

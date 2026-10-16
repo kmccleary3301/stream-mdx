@@ -24,7 +24,7 @@ import type { RegressionScenario } from "./utils";
 const UPDATE = process.env.UPDATE_SNAPSHOTS === "1" || process.env.UPDATE_SNAPSHOTS === "true";
 const BASE_URL = process.env.STREAM_MDX_REGRESSION_BASE_URL || "http://localhost:3000";
 const SNAPSHOT_ROOT = path.resolve(process.cwd(), "tests/regression/snapshots/html");
-const ARTIFACT_ROOT = path.resolve(process.cwd(), "tests/regression/artifacts");
+const ARTIFACT_ROOT = path.resolve(getArg("--out") ?? path.join(process.cwd(), "tests/regression/artifacts"));
 
 function getArg(flag: string): string | null {
   const index = process.argv.indexOf(flag);
@@ -32,18 +32,27 @@ function getArg(flag: string): string | null {
   return process.argv[index + 1] ?? null;
 }
 
+function getNumArg(flag: string): number | null {
+  const value = getArg(flag);
+  if (!value) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+const SCENARIO_TIMEOUT_MS = getNumArg("--timeout") ?? Number(process.env.STREAM_MDX_REGRESSION_TIMEOUT ?? 60000);
+
 async function ensureDir(dir: string): Promise<void> {
   await fs.mkdir(dir, { recursive: true });
 }
 
 async function readSummary(
-  page: import("@playwright/test").Page,
+  page: Page,
 ): Promise<{ rootChildCount: number; selectors: Record<string, boolean>; counts?: Record<string, number> }> {
   const summary = (await page.evaluate(() => window.__streammdxRegression?.getSummary())) as
     | { rootChildCount: number; selectors: Record<string, boolean>; counts?: Record<string, number> }
     | undefined;
   if (summary) return summary;
-  await page.waitForFunction(() => Boolean(window.__streammdxRegression));
+  await page.waitForFunction(() => Boolean(window.__streammdxRegression), undefined, { timeout: 15000 });
   const retry = (await page.evaluate(() => window.__streammdxRegression?.getSummary())) as
     | { rootChildCount: number; selectors: Record<string, boolean>; counts?: Record<string, number> }
     | undefined;
@@ -62,6 +71,10 @@ type SnapshotCheckpoint = {
     queueDepth: number;
     pendingBatches: number;
     workerReady: boolean;
+    workerInitialized?: boolean;
+    workerFinalized?: boolean;
+    workerErrors?: string[];
+    harnessErrors?: string[];
     lastTx: number | null;
     lastPatchToDomMs: number | null;
     lastDurationMs: number | null;
@@ -156,6 +169,7 @@ async function writeComparisonArtifacts(
     expected: HtmlSnapshot;
     received: HtmlSnapshot;
     message: string;
+    capturedLogs?: Array<{ type: string; message: string; timestamp: string }>;
   },
 ): Promise<string> {
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
@@ -167,6 +181,57 @@ async function writeComparisonArtifacts(
   await fs.writeFile(path.join(artifactDir, "expected.snap.json"), JSON.stringify(params.expected, null, 2));
   await fs.writeFile(path.join(artifactDir, "received.snap.json"), JSON.stringify(params.received, null, 2));
   await fs.writeFile(path.join(artifactDir, "message.txt"), `${params.message}\n`);
+  if (params.received.final.runtimeState) {
+    await fs.writeFile(
+      path.join(artifactDir, "runtime-state.json"),
+      JSON.stringify(params.received.final.runtimeState, null, 2),
+    );
+  }
+  if (params.capturedLogs && params.capturedLogs.length > 0) {
+    await fs.writeFile(path.join(artifactDir, "browser-logs.json"), JSON.stringify(params.capturedLogs, null, 2));
+  }
+  return artifactDir;
+}
+
+async function writeFailureArtifacts(
+  params: {
+    fixtureId: string;
+    scenarioId: string;
+    label: string;
+    error?: unknown;
+    message?: string;
+    received?: Partial<HtmlSnapshot> | null;
+    runtimeState?: unknown;
+    html?: string;
+    capturedLogs?: Array<{ type: string; message: string; timestamp: string }>;
+  },
+): Promise<string> {
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const safeLabel = params.label.replace(/[^a-z0-9_-]+/gi, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+  const artifactDir = path.join(ARTIFACT_ROOT, stamp, params.fixtureId, params.scenarioId, safeLabel || "failure");
+  await ensureDir(artifactDir);
+  const errorDetails: string[] = [];
+  if (params.message) errorDetails.push(params.message);
+  if (params.error) {
+    errorDetails.push(
+      params.error instanceof Error
+        ? `${params.error.name}: ${params.error.message}\n${params.error.stack ?? ""}`
+        : String(params.error),
+    );
+  }
+  await fs.writeFile(path.join(artifactDir, "error.txt"), `${errorDetails.join("\n\n")}\n`);
+  if (params.html !== undefined) {
+    await fs.writeFile(path.join(artifactDir, "partial.html"), params.html);
+  }
+  if (params.received) {
+    await fs.writeFile(path.join(artifactDir, "partial.snap.json"), JSON.stringify(params.received, null, 2));
+  }
+  if (params.runtimeState) {
+    await fs.writeFile(path.join(artifactDir, "runtime-state.json"), JSON.stringify(params.runtimeState, null, 2));
+  }
+  if (params.capturedLogs && params.capturedLogs.length > 0) {
+    await fs.writeFile(path.join(artifactDir, "browser-logs.json"), JSON.stringify(params.capturedLogs, null, 2));
+  }
   return artifactDir;
 }
 
@@ -481,25 +546,44 @@ async function run(): Promise<void> {
   const unexpected404Urls = new Set<string>();
   let suppressNameNotResolved = false;
   let currentFixtureId = "unknown";
-  const attachPageObservers = (page: import("@playwright/test").Page) => {
+  const attachPageObservers = (
+    page: Page,
+    capturedLogs: Array<{ type: string; message: string; timestamp: string }>,
+  ) => {
+    const pushLog = (type: string, message: string) => {
+      capturedLogs.push({ type, message, timestamp: new Date().toISOString() });
+      if (capturedLogs.length > 200) capturedLogs.shift();
+    };
+
     page.on("pageerror", (error) => {
-      console.error(`\n[regression pageerror] ${error}`);
+      const msg = error instanceof Error ? `${error.name}: ${error.message}\n${error.stack ?? ""}` : String(error);
+      pushLog("pageerror", msg);
+      console.error(`\n[regression pageerror] ${msg}`);
+    });
+    page.on("requestfailed", (request) => {
+      const failure = request.failure();
+      const msg = `${request.method()} ${request.url()} - ${failure?.errorText ?? "request failed"}`;
+      pushLog("requestfailed", msg);
+      console.error(`\n[regression requestfailed] ${msg}`);
     });
     page.on("response", (response) => {
-      if (response.status() !== 404) return;
-      const url = response.url();
-      if (ignored404Patterns.some((pattern) => url.includes(pattern))) {
-        return;
+      if (response.status() >= 400) {
+        const url = response.url();
+        if (response.status() === 404 && ignored404Patterns.some((pattern) => url.includes(pattern))) {
+          return;
+        }
+        if (unexpected404Urls.has(url)) {
+          return;
+        }
+        unexpected404Urls.add(url);
+        pushLog("response", `${response.status()} ${url}`);
+        console.error(`\n[regression http${response.status()}] ${url}`);
       }
-      if (unexpected404Urls.has(url)) {
-        return;
-      }
-      unexpected404Urls.add(url);
-      console.error(`\n[regression http404] ${url}`);
     });
     page.on("console", (message) => {
-      if (message.type() === "error") {
-        const text = message.text();
+      const type = message.type();
+      const text = message.text();
+      if (type === "error") {
         if (text.includes("Failed to load resource: the server responded with a status of 404")) {
           return;
         }
@@ -509,8 +593,17 @@ async function run(): Promise<void> {
             (suppressedConsole.nameNotResolvedByFixture[currentFixtureId] ?? 0) + 1;
           return;
         }
-        console.error(`\n[regression console.${message.type()}] ${text}`);
+        pushLog("console.error", text);
+        console.error(`\n[regression console.${type}] ${text}`);
+      } else if (type === "warn") {
+        pushLog("console.warn", text);
       }
+    });
+    page.on("worker", (worker) => {
+      pushLog("worker.created", worker.url());
+      worker.on("close", () => {
+        pushLog("worker.closed", worker.url());
+      });
     });
   };
 
@@ -550,7 +643,17 @@ async function run(): Promise<void> {
         executedByFixture.set(fixture.id, (executedByFixture.get(fixture.id) ?? 0) + 1);
         executedByScenario.set(scenario.id, (executedByScenario.get(scenario.id) ?? 0) + 1);
         const page = await context.newPage();
-        attachPageObservers(page);
+        const capturedLogs: Array<{ type: string; message: string; timestamp: string }> = [];
+        attachPageObservers(page, capturedLogs);
+        const scenarioDeadline = Date.now() + SCENARIO_TIMEOUT_MS;
+        const remainingTimeout = () => {
+          const rem = scenarioDeadline - Date.now();
+          if (rem <= 0) {
+            throw new Error(`Scenario exceeded configured deadline of ${SCENARIO_TIMEOUT_MS}ms`);
+          }
+          return rem;
+        };
+
         const usesFixedSplit = activeSeed === null && isSplitScenario(scenario) && Boolean(split);
         const chunks = activeSeed !== null
           ? buildSeededChunks(text, scenario, `${fixture.id}:${scenario.id}:${activeSeed}`)
@@ -579,10 +682,17 @@ async function run(): Promise<void> {
           hasMath: false,
         };
         const checkpoints: SnapshotCheckpoint[] = [];
+        let partialSnapshot: Partial<HtmlSnapshot> | null = null;
+        let lastKnownRuntimeState: unknown = null;
+        let lastKnownHtml = "";
 
         try {
-          await page.goto(`${BASE_URL}/regression/html/`, { waitUntil: "load" });
-          await page.waitForFunction(() => Boolean(window.__streammdxRegression));
+          await page.goto(`${BASE_URL}/regression/html/`, { waitUntil: "load", timeout: remainingTimeout() });
+          await page.waitForFunction(
+            () => Boolean(window.__streammdxRegression),
+            undefined,
+            { timeout: remainingTimeout() },
+          );
           await page.evaluate(
             async ({ fixtureId, scenarioId, nextSeed, nextSchedulerMode, preset }) => {
               window.__streammdxRegression?.setMeta({
@@ -603,7 +713,7 @@ async function run(): Promise<void> {
               preset: getSchedulerPreset(schedulerMode),
             },
           );
-          await page.evaluate(() => window.__streammdxRegression?.waitForReady());
+          await page.evaluate((timeout) => window.__streammdxRegression?.waitForReady(timeout), remainingTimeout());
 
           let appended = 0;
           let firstChunkCaptured = false;
@@ -647,11 +757,21 @@ async function run(): Promise<void> {
               selectors: summary.selectors,
               counts: summary.counts,
               html: html ?? "",
-              textSample: textContent.slice(0, 200),
-              structure,
-              inspection,
-            });
+            textSample: textContent.slice(0, 200),
+            structure,
+            inspection,
+          });
+          lastKnownHtml = html ?? "";
+          lastKnownRuntimeState = runtimeState;
+          partialSnapshot = {
+            fixtureId: fixture.id,
+            fixtureTitle: fixture.title,
+            scenarioId: scenario.id,
+            scenario,
+            totalLength: text.length,
+            checkpoints: [...checkpoints],
           };
+        };
 
           for (const chunk of chunks) {
             await page.evaluate((value) => window.__streammdxRegression?.appendAndFlush(value), chunk);
@@ -716,11 +836,15 @@ async function run(): Promise<void> {
 
         if (waitForMdxCompiled) {
           try {
-            await page.waitForFunction(() => {
-              const summary = window.__streammdxRegression?.getSummary();
-              if (!summary) return false;
-              return summary.selectors.hasMdxCompiled && !summary.selectors.hasMdxPending;
-            });
+            await page.waitForFunction(
+              () => {
+                const summary = window.__streammdxRegression?.getSummary();
+                if (!summary) return false;
+                return summary.selectors.hasMdxCompiled && !summary.selectors.hasMdxPending;
+              },
+              undefined,
+              { timeout: remainingTimeout() },
+            );
           } catch (error) {
             failures += 1;
             scenarioFailed = true;
@@ -768,16 +892,41 @@ async function run(): Promise<void> {
           const finalStructure = await readStructure(page);
           const finalInspection = await readInspection(page);
           const rootChildren = await readRootChildren(page);
-        const childHashes = rootChildren.map((child, index) => ({
-          index,
-          tag: child.tag,
-          hash: hashHtml(child.html),
-          textSample: child.text,
-        }));
-        const htmlInvariantFailures: string[] = [];
-        const finalHtmlValue = finalHtml ?? "";
-        const rawBlockMathNeedle = '<p class="markdown-paragraph">$$';
-        const rawInlineCodeNeedle =
+         const childHashes = rootChildren.map((child, index) => ({
+           index,
+           tag: child.tag,
+           hash: hashHtml(child.html),
+           textSample: child.text,
+         }));
+         const snapshot: HtmlSnapshot = {
+           fixtureId: fixture.id,
+           fixtureTitle: fixture.title,
+           scenarioId: scenario.id,
+           scenario,
+           runMeta: {
+             seed: activeSeed,
+             schedulerMode,
+             usedSplitMarkers: usesFixedSplit,
+             fixtureTags: [...(fixture.tags ?? [])],
+           },
+           totalLength: text.length,
+           checkpoints,
+           final: {
+             id: "after-finalize",
+             appendedChars: appended,
+             rootChildCount: finalSummary.rootChildCount,
+             selectors: finalSummary.selectors,
+             html: finalHtml ?? "",
+             runtimeState: finalRuntimeState,
+             structure: finalStructure,
+             children: childHashes,
+             inspection: finalInspection,
+           },
+         };
+         const htmlInvariantFailures: string[] = [];
+         const finalHtmlValue = finalHtml ?? "";
+         const rawBlockMathNeedle = '<p class="markdown-paragraph">$$';
+         const rawInlineCodeNeedle =
           "`this is a really really really really really really really really really really really really really really really really really really really really really long inline code span`";
         const isSanitizationFixture = (fixture.tags ?? []).includes("sanitization");
         const emptyNestedListCount = fixture.forbidEmptyNestedLists
@@ -869,15 +1018,26 @@ async function run(): Promise<void> {
           await validateDisplayFormula(page, "a_n = \\frac{1}{n}\n\\sqrt{x}", "after-finalize", htmlInvariantFailures);
         }
 
+
         if (htmlInvariantFailures.length > 0) {
           failures += 1;
           scenarioFailed = true;
-          console.error(`\nHTML invariant violations for ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}:`);
-          for (const message of htmlInvariantFailures) {
-            console.error(`- ${message}`);
-          }
+          const msg = `HTML invariant violations for ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}:\n` +
+            htmlInvariantFailures.map((m) => `- ${m}`).join("\n");
+          console.error(`\n${msg}`);
+          const artifactDir = await writeFailureArtifacts({
+            fixtureId: fixture.id,
+            scenarioId: scenario.id,
+            label: `html-invariants-${activeSeed ?? "baseline"}`,
+            message: msg,
+            received: snapshot,
+            runtimeState: finalRuntimeState,
+            html: finalHtmlValue,
+            capturedLogs,
+          });
+          console.error(`artifacts: ${artifactDir}`);
+          console.error(`trace replay: ${buildTraceReplayCommand(fixture.file)}`);
         }
-
         const requiredSelectors = fixture.requiredSelectors ?? [];
         if (requiredSelectors.length > 0) {
           const missing = (await page.evaluate((selectors) => {
@@ -904,36 +1064,10 @@ async function run(): Promise<void> {
             console.error(
               `\nForbidden selectors present for ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}: ${presentForbidden.join(", ")}`,
             );
-          }
+         }
         }
-
-          const snapshot: HtmlSnapshot = {
-          fixtureId: fixture.id,
-          fixtureTitle: fixture.title,
-          scenarioId: scenario.id,
-          scenario,
-          runMeta: {
-            seed: activeSeed,
-            schedulerMode,
-            usedSplitMarkers: usesFixedSplit,
-            fixtureTags: [...(fixture.tags ?? [])],
-          },
-          totalLength: text.length,
-          checkpoints,
-          final: {
-            id: "after-finalize",
-            appendedChars: appended,
-            rootChildCount: finalSummary.rootChildCount,
-            selectors: finalSummary.selectors,
-            html: finalHtml ?? "",
-            runtimeState: finalRuntimeState,
-            structure: finalStructure,
-            children: childHashes,
-            inspection: finalInspection,
-          },
-        };
-
-          if (!replayMode) {
+ 
+         if (!replayMode) {
           if (UPDATE) {
             if (scenarioFailed) {
               console.warn(`skipped update for ${fixture.id}/${scenario.id} due to failures`);
@@ -961,6 +1095,7 @@ async function run(): Promise<void> {
               expected,
               received: snapshot,
               message: result.message ?? "HTML regression",
+              capturedLogs,
             });
             console.error(`\nHTML regression: ${fixture.id} / ${scenario.id}\n${result.message}\n`);
             console.error(`artifacts: ${artifactDir}`);
@@ -991,6 +1126,7 @@ async function run(): Promise<void> {
               expected,
               received: snapshot,
               message: result.message ?? "Final HTML parity mismatch vs baseline snapshot",
+              capturedLogs,
             });
             console.error(
               `\nFinal HTML parity mismatch vs baseline snapshot for ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}\n${result.message ?? ""}\n`,
@@ -1013,17 +1149,40 @@ async function run(): Promise<void> {
               expected: baselineReplaySnapshot,
               received: snapshot,
               message: replayResult.message ?? "Replay divergence",
+              capturedLogs,
             });
             console.error(
               `\nReplay divergence for ${fixture.id}/${scenario.id}: baseline seed=${baselineReplaySnapshot.runMeta?.seed ?? "baseline"} vs ${activeSeed ?? "baseline"}\n${replayResult.message ?? ""}\n`,
             );
             console.error(`artifacts: ${artifactDir}`);
-            console.error(`trace replay: ${buildTraceReplayCommand(fixture.file)}`);
+             console.error(`trace replay: ${buildTraceReplayCommand(fixture.file)}`);
+           }
+         }
+         if (!scenarioFailed) {
+           console.log(`ok ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}`);
+         }
+       } catch (error) {
+         failures += 1;
+         scenarioFailed = true;
+         console.error(`\n[regression scenario error] ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}:`, error);
+         try {
+           lastKnownHtml = (await page.evaluate(() => window.__streammdxRegression?.getHtml())) ?? lastKnownHtml;
+            lastKnownRuntimeState = (await page.evaluate(() => window.__streammdxRegression?.getRuntimeState?.())) ?? lastKnownRuntimeState;
+          } catch {
+            // Page evaluation may fail if context is closed or disconnected
           }
-          }
-          if (!scenarioFailed) {
-            console.log(`ok ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}`);
-          }
+          const artifactDir = await writeFailureArtifacts({
+            fixtureId: fixture.id,
+            scenarioId: scenario.id,
+            label: `scenario-error-${activeSeed ?? "baseline"}`,
+            error,
+            received: partialSnapshot,
+            runtimeState: lastKnownRuntimeState,
+            html: lastKnownHtml,
+            capturedLogs,
+          });
+          console.error(`artifacts: ${artifactDir}`);
+          console.error(`trace replay: ${buildTraceReplayCommand(fixture.file)}`);
         } finally {
           await page.close().catch((error) => {
             console.error(`Failed to close regression page for ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}:`, error);
