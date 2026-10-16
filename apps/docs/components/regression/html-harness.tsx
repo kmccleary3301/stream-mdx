@@ -315,7 +315,7 @@ export function HtmlRegressionHarness(): JSX.Element {
       parseEventCount: 0,
       patchEventCount: 0,
     };
-    const worker = new Worker("/workers/markdown-worker.js");
+    const worker = new Worker("/workers/markdown-worker.js", { type: "module" });
     const pushEvent = (type: string, details?: string) => {
       const events = workerLifecycleRef.current.events;
       events.push({ type, details, timestamp: Date.now() });
