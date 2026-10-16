@@ -89,7 +89,7 @@ type RegressionApi = {
   appendAndFlush: (chunk: string) => Promise<void>;
   finalizeAndFlush: () => Promise<void>;
   restart: () => void;
-  waitForReady: () => Promise<void>;
+  waitForReady: (timeoutMs?: number) => Promise<void>;
   getHtml: () => string;
   getSummary: () => RegressionSummary;
   getRuntimeState: () => {
@@ -97,6 +97,10 @@ type RegressionApi = {
     queueDepth: number;
     pendingBatches: number;
     workerReady: boolean;
+    workerInitialized: boolean;
+    workerFinalized: boolean;
+    workerErrors: string[];
+    harnessErrors: string[];
     lastTx: number | null;
     lastPatchToDomMs: number | null;
     lastDurationMs: number | null;
@@ -198,9 +202,11 @@ async function waitForStableVersion(
   handle: StreamingMarkdownHandle | null,
   options: { stableFrames?: number; timeoutMs?: number } = {},
 ): Promise<void> {
-  if (!handle) return;
+  if (!handle) {
+    throw new Error("[waitForStableVersion] Handle is absent");
+  }
   const stableFrames = options.stableFrames ?? 3;
-  const timeoutMs = options.timeoutMs ?? 2000;
+  const timeoutMs = options.timeoutMs ?? 3000;
   const start = Date.now();
   let lastVersion = handle.getState().rendererVersion;
   let stableCount = 0;
@@ -214,7 +220,9 @@ async function waitForStableVersion(
       lastVersion = nextVersion;
     }
     if (Date.now() - start > timeoutMs) {
-      return;
+      throw new Error(
+        `[waitForStableVersion] Timed out waiting for stable renderer version after ${timeoutMs}ms (version=${lastVersion}, stableFrames=${stableCount}/${stableFrames}, queueDepth=${handle.getState().queueDepth}, pendingBatches=${handle.getState().pendingBatches}).`,
+      );
     }
   }
 }
@@ -232,7 +240,9 @@ async function waitForLazyCodeCompletion(
   handle: StreamingMarkdownHandle | null,
   options: { timeoutMs?: number } = {},
 ): Promise<void> {
-  if (!handle) return;
+  if (!handle) {
+    throw new Error("[waitForLazyCodeCompletion] Handle is absent");
+  }
   const timeoutMs = options.timeoutMs ?? 5000;
   const start = Date.now();
   while (Date.now() - start <= timeoutMs) {
@@ -254,8 +264,8 @@ async function waitForLazyCodeCompletion(
     }
     await nextFrame();
   }
+  throw new Error(`[waitForLazyCodeCompletion] Timed out waiting for lazy code tokenization after ${timeoutMs}ms.`);
 }
-
 export function HtmlRegressionHarness(): JSX.Element {
   const FLUSH_TIMEOUT_MS = 8000;
   const [config, setConfig] = useState<RegressionConfig>({
@@ -271,6 +281,86 @@ export function HtmlRegressionHarness(): JSX.Element {
   const activeInstanceKeyRef = useRef<number | null>(null);
   const metaRef = useRef<{ fixtureId?: string; scenarioId?: string; seed?: string; schedulerMode?: string }>({});
 
+  type WorkerLifecycle = {
+    initialized: boolean;
+    finalized: boolean;
+    errors: string[];
+    events: Array<{ type: string; details?: string; timestamp: number }>;
+    parseEventCount: number;
+    patchEventCount: number;
+  };
+
+  const workerLifecycleRef = useRef<WorkerLifecycle>({
+    initialized: false,
+    finalized: false,
+    errors: [],
+    events: [],
+    parseEventCount: 0,
+    patchEventCount: 0,
+  });
+  const harnessErrorsRef = useRef<string[]>([]);
+
+  const handleStreamingError = useCallback((error: Error) => {
+    const message = error?.message || String(error);
+    harnessErrorsRef.current.push(message);
+    if (harnessErrorsRef.current.length > 50) harnessErrorsRef.current.shift();
+  }, []);
+
+  const createHarnessWorker = useCallback((): Worker => {
+    workerLifecycleRef.current = {
+      initialized: false,
+      finalized: false,
+      errors: [],
+      events: [],
+      parseEventCount: 0,
+      patchEventCount: 0,
+    };
+    const worker = new Worker("/workers/markdown-worker.js");
+    const pushEvent = (type: string, details?: string) => {
+      const events = workerLifecycleRef.current.events;
+      events.push({ type, details, timestamp: Date.now() });
+      if (events.length > 50) events.shift();
+    };
+
+    worker.addEventListener("message", (event: MessageEvent<any>) => {
+      const data = event.data;
+      if (!data || typeof data !== "object") return;
+      if (data.type === "INITIALIZED") {
+        workerLifecycleRef.current.initialized = true;
+        pushEvent("INITIALIZED", `blocks=${Array.isArray(data.blocks) ? data.blocks.length : 0}`);
+      } else if (data.type === "FINALIZED") {
+        workerLifecycleRef.current.finalized = true;
+        pushEvent("FINALIZED");
+      } else if (data.type === "PATCH") {
+        workerLifecycleRef.current.parseEventCount += 1;
+        workerLifecycleRef.current.patchEventCount += 1;
+        pushEvent("PATCH", `tx=${data.tx} patches=${Array.isArray(data.patches) ? data.patches.length : 0}`);
+      } else if (data.type === "METRICS") {
+        workerLifecycleRef.current.parseEventCount += 1;
+        pushEvent("METRICS", `parseMs=${data.metrics?.parseMs ?? 0}`);
+      } else if (data.type === "RESET") {
+        pushEvent("RESET", typeof data.reason === "string" ? data.reason : "");
+      } else if (data.type === "ERROR") {
+        const msg = data.error?.message ?? "Worker reported ERROR";
+        workerLifecycleRef.current.errors.push(msg);
+        pushEvent("ERROR", msg);
+      }
+    });
+
+    worker.addEventListener("error", (event: ErrorEvent) => {
+      const msg = event.message || "Worker runtime error";
+      workerLifecycleRef.current.errors.push(msg);
+      pushEvent("WORKER_ERROR", msg);
+    });
+
+    worker.addEventListener("messageerror", () => {
+      const msg = "Worker message deserialization error";
+      workerLifecycleRef.current.errors.push(msg);
+      pushEvent("MESSAGE_ERROR", msg);
+    });
+
+    return worker;
+  }, []);
   const tableElements = useMemo(() => createDemoTableElements(), []);
   const htmlElements = useMemo(() => createDemoHtmlElements(), []);
 
@@ -304,17 +394,28 @@ export function HtmlRegressionHarness(): JSX.Element {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const waitForFlushAfter = async (prevVersion: number): Promise<void> => {
+    const waitForFlushAfter = async (prevVersion: number, timeoutMs = FLUSH_TIMEOUT_MS): Promise<void> => {
       const handle = handleRef.current;
-      if (!handle) return;
-      await new Promise<void>((resolve) => {
+      if (!handle) {
+        throw new Error(
+          `[waitForFlushAfter] Handle absent while waiting for flush (prevVersion=${prevVersion}, fixture=${metaRef.current.fixtureId ?? "unknown"}, seed=${metaRef.current.seed ?? "baseline"}).`,
+        );
+      }
+      // flushPending may commit synchronously before this waiter subscribes.
+      if (handle.getState().rendererVersion !== prevVersion) return;
+      await new Promise<void>((resolve, reject) => {
         let settled = false;
         const timer = window.setTimeout(() => {
           if (settled) return;
           settled = true;
           unsubscribe?.();
-          resolve();
-        }, FLUSH_TIMEOUT_MS);
+          const state = handle.getState();
+          reject(
+            new Error(
+              `[waitForFlushAfter] Timed out waiting for flush after ${timeoutMs}ms (prevVersion=${prevVersion}, currentVersion=${state.rendererVersion}, queueDepth=${state.queueDepth}, pendingBatches=${state.pendingBatches}, workerReady=${state.workerReady}, workerInitialized=${workerLifecycleRef.current.initialized}, fixture=${metaRef.current.fixtureId ?? "unknown"}, scenario=${metaRef.current.scenarioId ?? "unknown"}, seed=${metaRef.current.seed ?? "baseline"}).`,
+            ),
+          );
+        }, timeoutMs);
         const unsubscribe = handle.onFlush(() => {
           const nextVersion = handle.getState().rendererVersion;
           if (nextVersion !== prevVersion && !settled) {
@@ -327,9 +428,37 @@ export function HtmlRegressionHarness(): JSX.Element {
       });
     };
 
+    const waitForIdleWithTimeout = async (handle: StreamingMarkdownHandle, timeoutMs = FLUSH_TIMEOUT_MS): Promise<void> => {
+      let timer: number | undefined;
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timer = window.setTimeout(() => {
+          const state = handle.getState();
+          reject(
+            new Error(
+              `[waitForIdle] Queue failed to drain within ${timeoutMs}ms (queueDepth=${state.queueDepth}, pendingBatches=${state.pendingBatches}, workerReady=${state.workerReady}, workerInitialized=${workerLifecycleRef.current.initialized}, fixture=${metaRef.current.fixtureId ?? "unknown"}, scenario=${metaRef.current.scenarioId ?? "unknown"}, seed=${metaRef.current.seed ?? "baseline"}).`,
+            ),
+          );
+        }, timeoutMs);
+      });
+      try {
+        await Promise.race([handle.waitForIdle(), timeoutPromise]);
+      } finally {
+        if (timer !== undefined) window.clearTimeout(timer);
+      }
+    };
+
     const api: RegressionApi = {
       async setConfig(next) {
         const targetKey = instanceKeyRef.current + 1;
+        workerLifecycleRef.current = {
+          initialized: false,
+          finalized: false,
+          errors: [],
+          events: [],
+          parseEventCount: 0,
+          patchEventCount: 0,
+        };
+        harnessErrorsRef.current.length = 0;
         setConfig((prev) => ({ ...prev, ...next }));
         setInstanceKey(targetKey);
         instanceKeyRef.current = targetKey;
@@ -342,7 +471,7 @@ export function HtmlRegressionHarness(): JSX.Element {
             return;
           }
           if (Date.now() - start > timeoutMs) {
-            throw new Error("Regression harness renderer did not remount in time.");
+            throw new Error(`[setConfig] Regression harness renderer did not remount in time after ${timeoutMs}ms.`);
           }
           await nextFrame();
         }
@@ -358,42 +487,184 @@ export function HtmlRegressionHarness(): JSX.Element {
       },
       async appendAndFlush(chunk) {
         if (!chunk) return;
+        const meta = metaRef.current;
         const handle = handleRef.current;
-        if (!handle) return;
+        if (!handle) {
+          throw new Error(
+            `[appendAndFlush] Handle absent while attempting to append source chunk (` +
+              `length=${chunk.length}, instanceKey=${instanceKeyRef.current}, activeKey=${activeInstanceKeyRef.current}, ` +
+              `workerInitialized=${workerLifecycleRef.current.initialized}, workerReady=false, ` +
+              `fixture=${meta.fixtureId ?? "unknown"}, scenario=${meta.scenarioId ?? "unknown"}, seed=${meta.seed ?? "baseline"}, scheduler=${meta.schedulerMode ?? "default"}` +
+              `).`,
+          );
+        }
+        if (!handle.getState().workerReady || !workerLifecycleRef.current.initialized) {
+          throw new Error(
+            `[appendAndFlush] Engine/worker not ready during append (` +
+              `workerReady=${handle.getState().workerReady}, workerInitialized=${workerLifecycleRef.current.initialized}, ` +
+              `fixture=${meta.fixtureId ?? "unknown"}, scenario=${meta.scenarioId ?? "unknown"}, seed=${meta.seed ?? "baseline"}` +
+              `).`,
+          );
+        }
+        if (workerLifecycleRef.current.errors.length > 0) {
+          throw new Error(
+            `[appendAndFlush] Worker error prior to append: ${workerLifecycleRef.current.errors.join("; ")}`,
+          );
+        }
+        if (harnessErrorsRef.current.length > 0) {
+          throw new Error(
+            `[appendAndFlush] Harness error prior to append: ${harnessErrorsRef.current.join("; ")}`,
+          );
+        }
+
+        const prevParseCount = workerLifecycleRef.current.parseEventCount;
+        const prevPatchCount = workerLifecycleRef.current.patchEventCount;
         const prevVersion = handle.getState().rendererVersion;
+
         handle.append(chunk);
-        handle.flushPending();
-        await waitForFlushAfter(prevVersion);
-        await handle.waitForIdle();
+
+        // Await worker parse response (either PATCH or METRICS) within genuine timeout
+        const start = Date.now();
+        while (workerLifecycleRef.current.parseEventCount === prevParseCount) {
+          if (workerLifecycleRef.current.errors.length > 0) {
+            throw new Error(
+              `[appendAndFlush] Worker error while processing chunk: ${workerLifecycleRef.current.errors.join("; ")}`,
+            );
+          }
+          if (harnessErrorsRef.current.length > 0) {
+            throw new Error(
+              `[appendAndFlush] Harness error while processing chunk: ${harnessErrorsRef.current.join("; ")}`,
+            );
+          }
+          if (Date.now() - start > FLUSH_TIMEOUT_MS) {
+            throw new Error(
+              `[appendAndFlush] Worker did not acknowledge APPEND parse within ${FLUSH_TIMEOUT_MS}ms (` +
+                `chunkLength=${chunk.length}, prevParseEvents=${prevParseCount}, ` +
+                `fixture=${meta.fixtureId ?? "unknown"}, scenario=${meta.scenarioId ?? "unknown"}, seed=${meta.seed ?? "baseline"}` +
+                `).`,
+            );
+          }
+          await nextFrame();
+        }
+
+        const hadNewPatches = workerLifecycleRef.current.patchEventCount > prevPatchCount;
+        if (hadNewPatches) {
+          // Worker produced patches: flush and wait for React commit
+          handle.flushPending();
+          await waitForFlushAfter(prevVersion);
+          await waitForIdleWithTimeout(handle, FLUSH_TIMEOUT_MS);
+        } else {
+          // Chunk was no-op/whitespace/partial delimiter without AST patch.
+          // Still flush any previously pending queue and wait if queue was active.
+          handle.flushPending();
+          if (handle.getState().queueDepth > 0 || handle.getState().pendingBatches > 0) {
+            await waitForIdleWithTimeout(handle, FLUSH_TIMEOUT_MS);
+          }
+        }
+
         await nextFrame();
         await nextFrame();
       },
       async finalizeAndFlush() {
+        const meta = metaRef.current;
         const handle = handleRef.current;
-        if (!handle) return;
+        if (!handle) {
+          throw new Error(
+            `[finalizeAndFlush] Handle absent while attempting to finalize (` +
+              `instanceKey=${instanceKeyRef.current}, activeKey=${activeInstanceKeyRef.current}, ` +
+              `fixture=${meta.fixtureId ?? "unknown"}, scenario=${meta.scenarioId ?? "unknown"}, seed=${meta.seed ?? "baseline"}, scheduler=${meta.schedulerMode ?? "default"}` +
+              `).`,
+          );
+        }
+        if (workerLifecycleRef.current.errors.length > 0) {
+          throw new Error(
+            `[finalizeAndFlush] Worker error prior to finalize: ${workerLifecycleRef.current.errors.join("; ")}`,
+          );
+        }
+        if (harnessErrorsRef.current.length > 0) {
+          throw new Error(
+            `[finalizeAndFlush] Harness error prior to finalize: ${harnessErrorsRef.current.join("; ")}`,
+          );
+        }
         const prevVersion = handle.getState().rendererVersion;
         handle.finalize();
         handle.flushPending();
-        await waitForFlushAfter(prevVersion);
-        await handle.waitForIdle();
-        await waitForStableVersion(handle, { stableFrames: 3, timeoutMs: 2000 });
+
+        // Require real FINALIZED from the worker for final drain
+        const finalizeStart = Date.now();
+        const finalizeTimeoutMs = 15000;
+        while (!workerLifecycleRef.current.finalized) {
+          if (workerLifecycleRef.current.errors.length > 0) {
+            throw new Error(
+              `[finalizeAndFlush] Worker error while waiting for FINALIZED: ${workerLifecycleRef.current.errors.join("; ")}`,
+            );
+          }
+          if (Date.now() - finalizeStart > finalizeTimeoutMs) {
+            throw new Error(
+              `[finalizeAndFlush] Worker did not emit FINALIZED within ${finalizeTimeoutMs}ms (` +
+                `fixture=${meta.fixtureId ?? "unknown"}, scenario=${meta.scenarioId ?? "unknown"}, seed=${meta.seed ?? "baseline"}` +
+                `).`,
+            );
+          }
+          await nextFrame();
+        }
+
+        if (handle.getState().rendererVersion !== prevVersion || handle.getState().queueDepth > 0 || handle.getState().pendingBatches > 0) {
+          handle.flushPending();
+          await waitForIdleWithTimeout(handle, FLUSH_TIMEOUT_MS);
+        }
+        await waitForStableVersion(handle, { stableFrames: 3, timeoutMs: 3000 });
         await waitForLazyCodeCompletion(handle, { timeoutMs: 5000 });
-        await waitForStableVersion(handle, { stableFrames: 3, timeoutMs: 2000 });
+        await waitForStableVersion(handle, { stableFrames: 3, timeoutMs: 3000 });
+
+        // Assert store readiness
+        const state = handle.getState();
+        if (state.queueDepth > 0 || state.pendingBatches > 0) {
+          throw new Error(
+            `[finalizeAndFlush] Store queue not drained after finalize (queueDepth=${state.queueDepth}, pendingBatches=${state.pendingBatches}).`,
+          );
+        }
+
         await nextFrame();
         await nextFrame();
       },
       restart() {
+        workerLifecycleRef.current.finalized = false;
         handleRef.current?.restart();
       },
-      async waitForReady() {
-        const timeoutMs = 15000;
+      async waitForReady(timeoutMs = 15000) {
         const start = Date.now();
         while (true) {
-          const ready =
-            activeInstanceKeyRef.current === instanceKeyRef.current && Boolean(handleRef.current?.getState().workerReady);
-          if (ready) return;
+          if (workerLifecycleRef.current.errors.length > 0) {
+            throw new Error(
+              `[waitForReady] Worker reported error during initialization: ${workerLifecycleRef.current.errors.join("; ")}`,
+            );
+          }
+          if (harnessErrorsRef.current.length > 0) {
+            throw new Error(
+              `[waitForReady] Harness reported error during initialization: ${harnessErrorsRef.current.join("; ")}`,
+            );
+          }
+          const handle = handleRef.current;
+          const isMounted = activeInstanceKeyRef.current === instanceKeyRef.current && handle !== null;
+          const isWorkerReady = Boolean(handle?.getState().workerReady);
+          const isWorkerInitialized = workerLifecycleRef.current.initialized;
+          const isStoreReady = Boolean(
+            handle && handle.getState().store && typeof handle.getState().store.getVersion() === "number",
+          );
+
+          if (isMounted && isWorkerReady && isWorkerInitialized && isStoreReady) {
+            return;
+          }
           if (Date.now() - start > timeoutMs) {
-            throw new Error("Worker did not initialize within the expected window.");
+            const meta = metaRef.current;
+            throw new Error(
+              `[waitForReady] Worker/store did not reach real INITIALIZED readiness within ${timeoutMs}ms (` +
+                `mounted=${isMounted}, workerReady=${isWorkerReady}, workerInitialized=${isWorkerInitialized}, storeReady=${isStoreReady}, ` +
+                `instanceKey=${instanceKeyRef.current}, activeKey=${activeInstanceKeyRef.current}, ` +
+                `fixture=${meta.fixtureId ?? "unknown"}, scenario=${meta.scenarioId ?? "unknown"}, seed=${meta.seed ?? "baseline"}, scheduler=${meta.schedulerMode ?? "default"}` +
+                `).`,
+            );
           }
           await nextFrame();
         }
@@ -429,12 +700,17 @@ export function HtmlRegressionHarness(): JSX.Element {
       },
       getRuntimeState() {
         const handle = handleRef.current;
+        const lifecycle = workerLifecycleRef.current;
         if (!handle) {
           return {
             rendererVersion: 0,
             queueDepth: 0,
             pendingBatches: 0,
             workerReady: false,
+            workerInitialized: lifecycle?.initialized ?? false,
+            workerFinalized: lifecycle?.finalized ?? false,
+            workerErrors: lifecycle ? [...lifecycle.errors] : [],
+            harnessErrors: [...harnessErrorsRef.current],
             lastTx: null,
             lastPatchToDomMs: null,
             lastDurationMs: null,
@@ -448,6 +724,10 @@ export function HtmlRegressionHarness(): JSX.Element {
           queueDepth: state.queueDepth,
           pendingBatches: state.pendingBatches,
           workerReady: state.workerReady,
+          workerInitialized: lifecycle.initialized,
+          workerFinalized: lifecycle.finalized,
+          workerErrors: [...lifecycle.errors],
+          harnessErrors: [...harnessErrorsRef.current],
           lastTx: state.lastMetrics?.tx ?? null,
           lastPatchToDomMs: state.lastMetrics?.patchToDomMs ?? null,
           lastDurationMs: state.lastMetrics?.durationMs ?? null,
@@ -552,7 +832,7 @@ export function HtmlRegressionHarness(): JSX.Element {
         <StreamingMarkdown
           key={instanceKey}
           ref={handleInstanceRef}
-          worker="/workers/markdown-worker.js"
+          worker={createHarnessWorker}
           className="markdown-v2-output"
           features={config.features}
           scheduling={config.scheduling}
@@ -562,6 +842,7 @@ export function HtmlRegressionHarness(): JSX.Element {
           inlineComponents={registry.getInlineComponentMap()}
           tableElements={tableElements}
           htmlElements={htmlElements}
+          onError={handleStreamingError}
         />
       </div>
     </div>

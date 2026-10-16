@@ -47,12 +47,13 @@ async function ensureDir(dir: string): Promise<void> {
 
 async function readSummary(
   page: Page,
+  remainingTimeout: () => number,
 ): Promise<{ rootChildCount: number; selectors: Record<string, boolean>; counts?: Record<string, number> }> {
   const summary = (await page.evaluate(() => window.__streammdxRegression?.getSummary())) as
     | { rootChildCount: number; selectors: Record<string, boolean>; counts?: Record<string, number> }
     | undefined;
   if (summary) return summary;
-  await page.waitForFunction(() => Boolean(window.__streammdxRegression), undefined, { timeout: 15000 });
+  await page.waitForFunction(() => Boolean(window.__streammdxRegression), undefined, { timeout: remainingTimeout() });
   const retry = (await page.evaluate(() => window.__streammdxRegression?.getSummary())) as
     | { rootChildCount: number; selectors: Record<string, boolean>; counts?: Record<string, number> }
     | undefined;
@@ -147,9 +148,20 @@ type HtmlSnapshot = {
   };
 };
 
-async function writeSnapshot(snapshotPath: string, data: HtmlSnapshot): Promise<void> {
+async function writeSnapshot(
+  snapshotPath: string,
+  data: HtmlSnapshot,
+  beforeCommit: () => void,
+): Promise<void> {
   await ensureDir(path.dirname(snapshotPath));
-  await fs.writeFile(snapshotPath, JSON.stringify(data, null, 2));
+  const temporaryPath = `${snapshotPath}.${crypto.randomUUID()}.tmp`;
+  try {
+    await fs.writeFile(temporaryPath, JSON.stringify(data, null, 2));
+    beforeCommit();
+    await fs.rename(temporaryPath, snapshotPath);
+  } finally {
+    await fs.rm(temporaryPath, { force: true });
+  }
 }
 
 async function loadSnapshot(snapshotPath: string): Promise<HtmlSnapshot | null> {
@@ -595,7 +607,7 @@ async function run(): Promise<void> {
         }
         pushLog("console.error", text);
         console.error(`\n[regression console.${type}] ${text}`);
-      } else if (type === "warn") {
+      } else if (type === "warning") {
         pushLog("console.warn", text);
       }
     });
@@ -660,6 +672,22 @@ async function run(): Promise<void> {
           : isSplitScenario(scenario) && split
             ? split.chunks
             : buildChunks(text, scenario);
+        const awaitScenario = async <T>(operation: () => Promise<T>): Promise<T> => {
+          const timeoutMs = remainingTimeout();
+          let timer: NodeJS.Timeout | undefined;
+          const deadlineExpired = new Promise<never>((_, reject) => {
+            timer = setTimeout(() => {
+              reject(new Error(`Scenario exceeded configured deadline of ${SCENARIO_TIMEOUT_MS}ms`));
+            }, timeoutMs);
+          });
+          try {
+            const result = await Promise.race([Promise.resolve().then(operation), deadlineExpired]);
+            remainingTimeout();
+            return result;
+          } finally {
+            clearTimeout(timer);
+          }
+        };
         const enforcePrefixInvariant = !["article", "footnotes", "html", "lists", "math", "mdx", "table", "code"].some((tag) =>
           (fixture.tags ?? []).includes(tag),
         );
@@ -687,34 +715,41 @@ async function run(): Promise<void> {
         let lastKnownHtml = "";
 
         try {
-          await page.goto(`${BASE_URL}/regression/html/`, { waitUntil: "load", timeout: remainingTimeout() });
-          await page.waitForFunction(
-            () => Boolean(window.__streammdxRegression),
-            undefined,
-            { timeout: remainingTimeout() },
+          await awaitScenario(() =>
+            page.goto(`${BASE_URL}/regression/html/`, { waitUntil: "load", timeout: remainingTimeout() }),
           );
-          await page.evaluate(
-            async ({ fixtureId, scenarioId, nextSeed, nextSchedulerMode, preset }) => {
-              window.__streammdxRegression?.setMeta({
-                fixtureId,
-                scenarioId,
-                seed: nextSeed,
-                schedulerMode: nextSchedulerMode,
-              });
-              if (preset && window.__streammdxRegression?.setConfig) {
-                await window.__streammdxRegression.setConfig(preset);
-              }
-            },
-            {
-              fixtureId: fixture.id,
-              scenarioId: scenario.id,
-              nextSeed: activeSeed,
-              nextSchedulerMode: schedulerMode,
-              preset: getSchedulerPreset(schedulerMode),
-            },
+          await awaitScenario(() =>
+            page.waitForFunction(
+              () => Boolean(window.__streammdxRegression),
+              undefined,
+              { timeout: remainingTimeout() },
+            ),
           );
-          await page.evaluate((timeout) => window.__streammdxRegression?.waitForReady(timeout), remainingTimeout());
-
+          await awaitScenario(() =>
+            page.evaluate(
+              async ({ fixtureId, scenarioId, nextSeed, nextSchedulerMode, preset }) => {
+                window.__streammdxRegression?.setMeta({
+                  fixtureId,
+                  scenarioId,
+                  seed: nextSeed ?? undefined,
+                  schedulerMode: nextSchedulerMode ?? undefined,
+                });
+                if (preset && window.__streammdxRegression?.setConfig) {
+                  await window.__streammdxRegression.setConfig(preset);
+                }
+              },
+              {
+                fixtureId: fixture.id,
+                scenarioId: scenario.id,
+                nextSeed: activeSeed,
+                nextSchedulerMode: schedulerMode,
+                preset: getSchedulerPreset(schedulerMode),
+              },
+            ),
+          );
+          await awaitScenario(() =>
+            page.evaluate((timeout) => window.__streammdxRegression?.waitForReady(timeout), remainingTimeout()),
+          );
           let appended = 0;
           let firstChunkCaptured = false;
           let tableFirstSeenAt: number | null = null;
@@ -774,10 +809,12 @@ async function run(): Promise<void> {
         };
 
           for (const chunk of chunks) {
-            await page.evaluate((value) => window.__streammdxRegression?.appendAndFlush(value), chunk);
+            await awaitScenario(() =>
+              page.evaluate((value) => window.__streammdxRegression?.appendAndFlush(value), chunk),
+            );
             appended += chunk.length;
 
-            const summary = await readSummary(page);
+            const summary = await awaitScenario(() => readSummary(page, remainingTimeout));
             if (tableFirstSeenAt === null && summary.selectors.hasTable) {
               tableFirstSeenAt = appended;
             }
@@ -785,77 +822,83 @@ async function run(): Promise<void> {
               tableFirstSeenAt = appended;
             }
             if (fixture.id === "math-display-checkpoint-supported" && usesFixedSplit && appended === split?.chunks[0].length) {
-              await validateDisplayFormula(page, "a_n = \\frac{1}{n}", "explicit split boundary", streamInvariantFailures);
-            }
-
-          if (!firstChunkCaptured) {
-            await captureCheckpoint("after-first-chunk", summary);
-            firstChunkCaptured = true;
-          }
-
-          while (checkpointTargets.length > 0 && appended >= checkpointTargets[0]) {
-            const target = checkpointTargets.shift();
-            if (target !== undefined && !checkpointSet.has(target)) {
-              checkpointSet.add(target);
-              await captureCheckpoint(`progress-${target}`, summary);
-            }
-          }
-
-          for (const [key, value] of Object.entries(summary.selectors)) {
-            if (value && !seenEvents[key]) {
-              seenEvents[key] = true;
-              await captureCheckpoint(`event-${key}`, summary);
-            }
-          }
-
-          if ((fixture.forbidSelectorsDuringStreaming?.length ?? 0) > 0) {
-            const forbiddenDuringStreaming = (await page.evaluate((selectors) => {
-              const root = document.getElementById("regression-root");
-              if (!root) return selectors;
-              return selectors.filter((selector) => root.querySelector(selector));
-            }, fixture.forbidSelectorsDuringStreaming ?? [])) as string[];
-            if (forbiddenDuringStreaming.length > 0) {
-              streamInvariantFailures.push(
-                `forbidden selectors visible during streaming: ${forbiddenDuringStreaming.join(", ")}.`,
+              await awaitScenario(() =>
+                validateDisplayFormula(page, "a_n = \\frac{1}{n}", "explicit split boundary", streamInvariantFailures),
               );
             }
-          }
-          if ((fixture.forbidHtmlFragmentsDuringStreaming?.length ?? 0) > 0) {
-            const forbiddenHtmlFragments = (fixture.forbidHtmlFragmentsDuringStreaming ?? []).filter((fragment) =>
-              checkpoints[checkpoints.length - 1]?.html.includes(fragment),
-            );
-            if (forbiddenHtmlFragments.length > 0) {
-              streamInvariantFailures.push(
-                `forbidden html fragments visible during streaming: ${forbiddenHtmlFragments.join(", ")}.`,
+
+            if (!firstChunkCaptured) {
+              await awaitScenario(() => captureCheckpoint("after-first-chunk", summary));
+              firstChunkCaptured = true;
+            }
+
+            while (checkpointTargets.length > 0 && appended >= checkpointTargets[0]) {
+              const target = checkpointTargets.shift();
+              if (target !== undefined && !checkpointSet.has(target)) {
+                checkpointSet.add(target);
+                await awaitScenario(() => captureCheckpoint(`progress-${target}`, summary));
+              }
+            }
+
+            for (const [key, value] of Object.entries(summary.selectors)) {
+              if (value && !seenEvents[key]) {
+                seenEvents[key] = true;
+                await awaitScenario(() => captureCheckpoint(`event-${key}`, summary));
+              }
+            }
+
+            if ((fixture.forbidSelectorsDuringStreaming?.length ?? 0) > 0) {
+              const forbiddenDuringStreaming = (await awaitScenario(() =>
+                page.evaluate((selectors) => {
+                  const root = document.getElementById("regression-root");
+                  if (!root) return selectors;
+                  return selectors.filter((selector) => root.querySelector(selector));
+                }, fixture.forbidSelectorsDuringStreaming ?? []),
+              )) as string[];
+              if (forbiddenDuringStreaming.length > 0) {
+                streamInvariantFailures.push(
+                  `forbidden selectors visible during streaming: ${forbiddenDuringStreaming.join(", ")}.`,
+                );
+              }
+            }
+            if ((fixture.forbidHtmlFragmentsDuringStreaming?.length ?? 0) > 0) {
+              const forbiddenHtmlFragments = (fixture.forbidHtmlFragmentsDuringStreaming ?? []).filter((fragment) =>
+                checkpoints[checkpoints.length - 1]?.html.includes(fragment),
               );
+              if (forbiddenHtmlFragments.length > 0) {
+                streamInvariantFailures.push(
+                  `forbidden html fragments visible during streaming: ${forbiddenHtmlFragments.join(", ")}.`,
+                );
+              }
             }
           }
-        }
 
-          await page.evaluate(() => window.__streammdxRegression?.finalizeAndFlush());
+          await awaitScenario(() => page.evaluate(() => window.__streammdxRegression?.finalizeAndFlush()));
 
-        if (waitForMdxCompiled) {
-          try {
-            await page.waitForFunction(
-              () => {
-                const summary = window.__streammdxRegression?.getSummary();
-                if (!summary) return false;
-                return summary.selectors.hasMdxCompiled && !summary.selectors.hasMdxPending;
-              },
-              undefined,
-              { timeout: remainingTimeout() },
-            );
-          } catch (error) {
-            failures += 1;
-            scenarioFailed = true;
-            console.error(`\nMDX compile timeout for ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}`);
-            console.error(error);
+          if (waitForMdxCompiled) {
+            try {
+              await awaitScenario(() =>
+                page.waitForFunction(
+                  () => {
+                    const summary = window.__streammdxRegression?.getSummary();
+                    if (!summary) return false;
+                    return summary.selectors.hasMdxCompiled && !summary.selectors.hasMdxPending;
+                  },
+                  undefined,
+                  { timeout: remainingTimeout() },
+                ),
+              );
+            } catch (error) {
+              failures += 1;
+              scenarioFailed = true;
+              console.error(`\nMDX compile timeout for ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}`);
+              console.error(error);
+            }
           }
-        }
 
-          const invariantViolations = (await page.evaluate(
-          () => window.__streammdxRegression?.getInvariantViolations?.() ?? [],
-        )) as { message: string }[];
+          const invariantViolations = (await awaitScenario(() =>
+            page.evaluate(() => window.__streammdxRegression?.getInvariantViolations?.() ?? []),
+          )) as { message: string }[];
         if (streamInvariantFailures.length > 0) {
           failures += 1;
           scenarioFailed = true;
@@ -874,7 +917,9 @@ async function run(): Promise<void> {
           }
         }
 
-          const finalSummary = (await page.evaluate(() => window.__streammdxRegression?.getSummary())) as {
+        const finalSummary = (await awaitScenario(() =>
+          page.evaluate(() => window.__streammdxRegression?.getSummary()),
+        )) as {
           rootChildCount: number;
           selectors: Record<string, boolean>;
           counts?: Record<string, number>;
@@ -882,16 +927,16 @@ async function run(): Promise<void> {
         for (const [key, value] of Object.entries(finalSummary.selectors)) {
           if (value && !seenEvents[key]) {
             seenEvents[key] = true;
-            await captureCheckpoint(`event-${key}`, finalSummary);
+            await awaitScenario(() => captureCheckpoint(`event-${key}`, finalSummary));
           }
         }
-          const finalHtml = await page.evaluate(() => window.__streammdxRegression?.getHtml());
-          const finalRuntimeState = (await page.evaluate(
-          () => window.__streammdxRegression?.getRuntimeState?.(),
+        const finalHtml = await awaitScenario(() => page.evaluate(() => window.__streammdxRegression?.getHtml()));
+        const finalRuntimeState = (await awaitScenario(() =>
+          page.evaluate(() => window.__streammdxRegression?.getRuntimeState?.()),
         )) as SnapshotCheckpoint["runtimeState"];
-          const finalStructure = await readStructure(page);
-          const finalInspection = await readInspection(page);
-          const rootChildren = await readRootChildren(page);
+        const finalStructure = await awaitScenario(() => readStructure(page));
+        const finalInspection = await awaitScenario(() => readInspection(page));
+        const rootChildren = await awaitScenario(() => readRootChildren(page));
          const childHashes = rootChildren.map((child, index) => ({
            index,
            tag: child.tag,
@@ -930,23 +975,24 @@ async function run(): Promise<void> {
           "`this is a really really really really really really really really really really really really really really really really really really really really really long inline code span`";
         const isSanitizationFixture = (fixture.tags ?? []).includes("sanitization");
         const emptyNestedListCount = fixture.forbidEmptyNestedLists
-          ? await page.evaluate(() => {
-              const root = document.getElementById("regression-root");
-              if (!root) return 0;
-              const nestedLists = root.querySelectorAll(
-                ".markdown-list-item-children > ol.markdown-list, .markdown-list-item-children > ul.markdown-list",
-              );
-              let emptyCount = 0;
-              for (const list of nestedLists) {
-                const hasItems = Array.from(list.children).some(
-                  (child) => child instanceof HTMLElement && child.classList.contains("markdown-list-item"),
+          ? await awaitScenario(() =>
+              page.evaluate(() => {
+                const root = document.getElementById("regression-root");
+                if (!root) return 0;
+                const nestedLists = root.querySelectorAll(
+                  ".markdown-list-item-children > ol.markdown-list, .markdown-list-item-children > ul.markdown-list",
                 );
-                if (!hasItems) emptyCount += 1;
-              }
-              return emptyCount;
-            })
+                let emptyCount = 0;
+                for (const list of nestedLists) {
+                  const hasItems = Array.from(list.children).some(
+                    (child) => child instanceof HTMLElement && child.classList.contains("markdown-list-item"),
+                  );
+                  if (!hasItems) emptyCount += 1;
+                }
+                return emptyCount;
+              }),
+            )
           : 0;
-
         if (!fixture.allowRawBlockMath && finalHtmlValue.includes(rawBlockMathNeedle)) {
           htmlInvariantFailures.push("raw block math detected in paragraph (expected KaTeX output).");
         }
@@ -973,10 +1019,12 @@ async function run(): Promise<void> {
           );
         }
         if (typeof fixture.expectedListItemCount === "number") {
-          const listItemCount = await page.evaluate(() => {
-            const root = document.getElementById("regression-root");
-            return root?.querySelectorAll("li").length ?? 0;
-          });
+          const listItemCount = await awaitScenario(() =>
+            page.evaluate(() => {
+              const root = document.getElementById("regression-root");
+              return root?.querySelectorAll("li").length ?? 0;
+            }),
+          );
           if (listItemCount !== fixture.expectedListItemCount) {
             htmlInvariantFailures.push(`list item count mismatch: expected ${fixture.expectedListItemCount}, got ${listItemCount}.`);
           }
@@ -986,10 +1034,12 @@ async function run(): Promise<void> {
           // tokens, so matching the serialized HTML string is incidental to the highlighter markup.
           // Validate against the DOM text of the regression root instead - verbatim, so meaningful
           // characters, newlines and protocols are not normalized away.
-          const renderedText = await page.evaluate(() => {
-            const root = document.getElementById("regression-root");
-            return root ? (root.textContent ?? "") : null;
-          });
+          const renderedText = await awaitScenario(() =>
+            page.evaluate(() => {
+              const root = document.getElementById("regression-root");
+              return root ? (root.textContent ?? "") : null;
+            }),
+          );
           const missingFragments = findMissingRequiredTextFragments(fixture.requiredTextFragments, renderedText);
           if (missingFragments.length > 0) {
             htmlInvariantFailures.push(`missing required text fragments: ${missingFragments.join(", ")}.`);
@@ -1015,7 +1065,9 @@ async function run(): Promise<void> {
         validateTableInspection(fixture, finalInspection, "after-finalize", htmlInvariantFailures);
         validateCodePrefixInvariant(fixture, checkpoints, finalInspection, htmlInvariantFailures);
         if (fixture.id === "math-display-checkpoint-supported") {
-          await validateDisplayFormula(page, "a_n = \\frac{1}{n}\n\\sqrt{x}", "after-finalize", htmlInvariantFailures);
+          await awaitScenario(() =>
+            validateDisplayFormula(page, "a_n = \\frac{1}{n}\n\\sqrt{x}", "after-finalize", htmlInvariantFailures),
+          );
         }
 
 
@@ -1040,11 +1092,13 @@ async function run(): Promise<void> {
         }
         const requiredSelectors = fixture.requiredSelectors ?? [];
         if (requiredSelectors.length > 0) {
-          const missing = (await page.evaluate((selectors) => {
-            const root = document.getElementById("regression-root");
-            if (!root) return selectors;
-            return selectors.filter((selector) => !root.querySelector(selector));
-          }, requiredSelectors)) as string[];
+          const missing = (await awaitScenario(() =>
+            page.evaluate((selectors) => {
+              const root = document.getElementById("regression-root");
+              if (!root) return selectors;
+              return selectors.filter((selector) => !root.querySelector(selector));
+            }, requiredSelectors),
+          )) as string[];
           if (missing.length > 0) {
             failures += 1;
             scenarioFailed = true;
@@ -1053,11 +1107,13 @@ async function run(): Promise<void> {
         }
         const forbidSelectors = fixture.forbidSelectors ?? [];
         if (forbidSelectors.length > 0) {
-          const presentForbidden = (await page.evaluate((selectors) => {
-            const root = document.getElementById("regression-root");
-            if (!root) return [];
-            return selectors.filter((selector) => root.querySelector(selector));
-          }, forbidSelectors)) as string[];
+          const presentForbidden = (await awaitScenario(() =>
+            page.evaluate((selectors) => {
+              const root = document.getElementById("regression-root");
+              if (!root) return [];
+              return selectors.filter((selector) => root.querySelector(selector));
+            }, forbidSelectors),
+          )) as string[];
           if (presentForbidden.length > 0) {
             failures += 1;
             scenarioFailed = true;
@@ -1072,7 +1128,7 @@ async function run(): Promise<void> {
             if (scenarioFailed) {
               console.warn(`skipped update for ${fixture.id}/${scenario.id} due to failures`);
             } else {
-              await writeSnapshot(snapshotPath, snapshot);
+              await awaitScenario(() => writeSnapshot(snapshotPath, snapshot, remainingTimeout));
               console.log(`updated ${fixture.id}/${scenario.id}`);
             }
             continue;
@@ -1161,36 +1217,39 @@ async function run(): Promise<void> {
          if (!scenarioFailed) {
            console.log(`ok ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}`);
          }
-       } catch (error) {
-         failures += 1;
-         scenarioFailed = true;
-         console.error(`\n[regression scenario error] ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}:`, error);
-         try {
-           lastKnownHtml = (await page.evaluate(() => window.__streammdxRegression?.getHtml())) ?? lastKnownHtml;
-            lastKnownRuntimeState = (await page.evaluate(() => window.__streammdxRegression?.getRuntimeState?.())) ?? lastKnownRuntimeState;
-          } catch {
-            // Page evaluation may fail if context is closed or disconnected
-          }
-          const artifactDir = await writeFailureArtifacts({
-            fixtureId: fixture.id,
-            scenarioId: scenario.id,
-            label: `scenario-error-${activeSeed ?? "baseline"}`,
-            error,
-            received: partialSnapshot,
-            runtimeState: lastKnownRuntimeState,
-            html: lastKnownHtml,
-            capturedLogs,
-          });
-          console.error(`artifacts: ${artifactDir}`);
-          console.error(`trace replay: ${buildTraceReplayCommand(fixture.file)}`);
-        } finally {
-          await page.close().catch((error) => {
-            console.error(`Failed to close regression page for ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}:`, error);
-            process.exitCode = 1;
-          });
+      } catch (error) {
+        failures += 1;
+        scenarioFailed = true;
+        console.error(`\n[regression scenario error] ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}:`, error);
+        try {
+          lastKnownHtml =
+            (await awaitScenario(() => page.evaluate(() => window.__streammdxRegression?.getHtml()))) ?? lastKnownHtml;
+          lastKnownRuntimeState =
+            (await awaitScenario(() => page.evaluate(() => window.__streammdxRegression?.getRuntimeState?.()))) ??
+            lastKnownRuntimeState;
+        } catch {
+          // Deadline expiry or a disconnected page leaves the last captured checkpoint as the diagnostic source.
         }
+        const artifactDir = await writeFailureArtifacts({
+          fixtureId: fixture.id,
+          scenarioId: scenario.id,
+          label: `scenario-error-${activeSeed ?? "baseline"}`,
+          error,
+          received: partialSnapshot,
+          runtimeState: lastKnownRuntimeState,
+          html: lastKnownHtml,
+          capturedLogs,
+        });
+        console.error(`artifacts: ${artifactDir}`);
+        console.error(`trace replay: ${buildTraceReplayCommand(fixture.file)}`);
+      } finally {
+        await page.close().catch((error) => {
+          console.error(`Failed to close regression page for ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}:`, error);
+          process.exitCode = 1;
+        });
       }
     }
+  }
   }
 
   if (executedByFixture.size === 0) {

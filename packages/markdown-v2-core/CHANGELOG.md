@@ -86,6 +86,7 @@
 ## Unreleased
 
 - Preserve unclosed fence content by default and after finalization. Provisional code rendering hides only unfinished closing markers that match the opening fence.
+- Align append-line metadata arrays to their owning patch line count before coalescing, preserving per-line token/highlight/diff metadata for short, empty, and overlong arrays.
 - Keep outer emphasis, strong, and strikethrough previews when repairing incomplete math.
 
 ## 0.5.0

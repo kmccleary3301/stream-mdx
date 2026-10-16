@@ -537,12 +537,30 @@ function computePercentile(values: number[], percentile: number): number | null 
   return sorted[index];
 }
 
-function collectCoalescingDurations(batches?: FlushBatchSample[] | null): number[] | null {
-  if (!Array.isArray(batches)) return [];
+function collectCoalescingDurations(batches?: unknown): number[] | null {
+  if (batches === null || batches === undefined) return [];
+  if (!Array.isArray(batches)) return null;
   const durations: number[] = [];
-  for (const batch of batches) {
-    if (!batch || !batch.coalescing) continue;
-    const duration = batch.coalescing.durationMs;
+  for (const candidate of batches) {
+    if (candidate === null || typeof candidate !== "object" || Array.isArray(candidate)) return null;
+    const batch = candidate as Partial<FlushBatchSample>;
+    const patchCount = batch.patchCount;
+    if (
+      typeof patchCount !== "number" ||
+      !Number.isFinite(patchCount) ||
+      !Number.isInteger(patchCount) ||
+      patchCount < 1
+    ) {
+      return null;
+    }
+    const coalescing = batch.coalescing;
+    if (coalescing === null || coalescing === undefined) {
+      // The scheduler deliberately skips coalescing for singleton patch batches.
+      if (patchCount === 1) continue;
+      return null;
+    }
+    if (typeof coalescing !== "object" || Array.isArray(coalescing)) return null;
+    const duration = coalescing.durationMs;
     if (typeof duration !== "number" || !Number.isFinite(duration) || duration < 0) return null;
     durations.push(duration);
   }
@@ -554,9 +572,6 @@ function normalizeTelemetrySnapshot(raw: RawTelemetrySnapshot | null): Telemetry
 
   const ensureArray = (value: number[] | null | undefined): number[] =>
     value?.map((num) => Number(num)).filter((num) => Number.isFinite(num)) ?? [];
-  const flushBatches: FlushBatchSample[] = (raw.flushBatches ?? []).filter(
-    (batch) => Number.isFinite(batch.queueDelayMs) && Number.isFinite(batch.durationMs),
-  );
 
   return {
     summary: raw.summary,
@@ -574,7 +589,7 @@ function normalizeTelemetrySnapshot(raw: RawTelemetrySnapshot | null): Telemetry
     stream: raw.stream ?? null,
     patchTotals: raw.patchTotals ?? null,
     coalescingTotals: raw.coalescingTotals ?? null,
-    flushBatches,
+    flushBatches: raw.flushBatches,
   };
 }
 
@@ -589,6 +604,7 @@ async function appendCoalescingCsvRows(snippetName: string, batches?: FlushBatch
   if (!Array.isArray(batches) || batches.length === 0) return;
   const lines: string[] = [];
   for (const batch of batches) {
+    if (!batch || typeof batch !== "object") continue;
     const metrics = batch.coalescing;
     if (!metrics) continue;
     const values = [
@@ -623,6 +639,7 @@ function computeCoalescingBreakdown(batches?: FlushBatchSample[] | null): Coales
   let batchesWithMetrics = 0;
   const durations: number[] = [];
   for (const batch of batches) {
+    if (!batch || typeof batch !== "object") continue;
     const metrics = batch.coalescing;
     if (!metrics) continue;
     input += metrics.inputPatchCount ?? 0;
@@ -759,7 +776,7 @@ function evaluateCoalescingGuardrails(snippetName: string, analysis: SnippetAnal
         snippetName,
         "coalescing/duration/invalid",
         "fail",
-        "Every reported coalescing duration sample must be finite and non-negative",
+        "Every retained coalescing sample must report a finite, non-negative duration; missing metadata is valid only for single-patch batches",
         issues,
       );
     } else if (durations.length === 0) {

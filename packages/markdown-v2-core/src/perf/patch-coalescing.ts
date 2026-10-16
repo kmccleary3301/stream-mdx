@@ -44,6 +44,13 @@ function hasSameAppendLineMetadataPresence(base: AppendLinesPatch, next: AppendL
       Object.prototype.hasOwnProperty.call(base, key) === Object.prototype.hasOwnProperty.call(next, key),
   );
 }
+function alignAppendLineMetadata<T>(values: ReadonlyArray<T | null>, lineCount: number): Array<T | null> {
+  const aligned = new Array<T | null>(lineCount);
+  for (let index = 0; index < lineCount; index++) {
+    aligned[index] = values[index] ?? null;
+  }
+  return aligned;
+}
 
 function runCoalescer(patches: Patch[], config: CoalesceConfig = DEFAULT_COALESCE_CONFIG): Patch[] {
   if (USE_LINEAR_COALESCING) {
@@ -136,11 +143,13 @@ function mergeAppendLines(window: Patch[], startIndex: number): { patch: Patch; 
   }
 
   const lines = [...(base.lines ?? [])];
-  const highlight: Array<string | null> = Array.isArray(base.highlight) ? [...base.highlight] : [];
-  const tokens: Array<unknown> = Array.isArray(base.tokens) ? [...base.tokens] : [];
-  const diffKind: Array<unknown> = Array.isArray(base.diffKind) ? [...base.diffKind] : [];
-  const oldNo: Array<unknown> = Array.isArray(base.oldNo) ? [...base.oldNo] : [];
-  const newNo: Array<unknown> = Array.isArray(base.newNo) ? [...base.newNo] : [];
+  const highlight: Array<string | null> = Array.isArray(base.highlight)
+    ? alignAppendLineMetadata(base.highlight, lines.length)
+    : [];
+  const tokens: Array<unknown> = Array.isArray(base.tokens) ? alignAppendLineMetadata(base.tokens, lines.length) : [];
+  const diffKind: Array<unknown> = Array.isArray(base.diffKind) ? alignAppendLineMetadata(base.diffKind, lines.length) : [];
+  const oldNo: Array<unknown> = Array.isArray(base.oldNo) ? alignAppendLineMetadata(base.oldNo, lines.length) : [];
+  const newNo: Array<unknown> = Array.isArray(base.newNo) ? alignAppendLineMetadata(base.newNo, lines.length) : [];
   let includeTokens = Array.isArray(base.tokens);
   let includeDiffKind = Array.isArray(base.diffKind);
   let includeOldNo = Array.isArray(base.oldNo);
@@ -164,15 +173,11 @@ function mergeAppendLines(window: Patch[], startIndex: number): { patch: Patch; 
       lines.push(...(next.lines ?? []));
       const nextHighlights = Array.isArray(next.highlight) ? next.highlight : [];
       const appendedCount = next.lines?.length ?? 0;
-      if (nextHighlights.length > 0) {
-        for (let idx = 0; idx < appendedCount; idx++) {
-          const highlightValue = idx < nextHighlights.length ? (nextHighlights[idx] ?? null) : null;
-          highlight.push(highlightValue);
-        }
-      } else {
-        for (let idx = 0; idx < appendedCount; idx++) {
-          highlight.push(null);
-        }
+      while (highlight.length < priorLineCount) {
+        highlight.push(null);
+      }
+      for (let idx = 0; idx < appendedCount; idx++) {
+        highlight.push(idx < nextHighlights.length ? (nextHighlights[idx] ?? null) : null);
       }
       if (Array.isArray(next.tokens)) {
         if (!includeTokens) {

@@ -320,6 +320,98 @@ const coalescers = [
   { name: "quadratic", coalesce: coalescePatchesQuadratic },
 ] as const;
 
+function createEmptyCodeBlock(): Block {
+  return {
+    id: "append-metadata",
+    type: "code",
+    isFinalized: false,
+    payload: { raw: "", meta: { lang: "js" } },
+  };
+}
+
+function testAppendMetadataStaysWithItsLines(): void {
+  const authoredLines = ["const queued = 1;", "const next = queued + 1;", "console.log(next);"];
+  const secondLineTokens = { spans: [{ t: authoredLines[1] }] };
+  const patches: Patch[] = [
+    {
+      op: "appendLines",
+      at: { blockId: "append-metadata", nodeId: "append-metadata" },
+      startIndex: 0,
+      lines: [authoredLines[0]],
+      highlight: [authoredLines[0]],
+      tokens: [],
+      diffKind: ["context"],
+      oldNo: [1, 999],
+      newNo: [null],
+    },
+    {
+      op: "appendLines",
+      at: { blockId: "append-metadata", nodeId: "append-metadata" },
+      startIndex: 1,
+      lines: authoredLines.slice(1),
+      highlight: [authoredLines[1]],
+      tokens: [secondLineTokens],
+      diffKind: ["add"],
+      oldNo: [2],
+      newNo: [3],
+    },
+  ];
+  const expectedMetadata = {
+    highlight: [authoredLines[0], authoredLines[1], null],
+    tokens: [null, secondLineTokens, null],
+    diffKind: ["context", "add", null],
+    oldNo: [1, 2, null],
+    newNo: [null, 3, null],
+  };
+  const replayModes = [
+    { name: "raw", patches: clonePatches(patches) },
+    ...coalescers.map(({ name, coalesce }) => ({ name, patches: coalesce(clonePatches(patches)) })),
+  ];
+
+  for (const { name, patches: replayPatches } of replayModes) {
+    if (name !== "raw") {
+      assert.strictEqual(replayPatches.length, 1, `${name}: contiguous append lines should coalesce`);
+      const merged = replayPatches[0];
+      assert.ok(merged?.op === "appendLines", `${name}: merged patch should retain appendLines`);
+      assert.deepStrictEqual(
+        {
+          highlight: merged.highlight,
+          tokens: merged.tokens,
+          diffKind: merged.diffKind,
+          oldNo: merged.oldNo,
+          newNo: merged.newNo,
+        },
+        expectedMetadata,
+        `${name}: each metadata value must stay aligned to its authored line`,
+      );
+    }
+
+    const store = createRendererStore([createEmptyCodeBlock()]);
+    store.applyPatches(clonePatches(replayPatches), { coalesced: true });
+    const lineIds = store.getChildren("append-metadata");
+    assert.deepStrictEqual(
+      lineIds,
+      authoredLines.map((_, index) => `append-metadata::line:${index}`),
+      `${name}: code line IDs must stay in authored order`,
+    );
+    const actualLines = lineIds.map((id) => {
+      const line = store.getNode(id);
+      assert.ok(line, `${name}: expected code line ${id}`);
+      return { text: line.props?.text, tokens: line.props?.tokens };
+    });
+    assert.deepStrictEqual(
+      actualLines,
+      [
+        { text: authoredLines[0], tokens: null },
+        { text: authoredLines[1], tokens: secondLineTokens },
+        { text: authoredLines[2], tokens: null },
+      ],
+      `${name}: consumer lines must retain exact authored text and token ownership`,
+    );
+  }
+}
+
+
 function testInsertBarrierPreservesDisjointRootProps(): void {
   const at = { blockId: "list-seed", nodeId: "list-seed" };
   const patches: Patch[] = [
@@ -590,6 +682,7 @@ export function runPatchCoalescingTests(): void {
   testInsertBarrierPreservesDisjointRootProps();
   testControlledRedundantUpdatesMeetReductionMinimum();
   testLowRedundancyKeepsEveryConsumerChild();
+  testAppendMetadataStaysWithItsLines();
 }
 
 runPatchCoalescingTests();
