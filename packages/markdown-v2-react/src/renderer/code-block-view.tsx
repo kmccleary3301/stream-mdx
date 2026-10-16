@@ -1,3 +1,5 @@
+declare const __STREAM_MDX_COUNTERS__: boolean;
+
 import { dedentIndentedCode, getDefaultCodeWrapperAttributes, stripCodeFence, type TokenLineV1 } from "@stream-mdx/core";
 import React from "react";
 import { trimProvisionalFenceTail } from "../code-fence-streaming";
@@ -36,6 +38,12 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
   const nodeVersion = node.version;
 
   const lines = React.useMemo(() => {
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      if (store && typeof store === "object" && "campaignCounters" in store) {
+        const storeWithCounters = store as { campaignCounters?: { recordStoreRecordsTouched?(count: number, stage: string): void } };
+        storeWithCounters.campaignCounters?.recordStoreRecordsTouched?.(childIds.length, "view");
+      }
+    }
     const seenIds = new Set<string>();
     const seenIndices = new Set<number>();
     const deduped: VirtualizedLine[] = [];

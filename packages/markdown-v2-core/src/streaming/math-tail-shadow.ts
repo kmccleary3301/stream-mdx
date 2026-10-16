@@ -298,7 +298,7 @@ function summarizeOps(ops: readonly LookaheadRepairOp[]): string[] {
       case "self-close-tag":
         return op.kind;
       default:
-        return op.kind satisfies never;
+        return op satisfies never;
     }
   });
 }

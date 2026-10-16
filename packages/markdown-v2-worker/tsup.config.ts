@@ -13,10 +13,14 @@ const sharedConfig: Options = {
   splitting: false,
   sourcemap,
   clean: false,
+  minifySyntax: true,
   format: ["esm", "cjs"],
   outDir: resolve("dist"),
   target: "es2020",
   tsconfig: resolve("tsconfig.build.json"),
+  define: {
+    __STREAM_MDX_COUNTERS__: "false",
+  },
   external: [
     "@lezer/markdown",
     "@lezer/lr",
