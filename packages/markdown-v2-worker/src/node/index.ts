@@ -221,7 +221,8 @@ export interface SnapshotArtifactV1 {
   tocHeadings?: TocHeading[];
   init?: {
     docPlugins?: WorkerInitMessage["docPlugins"];
-    mdx?: WorkerInitMessage["mdx"];
+    contentPolicy?: WorkerInitMessage["contentPolicy"];
+    contentComponents?: WorkerInitMessage["contentComponents"];
     prewarmLangs?: string[];
     themes?: WorkerInitMessage["themes"];
     syntax?: WorkerInitMessage["syntax"];
@@ -262,7 +263,8 @@ function createSnapshotArtifactInit(init: CompileMarkdownSnapshotOptions["init"]
   if (!init) return undefined;
   return {
     docPlugins: init.docPlugins,
-    mdx: init.mdx,
+    contentPolicy: init.contentPolicy,
+    contentComponents: init.contentComponents,
     prewarmLangs: init.prewarmLangs,
     themes: init.themes,
     syntax: init.syntax,
@@ -428,7 +430,8 @@ export async function compileMarkdownSnapshot(options: CompileMarkdownSnapshotOp
       initialContent: text,
       prewarmLangs: init?.prewarmLangs,
       docPlugins: init?.docPlugins,
-      mdx: init?.mdx,
+      contentPolicy: init?.contentPolicy,
+      contentComponents: init?.contentComponents,
       themes: init?.themes,
       syntax: init?.syntax,
       html: init?.html,

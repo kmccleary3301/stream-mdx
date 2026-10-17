@@ -62,26 +62,26 @@ import { MermaidBlock } from "@stream-mdx/mermaid";
 />
 ```
 
-## Sandboxed artifacts and generic codeRenderers
+## Code fence renderers
 
-You can register custom code fence renderers for arbitrary languages using `codeRenderers`. Built-in options include `MermaidBlock` and `ArtifactFrame`, which sandboxes HTML visualizations inside an isolated iframe:
+Register a custom renderer with `codeRenderers` for any fence language. Mermaid is available as an optional addon:
 
 ```tsx
-import { ArtifactFrame, StreamingMarkdown } from "@stream-mdx/react";
+import { StreamingMarkdown } from "@stream-mdx/react";
 import { MermaidBlock } from "@stream-mdx/mermaid";
 
 <StreamingMarkdown
   text={content}
-  engine="worker" // or "main-thread"
   codeRenderers={{
     mermaid: MermaidBlock,
-    "html-artifact": ArtifactFrame,
-    artifact: ArtifactFrame,
+    custom: ({ renderCode }) => <section>{renderCode}</section>,
   }}
 />
 ```
 
-For security guidelines, sandbox restrictions, and a complete chat-thread demo with dual-engine selection, see the [Deployment and Security Guide](/docs/guides/deployment-and-security#sandboxed-agent-artifacts-and-code-renderers) and the [`/showcase/assistant-stream`](/showcase/assistant-stream) showcase.
+Fences labeled `artifact` or `html-artifact` remain code unless the host provides a renderer. StreamMDX has no built-in artifact frame or sandbox. A custom renderer that activates source content needs a host-owned security boundary.
+
+For security guidance and the chat-thread demo, see the [Deployment and Security Guide](/docs/guides/deployment-and-security#agent-content-and-code-renderers) and [`/showcase/assistant-stream`](/showcase/assistant-stream).
 
 ## Remark and Rehype plugins (@stream-mdx/unified)
 

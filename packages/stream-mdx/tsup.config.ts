@@ -21,6 +21,8 @@ export default defineConfig({
     "src/plugins/html.ts",
     "src/plugins/mdx.ts",
     "src/plugins/tables.ts",
+    "src/trusted-mdx.ts",
+    "src/trusted-mdx/server.ts",
   ].map(resolve),
   dts: true,
   sourcemap,

@@ -89,11 +89,15 @@ At every committed semantic state:
 5. A committed code block must preserve stable line ordering and contiguous line identity.
 6. A committed MDX block must not silently lose content between states.
 
-Inline JSX tags and expressions belong to their paragraph or list-item projection. They must preserve surrounding prose and component allowlists without gaining block-module evaluation. A complete standalone component owns its source as block MDX and uses the existing evaluator. Normalized inline HTML, including quoted `code` elements, must retain the paragraph's text and elements.
+Inline JSX tags and expressions belong to their paragraph or list-item projection. They must preserve surrounding prose and component allowlists without gaining block-module evaluation. A complete standalone component owns its source as block MDX and remains inert unless admitted by the restricted policy's host registrations. Registrations use `defineContentComponent`; narrowed source-prop types require a type-predicate validator. Only serializable name/render-condition descriptors cross the worker boundary; component callbacks and native projected children remain host-side.
+
+The trusted lane is separate from native parsing: a host may submit one complete authored-document revision for explicit trusted preparation and evaluation. The worker never compiles or evaluates authored modules. `FINALIZED` means native semantic completion only; it does not promise trusted compilation, projection, or host render commit readiness.
+
+`renderWhen: "closed"` suppresses only an open native component. A finalized incomplete body that passes validation remains rendered with its diagnostic; an incomplete opening header remains literal and does not invoke the host component.
 
 Native `InlineCode` spans own their literal contents. Mixed-content projection must not promote braces or tags inside them to MDX or HTML, including multi-backtick spans and code inside prepared quotes or lists. Direct compilation, worker patches, and serialized resets must preserve the same code text.
 
-Registered paragraph wrappers receive each projected inline group through the existing `children` prop, with their original raw, inline, and metadata props intact. Prepared quotes pass their native child projection to the registered quote wrapper. Custom wrappers must consume that projection rather than rebuild incomplete JSX from raw prose. Coordinator-mode standalone MDX retains pending segment metadata for status/signature reconciliation without changing its block-module ownership.
+Registered paragraph wrappers receive each projected inline group through the existing `children` prop, with their original raw, inline, and metadata props intact. Prepared quotes pass their native child projection to the registered quote wrapper. Custom wrappers must consume that projection rather than rebuild incomplete JSX from raw prose.
 
 HTML portions of mixed paragraphs and list items retain owner-prepared sanitized trees through patches and serialization. Registry URL transforms and descendant drop/unwrap policies apply to those trees without reintroducing filtered HTML. Registered quote wrappers remain active while streaming and when the prepared quote is empty.
 
@@ -121,9 +125,11 @@ When streaming input is complete and finalization has finished:
 
 1. The final streamed semantic output must match a cold parse of the full final content.
 2. This parity must hold for normalized block semantics, text content, and final HTML output.
-3. No provisional nodes or pending MDX states may remain.
+3. No provisional native nodes or pending native semantic transactions may remain.
 
 This is stronger than "looks right in the demo". Final parity is a release requirement.
+
+`FINALIZED` is the native semantic barrier. Trusted whole-document compilation and rendering are a separate host-owned lifecycle and may still be in progress after native finalization. Native final-state parity does not claim trusted-MDX readiness; checks of trusted output must observe that lifecycle separately.
 
 ## 6) Intermediate-State Safety
 

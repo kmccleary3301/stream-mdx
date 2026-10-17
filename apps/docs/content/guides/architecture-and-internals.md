@@ -31,11 +31,11 @@ The regression harness enforces invariants that catch drift:
 
 ## MDX and HTML boundaries
 
-MDX compilation is decoupled from core markdown parsing:
+MDX syntax recognition is part of parsing; evaluating authored modules is a separate trust decision:
 
-- HTML/MDX is segmented into mixed content blocks.
-- MDX blocks can be compiled in the worker or server.
-- Inline protected ranges prevent false MDX detection inside code/math.
+- Mixed-content parsing preserves exact MDX source and block ownership.
+- Restricted source components use `defineContentComponent` adapters in `contentComponents`; validators and components stay on the host while serializable descriptors cross the worker boundary.
+- Full MDX evaluation requires trusted input, `contentPolicy="trusted-mdx"`, and an explicit `TrustedMdxEngine` with a host import map. Imports are not fetched; evaluation runs in the host realm, requires `unsafe-eval` in `script-src`, and is not a sandbox.
 
 ## Scheduling and backpressure
 

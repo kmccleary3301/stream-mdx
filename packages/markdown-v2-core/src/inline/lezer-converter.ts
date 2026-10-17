@@ -100,24 +100,37 @@ function normalizeInlineCodeText(raw: string): string {
   return singleLine;
 }
 
-export function mergeAdjacentTextNodes(nodes: InlineNode[]): InlineNode[] {
+export function mergeAdjacentTextNodes(nodes: InlineNode[], rawSource?: string, sourceOffset = 0): InlineNode[] {
   const result: InlineNode[] = [];
   for (const node of nodes) {
     if (node.kind === "text") {
       if (node.text.length === 0) continue;
       const prev = result[result.length - 1];
       if (prev && prev.kind === "text") {
-        prev.text += node.text;
-      } else {
-        result.push({ kind: "text", text: node.text });
+        const prevRange = prev.sourceRange;
+        const nodeRange = node.sourceRange;
+        const rangesJoin = Boolean(prevRange && nodeRange && prevRange.to === nodeRange.from);
+        const plainSource =
+          rawSource !== undefined &&
+          rangesJoin &&
+          rawSource.slice(prevRange!.from - sourceOffset, prevRange!.to - sourceOffset) === prev.text &&
+          rawSource.slice(nodeRange!.from - sourceOffset, nodeRange!.to - sourceOffset) === node.text;
+        if (rawSource === undefined ? (!prevRange && !nodeRange) || rangesJoin : plainSource) {
+          prev.text += node.text;
+          if (rangesJoin) {
+            prev.sourceRange = { from: prevRange!.from, to: nodeRange!.to };
+          }
+          continue;
+        }
       }
+      result.push({ ...node });
     } else if ("children" in node && Array.isArray(node.children)) {
       result.push({
         ...node,
-        children: mergeAdjacentTextNodes(node.children),
+        children: mergeAdjacentTextNodes(node.children, rawSource, sourceOffset),
       });
     } else {
-      result.push(node);
+      result.push({ ...node });
     }
   }
   return result;
@@ -158,12 +171,24 @@ export class LezerInlineConverter {
     this.references = references;
   }
 
-  convert(elements: readonly MarkdownElement[], text: string, from = 0, to: number = text.length): InlineNode[] {
-    const rawNodes = this.convertRange(elements, text, from, to);
-    return mergeAdjacentTextNodes(rawNodes);
+  convert(
+    elements: readonly MarkdownElement[],
+    text: string,
+    from = 0,
+    to: number = text.length,
+    sourceOffset?: number,
+  ): InlineNode[] {
+    const rawNodes = this.convertRange(elements, text, from, to, sourceOffset);
+    return mergeAdjacentTextNodes(rawNodes, sourceOffset === undefined ? undefined : text, sourceOffset);
   }
 
-  private convertRange(elements: readonly MarkdownElement[], text: string, from: number, to: number): InlineNode[] {
+  private convertRange(
+    elements: readonly MarkdownElement[],
+    text: string,
+    from: number,
+    to: number,
+    sourceOffset?: number,
+  ): InlineNode[] {
     const nodes: InlineNode[] = [];
     let cursor = from;
 
@@ -173,16 +198,21 @@ export class LezerInlineConverter {
         continue;
       }
 
-      // Add text gap before element
       if (el.from > cursor) {
-        const gap = text.slice(cursor, Math.min(el.from, to));
+        const gapTo = Math.min(el.from, to);
+        const gap = text.slice(cursor, gapTo);
         if (gap) {
-          nodes.push({ kind: "text", text: gap });
+          nodes.push({
+            kind: "text",
+            text: gap,
+            ...(sourceOffset === undefined ? {} : { sourceRange: { from: sourceOffset + cursor, to: sourceOffset + gapTo } }),
+          });
         }
       }
 
       const nodeName = this.nodeSet.types[el.type]?.name ?? "";
-      const converted = this.convertElement(el, nodeName, text);
+      const converted = this.convertElement(el, nodeName, text, sourceOffset);
+      let elementEnd = el.to;
       if (converted && !Array.isArray(converted) && converted.kind === "html" &&
           !converted.isClose && !converted.isSelfClosing && converted.tagName) {
         let depth = 1;
@@ -213,28 +243,37 @@ export class LezerInlineConverter {
           ? []
           : literal
             ? [{ kind: "text", text: decodeEntity(inner) }]
-            : this.convertRange(elements.slice(index + 1, closeIndex), text, el.to, innerTo);
+            : this.convertRange(elements.slice(index + 1, closeIndex), text, el.to, innerTo, sourceOffset);
         index = close ? closeIndex : elements.length;
         cursor = end;
+        elementEnd = end;
       }
       if (Array.isArray(converted)) {
-        nodes.push(...converted);
+        nodes.push(...converted.map((node) => this.withSourceRange(node, sourceOffset, el.from, elementEnd)));
       } else if (converted !== null && converted !== undefined) {
-        nodes.push(converted);
+        nodes.push(this.withSourceRange(converted, sourceOffset, el.from, elementEnd));
       }
 
-      cursor = Math.max(cursor, el.to);
+      cursor = Math.max(cursor, elementEnd);
     }
 
-    // Add trailing text gap
     if (cursor < to) {
       const remaining = text.slice(cursor, to);
       if (remaining) {
-        nodes.push({ kind: "text", text: remaining });
+        nodes.push({
+          kind: "text",
+          text: remaining,
+          ...(sourceOffset === undefined ? {} : { sourceRange: { from: sourceOffset + cursor, to: sourceOffset + to } }),
+        });
       }
     }
 
     return nodes;
+  }
+
+  private withSourceRange(node: InlineNode, sourceOffset: number | undefined, from: number, to: number): InlineNode {
+    if (sourceOffset === undefined || node.sourceRange) return node;
+    return { ...node, sourceRange: { from: sourceOffset + from, to: sourceOffset + to } };
   }
 
   private convertChildrenExcludingMarks(
@@ -243,45 +282,34 @@ export class LezerInlineConverter {
     from: number,
     to: number,
     markTypeName: string,
+    sourceOffset?: number,
   ): InlineNode[] {
-    // Filter out delimiter marks
-    const filtered = children.filter((c) => {
-      const name = this.nodeSet.types[c.type]?.name;
-      return name !== markTypeName;
-    });
-
-    // Content bounds are inside the marks
+    const filtered = children.filter((c) => this.nodeSet.types[c.type]?.name !== markTypeName);
     let contentFrom = from;
     let contentTo = to;
-    for (const c of children) {
-      const name = this.nodeSet.types[c.type]?.name;
-      if (name === markTypeName) {
-        if (c.from === from) {
-          contentFrom = c.to;
-        }
-        if (c.to === to) {
-          contentTo = c.from;
-        }
-      }
+    for (const child of children) {
+      if (this.nodeSet.types[child.type]?.name !== markTypeName) continue;
+      if (child.from === from) contentFrom = child.to;
+      if (child.to === to) contentTo = child.from;
     }
-
-    return this.convertRange(filtered, text, contentFrom, contentTo);
+    return this.convertRange(filtered, text, contentFrom, contentTo, sourceOffset);
   }
 
-  private convertElement(el: MarkdownElement, nodeName: string, text: string): InlineNode | InlineNode[] | null {
+
+  private convertElement(el: MarkdownElement, nodeName: string, text: string, sourceOffset?: number): InlineNode | InlineNode[] | null {
     switch (nodeName) {
       case "Emphasis": {
-        const children = this.convertChildrenExcludingMarks(el.children, text, el.from, el.to, "EmphasisMark");
+        const children = this.convertChildrenExcludingMarks(el.children, text, el.from, el.to, "EmphasisMark", sourceOffset);
         return { kind: "em", children };
       }
 
       case "StrongEmphasis": {
-        const children = this.convertChildrenExcludingMarks(el.children, text, el.from, el.to, "EmphasisMark");
+        const children = this.convertChildrenExcludingMarks(el.children, text, el.from, el.to, "EmphasisMark", sourceOffset);
         return { kind: "strong", children };
       }
 
       case "Strikethrough": {
-        const children = this.convertChildrenExcludingMarks(el.children, text, el.from, el.to, "StrikethroughMark");
+        const children = this.convertChildrenExcludingMarks(el.children, text, el.from, el.to, "StrikethroughMark", sourceOffset);
         return { kind: "strike", children };
       }
 
@@ -389,16 +417,16 @@ export class LezerInlineConverter {
       }
 
       case "Link":
-        return this.convertLink(el, text);
+        return this.convertLink(el, text, sourceOffset);
 
       case "Image":
-        return this.convertImage(el, text);
+        return this.convertImage(el, text, sourceOffset);
 
       default: {
         const ext = this.extensionsByName[nodeName];
         if (ext) {
           const res = ext.toInline(el, text, (children, from, to) =>
-            this.convert(children ?? el.children, text, from ?? el.from, to ?? el.to),
+            this.convert(children ?? el.children, text, from ?? el.from, to ?? el.to, sourceOffset),
           );
           return res ?? null;
         }
@@ -407,7 +435,7 @@ export class LezerInlineConverter {
     }
   }
 
-  private convertLink(el: MarkdownElement, text: string): InlineNode | InlineNode[] {
+  private convertLink(el: MarkdownElement, text: string, sourceOffset?: number): InlineNode | InlineNode[] {
     let openMark: MarkdownElement | null = null;
     let closeMark: MarkdownElement | null = null;
     let urlEl: MarkdownElement | null = null;
@@ -447,7 +475,7 @@ export class LezerInlineConverter {
       }
     }
 
-    const children = this.convertRange(textChildren, text, textFrom, textTo);
+    const children = this.convertRange(textChildren, text, textFrom, textTo, sourceOffset);
 
     // Inline link: [text](url "title") or [text]()
     const hasParen = el.children.some(
@@ -473,7 +501,7 @@ export class LezerInlineConverter {
         return linkNode;
       }
       // Undefined reference: CommonMark treats as literal text
-      return this.convertRange(el.children, text, el.from, el.to);
+      return this.convertRange(el.children, text, el.from, el.to, sourceOffset);
     }
 
     // Shortcut link: [text]
@@ -488,7 +516,7 @@ export class LezerInlineConverter {
     return [{ kind: "text", text: `[${rawLinkText}]` }];
   }
 
-  private convertImage(el: MarkdownElement, text: string): InlineNode | InlineNode[] {
+  private convertImage(el: MarkdownElement, text: string, sourceOffset?: number): InlineNode | InlineNode[] {
     let openMark: MarkdownElement | null = null;
     let closeMark: MarkdownElement | null = null;
     let urlEl: MarkdownElement | null = null;
@@ -519,7 +547,7 @@ export class LezerInlineConverter {
     const altFrom = openMark ? openMark.to : el.from + 2;
     const altTo = closeMark ? closeMark.from : el.to;
     const rawAltText = text.slice(altFrom, altTo);
-    const innerChildren = this.convertRange(textChildren, text, altFrom, altTo);
+    const innerChildren = this.convertRange(textChildren, text, altFrom, altTo, sourceOffset);
     const alt = extractPlainText(innerChildren);
 
     const hasParen = el.children.some(

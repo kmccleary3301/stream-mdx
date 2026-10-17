@@ -33,11 +33,9 @@ If you omit `worker`, StreamMDX uses the default worker strategy and falls back 
 
 ## MDX
 
-To render MDX blocks:
+Set `features={{ mdx: true }}` to recognize component syntax. `contentPolicy` defaults to `"restricted"`; source is not automatically evaluated. Under that policy, `contentComponents` is a map of `defineContentComponent` adapters, not raw constructors. Narrow source JSON props require a type-predicate validator, while native projected children stay separate as host React nodes. This registry is not active under `"markdown"` or `"trusted-mdx"` and is separate from `components`, which overrides native Markdown presentation.
 
-- set `features={{ mdx: true }}`
-- set `mdxCompileMode="worker"` (no server), or `"server"` (requires `/api/mdx-compile-v2`)
-- provide `mdxComponents` if you use custom MDX components
+Full MDX evaluation requires `contentPolicy="trusted-mdx"` and an explicit `engines.mdx` created with `createTrustedMdxEngine` from `@stream-mdx/react/trusted-mdx`. Its import map accepts only explicit host bindings; it does not fetch modules, is not a sandbox, and requires `unsafe-eval` in the host `script-src`. Use it only for trusted, reviewed content. See the [React Integration Guide](./REACT_INTEGRATION_GUIDE.md) and [Security Model](./SECURITY_MODEL.md).
 
 ## Rendering overrides
 
@@ -45,14 +43,14 @@ To render MDX blocks:
 - `inlineComponents`: override inline renders (strong/em/link/code/etc).
 - `tableElements`: override table tags (Shadcn table wrappers).
 - `htmlElements`: override HTML tag renders (when HTML is enabled).
-- `codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `artifact`, `diff`, custom languages) keyed by language; `{ component, aliases }` entries add alias languages, resolved case-insensitively.
+- `codeRenderers`: map fenced code languages to custom renderers (e.g. `mermaid`, `diff`, or custom languages) keyed by language; `{ component, aliases }` entries add alias languages, resolved case-insensitively.
+  Fences labeled `artifact` or `html-artifact` remain code unless you provide a renderer.
 - `allowedElements`: whitelist of permitted HTML tag names (mutually exclusive with `disallowedElements`).
 - `disallowedElements`: blacklist of HTML tag names to drop (mutually exclusive with `allowedElements`).
 - `unwrapDisallowed`: when `true`, render children of disallowed tags instead of dropping the subtree.
 - `allowElement`: callback predicate `(element, context) => boolean` for dynamic tag filtering.
 - `disableAutolinkProtocols`: protocols (e.g. `["mailto"]`) whose autolinks render as plain text while explicit markdown links remain active.
 - `mathRenderer`: provide custom inline and display math renderers (KaTeX is built-in default; MathJax supported).
-- `artifactHtml`: opt-in flag (`true` to render standard ````html ```` code fences via `ArtifactFrame`).
 
 Mermaid is an **opt-in add-on** that renders fenced ` ```mermaid ` code blocks as diagrams (with a Diagram/Code toggle).
 

@@ -15,3 +15,9 @@ export * from "./perf/backpressure";
 export * from "./perf/patch-coalescing";
 export * from "./streaming/custom-matcher";
 export * from "./streaming/inline-streaming";
+export * from "./admission";
+export type {
+  TrustedMdxArtifact,
+  TrustedMdxSourceRegion,
+} from "./trusted-mdx-artifact";
+export * from "./trusted-mdx-artifact";

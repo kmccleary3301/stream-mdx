@@ -3,12 +3,7 @@ import type { Block, DiffBlock } from "@stream-mdx/core";
 import { JSDOM } from "jsdom";
 import React from "react";
 import { createRoot } from "react-dom/client";
-import {
-  ArtifactFrame,
-  buildArtifactSrcDoc,
-  ComponentRegistry,
-  type CodeFenceRendererProps,
-} from "../src/components";
+import { ComponentRegistry, type CodeFenceRendererProps } from "../src/components";
 import { BlockNodeRenderer } from "../src/renderer/node-views";
 import { compileMarkdownSnapshotDirect } from "@stream-mdx/worker/direct";
 import { createRendererStore } from "../src/renderer/store";
@@ -215,130 +210,6 @@ async function testDiffRendererRowsAndTokens(): Promise<void> {
   root.unmount();
 }
 
-// Test 3: ArtifactFrame sandbox, CSP, finalize, and foreign-source size guard
-async function testArtifactFrameLifecycleAndSecurity(): Promise<void> {
-  const window = await setupDom();
-  const container = window.document.getElementById("root");
-  assert.ok(container);
-
-  // Phase A: Not finalized -> code view only, no iframe mounted
-  const root = createRoot(container);
-  root.render(
-    React.createElement(ArtifactFrame, {
-      code: "<h1>Hello Artifact</h1>",
-      language: "html-artifact",
-      isFinalized: false,
-      renderCode: React.createElement("pre", { id: "streaming-code" }, "<h1>Hello Artifact</h1>"),
-    }),
-  );
-  await sleep(20);
-
-  assert.ok(container.querySelector("#streaming-code"), "while not finalized, must render fallback code view");
-  assert.strictEqual(container.querySelector("iframe"), null, "iframe MUST NOT be mounted before finalize");
-
-  // Phase B: Finalized -> iframe mounted with exact sandbox and CSP meta
-  root.render(
-    React.createElement(ArtifactFrame, {
-      code: "<h1>Hello Artifact</h1>",
-      language: "html-artifact",
-      isFinalized: true,
-      csp: {
-        scriptSrc: ["https://cdn.example.com"],
-        connectSrc: ["https://api.example.com"],
-      },
-      renderCode: React.createElement("pre", { id: "streaming-code" }, "<h1>Hello Artifact</h1>"),
-    }),
-  );
-  await sleep(30);
-
-  const iframe = container.querySelector("iframe");
-  assert.ok(iframe, "iframe must be mounted when isFinalized is true");
-
-  // Verify sandbox attribute is exactly "allow-scripts" (no allow-same-origin)
-  const sandbox = iframe.getAttribute("sandbox");
-  assert.strictEqual(sandbox, "allow-scripts", "sandbox attribute must be exactly allow-scripts");
-  assert.ok(!sandbox.includes("allow-same-origin"), "sandbox MUST NOT contain allow-same-origin");
-
-  // Verify srcDoc contains CSP meta
-  const srcDoc = iframe.getAttribute("srcdoc") || "";
-  assert.ok(srcDoc.includes('<meta http-equiv="Content-Security-Policy"'), "srcdoc must contain CSP meta tag");
-  assert.ok(srcDoc.includes("default-src 'none'"), "CSP must include default-src 'none'");
-  assert.ok(srcDoc.includes("connect-src https://api.example.com"), "CSP connect-src must reflect configured allowlist");
-  assert.ok(srcDoc.includes("https://cdn.example.com"), "CSP script-src must reflect configured allowlist");
-
-  // Verify default connect-src 'none' when not specified
-  const defaultSrcDoc = buildArtifactSrcDoc({ html: "<p>test</p>" });
-  assert.ok(defaultSrcDoc.includes("connect-src 'none'"), "default CSP must have connect-src 'none'");
-
-  // A full document whose own <head> starts with a script must still get the CSP first.
-  const fullDoc = buildArtifactSrcDoc({ html: "<!doctype html><script>fetch('https://evil.test')</script><html><head></head><body>x</body></html>" });
-  assert.ok(
-    fullDoc.indexOf("Content-Security-Policy") < fullDoc.indexOf("evil.test"),
-    "CSP must precede every byte of artifact markup",
-  );
-
-  // Phase C: Accept the iframe's resize, reject foreign messages, and clamp small heights.
-  const source = iframe.contentWindow;
-  assert.ok(source, "iframe window available for resize messages");
-  window.dispatchEvent(new window.MessageEvent("message", {
-    data: { type: "stream-mdx:artifact-size", height: 420 },
-    source,
-  }));
-  await waitFor(container, () => iframe.style.height === "420px", "valid iframe resize did not update its height");
-  assert.strictEqual(iframe.style.height, "420px");
-
-  window.dispatchEvent(new window.MessageEvent("message", {
-    data: { type: "stream-mdx:artifact-size", height: 999 },
-    source: window,
-  }));
-  await sleep(20);
-  assert.strictEqual(iframe.style.height, "420px", "foreign-source size messages must preserve the accepted height");
-
-  window.dispatchEvent(new window.MessageEvent("message", {
-    data: { type: "stream-mdx:artifact-size", height: 1 },
-    source,
-  }));
-  await waitFor(container, () => iframe.style.height === "50px", "valid small resize must clamp to the minimum height");
-  assert.strictEqual(iframe.style.height, "50px");
-
-  window.dispatchEvent(new window.MessageEvent("message", {
-    data: { type: "stream-mdx:artifact-size", height: Number.NaN },
-    source,
-  }));
-  await sleep(20);
-  assert.strictEqual(iframe.style.height, "50px", "NaN height must be ignored");
-
-  window.dispatchEvent(new window.MessageEvent("message", {
-    data: { type: "stream-mdx:artifact-size", height: Number.POSITIVE_INFINITY },
-    source,
-  }));
-  await sleep(20);
-  assert.strictEqual(iframe.style.height, "50px", "Infinity height must be ignored");
-
-  // Phase D: link messages from the frame route through openLink; non-http(s)/mailto URLs are dropped.
-  const opened: string[] = [];
-  root.render(
-    React.createElement(ArtifactFrame, {
-      code: "<a href='https://example.com'>x</a>",
-      language: "html-artifact",
-      isFinalized: true,
-      openLink: (url: string) => {
-        opened.push(url);
-      },
-      renderCode: null,
-    }),
-  );
-  await sleep(30);
-  const frameWindow = container.querySelector("iframe")?.contentWindow;
-  assert.ok(frameWindow, "iframe window available");
-  for (const href of ["javascript:alert(1)", "data:text/html,x", "https://example.com/next"]) {
-    window.dispatchEvent(new window.MessageEvent("message", { data: { type: "stream-mdx:artifact-link", href }, source: frameWindow }));
-  }
-  await sleep(20);
-  assert.deepStrictEqual(opened, ["https://example.com/next"], "only http(s)/mailto links leave the sandbox, via openLink");
-
-  root.unmount();
-}
 
 // Test 4: KaTeX math rendering and custom mathRenderer override
 async function testKaTeXMathAndOverride(): Promise<void> {
@@ -390,53 +261,52 @@ async function testKaTeXMathAndOverride(): Promise<void> {
     root.unmount();
   }
 }
-async function testHtmlArtifactAndMetricRoutingFromCompile(): Promise<void> {
+
+async function testArtifactFencesRemainInertByDefault(): Promise<void> {
   const window = await setupDom();
   const container = window.document.getElementById("root");
   assert.ok(container);
-  const root = createRoot(container);
 
-  const markdown = "```html-artifact\n<div class=\"viz\">Artifact View</div>\n```\n\n```metric\n42\n```";
+  const artifactSource = '<script>globalThis.__streamMdxArtifactExecuted = true</script>';
+  const htmlArtifactSource = '<iframe srcdoc="<script>globalThis.__streamMdxArtifactExecuted = true</script>"></iframe>';
+  const markdown = [
+    "```artifact",
+    artifactSource,
+    "```",
+    "",
+    "```html-artifact",
+    htmlArtifactSource,
+    "```",
+  ].join("\n");
   const result = await compileMarkdownSnapshotDirect({ text: markdown });
 
   assert.strictEqual(result.blocks.length, 2);
-  assert.strictEqual(result.blocks[0].payload.meta?.lang, "html-artifact");
-  assert.strictEqual(result.blocks[1].payload.meta?.lang, "metric");
+  assert.deepStrictEqual(result.blocks.map((block) => block.payload.meta?.lang), ["artifact", "html-artifact"]);
 
   const registry = new ComponentRegistry();
-  registry.setCodeRenderers({
-    "html-artifact": (props: CodeFenceRendererProps) => {
-      return React.createElement("div", { id: "custom-artifact-frame" }, props.code.trim());
-    },
-    metric: (props: CodeFenceRendererProps) => {
-      return React.createElement("div", { id: "custom-metric-badge" }, `Metric: ${props.code.trim()}`);
-    },
-  });
-
   const store = createRendererStore(result.blocks);
-  root.render(
-    React.createElement(
-      React.Fragment,
-      null,
-      result.blocks.map((block) => React.createElement(BlockNodeRenderer, { key: block.id, store, blockId: block.id, registry })),
-    ),
-  );
-  await sleep(30);
+  const root = createRoot(container);
+  try {
+    root.render(
+      React.createElement(
+        React.Fragment,
+        null,
+        result.blocks.map((block) => React.createElement(BlockNodeRenderer, { key: block.id, store, blockId: block.id, registry })),
+      ),
+    );
+    await waitFor(container, () => container.querySelectorAll("pre code").length === 2, "artifact fences did not render as code");
 
-  const artifactEl = container.querySelector("#custom-artifact-frame");
-  assert.ok(artifactEl, "custom html-artifact codeRenderer must be matched");
-  assert.strictEqual(artifactEl.textContent, '<div class="viz">Artifact View</div>');
-
-  const metricEl = container.querySelector("#custom-metric-badge");
-  assert.ok(metricEl, "custom metric codeRenderer must be matched");
-  assert.strictEqual(metricEl.textContent, "Metric: 42");
-
-  root.unmount();
+    const codeViews = container.querySelectorAll("pre code");
+    assert.strictEqual(codeViews[0].textContent?.trim(), artifactSource);
+    assert.strictEqual(codeViews[1].textContent?.trim(), htmlArtifactSource);
+    assert.strictEqual(container.querySelector("script, iframe"), null, "artifact fence source must remain inert code");
+  } finally {
+    root.unmount();
+  }
 }
 
 await testCodeRenderersNormalizationAndPrecedence();
 await testDiffRendererRowsAndTokens();
-await testArtifactFrameLifecycleAndSecurity();
 await testKaTeXMathAndOverride();
-await testHtmlArtifactAndMetricRoutingFromCompile();
-console.log("All codeRenderers, diff, artifact, and math tests passed successfully.");
+await testArtifactFencesRemainInertByDefault();
+console.log("Code renderers, diff, custom fence, and math tests passed successfully.");

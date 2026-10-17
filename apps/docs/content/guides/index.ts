@@ -22,7 +22,7 @@ export const GUIDE_ITEMS: GuideItem[] = [
     slug: "mdx-and-html",
     title: "MDX and HTML in StreamMDX",
     file: "mdx-and-html.md",
-    description: "MDX compile strategies, HTML safety, and when to use each feature.",
+    description: "Restricted and trusted MDX policies, HTML safety, and when to use each feature.",
   },
   {
     slug: "plugins-and-extensions",

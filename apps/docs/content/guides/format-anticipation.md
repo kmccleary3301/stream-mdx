@@ -43,7 +43,7 @@ $$
 ## HTML and MDX
 
 - HTML: only allowlisted tags are eligible for anticipation.
-- MDX: anticipation applies to known component tags provided in `mdxComponents`.
+- MDX: anticipation applies to host-registered component tags in `contentComponents` under the restricted policy.
 
 This keeps the streaming state stable while letting rich components appear as early as possible.
 

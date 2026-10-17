@@ -36,6 +36,7 @@ const RENDERER = getArg("--renderer") ?? process.env.STREAM_MDX_PERF_RENDERER ??
 const PROFILE = getArg("--profile") ?? process.env.STREAM_MDX_PERF_PROFILE ?? "parity";
 const WORKTREE = getArg("--worktree") ?? process.env.STREAM_MDX_PERF_WORKTREE ?? process.cwd();
 const FIXTURE = getArg("--fixture") ?? process.env.STREAM_MDX_PERF_FIXTURE ?? "naive-bayes";
+const P9_T2_FIXTURE_ID = "restricted-native-streaming";
 const SCENARIO = getArg("--scenario") ?? process.env.STREAM_MDX_PERF_SCENARIO ?? "S2_typical";
 const SCHEDULING = getArg("--scheduling") ?? process.env.STREAM_MDX_PERF_SCHEDULING ?? "aggressive";
 const RUNS = getNumArg("--runs", "STREAM_MDX_PERF_RUNS") ?? 3;
@@ -67,6 +68,39 @@ const SCHEDULING_OVERRIDES: Record<string, string> = {
   adaptiveQueueThreshold: getArg("--adaptiveQueueThreshold") ?? process.env.STREAM_MDX_PERF_ADAPTIVE_QUEUE_THRESHOLD ?? "",
 };
 
+type P9T2HostObservation = {
+  sourceOffset: number;
+  closerOffset: number;
+  rendered: boolean;
+  label: string | null;
+  count: string | null;
+  enabled: string | null;
+  status: string | null;
+  diagnostic: string | null;
+  nativeStrongText: string | null;
+};
+
+type P9T2FunctionalObservations = {
+  contentPolicyPropOmitted: boolean;
+  mdxAdmissionEnabled: boolean;
+  worker: { initialized: boolean; sourceEof: boolean; finalized: boolean; semanticDrain: boolean };
+  partialOpeningHeaderObserved: boolean;
+  openCardBeforeCloser: P9T2HostObservation;
+  closedCardWithheldBeforeCloser: P9T2HostObservation;
+  closedCardAfterCloser: P9T2HostObservation;
+  incompleteCardAtEof: P9T2HostObservation;
+  authoredSource: Record<string, string | null>;
+  noScriptOrIframe: boolean;
+  sideEffectTrace: string[];
+  evaluationTraps: {
+    installedAfterBootBeforeSource: boolean;
+    attempts: string[];
+    restored: boolean;
+  };
+};
+
+type BrowserMessage = { type: "warning" | "error" | "pageerror"; text: string };
+
 type PerfReport = {
   meta: {
     renderer: string;
@@ -89,6 +123,7 @@ type PerfReport = {
     totalChars: number;
     firstFlushAt: number | null;
     userAgent: string;
+    functionalObservations?: P9T2FunctionalObservations;
     liveDom: {
       subtreeCounts: {
         elements: number;
@@ -222,6 +257,7 @@ type PerfRun = {
     domEnd: DomCounters | null;
     domDelta: DomCounters | null;
   };
+  browserMessages: BrowserMessage[];
 };
 
 type Stats = {
@@ -311,6 +347,8 @@ type Summary = {
   };
   runs: Array<{
     run: number;
+    functionalObservations: P9T2FunctionalObservations | null;
+    browserMessages: BrowserMessage[];
     durationMs: number;
     timeToFirstFlushMs: number | null;
     flushDuration: Stats | null;
@@ -570,7 +608,116 @@ async function ensureDir(dir: string): Promise<void> {
   await fs.mkdir(dir, { recursive: true });
 }
 
+type P9PageAudit = {
+  effects: string[];
+  trapAttempts: string[];
+  trapsInstalledAfterBoot: boolean;
+  trapsInstalledBeforeSource: boolean;
+  workerInitializedAtTrapInstall: boolean;
+  trapsRestored: boolean;
+  sourceOffset: number;
+  installTraps?: () => void;
+  restoreTraps?: () => void;
+};
+
+function assertP9T2FunctionalObservations(report: PerfReport): void {
+  const observations = report.meta.functionalObservations;
+  const expectedAuthoredSource: Record<string, string> = {
+    unknownTag: '<UnknownWidget label="unknown-authored-source" />',
+    malformedTag: "<Card 12345>",
+    braceExpression: '{globalThis.__streammdxP9T2Effects.push("brace-expression")}',
+    attributeExpression: '<Card label={globalThis.__streammdxP9T2Effects.push("attribute-expression")} count={7} enabled />',
+    functionExpression: '{Function("return globalThis.__streammdxP9T2Effects.push(\'function-constructor\')")()}',
+    evalExpression: '{eval("globalThis.__streammdxP9T2Effects.push(\'eval-call\')")}',
+    artifactScript: '<script>globalThis.__streammdxP9T2Effects.push("artifact-script")</script>',
+    artifactTag: '<Card label={globalThis.__streammdxP9T2Effects.push("artifact-component")} count={1} enabled />',
+    artifactExpression: '{Function("return globalThis.__streammdxP9T2Effects.push(\'artifact-constructor\')")()}',
+    htmlArtifactScript: '<script>globalThis.__streammdxP9T2Effects.push("html-artifact-script")</script>',
+    htmlArtifactIframe: '<iframe srcdoc="<script>globalThis.__streammdxP9T2Effects.push(\'html-artifact-frame\')</script>"></iframe>',
+    htmlArtifactTag: '<Card label={globalThis.__streammdxP9T2Effects.push("html-artifact-component")} count={1} enabled />',
+    htmlArtifactExpression: '{eval("globalThis.__streammdxP9T2Effects.push(\'html-artifact-eval\')")}',
+  };
+  if (!observations) throw new Error("Incomplete measurement: the restricted T2 functional report is missing.");
+  const open = observations.openCardBeforeCloser;
+  const closedBefore = observations.closedCardWithheldBeforeCloser;
+  const closedAfter = observations.closedCardAfterCloser;
+  const incomplete = observations.incompleteCardAtEof;
+  const allWorkerPhasesObserved = Object.values(observations.worker).every(Boolean);
+  const allAuthoredSourcePreserved = Object.entries(expectedAuthoredSource)
+    .every(([key, source]) => observations.authoredSource[key] === source);
+  if (
+    report.meta.fixtureId !== P9_T2_FIXTURE_ID ||
+    report.meta.renderer !== "streammdx" ||
+    report.meta.profile !== "parity" ||
+    report.meta.policy.mdx !== true ||
+    !observations.contentPolicyPropOmitted ||
+    !observations.mdxAdmissionEnabled ||
+    !allWorkerPhasesObserved ||
+    !observations.partialOpeningHeaderObserved ||
+    !open.rendered ||
+    open.sourceOffset >= open.closerOffset ||
+    open.label !== "open-stage" ||
+    open.count !== "17" ||
+    open.enabled !== "true" ||
+    open.status !== "open" ||
+    open.nativeStrongText !== "Native bold child: p9-open-native-strong" ||
+    closedBefore.rendered ||
+    closedBefore.sourceOffset >= closedBefore.closerOffset ||
+    closedBefore.label !== "closed-stage" ||
+    closedBefore.count !== "23" ||
+    closedBefore.enabled !== "true" ||
+    closedBefore.status !== "open" ||
+    !closedAfter.rendered ||
+    closedAfter.sourceOffset <= closedAfter.closerOffset ||
+    closedAfter.label !== "closed-stage" ||
+    closedAfter.count !== "23" ||
+    closedAfter.enabled !== "true" ||
+    closedAfter.status !== "closed" ||
+    closedAfter.nativeStrongText !== "Closed-only native child: p9-closed-native-strong" ||
+    !incomplete.rendered ||
+    incomplete.sourceOffset !== report.meta.totalChars ||
+    incomplete.closerOffset !== report.meta.totalChars ||
+    incomplete.label !== "eof-incomplete" ||
+    incomplete.count !== "99" ||
+    incomplete.enabled !== "true" ||
+    incomplete.status !== "incomplete" ||
+    !/Unclosed component tag/.test(incomplete.diagnostic ?? "") ||
+    incomplete.nativeStrongText !== "Native bold child: p9-incomplete-native-strong" ||
+    !allAuthoredSourcePreserved ||
+    !observations.noScriptOrIframe ||
+    observations.sideEffectTrace.length !== 0 ||
+    observations.evaluationTraps.attempts.length !== 0 ||
+    !observations.evaluationTraps.installedAfterBootBeforeSource ||
+    !observations.evaluationTraps.restored
+  ) {
+    throw new Error("Incomplete measurement: restricted T2 functional observations failed.");
+  }
+}
+
 async function runOnce(pageId: number, page: Page, cpuProfilePath?: string, tracePath?: string) {
+  const browserMessages: BrowserMessage[] = [];
+  page.on("console", (message) => {
+    const type = message.type();
+    if (type === "warning" || type === "error") browserMessages.push({ type, text: message.text() });
+  });
+  page.on("pageerror", (error) => browserMessages.push({ type: "pageerror", text: error.message }));
+  try {
+    return await runOnceCore(pageId, page, cpuProfilePath, tracePath, browserMessages);
+  } catch (error) {
+    if (browserMessages.length > 0) {
+      console.error("browser warnings/errors:", JSON.stringify(browserMessages));
+    }
+    throw error;
+  }
+}
+
+async function runOnceCore(
+  pageId: number,
+  page: Page,
+  cpuProfilePath: string | undefined,
+  tracePath: string | undefined,
+  browserMessages: BrowserMessage[],
+) {
   const client = await page.context().newCDPSession(page);
   try {
     await client.send("Performance.enable");
@@ -611,10 +758,28 @@ async function runOnce(pageId: number, page: Page, cpuProfilePath?: string, trac
       transferMode: "ReportEvents",
     });
   }
-  await page.evaluate(() => {
+  // Enter once before installing the traps. Playwright itself uses window.eval
+  // for subsequent evaluate/waitForFunction calls, so keep the whole content
+  // processing interval inside this invocation and restore before returning.
+  await page.evaluate(async ({ restricted, timeoutMs }) => {
     if (!window.__streammdxPerfStart) throw new Error(window.__streammdxPerfError ?? "Incomplete measurement: CDP start handshake missing.");
-    window.__streammdxPerfStart();
-  });
+    const audit = (window as Window & { __streammdxP9T2Audit?: P9PageAudit }).__streammdxP9T2Audit;
+    if (restricted && !audit?.installTraps) throw new Error("Missing browser-owned restricted-source trap installer.");
+    const deadline = performance.now() + timeoutMs;
+    try {
+      if (restricted) audit?.installTraps?.();
+      window.__streammdxPerfStart();
+      if (restricted) {
+        while (typeof window.__streammdxPerfRunEnd !== "number" && !window.__streammdxPerfError) {
+          if (performance.now() >= deadline) throw new Error("Restricted source processing exceeded the existing harness timeout.");
+          await new Promise<void>((resolve) => window.setTimeout(resolve, 10));
+        }
+        if (window.__streammdxPerfError) throw new Error(window.__streammdxPerfError);
+      }
+    } finally {
+      if (restricted) audit?.restoreTraps?.();
+    }
+  }, { restricted: FIXTURE === P9_T2_FIXTURE_ID, timeoutMs: TIMEOUT_MS });
   await page.waitForFunction(
     () => typeof window.__streammdxPerfRunEnd === "number" || Boolean(window.__streammdxPerfError),
     null,
@@ -648,6 +813,8 @@ async function runOnce(pageId: number, page: Page, cpuProfilePath?: string, trac
   }
   await page.evaluate(() => {
     if (!window.__streammdxPerfCollect) throw new Error(window.__streammdxPerfError ?? "Incomplete measurement: CDP end handshake missing.");
+    const pageWindow = window as Window & { __streammdxP9T2Audit?: P9PageAudit };
+    pageWindow.__streammdxP9T2Audit?.restoreTraps?.();
     window.__streammdxPerfCollect();
   });
   await page.waitForFunction(() => Boolean(window.__streammdxPerfReport || window.__streammdxPerfError), null, { timeout: TIMEOUT_MS });
@@ -659,6 +826,7 @@ async function runOnce(pageId: number, page: Page, cpuProfilePath?: string, trac
   if (!Number.isFinite(report.meta.runStart) || !Number.isFinite(report.meta.runEnd) || report.meta.runEnd < report.meta.runStart) {
     throw new Error("Incomplete measurement: valid browser run boundaries are missing.");
   }
+  if (FIXTURE === P9_T2_FIXTURE_ID) assertP9T2FunctionalObservations(report as PerfReport);
   const cdpMetrics = buildCdpMetrics(startMetrics, endMetrics);
   const domStart = startDom ?? null;
   const domEnd = endDom ?? null;
@@ -671,6 +839,7 @@ async function runOnce(pageId: number, page: Page, cpuProfilePath?: string, trac
       domEnd,
       domDelta: diffDomCounters(domStart, domEnd),
     },
+    browserMessages,
   };
 }
 
@@ -704,6 +873,8 @@ function summarizeRun(entry: PerfRun) {
 
   return {
     run,
+    functionalObservations: report.meta.functionalObservations ?? null,
+    browserMessages: entry.browserMessages,
     durationMs: report.meta.runDurationMs,
     timeToFirstFlushMs,
     flushDuration: stats(flushDurations),

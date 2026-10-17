@@ -1,22 +1,22 @@
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 
-import type { Block, CodeHighlightingMode, CompiledMdxModule, FormatAnticipationConfig, PatchMetrics } from "@stream-mdx/core";
 import { MarkdownRenderer } from "./renderer";
 import { MarkdownBlocksRenderer } from "./renderer";
 import { CodeHighlightRequestContext, type CodeHighlightRequest } from "./renderer/code-highlight-context";
 import { DefaultLinkSafetyModal, type LinkSafetyModalProps } from "./components";
-import { useMdxCoordinator } from "./mdx-coordinator";
-import { MdxHydrationContext, type MdxHydrationOptions, createMdxHydrationController } from "./mdx-hydration-context";
-import { type MdxHydrationSummary, getMdxHydrationSummary, recordMdxHydrationLongTask } from "./mdx-hydration-metrics";
-import { MdxPrefetchQueue } from "./mdx-prefetch";
-import { prefetchMdxRuntime } from "./mdx-runtime";
+import type { ContentComponentsMap } from "./components/content-components";
+import { normalizeContentComponents } from "./components/content-components";
+import type { TrustedMdxEngine } from "./trusted-mdx-contract";
+import type { Block, CodeHighlightingMode, ContentPolicy, FormatAnticipationConfig, PatchMetrics } from "@stream-mdx/core";
 import type { AdaptiveBudgetState, PatchFlushResult } from "./renderer/patch-commit-scheduler";
 import { DeferredRenderContext, type DeferredRenderConfig } from "./renderer/deferred-render-context";
 import { useRendererBlocks } from "./renderer/hooks";
 import { StreamingActivityContext } from "./renderer/streaming-activity-context";
-import type { RendererStore } from "./renderer/store";
+import { capturePreparedRendererStore, type RendererStore } from "./renderer/store";
 import { useWorkerSession } from "./worker-session";
 import { useStreamInputSession } from "./stream-input-session";
+import { TrustedMdxBoundary } from "./trusted-mdx-boundary";
+import { getTrustedRevisionFeed } from "./trusted-revision-feed";
 import { defaultUrlTransform, type AnimatedProp, type BlockComponents, type BlockRendererOverride, type CodeFenceRenderer, type ControlsComponentProps, type ControlsConfig, type ElementFilterOptions, type HtmlElements, type HtmlOptions, type InlineComponents, type MathRenderer, type RendererConfig, type SyntaxRuleSpec, type TableElements, type TableVirtualizationOptions, type UrlTransform } from "./types";
 const EMPTY_BLOCKS: ReadonlyArray<Block> = [];
 
@@ -28,9 +28,8 @@ interface StreamingMarkdownConfigSignature {
   features: StreamingFeatureFlags;
   prewarm: string[];
   scheduling: StreamingSchedulerOptions | undefined;
-  mdxStrategy?: "server" | "worker";
-  mdxComponentKeys: string[];
-  mdxHydration?: MdxHydrationOptions;
+  contentPolicy?: ContentPolicy;
+  contentComponentKeys: string[];
   syntax?: SyntaxRuleSpec[];
   html?: HtmlOptions;
   themes?: { light: string; dark: string };
@@ -101,7 +100,6 @@ export interface RendererStateSnapshot {
   rendererVersion: number;
   store: RendererStore;
   lastMetrics: RendererMetrics | null;
-  mdxHydration?: MdxHydrationSummary & { pending: number };
 }
 
 export interface StreamingMarkdownHandle {
@@ -140,11 +138,13 @@ export interface StreamingMarkdownProps extends ElementFilterOptions {
   components?: Partial<BlockComponents>;
   tableElements?: Partial<TableElements>;
   htmlElements?: Partial<HtmlElements>;
-  mdxComponents?: Record<string, React.ComponentType<unknown>>;
   inlineComponents?: Partial<InlineComponents>;
   scheduling?: StreamingSchedulerOptions;
-  mdxCompileMode?: "server" | "worker";
-  mdxHydration?: MdxHydrationOptions;
+  contentPolicy?: ContentPolicy;
+  contentComponents?: ContentComponentsMap;
+  engines?: {
+    mdx?: TrustedMdxEngine;
+  };
   onMetrics?: (metrics: RendererMetrics) => void;
   onError?: (error: Error) => void;
   className?: string;
@@ -153,7 +153,6 @@ export interface StreamingMarkdownProps extends ElementFilterOptions {
   linkSafety?: LinkSafetyConfig;
   codeRenderers?: Record<string, CodeFenceRenderer>;
   mathRenderer?: MathRenderer;
-  artifactHtml?: boolean;
   deferHeavyBlocks?: boolean | DeferredRenderConfig;
   blockRenderer?: BlockRendererOverride;
   syntax?: SyntaxRuleSpec[];
@@ -165,74 +164,6 @@ export interface StreamingMarkdownProps extends ElementFilterOptions {
   animated?: AnimatedProp;
 }
 
-const MdxCoordinatorBridge: React.FC<{ store: RendererStore; mode: "server" | "worker" }> = ({ store, mode }) => {
-  const blocks = useRendererBlocks(store);
-  useMdxCoordinator(blocks, undefined, { store, mode });
-  return null;
-};
-
-const MdxPrefetchBridge: React.FC<{ store: RendererStore }> = ({ store }) => {
-  const blocks = useRendererBlocks(store);
-  const prefetchedRuntimeRef = useRef(false);
-  const trackedIdsRef = useRef(new Set<string>());
-  const queueRef = useRef<MdxPrefetchQueue | null>(null);
-
-  if (!queueRef.current) {
-    queueRef.current = new MdxPrefetchQueue();
-  }
-
-  useEffect(() => {
-    const queue = queueRef.current;
-    if (!queue) return;
-    const nextIds = new Map<string, { id: string; compiledModule: CompiledMdxModule | null }>();
-    let shouldPrefetchRuntime = false;
-
-    for (const block of blocks) {
-      if (block.type === "mdx") {
-        shouldPrefetchRuntime = true;
-        const compiledModule = block.payload.compiledMdxModule ?? null;
-        const compiledRef = block.payload.compiledMdxRef;
-        if (compiledModule && typeof compiledModule.id === "string") {
-          nextIds.set(compiledModule.id, { id: compiledModule.id, compiledModule });
-        } else if (compiledRef?.id && compiledRef.id !== "pending") {
-          nextIds.set(compiledRef.id, { id: compiledRef.id, compiledModule: null });
-        }
-      }
-      const meta = block.payload.meta as { mixedSegments?: Array<{ kind?: string }> } | undefined;
-      const segments = Array.isArray(meta?.mixedSegments) ? meta?.mixedSegments : [];
-      if (segments.some((segment) => segment?.kind === "mdx")) {
-        shouldPrefetchRuntime = true;
-      }
-    }
-
-    if (shouldPrefetchRuntime && !prefetchedRuntimeRef.current) {
-      prefetchedRuntimeRef.current = true;
-      prefetchMdxRuntime();
-    }
-
-    for (const id of trackedIdsRef.current) {
-      if (!nextIds.has(id)) {
-        queue.cancel(id);
-      }
-    }
-
-    for (const entry of nextIds.values()) {
-      if (!trackedIdsRef.current.has(entry.id)) {
-        queue.enqueue({ id: entry.id, compiledModule: entry.compiledModule });
-      }
-    }
-
-    trackedIdsRef.current = new Set(nextIds.keys());
-  }, [blocks]);
-
-  useEffect(() => {
-    return () => {
-      queueRef.current?.cancelAll();
-    };
-  }, []);
-
-  return null;
-};
 
 
 const DEFAULT_HISTORY_LIMIT =
@@ -295,11 +226,11 @@ function StreamingMarkdownComponent(
     components,
     tableElements,
     htmlElements,
-    mdxComponents,
+    contentPolicy = "restricted",
+    contentComponents,
+    engines,
     inlineComponents,
     scheduling,
-    mdxCompileMode,
-    mdxHydration,
     managedWorker = false,
     onMetrics,
     onError,
@@ -314,7 +245,6 @@ function StreamingMarkdownComponent(
     unwrapDisallowed,
     disableAutolinkProtocols,
     mathRenderer,
-    artifactHtml,
     deferHeavyBlocks,
     blockRenderer,
     syntax,
@@ -340,33 +270,31 @@ function StreamingMarkdownComponent(
       ? effectiveScheduling.maxBatchesPerFlush
       : DEFAULT_ADAPTIVE_QUEUE_THRESHOLD);
   const effectiveThemes = themes ?? features?.themes;
+  const normalizedContentComponents = useMemo(
+    () => normalizeContentComponents(contentComponents),
+    [contentComponents],
+  );
   const configSignature = useMemo(
     () =>
       createConfigSignature({
         features,
         prewarm: prewarmLangs,
         scheduling: effectiveScheduling,
-        mdxStrategy: mdxCompileMode,
-        mdxComponentKeys: mdxComponents ? Object.keys(mdxComponents).sort() : [],
-        mdxHydration,
+        contentPolicy,
+        contentComponentKeys: Object.keys(normalizedContentComponents).sort(),
         syntax,
         html,
         themes: effectiveThemes,
       }),
-    [features, prewarmLangs, effectiveScheduling, mdxCompileMode, mdxComponents, mdxHydration, syntax, html, effectiveThemes],
+    [features, prewarmLangs, effectiveScheduling, contentPolicy, normalizedContentComponents, syntax, html, effectiveThemes],
   );
-
-  const mdxHydrationController = useMemo(() => createMdxHydrationController(mdxHydration), [mdxHydration]);
-  const mdxHydrationContextValue = useMemo(
-    () => ({
-      controller: mdxHydrationController,
-      options: mdxHydration,
-    }),
-    [mdxHydrationController, mdxHydration],
-  );
-  // Stable indirection so renderers built once (artifact frames) always reach the current linkSafety handler.
+  // Stable indirection lets renderers use the current linkSafety handler.
   const linkHandlerRef = useRef<(url: string) => Promise<void>>();
-  const rendererRef = useRef<{ renderer: MarkdownRenderer; signature: string }>();
+  const rendererRef = useRef<{
+    renderer: MarkdownRenderer;
+    signature: string;
+    trustedEngine: TrustedMdxEngine | undefined;
+  }>();
   const [session, setSession] = useState(0);
   const rendererKey = `${configSignature}:${session}`;
   const onErrorRef = useRef(onError);
@@ -375,15 +303,9 @@ function StreamingMarkdownComponent(
   }, [onError]);
 
   const historyLimit = effectiveScheduling.historyLimit ?? DEFAULT_HISTORY_LIMIT;
+  const trustedEngine = contentPolicy === "trusted-mdx" ? engines?.mdx : undefined;
 
-  if (!rendererRef.current || rendererRef.current.signature !== rendererKey) {
-    const mdxConfig =
-      mdxCompileMode || mdxComponents
-        ? {
-            compileStrategy: mdxCompileMode ?? "server",
-            components: mdxComponents,
-          }
-        : undefined;
+  if (!rendererRef.current || rendererRef.current.signature !== rendererKey || rendererRef.current.trustedEngine !== trustedEngine) {
     const rendererConfig: RendererConfig = {
       themes: effectiveThemes,
       codeRenderers,
@@ -393,12 +315,14 @@ function StreamingMarkdownComponent(
       unwrapDisallowed,
       disableAutolinkProtocols,
       mathRenderer,
-      artifactHtml,
       tableVirtualization,
       urlTransform,
       blockRenderer,
       controls,
       controlsComponent,
+      contentPolicy,
+      contentComponents: normalizedContentComponents,
+      engines,
       highlight: prewarmLangs.length > 0 ? { langs: prewarmLangs } : undefined,
       plugins: features,
       performance: {
@@ -413,7 +337,6 @@ function StreamingMarkdownComponent(
         startupMicrotaskFlushes: effectiveScheduling.startupMicrotaskFlushes,
         adaptiveBudgeting: effectiveScheduling.adaptiveBudgeting,
       },
-      mdx: mdxConfig,
       syntax,
       html,
     };
@@ -424,10 +347,12 @@ function StreamingMarkdownComponent(
     rendererRef.current = {
       renderer: nextRenderer,
       signature: rendererKey,
+      trustedEngine,
     };
   }
 
   const renderer = rendererRef.current.renderer;
+  const trustedRevisionFeed = getTrustedRevisionFeed(renderer);
   const highlightRequester = useCallback(
     (request: CodeHighlightRequest) => {
       renderer.requestCodeHighlightRange(request);
@@ -438,35 +363,10 @@ function StreamingMarkdownComponent(
   const blocks = useRendererBlocks(store);
   const adaptiveSwitchedRef = useRef(false);
   const adaptiveFirstFlushRef = useRef(false);
-  const mdxMode: "server" | "worker" = mdxCompileMode ?? "server";
   const imperativeActivityRef = useRef(false);
   const lastMetricsRef = useRef<RendererMetrics | null>(null);
   const patchHistoryRef = useRef<RendererMetrics[]>([]);
 
-  useEffect(() => {
-    if (typeof window === "undefined" || typeof PerformanceObserver === "undefined") {
-      return undefined;
-    }
-    let observer: PerformanceObserver | null = null;
-    try {
-      observer = new PerformanceObserver((list) => {
-        for (const entry of list.getEntries()) {
-          const duration = entry.duration;
-          const start = (entry as PerformanceEntry).startTime;
-          if (Number.isFinite(duration) && Number.isFinite(start)) {
-            recordMdxHydrationLongTask(start, duration);
-          }
-        }
-      });
-      observer.observe({ entryTypes: ["longtask"] });
-    } catch (error) {
-      observer = null;
-      console.warn("[streaming-markdown] Long task observer unavailable", error);
-    }
-    return () => {
-      observer?.disconnect();
-    };
-  }, []);
 
   const linkSafetyEnabled = Boolean(linkSafety?.enabled);
   const [linkModalState, setLinkModalState] = useState<{ url: string; isOpen: boolean; isChecking: boolean }>({
@@ -620,8 +520,8 @@ function StreamingMarkdownComponent(
     if (components) {
       renderer.setBlockComponents(components);
     }
-    if (mdxComponents) {
-      renderer.setMdxComponents(mdxComponents);
+    if (normalizedContentComponents) {
+      renderer.setContentComponents(normalizedContentComponents);
     }
     if (inlineComponents) {
       renderer.setInlineComponents(resolvedInlineComponents ?? inlineComponents);
@@ -641,11 +541,8 @@ function StreamingMarkdownComponent(
     if (mathRenderer) {
       renderer.setMathRenderer(mathRenderer);
     }
-    if (artifactHtml !== undefined) {
-      reg.setArtifactHtml(artifactHtml);
-    }
     reg.setTableVirtualization(tableVirtualization);
-  }, [renderer, components, mdxComponents, inlineComponents, resolvedInlineComponents, tableElements, htmlElements, codeRenderers, mathRenderer, artifactHtml, tableVirtualization]);
+  }, [renderer, components, normalizedContentComponents, inlineComponents, resolvedInlineComponents, tableElements, htmlElements, codeRenderers, mathRenderer, tableVirtualization]);
 
   useEffect(() => {
     const removeListener = renderer.addFlushListener((result) => {
@@ -729,7 +626,6 @@ function StreamingMarkdownComponent(
           rendererVersion: store.getVersion(),
           store,
           lastMetrics: lastMetricsRef.current,
-          mdxHydration: summarizeMdxHydration(currentBlocks),
         };
       },
       getPatchHistory(limit) {
@@ -786,36 +682,44 @@ function StreamingMarkdownComponent(
       })
     : null;
 
+  const renderNativeFrame = (frameStore: RendererStore): React.ReactElement => (
+    <MarkdownBlocksRenderer
+      blocks={EMPTY_BLOCKS}
+      componentRegistry={renderer.getComponentRegistry()}
+      codeRenderers={codeRenderers}
+      blockRenderer={blockRenderer}
+      urlTransform={urlTransform}
+      controls={controls}
+      controlsComponent={controlsComponent}
+      animated={animated}
+      contentComponents={normalizedContentComponents}
+      allowedElements={allowedElements}
+      disallowedElements={disallowedElements}
+      allowElement={allowElement}
+      unwrapDisallowed={unwrapDisallowed}
+      disableAutolinkProtocols={disableAutolinkProtocols}
+      className={resolvedClassName}
+      style={resolvedStyle}
+      store={frameStore}
+    />
+  );
+
   return (
-    <MdxHydrationContext.Provider value={mdxHydrationContextValue}>
-      <DeferredRenderContext.Provider value={deferredConfig}>
-        <MdxPrefetchBridge store={store} />
-        {mdxMode === "server" ? <MdxCoordinatorBridge store={store} mode={mdxMode} /> : null}
-        <CodeHighlightRequestContext.Provider value={highlightRequester}>
-        <StreamingActivityContext.Provider value={streamStatus === "streaming" || hasActiveBlocks}>
-          <MarkdownBlocksRenderer
-            blocks={EMPTY_BLOCKS}
-            componentRegistry={renderer.getComponentRegistry()}
-            codeRenderers={codeRenderers}
-            blockRenderer={blockRenderer}
-            urlTransform={urlTransform}
-            controls={controls}
-            controlsComponent={controlsComponent}
-            animated={animated}
-            allowedElements={allowedElements}
-            disallowedElements={disallowedElements}
-            allowElement={allowElement}
-            unwrapDisallowed={unwrapDisallowed}
-            disableAutolinkProtocols={disableAutolinkProtocols}
-            className={resolvedClassName}
-            style={resolvedStyle}
-            store={store}
-          />
-        </StreamingActivityContext.Provider>
-        </CodeHighlightRequestContext.Provider>
-        {linkModal}
-      </DeferredRenderContext.Provider>
-    </MdxHydrationContext.Provider>
+    <DeferredRenderContext.Provider value={deferredConfig}>
+      <CodeHighlightRequestContext.Provider value={highlightRequester}>
+      <StreamingActivityContext.Provider value={streamStatus === "streaming" || hasActiveBlocks}>
+        <TrustedMdxBoundary
+          engine={trustedEngine}
+          feed={trustedRevisionFeed}
+          captureNativeFrame={() => capturePreparedRendererStore(store)}
+          renderNativeFrame={renderNativeFrame}
+        >
+          {renderNativeFrame(store)}
+        </TrustedMdxBoundary>
+      </StreamingActivityContext.Provider>
+      </CodeHighlightRequestContext.Provider>
+      {linkModal}
+    </DeferredRenderContext.Provider>
   );
 }
 
@@ -868,22 +772,6 @@ function summarizeFlush(result: PatchFlushResult): RendererMetrics {
   };
 }
 
-function summarizeMdxHydration(blocks: ReadonlyArray<Block>): MdxHydrationSummary & { pending: number } {
-  const summary = getMdxHydrationSummary();
-  let pending = 0;
-
-  for (const block of blocks) {
-    if (block.type !== "mdx") continue;
-    const meta = block.payload.meta as { mdxStatus?: unknown } | undefined;
-    const status = typeof meta?.mdxStatus === "string" ? meta.mdxStatus : undefined;
-    const compiled = block.payload.compiledMdxRef ?? block.payload.compiledMdxModule;
-    if (!compiled || status === "pending") {
-      pending += 1;
-    }
-  }
-
-  return { ...summary, pending };
-}
 
 function average(values: number[]): number {
   if (values.length === 0) return 0;

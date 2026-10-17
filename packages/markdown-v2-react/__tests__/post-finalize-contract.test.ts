@@ -63,38 +63,18 @@ function createFinalizedTableBlock(): Block {
   };
 }
 
-function createFinalizedMdxBlock(): Block {
-  return {
-    id: "mdx-block",
-    type: "mdx",
-    isFinalized: true,
-    payload: {
-      raw: "<Widget answer={42} />",
-      meta: {
-        mdxStatus: "pending",
-      },
-    },
-  };
-}
 
 async function main() {
-  const store = createRendererStore([
-    createFinalizedCodeBlock(),
-    createFinalizedListBlock(),
-    createFinalizedTableBlock(),
-    createFinalizedMdxBlock(),
-  ]);
+  const store = createRendererStore([createFinalizedCodeBlock(), createFinalizedListBlock(), createFinalizedTableBlock()]);
 
   const initialCode = store.getNode("code-block");
   const initialList = store.getNode("list-block");
   const initialTable = store.getNode("table-block");
-  const initialMdx = store.getNode("mdx-block");
-  assert.ok(initialCode && initialList && initialTable && initialMdx, "expected mixed finalized blocks");
+  assert.ok(initialCode && initialList && initialTable, "expected mixed finalized blocks");
 
   const codeEpoch = initialCode.blockEpoch;
   const listEpoch = initialList.blockEpoch;
   const tableEpoch = initialTable.blockEpoch;
-  const mdxEpoch = initialMdx.blockEpoch;
   const originalListChildren = [...store.getChildren("list-block")];
 
   const tbodyId = store.getChildren("table-block")[1];
@@ -130,17 +110,6 @@ async function main() {
     },
   };
 
-  const compiledMdx: Block = {
-    ...initialMdx.block!,
-    payload: {
-      ...initialMdx.block!.payload,
-      compiledMdxRef: { id: "compiled:ok" },
-      meta: {
-        ...(initialMdx.block!.payload.meta ?? {}),
-        mdxStatus: "compiled",
-      },
-    },
-  };
 
   store.applyPatches([
     {
@@ -171,24 +140,12 @@ async function main() {
         blockEpoch: tableEpoch - 1,
       },
     } satisfies Patch,
-    {
-      op: "setProps",
-      at: { blockId: "mdx-block", nodeId: "mdx-block" },
-      props: { block: compiledMdx },
-      meta: {
-        kind: "semantic",
-        blockEpoch: mdxEpoch,
-        parseEpoch: mdxEpoch + 1,
-        tx: 777,
-      },
-    } satisfies Patch,
   ]);
 
   const afterCode = store.getNode("code-block");
   const afterListChildren = store.getChildren("list-block");
   const afterTableCell = store.getNode(originalCellId);
-  const afterMdx = store.getNode("mdx-block");
-  assert.ok(afterCode && afterTableCell && afterMdx, "expected finalized blocks after mixed follow-up batch");
+  assert.ok(afterCode && afterTableCell, "expected finalized blocks after mixed follow-up batch");
 
   assert.strictEqual(afterCode.block?.isFinalized, true, "enrichment must not reopen finalized code blocks");
   assert.strictEqual(afterCode.blockEpoch, codeEpoch, "enrichment must not advance block epoch");
@@ -198,10 +155,6 @@ async function main() {
 
   assert.strictEqual(afterTableCell.props?.text, "Alpha", "stale finalized table replacement must be rejected");
 
-  assert.strictEqual(afterMdx.block?.isFinalized, true, "valid semantic MDX follow-up must keep block finalized");
-  assert.strictEqual(afterMdx.block?.payload.meta?.mdxStatus, "compiled", "valid semantic MDX follow-up should land");
-  assert.strictEqual(afterMdx.block?.payload.compiledMdxRef?.id, "compiled:ok", "compiled ref should land on finalized MDX block");
-  assert.ok(afterMdx.blockEpoch > mdxEpoch, "valid semantic MDX follow-up should advance the epoch");
 
   const counters = store.getDebugCounters();
   assert.strictEqual(counters.staleEpochRejected, 2, "expected stale finalized semantic patches to be rejected");

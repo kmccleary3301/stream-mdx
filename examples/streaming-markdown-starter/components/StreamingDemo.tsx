@@ -11,7 +11,7 @@ This starter demonstrates the ref-driven \`<StreamingMarkdown>\` component. Upda
 ## Features
 
 - Worker-based parsing + diffing
-- MDX compilation (server or worker)
+- MDX is disabled for editable text; trusted authored MDX requires an explicit host engine.
 - Math/list/table plugins enabled by default
 - Instrumentation surfaced via \`onMetrics\`
 
@@ -22,7 +22,6 @@ const USE_WORKER_HELPER = process.env.NEXT_PUBLIC_STREAMING_WORKER_HELPER === "t
 export default function StreamingDemo() {
   const streamingRef = useRef<StreamingMarkdownHandle>(null);
   const [text, setText] = useState(ARTICLE);
-  const [mdxMode, setMdxMode] = useState<"server" | "worker">("server");
   const stats = streamingRef.current?.getState();
   const [lastMetrics, setLastMetrics] = useState<RendererMetrics | null>(null);
   const workerFactory = useMemo<(() => Worker) | undefined>(() => {
@@ -41,17 +40,6 @@ export default function StreamingDemo() {
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap gap-4">
-        <label className="flex items-center gap-2 font-medium text-gray-700 text-sm">
-          MDX mode
-          <select
-            value={mdxMode}
-            onChange={(event) => setMdxMode(event.target.value as "server" | "worker")}
-            className="rounded border border-gray-300 bg-white px-2 py-1 text-sm"
-          >
-            <option value="server">Server (API)</option>
-            <option value="worker">Worker (client)</option>
-          </select>
-        </label>
         <button
           className="rounded border border-gray-300 px-3 py-1 font-medium text-gray-700 text-sm hover:bg-gray-50"
           type="button"
@@ -68,8 +56,7 @@ export default function StreamingDemo() {
           ref={streamingRef}
           text={text}
           worker={workerFactory}
-          features={{ math: true, mdx: true, tables: true, html: true }}
-          mdxCompileMode={mdxMode}
+          features={{ math: true, mdx: false, tables: true, html: true }}
           prewarmLangs={["tsx", "python"]}
           onMetrics={(metric) => {
             setLastMetrics(metric);

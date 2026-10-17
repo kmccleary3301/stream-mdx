@@ -31,15 +31,6 @@ export function cloneBlock(block: Block): Block {
       inline: block.payload.inline ? cloneInlineNodes(block.payload.inline) : undefined,
       highlightedHtml: block.payload.highlightedHtml,
       sanitizedHtml: block.payload.sanitizedHtml,
-      compiledMdxRef: block.payload.compiledMdxRef ? { ...block.payload.compiledMdxRef } : undefined,
-      compiledMdxModule: block.payload.compiledMdxModule
-        ? {
-            ...block.payload.compiledMdxModule,
-            dependencies: Array.isArray(block.payload.compiledMdxModule.dependencies) ? [...block.payload.compiledMdxModule.dependencies] : undefined,
-          }
-        : block.payload.compiledMdxModule === null
-          ? null
-          : undefined,
       meta: block.payload.meta ? structuredCloneIfPossible(block.payload.meta) : undefined,
       range: block.payload.range ? { ...block.payload.range } : undefined,
     },
@@ -144,8 +135,6 @@ function createSegmentSnapshot(
         type: `${parentType}-mdx`,
         props: {
           raw: segment.value,
-          status: segment.status ?? "pending",
-          error: segment.error,
         },
         range,
         children: [],
@@ -171,11 +160,15 @@ function enrichTableSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot
         header?: InlineNode[][];
         rows?: InlineNode[][][];
         align?: Array<"left" | "center" | "right" | null>;
+        headerCellRanges?: Array<{ from: number; to: number } | undefined>;
+        rowCellRanges?: Array<Array<{ from: number; to: number } | undefined>>;
       }
     | undefined;
   const header = Array.isArray(meta?.header) ? (meta?.header as InlineNode[][]) : [];
   const rows = Array.isArray(meta?.rows) ? (meta?.rows as InlineNode[][][]) : [];
   const align = Array.isArray(meta?.align) ? (meta?.align ?? []) : [];
+  const headerCellRanges = Array.isArray(meta?.headerCellRanges) ? meta.headerCellRanges : [];
+  const rowCellRanges = Array.isArray(meta?.rowCellRanges) ? meta.rowCellRanges : [];
 
   const children: NodeSnapshot[] = [];
 
@@ -193,6 +186,7 @@ function enrichTableSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot
           inline: cloneInlineNodes(cellInline),
           text: inlineNodesToPlainText(cellInline),
         },
+        ...(headerCellRanges[cellIndex] ? { range: { ...headerCellRanges[cellIndex]! } } : {}),
         children: [],
       })),
     });
@@ -212,6 +206,7 @@ function enrichTableSnapshot(block: Block, snapshot: NodeSnapshot): NodeSnapshot
         inline: cloneInlineNodes(cellInline),
         text: inlineNodesToPlainText(cellInline),
       },
+      ...(rowCellRanges[rowIndex]?.[cellIndex] ? { range: { ...rowCellRanges[rowIndex][cellIndex]! } } : {}),
       children: [],
     })),
   }));
@@ -337,10 +332,11 @@ function normalizeOptionalArray<T>(lines: Array<T | null>, fallbackLength: numbe
 
 function cloneInlineNodes(nodes: InlineNode[]): InlineNode[] {
   return nodes.map((node) => {
+    const sourceRange = node.sourceRange ? { sourceRange: { ...node.sourceRange } } : {};
     if ("children" in node && Array.isArray(node.children)) {
-      return { ...node, children: cloneInlineNodes(node.children) };
+      return { ...node, ...sourceRange, children: cloneInlineNodes(node.children) };
     }
-    return { ...node };
+    return { ...node, ...sourceRange };
   });
 }
 
@@ -367,6 +363,9 @@ export function inlineNodesToPlainText(nodes: InlineNode[]): string {
         } else if ("text" in node && typeof node.text === "string") {
           result += node.text;
         }
+        break;
+      case "trusted-mdx-inline":
+        result += node.raw;
         break;
       case "plugin":
         if (node.children && Array.isArray(node.children)) {

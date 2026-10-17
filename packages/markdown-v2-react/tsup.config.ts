@@ -16,27 +16,33 @@ const clientEntries = [
   "src/renderer/virtualized-code.tsx",
   "src/components/index.ts",
   "src/components/bottom-stick-scroll-area.tsx",
-  "src/components/artifact-frame.tsx",
   "src/components/diff-renderer.tsx",
   "src/components/katex-math.tsx",
-  "src/mdx-client.ts",
-  "src/mdx-coordinator.ts",
   "src/utils/inline-html.ts",
   "src/math/display-wrapper.tsx",
   "src/contexts/math-tracker.ts",
+  "src/trusted-mdx/index.ts",
+  "src/trusted-mdx/native-children-slot.tsx",
 ].map(resolve);
 
-const serverEntries = [resolve("src/server.tsx")];
+const serverEntries = [resolve("src/server.tsx"), resolve("src/trusted-mdx/server.tsx")];
 
 const sharedConfig = {
-  dts: true,
+  dts: false,
   sourcemap,
   splitting: false,
   format: ["esm", "cjs"],
   outDir: join(__dirname, "dist"),
   target: "es2020",
   tsconfig: join(__dirname, "tsconfig.build.json"),
-  external: ["react", "react-dom", "@stream-mdx/core", "@stream-mdx/worker", "katex"],
+  external: [
+    "react",
+    "react-dom",
+    "@stream-mdx/core",
+    "@stream-mdx/worker",
+    "@stream-mdx/react/_internal/trusted-mdx-native-children",
+    "katex",
+  ],
   outExtension({ format }: { format: "cjs" | "esm" }) {
     return {
       js: format === "cjs" ? ".cjs" : ".mjs",
@@ -51,7 +57,8 @@ export default defineConfig([
   {
     ...sharedConfig,
     entry: clientEntries,
-    clean: true,
+    // One declaration writer owns the shared output directory for both realms.
+    dts: { entry: [...clientEntries, ...serverEntries] },
     banner: {
       js: '"use client";',
     },

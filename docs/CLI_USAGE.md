@@ -33,7 +33,6 @@ worker.postMessage({
   initialContent: "",
   prewarmLangs: ["typescript"],
   docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true },
-  mdx: { compileMode: "worker" },
 });
 
 worker.postMessage({ type: "APPEND", text: "## Hello\\n\\nStreaming **markdown**" });
@@ -57,7 +56,6 @@ const result = await compileMarkdownSnapshot({
   text: "# Hello\\n\\n```ts\\nconsole.log('hi')\\n```",
   init: {
     docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true },
-    mdx: { compileMode: "server" },
     prewarmLangs: ["typescript"],
   },
   cache: {
@@ -85,7 +83,6 @@ const result = await compileMarkdownSnapshotDirect({
   text: "# Edge-safe compile\\n\\n```ts\\nexport const answer = 42;\\n```",
   init: {
     docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true },
-    mdx: { compileMode: "server" },
     prewarmLangs: ["typescript"],
   },
   hashSalt: "edge-preview",
@@ -132,7 +129,7 @@ For streaming, treat the markdown input as append-only and send `APPEND` message
 
 Messages sent **to** the worker (`WorkerIn`) include:
 
-- `INIT` (initial content, plugin toggles, MDX compile mode)
+- `INIT` (initial content, parser/plugin toggles, content policy, and registered source components)
 - `APPEND` (append-only streaming text)
 - `FINALIZE` (finalize blocks once the stream ends)
 - `SET_CREDITS` (optional backpressure control)

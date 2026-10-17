@@ -34,7 +34,6 @@ export interface ServeMarkdownWorkerOptions {
 }
 
 export type CodeHighlightingMode = "final" | "incremental" | "live";
-export type WorkerMdxMode = "server" | "worker";
 
 export interface ShikiTokenStyle {
   color?: string;
@@ -101,12 +100,6 @@ export interface ContentChangeRange {
   toB: number;
 }
 
-export interface MdxStatusUpdate {
-  compiledRef?: { id: string };
-  status: "compiled" | "error";
-  error?: string;
-  rawSignature?: string;
-}
 
 export interface ParseOptions {
   forceFinalize?: boolean;

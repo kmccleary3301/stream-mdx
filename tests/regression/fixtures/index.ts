@@ -3,7 +3,6 @@ export type RegressionFixture = {
   title: string;
   file: string;
   tags?: string[];
-  waitForMdxCompiled?: boolean;
   requiredSelectors?: string[];
   forbidSelectors?: string[];
   forbidSelectorsDuringStreaming?: string[];
@@ -62,7 +61,7 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
     file: "inline-html.md",
     tags: ["html"],
     requiredSelectors: ["kbd", "sub", "sup", "code.inline-code"],
-    forbidSelectors: [".markdown-mdx-inline", "[data-mdx-status]"],
+    forbidSelectors: [".markdown-mdx-inline"],
     requiredTextFragments: ["Inline code with language hint: {:js}{:js}."],
   },
   {
@@ -397,7 +396,6 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
     title: "MDX Tag Allowlist Inline",
     file: "mdx-tag-allowlist-inline.mdx",
     tags: ["anticipation", "mdx", "inline"],
-    waitForMdxCompiled: false,
     requiredSelectors: [".markdown-mdx-inline", "ul", "blockquote"],
     requiredTextFragments: [
       "Prefix text with",
@@ -413,7 +411,6 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
     title: "MDX Tag No Swallow Negative",
     file: "mdx-tag-no-swallow-negative.mdx",
     tags: ["anticipation", "mdx", "negative"],
-    waitForMdxCompiled: false,
     requiredSelectors: [],
     requiredTextFragments: [
       "Prefix text with",
@@ -426,7 +423,6 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
     title: "MDX Expression No Swallow Negative",
     file: "mdx-expression-no-swallow-negative.mdx",
     tags: ["anticipation", "mdx", "negative"],
-    waitForMdxCompiled: false,
     requiredSelectors: ["ul", "blockquote"],
     requiredTextFragments: [
       "Prefix text with {expr and trailing prose that must stay visible.",

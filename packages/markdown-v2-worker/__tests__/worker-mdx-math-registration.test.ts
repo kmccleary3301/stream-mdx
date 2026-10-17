@@ -61,7 +61,6 @@ async function testNestedNegativeMathFallback(): Promise<void> {
     type: "INIT",
     initialContent: "",
     prewarmLangs: [],
-    mdx: { compileMode: "worker" },
     docPlugins: { html: true, mdx: true, math: true, formatAnticipation: { mathInline: true, mathBlock: true, mdx: true, html: true } },
   });
   const assertFallback = (blocks: Block[]): void => {
@@ -70,7 +69,6 @@ async function testNestedNegativeMathFallback(): Promise<void> {
     assert.equal(math.type, "paragraph", "raw math must not compile through MDX's EOF math closure");
     assert.ok(math.payload.inline?.every((node) => node.kind === "text"), "unsupported math must remain literal, not speculative math or JSX");
     assert.equal(math.payload.inline?.map((node) => node.kind === "text" ? node.text : "").join(""), math.payload.raw);
-    assert.equal(math.payload.compiledMdxModule, undefined);
     assert.equal(math.payload.meta?.mixedSegments, undefined);
     const protectedRanges = math.payload.meta?.protectedRanges as Array<{ from: number; to: number; kind: string }> | undefined;
     assert.ok(protectedRanges?.some((range) => range.kind === "math-display" && range.from === 0 && range.to === math.payload.raw.length));

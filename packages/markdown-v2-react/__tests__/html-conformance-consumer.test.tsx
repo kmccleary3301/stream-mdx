@@ -34,7 +34,7 @@ function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void; reje
   return { promise, resolve, reject };
 }
 
-async function streamed(text: string, config: Pick<Extract<WorkerIn, { type: "INIT" }>, "html" | "syntax" | "docPlugins" | "mdxCompileMode"> = {}): Promise<RendererStore> {
+async function streamed(text: string, config: Pick<Extract<WorkerIn, { type: "INIT" }>, "html" | "syntax" | "docPlugins"> = {}): Promise<RendererStore> {
   const worker = createInlineEngineWorker();
   const store = createRendererStore();
   const { promise, resolve, reject } = deferred<RendererStore>();
@@ -196,7 +196,7 @@ const codeSource = [
   "| `{:js}{:js}` |",
   "",
 ].join("\n");
-const codeInit = { ...init, docPlugins: { ...init.docPlugins, mdx: true }, mdxCompileMode: "server" as const };
+const codeInit = { ...init, docPlugins: { ...init.docPlugins, mdx: true } };
 const codeCompiled = await compileMarkdownSnapshotDirect({ text: codeSource, init: codeInit });
 const codeSerialized = JSON.parse(JSON.stringify(codeCompiled.blocks)) as Block[];
 const codeStore = await streamed(codeSource, codeInit);

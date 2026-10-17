@@ -75,7 +75,6 @@ worker.postMessage({
   type: "INIT",
   initialContent: "",
   docPlugins: { tables: true, html: true, mdx: false, math: false, footnotes: true },
-  mdx: { compileMode: "server" },
 });
 ```
 

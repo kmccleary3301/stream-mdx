@@ -76,7 +76,7 @@ Current audited enrichment uses:
 
 Current audited semantic uses:
 
-- finalized MDX status transitions
+- native MDX source/ownership and semantic block transitions (not compile-status transitions)
 - block payload replacement
 - semantic reparses
 
@@ -103,6 +103,8 @@ not rely on `setHTML` enrichment. Treat that space as reserved, not active.
 - stale semantic patches are rejected in the renderer store
 - post-finalize visible mutation paths are governed separately by
   `docs/POST_FINALIZE_MUTATION_LEDGER.md`
+
+Trusted compilation and evaluation readiness are outside the worker `Patch` union. The worker has no per-block `MDX_COMPILED` or `MDX_ERROR` transitions. A host may project an explicitly trusted whole-document revision after native finalization; this is not a patch-classification family.
 
 ## Guard Coverage
 

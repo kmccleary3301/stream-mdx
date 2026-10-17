@@ -38,7 +38,7 @@ StreamMDX is a **high-performance, streaming-first React component** designed fo
 - ⚡ **Incremental rendering** — Only updates the "tail" block, finalized blocks never re-render
 - 🎨 **Syntax highlighting** — Shiki-powered code blocks with 200+ languages
 - 🔌 **Plugin system** — Extensible inline and block processing
-- 🛡️ **Security-first** — CSP-compliant, no `unsafe-eval`, Trusted Types support
+- 🛡️ **Security-first** — Restricted Markdown avoids `unsafe-eval`; explicit trusted MDX requires it and is never a sandbox
 - 📦 **Tree-shakable** — Import only what you need
 
 ---
@@ -114,8 +114,7 @@ export async function ArticlePage() {
   const { blocks } = await compileMarkdownSnapshot({
     text: "# Hello\\n\\n```ts\\nconsole.log('hi')\\n```",
     init: {
-      docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true },
-      mdx: { compileMode: "server" },
+      docPlugins: { tables: true, html: true, math: true, footnotes: true },
     },
   });
 
@@ -139,8 +138,7 @@ export async function EdgeLikeArticlePage() {
   const { blocks } = await compileMarkdownSnapshotDirect({
     text: "# Hello\\n\\nEdge-safe deterministic compile.",
     init: {
-      docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true },
-      mdx: { compileMode: "server" },
+      docPlugins: { tables: true, html: true, math: true, footnotes: true },
       prewarmLangs: ["typescript"],
     },
     cache: {
@@ -176,8 +174,9 @@ Cache note:
 | `stream` | `AsyncIterable<string>` | Streaming markdown chunks. Use for live updates. |
 | `worker` | `Worker \| URL \| string \| () => Worker` | Worker instance/URL/factory. Recommended: `"/workers/markdown-worker.js"`. |
 | `features` | `object` | Feature flags: `{ math?, mdx?, tables?, html?, callouts?, footnotes?, formatAnticipation?, codeHighlighting? }` |
-| `mdxCompileMode` | `"server" \| "worker"` | Enables MDX compilation/hydration and selects strategy. |
-| `mdxComponents` | `object` | Component map passed to hydrated MDX blocks. |
+| `contentPolicy` | `"markdown" \| "restricted" \| "trusted-mdx"` | Defaults to `"restricted"`. Full MDX evaluation requires `"trusted-mdx"` and an explicit engine. |
+| `contentComponents` | `ContentComponentsMap` | Host registrations for recognized restricted source components, separate from native Markdown presentation overrides. |
+| `engines.mdx` | `TrustedMdxEngine` | Explicit evaluator supplied when `contentPolicy="trusted-mdx"`. |
 | `components` | `object` | Override block components (headings, code, tables, etc.). Only entries that differ from the built-in defaults replace native block views, so re-passing `registry.getBlockComponentMap()` keeps native list/table/HTML rendering (nested list children, tables, HTML ownership) enabled. |
 | `inlineComponents` | `object` | Override inline components (bold, links, code, etc.). |
 | `tableElements` | `object` | Override table tags (Shadcn table wrappers, etc.). |
@@ -544,7 +543,6 @@ Fenced code blocks can be mapped to custom renderers by language via `codeRender
 ```tsx
 import { StreamingMarkdown } from "stream-mdx";
 import { MermaidBlock } from "@stream-mdx/mermaid";
-import { ArtifactFrame } from "@stream-mdx/react";
 
 export function DocsPage({ content }: { content: string }) {
   return (
@@ -552,8 +550,6 @@ export function DocsPage({ content }: { content: string }) {
       text={content}
       codeRenderers={{
         mermaid: MermaidBlock,
-        artifact: ArtifactFrame,
-        "html-artifact": ArtifactFrame,
       }}
     />
   );
@@ -746,111 +742,72 @@ For end-to-end worker plugin wiring and registration order, see `docs/STREAMING_
 
 ## MDX Integration
 
-### Basic MDX Setup
+### Restricted component content
+
+The default `contentPolicy` is `"restricted"`. Register approved source components with `defineContentComponent`; raw component constructors are not registrations. Use a type-predicate validator for narrower source JSON props. Broad JSON-props registrations may omit the validator. Native projected `children` are passed separately as host React nodes, and are not part of the source-prop validation. This registry is active only under `"restricted"` policy, separate from `components`, which overrides native Markdown block rendering.
+
+```tsx
+import { defineContentComponent, StreamingMarkdown, type ContentComponentProps, type ContentComponentsMap } from "stream-mdx";
+import type { ComponentProps } from "react";
+import { Callout } from "./Callout";
+
+type CalloutSourceProps = Pick<ComponentProps<typeof Callout>, "type">;
+const validateCalloutProps = (
+  props: ContentComponentProps,
+): props is ContentComponentProps & CalloutSourceProps =>
+  props.type === "info" || props.type === "warning";
+
+const contentComponents = {
+  Callout: defineContentComponent({ component: Callout, validateProps: validateCalloutProps }),
+} satisfies ContentComponentsMap;
+
+<StreamingMarkdown
+  text={content}
+  features={{ mdx: true }}
+  contentComponents={contentComponents}
+/>;
+
+```
+
+When `renderWhen` is `"closed"`, only an open native component is suppressed. A finalized incomplete body that passes validation still renders with its diagnostic; an incomplete opening header remains literal and does not invoke the host component. In a React Server Component, import the pure registration factory from `@stream-mdx/react/server`, not the client root.
+
+### Full MDX for trusted content
+
+Full MDX evaluation is an explicit opt-in. Create a `TrustedMdxEngine` and pass it with `contentPolicy="trusted-mdx"`. Only use this path for trusted, reviewed source. It evaluates authored code in the host realm; it is not a sandbox.
 
 ```tsx
 import { StreamingMarkdown } from "stream-mdx";
+import { Callout } from "./Callout";
+import { createTrustedMdxEngine } from "@stream-mdx/react/trusted-mdx";
 
-const mdxComponents = {
-  h1: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
-    <h1 {...props} className="text-4xl font-bold mb-4" />
-  ),
-  h2: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
-    <h2 {...props} className="text-3xl font-semibold mb-3" />
-  ),
-  p: (props: React.HTMLAttributes<HTMLParagraphElement>) => (
-    <p {...props} className="mb-3 leading-relaxed" />
-  ),
-  YouTube: ({ id }: { id: string }) => (
-    <iframe
-      width="560"
-      height="315"
-      src={`https://www.youtube.com/embed/${id}`}
-      frameBorder="0"
-      allowFullScreen
-    />
-  ),
-  Callout: ({ type, children }: { type: "info" | "warn"; children: React.ReactNode }) => (
-    <div className={`border-l-4 p-4 my-4 ${
-      type === "warn" ? "border-yellow-500 bg-yellow-50" : "border-blue-500 bg-blue-50"
-    }`}>
-      {children}
-    </div>
-  ),
-};
+const hostWidgets = { Callout };
+const mdxEngine = createTrustedMdxEngine({
+  components: hostWidgets,
+  imports: { "host:widgets": hostWidgets },
+});
 
-export function MDXMarkdown({ text }: { text: string }) {
+export function TrustedMdxMarkdown({ text }: { text: string }) {
   return (
     <StreamingMarkdown
       text={text}
       worker="/workers/markdown-worker.js"
-      features={{ mdx: true, math: true, tables: true, html: true }}
-      mdxCompileMode="worker"
-      mdxComponents={mdxComponents}
-    />
-  );
-}
-```
-
-### Server vs Worker MDX — Parity and Strategy
-
-StreamMDX supports two MDX compilation strategies:
-
-- `mdxCompileMode="server"` – MDX blocks are compiled via the `/api/mdx-compile-v2` endpoint.
-- `mdxCompileMode="worker"` – MDX is compiled inside the worker bundle itself.
-
-Both strategies can share the **same MDX compilation pipeline** when you use the exported helper:
-
-- `remark-gfm` and `remark-math` for markdown + math parsing.
-- `rehype-slug` and `rehype-katex` for headings and math HTML.
-- `@mdx-js/mdx` with `outputFormat: "function-body"` and the React JSX runtime.
-
-The worker compilation path uses the same pipeline; for server compilation, use `compileMdxContent` from `stream-mdx/worker/mdx-compile` (or `@stream-mdx/worker/mdx-compile`) to keep parity.
-
-For strict CSP or centralized caching, prefer **server** mode. For lower latency or offline scenarios, prefer **worker** mode. In either case, you can assume **matching HTML/DOM output and hydration behavior** for the same MDX source and `components` map.
-
-### MDX with Server Compilation
-
-```tsx
-import { StreamingMarkdown } from "stream-mdx";
-
-export function ServerMDX({ text }: { text: string }) {
-  return (
-    <StreamingMarkdown
-      text={text}
       features={{ mdx: true }}
-      mdxCompileMode="server" // Uses /api/mdx-compile-v2 endpoint
+      contentPolicy="trusted-mdx"
+      engines={{ mdx: mdxEngine }}
     />
   );
 }
 ```
 
-**API Route (`app/api/mdx-compile-v2/route.ts`):**
+The import map grants only the host bindings named by authored imports such as `import { Callout } from "host:widgets"`; unresolved imports fail instead of being fetched. The trusted evaluator runs `AsyncFunction` in the host realm and requires `unsafe-eval` in `script-src`. Do not enable it for untrusted content.
 
-```ts
-import { NextRequest, NextResponse } from "next/server";
-import { compileMdxContent } from "stream-mdx/worker/mdx-compile";
+Native worker `FINALIZED` confirms semantic completion for that source revision only. Trusted whole-document preparation, evaluation, projection, and React commit readiness are asynchronous and separate. The trusted document tracks requested, projected, and actually rendered revisions; stale results are rejected after newer requests or lease/engine invalidation, with an ownership check immediately before authored code runs. Render failure may restore the last committed UI, but cannot undo side effects already performed by trusted code.
 
-export async function POST(request: NextRequest) {
-  const { content, blockId } = await request.json();
-  
-  try {
-    const compiled = await compileMdxContent(content);
+Trusted render regions retain exact authored UTF-16 MDAST spans and node-kind placement. The host compiler and worker share one private source-span collector. Worker recognition uses only `unified`, `remark-parse`, `remark-mdx`, and the existing `remark-gfm`/`remark-math` configuration, calling `.parse` only; it does not import, compile, or evaluate `@mdx-js/mdx`. A compiler-proven flow JSX root is projected outside native paragraphs; inline JSX and expressions remain in their native paragraph positions. For each complete flow root, the worker reuses prepared `htmlTree`/`trustedMdxNativeChildren` owners per direct MDAST child and parses only missing Markdown/JSX spans through the configured native parser and `extractBlocks`. An unnamed fragment, including an unseparated Markdown body, uses those MDAST spans rather than HTML-tag scanning or a new grammar. Each direct child with an exact worker-block or prepared-tree owner renders through that existing native owner. Markdown without an owner is prepared rather than omitted; only JSX/expression children without independent native ownership use their original compiler expression as lazy fallback. Misaligned spans where owners exist raise an ownership error rather than hiding owners. Headings, paragraphs, code, math, quotes, lists, tables, and inline MDX retain their existing owners and source scopes. Placement comes from MDAST, never returned host DOM. Only a `VFileMessage` from a known MDX syntax source becomes a `not-complete` span-recognition result. The worker keeps authored source native and continues to native `FINALIZED`; the host compiler remains responsible for its normal syntax diagnostic. Unexpected errors propagate.
 
-    return NextResponse.json({
-      // `blockId` comes from the client and is used for caching.
-      id: blockId,
-      code: compiled.code,
-      dependencies: compiled.dependencies,
-    });
-  } catch (error) {
-    return NextResponse.json(
-      { error: "MDX compilation failed" },
-      { status: 500 }
-    );
-  }
-}
-```
+For a React Server Component handoff, `projectTrustedMdxServerDocument` keeps evaluator closures, host component maps, and the authored layout on the server. It sends the client renderer `ReactNode` content plus serializable native-owner identities and their compiler-authored child spans through `TrustedMdxServerRegionProvider`. The private client slot uses indexed native owners for represented children and carries already-rendered compiler fallback nodes only for unowned children; no fallback closures cross the handoff. Flow-owned worker blocks are not also emitted as top-level siblings. The native block renderer remains the owner of nested Markdown preparation and wrappers.
+
+`contentComponents` is only the restricted native component path; it is not used by `"markdown"` or `"trusted-mdx"` policies. `contentPolicy="trusted-mdx"` requires `engines.mdx`; there is no compile-mode prop or source-triggered worker evaluator. See the [Security Model](./SECURITY_MODEL.md) before enabling it.
 
 ### Feature Flags: Math, HTML, MDX, Format Anticipation
 
@@ -873,7 +830,7 @@ The `features` prop on `<StreamingMarkdown />` controls built‑in domains:
 ```
 
 - Set `math: false` to disable math detection/rendering and treat math as plain text.
-- Set `mdx: false` to skip MDX detection/compilation and render MDX markup as regular markdown/text.
+- Set `mdx: false` to skip MDX syntax recognition and admission.
 - Set `html: false` to avoid inline/block HTML plugins beyond the core sanitization path.
 - Set `formatAnticipation: true` to withhold formatting markers while streaming (initial support: `*`, `**`, `` ` ``, `~~`).
 - Set `codeHighlighting: "final" | "incremental" | "live"` to control Shiki behavior:
@@ -1218,8 +1175,8 @@ export function FullChatInterface() {
 
   const markdownProps = {
     worker: "/workers/markdown-worker.js",
-    features: { math: true, mdx: true, tables: true, html: true },
-    mdxCompileMode: "worker" as const,
+    features: { math: true, tables: true, html: true },
+    contentPolicy: "restricted" as const,
     prewarmLangs: ["typescript", "bash", "python"],
   };
 
@@ -1374,15 +1331,15 @@ export function DocumentationViewer({ url }: { url: string }) {
 - For custom syntax you need a custom worker bundle that registers your plugins; then pass that worker URL via `worker`.
 - Use `inlineComponents` / `components` to render any custom nodes emitted by your worker.
 
-### MDX Not Compiling
+### MDX Content Not Rendering as Expected
 
-**Problem**: MDX blocks show as raw code.
+**Problem**: Component tags stay restricted instead of evaluating as full MDX.
 
 **Solutions**:
-- Set `features={{ mdx: true }}`
-- Set `mdxCompileMode="worker"` (no server) or `mdxCompileMode="server"` (requires `/api/mdx-compile-v2`)
-- Check MDX compilation endpoint is working
-- Verify you passed `mdxComponents` for your custom MDX components
+- The default `contentPolicy` is `"restricted"` and does not evaluate authored expressions.
+- Register fixed host components with `defineContentComponent` and `contentComponents` under the restricted policy.
+- For trusted, reviewed full MDX, create a `TrustedMdxEngine` and pass it through `engines.mdx` with `contentPolicy="trusted-mdx"`.
+- Full MDX runs authored code in the host realm; do not enable it for untrusted input.
 
 ### Colors Not Showing in Code Blocks
 
@@ -1414,7 +1371,7 @@ You now have everything you need to:
 - Stream from LLMs/APIs (fetch, WebSocket, SSE examples)
 - Customize components (block and inline overrides)
 - Extend syntax via custom worker bundles (advanced)
-- Integrate MDX (server and worker compilation)
+- Integrate restricted components or opt into full MDX with an explicit trusted engine
 - Optimize performance (metrics, scheduling, prewarming)
 
 StreamMDX is designed for production React applications; start with the defaults, then tighten CSP and tuning knobs as you scale.

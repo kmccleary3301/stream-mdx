@@ -821,7 +821,6 @@ async function renderSnippet(
   options?: { traceFast?: boolean; streamLimit?: number },
 ): Promise<{ html: string; telemetry: TelemetrySnapshot | null; state: RuntimeStateSnapshot }> {
   const minVisibleLength = Math.min(10, Math.max(1, normalizeWhitespace(snippetContent).length));
-  const compileMode = process.env.MDX_COMPILE_MODE && process.env.MDX_COMPILE_MODE.toLowerCase() === "worker" ? "worker" : "server";
   await page.addInitScript(
     ({ content, config }) => {
       const runtimeWindow = window as typeof window & {
@@ -830,7 +829,6 @@ async function renderSnippet(
         __TEST_SNIPPET_CONFIG__?: {
           initialStreamLimit?: number | null;
           initialIsRunning?: boolean;
-          initialMdxStrategy?: "server" | "worker";
         };
       };
       // Some MDX fixtures expect this helper to exist in the browser.
@@ -848,12 +846,10 @@ async function renderSnippet(
         ? {
             initialStreamLimit: options.streamLimit ?? null,
             initialIsRunning: false,
-            initialMdxStrategy: compileMode,
           }
         : {
             initialStreamLimit: null,
             initialIsRunning: true,
-            initialMdxStrategy: compileMode,
           },
     },
   );
@@ -893,16 +889,15 @@ async function renderSnippet(
     });
   } else {
     await page.evaluate(
-      ({ mode, streamLimit }) => {
+      ({ streamLimit }) => {
         const api = window.__STREAMING_DEMO__;
         if (!api) return;
         if (typeof streamLimit === "number") {
           api.setStreamLimit?.(streamLimit);
         }
-        api.setMdxStrategy?.(mode === "worker" ? "worker" : "server");
         api.restart?.();
       },
-      { mode: compileMode, streamLimit: options?.streamLimit ?? null },
+      { streamLimit: options?.streamLimit ?? null },
     );
   }
 

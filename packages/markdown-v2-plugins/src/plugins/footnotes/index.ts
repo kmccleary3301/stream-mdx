@@ -194,6 +194,8 @@ function assignNumbersFromReferencesInBlocks(blocks: Block[], state: FootnoteSta
       // The HAST children own the rendered children; inlineNode.children is a shadow.
       if (node.inlineNode?.kind === "footnote-ref") scanInline([node.inlineNode], owners);
       scope.html = visitHtml(node.children, owners);
+    } else if (node.kind === "component") {
+      scope.html = visitHtml(node.children, owners);
     } else {
       visitBlock(node.block, owners);
     }
@@ -358,6 +360,9 @@ function numberInlineReferences(blocks: Block[], state: FootnoteState, scopes: M
       if (children !== node.children || inlineNode !== node.inlineNode) {
         result = { ...node, children, ...(inlineNode !== node.inlineNode ? { inlineNode } : {}) };
       }
+    } else if (node.kind === "component") {
+      const children = mapChanged(node.children, (child, index) => numberHtmlNode(child, scope?.html?.[index]));
+      if (children !== node.children) result = { ...node, children };
     } else {
       const block = numberBlock(node.block);
       if (block !== node.block) result = { ...node, block };
@@ -457,7 +462,9 @@ function visitPreparedInline(children: NodeSnapshot[], visit: (nodes: InlineNode
       if (node.kind === "block") visitBlock(node.block);
       else if (node.kind === "text") {
         if (node.inline) visit(node.inline);
-      } else if (!["code", "pre", "textarea"].includes(node.tagName.toLowerCase())) {
+      } else if (node.kind === "component") {
+        visitHtml(node.children);
+      } else if (node.kind === "element" && !["code", "pre", "textarea"].includes(node.tagName.toLowerCase())) {
         if (node.inlineNode?.kind === "footnote-ref") visit([node.inlineNode]);
         visitHtml(node.children);
       }

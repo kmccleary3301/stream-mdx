@@ -197,41 +197,15 @@ reuse global `self`/`postMessage` transport bindings. Another worker runtime may
 replace those bindings without redirecting direct compilation output. Existing
 compile serialization, artifact hashes, and cache behavior remain unchanged.
 
-Public imports and direct/worker compilation also leave `document` and
-`DOMParser` unchanged. The obsolete ambient worker DOM stubs have been removed.
-Node SSR uses the actual DOM-free HTML/sanitizer paths; physical workers compile
-MDX through the existing DOM-free dependency aliases. Browser hosts retain their
-real DOM rather than receiving an incomplete replacement.
-
-Owner regression evidence at `c336251` (Node 26.3.0): both fresh public package
-formats, ESM and CJS, passed unchanged global-descriptor checks for `window`,
-`document`, `DOMParser`, `HTMLElement`, and `Node`. Direct and physical hosted
-worker compilation produced identical final blocks for balanced MDX components,
-case-sensitive `<Input>`, decoded entities, math, and quote-owned fenced code.
-All three targeted scripts passed: `worker-dom-free-public-imports`,
-`direct-compile-parity`, and `mdx-component-region-ownership`. The first also
-renders the public React component in Node SSR without installing DOM globals;
-that check establishes import/SSR safety, not rendered MDX-content parity.
-Node 20 public-package and real-browser application gates were not evidence from
-that run.
-
-The subsequent `342b378` packaging correction resolves public MDX dependencies
-with browser conditions and builds the native Node exports separately, retaining
-their existing names. The same three owner regressions passed after this change.
-On Node 20.20.2, the preserved Vite production consumer also passed after
-installing only a newly packed worker tarball; its Vite config and application
-source were unchanged. Fresh ESM and CJS subprocesses against that installed
-package passed the public import, direct/physical-worker MDX parity, and SSR
-global-descriptor checks.
-
-The final integration gates subsequently passed on Node 20.20.2: fresh packed
-ESM/CJS runtime imports, real remark/rehype mutations, and production Next/Vite
-builds. Both freshly installed applications also rendered the public main-thread
-consumer in an actual browser, including the transformed heading/text and
-Mermaid SVG, without page errors. Final integrated test suites passed 20 core,
-50 worker, 42 React, and one unified test file. The configured conformance corpus
-passed all 675 static/streaming/SSR cases with zero divergence and retained all
-427 baseline IDs. The final non-update production HTML run passed 120 scenarios.
+Public imports and parser compilation leave `document` and `DOMParser`
+unchanged. Worker parsing creates native MDX source blocks but never compiles or
+evaluates authored modules. The `streammdx.snapshot.v1` artifact in this
+contract is a serialized native parser snapshot, not a trusted compiled module
+or authorization to execute one. Trusted artifacts are pure compilation output;
+only an explicit trusted engine evaluates them with host-provided import
+bindings. Native `FINALIZED` is semantic completion, not trusted compilation,
+projection, or host-render readiness. See the React integration guide for the
+trusted revision lifecycle and the security model for its CSP requirements.
 
 ## Runtime fallback
 

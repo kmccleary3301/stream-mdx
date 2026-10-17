@@ -65,9 +65,7 @@ export function Example() {
       text="## Hello\n\nStreaming **markdown**"
       engine="auto"
       worker="/workers/markdown-worker.js"
-      features={{ tables: true, html: true, math: true, mdx: true }}
-      mdxCompileMode="worker"
-      prewarmLangs={["python", "bash"]}
+      features={{ tables: true, html: true, math: true }}
       onMetrics={(metrics) => console.table(metrics.queueDelay)}
       onError={(error) => console.error(error)}
     />
@@ -87,7 +85,9 @@ export function Example() {
 | `prewarmLangs` | `string[]` | Shiki languages to load inside the worker. |
 | `features` | `StreamingFeatureFlags` | Built-in parsing/highlighting flags, including `emitDiffBlocks`, `outputMode`, and `lazyTokenization`. |
 | `themes` | `{ light: string; dark: string }` | Configures light and dark Shiki theme IDs (e.g. `{ light: "min-light", dark: "nord" }`). Changing themes re-initializes the engine. Unknown themes report an INIT error and fall back to GitHub light/dark. |
-| `mdxCompileMode` | `MdxCompileMode` | Enables MDX compilation/hydration and selects the compile strategy. |
+| `contentPolicy` | `"markdown" \| "restricted" \| "trusted-mdx"` | Defaults to `"restricted"`. Full MDX evaluation requires `"trusted-mdx"` and an explicit engine. |
+| `contentComponents` | `ContentComponentsMap` | Host registrations for restricted source components. Separate from native Markdown presentation overrides. |
+| `engines.mdx` | `TrustedMdxEngine` | Explicit evaluator required with `contentPolicy="trusted-mdx"`. |
 | `components` | `Partial<BlockComponents>` | Override block renders (wrap code/math without affecting the patch scheduler). |
 | `inlineComponents` | `Partial<InlineComponents>` | Override inline renders. |
 | `tableElements` | `Partial<TableElements>` | Override table tags (e.g. Shadcn table wrappers). |
@@ -95,7 +95,6 @@ export function Example() {
 | `htmlElements` | `Partial<HtmlElements>` | Override HTML tag renders (when HTML is enabled). |
 | `html` | `HtmlOptions` | Per-tag attribute allowlists and opt-in markdown parsing inside raw HTML blocks. Requires `features.html`. |
 | `syntax` | `SyntaxRuleSpec[]` | Serializable regex rules for inline plugin nodes. Map rule names in `inlineComponents`. |
-| `mdxComponents` | `Record<string, ComponentType>` | Component registry used when hydrating MDX. |
 | `caret` | `CaretMode` | Show a streaming caret while blocks are still in-flight. |
 | `linkSafety` | `{ enabled?, onLinkCheck?, renderModal? }` | Intercept links and require confirmation before navigation. Rejected URLs never navigate. |
 | `urlTransform` | `UrlTransform` | Custom URL transformation callback `(url, attribute, context) => string \| null \| undefined`. Defaults to `defaultUrlTransform` from `@stream-mdx/core`. |
@@ -107,7 +106,6 @@ export function Example() {
 | `unwrapDisallowed` | `boolean` | When true, disallowed tags render their child content in place instead of dropping their entire subtree. Default `false`. |
 | `disableAutolinkProtocols` | `string[]` | Protocols (e.g. `["mailto"]`, case-insensitive, trailing colon optional) whose autolinks render as plain text. Explicit markdown links `[label](url)` remain links. |
 | `mathRenderer` | `MathRenderer` | Replace inline/display KaTeX rendering without changing math parsing. |
-| `artifactHtml` | `boolean` | Default `false`. Render ordinary `html` fences as artifacts; `artifact` and `html-artifact` fences already select `ArtifactFrame`. |
 | `blockRenderer` | `BlockRendererOverride` | Finalized-block override receiving `{ block, element }`. Streaming blocks retain native rendering. |
 | `scheduling` | `StreamingSchedulerOptions` | Patch scheduler/backpressure knobs. |
 | `onMetrics` | `(metrics: RendererMetrics) => void` | Invoked after each flush (queue depth, timings, adaptive budget state, worker metrics). |
@@ -120,7 +118,6 @@ Notes:
 
 Type aliases:
 - `type WorkerLike = Worker | URL | string | (() => Worker)`
-- `type MdxCompileMode = "server" | "worker"`
 - `type CaretMode = "block" | "circle" | string | false`
 - `type DeferHeavyBlocks = boolean | { rootMargin?: string; idleTimeoutMs?: number; debounceMs?: number }`
 
@@ -233,7 +230,7 @@ The constructor accepts only `{ post, extensions? }`. `extensions` has `markdown
 
 - `tables`: GitHub-flavored markdown tables → table block snapshots (`tableElements` controls rendering).
 - `html`: enables inline/raw HTML (sanitized by default; `htmlElements` controls rendering).
-- `mdx`: recognizes MDX blocks (requires `mdxCompileMode` to compile/hydrate). A balanced JSX/MDX component whose native HTML block would be split by blank lines (for example `<SmokeBox>` … `</SmokeBox>`) stays one owning root and compiles as a single module; while it is still unclosed it remains a pending `html` root and is not compiled until it closes or the document finalizes.
+- `mdx`: recognizes component syntax. The default restricted policy renders only registered `contentComponents`; full MDX evaluation requires an explicit `TrustedMdxEngine` with `contentPolicy="trusted-mdx"`. A balanced JSX/MDX component whose native HTML block would be split by blank lines (for example `<SmokeBox>` … `</SmokeBox>`) stays one owning root and remains pending until it closes or the document finalizes.
 - `math`: recognizes inline + display math (default delimiters: `$…$` and `$$…$$`).
 - `footnotes`: enables footnote aggregation.
 - `callouts`: enables callout blockquote syntax (disabled by default in the worker).
@@ -254,7 +251,7 @@ The constructor accepts only `{ post, extensions? }`. `extensions` has `markdown
 | `tables` | Yes | Yes | Preview |
 | `html` | Yes (sanitized) | Yes (sanitized) | Preview |
 | `math` | Yes | Yes | Preview |
-| `mdx` | Yes (`server` or `worker` mode) | Yes (`server` compile mode) | Preview (`server` compile mode) |
+| `mdx` | Restricted source by default; full MDX requires an explicit `TrustedMdxEngine` in the browser React integration. | Snapshot parsing does not automatically evaluate MDX. | Snapshot parsing does not automatically evaluate MDX. |
 | `footnotes` | Yes | Yes | Preview |
 | `callouts` | Yes | Yes | Preview |
 | Code themes (`themes`) | Yes | Yes | Preview |
@@ -307,7 +304,7 @@ Mermaid renders are serialized through an internal module queue so concurrent bl
 Custom code fence rendering is registered via `codeRenderers` on `<StreamingMarkdown />` or `<MarkdownBlocksRenderer />`:
 
 ```tsx
-import { ArtifactFrame, StreamingMarkdown } from "@stream-mdx/react";
+import { StreamingMarkdown } from "@stream-mdx/react";
 import { MermaidBlock } from "@stream-mdx/mermaid";
 
 export function CodeExample({ text }: { text: string }) {
@@ -316,7 +313,6 @@ export function CodeExample({ text }: { text: string }) {
       text={text}
       codeRenderers={{
         mermaid: MermaidBlock,
-        artifact: (props) => <ArtifactFrame {...props} maxHeight="480px" />,
         custom: ({ language, renderCode }) => (
           <section><p>Language: {language}</p>{renderCode}</section>
         ),
@@ -349,17 +345,14 @@ interface CodeFenceRendererProps {
 }
 ```
 
-`renderCode` is an already rendered React node, not a function. Return it directly when your custom view is unavailable. Explicit language renderers take precedence over built-in artifact/diff rendering and `components.code`.
+`renderCode` is an already rendered React node, not a function. Return it directly when your custom view is unavailable. Explicit language renderers take precedence over built-in diff rendering and `components.code`.
 
 With `features.emitDiffBlocks: true`, fences with diff metadata use `DefaultDiffRenderer`, including line numbers and token colors. Without diff metadata it returns `renderCode`. A custom language renderer overrides that view.
 
-### Artifacts and math
+### Artifact-like code fences
 
-`ArtifactFrame` keeps `renderCode` while streaming, then mounts finalized HTML in `<iframe sandbox="allow-scripts">`. It does not grant `allow-same-origin`. Its CSP precedes artifact content and defaults to `default-src 'none'`, inline scripts/styles, data/blob images, data fonts, `connect-src 'none'`, `base-uri 'none'`, and `form-action 'none'`. `csp` can explicitly permit additional resources; only `connectSrc` replaces rather than extends the defaults. Treat these overrides as application security policy.
+Fences labeled `artifact` or `html-artifact` render as ordinary code unless the host supplies a `codeRenderers` entry. StreamMDX does not ship a default artifact iframe or sandbox. A custom renderer is application code; if it turns source into active content, the host owns its isolation and security policy.
 
-The sandbox provides host DOM/origin isolation. The default CSP blocks connection APIs such as `fetch`, `XMLHttpRequest`, and `WebSocket`, and restricts resource loading. It is not a guarantee of total network isolation or prevention of iframe self-navigation. Use self-contained artifact content; link confirmation applies to the intercepted anchor-click path, not every navigation a script can initiate.
-
-The frame accepts size/link messages only from its own `contentWindow`. Allowed outgoing links are absolute `http:`, `https:`, and `mailto:` URLs. `onLinkClick` takes precedence over `openLink`; the latter applies the host's `linkSafety`. Without either callback, links open with `noopener,noreferrer`. An `onLinkClick` override owns confirmation itself. `maxHeight?: number | string`, default `600`, caps the scrolling wrapper, not the measured iframe. `themeCssVars` supplies frame-local CSS variables.
 
 Math uses KaTeX by default. `mathRenderer` accepts either a component with `{ tex: string; display?: boolean; className?: string }` or `{ inline?, display? }` components with `{ tex: string; className?: string }`. Unspecified entries retain their existing renderer. `features.math: false` disables math recognition, including inside opt-in HTML markdown. A render override does not re-enable parsing.
 
@@ -565,13 +558,34 @@ Filtering applies consistently at render time across client streaming, client no
   }}
 />
 ```
-## 4) MDX Compilation Modes
 
-`mdxCompileMode` selects how MDX blocks are compiled:
-- `"worker"`: compilation happens client-side in the worker.
-- `"server"`: compilation requests go to `/api/mdx-compile-v2` by default (you must implement this endpoint in your app).
+## 4) MDX
 
-See `docs/REACT_INTEGRATION_GUIDE.md` for a complete Next.js wiring guide and parity notes.
+`contentPolicy` defaults to `"restricted"`. Register approved source names using `defineContentComponent`; raw constructors are not registrations. A type-predicate validator is required for narrower source JSON props, and native projected `children` are supplied separately as host React nodes. `contentComponents` is active only under `"restricted"` policy, not `"markdown"` or `"trusted-mdx"`.
+
+For trusted, reviewed full MDX, create an explicit engine from `@stream-mdx/react/trusted-mdx` and pass it through `engines.mdx`:
+
+```tsx
+import { StreamingMarkdown } from "stream-mdx";
+import { createTrustedMdxEngine } from "@stream-mdx/react/trusted-mdx";
+import { Callout } from "./Callout";
+
+const hostWidgets = { Callout };
+const mdxEngine = createTrustedMdxEngine({
+  components: hostWidgets,
+  imports: { "host:widgets": hostWidgets },
+});
+
+<StreamingMarkdown
+  text={text}
+  features={{ mdx: true }}
+  contentPolicy="trusted-mdx"
+  engines={{ mdx: mdxEngine }}
+/>;
+```
+
+
+The import map is the host's capability grant for authored module specifiers; unresolved imports fail instead of being fetched. Trusted evaluation runs in the host realm, requires `unsafe-eval` in `script-src`, and is not a sandbox. Use it only for trusted, reviewed source. Native worker `FINALIZED` confirms semantic completion only; trusted projection and actual React commit readiness are separate and asynchronous. See the [React Integration Guide](./REACT_INTEGRATION_GUIDE.md) and [Security Model](./SECURITY_MODEL.md) for the lease lifecycle and safety requirements.
 
 ### Next.js App Router (server-safe rendering)
 
@@ -584,7 +598,6 @@ export default async function Page() {
     text: "# Hello\\n\\nStreaming-safe server render.",
     init: {
       docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true },
-      mdx: { compileMode: "server" },
       prewarmLangs: ["typescript"],
     },
   });
@@ -592,6 +605,9 @@ export default async function Page() {
   return <MarkdownBlocksRenderer blocks={blocks} componentRegistry={new ComponentRegistry()} />;
 }
 ```
+
+
+If an RSC constructs restricted registrations, import the pure `defineContentComponent` factory from `@stream-mdx/react/server`, not the client root.
 
 ### Static build pipeline (SSG/export)
 
@@ -614,7 +630,6 @@ export default async function EdgeLikePage() {
     text: "# Hello\\n\\nEdge-safe deterministic compile.",
     init: {
       docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true },
-      mdx: { compileMode: "server" },
       prewarmLangs: ["typescript"],
     },
     cache: {

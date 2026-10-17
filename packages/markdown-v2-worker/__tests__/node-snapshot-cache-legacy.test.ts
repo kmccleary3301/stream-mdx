@@ -5,7 +5,8 @@ import path from "node:path";
 import { existsSync, promises as fs } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-import { compileMarkdownSnapshot, computeSnapshotHash, type CompileMarkdownSnapshotOptions, type SnapshotArtifactV1 } from "../src/node/index";
+import type { CompileMarkdownSnapshotOptions, SnapshotArtifactV1 } from "../src/node/index";
+import { compileMarkdownSnapshot, computeSnapshotHash } from "../src/node/index";
 
 async function readJsonEventually<T>(filePath: string, predicate: (value: unknown) => value is T, timeoutMs = 2000): Promise<T> {
   const deadline = Date.now() + timeoutMs;
@@ -37,7 +38,8 @@ async function runLegacyCacheCompatibilityTest(): Promise<void> {
     const text = ["# Title", "", "body"].join("\n");
     const init = {
       docPlugins: { html: true, tables: true, footnotes: true },
-      mdx: { compileMode: "server" },
+      contentPolicy: "restricted",
+      contentComponents: [{ name: "Badge", renderWhen: "closed" }],
       prewarmLangs: [],
       themes: { light: "min-light", dark: "nord" },
       syntax: [{ name: "ticket", pattern: { source: "#([A-Z]+-\\d+)" }, attrs: { id: 1 } }],
@@ -87,7 +89,6 @@ async function runLegacyCacheCompatibilityTest(): Promise<void> {
     assert.strictEqual(parsed.version, 1, "cache should be rewritten to v1");
     assert.strictEqual(parsed.schemaId, "streammdx.snapshot.v1", "cache should include the current schema id");
     assert.strictEqual(parsed.hash, hash, "rewritten cache should preserve compile hash");
-    assert.ok(Array.isArray(parsed.blocks) && parsed.blocks.length > 0, "rewritten cache should include compiled blocks");
 
     // A matching v1 cache written before init metadata preservation must remain a hit.
     const cachedArtifact: SnapshotArtifactV1 = {
@@ -95,7 +96,6 @@ async function runLegacyCacheCompatibilityTest(): Promise<void> {
       createdAt: "2025-01-01T00:00:00.000Z",
       init: {
         docPlugins: init.docPlugins,
-        mdx: init.mdx,
         prewarmLangs: init.prewarmLangs,
       },
     };

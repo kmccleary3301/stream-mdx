@@ -255,8 +255,6 @@ async function readStructure(page: import("@playwright/test").Page): Promise<{ t
       pre: root?.querySelectorAll("pre").length ?? 0,
       blockquote: root?.querySelectorAll("blockquote").length ?? 0,
       katex: root?.querySelectorAll(".katex").length ?? 0,
-      mdxPending: root?.querySelectorAll('.markdown-mdx[data-mdx-status="pending"]').length ?? 0,
-      mdxCompiled: root?.querySelectorAll('.markdown-mdx[data-mdx-status="compiled"]').length ?? 0,
       footnotes: root?.querySelectorAll(".footnotes").length ?? 0,
       hr: root?.querySelectorAll("hr").length ?? 0,
     };
@@ -560,7 +558,6 @@ async function run(): Promise<void> {
         const enforcePrefixInvariant = !["article", "footnotes", "html", "lists", "math", "mdx", "table", "code"].some((tag) =>
           (fixture.tags ?? []).includes(tag),
         );
-        const waitForMdxCompiled = fixture.waitForMdxCompiled ?? (fixture.tags ?? []).includes("mdx");
         const tableTargetPct = fixture.expectTableByPct;
         const tableTargetChars =
           typeof tableTargetPct === "number" && scenario.maxChunkChars <= 512
@@ -573,8 +570,6 @@ async function run(): Promise<void> {
           hasTable: false,
           hasPre: false,
           hasFootnotes: false,
-          hasMdxPending: false,
-          hasMdxCompiled: false,
           hasBlockquote: false,
           hasMath: false,
         };
@@ -625,7 +620,6 @@ async function run(): Promise<void> {
             const textContent = await readRootText(page);
             if (
               enforcePrefixInvariant &&
-              !summary.selectors.hasMdxPending &&
               lastCheckpointText &&
               !textContent.startsWith(lastCheckpointText)
             ) {
@@ -714,20 +708,6 @@ async function run(): Promise<void> {
 
           await page.evaluate(() => window.__streammdxRegression?.finalizeAndFlush());
 
-        if (waitForMdxCompiled) {
-          try {
-            await page.waitForFunction(() => {
-              const summary = window.__streammdxRegression?.getSummary();
-              if (!summary) return false;
-              return summary.selectors.hasMdxCompiled && !summary.selectors.hasMdxPending;
-            });
-          } catch (error) {
-            failures += 1;
-            scenarioFailed = true;
-            console.error(`\nMDX compile timeout for ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}`);
-            console.error(error);
-          }
-        }
 
           const invariantViolations = (await page.evaluate(
           () => window.__streammdxRegression?.getInvariantViolations?.() ?? [],

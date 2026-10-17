@@ -4,7 +4,7 @@ import type { Block, CodeHighlightingMode, FormatAnticipationConfig, Patch, Perf
 import type { CoalescingMetrics } from "@stream-mdx/react/renderer/patch-coalescing";
 import type { PatchFlushResult } from "@stream-mdx/react/renderer/patch-commit-scheduler";
 import type { RendererStore } from "@stream-mdx/react/renderer/store";
-import type { ComponentType } from "react";
+
 
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -12,12 +12,11 @@ import { cn } from "@/lib/utils";
 import { components as sharedMdxComponents } from "@/mdx-components";
 import { configureDemoRegistry, createDemoHtmlElements, createDemoTableElements } from "@/lib/streaming-demo-registry";
 import { DEFAULT_BACKPRESSURE_CONFIG, calculateSmoothedCredit, clampCredit } from "@stream-mdx/core";
-import { StreamingMarkdown, type StreamingMarkdownHandle, ComponentRegistry } from "@stream-mdx/react";
-import { registerMDXComponents } from "@stream-mdx/react/mdx-client";
+import { defineContentComponent, StreamingMarkdown, type ContentComponentHostProps, type ContentComponentProps, type ContentComponentRegistration, type StreamingMarkdownHandle, ComponentRegistry } from "@stream-mdx/react";
 import { MarkdownWorkerClient, type MarkdownWorkerClientOptions } from "@stream-mdx/worker/worker-client";
 import type { DefaultWorkerMode } from "@stream-mdx/worker";
 
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { createElement, Fragment, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 const METRIC_SAMPLE_LIMIT = process.env.NODE_ENV === "production" ? 300 : 1000;
 const COALESCING_RECENT_BATCH_COUNT = 8;
@@ -31,11 +30,20 @@ const AUTOMATION_DOC_LINK = "docs/STREAMING_MARKDOWN_V2_STATUS.md#54-automation-
 const ENABLE_WORKER_HELPER = process.env.NEXT_PUBLIC_STREAMING_WORKER_HELPER === "true";
 const WORKER_HELPER_MODE: DefaultWorkerMode = process.env.NEXT_PUBLIC_STREAMING_WORKER_HELPER_MODE === "blob" ? "blob" : "auto";
 
-// Caller-owned INIT uses the same uppercase-initial names as the renderer.
-const MDX_COMPONENT_NAMES = Object.keys(sharedMdxComponents).filter((name) => {
+const demoContentComponents: Record<string, ContentComponentRegistration> = {};
+for (const [name, component] of Object.entries(sharedMdxComponents)) {
   const first = name.charAt(0);
-  return first.toUpperCase() === first && first.toLowerCase() !== first;
-});
+  if (first.toUpperCase() !== first || first.toLowerCase() === first) continue;
+  if (typeof component !== "function") continue;
+
+  demoContentComponents[name] = defineContentComponent({
+    component: (props: ContentComponentProps & ContentComponentHostProps) => createElement(component, props),
+  });
+}
+const DEMO_CONTENT_DESCRIPTORS = Object.entries(demoContentComponents).map(([name, registration]) => ({
+  name,
+  renderWhen: registration.renderWhen,
+}));
 
 type PatchSummary = { tx: number; count: number; byOp: Record<string, number> };
 type FormatAnticipationOptions = Exclude<FormatAnticipationConfig, boolean>;
@@ -182,7 +190,6 @@ export type StreamingDemoAutomationApiV2 = {
   setMode?: (mode: "classic" | "worker") => void;
   setSchedulingPreset?: (preset: "latency" | "throughput") => void;
   setMdxEnabled?: (enabled: boolean) => void;
-  setMdxStrategy?: (mode: "server" | "worker") => void;
   setStreamLimit?: (limit: number | null) => void;
   fastForward?: () => Promise<void>;
   restart?: () => void;
@@ -236,30 +243,6 @@ export type StreamingDemoAutomationApiV2 = {
       setProps: number;
       insertChild: number;
       durationMs: number;
-    } | null;
-    mdxHydration?: {
-      pending: number;
-      compiled: number;
-      hydrated: number;
-      error: number;
-      avgHydrationMs: number | null;
-      p95HydrationMs: number | null;
-      maxHydrationMs: number | null;
-      lastHydrationMs: number | null;
-      longTaskTotalMs?: number | null;
-      longTaskCount?: number | null;
-      p95LongTaskMs?: number | null;
-      maxLongTaskMs?: number | null;
-      prefetch?: {
-        requested: number;
-        completed: number;
-        error: number;
-        pending: number;
-        avgPrefetchMs: number | null;
-        p95PrefetchMs: number | null;
-        maxPrefetchMs: number | null;
-        lastPrefetchMs: number | null;
-      } | null;
     } | null;
     stream?: {
       startedAt?: number | null;
@@ -579,13 +562,11 @@ export function StreamingMarkdownDemoV2({
   className = "",
   initialStreamLimit = null,
   initialIsRunning = true,
-  initialMdxStrategy = "worker",
 }: {
   fullText: string;
   className?: string;
   initialStreamLimit?: number | null;
   initialIsRunning?: boolean;
-  initialMdxStrategy?: "server" | "worker";
 }) {
   const tableElements = useMemo(() => createDemoTableElements(), []);
   const htmlElements = useMemo(() => createDemoHtmlElements(), []);
@@ -634,9 +615,6 @@ export function StreamingMarkdownDemoV2({
   const listDebugStartRef = useRef<number | null>(null);
   const listMismatchCountRef = useRef(0);
   const listAutoExportedRef = useRef(false);
-  // Default to worker-side MDX compilation so the demo renders MDX blocks without server help.
-  const [mdxStrategy, setMdxStrategy] = useState<"server" | "worker">(initialMdxStrategy);
-  const mdxStrategyRef = useRef<"server" | "worker">(initialMdxStrategy);
   const schedulingPresetRef = useRef<SchedulingPreset>(schedulingPreset);
 
   useEffect(() => {
@@ -753,9 +731,6 @@ export function StreamingMarkdownDemoV2({
     console.error("StreamingMarkdown render error", error);
   }, []);
 
-  useEffect(() => {
-    mdxStrategyRef.current = mdxStrategy;
-  }, [mdxStrategy]);
 
   // V2 Markdown Worker State
   const [blocks, setBlocks] = useState<Block[]>([]);
@@ -808,7 +783,6 @@ export function StreamingMarkdownDemoV2({
     footnotes: true,
     html: htmlEnabled,
     mdx: mdxEnabled,
-    mdxComponentNames: MDX_COMPONENT_NAMES,
     tables: true,
     callouts: true,
     math: mathEnabled,
@@ -1147,9 +1121,6 @@ export function StreamingMarkdownDemoV2({
     finalizeDrainTimerRef.current = setTimeout(drain, 0);
   }, []);
 
-  useEffect(() => {
-    registerMDXComponents(sharedMdxComponents as unknown as Record<string, ComponentType<unknown>>);
-  }, []);
 
   const notifyPatchListeners = useCallback(() => {
     for (const listener of patchListenersRef.current) {
@@ -1648,7 +1619,6 @@ export function StreamingMarkdownDemoV2({
   }, [
     PREWARM_LANGS,
     prewarm,
-    mdxStrategy,
     resetCoalescingStats,
     resetWorkerReadyPromise,
     resolveWorkerReadyPromise,
@@ -1672,9 +1642,7 @@ export function StreamingMarkdownDemoV2({
       if (workerRef.current !== client) {
         return;
       }
-      client.init("", prewarm ? PREWARM_LANGS : [], docPluginConfigRef.current, {
-        compileMode: mdxStrategy,
-      });
+      client.init("", prewarm ? PREWARM_LANGS : [], docPluginConfigRef.current, "restricted", DEMO_CONTENT_DESCRIPTORS);
       pendingWorkerInitRef.current = null;
       workerInitTimerRef.current = null;
     }, 0);
@@ -1685,7 +1653,7 @@ export function StreamingMarkdownDemoV2({
         workerInitTimerRef.current = null;
       }
     };
-  }, [rendererWorker, prewarm, PREWARM_LANGS, mdxStrategy]);
+  }, [rendererWorker, prewarm, PREWARM_LANGS]);
 
   useEffect(() => {
     setupWorker();
@@ -2121,11 +2089,6 @@ export function StreamingMarkdownDemoV2({
       };
       onRestart();
     };
-    api.setMdxStrategy = (mode: "server" | "worker") => {
-      mdxStrategyRef.current = mode;
-      setMdxStrategy(mode);
-      onRestart();
-    };
     api.restart = () => onRestart();
     api.pause = () => setIsRunning(false);
     api.resume = () => setIsRunning(true);
@@ -2182,7 +2145,6 @@ export function StreamingMarkdownDemoV2({
       patchTotals: patchTotalsRef.current,
       workerTotals: { ...workerTotalsRef.current },
       coalescingTotals: { ...coalescingTotalsRef.current },
-      mdxHydration: streamingRef.current?.getState?.().mdxHydration ?? null,
       scheduler: {
         adaptiveBudgetActive: schedulerBudgetRef.current.active,
         coalescingDurationP95: schedulerBudgetRef.current.p95,
@@ -2309,8 +2271,8 @@ export function StreamingMarkdownDemoV2({
                 className="markdown-v2-output"
                 features={docPluginConfigRef.current}
                 scheduling={rendererScheduling}
-                mdxCompileMode={mdxStrategy}
-                mdxComponents={sharedMdxComponents as unknown as Record<string, ComponentType<unknown>>}
+                contentPolicy="restricted"
+                contentComponents={demoContentComponents}
                 prewarmLangs={prewarm ? PREWARM_LANGS : []}
                 components={componentRegistry.getBlockComponentMap()}
                 inlineComponents={componentRegistry.getInlineComponentMap()}
@@ -2632,7 +2594,7 @@ export function StreamingMarkdownDemoV2({
                 />
               </label>
               <label className="flex items-center justify-between gap-2">
-                <span>MDX components</span>
+                <span>Registered MDX components</span>
                 <input
                   type="checkbox"
                   checked={mdxEnabled}
@@ -2701,43 +2663,6 @@ export function StreamingMarkdownDemoV2({
                 </div>
               </div>
 
-              <div className="flex items-center justify-between">
-                <span>HTML/MDX compilation</span>
-                <div className="flex items-center gap-2">
-                  <label className="inline-flex items-center gap-2 text-xs">
-                    <input
-                      type="radio"
-                      name="mdx-strategy"
-                      value="server"
-                      checked={mdxStrategy === "server"}
-                      onChange={() => {
-                        if (mdxStrategyRef.current !== "server") {
-                          mdxStrategyRef.current = "server";
-                          setMdxStrategy("server");
-                          onRestart();
-                        }
-                      }}
-                    />
-                    <span>Server (API)</span>
-                  </label>
-                  <label className="inline-flex items-center gap-2 text-xs">
-                    <input
-                      type="radio"
-                      name="mdx-strategy"
-                      value="worker"
-                      checked={mdxStrategy === "worker"}
-                      onChange={() => {
-                        if (mdxStrategyRef.current !== "worker") {
-                          mdxStrategyRef.current = "worker";
-                          setMdxStrategy("worker");
-                          onRestart();
-                        }
-                      }}
-                    />
-                    <span>Client (Worker)</span>
-                  </label>
-                </div>
-              </div>
 
               <div className="flex items-center justify-between">
                 <span>Pre-warm languages</span>
