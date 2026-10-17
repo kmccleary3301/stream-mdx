@@ -295,6 +295,7 @@ export class MarkdownEngine {
   private contentPolicy: ContentPolicy = "restricted";
   private contentComponents: Map<string, RestrictedComponentDescriptor> = new Map();
   private messageQueue: Promise<void> = Promise.resolve();
+  private inputSealed = false;
   private disposed = false;
 
   constructor(options: MarkdownEngineOptions) {
@@ -363,10 +364,15 @@ export class MarkdownEngine {
     if (this.disposed) {
       return Promise.resolve();
     }
+    // Capture admission before queueing so accepted APPENDs still drain ahead of FINALIZE.
+    const rejectAppend = message.type === "APPEND" && this.inputSealed;
+    if (message.type === "FINALIZE") this.inputSealed = true;
+    else if (message.type === "INIT") this.inputSealed = false;
     const task = this.messageQueue
       .then(async () => {
         if (this.disposed) return;
         try {
+          if (rejectAppend) throw new Error("Cannot append after FINALIZE; start a new generation with INIT.");
           await this.processMessage(message);
         } catch (error) {
           console.error("Worker error:", error);

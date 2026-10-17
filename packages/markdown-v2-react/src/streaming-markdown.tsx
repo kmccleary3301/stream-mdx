@@ -587,8 +587,10 @@ function StreamingMarkdownComponent(
         renderer.resume();
       },
       restart() {
+        workerReadyRef.current = false;
         imperativeActivityRef.current = false;
         activeIteratorRef.current = null;
+        renderer.restart({ reinitializeWorker: false });
         setStreamStatus("idle");
         setSession((prev) => prev + 1);
       },
@@ -599,9 +601,9 @@ function StreamingMarkdownComponent(
       },
       append(text: string) {
         if (!text || !workerReadyRef.current) return;
+        renderer.append(text);
         imperativeActivityRef.current = true;
         setStreamStatus("streaming");
-        renderer.append(text);
       },
       setCredits(value: number) {
         renderer.setCredits(value);

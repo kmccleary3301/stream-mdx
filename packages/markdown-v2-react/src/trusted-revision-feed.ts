@@ -3,6 +3,7 @@ import type { TrustedMdxRevision } from "./trusted-mdx-contract";
 
 export interface TrustedRevisionFeedSnapshot {
   readonly generation: number;
+  readonly version: number;
   readonly generationCause: "initial" | "replacement" | "reset";
   /** Full controlled text input while its worker generation is still being prepared. */
   readonly pendingSource: string | null;
@@ -24,8 +25,10 @@ export class TrustedRevisionFeed {
   private version = 0;
   private chunks: string[] = [];
   private completedVersion = -1;
+  private inputSealed = false;
   private currentSnapshot: TrustedRevisionFeedSnapshot = Object.freeze({
     generation: 1,
+    version: 0,
     generationCause: "initial",
     pendingSource: null,
     revision: null,
@@ -46,6 +49,7 @@ export class TrustedRevisionFeed {
     this.version = 0;
     this.chunks = source.length > 0 ? [source] : [];
     this.completedVersion = -1;
+    this.inputSealed = false;
     this.publish(null);
     return this.generation;
   }
@@ -57,11 +61,13 @@ export class TrustedRevisionFeed {
     this.version = 0;
     this.chunks = [];
     this.completedVersion = -1;
+    this.inputSealed = false;
     this.publish(null);
     return this.generation;
   }
 
   append(chunk: string): void {
+    if (this.inputSealed) throw new Error("Cannot append trusted source after FINALIZE; start a new generation first.");
     if (chunk.length === 0) return;
     this.chunks.push(chunk);
     this.version += 1;
@@ -72,6 +78,7 @@ export class TrustedRevisionFeed {
   }
 
   requestFinalization(): TrustedRevisionToken {
+    this.inputSealed = true;
     return { generation: this.generation, version: this.version };
   }
 
@@ -105,6 +112,7 @@ export class TrustedRevisionFeed {
   private publish(revision: TrustedMdxRevision | null): void {
     this.currentSnapshot = Object.freeze({
       generation: this.generation,
+      version: this.version,
       generationCause: this.generationCause,
       pendingSource: this.pendingSource,
       revision,

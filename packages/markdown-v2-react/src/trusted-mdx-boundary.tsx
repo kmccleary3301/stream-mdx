@@ -26,6 +26,7 @@ const EMPTY_DOCUMENT_SNAPSHOT: TrustedMdxDocumentSnapshot = Object.freeze({
 });
 const EMPTY_FEED_SNAPSHOT: TrustedRevisionFeedSnapshot = Object.freeze({
   generation: 0,
+  version: 0,
   generationCause: "initial",
   pendingSource: null,
   revision: null,
@@ -65,6 +66,7 @@ interface SourceRevisionIdentity {
   readonly engineGeneration: number;
   readonly feed: TrustedRevisionFeed;
   readonly generation: number;
+  readonly version: number;
   readonly revision: TrustedMdxRevision;
   readonly targetRevision: number;
 }
@@ -75,6 +77,7 @@ interface ConfirmedNativeRevision {
   readonly engineGeneration: number;
   readonly feed: TrustedRevisionFeed;
   readonly generation: number;
+  readonly version: number;
   readonly revision: number;
   readonly sourceRevision: TrustedMdxRevision;
   readonly snapshot: TrustedMdxDocumentSnapshot;
@@ -183,13 +186,7 @@ export function TrustedMdxBoundary({
   );
 
   useEffect(() => {
-    if (
-      !document ||
-      !engine ||
-      !feed ||
-      !feedSnapshot.revision ||
-      feedSnapshot.generation !== feed.getSnapshot().generation
-    ) {
+    if (!document || !engine || !feed || !feedSnapshot.revision) {
       sourceIdentityRef.current = null;
       return;
     }
@@ -199,12 +196,17 @@ export function TrustedMdxBoundary({
       engineGeneration: engine.getGeneration(),
       feed,
       generation: feedSnapshot.generation,
+      version: feedSnapshot.version,
       revision: feedSnapshot.revision,
       targetRevision: document.getSnapshot().requestedRevision + 1,
     });
+    if (!feed.isCurrent(identity)) {
+      sourceIdentityRef.current = null;
+      return;
+    }
     sourceIdentityRef.current = identity;
     void document.compileRevision(feedSnapshot.revision);
-  }, [document, engine, feed, feedSnapshot.generation, feedSnapshot.revision]);
+  }, [document, engine, feed, feedSnapshot.generation, feedSnapshot.version, feedSnapshot.revision]);
 
   const confirmRenderedRevision = useCallback((
     targetDocument: TrustedMdxDocument,
@@ -221,9 +223,11 @@ export function TrustedMdxBoundary({
       targetDocument !== document ||
       identity.engine !== engine ||
       identity.engineGeneration !== engineGeneration ||
+      identity.feed !== feed ||
       sourceIdentityRef.current !== identity ||
       identity.targetRevision !== revision ||
-      engine.getGeneration() !== engineGeneration
+      engine.getGeneration() !== engineGeneration ||
+      !feed.isCurrent(identity)
     ) {
       return;
     }
@@ -234,6 +238,7 @@ export function TrustedMdxBoundary({
       alreadyCommitted.engineGeneration === engineGeneration &&
       alreadyCommitted.feed === feed &&
       alreadyCommitted.generation === identity.generation &&
+      alreadyCommitted.version === identity.version &&
       alreadyCommitted.revision === revision &&
       alreadyCommitted.sourceRevision === identity.revision
     ) {
@@ -244,7 +249,9 @@ export function TrustedMdxBoundary({
     const candidate = document.getSnapshot();
     if (
       currentFeed.generation !== identity.generation ||
+      currentFeed.version !== identity.version ||
       currentFeed.revision !== identity.revision ||
+      !feed.isCurrent(identity) ||
       candidate.status !== "ready" ||
       candidate.requestedRevision !== revision ||
       candidate.projectionRevision !== revision
@@ -267,8 +274,23 @@ export function TrustedMdxBoundary({
     if (
       sourceIdentityRef.current !== identity ||
       latestFeed.generation !== identity.generation ||
+      latestFeed.version !== identity.version ||
       latestFeed.revision !== identity.revision ||
+      !feed.isCurrent(identity) ||
       engine.getGeneration() !== engineGeneration
+    ) {
+      return;
+    }
+    const store = captureNativeFrameRef.current();
+    const capturedFeed = feed.getSnapshot();
+    if (
+      sourceIdentityRef.current !== identity ||
+      capturedFeed.generation !== identity.generation ||
+      capturedFeed.version !== identity.version ||
+      capturedFeed.revision !== identity.revision ||
+      !feed.isCurrent(identity) ||
+      engine.getGeneration() !== engineGeneration ||
+      document.getSnapshot().renderedRevision !== revision
     ) {
       return;
     }
@@ -278,10 +300,11 @@ export function TrustedMdxBoundary({
       engineGeneration,
       feed,
       generation: identity.generation,
+      version: identity.version,
       revision,
       sourceRevision: identity.revision,
       snapshot: committedSnapshot,
-      store: captureNativeFrameRef.current(),
+      store,
     });
     lastCommittedFrameRef.current = confirmed;
     committedFrameRef.current = null;
@@ -302,7 +325,9 @@ export function TrustedMdxBoundary({
     engine.getGeneration() === engineGeneration &&
     sourceIdentity.feed === feed &&
     sourceIdentity.generation === feedSnapshot.generation &&
+    sourceIdentity.version === feedSnapshot.version &&
     sourceIdentity.revision === feedSnapshot.revision &&
+    feed.isCurrent(sourceIdentity) &&
     sourceIdentity.targetRevision === revision &&
     snapshot.status === "ready" &&
     snapshot.requestedRevision === revision,

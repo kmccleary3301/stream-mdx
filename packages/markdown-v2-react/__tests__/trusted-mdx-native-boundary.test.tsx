@@ -21,6 +21,7 @@ import {
   workerFactory,
 } from "./trusted-native-fixture";
 import type { Deferred } from "./trusted-native-fixture";
+import { testTrustedFeedFinalizationBarrier } from "./trusted-mdx-feed-finalization";
 
 const restoreTrustedNativeTestDom = installTrustedNativeTestDom();
 
@@ -846,6 +847,7 @@ try {
   await testCompleteTextReplacementFailureAndSameLeaseRollback();
   await testRetainedNativeFrameRevocation();
   await testReplacementInvalidatesStaleEvaluationWithReusedBlockIds();
+  await testTrustedFeedFinalizationBarrier();
 } finally {
   restoreTrustedNativeTestDom();
 }

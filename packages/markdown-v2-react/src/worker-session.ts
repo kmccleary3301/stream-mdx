@@ -152,12 +152,23 @@ export function useWorkerSession({
     setWorkerReady(false);
     workerReadyRef.current = false;
 
+    const reportError = (error: unknown) => {
+      onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
+    };
     const attach = (lease: WorkerLease) => {
       renderer.detachWorker();
-      renderer.attachWorker(lease.worker, { skipInit: managedWorker });
       readyRendererRef.current = renderer;
-      setWorkerReady(true);
-      workerReadyRef.current = true;
+      renderer.attachWorker(lease.worker, {
+        skipInit: managedWorker,
+        onInitialized: () => {
+          if (cancelled || readyRendererRef.current !== renderer) return;
+          setWorkerReady(true);
+          workerReadyRef.current = true;
+        },
+        onInitializationError: (error) => {
+          if (!cancelled) reportError(error);
+        },
+      });
     };
     const existing = activeInstanceRef.current;
     if (existing && existing.source === workerSource && existing.engine === engine && existing.managedWorker === managedWorker && (managedWorker || existing.session === session)) {
@@ -173,9 +184,6 @@ export function useWorkerSession({
         }
         activeInstanceRef.current = { lease, source: workerSource, engine, session, managedWorker };
         attach(lease);
-      };
-      const reportError = (error: unknown) => {
-        onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
       };
       try {
         const resolved = resolveWorkerSetup(engine, workerSource, () => cancelled, factories, managedWorker);

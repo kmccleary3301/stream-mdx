@@ -134,6 +134,7 @@ export class MarkdownRenderer implements Renderer {
   private readonly trustedRevisionFeed: TrustedRevisionFeed | null;
   private trustedFinalizedGeneration: number | null = null;
   private trustedFinalizedVersion: number | null = null;
+  private inputSealed = false;
   private trustedSemanticAwaitingFlush = false;
 
   constructor(config: RendererConfig = {}) {
@@ -186,7 +187,11 @@ export class MarkdownRenderer implements Renderer {
   /**
    * Attach Web Worker
    */
-  attachWorker(worker: Worker, options?: { skipInit?: boolean }): void {
+  attachWorker(worker: Worker, options?: {
+    skipInit?: boolean;
+    onInitialized?: () => void;
+    onInitializationError?: (error: Error) => void;
+  }): void {
     if (this.worker) this.detachWorker();
     this.patchScheduler.restart();
     this.componentRegistry.resetAnimationTimeline();
@@ -203,7 +208,14 @@ export class MarkdownRenderer implements Renderer {
     this.worker.addEventListener("message", this.workerMessageListener);
     this.workerErrorListener = this.handleWorkerError.bind(this);
     this.worker.addEventListener("error", this.workerErrorListener);
-    if (!this.skipWorkerInit) this.initializeWorker();
+    if (!this.skipWorkerInit) {
+      this.initializeWorker("", {
+        resolve: () => options?.onInitialized?.(),
+        reject: options?.onInitializationError,
+      });
+    } else {
+      options?.onInitialized?.();
+    }
   }
 
   private initializeWorker(
@@ -317,6 +329,9 @@ export class MarkdownRenderer implements Renderer {
    * Append text chunk for streaming
    */
   append(text: string): void {
+    if (this.inputSealed) {
+      throw new Error("Cannot append after FINALIZE; start a new generation first.");
+    }
     if (!this.worker) {
       throw new Error("Worker not attached");
     }
@@ -342,6 +357,7 @@ export class MarkdownRenderer implements Renderer {
         return;
       }
 
+      this.inputSealed = false;
       this.trustedRevisionFeed?.replace(text);
       this.trustedFinalizedGeneration = null;
       this.trustedFinalizedVersion = null;
@@ -552,7 +568,8 @@ export class MarkdownRenderer implements Renderer {
     return this.patchScheduler.isPaused();
   }
 
-  restart(): void {
+  restart(options: { reinitializeWorker?: boolean } = {}): void {
+    this.inputSealed = false;
     this.trustedRevisionFeed?.reset();
     this.trustedFinalizedGeneration = null;
     this.trustedFinalizedVersion = null;
@@ -564,7 +581,7 @@ export class MarkdownRenderer implements Renderer {
     if (this.updateCallbacks.length > 0) {
       this.notifyUpdateCallbacks();
     }
-    if (this.workerHasContent) {
+    if (options.reinitializeWorker !== false && this.workerHasContent) {
       if (!this.skipWorkerInit) this.initializeWorker();
       this.workerHasContent = false;
     }
@@ -572,6 +589,7 @@ export class MarkdownRenderer implements Renderer {
 
   finalize(): void {
     if (!this.worker) return;
+    this.inputSealed = true;
     const token = this.trustedRevisionFeed?.requestFinalization();
     const finalization: OwnedFinalization = {
       owner: this,
