@@ -1,4 +1,4 @@
-import { normalizeBlockquoteText, type Block, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type UrlTransform } from "@stream-mdx/core";
+import { normalizeBlockquoteText, stripCodeFence, type Block, type HtmlTreeNode, type InlineNode, type MixedContentSegment, type UrlTransform } from "@stream-mdx/core";
 import React from "react";
 import type { InlineComponents, TableElements } from "../types";
 import {
@@ -20,6 +20,43 @@ import { createRendererStore, isListPatchDebugEnabled, type RendererStore } from
 import { useVirtualizedTable, type TableVirtualizationProps } from "./virtualized-table";
 import { StreamingActivityContext } from "./streaming-activity-context";
 import { CodeBlockView } from "./code-block-view";
+import { useLazyCodeHighlightRequest } from "./use-lazy-code-highlight-request";
+
+const CustomCodeBlockView: React.FC<{ block: Block; registry: ComponentRegistry }> = React.memo(({ block, registry }) => {
+  const meta = (block.payload.meta ?? {}) as Record<string, unknown>;
+  const lazyEnabled = Boolean(meta.lazyTokenization);
+  const lazyTokenizedUntil = typeof meta.lazyTokenizedUntil === "number" ? meta.lazyTokenizedUntil : 0;
+  const sourceLineCount = lazyEnabled ? getLazyCodeSourceLineCount(block, meta) : 0;
+  const highlightedLineCount = Array.isArray(meta.highlightedLines) ? meta.highlightedLines.length : 0;
+  const tokenLineCount = Array.isArray(meta.tokenLines) ? meta.tokenLines.length : 0;
+  const totalLazyLineCount = Math.max(sourceLineCount, highlightedLineCount, tokenLineCount);
+
+  useLazyCodeHighlightRequest({
+    blockId: block.id,
+    blockIsFinalized: block.isFinalized,
+    lazyEnabled,
+    lazyTokenizedUntil,
+    totalLazyLineCount,
+    shouldVirtualize: false,
+  });
+
+  return <>{registry.renderFinalizedBlock(block, registry.renderBlock(block))}</>;
+});
+
+function getLazyCodeSourceLineCount(block: Block, meta: Record<string, unknown>): number {
+  const metaCode = typeof meta.code === "string" ? meta.code : null;
+  let sourceText: string;
+  if (metaCode !== null) {
+    sourceText = metaCode.replace(/\r\n?/g, "\n");
+  } else {
+    const raw = typeof block.payload.raw === "string" ? block.payload.raw : "";
+    if (raw.length === 0) return 0;
+    const normalized = raw.replace(/\r\n?/g, "\n");
+    const fenced = stripCodeFence(normalized);
+    sourceText = fenced.hadFence ? fenced.code : normalized;
+  }
+  return sourceText.length > 0 ? sourceText.split("\n").length : 0;
+}
 
 export const BlockNodeRenderer: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = ({ store, blockId, registry }) => {
   const node = useRendererNode(store, blockId);
@@ -34,6 +71,9 @@ export const BlockNodeRenderer: React.FC<{ store: RendererStore; blockId: string
   const preparedQuote = block.type === "blockquote" && Boolean(block.payload.meta?.preparedNested);
   const mixedParagraph = block.type === "paragraph" && Array.isArray(block.payload.meta?.mixedSegments);
   if ((registry.hasCustomBlockComponent(block.type) || mixedParagraph) && !preparedQuote) {
+    if (block.type === "code") {
+      return <CustomCodeBlockView block={block} registry={registry} />;
+    }
     return <>{registry.renderFinalizedBlock(block, registry.renderBlock(block))}</>;
   }
 

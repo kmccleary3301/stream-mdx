@@ -21,7 +21,10 @@ class ResizeObserverStub {
   disconnect() {}
 }
 
-async function renderBlock(block: Block): Promise<{ pre: HTMLElement; requests: Array<Record<string, unknown>> }> {
+async function renderBlock(
+  block: Block,
+  registry = new ComponentRegistry(),
+): Promise<{ pre: HTMLElement; requests: Array<Record<string, unknown>> }> {
   const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
     pretendToBeVisual: true,
   });
@@ -35,7 +38,6 @@ async function renderBlock(block: Block): Promise<{ pre: HTMLElement; requests: 
   (globalThis as any).ResizeObserver = ResizeObserverStub;
 
   const store = createRendererStore([block]);
-  const registry = new ComponentRegistry();
   const container = window.document.getElementById("root");
   const requests: Array<Record<string, unknown>> = [];
   assert.ok(container, "missing test root container");
@@ -72,17 +74,41 @@ async function runVirtualizedCodeStreamingGuardTest(): Promise<void> {
       meta: { lang: "ts", lazyTokenization: true, code: raw.replace(/^```[^\n]*\n/, "").replace(/\n```$/, "") },
     },
   };
-
+  const expectedLineCount = finalizedLazyBlock.payload.meta?.code?.split("\n").length ?? 0;
   const { pre, requests } = await renderBlock(finalizedLazyBlock);
   assert.strictEqual(pre.getAttribute("data-code-virtualized"), "false", "lazy-tokenized code must remain non-virtualized");
   assert.ok(requests.length > 0, "finalized lazy non-virtualized code should request a full highlight pass");
   const fullRequest = requests.find((request) => request.blockId === finalizedLazyBlock.id);
   assert.ok(fullRequest, "expected a lazy highlight request for the finalized lazy code block");
-  const expectedLineCount = finalizedLazyBlock.payload.meta?.code?.split("\n").length ?? 0;
   assert.deepStrictEqual(
     { startLine: fullRequest?.startLine, endLine: fullRequest?.endLine, priority: fullRequest?.priority, reason: fullRequest?.reason },
     { startLine: 0, endLine: expectedLineCount, priority: "visible", reason: "finalize-full" },
     "finalized lazy non-virtualized code should request the entire code range",
+  );
+
+  const customRegistry = new ComponentRegistry();
+  customRegistry.setBlockComponents({
+    code: ({ meta, html }) =>
+      React.createElement(
+        "pre",
+        { "data-code-block": "true", "data-custom-code": "true" },
+        typeof meta?.code === "string" ? meta.code : (html ?? ""),
+      ),
+  });
+  const { pre: customPre, requests: customRequests } = await renderBlock(finalizedLazyBlock, customRegistry);
+  assert.strictEqual(customPre.getAttribute("data-custom-code"), "true", "custom code output should still render");
+  assert.strictEqual(customPre.textContent, finalizedLazyBlock.payload.meta?.code, "custom code content should remain unchanged");
+  const customFullRequest = customRequests.find((request) => request.blockId === finalizedLazyBlock.id);
+  assert.ok(customFullRequest, "custom code blocks should request lazy highlighting after finalization");
+  assert.deepStrictEqual(
+    {
+      startLine: customFullRequest?.startLine,
+      endLine: customFullRequest?.endLine,
+      priority: customFullRequest?.priority,
+      reason: customFullRequest?.reason,
+    },
+    { startLine: 0, endLine: expectedLineCount, priority: "visible", reason: "finalize-full" },
+    "custom finalized lazy code should request the entire code range",
   );
 
   const eagerBlock: Block = {
@@ -107,3 +133,4 @@ runVirtualizedCodeStreamingGuardTest()
     console.error(error);
     process.exitCode = 1;
   });
+
