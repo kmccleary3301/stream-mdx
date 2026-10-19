@@ -26,7 +26,8 @@ import type {
 } from "@stream-mdx/core";
 import { removeHeadingMarkers } from "@stream-mdx/core";
 import React from "react";
-import { DEFAULT_INLINE_HTML_RENDERERS, renderHtmlInlineNode, renderHtmlOwnershipTree, renderInlineHtmlSegment } from "../utils/inline-html";
+import { DEFAULT_INLINE_HTML_RENDERERS, renderHtmlInlineNode, renderInlineHtmlSegment } from "../utils/inline-html";
+import { renderOwnedHtmlTree, type OwnedHtmlRenderContext } from "./owned-html";
 import { TrustedMdxInlineOwner } from "../trusted-mdx/native-inline";
 import type {
   AllowElementFn,
@@ -1127,61 +1128,38 @@ export class ComponentRegistry {
   }
 
 
-  renderHtmlTree(tree: HtmlTreeNode[], renderBlock: (block: Block) => React.ReactNode = (block) => this.renderBlock(block), paragraph?: Block): React.ReactNode {
-    return this.renderOwnedHtmlTree(tree, renderBlock, paragraph);
-  }
-
-  private renderOwnedHtmlTree(
+  renderHtmlTree(
     tree: HtmlTreeNode[],
-    renderBlock: (block: Block) => React.ReactNode = (block) => this.renderBlock(block),
+    renderBlock: (block: Block, parentTagName?: string) => React.ReactNode = (block) => this.renderBlock(block),
     paragraph?: Block,
     parentTagName?: string,
   ): React.ReactNode {
-    return renderHtmlOwnershipTree(tree, this.htmlElements, renderBlock,
-      (nodes, parentTagName) => renderInlineNodes(nodes, this.inlineComponents, this.urlTransform, this, parentTagName),
-      (node, children) => {
-        if (node.kind === "strong" || node.kind === "em" || node.kind === "strike" || node.kind === "link") {
-          const component = this.inlineComponents[node.kind];
-          if (node.kind === "link") {
-            const { href, ...linkProps } = node;
-            const transform = this.urlTransform ?? defaultUrlTransform;
-            const safeHref = transform(href ?? "", "href", { source: "markdown" });
-            const direct = component ? React.createElement(component, {
-              ...linkProps,
-              ...(safeHref != null ? { href: safeHref } : {}),
-              children,
-            }) : React.createElement("a", { href: safeHref ?? undefined }, children);
-            if (!this.hasElementFilters()) return direct;
-            return this.filterElement(
-              { tagName: "a", properties: { href: safeHref, title: node.title } },
-              { source: "markdown" },
-              () => direct,
-              () => children,
-            );
-          }
-          const tag = node.kind === "strike" ? "del" : node.kind;
-          const direct = component ? React.createElement(component, { ...node, children }) : React.createElement(tag, {}, children);
-          if (!this.hasElementFilters()) return direct;
-          return this.filterElement(
-            { tagName: tag, properties: {} },
-            { source: "markdown" },
-            () => direct,
-            () => children,
-          );
-        }
-        if (node.kind === "plugin") {
-          const component = this.inlineComponents[node.name] ?? this.inlineComponents.plugin;
-          return component ? React.createElement(component, { ...node.attrs, name: node.name, attrs: node.attrs, raw: node.raw, children }) : node.raw;
-        }
-        return renderInlineNodes([node], this.inlineComponents, this.urlTransform, this);
-      }, paragraph ? (children) => React.createElement(this.getBlockComponent("paragraph"), {
+    return renderOwnedHtmlTree(tree, this.ownedHtmlRenderContext(renderBlock, paragraph, parentTagName));
+  }
+
+  private ownedHtmlRenderContext(
+    renderBlock: (block: Block, parentTagName?: string) => React.ReactNode = (block) => this.renderBlock(block),
+    paragraph?: Block,
+    parentTagName?: string,
+    inlineContext?: RenderInlineAnimationContext,
+  ): OwnedHtmlRenderContext {
+    return {
+      elements: this.htmlElements,
+      renderBlock,
+      renderInline: (nodes, parentTagName) =>
+        renderInlineNodes(nodes, this.inlineComponents, this.urlTransform, this, parentTagName, inlineContext),
+      inlineComponents: this.inlineComponents,
+      urlTransform: this.urlTransform,
+      isAutolinkProtocolDisabled: (href) => this.isAutolinkProtocolDisabled(href),
+      filterElement: this.hasElementFilters()
+        ? (element, context, renderElement, renderChildren) => this.filterElement(element, context, renderElement, renderChildren)
+        : undefined,
+      parentTagName,
+      contentComponents: this.contentComponents,
+      renderParagraph: paragraph ? (children) => React.createElement(this.getBlockComponent("paragraph"), {
         ...this.getBlockProps(paragraph), children,
       }) : undefined,
-      this.urlTransform,
-      this.hasElementFilters() ? (el, ctx, rEl, rCh) => this.filterElement(el, ctx, rEl, rCh) : undefined,
-      parentTagName,
-      this.contentComponents,
-    );
+    };
   }
 
   getBlockComponentMap(): BlockComponents {
@@ -1453,7 +1431,12 @@ export class ComponentRegistry {
         const headingText =
           typeof meta.headingText === "string" && meta.headingText.trim().length > 0 ? (meta.headingText as string) : removeHeadingMarkers(rawHeading).trim();
         const level = (normalizedLevel ?? this.extractHeadingLevel(rawHeading)) as 1 | 2 | 3 | 4 | 5 | 6;
-        const renderedChildren = renderInlineNodes(inlineNodes, this.inlineComponents, this.urlTransform, this, `h${level}`, animCtx);
+        const ownedTree = block.payload.meta?.htmlOwnership === true ? block.payload.meta.htmlTree : undefined;
+        const ownedRoot = ownedTree?.length === 1 ? ownedTree[0] : undefined;
+        const ownedChildren = ownedRoot?.kind === "element" && ownedRoot.tagName === `h${level}` ? ownedRoot.children : undefined;
+        const renderedChildren = ownedChildren
+          ? renderOwnedHtmlTree(ownedChildren, this.ownedHtmlRenderContext(undefined, undefined, `h${level}`, animCtx))
+          : renderInlineNodes(inlineNodes, this.inlineComponents, this.urlTransform, this, `h${level}`, animCtx);
         return {
           level,
           inlines: inlineNodes,
@@ -1473,7 +1456,7 @@ export class ComponentRegistry {
                 segments, this.inlineComponents, DEFAULT_INLINE_HTML_RENDERERS,
                 this.htmlElements, this.literalTagContent, this.urlTransform, this, animCtx,
                 block.payload.meta?.mixedHtmlTrees as Record<number, HtmlTreeNode[]> | undefined,
-                (tree) => this.renderOwnedHtmlTree(tree, undefined, undefined, "p"),
+                (tree) => renderOwnedHtmlTree(tree, this.ownedHtmlRenderContext(undefined, undefined, "p")),
               )
             : renderInlineNodes(block.payload.inline ?? [], this.inlineComponents, this.urlTransform, this, "p", animCtx),
         };

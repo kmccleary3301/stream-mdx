@@ -1,10 +1,11 @@
 import React, { useContext } from "react";
 import { TrustedMdxNativeChildrenContext } from "@stream-mdx/react/_internal/trusted-mdx-native-children";
 import { TrustedMdxProjectionContext } from "../trusted-mdx-boundary";
-import type {
-  TrustedMdxCompiledRegionProps,
-  TrustedMdxDocumentSnapshot,
-  TrustedMdxNativeChildrenFactory,
+import {
+  assertTrustedMdxNativeChildContinuations,
+  type TrustedMdxCompiledRegionProps,
+  type TrustedMdxDocumentSnapshot,
+  type TrustedMdxNativeChildrenFactory,
 } from "../trusted-mdx-contract";
 
 export function renderTrustedMdxOwner(
@@ -47,8 +48,10 @@ export function renderTrustedMdxOwner(
             ) {
               throw new Error(`Trusted MDX owner "${ownerId}" has misaligned native child owners.`);
             }
+            assertTrustedMdxNativeChildContinuations(owners, flowChildren);
             return owners.map((owner, index) => {
               if (owner === null) return fallback(index);
+              if (owner.kind === "continuation") return undefined;
               const child = nativeChildren[index];
               if (child === undefined) {
                 throw new Error(`Trusted MDX owner "${ownerId}" has no rendered native child "${owner.blockId}".`);

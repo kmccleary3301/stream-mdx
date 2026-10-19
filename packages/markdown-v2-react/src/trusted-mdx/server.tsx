@@ -1,12 +1,14 @@
 import React from "react";
 import type { Block, TrustedMdxArtifact } from "@stream-mdx/core";
 import type { ComponentType, ElementType } from "react";
-import type {
-  TrustedMdxCompiledRegionProps,
-  TrustedMdxNativeChildrenFactory,
-  TrustedMdxRenderProps,
+import {
+  assertTrustedMdxNativeChildContinuations,
+  type TrustedMdxCompiledRegionProps,
+  type TrustedMdxNativeChildrenFactory,
+  type TrustedMdxRenderProps,
 } from "../trusted-mdx-contract";
 import { evaluateCompiledMdx } from "./evaluate";
+
 import { TrustedMdxNativeChildrenSlot } from "@stream-mdx/react/_internal/trusted-mdx-native-children";
 import { projectMdxBlocks } from "./projection";
 import type { TrustedMdxServerRegion } from "./server-regions";
@@ -79,9 +81,14 @@ export async function projectTrustedMdxServerDocument(
           ) {
             throw new Error(`Trusted MDX owner "${ownerId}" has misaligned native child owners.`);
           }
+          assertTrustedMdxNativeChildContinuations(owners, flowChildren);
           const children = owners.map((owner, index) => {
+            if (owner?.kind === "continuation") return null;
             if (owner !== null) {
-              return React.createElement(TrustedMdxNativeChildrenSlot, { index, key: owner.blockId });
+              return React.createElement(TrustedMdxNativeChildrenSlot, {
+                index,
+                key: `${owner.kind}:${owner.blockId}:${index}`,
+              });
             }
             const flowChild = flowChildren[index];
             if (flowChild === undefined) {

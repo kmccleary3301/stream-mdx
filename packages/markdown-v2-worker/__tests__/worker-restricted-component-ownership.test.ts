@@ -1,6 +1,13 @@
 import assert from "node:assert";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, it } from "node:test";
+import { JSDOM } from "jsdom";
 import type { HtmlTreeNode, WorkerIn, WorkerOut } from "@stream-mdx/core";
+import { MarkdownBlocksRenderer } from "@stream-mdx/react/server";
+import { ComponentRegistry } from "@stream-mdx/react";
+import { createRendererStore } from "@stream-mdx/react/renderer/store";
+import { defineContentComponent, type ContentComponentProps } from "../../markdown-v2-react/src/components/content-components";
 import { createWorkerHarness } from "./worker-test-harness";
 import { buildRestrictedComponentTree } from "../src/engine/restricted-component-ownership";
 
@@ -371,6 +378,209 @@ describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
       assert.strictEqual(root.name, "Card");
       assert.strictEqual(root.status, "closed");
       assert.ok(root.children.some((child) => child.kind === "block" && child.block.type === "code" && child.block.payload.raw.includes("</Card>")));
+    }
+  });
+
+  it("renders restricted tags recursively through native phrasing, quote, list, HTML, and protected siblings", async () => {
+    type TitleProps = ContentComponentProps & { title?: string };
+    type InputProps = ContentComponentProps & { placeholder?: string };
+    const isTitleProps = (props: ContentComponentProps): props is TitleProps =>
+      props.title === undefined || typeof props.title === "string";
+    const isInputProps = (props: ContentComponentProps): props is InputProps =>
+      props.placeholder === undefined || typeof props.placeholder === "string";
+    const Card = (props: { title?: string; children?: React.ReactNode }) =>
+      React.createElement("section", { "data-card": props.title }, props.children);
+    const Alert = (props: { title?: string; children?: React.ReactNode }) =>
+      React.createElement("span", { "data-alert": props.title }, props.children);
+    const Input = (props: { placeholder?: string }) =>
+      React.createElement("input", { "data-input": props.placeholder });
+    const hostComponents = {
+      Card: defineContentComponent({ component: Card, validateProps: isTitleProps, renderWhen: "open" }),
+      Alert: defineContentComponent({ component: Alert, validateProps: isTitleProps, renderWhen: "closed" }),
+      Input: defineContentComponent({ component: Input, validateProps: isInputProps, renderWhen: "open" }),
+    };
+    const Strong = ({ children }: { children?: React.ReactNode }) =>
+      React.createElement("strong", { "data-inline-owner": "configured" }, children);
+    const componentRegistry = new ComponentRegistry({}, { strong: Strong });
+    const content = [
+      '<Card title="root">',
+      "",
+      'Native **bold** with <Alert title="paired">nested <Input placeholder="nested" /></Alert> and <Input placeholder="self" />.',
+      "",
+      '**Formatted <Input placeholder="emphasis" /> suffix** and [before <Alert title="link">linked</Alert>](/safe).',
+      "",
+      'Encoded &#xE000;smdx-restricted-inline-0&#xE001; <Input placeholder="encoded-real" />.',
+      "",
+      `[protected title](/safe '<Input placeholder="title-protected" />') and ![<Input placeholder="image-protected" />](/image.png).`,
+      "",
+      `<span title='<Input placeholder="attribute-protected" />'>native attribute</span>`,
+      "",
+      '## Heading with <Alert title="heading">title</Alert>',
+      "",
+      '> Quote with <Alert title="quote">quoted</Alert>.',
+      '<div>HTML <Alert title="html">leaf</Alert></div>',
+      "",
+      "",
+      '- List with <Input placeholder="list" />.',
+      "",
+      '- **before <Input placeholder="list-emphasis" /> after**',
+      '- <Alert title="list-owned">**before <Input placeholder="list-owned-child" /> after**</Alert>',
+      "",
+      '`<Input placeholder="code" />`',
+      "",
+      '<Alert title={globalThis.__restrictedAdmissionSentinel()} />',
+      "",
+      "</Card>",
+      "",
+      '<Card title="mismatch"><Alert title="unclosed">mismatch</Card>',
+    ].join("\n");
+    let sentinelCalls = 0;
+    const globalWithSentinel = globalThis as typeof globalThis & { __restrictedAdmissionSentinel?: () => string };
+    globalWithSentinel.__restrictedAdmissionSentinel = () => {
+      sentinelCalls++;
+      return "executed";
+    };
+    let dom: JSDOM | undefined;
+    try {
+      const harness = await createWorkerHarness();
+      const messages = await harness.send({
+        type: "INIT",
+        initialContent: content,
+        contentPolicy: "restricted",
+        contentComponents: registeredComponents,
+      });
+      const initialized = findMessage(messages, "INITIALIZED");
+      assert.ok(initialized);
+      const rendered = renderToStaticMarkup(
+        React.createElement(MarkdownBlocksRenderer, { blocks: initialized.blocks, contentComponents: hostComponents, componentRegistry }),
+      );
+
+      dom = new JSDOM(rendered);
+      const document = dom.window.document;
+      assert.ok(document.querySelector('section[data-card="root"]'), "outer host component must render");
+      assert.strictEqual(document.querySelector("p strong")?.textContent, "bold", "native paragraph formatting must remain");
+      assert.ok(document.querySelector('[data-alert="paired"] [data-input="nested"]'), "paired component must own its nested self-closing host");
+      assert.ok(document.querySelector('[data-input="self"]'), "self-closing component in native phrasing must render");
+      assert.ok(document.querySelector('strong [data-input="emphasis"]'), "native emphasis must span the admitted component");
+      assert.strictEqual(document.querySelector('a[href="/safe"] [data-alert="link"]')?.textContent, "linked", "native link must span the admitted component");
+      assert.ok(document.querySelector('[data-input="encoded-real"]'), "entity-encoded authored text must not forge an admission marker");
+      assert.ok(document.body.textContent?.includes("\uE000smdx-restricted-inline-0\uE001"), "native entity decoding must retain authored text");
+      assert.strictEqual(document.querySelector('[data-input="title-protected"], [data-input="image-protected"], [data-input="attribute-protected"]'), null, "native link titles, image alt and HTML attributes must not activate tags");
+      assert.strictEqual(document.querySelector('blockquote [data-alert="quote"]')?.textContent, "quoted", "quote child must retain its native owner");
+      assert.strictEqual(document.querySelector("h2")?.textContent, "Heading with title", "native heading level and unmarked prepared children must remain");
+      assert.ok(document.querySelector('h2 [data-alert="heading"]'), "heading child component must render");
+      assert.strictEqual(document.querySelector('div [data-alert="html"]')?.textContent, "leaf", "native HTML child component must render");
+      assert.ok(document.querySelector('ul li [data-input="list"]'), "list child must retain its native owner");
+      assert.ok(document.querySelector('li strong [data-input="list-emphasis"]'), "list emphasis must own an admitted inline component");
+      assert.ok(document.querySelector('[data-alert="list-owned"] strong[data-inline-owner="configured"] [data-input="list-owned-child"]'), "list owned trees must use configured native inline renderers");
+      assert.strictEqual(document.querySelector("code")?.textContent, '<Input placeholder="code" />', "protected code span must remain literal");
+      assert.strictEqual(document.querySelector('[data-input="code"]'), null, "protected code span must not activate its tag");
+      assert.ok(document.body.textContent?.includes("<Alert title={globalThis.__restrictedAdmissionSentinel()} />"), "invalid expression must remain literal");
+      assert.strictEqual(sentinelCalls, 0, "restricted expression must not execute");
+      assert.ok(document.body.textContent?.includes('<Card title="mismatch"><Alert title="unclosed">mismatch</Card>'), "mismatched nesting must preserve the whole authored source as literal");
+      assert.strictEqual(document.querySelector('[data-card="mismatch"]'), null, "mismatched root must not be auto-closed into a host component");
+    } finally {
+      dom?.window.close();
+      delete globalWithSentinel.__restrictedAdmissionSentinel;
+    }
+  });
+
+  it("preserves parent-sensitive filters and disabled autolinks around list components", async () => {
+    const harness = await createWorkerHarness();
+    const messages = await harness.send({
+      type: "INIT",
+      initialContent: '- <Input /> [blocked](https://example.invalid/)\n- <Input /> **[nested-blocked](https://nested.example.invalid/)**\n- <Input /> contact@example.invalid\n- <Input /> <campaign-mark data-owned="kept">custom HTML</campaign-mark>\n',
+      contentPolicy: "restricted",
+      contentComponents: registeredComponents,
+      html: { allowRaw: true, allowedTags: { "campaign-mark": ["data-owned"] } },
+    });
+    const initialized = findMessage(messages, "INITIALIZED");
+    assert.ok(initialized);
+    const Input = () => React.createElement("input", { "data-policy-owner": true });
+    const contentComponents = { Input: defineContentComponent({ component: Input }) };
+    const componentRegistry = new ComponentRegistry({}, {}, {}, {
+      disableAutolinkProtocols: ["mailto"],
+      allowElement: (element, context) => !(element.tagName === "a" && (
+        (context.parentTagName === "li" && element.properties.href === "https://example.invalid/") ||
+        (context.parentTagName === "strong" && element.properties.href === "https://nested.example.invalid/")
+      )),
+    });
+    const dom = new JSDOM(renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: initialized.blocks, contentComponents, componentRegistry })));
+    try {
+      const forbiddenHrefs = [...dom.window.document.querySelectorAll("a")].map(anchor => anchor.getAttribute("href"))
+        .filter(href => href === "https://example.invalid/" || href === "https://nested.example.invalid/" || href?.startsWith("mailto:"));
+      const configuredTag = dom.window.document.querySelector("campaign-mark");
+      assert.deepStrictEqual({ forbiddenHrefs, configuredText: configuredTag?.textContent, configuredAttribute: configuredTag?.getAttribute("data-owned") },
+        { forbiddenHrefs: [], configuredText: "custom HTML", configuredAttribute: "kept" }, "owned list content must retain native parent/protocol filters and configured HTML policy");
+      assert.ok(dom.window.document.body.textContent?.includes("contact@example.invalid"), "a disabled autolink must retain its visible text");
+      assert.ok(dom.window.document.querySelector("[data-policy-owner]"), "the neighboring registered host must remain active");
+    } finally {
+      dom.window.close();
+    }
+  });
+
+  it("publishes component footnotes beside native HTML only with their finalized definition", async () => {
+    const harness = await createWorkerHarness();
+    const messages = await harness.send({
+      type: "INIT",
+      initialContent: 'Before <Alert>inside[^owned]</Alert> with <em>ordinary</em>.\n\n- <Input /> outside[^owned] with <Alert>nested[^owned]</Alert>.\n\n[^owned]: Owned definition.\n',
+      contentPolicy: "restricted",
+      contentComponents: registeredComponents,
+      docPlugins: { footnotes: true, html: true },
+    });
+    const initialized = findMessage(messages, "INITIALIZED");
+    assert.ok(initialized);
+    const Alert = ({ children }: { children?: React.ReactNode }) => React.createElement("span", { "data-footnote-owner": true }, children);
+    const hostComponents = {
+      Alert: defineContentComponent({ component: Alert, renderWhen: "closed" }),
+      Input: defineContentComponent({ component: () => React.createElement("input") }),
+    };
+    const store = createRendererStore();
+    store.reset(initialized.blocks);
+    for (const message of messages) {
+      if (message.type === "PATCH") store.applyPatches(message.patches, { captureMetrics: false });
+    }
+    const dom = new JSDOM(renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: initialized.blocks, contentComponents: hostComponents })));
+    try {
+      assert.strictEqual(dom.window.document.querySelector("sup.footnote-ref a"), null, "an unpublished definition must not produce a premature reference link");
+      const finalMessages = await harness.send({ type: "FINALIZE" });
+      for (const message of finalMessages) {
+        if (message.type === "PATCH") store.applyPatches(message.patches, { captureMetrics: false });
+      }
+      dom.window.document.body.innerHTML = renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: store.getBlocks(), contentComponents: hostComponents }));
+      assert.strictEqual(dom.window.document.querySelector('[data-footnote-owner] a[data-label="owned"]')?.textContent, "1");
+      assert.ok(dom.window.document.querySelector('a[data-label="owned"]')?.getAttribute("href")?.startsWith("#fn:"));
+      assert.strictEqual(dom.window.document.querySelector("em")?.textContent, "ordinary");
+      assert.strictEqual(dom.window.document.querySelectorAll("li sup.footnote-ref a[data-label=\"owned\"]").length, 2, "both direct and component-owned list references must be numbered");
+      for (const anchor of dom.window.document.querySelectorAll<HTMLAnchorElement>("sup.footnote-ref a, a.footnote-backref")) {
+        assert.ok(dom.window.document.getElementById(anchor.hash.slice(1)), "every reference and backlink must target a rendered definition or occurrence");
+      }
+    } finally {
+      dom.window.close();
+    }
+  });
+
+  it("admits an unclosed ordinary HTML first block without owning the following paragraph", async () => {
+    const harness = await createWorkerHarness();
+    const messages = await harness.send({
+      type: "INIT",
+      initialContent: '<div><Input />\n\nOutside unclosed HTML.\n',
+      contentPolicy: "restricted",
+      contentComponents: registeredComponents,
+    });
+    const initialized = findMessage(messages, "INITIALIZED");
+    assert.ok(initialized);
+    const Input = () => React.createElement("input", { "data-open-html": true });
+    const hostComponents = { Input: defineContentComponent({ component: Input }) };
+    const dom = new JSDOM(renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: initialized.blocks, contentComponents: hostComponents })));
+    try {
+      const input = dom.window.document.querySelector("[data-open-html]");
+      const paragraph = [...dom.window.document.querySelectorAll("p")].find(node => node.textContent === "Outside unclosed HTML.");
+      assert.ok(input, "the first unclosed ordinary HTML block must admit its local host");
+      assert.ok(paragraph, "the following native paragraph must remain visible");
+      assert.ok(!input.closest("div")?.contains(paragraph), "unclosed HTML must not capture the following block");
+    } finally {
+      dom.window.close();
     }
   });
 

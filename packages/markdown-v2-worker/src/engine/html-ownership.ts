@@ -1,38 +1,10 @@
 import type { MarkdownParser } from "@lezer/markdown";
-import { dedentIndentedCode, sanitizeHtmlTreeInWorker, stripCodeFence, type Block, type ContentPolicy, type HtmlOptions, type HtmlTreeNode, type InlineNode, type RestrictedComponentDescriptor } from "@stream-mdx/core";
+import { dedentIndentedCode, removeHeadingMarkers, sanitizeHtmlTreeInWorker, stripCodeFence, type Block, type ContentPolicy, type HtmlOptions, type HtmlTreeNode, type InlineNode, type RestrictedComponentDescriptor } from "@stream-mdx/core";
 import { trimProvisionalFenceTail } from "./parse-extract";
-import { buildRestrictedComponentTree, isRegisteredRestrictedComponent, scanRegisteredRestrictedTags, type RestrictedInlineElement } from "./restricted-component-ownership";
+import { buildRestrictedComponentInlineTree, buildRestrictedComponentTree, buildRestrictedHtmlComponentTree, isRegisteredRestrictedComponent, scanRegisteredRestrictedTags, type RestrictedInlineElement } from "./restricted-component-ownership";
+import { escapeHtml, inlineHtml, normalizeNativeInlineParagraph } from "./native-inline-normalization";
 
 const VOID: Record<string, true> = { area: true, base: true, br: true, col: true, embed: true, hr: true, img: true, input: true, link: true, meta: true, param: true, source: true, track: true, wbr: true };
-const escapeHtml = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
-
-function inlineHtml(nodes: InlineNode[]): string {
-  return nodes.map((node): string => {
-    switch (node.kind) {
-      case "text": return escapeHtml(node.text);
-      // Ownership markup is inert; the marked native slot retains its MDX projection.
-      case "trusted-mdx-inline": return escapeHtml(node.raw);
-      case "code": return `<code>${escapeHtml(node.text)}</code>`;
-      case "br": return "<br>\n";
-      case "strong": return `<strong>${inlineHtml(node.children)}</strong>`;
-      case "em": return `<em>${inlineHtml(node.children)}</em>`;
-      case "strike": return `<del>${inlineHtml(node.children)}</del>`;
-      case "link": return `<a${node.href === undefined ? "" : ` href="${escapeHtml(node.href)}"`}>${inlineHtml(node.children)}</a>`;
-      case "image": return `<img src="${escapeHtml(node.src)}" alt="${escapeHtml(node.alt ?? "")}">`;
-      case "html": {
-        if (node.isClose) return node.raw;
-        if (!node.tagName || node.tagName === "script" || node.tagName === "style") return "";
-        const attrs = Object.entries(node.attributes ?? {}).map(([key, value]) => ` ${key === "className" ? "class" : key}="${escapeHtml(value)}"`).join("");
-        return `<${node.tagName}${attrs}>${node.isSelfClosing ? "" : `${inlineHtml(node.children ?? [])}</${node.tagName}>`}`;
-      }
-      case "plugin": return node.children ? inlineHtml(node.children) : escapeHtml(node.raw);
-      case "math-inline": case "math-display": return escapeHtml(node.tex);
-      case "mention": return escapeHtml(`@${node.handle}`);
-      case "citation": return escapeHtml(node.id);
-      case "footnote-ref": return escapeHtml(`[^${node.label}]`);
-    }
-  }).join("");
-}
 
 function blockHtml(block: Block, attribute: string, index: number): string {
   const marker = ` ${attribute}="${index}"`;
@@ -161,6 +133,23 @@ function applyRestrictedComponentTagBalance(
   }
 }
 
+export function getActiveHtmlTreeKey(
+  meta: Record<string, unknown> | undefined,
+): "htmlTree" | "htmlParagraphTree" | undefined {
+  if (meta?.htmlOwnership === true && Array.isArray(meta.htmlTree)) return "htmlTree";
+  if (Array.isArray(meta?.htmlParagraphTree)) return "htmlParagraphTree";
+  if (Array.isArray(meta?.htmlTree)) return "htmlTree";
+}
+
+function withHtmlOwnership(
+  meta: Block["payload"]["meta"],
+  htmlTree: HtmlTreeNode[],
+): NonNullable<Block["payload"]["meta"]> {
+  const nextMeta = { ...meta, htmlTree, htmlOwnership: true };
+  delete nextMeta.htmlParagraphTree;
+  return nextMeta;
+}
+
 /** Own balanced HTML regions across native block boundaries, retaining pending MDX roots. */
 export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, content: string, options?: HtmlOptions, sourceOffset = 0, parseInline?: (text: string) => InlineNode[], regionOptions?: { joinLeafRaws?: boolean; forceFinalize?: boolean; mdxComponents?: boolean; contentPolicy?: ContentPolicy; contentComponents?: ReadonlyMap<string, RestrictedComponentDescriptor> }): Block[] {
   const contentComponents = regionOptions?.contentPolicy === "markdown" || regionOptions?.contentPolicy === "trusted-mdx"
@@ -185,6 +174,7 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
         sourceOffset: componentSourceOffset,
         parser,
         literalTagContent: options?.literalTagContent,
+        htmlOptions: options,
         containerClosed,
       })
     : null;
@@ -193,9 +183,47 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
     isFinalized: htmlTree[0]?.kind === "component" ? htmlTree[0].status !== "open" : block.isFinalized,
     payload: {
       ...block.payload,
-      meta: { ...block.payload.meta, htmlTree, htmlOwnership: true },
+      meta: withHtmlOwnership(block.payload.meta, htmlTree),
     },
   });
+  const admitNestedBlock = (block: Block): Block => {
+    if (!contentComponents || block.type === "code" || block.payload.meta?.htmlOwnership === true) return block;
+    const admissionOptions = {
+      forceFinalize: regionOptions?.forceFinalize,
+      parseInline,
+      parser,
+      literalTagContent: options?.literalTagContent,
+      htmlOptions: options,
+    };
+    const headingText = block.payload.meta?.headingText;
+    const inlineSource = block.type === "heading"
+      ? typeof headingText === "string" ? headingText : removeHeadingMarkers(block.payload.raw)
+      : block.payload.raw;
+    let htmlTree = block.type === "html"
+      ? buildRestrictedHtmlComponentTree(block.payload.raw, contentComponents, { ...admissionOptions, htmlOptions: options })
+      : block.type === "heading" ? null : buildRestrictedComponentTree(block.payload.raw, contentComponents, admissionOptions);
+    if (!htmlTree && (block.type === "paragraph" || block.type === "heading")) {
+      const inlineTree = buildRestrictedComponentInlineTree(inlineSource, contentComponents, admissionOptions);
+      if (inlineTree) {
+        const headingLevel = block.payload.meta?.headingLevel;
+        htmlTree = [{
+          kind: "element",
+          tagName: block.type === "heading" ? `h${typeof headingLevel === "number" ? headingLevel : 1}` : "p",
+          attributes: {},
+          children: inlineTree,
+          ...(block.type === "paragraph" ? { paragraphRoot: true } : {}),
+        }];
+      }
+    }
+    if (!htmlTree) return block;
+    return {
+      ...block,
+      payload: {
+        ...block.payload,
+        meta: withHtmlOwnership(block.payload.meta, htmlTree),
+      },
+    };
+  };
   const flush = () => {
     if (stack.length > 0 && !pendingComponent) {
       // An unclosed HTML tag is not evidence that later native paragraphs or lists belong to it.
@@ -279,7 +307,7 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
             ...first.payload,
             raw,
             range: { from: first.payload.range?.from ?? sourceOffset, to: last.payload.range?.to ?? content.length + sourceOffset },
-            meta: { ...first.payload.meta, htmlTree: sanitizeHtmlTreeInWorker(html, options, { attribute, blocks: markdown }, parseInline), htmlOwnership: true },
+            meta: withHtmlOwnership(first.payload.meta, sanitizeHtmlTreeInWorker(html, options, { attribute, blocks: markdown }, parseInline)),
           },
         });
       }
@@ -288,7 +316,7 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
     stack = [];
     pendingComponent = false;
   };
-  for (const block of blocks) {
+  for (let block of blocks) {
     if (block.type !== "code") {
       if (region.length > 0 || block.type === "html") {
         applyHtmlTagBalance(
@@ -311,7 +339,7 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
     }
     if (region.length === 0 && stack.length === 0) {
       const compTree = buildComponentTree(block.payload.raw, true);
-      result.push(compTree ? retainComponentTree(block, compTree) : block);
+      result.push(compTree ? retainComponentTree(block, compTree) : admitNestedBlock(block));
       continue;
     }
     if (region.length === 0) {
@@ -322,6 +350,7 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
       );
       pendingComponent = isComp;
     }
+    if (region.length > 0 || !pendingComponent) block = admitNestedBlock(block);
     region.push(block);
     if (stack.length === 0) flush();
   }
@@ -334,37 +363,7 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
  * The private attribute cannot occur in user source; only generated IR wrappers receive slots.
  */
 export function normalizeHtmlParagraph(block: Block, options?: HtmlOptions) {
-  const source = block.payload.raw;
-  let attribute = "smdxinline";
-  const lower = source.toLowerCase();
-  while (lower.includes(attribute)) attribute += "x";
-  const inline: InlineNode[] = [];
-  const serialize = (nodes: InlineNode[]): string => nodes.map((node): string => {
-    if (node.kind === "text") return escapeHtml(node.text);
-    if (node.kind === "html") {
-      if (node.isClose) return node.raw;
-      const open = node.openingRaw ?? node.raw;
-      if (node.isSelfClosing) return open;
-      const literal = ["pre", "code", "textarea", ...(options?.literalTagContent ?? [])]
-        .some((tag) => tag.toLowerCase() === node.tagName);
-      const children = literal
-        ? (node.children ?? []).map((child) => child.kind === "text" ? escapeHtml(child.text) : inlineHtml([child])).join("")
-        : serialize(node.children ?? []);
-      return open + children + (node.closingRaw ?? "");
-    }
-    const index = inline.push(node) - 1;
-    const slot = ` ${attribute}="${index}"`;
-    if (node.kind === "strong" || node.kind === "em" || node.kind === "strike" || node.kind === "link") {
-      const tag = node.kind === "strike" ? "del" : node.kind === "link" ? "a" : node.kind;
-      const href = node.kind === "link" && node.href !== undefined ? ` href="${escapeHtml(node.href)}"` : "";
-      return `<${tag}${slot}${href}>${serialize(node.children)}</${tag}>`;
-    }
-    if (node.kind === "plugin" && node.children) {
-      return `<span${slot}>${serialize(node.children)}</span>`;
-    }
-    return `<span${slot}>${inlineHtml([node])}</span>`;
-  }).join("");
-  return sanitizeHtmlTreeInWorker(`<p class="markdown-paragraph" ${attribute}="paragraph">${serialize(block.payload.inline ?? [])}</p>\n`, options, { attribute, inline });
+  return normalizeNativeInlineParagraph(block.payload.raw, block.payload.inline ?? [], options);
 }
 
 /** JSX tags in prose belong to mixed-content segments, never the HTML sanitizer. */

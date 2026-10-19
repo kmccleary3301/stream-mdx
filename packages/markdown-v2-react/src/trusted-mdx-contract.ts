@@ -14,7 +14,47 @@ export type TrustedMdxNativeChildrenFactory = (
 export type TrustedMdxNativeChildOwner =
   | { readonly kind: "block"; readonly blockId: string }
   | { readonly kind: "prepared-tree"; readonly blockId: string }
+  | { readonly kind: "continuation"; readonly ownerIndex: number }
   | null;
+
+/** Guards typed continuations against suppressing anything outside one inline run. */
+export function assertTrustedMdxNativeChildContinuations(
+  owners: readonly TrustedMdxNativeChildOwner[],
+  flowChildren: readonly TrustedMdxFlowChildSpan[],
+): void {
+  if (owners.length !== flowChildren.length) {
+    throw new Error("A trusted MDX native child continuation has misaligned owner and source spans.");
+  }
+  let continuationOwnerIndex: number | undefined;
+  for (let index = 0; index < owners.length; index++) {
+    const owner = owners[index];
+    if (owner?.kind !== "continuation") {
+      continuationOwnerIndex = undefined;
+      continue;
+    }
+    const ownerIndex = owner.ownerIndex;
+    const ownerForRun = owners[ownerIndex];
+    const previousChild = flowChildren[index - 1];
+    const child = flowChildren[index];
+    if (
+      !Number.isSafeInteger(ownerIndex) ||
+      ownerIndex < 0 ||
+      ownerIndex >= index ||
+      (continuationOwnerIndex === undefined ? ownerIndex !== index - 1 : ownerIndex !== continuationOwnerIndex) ||
+      ownerForRun === null ||
+      ownerForRun === undefined ||
+      ownerForRun.kind === "continuation" ||
+      previousChild?.kind !== "inline" ||
+      child?.kind !== "inline" ||
+      previousChild.to <= previousChild.from ||
+      child.to <= child.from ||
+      previousChild.to !== child.from
+    ) {
+      throw new Error("A trusted MDX native child continuation does not cover one exact contiguous inline run.");
+    }
+    continuationOwnerIndex = ownerIndex;
+  }
+}
 
 /** Private compiler-region invocation props; host components receive TrustedMdxRenderProps only. */
 export interface TrustedMdxCompiledRegionProps extends Omit<TrustedMdxRenderProps, "children"> {
@@ -41,7 +81,7 @@ export type TrustedMdxBlockProjection =
       readonly rootElementName?: string | null;
       /** The compiler-authored flow root replaces only children represented by its worker owners. */
       readonly nativeChildren?: true;
-      /** Per-MDAST-child native owner, or null for a compiler-only JSX/expression child. */
+      /** Per-child owner, inline-run continuation, or null for a compiler-only child. */
       readonly nativeChildOwners?: readonly TrustedMdxNativeChildOwner[];
       readonly flowChildren?: readonly TrustedMdxFlowChildSpan[];
       /** Top-level worker blocks consumed or replaced by this exact flow region. */

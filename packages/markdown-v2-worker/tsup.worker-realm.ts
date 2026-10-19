@@ -41,8 +41,12 @@ export const workerMdxBundlePackages: RegExp[] = [
   /^@mdx-js\/mdx$/,
   /^remark-gfm$/,
   /^remark-math$/,
+  /^remark-mdx$/,
+  /^remark-parse$/,
   /^rehype-slug$/,
   /^rehype-katex$/,
+  /^unified$/,
+  /^vfile-message$/,
 ];
 
 export const workerRealmAliases: Record<string, string> = {

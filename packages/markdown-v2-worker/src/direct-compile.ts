@@ -380,13 +380,13 @@ export async function compileMarkdownSnapshotDirect(
       })(),
       init: init
         ? {
-            docPlugins: init.docPlugins,
-            contentPolicy: init.contentPolicy,
-            contentComponents: init.contentComponents,
-            prewarmLangs: init.prewarmLangs,
-            themes: init.themes,
-            syntax: init.syntax,
-            html: init.html,
+            ...(init.docPlugins === undefined ? {} : { docPlugins: init.docPlugins }),
+            ...(init.contentPolicy === undefined ? {} : { contentPolicy: init.contentPolicy }),
+            ...(init.contentComponents === undefined ? {} : { contentComponents: init.contentComponents }),
+            ...(init.prewarmLangs === undefined ? {} : { prewarmLangs: init.prewarmLangs }),
+            ...(init.themes === undefined ? {} : { themes: init.themes }),
+            ...(init.syntax === undefined ? {} : { syntax: init.syntax }),
+            ...(init.html === undefined ? {} : { html: init.html }),
           }
         : undefined,
     };

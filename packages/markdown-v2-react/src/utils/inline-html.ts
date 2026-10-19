@@ -65,9 +65,9 @@ export function renderHtmlInlineNode(
 export function renderHtmlOwnershipTree(
   nodes: HtmlTreeNode[],
   elements: HtmlElements,
-  renderBlock: (block: Extract<HtmlTreeNode, { kind: "block" }>["block"]) => React.ReactNode,
+  renderBlock: (block: Extract<HtmlTreeNode, { kind: "block" }>["block"], parentTagName?: string) => React.ReactNode,
   renderInline?: (nodes: InlineNode[], parentTagName?: string) => React.ReactNode,
-  renderInlineElement?: (node: InlineNode, children: React.ReactNode) => React.ReactNode,
+  renderInlineElement?: (node: InlineNode, children: React.ReactNode, parentTagName?: string) => React.ReactNode,
   renderParagraph?: (children: React.ReactNode) => React.ReactNode,
   urlTransform?: UrlTransform,
   filterElement?: (
@@ -81,7 +81,7 @@ export function renderHtmlOwnershipTree(
 ): React.ReactNode {
   return nodes.map((node, index) => {
     if (node.kind === "text") return node.inline && renderInline ? renderInline(node.inline, parentTagName) : (node.rawSource ?? node.text);
-    if (node.kind === "block") return renderBlock(node.block);
+    if (node.kind === "block") return renderBlock(node.block, parentTagName);
     if (node.kind === "component") {
       const reg = contentComponents?.[node.name];
       if (!reg) {
@@ -131,7 +131,7 @@ export function renderHtmlOwnershipTree(
       return React.createElement(React.Fragment, { key: index }, paragraph);
     }
     if (node.inlineNode && renderInlineElement) {
-      return React.createElement(React.Fragment, { key: index }, renderInlineElement(node.inlineNode, children));
+      return React.createElement(React.Fragment, { key: index }, renderInlineElement(node.inlineNode, children, parentTagName));
     }
     if (!filterElement) {
       if (tag === "textarea") {

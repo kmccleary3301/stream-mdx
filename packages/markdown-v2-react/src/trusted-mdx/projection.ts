@@ -26,12 +26,27 @@ interface SourceRange {
   readonly to: number;
 }
 
+interface InlineChildRun {
+  readonly startIndex: number;
+  readonly endIndex: number;
+}
+
 interface SnapshotFields {
   readonly id: string;
   readonly type: string;
   readonly range: unknown;
   readonly props: unknown;
   readonly children: unknown;
+}
+
+/** Canonical children win, including empty trees; legacy HTML trees are fallback only. */
+export function getActiveTrustedMdxNativeTree(
+  meta: Record<string, unknown> | undefined,
+): HtmlTreeNode[] | undefined {
+  if (Array.isArray(meta?.trustedMdxNativeChildren)) return meta.trustedMdxNativeChildren;
+  if (meta?.htmlOwnership === true && Array.isArray(meta.htmlTree)) return meta.htmlTree;
+  if (Array.isArray(meta?.htmlParagraphTree)) return meta.htmlParagraphTree;
+  if (Array.isArray(meta?.htmlTree)) return meta.htmlTree;
 }
 
 function readSourceRange(value: unknown, sourceLength: number): SourceRange | null {
@@ -155,6 +170,15 @@ interface FlowNativeBlocks {
   readonly ownedBlockIds: string[];
 }
 
+interface GroupedInlineNativeOwner {
+  readonly startIndex: number;
+  readonly endIndex: number;
+  readonly block: Block;
+  readonly owner:
+    | { readonly kind: "block"; readonly blockId: string }
+    | { readonly kind: "prepared-tree"; readonly blockId: string };
+}
+
 function readFlowChildRanges(
   flowChildren: readonly TrustedMdxFlowChildSpan[] | undefined,
   flowRange: SourceRange,
@@ -198,6 +222,44 @@ function classifyFlowRange(
   return directChildIndex ?? "root-syntax";
 }
 
+function findInlineChildRunForRange(
+  range: SourceRange,
+  flowChildren: readonly TrustedMdxFlowChildSpan[] | undefined,
+  childRanges: readonly SourceRange[] | undefined,
+): InlineChildRun | undefined {
+  if (flowChildren === undefined || childRanges === undefined || range.to <= range.from) return undefined;
+  for (let startIndex = 0; startIndex < flowChildren.length; startIndex++) {
+    const firstChild = flowChildren[startIndex];
+    const firstRange = childRanges[startIndex];
+    if (
+      firstChild?.kind !== "inline" ||
+      !firstRange ||
+      firstRange.from !== range.from ||
+      firstRange.to <= firstRange.from
+    ) continue;
+    let previousRange = firstRange;
+    for (let endIndex = startIndex + 1; endIndex < flowChildren.length; endIndex++) {
+      const child = flowChildren[endIndex];
+      const childRange = childRanges[endIndex];
+      if (
+        child?.kind !== "inline" ||
+        !childRange ||
+        childRange.from !== previousRange.to ||
+        childRange.to <= childRange.from
+      ) break;
+      previousRange = childRange;
+      if (previousRange.to === range.to) {
+        return {
+          startIndex,
+          endIndex,
+        };
+      }
+      if (previousRange.to > range.to) break;
+    }
+  }
+  return undefined;
+}
+
 function collectFlowOwnerBlocks(blocks: readonly Block[]): Block[] {
   const flowOwnerBlocks: Block[] = [];
   const seenBlockIds = new Set<string>();
@@ -210,8 +272,8 @@ function collectFlowOwnerBlocks(blocks: readonly Block[]): Block[] {
     seenBlockIds.add(block.id);
     flowOwnerBlocks.push(block);
     const meta = block.payload.meta;
-    if (meta?.trustedMdxNativeChildren) pendingNodes.push(...meta.trustedMdxNativeChildren);
-    if (meta?.htmlTree) pendingNodes.push(...meta.htmlTree);
+    const preparedTree = getActiveTrustedMdxNativeTree(meta);
+    if (preparedTree !== undefined) pendingNodes.push(...preparedTree);
     while (pendingNodes.length > 0) {
       const node = pendingNodes.pop();
       if (!node || visitedNodes.has(node)) continue;
@@ -227,16 +289,23 @@ function collectFlowOwnerBlocks(blocks: readonly Block[]): Block[] {
 }
 
 function hasWholeFlowRootMatch(
-  blockId: string,
+  block: Block,
   childRange: SourceRange,
   matches: readonly MdxBlockMatch[],
 ): boolean {
   return matches.some(
     (match) =>
-      match.id === blockId &&
       match.wholeBlockFlowRoot &&
       match.from === childRange.from &&
-      match.to === childRange.to,
+      match.to === childRange.to &&
+      (match.id === block.id ||
+        block.payload.inline?.some(
+          (node) =>
+            node.kind === "trusted-mdx-inline" &&
+            node.ownerId === match.id &&
+            node.sourceRange?.from === childRange.from &&
+            node.sourceRange?.to === childRange.to,
+        ) === true),
   );
 }
 
@@ -259,7 +328,7 @@ function findPreparedTreeBlock(
       if (!range) continue;
       const wholeFlowRoot =
         wholeFlowRoots !== undefined &&
-        hasWholeFlowRootMatch(node.block.id, childRange, wholeFlowRoots) &&
+        hasWholeFlowRootMatch(node.block, childRange, wholeFlowRoots) &&
         range.from === childRange.from &&
         range.to <= childRange.to;
       const rangeMatches = exact
@@ -280,9 +349,11 @@ function findPreparedTreeBlock(
   return owner;
 }
 
+
 function assertPreparedTreeOwnersFitFlowChildren(
   tree: readonly HtmlTreeNode[] | undefined,
   childRanges: readonly SourceRange[] | undefined,
+  flowChildren: readonly TrustedMdxFlowChildSpan[] | undefined,
   flowRange: SourceRange,
   sourceLength: number,
 ): void {
@@ -304,7 +375,13 @@ function assertPreparedTreeOwnersFitFlowChildren(
       if (childRanges === undefined) {
         throw new Error("A trusted MDX flow region has prepared tree owners but no direct-child spans.");
       }
-      if (classifyFlowRange(range, childRanges) === null) {
+      const inlineRun =
+        node.block.type === "paragraph" &&
+        Array.isArray(node.block.payload.inline) &&
+        node.block.payload.inline.length > 0
+          ? findInlineChildRunForRange(range, flowChildren, childRanges)
+          : undefined;
+      if (classifyFlowRange(range, childRanges) === null && inlineRun === undefined) {
         throw new Error("A trusted MDX flow region has prepared tree owners crossing direct-child boundaries.");
       }
     } else if (node.kind === "element" || node.kind === "component") {
@@ -328,14 +405,8 @@ function collectFlowNativeBlocks(
   }
   const rootBlock = flowOwnerBlocks.find((block) => block.id === rootOwnerId);
   const meta = rootBlock?.payload.meta;
-  const preparedTrees: HtmlTreeNode[][] = [];
-  if (meta?.trustedMdxNativeChildren) {
-    preparedTrees.push(meta.trustedMdxNativeChildren);
-  }
-  if (meta?.htmlTree) {
-    const tree = meta.htmlTree;
-    if (!preparedTrees.includes(tree)) preparedTrees.push(tree);
-  }
+  const preparedTree = getActiveTrustedMdxNativeTree(meta);
+  const preparedTrees = preparedTree === undefined ? [] : [preparedTree];
   const ownedBlockIds: string[] = [];
   for (const block of blocks) {
     if (block.id === rootOwnerId) continue;
@@ -350,7 +421,13 @@ function collectFlowNativeBlocks(
       throw new Error("A trusted MDX flow region has worker owners but no direct-child spans.");
     }
     const ownership = classifyFlowRange(blockRange, childRanges);
-    if (ownership === null) {
+    const inlineRun =
+      block.type === "paragraph" &&
+      Array.isArray(block.payload.inline) &&
+      block.payload.inline.length > 0
+        ? findInlineChildRunForRange(blockRange, flowChildren, childRanges)
+        : undefined;
+    if (ownership === null && inlineRun === undefined) {
       throw new Error("A trusted MDX flow region has worker owners crossing direct-child boundaries.");
     }
     // Root syntax is suppressed with the flow root, never assigned to a child below.
@@ -359,11 +436,113 @@ function collectFlowNativeBlocks(
 
   for (const tree of preparedTrees) {
     if (hasNativeBlockOwner(tree)) {
-      assertPreparedTreeOwnersFitFlowChildren(tree, childRanges, flowRange, sourceLength);
+      assertPreparedTreeOwnersFitFlowChildren(tree, childRanges, flowChildren, flowRange, sourceLength);
     }
   }
   if (flowChildren === undefined || flowChildren.length === 0) {
     return { childOwners: [], ownedBlockIds };
+  }
+  if (childRanges === undefined) {
+    throw new Error("A trusted MDX flow region has native children but no direct-child spans.");
+  }
+  let groupedInlineOwners: Array<GroupedInlineNativeOwner | undefined> | undefined;
+  const registerGroupedInlineOwner = (
+    block: Block,
+    kind: "block" | "prepared-tree",
+  ): void => {
+    if (
+      block.id === rootOwnerId ||
+      block.type !== "paragraph" ||
+      !Array.isArray(block.payload.inline) ||
+      block.payload.inline.length === 0
+    ) {
+      return;
+    }
+    const range = readSourceRange(block.payload.range, sourceLength);
+    if (!range) return;
+    const run = findInlineChildRunForRange(range, flowChildren, childRanges);
+    if (!run) return;
+    const groupedOwners = groupedInlineOwners ??= new Array<GroupedInlineNativeOwner | undefined>(flowChildren.length);
+    for (let index = run.startIndex; index <= run.endIndex; index++) {
+      const existing = groupedOwners[index];
+      if (
+        existing &&
+        (existing.block.id !== block.id ||
+          existing.startIndex !== run.startIndex ||
+          existing.endIndex !== run.endIndex)
+      ) {
+        throw new Error("A trusted MDX flow region has duplicate native owners for one inline child run.");
+      }
+    }
+    const existing = groupedOwners[run.startIndex];
+    if (existing?.owner.kind === "block" && kind === "prepared-tree") return;
+    const candidate: GroupedInlineNativeOwner = {
+      startIndex: run.startIndex,
+      endIndex: run.endIndex,
+      block,
+      owner: kind === "block"
+        ? { kind: "block", blockId: block.id }
+        : { kind: "prepared-tree", blockId: block.id },
+    };
+    for (let index = run.startIndex; index <= run.endIndex; index++) {
+      groupedOwners[index] = candidate;
+    }
+  };
+  for (const block of blocks) {
+    registerGroupedInlineOwner(block, "block");
+  }
+  for (const tree of preparedTrees) {
+    const pending: HtmlTreeNode[] = [...tree];
+    const visited = new WeakSet<object>();
+    while (pending.length > 0) {
+      const node = pending.pop();
+      if (!node || visited.has(node)) continue;
+      visited.add(node);
+      if (node.kind === "block") {
+        registerGroupedInlineOwner(node.block, "prepared-tree");
+      } else if (node.kind === "element" || node.kind === "component") {
+        pending.push(...node.children);
+      }
+    }
+  }
+  let groupedChildRanges: Map<number, number> | undefined;
+  for (let startIndex = 0; startIndex < (groupedInlineOwners?.length ?? 0); startIndex++) {
+    const groupedOwner = groupedInlineOwners?.[startIndex];
+    if (!groupedOwner || groupedOwner.startIndex !== startIndex) continue;
+    for (let childIndex = groupedOwner.startIndex; childIndex <= groupedOwner.endIndex; childIndex++) {
+      const childRange = childRanges[childIndex];
+      if (!childRange) {
+        throw new Error("A trusted MDX flow region has an invalid grouped inline child span.");
+      }
+      groupedChildRanges ??= new Map();
+      groupedChildRanges.set(childRange.from, childRange.to);
+    }
+  }
+  if (groupedChildRanges !== undefined) {
+    for (const block of blocks) {
+      if (block.id === rootOwnerId) continue;
+      const blockRange = readSourceRange(block.payload.range, sourceLength);
+      if (blockRange && groupedChildRanges.get(blockRange.from) === blockRange.to) {
+        throw new Error("A trusted MDX flow region has duplicate native owners inside a grouped inline run.");
+      }
+    }
+    for (const tree of preparedTrees) {
+      const pending: HtmlTreeNode[] = [...tree];
+      const visited = new WeakSet<object>();
+      while (pending.length > 0) {
+        const node = pending.pop();
+        if (!node || visited.has(node)) continue;
+        visited.add(node);
+        if (node.kind === "block") {
+          const blockRange = readSourceRange(node.block.payload.range, sourceLength);
+          if (blockRange && groupedChildRanges.get(blockRange.from) === blockRange.to) {
+            throw new Error("A trusted MDX flow region has duplicate native owners inside a grouped inline run.");
+          }
+        } else if (node.kind === "element" || node.kind === "component") {
+          pending.push(...node.children);
+        }
+      }
+    }
   }
   const childOwners: TrustedMdxNativeChildOwner[] = [];
   for (let childIndex = 0; childIndex < flowChildren.length; childIndex++) {
@@ -371,6 +550,18 @@ function collectFlowNativeBlocks(
     const childRange = childRanges?.[childIndex];
     if (!child || !childRange) {
       throw new Error("A trusted MDX flow region has invalid direct-child spans.");
+    }
+    const groupedOwner = groupedInlineOwners?.[childIndex];
+    if (groupedOwner) {
+      if (groupedOwner.startIndex !== childIndex || child.kind !== "inline") {
+        throw new Error("A trusted MDX flow region has an invalid grouped inline native owner.");
+      }
+      childOwners.push(groupedOwner.owner);
+      for (let coveredIndex = childIndex + 1; coveredIndex <= groupedOwner.endIndex; coveredIndex++) {
+        childOwners.push({ kind: "continuation", ownerIndex: childIndex });
+      }
+      childIndex = groupedOwner.endIndex;
+      continue;
     }
     let ownerId: string | undefined;
     let ownerWidth = -1;
@@ -384,10 +575,12 @@ function collectFlowNativeBlocks(
         const isDirectChildOwner =
           child.kind === "markdown"
             ? blockRange.from >= childRange.from && blockRange.to <= childRange.to
-            : block.type === "mdx"
+            : child.kind === "inline"
               ? blockRange.from === childRange.from && blockRange.to === childRange.to
-              : blockRange.from === childRange.from &&
-                hasWholeFlowRootMatch(block.id, childRange, matches);
+              : block.type === "mdx"
+                ? blockRange.from === childRange.from && blockRange.to === childRange.to
+                : blockRange.from === childRange.from &&
+                  hasWholeFlowRootMatch(block, childRange, matches);
         if (!isDirectChildOwner) continue;
         const width = blockRange.to - blockRange.from;
         if (width > ownerWidth) {
@@ -413,11 +606,17 @@ function collectFlowNativeBlocks(
         if (preparedOwner) break;
       }
       if (preparedOwner) {
+        if (child.kind === "inline") {
+          const preparedRange = readSourceRange(preparedOwner.payload.range, sourceLength);
+          if (preparedRange?.from !== childRange.from || preparedRange.to !== childRange.to) {
+            throw new Error("A compiler-authored inline child has no exact prepared native owner.");
+          }
+        }
         childOwners.push({ kind: "prepared-tree", blockId: preparedOwner.id });
         continue;
       }
     }
-    if (child.kind === "markdown") {
+    if (child.kind === "markdown" || child.kind === "inline") {
       throw new Error("A compiler-authored Markdown child has no prepared native block owner.");
     }
     childOwners.push(null);
@@ -566,8 +765,8 @@ function collectHtmlTreeOwners(
           collectInlineOwners(meta.header, sourceLength, matches);
           collectInlineOwners(meta.rows, sourceLength, matches);
           collectPreparedNestedOwners(meta.preparedNested, sourceLength, matches);
-          if (meta.trustedMdxNativeChildren) pending.push(meta.trustedMdxNativeChildren);
-          if (meta.htmlTree) pending.push(meta.htmlTree);
+          const preparedTree = getActiveTrustedMdxNativeTree(meta);
+          if (preparedTree !== undefined) pending.push(preparedTree);
         }
       }
     }
@@ -617,8 +816,8 @@ function collectMdxOwners(source: string, blocks: readonly Block[]): MdxBlockMat
       collectInlineOwners(tableMeta.header, source.length, matches);
       collectInlineOwners(tableMeta.rows, source.length, matches);
       collectPreparedNestedOwners(tableMeta.preparedNested, source.length, matches);
-      collectHtmlTreeOwners(tableMeta.trustedMdxNativeChildren, source.length, matches);
-      collectHtmlTreeOwners(tableMeta.htmlTree, source.length, matches);
+      const preparedTree = getActiveTrustedMdxNativeTree(tableMeta);
+      if (preparedTree !== undefined) collectHtmlTreeOwners(preparedTree, source.length, matches);
     }
   }
   const unique = new Map<string, MdxBlockMatch>();
@@ -673,23 +872,13 @@ export function projectMdxBlocks(
         match.ambiguous = true;
         continue;
       }
-      const hasIndependentPreparedChildOwner =
-        match.nativeChildren &&
-        match.placement === "flow" &&
-        region.kind === "render" &&
-        regionRange.from > match.from &&
-        regionRange.to < match.to &&
-        matches.some((child) =>
-          child !== match &&
-          child.from !== null &&
-          child.to !== null &&
-          child.from >= ownerFrom &&
-          child.to <= ownerTo &&
-          (child.from > ownerFrom || child.to < ownerTo) &&
-          child.from <= regionRange.from &&
-          regionRange.to <= child.to
-        );
-      if (hasIndependentPreparedChildOwner) continue;
+      const isDescendantOfCompilerFlowRoot =
+        match.wholeBlockFlowRoot &&
+        regionRange.from >= ownerFrom &&
+        regionRange.to <= ownerTo &&
+        (regionRange.from > ownerFrom || regionRange.to < ownerTo);
+      // The exact compiler frame owns its body; descendant regions are not extra roots.
+      if (isDescendantOfCompilerFlowRoot) continue;
       match.regions.push(region);
       if (region.kind !== "module") {
         owners.push(match);

@@ -68,11 +68,13 @@ import { isBlockLevelNode, mapLezerNodeToBlockType } from "../parser/block-types
 import { HtmlContinuationExtension } from "../parser/html-extension";
 import {
   containsInlineHtml,
+  getActiveHtmlTreeKey,
   groupHtmlOwnership,
   normalizeHtmlParagraph,
   preserveInlineComponentSource,
 } from "./html-ownership";
 import { parseTrustedMdxSourceSpans } from "../mdx-source-spans";
+import { buildRestrictedComponentInlineTree, buildRestrictedComponentTree } from "./restricted-component-ownership";
 import { computeParagraphPatchLimit } from "../perf/patch-heuristics";
 import {
   clampLazyRange,
@@ -164,34 +166,65 @@ const MAX_APPEND_CHUNK_SIZE = 12000;
 const MIN_APPEND_BATCH_MS = 4;
 const MAX_APPEND_BATCH_MS = 50;
 
-function hasPreparedNativeBlockInRange(
+function appendPreparedNativeBlocksInRange(
   nodes: readonly HtmlTreeNode[] | undefined,
   from: number,
   to: number,
-  exact = false,
-  mdxOnly = false,
-): boolean {
-  if (!nodes) return false;
-  const pending: HtmlTreeNode[] = [...nodes];
+  exact: boolean,
+  mdxOnly: boolean,
+  output: Block[],
+  seenOwners: Set<Block>,
+): void {
+  if (!nodes || nodes.length === 0) return;
+  const pending: HtmlTreeNode[] = [];
+  for (let index = nodes.length - 1; index >= 0; index--) {
+    const node = nodes[index];
+    if (node) pending.push(node);
+  }
+  const visitedNodes = new WeakSet<object>();
   while (pending.length > 0) {
     const node = pending.pop();
-    if (!node) continue;
+    if (!node || visitedNodes.has(node)) continue;
+    visitedNodes.add(node);
     if (node.kind === "block") {
       const block = node.block;
       const range = block.payload.range;
-      if (
+      const isPreparedOwner = Boolean(
         range &&
         (exact ? range.from === from && range.to === to : range.from >= from && range.to <= to) &&
         (!mdxOnly || block.type === "mdx") &&
         range.to > range.from
-      ) return true;
+      );
+      if (isPreparedOwner && range) {
+        if (!seenOwners.has(block)) {
+          seenOwners.add(block);
+          output.push(block);
+        }
+      } else {
+        const meta = block.payload.meta;
+        const nestedNativeChildren = meta?.trustedMdxNativeChildren;
+        let nestedTree: readonly HtmlTreeNode[] | undefined;
+        if (Array.isArray(nestedNativeChildren)) {
+          nestedTree = nestedNativeChildren;
+        } else {
+          const treeKey = getActiveHtmlTreeKey(meta);
+          nestedTree = treeKey ? (meta?.[treeKey] as HtmlTreeNode[] | undefined) : undefined;
+        }
+        if (nestedTree) {
+          for (let index = nestedTree.length - 1; index >= 0; index--) {
+            const child = nestedTree[index];
+            if (child) pending.push(child);
+          }
+        }
+      }
     } else if (node.kind === "element" || node.kind === "component") {
-      pending.push(...node.children);
+      for (let index = node.children.length - 1; index >= 0; index--) {
+        const child = node.children[index];
+        if (child) pending.push(child);
+      }
     }
   }
-  return false;
 }
-
 
 function clampInt(value: number, min: number, max: number): number {
   if (!Number.isFinite(value)) return min;
@@ -319,7 +352,7 @@ export class MarkdownEngine {
 
   private buildMarkdownParser(tables: boolean): void {
     const gfm = tables ? GFM : GFM.filter((extension) => extension !== Table);
-    this.mdParser = mdParser.configure([gfm, createBlockCompatibilityExtension(), HtmlContinuationExtension, ...(this.extensions?.markdown ?? [])]);
+    this.mdParser = mdParser.configure([gfm, createBlockCompatibilityExtension(() => this.contentPolicy === "restricted" ? this.contentComponents : undefined), HtmlContinuationExtension, ...(this.extensions?.markdown ?? [])]);
   }
 
   private buildInlineParser(): void {
@@ -701,11 +734,21 @@ export class MarkdownEngine {
       this.lastTree = result.lastTree;
     }
 
+    // Carry producer epochs on the initial wire projection, not in canonical semantic metadata.
+    const initialBlocks = this.blocks.map((block) => {
+      const blockEpoch = this.emittedBlockEpochs.get(block.id) ?? 1;
+      this.emittedBlockEpochs.set(block.id, blockEpoch);
+      return {
+        ...block,
+        payload: { ...block.payload, meta: { ...block.payload.meta, blockEpoch } },
+      };
+    });
+
     this.txCounter = 0;
     reportWorkerStructuralInvariantViolations("initialize", this.blocks, this.lastWorkerInvariantSignature);
     this.post({
       type: "INITIALIZED",
-      blocks: this.blocks,
+      blocks: initialBlocks,
     });
 
     if (this.blocks.length > 0) {
@@ -1037,6 +1080,17 @@ export class MarkdownEngine {
     return block;
   }
 
+  private async prepareTrustedMdxInlineChild(raw: string, from: number, to: number): Promise<Block> {
+    const child: Block = {
+      id: generateBlockId(`${from}:paragraph`, "paragraph"),
+      type: "paragraph",
+      isFinalized: true,
+      payload: { raw, range: { from, to }, meta: { trustedMdxSource: true } },
+    };
+    await this.enrichBlock(child, { forceFinalize: true });
+    return child;
+  }
+
   private async prepareTrustedMdxFlowChildren(block: Block): Promise<void> {
     if (
       this.contentPolicy !== "trusted-mdx" ||
@@ -1063,40 +1117,47 @@ export class MarkdownEngine {
     );
     if (!flowRoot || flowRoot.flowChildren === undefined) return;
     const meta = block.payload.meta;
-    const existingNativeChildren = meta?.trustedMdxNativeChildren ?? [];
+    const treeKey = getActiveHtmlTreeKey(meta);
+    const activeTree = treeKey ? (meta?.[treeKey] as HtmlTreeNode[] | undefined) : undefined;
+    const canonicalNativeChildren = Array.isArray(meta?.trustedMdxNativeChildren)
+      ? meta.trustedMdxNativeChildren
+      : undefined;
     const mdxDetection = this.documentPluginRegistry.getAll().find((plugin) => plugin.name === "mdx-detection");
     const nativeChildren: HtmlTreeNode[] = [];
     for (const child of flowRoot.flowChildren) {
       if (child.kind === "expression") continue;
       const childSource = raw.slice(child.from, child.to);
-      if (childSource.trim() === "") continue;
+      if (child.kind !== "inline" && childSource.trim() === "") continue;
       const childFrom = sourceFrom + child.from;
       const childTo = sourceFrom + child.to;
-      const hasPreparedChildOwner = child.kind === "markdown"
-        ? hasPreparedNativeBlockInRange(existingNativeChildren, childFrom, childTo) ||
-          hasPreparedNativeBlockInRange(meta?.htmlTree, childFrom, childTo)
-        : hasPreparedNativeBlockInRange(existingNativeChildren, childFrom, childTo, true, true) ||
-          hasPreparedNativeBlockInRange(meta?.htmlTree, childFrom, childTo, true, true);
-      if (hasPreparedChildOwner) continue;
-      const childBlocks = await this.extractBlocks(
-        this.mdParser.parse(childSource),
-        childSource,
-        { forceFinalize: true },
-        childFrom,
-      );
-      if (child.kind === "markdown" && childBlocks.length === 0) {
-        throw new Error("A compiler-authored Markdown child in an MDX flow root has no native block owner.");
+      const childBlocks: Block[] = [];
+      const seenOwners = new Set<Block>();
+      const exact = child.kind !== "markdown";
+      const mdxOnly = child.kind === "jsx";
+      appendPreparedNativeBlocksInRange(canonicalNativeChildren ?? activeTree, childFrom, childTo, exact, mdxOnly, childBlocks, seenOwners);
+      if (childBlocks.length === 0) {
+        const parsedChildBlocks = child.kind === "inline"
+          ? [await this.prepareTrustedMdxInlineChild(childSource, childFrom, childTo)]
+          : await this.extractBlocks(
+            this.mdParser.parse(childSource),
+            childSource,
+            { forceFinalize: true },
+            childFrom,
+          );
+        if ((child.kind === "markdown" || child.kind === "inline") && parsedChildBlocks.length === 0) {
+          throw new Error("A compiler-authored Markdown child in an MDX flow root has no native block owner.");
+        }
+        if (parsedChildBlocks.length === 0) continue;
+        mdxDetection?.process({ content: childSource, blocks: parsedChildBlocks, state: this.documentPluginState });
+        childBlocks.push(...parsedChildBlocks);
       }
-      if (childBlocks.length === 0) continue;
-      mdxDetection?.process({ content: childSource, blocks: childBlocks, state: this.documentPluginState });
       for (const childBlock of childBlocks) {
         nativeChildren.push({ kind: "block", block: childBlock });
       }
     }
-    if (nativeChildren.length === 0) return;
     block.payload.meta = {
       ...meta,
-      trustedMdxNativeChildren: [...existingNativeChildren, ...nativeChildren],
+      trustedMdxNativeChildren: nativeChildren,
     };
   }
 
@@ -1588,7 +1649,7 @@ export class MarkdownEngine {
           metaChanged = true;
         }
 
-        if (!nextMeta.mixedSegments && containsInlineHtml(block.payload.inline ?? [])) {
+        if (nextMeta.htmlOwnership !== true && !nextMeta.mixedSegments && containsInlineHtml(block.payload.inline ?? [])) {
           nextMeta.htmlParagraphTree = normalizeHtmlParagraph(block, this.htmlConfig);
           metaChanged = true;
         } else if (nextMeta.htmlParagraphTree) {
@@ -1784,7 +1845,8 @@ export class MarkdownEngine {
               nested.payload.meta = meta;
               this.updateInlineLookaheadMeta(nested, null, false);
             } else {
-              const codeRanges = collectCodeProtectedRanges(text).map((range) => ({
+              const localCodeRanges = collectCodeProtectedRanges(text);
+              const codeRanges = localCodeRanges.map((range) => ({
                 ...range,
                 from: baseOffset + range.from,
                 to: baseOffset + range.to,
@@ -1792,43 +1854,90 @@ export class MarkdownEngine {
               const parsed = nested.isFinalized ? null : this.parseInlineStreaming(text, this.inlineContext(nested, ancestors), nested.payload.inline);
               this.updateInlineLookaheadMeta(nested, parsed, this.tracksInlineStatus());
               if (text.includes("<") || text.includes("{")) {
-                const extraction = extractMixedContentSegmentsWithLookahead(text, baseOffset,
-                  (value) => {
-                    const inline = nested.isFinalized ? this.inlineParser.parse(value) : this.parseInlineStreaming(value, this.inlineContext(nested, ancestors, "mixed-content")).inline;
-                    return this.mdxEnabled ? preserveInlineComponentSource(inline) : inline;
-                  }, {
-                    html: !nested.isFinalized && this.formatAnticipationConfig.html ? { autoClose: true, maxNewlines: MIXED_CONTENT_AUTOCLOSE_NEWLINES } : undefined,
-                    mdx: {
-                      autoClose: !nested.isFinalized && this.formatAnticipationConfig.mdx,
-                      maxNewlines: MIXED_CONTENT_AUTOCLOSE_NEWLINES,
-                      componentAllowlist:
-                        this.contentPolicy === "trusted-mdx" || this.contentComponents.size === 0
-                          ? undefined
-                          : this.contentComponents.keys(),
-                    },
-                    protectedRanges: codeRanges,
-                    allowedTags: this.htmlConfig?.allowedTags,
+                let restrictedInlineTree: HtmlTreeNode[] | null = null;
+                if (this.contentPolicy === "restricted" && text.includes("<")) {
+                  const protectedRanges = localCodeRanges;
+                  if (this.enableMath) protectedRanges.push(...collectMathProtectedRanges(text, protectedRanges));
+                  protectedRanges.push(...collectAutolinkProtectedRanges(text));
+                  restrictedInlineTree = buildRestrictedComponentInlineTree(text, this.contentComponents, {
+                    forceFinalize: options?.forceFinalize,
+                    parseInline: (value) => this.inlineParser.parse(value),
+                    parser: this.mdParser,
+                    htmlOptions: this.htmlConfig,
                     literalTagContent: this.htmlConfig?.literalTagContent,
-                    lookaheadContext: this.inlineContext(nested, ancestors, "mixed-content"),
+                    protectedRanges,
                   });
-                if (!nested.isFinalized && extraction.lookahead.length > 0) {
+                }
+                const extraction = restrictedInlineTree && nested.isFinalized
+                  ? null
+                  : extractMixedContentSegmentsWithLookahead(
+                      text,
+                      baseOffset,
+                      restrictedInlineTree
+                        ? () => []
+                        : (value) => {
+                            const inline = nested.isFinalized
+                              ? this.inlineParser.parse(value)
+                              : this.parseInlineStreaming(value, this.inlineContext(nested, ancestors, "mixed-content")).inline;
+                            return this.mdxEnabled ? preserveInlineComponentSource(inline) : inline;
+                          },
+                      {
+                        html: !nested.isFinalized && this.formatAnticipationConfig.html
+                          ? { autoClose: true, maxNewlines: MIXED_CONTENT_AUTOCLOSE_NEWLINES }
+                          : undefined,
+                        mdx: {
+                          autoClose: !nested.isFinalized && this.formatAnticipationConfig.mdx,
+                          maxNewlines: MIXED_CONTENT_AUTOCLOSE_NEWLINES,
+                          componentAllowlist:
+                            this.contentPolicy === "trusted-mdx" || this.contentComponents.size === 0
+                              ? undefined
+                              : this.contentComponents.keys(),
+                        },
+                        protectedRanges: codeRanges,
+                        allowedTags: this.htmlConfig?.allowedTags,
+                        literalTagContent: this.htmlConfig?.literalTagContent,
+                        lookaheadContext: this.inlineContext(nested, ancestors, "mixed-content"),
+                      },
+                    );
+                if (extraction && !nested.isFinalized && extraction.lookahead.length > 0) {
                   nested.payload.meta = { ...nested.payload.meta, mixedLookahead: extraction.lookahead };
                 }
                 const segmentPrefix = `${nested.id}::list-item:segment:`;
                 const blockChildren = (snapshot.children ?? []).filter((child) => !child.id.startsWith(segmentPrefix));
-                const segments = extraction.segments;
-                const segmentChildren: NodeSnapshot[] = segments.some((segment) => segment.kind === "mdx") ? segments.map((segment, index) => ({
-                  id: `${segmentPrefix}${index}`,
-                  type: `list-item-${segment.kind}`,
-                  range: segment.range ? { ...segment.range } : undefined,
-                  props: segment.kind === "text" ? { inline: segment.inline, text: segment.value }
-                    : segment.kind === "html" ? {
-                        raw: segment.value, html: segment.sanitized ?? segment.value,
-                        htmlTree: sanitizeHtmlTreeInWorker(segment.value, this.mixedHtmlConfig, undefined, (value) => this.inlineParser.parse(value)),
-                      }
-                    : { raw: segment.value },
-                  children: [],
-                })) : [];
+                const segments = extraction?.segments ?? [];
+                const segmentChildren: NodeSnapshot[] = restrictedInlineTree
+                  ? [{
+                      id: `${segmentPrefix}0`,
+                      type: "list-item-html",
+                      range: sourcePositions && sourcePositions.length === text.length && sourcePositions.length > 0
+                        ? { from: sourcePositions[0], to: sourcePositions[sourcePositions.length - 1] + 1 }
+                        : { from: baseOffset, to: baseOffset + text.length },
+                      props: { raw: text, htmlTree: restrictedInlineTree },
+                      children: [],
+                    }]
+                  : segments.some((segment) => segment.kind === "mdx") ? segments.map((segment, index) => {
+                      const restrictedTree = segment.kind === "mdx" && this.contentPolicy === "restricted"
+                        ? buildRestrictedComponentTree(segment.value, this.contentComponents, {
+                            forceFinalize: options?.forceFinalize,
+                            parseInline: (value) => this.inlineParser.parse(value),
+                            parser: this.mdParser,
+                            literalTagContent: this.htmlConfig?.literalTagContent,
+                          })
+                        : null;
+                      return {
+                        id: `${segmentPrefix}${index}`,
+                        type: restrictedTree ? "list-item-html" : `list-item-${segment.kind}`,
+                        range: segment.range ? { ...segment.range } : undefined,
+                        props: segment.kind === "text" ? { inline: segment.inline, text: segment.value }
+                          : segment.kind === "html" ? {
+                              raw: segment.value, html: segment.sanitized ?? segment.value,
+                              htmlTree: sanitizeHtmlTreeInWorker(segment.value, this.mixedHtmlConfig, undefined, (value) => this.inlineParser.parse(value)),
+                            }
+                          : restrictedTree ? { raw: segment.value, htmlTree: restrictedTree }
+                          : { raw: segment.value },
+                        children: [],
+                      };
+                    }) : [];
                 if (this.mdxEnabled) {
                   nested.payload.inline = preserveInlineComponentSource(nested.payload.inline ?? []);
                   snapshot.props = { ...snapshot.props, inline: nested.payload.inline };
@@ -2740,11 +2849,10 @@ export class MarkdownEngine {
       const prepared = meta?.preparedNested as PreparedNestedSnapshot | undefined;
       const nested = prepared ? findSnapshots(prepared.children) : undefined;
       if (nested) return nested;
-      for (const key of ["htmlTree", "htmlParagraphTree"]) {
-        const tree = meta?.[key] as HtmlTreeNode[] | undefined;
-        const owned = tree ? findTree(tree) : undefined;
-        if (owned) return owned;
-      }
+      const treeKey = getActiveHtmlTreeKey(meta);
+      const tree = treeKey ? (meta?.[treeKey] as HtmlTreeNode[] | undefined) : undefined;
+      const owned = tree ? findTree(tree) : undefined;
+      if (owned) return owned;
       return undefined;
     };
     for (let rootIndex = 0; rootIndex < this.blocks.length; rootIndex++) {
@@ -2798,9 +2906,10 @@ export class MarkdownEngine {
         const children = mapChanged(prepared.children, replaceSnapshot);
         set("preparedNested", children === prepared.children ? prepared : { ...prepared, children });
       }
-      for (const key of ["htmlTree", "htmlParagraphTree"]) {
-        const tree = meta[key] as HtmlTreeNode[] | undefined;
-        if (tree) set(key, mapChanged(tree, replaceTreeNode));
+      const treeKey = getActiveHtmlTreeKey(meta);
+      if (treeKey) {
+        const tree = meta[treeKey] as HtmlTreeNode[] | undefined;
+        if (tree) set(treeKey, mapChanged(tree, replaceTreeNode));
       }
       replaced.set(meta, result);
       return result;

@@ -14,18 +14,23 @@ import {
   tableToTsv,
 } from "../components";
 import type { ComponentRegistry } from "../components";
-import { DEFAULT_INLINE_HTML_RENDERERS, renderHtmlOwnershipTree, renderInlineHtmlSegment } from "../utils/inline-html";
+import { DEFAULT_INLINE_HTML_RENDERERS, renderInlineHtmlSegment } from "../utils/inline-html";
+import { renderOwnedHtmlTree } from "../components/owned-html";
 import { RenderConfigVersionContext, useRendererChildren, useRendererNode } from "./hooks";
 import { createRendererStore, isListPatchDebugEnabled, type RendererStore } from "./store";
 import { useVirtualizedTable, type TableVirtualizationProps } from "./virtualized-table";
 import { StreamingActivityContext } from "./streaming-activity-context";
 import { CodeBlockView } from "./code-block-view";
 import { TrustedMdxProjectionContext } from "../trusted-mdx-boundary";
-import type {
-  TrustedMdxDocumentSnapshot,
-  TrustedMdxNativeChildOwner,
+import { renderTrustedMdxInlineChild, TrustedMdxInlineBlockView } from "./trusted-mdx-inline-child";
+import {
+  assertTrustedMdxNativeChildContinuations,
+  type TrustedMdxDocumentSnapshot,
+  type TrustedMdxNativeChildOwner,
 } from "../trusted-mdx-contract";
+
 import { renderTrustedMdxOwner } from "../trusted-mdx/native-inline";
+import { getActiveTrustedMdxNativeTree } from "../trusted-mdx/projection";
 
 function hasTrustedMdxInline(nodes: readonly InlineNode[]): boolean {
   return nodes.some((node) =>
@@ -110,7 +115,8 @@ export const BlockNodeRenderer: React.FC<{
   blockId: string;
   registry: ComponentRegistry;
   nativeFlowChild?: boolean;
-}> = ({ store, blockId, registry, nativeFlowChild = false }) => {
+  parentTagName?: string;
+}> = ({ store, blockId, registry, nativeFlowChild = false, parentTagName }) => {
   const node = useRendererNode(store, blockId);
   const trustedSnapshot = React.useContext(TrustedMdxProjectionContext);
   const block = node?.block;
@@ -157,7 +163,7 @@ export const BlockNodeRenderer: React.FC<{
       element = <CodeBlockView store={store} blockId={block.id} registry={registry} />;
       break;
     case "html":
-      element = <HtmlBlockView store={store} blockId={block.id} registry={registry} />;
+      element = <HtmlBlockView store={store} blockId={block.id} registry={registry} parentTagName={parentTagName} />;
       break;
     case "mdx":
       element = <MdxBlockView store={store} blockId={block.id} registry={registry} />;
@@ -510,7 +516,7 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
     if (childNode.type === "list") {
       return <ListBlockView key={childId} store={store} blockId={childId} registry={registry} depth={0} />;
     }
-    return <BlockNodeRenderer key={childId} store={store} blockId={childId} registry={registry} />;
+    return <BlockNodeRenderer key={childId} store={store} blockId={childId} registry={registry} parentTagName="blockquote" />;
   });
 
   if (block.payload.meta?.preparedNested && childIds.length === 0) {
@@ -627,14 +633,19 @@ const MixedSegmentView: React.FC<{
     case "list-item-html": {
       const htmlTree = node.props?.htmlTree as HtmlTreeNode[] | undefined;
       if (registry && htmlTree !== undefined) {
-        return <>{renderHtmlOwnershipTree(
-          htmlTree, registry.getHtmlElements(), (block) => registry.renderBlock(block),
-          (nodes, parentTag) => renderInlineNodes(nodes, inlineComponents, urlTransform, registry, parentTag),
-          undefined, undefined, urlTransform,
-          registry.hasElementFilters() ? (element, context, renderElement, renderChildren) => registry.filterElement(element, context, renderElement, renderChildren) : undefined,
+        return <>{renderOwnedHtmlTree(htmlTree, {
+          elements: registry.getHtmlElements(),
+          renderBlock: (block) => registry.renderBlock(block),
+          renderInline: (nodes, parentTagName) => renderInlineNodes(nodes, inlineComponents, urlTransform, registry, parentTagName),
+          inlineComponents,
+          urlTransform,
+          isAutolinkProtocolDisabled: (href) => registry.isAutolinkProtocolDisabled(href),
+          filterElement: registry.hasElementFilters()
+            ? (element, context, renderElement, renderChildren) => registry.filterElement(element, context, renderElement, renderChildren)
+            : undefined,
           parentTagName,
-          registry.getContentComponents(),
-        )}</>;
+          contentComponents: registry.getContentComponents(),
+        })}</>;
       }
       const raw = typeof node.props?.raw === "string" ? (node.props.raw as string) : undefined;
       const html = typeof node.props?.html === "string" ? (node.props?.html as string) : "";
@@ -669,13 +680,19 @@ const MixedSegmentView: React.FC<{
 
 MixedSegmentView.displayName = "MixedSegmentView";
 
-const HtmlBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
+const HtmlBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry; parentTagName?: string }> = React.memo(({ store, blockId, registry, parentTagName }) => {
   const node = useRendererNode(store, blockId);
   if (!node || !node.block) return null;
   const tree = node.block.payload.meta?.htmlTree as HtmlTreeNode[] | undefined;
   if (tree) {
-    return <>{registry.renderHtmlTree(tree, (block) =>
-      <OwnedHtmlBlock key={block.id} block={block} registry={registry} />)}</>;
+    return <>{registry.renderHtmlTree(
+      tree,
+      (block, blockParentTagName) => (
+        <OwnedHtmlBlock key={block.id} block={block} registry={registry} parentTagName={blockParentTagName} />
+      ),
+      undefined,
+      parentTagName,
+    )}</>;
   }
   return registry.renderBlock(node.block);
 });
@@ -686,9 +703,10 @@ const OwnedHtmlBlock: React.FC<{
   block: Block;
   registry: ComponentRegistry;
   nativeFlowChild?: boolean;
-}> = ({ block, registry, nativeFlowChild = false }) => {
+  parentTagName?: string;
+}> = ({ block, registry, nativeFlowChild = false, parentTagName }) => {
   const store = React.useMemo(() => createRendererStore([block]), [block]);
-  return <BlockNodeRenderer store={store} blockId={block.id} registry={registry} nativeFlowChild={nativeFlowChild} />;
+  return <BlockNodeRenderer store={store} blockId={block.id} registry={registry} nativeFlowChild={nativeFlowChild} parentTagName={parentTagName} />;
 };
 
 function findPreparedTreeBlock(
@@ -721,18 +739,25 @@ function renderTrustedMdxNativeChildren(
   if (!childOwners || !flowChildren || childOwners.length !== flowChildren.length) {
     throw new Error(`Trusted MDX flow owner "${block.id}" has misaligned compiler child spans and native owners.`);
   }
-  const meta = block.payload.meta;
-  const preparedTrees: HtmlTreeNode[][] = [];
-  if (meta?.trustedMdxNativeChildren) {
-    preparedTrees.push(meta.trustedMdxNativeChildren);
-  }
-  if (meta?.htmlTree) {
-    const tree = meta.htmlTree;
-    if (!preparedTrees.includes(tree)) preparedTrees.push(tree);
-  }
+  assertTrustedMdxNativeChildContinuations(childOwners, flowChildren);
+  const preparedTree = getActiveTrustedMdxNativeTree(block.payload.meta);
   return childOwners.map((owner, index) => {
     if (owner === null) return undefined;
+    if (owner.kind === "continuation") {
+      return undefined;
+    }
     if (owner.kind === "block") {
+      if (flowChildren[index]?.kind === "inline") {
+        return (
+          <TrustedMdxInlineBlockView
+            key={`${owner.blockId}:${index}`}
+            store={store}
+            blockId={owner.blockId}
+            registry={registry}
+            parentTagName={rootElementName ?? undefined}
+          />
+        );
+      }
       return (
         <BlockNodeRenderer
           key={`${owner.blockId}:${index}`}
@@ -740,18 +765,22 @@ function renderTrustedMdxNativeChildren(
           blockId={owner.blockId}
           registry={registry}
           nativeFlowChild
+          parentTagName={rootElementName ?? undefined}
         />
       );
     }
-    let child: Block | undefined;
-    for (const tree of preparedTrees) {
-      child = findPreparedTreeBlock(tree, owner.blockId);
-      if (child) break;
-    }
+    const child = findPreparedTreeBlock(preparedTree, owner.blockId);
     if (!child) {
       throw new Error(`Trusted MDX flow owner "${block.id}" has no prepared tree block "${owner.blockId}".`);
     }
-    return <OwnedHtmlBlock key={`${owner.blockId}:${index}`} block={child} registry={registry} nativeFlowChild />;
+    if (flowChildren[index]?.kind === "inline") {
+      return (
+        <React.Fragment key={`${owner.blockId}:${index}`}>
+          {renderTrustedMdxInlineChild(child, registry, rootElementName ?? undefined)}
+        </React.Fragment>
+      );
+    }
+    return <OwnedHtmlBlock key={`${owner.blockId}:${index}`} block={child} registry={registry} nativeFlowChild parentTagName={rootElementName ?? undefined} />;
   });
 }
 
@@ -971,7 +1000,7 @@ const ListItemView: React.FC<{
         case "list":
           return <ListBlockView key={childId} store={store} blockId={childId} registry={registry} depth={depth + 1} />;
         default:
-          return <BlockNodeRenderer key={childId} store={store} blockId={childId} registry={registry} />;
+          return <BlockNodeRenderer key={childId} store={store} blockId={childId} registry={registry} parentTagName="li" />;
       }
     });
   }, [contentChildIds, store, inlineComponents, registry, depth, renderConfigVersion]);

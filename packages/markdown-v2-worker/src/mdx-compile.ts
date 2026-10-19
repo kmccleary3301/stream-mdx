@@ -19,7 +19,7 @@ import remarkMath from "remark-math";
 import type { TrustedMdxArtifact, TrustedMdxSourceRegion } from "@stream-mdx/core";
 import { collectTrustedMdxSourceSpans, type TrustedMdxSourceSpan } from "./mdx-source-spans";
 
-export const TRUSTED_MDX_COMPILER_REVISION = "stream-mdx-trusted:mdx3.1.1:recma-v3:sync-esm:native-flow-children-v4";
+export const TRUSTED_MDX_COMPILER_REVISION = "stream-mdx-trusted:mdx3.1.1:recma-v3:sync-esm:native-flow-children-v5";
 
 
 

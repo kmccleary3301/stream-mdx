@@ -153,6 +153,24 @@ interface FootnoteReferenceScope {
   html?: FootnoteReferenceScope[];
 }
 
+function getActiveHtmlTreeKey(
+  meta: Record<string, unknown> | undefined,
+): "trustedMdxNativeChildren" | "htmlTree" | "htmlParagraphTree" | undefined {
+  if (Array.isArray(meta?.trustedMdxNativeChildren)) return "trustedMdxNativeChildren";
+  if (meta?.htmlOwnership === true && Array.isArray(meta.htmlTree)) return "htmlTree";
+  if (Array.isArray(meta?.htmlParagraphTree)) return "htmlParagraphTree";
+  if (Array.isArray(meta?.htmlTree)) return "htmlTree";
+}
+
+function snapshotHtmlTree(snapshot: NodeSnapshot): HtmlTreeNode[] | undefined {
+  const props = snapshot.props;
+  const propsKey = getActiveHtmlTreeKey(props);
+  if (propsKey) return props?.[propsKey] as HtmlTreeNode[];
+  const meta = (props?.block as Block | undefined)?.payload.meta;
+  const key = getActiveHtmlTreeKey(meta);
+  return key ? meta?.[key] as HtmlTreeNode[] : undefined;
+}
+
 function assignNumbersFromReferencesInBlocks(blocks: Block[], state: FootnoteState) {
   const scopes = new Map<string, FootnoteReferenceScope>();
   state.labelToNumber.clear();
@@ -206,14 +224,14 @@ function assignNumbersFromReferencesInBlocks(blocks: Block[], state: FootnoteSta
     const scope = scopeFor(snapshot.id);
     const owners = parents.includes(scope) ? parents : [...parents, scope];
     const block = snapshot.props?.block as Block | undefined;
-    const tree = block?.payload.meta?.htmlParagraphTree ?? block?.payload.meta?.htmlTree;
+    const tree = snapshotHtmlTree(snapshot);
     if (Array.isArray(tree)) {
-      scope.html = visitHtml(tree as HtmlTreeNode[], owners);
+      scope.html = visitHtml(tree, owners);
       return;
     }
     if (snapshot.type === "html") return;
     const children = snapshot.children ?? [];
-    const segmented = children.some((child) => child.type === "list-item-text" || child.type === "paragraph-text");
+    const segmented = children.some((child) => child.type.startsWith("list-item-") || child.type.startsWith("paragraph-"));
     if (snapshot.type !== "list" && snapshot.type !== "blockquote" && !segmented) {
       const inline = snapshot.props?.inline ?? block?.payload.inline;
       if (Array.isArray(inline)) scanInline(inline as InlineNode[], owners);
@@ -231,9 +249,10 @@ function assignNumbersFromReferencesInBlocks(blocks: Block[], state: FootnoteSta
     const scope = scopeFor(block.id);
     const owners = parents.includes(scope) ? parents : [...parents, scope];
     const meta = block.payload.meta;
-    const tree = meta?.htmlParagraphTree ?? meta?.htmlTree;
+    const treeKey = getActiveHtmlTreeKey(meta);
+    const tree = treeKey ? (meta?.[treeKey] as HtmlTreeNode[] | undefined) : undefined;
     if (Array.isArray(tree)) {
-      scope.html = visitHtml(tree as HtmlTreeNode[], owners);
+      scope.html = visitHtml(tree, owners);
       return;
     }
     const prepared = meta?.preparedNested as PreparedNestedSnapshot | undefined;
@@ -398,9 +417,10 @@ function numberInlineReferences(blocks: Block[], state: FootnoteState, scopes: M
     if (Array.isArray(meta.rows) && meta.rows.every((row) => Array.isArray(row))) {
       set("rows", mapChanged(meta.rows as InlineNode[][][], (row, rowIndex) => mapChanged(row, (cell, index) => applyNumbers(cell, scope?.rows?.[rowIndex]?.[index] ?? scope) ?? cell)));
     }
-    for (const key of ["htmlTree", "htmlParagraphTree"]) {
-      const tree = meta[key];
-      if (Array.isArray(tree)) set(key, mapChanged(tree as HtmlTreeNode[], (node, index) => numberHtmlNode(node, scope?.html?.[index])));
+    const treeKey = getActiveHtmlTreeKey(meta);
+    if (treeKey) {
+      const tree = meta[treeKey];
+      if (Array.isArray(tree)) set(treeKey, mapChanged(tree as HtmlTreeNode[], (node, index) => numberHtmlNode(node, scope?.html?.[index])));
     }
     const prepared = meta.preparedNested as PreparedNestedSnapshot | undefined;
     if (prepared) {
@@ -443,9 +463,10 @@ function visitPreparedInline(children: NodeSnapshot[], visit: (nodes: InlineNode
   const visitBlock = (block: Block): void => {
     if (block.type === "code" || block.type === "footnote-def" || block.type === "footnotes") return;
     const meta = block.payload.meta;
-    const tree = meta?.htmlParagraphTree ?? meta?.htmlTree;
+    const treeKey = getActiveHtmlTreeKey(meta);
+    const tree = treeKey ? (meta?.[treeKey] as HtmlTreeNode[] | undefined) : undefined;
     if (Array.isArray(tree)) {
-      visitHtml(tree as HtmlTreeNode[]);
+      visitHtml(tree);
       return;
     }
     const prepared = meta?.preparedNested as PreparedNestedSnapshot | undefined;
@@ -473,11 +494,11 @@ function visitPreparedInline(children: NodeSnapshot[], visit: (nodes: InlineNode
   for (const snapshot of children) {
     if (snapshot.type === "code" || snapshot.type === "footnote-def") continue;
     const nestedChildren = snapshot.children ?? [];
-    const segmented = nestedChildren.some((child) => child.type === "list-item-text" || child.type === "paragraph-text");
+    const segmented = nestedChildren.some((child) => child.type.startsWith("list-item-") || child.type.startsWith("paragraph-"));
     const block = snapshot.props?.block as Block | undefined;
-    const tree = block?.payload.meta?.htmlParagraphTree ?? block?.payload.meta?.htmlTree;
+    const tree = snapshotHtmlTree(snapshot);
     if (Array.isArray(tree)) {
-      visitHtml(tree as HtmlTreeNode[]);
+      visitHtml(tree);
       continue;
     }
     if (snapshot.type === "html") {

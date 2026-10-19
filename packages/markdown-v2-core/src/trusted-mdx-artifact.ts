@@ -2,7 +2,8 @@
 export interface TrustedMdxFlowChildSpan {
   readonly from: number;
   readonly to: number;
-  readonly kind: "markdown" | "jsx" | "expression";
+  /** Inline children reuse native phrasing without introducing a block wrapper. */
+  readonly kind: "markdown" | "inline" | "jsx" | "expression";
 }
 
 /** Source spans are authored UTF-16 offsets, not offsets into repaired or concatenated blocks. */
