@@ -300,12 +300,18 @@ async function testRecoverableThemeInitErrorDoesNotBlockStaticText(): Promise<vo
   const root = createRoot(container);
   const worker = new TestMockWorker();
   const text = "Static text survives a recoverable theme error";
+  const reportedErrors: Error[] = [];
   const workerFactory = () => worker as unknown as Worker;
 
   try {
-    await act(async () => {
-      root.render(<StreamingMarkdown engine="worker" worker={workerFactory} text={text} />);
-    });
+    root.render(
+      <StreamingMarkdown
+        engine="worker"
+        worker={workerFactory}
+        text={text}
+        onError={(error) => reportedErrors.push(error)}
+      />,
+    );
     await waitFor(
       () => worker.messages.some((message) => message.type === "INIT"),
       "worker INIT should be posted",
@@ -319,6 +325,7 @@ async function testRecoverableThemeInitErrorDoesNotBlockStaticText(): Promise<vo
       });
       worker.emit({ type: "INITIALIZED", blocks: [] });
     });
+    assert.strictEqual(reportedErrors.length, 1, "recoverable INIT errors should still reach onError");
     await waitFor(
       () => worker.messages.some((message) => message.type === "INIT" && message.initialContent === text),
       "static text should be sent after a recoverable theme error and INIT acknowledgement",
