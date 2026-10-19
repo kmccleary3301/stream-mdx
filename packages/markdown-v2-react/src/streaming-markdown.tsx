@@ -366,10 +366,11 @@ function StreamingMarkdownComponent(
   const adaptiveSwitchedRef = useRef(false);
   const adaptiveFirstFlushRef = useRef(false);
   const imperativeActivityRef = useRef(false);
-  const pendingAppendsRef = useRef<{
+  const pendingCommandsRef = useRef<{
     owner: string;
-    chunks: string[];
+    commands: Array<{ type: "append"; text: string } | { type: "finalize" }>;
     nextIndex: number;
+    trustedFinalized: boolean;
   } | null>(null);
   const lastMetricsRef = useRef<RendererMetrics | null>(null);
   const patchHistoryRef = useRef<RendererMetrics[]>([]);
@@ -584,23 +585,41 @@ function StreamingMarkdownComponent(
     renderer, text, stream, workerReady, inputReady, inputReadyRef, initializationError, session, managedWorker, readyRendererRef,
     imperativeActivityRef, onErrorRef, debug: DEBUG_WORKER,
   });
-  const flushPendingAppends = useCallback(() => {
-    const pending = pendingAppendsRef.current;
+  const flushPendingCommands = useCallback(() => {
+    const pending = pendingCommandsRef.current;
     if (!pending || pending.owner !== rendererKey || !workerReadyRef.current) return;
-    while (pending.nextIndex < pending.chunks.length) {
-      renderer.append(pending.chunks[pending.nextIndex]);
+    while (pending.nextIndex < pending.commands.length) {
+      const command = pending.commands[pending.nextIndex];
+      if (command.type === "append") {
+        renderer.append(command.text);
+        imperativeActivityRef.current = true;
+      } else {
+        renderer.finalize();
+        imperativeActivityRef.current = false;
+      }
       pending.nextIndex += 1;
-      imperativeActivityRef.current = true;
     }
-    pendingAppendsRef.current = null;
-    setStreamStatus("streaming");
-  }, [renderer, rendererKey, setStreamStatus, workerReadyRef]);
+    pendingCommandsRef.current = null;
+  }, [renderer, rendererKey, workerReadyRef]);
+  const queuePendingCommand = useCallback((command: { type: "append"; text: string } | { type: "finalize" }) => {
+    const owner = `${configSignature}:${sessionRef.current}`;
+    let pending = pendingCommandsRef.current;
+    if (!pending || pending.owner !== owner) {
+      pending = { owner, commands: [], nextIndex: 0, trustedFinalized: false };
+      pendingCommandsRef.current = pending;
+    }
+    if (command.type === "append" && trustedRevisionFeed && pending.trustedFinalized) {
+      throw new Error("Cannot append after FINALIZE; start a new generation first.");
+    }
+    pending.commands.push(command);
+    if (command.type === "finalize" && trustedRevisionFeed) pending.trustedFinalized = true;
+  }, [configSignature, trustedRevisionFeed]);
   useEffect(() => {
-    if (pendingAppendsRef.current && pendingAppendsRef.current.owner !== rendererKey) {
-      pendingAppendsRef.current = null;
+    if (pendingCommandsRef.current && pendingCommandsRef.current.owner !== rendererKey) {
+      pendingCommandsRef.current = null;
     }
-    flushPendingAppends();
-  }, [rendererKey, workerReady, flushPendingAppends]);
+    flushPendingCommands();
+  }, [rendererKey, workerReady, flushPendingCommands]);
   useImperativeHandle(
     ref,
     () => ({
@@ -613,7 +632,7 @@ function StreamingMarkdownComponent(
       restart() {
         workerReadyRef.current = false;
         inputReadyRef.current = false;
-        pendingAppendsRef.current = null;
+        pendingCommandsRef.current = null;
         imperativeActivityRef.current = false;
         activeIteratorRef.current = null;
         renderer.restart({ reinitializeWorker: false });
@@ -622,23 +641,23 @@ function StreamingMarkdownComponent(
         setSession(sessionRef.current);
       },
       finalize() {
-        renderer.finalize();
+        if (!workerReadyRef.current) {
+          queuePendingCommand({ type: "finalize" });
+        } else {
+          flushPendingCommands();
+          renderer.finalize();
+        }
         imperativeActivityRef.current = false;
         setStreamStatus(activeIteratorRef.current === null ? "done" : "streaming");
       },
       append(text: string) {
         if (!text) return;
         if (!workerReadyRef.current) {
-          const owner = `${configSignature}:${sessionRef.current}`;
-          const pending = pendingAppendsRef.current;
-          if (!pending || pending.owner !== owner) {
-            pendingAppendsRef.current = { owner, chunks: [], nextIndex: 0 };
-          }
-          pendingAppendsRef.current?.chunks.push(text);
-          return;
+          queuePendingCommand({ type: "append", text });
+        } else {
+          flushPendingCommands();
+          renderer.append(text);
         }
-        flushPendingAppends();
-        renderer.append(text);
         imperativeActivityRef.current = true;
         setStreamStatus("streaming");
       },
@@ -674,7 +693,7 @@ function StreamingMarkdownComponent(
         return patchHistoryRef.current.slice(patchHistoryRef.current.length - limit);
       },
     }),
-    [renderer, store],
+    [renderer, store, flushPendingCommands, queuePendingCommand, workerReadyRef, inputReadyRef, activeIteratorRef, imperativeActivityRef, setStreamStatus, sessionRef, setSession],
   );
 
   const hasActiveBlocks = useMemo(() => blocks.some((block) => !block.isFinalized), [blocks]);

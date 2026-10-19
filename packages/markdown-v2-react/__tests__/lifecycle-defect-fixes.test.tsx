@@ -5,6 +5,7 @@ import { JSDOM } from "jsdom";
 import { MarkdownRenderer, StreamingMarkdown, type StreamingMarkdownHandle } from "../src/index";
 import React, { act } from "react";
 import { makeEngine as makeTrustedEngine } from "./trusted-native-fixture";
+import { workerFactory as createTrustedWorker } from "./trusted-native-fixture";
 import { createRoot } from "react-dom/client";
 
 class TestMockWorker extends EventTarget {
@@ -353,6 +354,108 @@ async function testRecoverableThemeInitErrorDoesNotBlockStaticText(): Promise<vo
   }
 }
 
+async function testSameTurnRestartFinalizeUsesFreshTrustedWorker(): Promise<void> {
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  const handle = React.createRef<StreamingMarkdownHandle>();
+  const reportedErrors: Error[] = [];
+  const observedWorkers: Array<{ worker: Worker; inputs: WorkerIn[]; outputs: WorkerOut[] }> = [];
+  const workerFactory = () => {
+    const worker = createTrustedWorker();
+    const observation = { worker, inputs: [] as WorkerIn[], outputs: [] as WorkerOut[] };
+    const postMessage = worker.postMessage.bind(worker);
+    Object.defineProperty(worker, "postMessage", {
+      configurable: true,
+      value(message: WorkerIn) {
+        observation.inputs.push(message);
+        postMessage(message as Parameters<typeof worker.postMessage>[0]);
+      },
+    });
+    worker.addEventListener("message", (event: MessageEvent<WorkerOut>) => {
+      observation.outputs.push(event.data);
+    });
+    observedWorkers.push(observation);
+    return worker;
+  };
+  const Card: React.FC<{ value?: string; title?: string; children?: React.ReactNode }> = ({ value, children }) => (
+    <span data-lifecycle-card={value}>{children ?? value}</span>
+  );
+  const trustedEngine = makeTrustedEngine(Card);
+  const oldSource = [
+    'import { Card } from "host:widgets";',
+    'export const value = "old generation";',
+    "",
+    "<Card value={value} />",
+  ].join("\n");
+  const freshChunks = ["fresh first\n\n", "fresh second"];
+  const render = async (text: string | undefined) => {
+    await act(async () => {
+      root.render(
+        <StreamingMarkdown
+          ref={handle}
+          engine="worker"
+          worker={workerFactory}
+          contentPolicy="trusted-mdx"
+          engines={{ mdx: trustedEngine }}
+          features={{ mdx: true }}
+          text={text}
+          caret={false}
+          onError={(error) => reportedErrors.push(error)}
+        />,
+      );
+    });
+  };
+
+  try {
+    await render(oldSource);
+    await waitFor(
+      () => observedWorkers.length === 1 &&
+        observedWorkers[0].outputs.some((message) => message.type === "FINALIZED") &&
+        container.querySelector('[data-lifecycle-card="old generation"]') !== null,
+      "the initial trusted generation renders and receives a real FINALIZED response",
+      10_000,
+    );
+    assert.equal(observedWorkers[0].outputs.filter((message) => message.type === "FINALIZED").length, 1);
+
+    await render(undefined);
+    await act(async () => {
+      handle.current?.restart();
+      handle.current?.append(freshChunks[0]);
+      handle.current?.append(freshChunks[1]);
+      handle.current?.finalize();
+    });
+    assert.ok(handle.current, "the public handle remains mounted after removing old source");
+    assert.equal(observedWorkers.length, 2, `restart should create a replacement worker; errors: ${reportedErrors.map((error) => error.message).join("; ")}`);
+    const freshWorker = observedWorkers[1];
+    assert.ok(freshWorker.inputs.some((message) => message.type === "INIT"), "the fresh worker receives INIT");
+    assert.deepEqual(
+      freshWorker.inputs.filter((message) => message.type === "INIT" || message.type === "APPEND" || message.type === "FINALIZE")
+        .map((message) => message.type === "APPEND" ? message.text : message.type),
+      ["INIT", ...freshChunks, "FINALIZE"],
+      "the fresh worker receives INIT, both appends, and FINALIZE in FIFO order",
+    );
+    await waitFor(
+      () => freshWorker.outputs.some((message) => message.type === "FINALIZED") &&
+        Array.from(container.querySelectorAll("p"), (paragraph) => paragraph.textContent).join("|") === "fresh first|fresh second",
+      "the real fresh worker finalizes and renders the exact authored chunks",
+      10_000,
+    );
+    assert.equal(freshWorker.outputs.filter((message) => message.type === "FINALIZED").length, 1);
+    assert.equal(container.textContent?.includes("old generation"), false);
+    assert.deepEqual(
+      Array.from(container.querySelectorAll("p"), (paragraph) => paragraph.textContent),
+      ["fresh first", "fresh second"],
+    );
+  } finally {
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+    trustedEngine.dispose();
+  }
+}
+
 async function testSameTurnRestartAppendsUseFreshTrustedGeneration(): Promise<void> {
   const container = document.createElement("div");
   document.body.append(container);
@@ -587,6 +690,7 @@ async function main(): Promise<void> {
     await testRemovingBlockRendererRevertsToDefault();
     await testWorkerErrorEventRoutesToOnErrorAndExitsStreaming();
     await testNoCommitsAfterDetach();
+    await testSameTurnRestartFinalizeUsesFreshTrustedWorker();
     await testSameTurnRestartAppendsUseFreshTrustedGeneration();
     await testInitialAppendBeforeWorkerAttachIsQueued();
     await testAppendBeforeInitializationAckAfterRestart();
