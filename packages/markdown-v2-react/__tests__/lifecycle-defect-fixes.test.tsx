@@ -424,6 +424,11 @@ async function testSameTurnRestartFinalizeUsesFreshTrustedWorker(): Promise<void
       handle.current?.append(freshChunks[0]);
       handle.current?.append(freshChunks[1]);
       handle.current?.finalize();
+      assert.throws(
+        () => handle.current?.append("too late"),
+        Error,
+        "a queued trusted FINALIZE seals its generation before the worker attaches",
+      );
     });
     assert.ok(handle.current, "the public handle remains mounted after removing old source");
     assert.equal(observedWorkers.length, 2, `restart should create a replacement worker; errors: ${reportedErrors.map((error) => error.message).join("; ")}`);
