@@ -428,13 +428,13 @@ export async function compileMarkdownSnapshot(options: CompileMarkdownSnapshotOp
     const initMessage: WorkerInitMessage = {
       type: "INIT",
       initialContent: text,
-      prewarmLangs: init?.prewarmLangs,
-      docPlugins: init?.docPlugins,
-      contentPolicy: init?.contentPolicy,
-      contentComponents: init?.contentComponents,
-      themes: init?.themes,
-      syntax: init?.syntax,
-      html: init?.html,
+      ...(init?.prewarmLangs === undefined ? {} : { prewarmLangs: init.prewarmLangs }),
+      ...(init?.docPlugins === undefined ? {} : { docPlugins: init.docPlugins }),
+      ...(init?.contentPolicy === undefined ? {} : { contentPolicy: init.contentPolicy }),
+      ...(init?.contentComponents === undefined ? {} : { contentComponents: init.contentComponents }),
+      ...(init?.themes === undefined ? {} : { themes: init.themes }),
+      ...(init?.syntax === undefined ? {} : { syntax: init.syntax }),
+      ...(init?.html === undefined ? {} : { html: init.html }),
     };
     worker.postMessage(initMessage);
 
