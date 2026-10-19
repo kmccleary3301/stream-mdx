@@ -98,7 +98,13 @@ function getWorkerInitializations(worker: Worker): WorkerInitializationQueue {
       if (finalization) queue.finalizationAcknowledgements.set(event, finalization);
     } else if (message.type === "ERROR" && message.phase === "FINALIZE") {
       queue.pendingFinalizations.shift();
-    } else if (message.type === "ERROR" && message.phase === "INIT" && typeof message.meta?.rule !== "string") {
+    // Theme lookup failures are recoverable; keep the INIT pending for its INITIALIZED response.
+    } else if (
+      message.type === "ERROR" &&
+      message.phase === "INIT" &&
+      typeof message.meta?.rule !== "string" &&
+      message.meta?.theme === undefined
+    ) {
       queue.pending.shift()?.reject?.(new Error(message.error.message));
     }
   });

@@ -587,11 +587,8 @@ function StreamingMarkdownComponent(
         renderer.resume();
       },
       restart() {
-        workerReadyRef.current = false;
-        inputReadyRef.current = false;
         imperativeActivityRef.current = false;
         activeIteratorRef.current = null;
-        renderer.restart({ reinitializeWorker: false });
         setStreamStatus("idle");
         setSession((prev) => prev + 1);
       },
@@ -601,7 +598,7 @@ function StreamingMarkdownComponent(
         setStreamStatus(activeIteratorRef.current === null ? "done" : "streaming");
       },
       append(text: string) {
-        if (!text || !inputReadyRef.current) return;
+        if (!text || !workerReadyRef.current) return;
         renderer.append(text);
         imperativeActivityRef.current = true;
         setStreamStatus("streaming");

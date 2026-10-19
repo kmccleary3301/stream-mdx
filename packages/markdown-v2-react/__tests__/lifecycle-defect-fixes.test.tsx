@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createBlockSnapshot, PATCH_ROOT_ID } from "@stream-mdx/core";
 import type { Patch, WorkerIn, WorkerOut } from "@stream-mdx/core";
 import { JSDOM } from "jsdom";
 import { MarkdownRenderer, StreamingMarkdown, type StreamingMarkdownHandle } from "../src/index";
@@ -38,6 +39,12 @@ class TestMockWorker extends EventTarget {
       });
     }
   }
+  emit(message: WorkerOut): void {
+    const event = new Event("message") as MessageEvent<WorkerOut>;
+    Object.defineProperty(event, "data", { value: message });
+    this.dispatchEvent(event);
+  }
+
 
   terminate(): void {
     this.terminated = true;
@@ -219,6 +226,125 @@ async function testWorkerErrorEventRoutesToOnErrorAndExitsStreaming(): Promise<v
   }
 }
 
+function insertParagraphPatch(text: string): Patch {
+  return {
+    op: "insertChild",
+    at: { blockId: PATCH_ROOT_ID },
+    index: 0,
+    node: createBlockSnapshot({
+      id: "appended-paragraph",
+      type: "paragraph",
+      isFinalized: true,
+      payload: { raw: text, inline: [{ kind: "text", text }] },
+    }),
+  };
+}
+
+async function testAppendBeforeInitializationAckAfterRestart(): Promise<void> {
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  const workers: TestMockWorker[] = [];
+  const handle = React.createRef<StreamingMarkdownHandle>();
+  const workerFactory = () => {
+    const worker = new TestMockWorker();
+    workers.push(worker);
+    return worker as unknown as Worker;
+  };
+  const text = "Appended before the fresh INIT acknowledgement";
+
+  try {
+    await act(async () => {
+      root.render(<StreamingMarkdown ref={handle} engine="worker" worker={workerFactory} />);
+    });
+    await waitFor(
+      () => workers.length === 1 && workers[0].messages.some((message) => message.type === "INIT"),
+      "initial worker INIT should be posted",
+    );
+    await act(async () => {
+      workers[0].emit({ type: "INITIALIZED", blocks: [] });
+    });
+
+    await act(async () => {
+      handle.current?.restart();
+    });
+    await waitFor(
+      () => workers.length === 2 && workers[1].messages.some((message) => message.type === "INIT"),
+      "restarted worker INIT should be posted",
+    );
+
+    await act(async () => {
+      handle.current?.append(text);
+    });
+    assert.ok(
+      workers[1].messages.some((message) => message.type === "APPEND" && message.text === text),
+      "append before the restarted worker's INIT acknowledgement must reach that worker",
+    );
+
+    await act(async () => {
+      workers[1].emit({ type: "INITIALIZED", blocks: [] });
+      workers[1].emit({ type: "PATCH", tx: 1, patches: [insertParagraphPatch(text)] });
+    });
+    await waitFor(() => container.textContent?.includes(text) ?? false, "pre-ack append should render after acknowledgement");
+  } finally {
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  }
+}
+
+async function testRecoverableThemeInitErrorDoesNotBlockStaticText(): Promise<void> {
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  const worker = new TestMockWorker();
+  const text = "Static text survives a recoverable theme error";
+  const workerFactory = () => worker as unknown as Worker;
+
+  try {
+    await act(async () => {
+      root.render(<StreamingMarkdown engine="worker" worker={workerFactory} text={text} />);
+    });
+    await waitFor(
+      () => worker.messages.some((message) => message.type === "INIT"),
+      "worker INIT should be posted",
+    );
+    await act(async () => {
+      worker.emit({
+        type: "ERROR",
+        phase: "INIT",
+        error: { message: "Unknown code theme" },
+        meta: { theme: ["not-a-theme"] },
+      });
+      worker.emit({ type: "INITIALIZED", blocks: [] });
+    });
+    await waitFor(
+      () => worker.messages.some((message) => message.type === "INIT" && message.initialContent === text),
+      "static text should be sent after a recoverable theme error and INIT acknowledgement",
+    );
+    await act(async () => {
+      worker.emit({
+        type: "INITIALIZED",
+        blocks: [
+          {
+            id: "theme-error-paragraph",
+            type: "paragraph",
+            isFinalized: true,
+            payload: { raw: text, inline: [{ kind: "text", text }] },
+          },
+        ],
+      });
+    });
+    await waitFor(() => container.textContent?.includes(text) ?? false, "static text should render after recoverable theme error");
+  } finally {
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  }
+}
+
 async function testNoCommitsAfterDetach(): Promise<void> {
   const worker = new TestMockWorker();
   const renderer = new MarkdownRenderer({
@@ -276,6 +402,8 @@ async function main(): Promise<void> {
     await testRemovingBlockRendererRevertsToDefault();
     await testWorkerErrorEventRoutesToOnErrorAndExitsStreaming();
     await testNoCommitsAfterDetach();
+    await testAppendBeforeInitializationAckAfterRestart();
+    await testRecoverableThemeInitErrorDoesNotBlockStaticText();
     console.log("lifecycle defect fixes tests passed successfully");
   } finally {
     for (const [key, descriptor] of previousGlobals) {
