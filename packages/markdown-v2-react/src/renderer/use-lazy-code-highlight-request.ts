@@ -30,12 +30,11 @@ export function useLazyCodeHighlightRequest({
     if (last?.blockId === blockId && last.endLine === totalLazyLineCount && last.tokenizedUntil === lazyTokenizedUntil) {
       return;
     }
-    lastRangeRef.current = { blockId, endLine: totalLazyLineCount, tokenizedUntil: lazyTokenizedUntil };
+    const nextRange = { blockId, endLine: totalLazyLineCount, tokenizedUntil: lazyTokenizedUntil };
+    lastRangeRef.current = nextRange;
 
-    if (rafRef.current !== null && typeof cancelAnimationFrame === "function") {
-      cancelAnimationFrame(rafRef.current);
-    }
     const requestFullHighlight = () => {
+      rafRef.current = null;
       highlightRequester({
         blockId,
         startLine: 0,
@@ -43,12 +42,17 @@ export function useLazyCodeHighlightRequest({
         priority: "visible",
         reason: "finalize-full",
       });
-      rafRef.current = null;
     };
-    if (typeof requestAnimationFrame === "function") {
-      rafRef.current = requestAnimationFrame(requestFullHighlight);
-    } else {
-      requestFullHighlight();
+    if (typeof requestAnimationFrame === "function" && typeof cancelAnimationFrame === "function") {
+      const frameId = requestAnimationFrame(requestFullHighlight);
+      rafRef.current = frameId;
+      return () => {
+        if (rafRef.current !== frameId) return;
+        cancelAnimationFrame(frameId);
+        rafRef.current = null;
+        if (lastRangeRef.current === nextRange) lastRangeRef.current = null;
+      };
     }
+    requestFullHighlight();
   }, [blockId, blockIsFinalized, highlightRequester, lazyEnabled, lazyTokenizedUntil, shouldVirtualize, totalLazyLineCount]);
 }
