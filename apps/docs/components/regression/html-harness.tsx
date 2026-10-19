@@ -245,26 +245,28 @@ async function waitForLazyCodeCompletion(
   }
   const timeoutMs = options.timeoutMs ?? 5000;
   const start = Date.now();
+  let pending: string[] = [];
   while (Date.now() - start <= timeoutMs) {
-    const blocks = handle.getState().blocks;
-    const pendingLazyCode = blocks.some((block) => {
-      if (block.type !== "code" || !block.isFinalized) return false;
+    pending = handle.getState().blocks.flatMap((block) => {
+      if (block.type !== "code" || !block.isFinalized) return [];
       const meta = (block.payload.meta as Record<string, unknown> | undefined) ?? undefined;
-      if (!meta?.lazyTokenization) return false;
+      if (!meta?.lazyTokenization) return [];
       const expected = expectedLazyCodeLineCount({
         raw: typeof block.payload.raw === "string" ? block.payload.raw : "",
         meta,
       });
-      if (expected <= 0) return false;
       const tokenizedUntil = typeof meta.lazyTokenizedUntil === "number" ? (meta.lazyTokenizedUntil as number) : 0;
-      return tokenizedUntil < expected;
+      return expected > 0 && tokenizedUntil < expected ? [`${block.id}:${tokenizedUntil}/${expected}`] : [];
     });
-    if (!pendingLazyCode) {
+    if (pending.length === 0) {
       return;
     }
     await nextFrame();
   }
-  throw new Error(`[waitForLazyCodeCompletion] Timed out waiting for lazy code tokenization after ${timeoutMs}ms.`);
+  throw new Error(
+    `[waitForLazyCodeCompletion] Timed out waiting for lazy code tokenization after ${timeoutMs}ms ` +
+      `(pending tokenizedUntil/expected: ${pending.join(", ")}).`,
+  );
 }
 export function HtmlRegressionHarness(): JSX.Element {
   const FLUSH_TIMEOUT_MS = 8000;
