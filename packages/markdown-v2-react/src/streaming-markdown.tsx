@@ -296,6 +296,8 @@ function StreamingMarkdownComponent(
     trustedEngine: TrustedMdxEngine | undefined;
   }>();
   const [session, setSession] = useState(0);
+  const sessionRef = useRef(session);
+  if (session > sessionRef.current) sessionRef.current = session;
   const rendererKey = `${configSignature}:${session}`;
   const onErrorRef = useRef(onError);
   useEffect(() => {
@@ -365,11 +367,10 @@ function StreamingMarkdownComponent(
   const adaptiveFirstFlushRef = useRef(false);
   const imperativeActivityRef = useRef(false);
   const pendingAppendsRef = useRef<{
-    renderer: MarkdownRenderer;
+    owner: string;
     chunks: string[];
     nextIndex: number;
   } | null>(null);
-  const restartingRendererRef = useRef<MarkdownRenderer | null>(null);
   const lastMetricsRef = useRef<RendererMetrics | null>(null);
   const patchHistoryRef = useRef<RendererMetrics[]>([]);
 
@@ -585,7 +586,7 @@ function StreamingMarkdownComponent(
   });
   const flushPendingAppends = useCallback(() => {
     const pending = pendingAppendsRef.current;
-    if (!pending || pending.renderer !== renderer || !workerReadyRef.current) return;
+    if (!pending || pending.owner !== rendererKey || !workerReadyRef.current) return;
     while (pending.nextIndex < pending.chunks.length) {
       renderer.append(pending.chunks[pending.nextIndex]);
       pending.nextIndex += 1;
@@ -593,14 +594,13 @@ function StreamingMarkdownComponent(
     }
     pendingAppendsRef.current = null;
     setStreamStatus("streaming");
-  }, [renderer, setStreamStatus, workerReadyRef]);
+  }, [renderer, rendererKey, setStreamStatus, workerReadyRef]);
   useEffect(() => {
-    if (restartingRendererRef.current !== renderer) restartingRendererRef.current = null;
-    if (pendingAppendsRef.current && pendingAppendsRef.current.renderer !== renderer) {
+    if (pendingAppendsRef.current && pendingAppendsRef.current.owner !== rendererKey) {
       pendingAppendsRef.current = null;
     }
     flushPendingAppends();
-  }, [renderer, workerReady, flushPendingAppends]);
+  }, [rendererKey, workerReady, flushPendingAppends]);
   useImperativeHandle(
     ref,
     () => ({
@@ -614,12 +614,12 @@ function StreamingMarkdownComponent(
         workerReadyRef.current = false;
         inputReadyRef.current = false;
         pendingAppendsRef.current = null;
-        restartingRendererRef.current = renderer;
         imperativeActivityRef.current = false;
         activeIteratorRef.current = null;
         renderer.restart({ reinitializeWorker: false });
         setStreamStatus("idle");
-        setSession((prev) => prev + 1);
+        sessionRef.current += 1;
+        setSession(sessionRef.current);
       },
       finalize() {
         renderer.finalize();
@@ -629,10 +629,10 @@ function StreamingMarkdownComponent(
       append(text: string) {
         if (!text) return;
         if (!workerReadyRef.current) {
-          if (restartingRendererRef.current === renderer) return;
+          const owner = `${configSignature}:${sessionRef.current}`;
           const pending = pendingAppendsRef.current;
-          if (!pending || pending.renderer !== renderer) {
-            pendingAppendsRef.current = { renderer, chunks: [], nextIndex: 0 };
+          if (!pending || pending.owner !== owner) {
+            pendingAppendsRef.current = { owner, chunks: [], nextIndex: 0 };
           }
           pendingAppendsRef.current?.chunks.push(text);
           return;

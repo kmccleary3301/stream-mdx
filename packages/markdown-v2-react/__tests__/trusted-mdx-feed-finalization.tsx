@@ -29,8 +29,8 @@ export async function testTrustedFeedFinalizationBarrier(): Promise<void> {
   ].join("\n");
   const committedSource = sourceFor("committed");
   const pendingSource = sourceFor("candidate");
-  const nextGenerationSource = sourceFor("accepted after reset");
-  const sameTickSource = sourceFor("same tick rejected");
+  const nextGenerationSource = "\n\naccepted after reset";
+  const sameTickSource = sourceFor("same tick accepted");
   const forbiddenAppend = '\n\n<Card value="forbidden append" />';
   const compileGate = deferred<void>();
   let pendingCompileStarted = false;
@@ -151,7 +151,6 @@ export async function testTrustedFeedFinalizationBarrier(): Promise<void> {
       assert.equal(handle.current?.getState().workerReady, false, "restart closes readiness synchronously");
       handle.current?.append(sameTickSource);
     });
-    assert.equal(handle.current?.getState().blocks.length, 0, "a same-tick append cannot reach the old worker");
     await waitFor(
       () => workerRef.current !== previousWorker && handle.current?.getState().workerReady === true,
       "reset starts a new worker generation and waits for INITIALIZED",
@@ -161,10 +160,20 @@ export async function testTrustedFeedFinalizationBarrier(): Promise<void> {
       handle.current?.finalize();
     });
     await waitFor(
-      () => container.querySelector('[data-feed-barrier-value="accepted after reset"]') !== null,
-      "an APPEND accepted before FINALIZE drains and commits in the new generation",
+      () => container.querySelector('[data-feed-barrier-value="same tick accepted"]') !== null
+        && container.textContent?.includes("accepted after reset") === true,
+      "same-turn input and later input both commit in the new generation",
     );
-    assert.equal(container.querySelector('[data-feed-barrier-value="same tick rejected"]'), null);
+    const renderedText = container.textContent ?? "";
+    assert.equal(
+      container.querySelectorAll('[data-feed-barrier-value="same tick accepted"]').length,
+      1,
+      "same-turn trusted input is applied exactly once",
+    );
+    assert.ok(
+      renderedText.indexOf("same tick accepted") < renderedText.indexOf("accepted after reset"),
+      "same-turn input remains before later input",
+    );
   } finally {
     compileGate.resolve();
     await act(async () => { root.unmount(); });
