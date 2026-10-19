@@ -570,11 +570,11 @@ function StreamingMarkdownComponent(
   }, [historyLimit]);
 
 
-  const { workerReady, workerReadyRef, readyRendererRef } = useWorkerSession({
+  const { workerReady, workerReadyRef, inputReady, inputReadyRef, initializationError, readyRendererRef } = useWorkerSession({
     renderer, workerSource, engine, session, managedWorker, onErrorRef, debug: DEBUG_WORKER,
   });
   const { streamStatus, setStreamStatus, activeIteratorRef } = useStreamInputSession({
-    renderer, text, stream, workerReady, session, managedWorker, readyRendererRef,
+    renderer, text, stream, workerReady, inputReady, inputReadyRef, initializationError, session, managedWorker, readyRendererRef,
     imperativeActivityRef, onErrorRef, debug: DEBUG_WORKER,
   });
   useImperativeHandle(
@@ -588,6 +588,7 @@ function StreamingMarkdownComponent(
       },
       restart() {
         workerReadyRef.current = false;
+        inputReadyRef.current = false;
         imperativeActivityRef.current = false;
         activeIteratorRef.current = null;
         renderer.restart({ reinitializeWorker: false });
@@ -600,7 +601,7 @@ function StreamingMarkdownComponent(
         setStreamStatus(activeIteratorRef.current === null ? "done" : "streaming");
       },
       append(text: string) {
-        if (!text || !workerReadyRef.current) return;
+        if (!text || !inputReadyRef.current) return;
         renderer.append(text);
         imperativeActivityRef.current = true;
         setStreamStatus("streaming");

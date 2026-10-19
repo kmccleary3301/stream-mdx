@@ -4,13 +4,16 @@ import type { MarkdownRenderer } from "./renderer";
 import type { StreamingMarkdownProps } from "./streaming-markdown";
 
 export function useStreamInputSession({
-  renderer, text, stream, workerReady, session, managedWorker, readyRendererRef,
+  renderer, text, stream, workerReady, inputReady, inputReadyRef, initializationError, session, managedWorker, readyRendererRef,
   imperativeActivityRef, onErrorRef, debug: DEBUG_WORKER,
 }: {
   renderer: MarkdownRenderer;
   text: string | undefined;
   stream: AsyncIterable<string> | undefined;
   workerReady: boolean;
+  inputReady: boolean;
+  inputReadyRef: MutableRefObject<boolean>;
+  initializationError: Error | null;
   session: number;
   managedWorker: boolean;
   readyRendererRef: MutableRefObject<MarkdownRenderer | null>;
@@ -31,7 +34,8 @@ export function useStreamInputSession({
     const restartToken = session;
     void restartToken;
     let cancelled = false;
-    if (!workerReady || readyRendererRef.current !== renderer) {
+    if (initializationError) {
+      setStreamStatus(imperativeActivityRef.current ? "streaming" : "done");
       return () => {
         cancelled = true;
       };
@@ -44,8 +48,13 @@ export function useStreamInputSession({
     }
 
     if (text !== undefined) {
-      imperativeActivityRef.current = false;
       setStreamStatus("streaming");
+      if (!workerReady || !inputReady || !inputReadyRef.current || readyRendererRef.current !== renderer) {
+        return () => {
+          cancelled = true;
+        };
+      }
+      imperativeActivityRef.current = false;
       void renderer.renderStatic(text).then(() => {
         if (cancelled || readyRendererRef.current !== renderer) return;
         renderer.finalize();
@@ -65,12 +74,19 @@ export function useStreamInputSession({
         cancelled = true;
       };
     }
+    setStreamStatus("streaming");
+    if (!workerReady || !inputReady || !inputReadyRef.current || readyRendererRef.current !== renderer) {
+      return () => {
+        cancelled = true;
+      };
+    }
     let iterator: AsyncIterator<string>;
     // Different iterable wrappers can return the same single-use iterator.
     try {
       iterator = stream[Symbol.asyncIterator]();
       const consumedIterators = consumedIteratorsRef.current ??= new WeakSet<AsyncIterator<string>>();
-      if (consumedIterators.has(iterator)) return;
+      const consumed = consumedIterators.has(iterator);
+      if (consumed) return;
       consumedIterators.add(iterator);
     } catch (error) {
       onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
@@ -115,6 +131,6 @@ export function useStreamInputSession({
         setStreamStatus(imperativeActivityRef.current ? "streaming" : "idle");
       }
     };
-  }, [renderer, text, stream, workerReady, session, managedWorker, readyRendererRef, imperativeActivityRef, onErrorRef, DEBUG_WORKER]);
+  }, [renderer, text, stream, workerReady, inputReady, inputReadyRef, initializationError, session, managedWorker, readyRendererRef, imperativeActivityRef, onErrorRef, DEBUG_WORKER]);
   return { streamStatus, setStreamStatus, activeIteratorRef };
 }

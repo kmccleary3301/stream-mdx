@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import { readFileSync } from "node:fs";
-import { detectMDX, type Block, type InlineNode, type MixedContentSegment, type Patch, type WorkerOut } from "@stream-mdx/core";
+import { detectMDX, type Block, type ContentPolicy, type InlineNode, type MixedContentSegment, type Patch, type WorkerOut } from "@stream-mdx/core";
 import { createRendererStore } from "../../markdown-v2-react/src/renderer/store";
 import { createWorkerHarness } from "./worker-test-harness";
 import { collectMathProtectedRanges } from "../src/engine/parse-extract";
@@ -27,13 +27,14 @@ function containsMathNodes(nodes: InlineNode[] | undefined): boolean {
   return false;
 }
 
-async function renderSnippetWithPlugins(snippet: string): Promise<Block[]> {
+async function renderSnippetWithPlugins(snippet: string, contentPolicy?: ContentPolicy): Promise<Block[]> {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
   const initMessages = await harness.send({
     type: "INIT",
     initialContent: "",
     prewarmLangs: [],
+    ...(contentPolicy === undefined ? {} : { contentPolicy }),
     docPlugins: { html: true, mdx: true, math: true, tables: true, callouts: true },
   });
   const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
@@ -130,7 +131,7 @@ async function testNestedNegativeMathFallback(): Promise<void> {
 }
 
 async function main() {
-  const blocks = await renderSnippetWithPlugins(SAMPLE_SNIPPET);
+  const blocks = await renderSnippetWithPlugins(SAMPLE_SNIPPET, "trusted-mdx");
   const mdxBlock = blocks.find((block) => block.type === "mdx");
   assert.ok(mdxBlock, "expected MDX detection plugin to retag Callout block to type 'mdx'");
 

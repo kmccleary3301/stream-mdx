@@ -61,6 +61,7 @@ import {
   DocumentPluginRegistry,
   type DocumentState,
   HTMLBlockPlugin,
+  MDXDetectionPlugin,
   TablesPlugin,
   registerFootnotesPlugin,
 } from "@stream-mdx/plugins";
@@ -328,6 +329,7 @@ export class MarkdownEngine {
   private contentPolicy: ContentPolicy = "restricted";
   private contentComponents: Map<string, RestrictedComponentDescriptor> = new Map();
   private messageQueue: Promise<void> = Promise.resolve();
+  private inputPolicy: ContentPolicy = "restricted";
   private inputSealed = false;
   private disposed = false;
 
@@ -397,10 +399,14 @@ export class MarkdownEngine {
     if (this.disposed) {
       return Promise.resolve();
     }
-    // Capture admission before queueing so accepted APPENDs still drain ahead of FINALIZE.
+    // Trusted MDX revisions are sealed; Markdown and restricted streams may reopen after EOF.
     const rejectAppend = message.type === "APPEND" && this.inputSealed;
-    if (message.type === "FINALIZE") this.inputSealed = true;
-    else if (message.type === "INIT") this.inputSealed = false;
+    if (message.type === "INIT") {
+      this.inputPolicy = message.contentPolicy ?? "restricted";
+      this.inputSealed = false;
+    } else if (message.type === "FINALIZE") {
+      this.inputSealed = this.inputPolicy === "trusted-mdx";
+    }
     const task = this.messageQueue
       .then(async () => {
         if (this.disposed) return;
@@ -708,6 +714,9 @@ export class MarkdownEngine {
     if (enable.tables) this.documentPluginRegistry.register(TablesPlugin);
     if (enable.callouts) this.documentPluginRegistry.register(CalloutsPlugin);
     if (enable.html) this.documentPluginRegistry.register(HTMLBlockPlugin);
+    if (enable.mdx && this.contentPolicy === "trusted-mdx") {
+      this.documentPluginRegistry.register(MDXDetectionPlugin);
+    }
     if (this.extensions?.documentPlugins) {
       for (const plugin of this.extensions.documentPlugins) {
         this.documentPluginRegistry.register(plugin);
@@ -1680,7 +1689,7 @@ export class MarkdownEngine {
         if (!nextMeta.htmlOwnership) {
           nextMeta.htmlTree = sanitizeHtmlTreeInWorker(rawHtml, this.htmlConfig, undefined, (text) => this.inlineParser.parse(text));
         }
-        if (rawHtml) {
+        if (rawHtml && this.contentPolicy !== "trusted-mdx") {
           nextMeta.protectedRanges = [{ from: 0, to: rawHtml.length, kind: "html-block" }];
         }
         block.payload.meta = nextMeta;

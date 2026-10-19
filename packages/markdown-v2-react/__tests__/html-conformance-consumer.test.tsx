@@ -196,7 +196,7 @@ const codeSource = [
   "| `{:js}{:js}` |",
   "",
 ].join("\n");
-const codeInit = { ...init, docPlugins: { ...init.docPlugins, mdx: true } };
+const codeInit = { ...init, contentPolicy: "trusted-mdx" as const, docPlugins: { ...init.docPlugins, mdx: true } };
 const codeCompiled = await compileMarkdownSnapshotDirect({ text: codeSource, init: codeInit });
 const codeSerialized = JSON.parse(JSON.stringify(codeCompiled.blocks)) as Block[];
 const codeStore = await streamed(codeSource, codeInit);

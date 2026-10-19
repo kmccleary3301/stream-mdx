@@ -329,7 +329,7 @@ export class MarkdownRenderer implements Renderer {
    * Append text chunk for streaming
    */
   append(text: string): void {
-    if (this.inputSealed) {
+    if (this.trustedRevisionFeed && this.inputSealed) {
       throw new Error("Cannot append after FINALIZE; start a new generation first.");
     }
     if (!this.worker) {
@@ -589,7 +589,7 @@ export class MarkdownRenderer implements Renderer {
 
   finalize(): void {
     if (!this.worker) return;
-    this.inputSealed = true;
+    this.inputSealed = this.trustedRevisionFeed !== null;
     const token = this.trustedRevisionFeed?.requestFinalization();
     const finalization: OwnedFinalization = {
       owner: this,
