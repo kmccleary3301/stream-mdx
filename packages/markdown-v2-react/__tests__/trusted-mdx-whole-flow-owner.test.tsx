@@ -9,10 +9,14 @@ import { installTrustedNativeTestDom } from "./trusted-native-fixture";
 
 const source = [
   "",
-  "<Preview>",
+  "<Preview codeblock>",
   "  <PreviewExample/>",
   "</Preview>",
+  "```text",
+  'const native = "exact";',
+  "```",
   "",
+  "Following native prose stays exact.",
   "",
   "",
   "",
@@ -63,6 +67,14 @@ try {
   assert.equal(panels[0]?.querySelector("[data-preview-example]")?.textContent, "Native preview example");
   assert.equal(panels[1]?.querySelector("figure")?.getAttribute("data-video-id"), "by9PUlqtJlM");
   assert.equal(panels[1]?.querySelector("figcaption")?.textContent, "A Test Video");
+  const nativeCode = container.querySelectorAll("pre code");
+  assert.equal(nativeCode.length, 1, "the adjacent native fence renders once outside its Preview owner");
+  assert.equal(nativeCode[0]?.textContent, 'const native = "exact";');
+  assert.equal(nativeCode[0]?.closest("section[data-preview]"), null, "the adjacent native fence does not become Preview children");
+  const nativeProse = Array.from(container.querySelectorAll("p"))
+    .filter((paragraph) => paragraph.textContent === "Following native prose stays exact.");
+  assert.equal(nativeProse.length, 1, "following native prose renders exactly once");
+  assert.equal(nativeProse[0]?.closest("section[data-preview]"), null, "following native prose stays outside its Preview owner");
   assert.equal(container.querySelectorAll("[data-preview-example]").length, 1);
   assert.equal(container.querySelectorAll("[data-video-id]").length, 1);
   console.log("trusted MDX nested whole-flow readonly consumer regression passed");

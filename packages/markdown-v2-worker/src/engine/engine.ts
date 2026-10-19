@@ -907,6 +907,21 @@ export class MarkdownEngine {
     await this.emitBlockDiffPatches(prevBlocks, changedBlocks, changeRanges, metrics);
   }
 
+  private findTrustedMdxFlowRootEnd(raw: string): number | null {
+    if (this.contentPolicy !== "trusted-mdx" || !this.mdxEnabled) return null;
+    const parsed = parseTrustedMdxSourceSpans(raw);
+    if (parsed.kind !== "parsed") return null;
+    const flowRoot = parsed.regions.find(
+      (region) =>
+        region.kind === "jsx" &&
+        region.placement === "flow" &&
+        typeof region.rootElementName === "string" &&
+        raw.slice(0, region.from).trim() === "" &&
+        raw.slice(region.to).trim() !== "",
+    );
+    return flowRoot?.to ?? null;
+  }
+
   private async extractBlocks(
     tree: Tree,
     content: string,
@@ -943,6 +958,26 @@ export class MarkdownEngine {
           if (isBlockLevelNode(nodeType) || footnoteDefinition) {
             hasRecognizedNodes = true;
             const blockType = footnoteDefinition ? "paragraph" : mapLezerNodeToBlockType(nodeType);
+            const flowRootEnd = blockType === "html" ? this.findTrustedMdxFlowRootEnd(raw) : null;
+            if (flowRootEnd !== null) {
+              // Lezer can extend an HTML block across a following fence; reparse after the exact authored JSX root.
+              const prefix = raw.slice(0, flowRootEnd);
+              const suffix = raw.slice(flowRootEnd);
+              const prefixBlocks = await this.extractBlocks(
+                this.mdParser.parse(prefix),
+                prefix,
+                options,
+                sourceOffset + from,
+              );
+              const suffixBlocks = await this.extractBlocks(
+                this.mdParser.parse(suffix),
+                suffix,
+                options,
+                sourceOffset + from + flowRootEnd,
+              );
+              extracted.push(...prefixBlocks, ...suffixBlocks);
+              continue;
+            }
             let block: Block | null = null;
             if (reusableBlockMap && to <= options.firstChangedPos!) {
               const prev = reusableBlockMap.get(`${from + sourceOffset}:${to + sourceOffset}`);
