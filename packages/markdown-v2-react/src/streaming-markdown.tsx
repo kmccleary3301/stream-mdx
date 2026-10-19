@@ -364,6 +364,12 @@ function StreamingMarkdownComponent(
   const adaptiveSwitchedRef = useRef(false);
   const adaptiveFirstFlushRef = useRef(false);
   const imperativeActivityRef = useRef(false);
+  const pendingAppendsRef = useRef<{
+    renderer: MarkdownRenderer;
+    chunks: string[];
+    nextIndex: number;
+  } | null>(null);
+  const restartingRendererRef = useRef<MarkdownRenderer | null>(null);
   const lastMetricsRef = useRef<RendererMetrics | null>(null);
   const patchHistoryRef = useRef<RendererMetrics[]>([]);
 
@@ -577,6 +583,24 @@ function StreamingMarkdownComponent(
     renderer, text, stream, workerReady, inputReady, inputReadyRef, initializationError, session, managedWorker, readyRendererRef,
     imperativeActivityRef, onErrorRef, debug: DEBUG_WORKER,
   });
+  const flushPendingAppends = useCallback(() => {
+    const pending = pendingAppendsRef.current;
+    if (!pending || pending.renderer !== renderer || !workerReadyRef.current) return;
+    while (pending.nextIndex < pending.chunks.length) {
+      renderer.append(pending.chunks[pending.nextIndex]);
+      pending.nextIndex += 1;
+      imperativeActivityRef.current = true;
+    }
+    pendingAppendsRef.current = null;
+    setStreamStatus("streaming");
+  }, [renderer, setStreamStatus, workerReadyRef]);
+  useEffect(() => {
+    if (restartingRendererRef.current !== renderer) restartingRendererRef.current = null;
+    if (pendingAppendsRef.current && pendingAppendsRef.current.renderer !== renderer) {
+      pendingAppendsRef.current = null;
+    }
+    flushPendingAppends();
+  }, [renderer, workerReady, flushPendingAppends]);
   useImperativeHandle(
     ref,
     () => ({
@@ -587,8 +611,13 @@ function StreamingMarkdownComponent(
         renderer.resume();
       },
       restart() {
+        workerReadyRef.current = false;
+        inputReadyRef.current = false;
+        pendingAppendsRef.current = null;
+        restartingRendererRef.current = renderer;
         imperativeActivityRef.current = false;
         activeIteratorRef.current = null;
+        renderer.restart({ reinitializeWorker: false });
         setStreamStatus("idle");
         setSession((prev) => prev + 1);
       },
@@ -598,7 +627,17 @@ function StreamingMarkdownComponent(
         setStreamStatus(activeIteratorRef.current === null ? "done" : "streaming");
       },
       append(text: string) {
-        if (!text || !workerReadyRef.current) return;
+        if (!text) return;
+        if (!workerReadyRef.current) {
+          if (restartingRendererRef.current === renderer) return;
+          const pending = pendingAppendsRef.current;
+          if (!pending || pending.renderer !== renderer) {
+            pendingAppendsRef.current = { renderer, chunks: [], nextIndex: 0 };
+          }
+          pendingAppendsRef.current?.chunks.push(text);
+          return;
+        }
+        flushPendingAppends();
         renderer.append(text);
         imperativeActivityRef.current = true;
         setStreamStatus("streaming");
