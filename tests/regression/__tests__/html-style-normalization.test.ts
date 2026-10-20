@@ -31,6 +31,14 @@ async function main(): Promise<void> {
       styleMentionInText,
       "text that resembles an inline-style attribute remains byte-identical",
     );
+
+    const unicodePrefix = '<div data-label="𝄞" style="';
+    const unicodeSuffix = '" data-after="preserved"></div>';
+    const unicodeHtml = `${unicodePrefix}contain:content${unicodeSuffix}`;
+    const normalizedUnicodeHtml = await normalizeInlineStyleSerialization(page, unicodeHtml);
+    assert.notEqual(normalizedUnicodeHtml, unicodeHtml, "style after supplementary Unicode is canonicalized");
+    assert.ok(normalizedUnicodeHtml.startsWith(unicodePrefix), "source bytes before the style value remain exact");
+    assert.ok(normalizedUnicodeHtml.endsWith(unicodeSuffix), "source bytes after the style value remain exact");
     assert.notEqual(
       await normalizeInlineStyleSerialization(page, '<div style="color:red"></div>'),
       await normalizeInlineStyleSerialization(page, '<div style="color:blue"></div>'),
