@@ -30,8 +30,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 0.10000000149011612,
-        "lastDurationMs": 0,
+        "lastPatchToDomMs": 0.800000011920929,
+        "lastDurationMs": 0.6000000238418579,
         "meta": {
           "fixtureId": "math-mdx-sentinel",
           "scenarioId": "S1_slow_small",
@@ -48,8 +48,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -58,12 +56,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><p class=\"markdown-paragraph\">Math / MDX</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><p class=\"markdown-paragraph\">Math / MDX</p></div>",
       "textSample": "Math / MDX",
       "structure": {
         "topLevelTags": [
@@ -80,7 +76,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -94,8 +89,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 0.10000000149011612,
-        "lastDurationMs": 0,
+        "lastPatchToDomMs": 0.800000011920929,
+        "lastDurationMs": 0.6000000238418579,
         "meta": {
           "fixtureId": "math-mdx-sentinel",
           "scenarioId": "S1_slow_small",
@@ -112,8 +107,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -122,12 +115,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><p class=\"markdown-paragraph\">Math / MDX</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><p class=\"markdown-paragraph\">Math / MDX</p></div>",
       "textSample": "Math / MDX",
       "structure": {
         "topLevelTags": [
@@ -144,7 +135,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -158,8 +148,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 2,
-        "lastPatchToDomMs": 0.10000000149011612,
-        "lastDurationMs": 0.10000000149011612,
+        "lastPatchToDomMs": 0.30000001192092896,
+        "lastDurationMs": 0.20000001788139343,
         "meta": {
           "fixtureId": "math-mdx-sentinel",
           "scenarioId": "S1_slow_small",
@@ -176,8 +166,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -186,12 +174,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><p class=\"markdown-paragraph\">Math / MDX sentinel </p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><p class=\"markdown-paragraph\">Math / MDX sentinel </p></div>",
       "textSample": "Math / MDX sentinel ",
       "structure": {
         "topLevelTags": [
@@ -208,7 +194,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -222,8 +207,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 4,
-        "lastPatchToDomMs": 17,
-        "lastDurationMs": 0.09999999403953552,
+        "lastPatchToDomMs": 16.80000001192093,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "math-mdx-sentinel",
           "scenarioId": "S1_slow_small",
@@ -240,8 +225,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -250,12 +233,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><p class=\"markdown-paragraph\">Math / MDX sentinel (must remain math, n</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><p class=\"markdown-paragraph\">Math / MDX sentinel (must remain math, n</p></div>",
       "textSample": "Math / MDX sentinel (must remain math, n",
       "structure": {
         "topLevelTags": [
@@ -272,7 +253,65 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "event-hasMath",
+      "appendedChars": 60,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 9,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 6,
+        "lastPatchToDomMs": 13.400000005960464,
+        "lastDurationMs": 0.09999999403953552,
+        "meta": {
+          "fixtureId": "math-mdx-sentinel",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasBlockquote": false,
+        "hasMath": true
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 1,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><p class=\"markdown-paragraph\">Math / MDX sentinel (must remain math, not MDX):</p><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mtext>M</mtext></mrow><annotation encoding=\"application/x-tex\">\\text{M}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord text\"><span class=\"mord\">M</span></span></span></span></span></span></span></div></div></div></div></div></div></div>",
+      "textSample": "Math / MDX sentinel (must remain math, not MDX):[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-web",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 1,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
         "codeBlocks": []
       }
     },
@@ -286,8 +325,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 7,
-        "lastPatchToDomMs": 15.399999998509884,
-        "lastDurationMs": 0.19999999552965164,
+        "lastPatchToDomMs": 10.5,
+        "lastDurationMs": 0.09999999403953552,
         "meta": {
           "fixtureId": "math-mdx-sentinel",
           "scenarioId": "S1_slow_small",
@@ -304,22 +343,18 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
-        "hasMath": false
+        "hasMath": true
       },
       "counts": {
         "table": 0,
         "pre": 0,
         "blockquote": 0,
-        "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
+        "katex": 1,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><p class=\"markdown-paragraph\">Math / MDX sentinel (must remain math, not MDX):</p><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-error\" title=\"ParseError: KaTeX parse error: Unexpected end of input in a macro argument, expected '}' at end of input: …ext{MDX\\_IN\\_MA\" style=\"color:#cc0000\">\\text{MDX\\_IN\\_MA</span></span></div></div></div></div></div></div></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><p class=\"markdown-paragraph\">Math / MDX sentinel (must remain math, not MDX):</p><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mtext>MDX_IN_MA</mtext></mrow><annotation encoding=\"application/x-tex\">\\text{MDX\\_IN\\_MA}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.9933em;vertical-align:-0.31em;\"></span><span class=\"mord text\"><span class=\"mord\">MDX_IN_MA</span></span></span></span></span></span></span></div></div></div></div></div></div></div>",
       "textSample": "Math / MDX sentinel (must remain math, not MDX):[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-web",
       "structure": {
         "topLevelTags": [
@@ -329,14 +364,13 @@
           "table": 0,
           "pre": 0,
           "blockquote": 0,
-          "katex": 0,
+          "katex": 1,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -350,8 +384,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 10,
-        "lastPatchToDomMs": 14.899999998509884,
-        "lastDurationMs": 0,
+        "lastPatchToDomMs": 16.19999998807907,
+        "lastDurationMs": 0.19999998807907104,
         "meta": {
           "fixtureId": "math-mdx-sentinel",
           "scenarioId": "S1_slow_small",
@@ -368,23 +402,19 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": true,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
-        "hasMath": false
+        "hasMath": true
       },
       "counts": {
         "table": 0,
         "pre": 0,
         "blockquote": 0,
-        "katex": 0,
-        "mdxPending": 1,
-        "mdxCompiled": 0,
+        "katex": 1,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><p class=\"markdown-paragraph\">Math / MDX sentinel (must remain math, not MDX):</p><div class=\"markdown-mdx\" data-mdx-ref=\"pending\" data-mdx-status=\"pending\" data-mdx-mode=\"server\">Compiling MDX (server)…</div></div>",
-      "textSample": "Math / MDX sentinel (must remain math, not MDX):Compiling MDX (server)…",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><p class=\"markdown-paragraph\">Math / MDX sentinel (must remain math, not MDX):</p><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mtext>MDX_IN_MATH_SENTINEL&nbsp;&lt;InlineComponent&nbsp;</mtext></mrow><annotation encoding=\"application/x-tex\">\\text{MDX\\_IN\\_MATH\\_SENTINEL &lt;InlineComponent }</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1.0044em;vertical-align:-0.31em;\"></span><span class=\"mord text\"><span class=\"mord\">MDX_IN_MATH_SENTINEL&nbsp;&lt;InlineComponent&nbsp;</span></span></span></span></span></span></span></div></div></div></div></div></div></div>",
+      "textSample": "Math / MDX sentinel (must remain math, not MDX):[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-web",
       "structure": {
         "topLevelTags": [
           "div"
@@ -393,88 +423,13 @@
           "table": 0,
           "pre": 0,
           "blockquote": 0,
-          "katex": 0,
+          "katex": 1,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "pending",
-            "textSample": "Compiling MDX (server)…"
-          }
-        ],
-        "codeBlocks": []
-      }
-    },
-    {
-      "id": "event-hasMdxPending",
-      "appendedChars": 100,
-      "rootChildCount": 1,
-      "runtimeState": {
-        "rendererVersion": 13,
-        "queueDepth": 0,
-        "pendingBatches": 0,
-        "workerReady": true,
-        "lastTx": 10,
-        "lastPatchToDomMs": 14.899999998509884,
-        "lastDurationMs": 0,
-        "meta": {
-          "fixtureId": "math-mdx-sentinel",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
-        },
-        "storeCounters": {
-          "appendLineGuardRejected": 0,
-          "staleEpochRejected": 0,
-          "storeInvariantViolationCount": 0
-        }
-      },
-      "selectors": {
-        "hasTable": false,
-        "hasPre": false,
-        "hasFootnotes": false,
-        "hasMdxPending": true,
-        "hasMdxCompiled": false,
-        "hasBlockquote": false,
-        "hasMath": false
-      },
-      "counts": {
-        "table": 0,
-        "pre": 0,
-        "blockquote": 0,
-        "katex": 0,
-        "mdxPending": 1,
-        "mdxCompiled": 0,
-        "footnotes": 0,
-        "hr": 0
-      },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><p class=\"markdown-paragraph\">Math / MDX sentinel (must remain math, not MDX):</p><div class=\"markdown-mdx\" data-mdx-ref=\"pending\" data-mdx-status=\"pending\" data-mdx-mode=\"server\">Compiling MDX (server)…</div></div>",
-      "textSample": "Math / MDX sentinel (must remain math, not MDX):Compiling MDX (server)…",
-      "structure": {
-        "topLevelTags": [
-          "div"
-        ],
-        "counts": {
-          "table": 0,
-          "pre": 0,
-          "blockquote": 0,
-          "katex": 0,
-          "footnotes": 0,
-          "hr": 0
-        }
-      },
-      "inspection": {
-        "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "pending",
-            "textSample": "Compiling MDX (server)…"
-          }
-        ],
         "codeBlocks": []
       }
     },
@@ -488,7 +443,66 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 12,
-        "lastPatchToDomMs": 16,
+        "lastPatchToDomMs": 14.299999982118607,
+        "lastDurationMs": 0.09999999403953552,
+        "meta": {
+          "fixtureId": "math-mdx-sentinel",
+          "scenarioId": "S1_slow_small",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": false,
+        "hasFootnotes": false,
+        "hasBlockquote": false,
+        "hasMath": true
+      },
+      "counts": {
+        "table": 0,
+        "pre": 0,
+        "blockquote": 0,
+        "katex": 1,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><p class=\"markdown-paragraph\">Math / MDX sentinel (must remain math, not MDX):</p><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mtext>MDX_IN_MATH_SENTINEL&nbsp;&lt;InlineComponent&nbsp;/&gt;</mtext><mo>+</mo><mtext>{not-md</mtext></mrow><annotation encoding=\"application/x-tex\">\\text{MDX\\_IN\\_MATH\\_SENTINEL &lt;InlineComponent /&gt;} + \\text{\\{not-md}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1.06em;vertical-align:-0.31em;\"></span><span class=\"mord text\"><span class=\"mord\">MDX_IN_MATH_SENTINEL&nbsp;&lt;InlineComponent&nbsp;/&gt;</span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord text\"><span class=\"mord\">{not-md</span></span></span></span></span></span></span></div></div></div></div></div></div></div>",
+      "textSample": "Math / MDX sentinel (must remain math, not MDX):[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-web",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 0,
+          "blockquote": 0,
+          "katex": 1,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "codeBlocks": []
+      }
+    },
+    {
+      "id": "progress-128",
+      "appendedChars": 128,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 16,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 13,
+        "lastPatchToDomMs": 12.699999988079071,
         "lastDurationMs": 0,
         "meta": {
           "fixtureId": "math-mdx-sentinel",
@@ -506,77 +520,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": true,
-        "hasMdxCompiled": false,
-        "hasBlockquote": false,
-        "hasMath": false
-      },
-      "counts": {
-        "table": 0,
-        "pre": 0,
-        "blockquote": 0,
-        "katex": 0,
-        "mdxPending": 1,
-        "mdxCompiled": 0,
-        "footnotes": 0,
-        "hr": 0
-      },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><p class=\"markdown-paragraph\">Math / MDX sentinel (must remain math, not MDX):</p><div class=\"markdown-mdx\" data-mdx-ref=\"pending\" data-mdx-status=\"pending\" data-mdx-mode=\"server\">Compiling MDX (server)…</div></div>",
-      "textSample": "Math / MDX sentinel (must remain math, not MDX):Compiling MDX (server)…",
-      "structure": {
-        "topLevelTags": [
-          "div"
-        ],
-        "counts": {
-          "table": 0,
-          "pre": 0,
-          "blockquote": 0,
-          "katex": 0,
-          "footnotes": 0,
-          "hr": 0
-        }
-      },
-      "inspection": {
-        "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "pending",
-            "textSample": "Compiling MDX (server)…"
-          }
-        ],
-        "codeBlocks": []
-      }
-    },
-    {
-      "id": "progress-128",
-      "appendedChars": 128,
-      "rootChildCount": 1,
-      "runtimeState": {
-        "rendererVersion": 16,
-        "queueDepth": 0,
-        "pendingBatches": 0,
-        "workerReady": true,
-        "lastTx": 13,
-        "lastPatchToDomMs": 14.899999998509884,
-        "lastDurationMs": 0.09999999403953552,
-        "meta": {
-          "fixtureId": "math-mdx-sentinel",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
-        },
-        "storeCounters": {
-          "appendLineGuardRejected": 0,
-          "staleEpochRejected": 0,
-          "storeInvariantViolationCount": 0
-        }
-      },
-      "selectors": {
-        "hasTable": false,
-        "hasPre": false,
-        "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": true
       },
@@ -585,12 +528,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><p class=\"markdown-paragraph\">Math / MDX sentinel (must remain math, not MDX):</p><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mtext>MDX_IN_MATH_SENTINEL&nbsp;&lt;InlineComponent&nbsp;/&gt;</mtext><mo>+</mo><mtext>{not-mdx}</mtext></mrow><annotation encoding=\"application/x-tex\">\\text{MDX\\_IN\\_MATH\\_SENTINEL &lt;InlineComponent /&gt;} + \\text{\\{not-mdx\\}}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1.06em;vertical-align:-0.31em;\"></span><span class=\"mord text\"><span class=\"mord\">MDX_IN_MATH_SENTINEL&nbsp;&lt;InlineComponent&nbsp;/&gt;</span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord text\"><span class=\"mord\">{not-mdx}</span></span></span></span></span></span></span></div></div></div></div></div></div></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><p class=\"markdown-paragraph\">Math / MDX sentinel (must remain math, not MDX):</p><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mtext>MDX_IN_MATH_SENTINEL&nbsp;&lt;InlineComponent&nbsp;/&gt;</mtext><mo>+</mo><mtext>{not-mdx}</mtext></mrow><annotation encoding=\"application/x-tex\">\\text{MDX\\_IN\\_MATH\\_SENTINEL &lt;InlineComponent /&gt;} + \\text{\\{not-mdx\\}}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1.06em;vertical-align:-0.31em;\"></span><span class=\"mord text\"><span class=\"mord\">MDX_IN_MATH_SENTINEL&nbsp;&lt;InlineComponent&nbsp;/&gt;</span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord text\"><span class=\"mord\">{not-mdx}</span></span></span></span></span></span></span></div></div></div></div></div></div></div>",
       "textSample": "Math / MDX sentinel (must remain math, not MDX):[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-web",
       "structure": {
         "topLevelTags": [
@@ -607,71 +548,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
-        "codeBlocks": []
-      }
-    },
-    {
-      "id": "event-hasMath",
-      "appendedChars": 128,
-      "rootChildCount": 1,
-      "runtimeState": {
-        "rendererVersion": 16,
-        "queueDepth": 0,
-        "pendingBatches": 0,
-        "workerReady": true,
-        "lastTx": 13,
-        "lastPatchToDomMs": 14.899999998509884,
-        "lastDurationMs": 0.09999999403953552,
-        "meta": {
-          "fixtureId": "math-mdx-sentinel",
-          "scenarioId": "S1_slow_small",
-          "seed": null,
-          "schedulerMode": null
-        },
-        "storeCounters": {
-          "appendLineGuardRejected": 0,
-          "staleEpochRejected": 0,
-          "storeInvariantViolationCount": 0
-        }
-      },
-      "selectors": {
-        "hasTable": false,
-        "hasPre": false,
-        "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
-        "hasBlockquote": false,
-        "hasMath": true
-      },
-      "counts": {
-        "table": 0,
-        "pre": 0,
-        "blockquote": 0,
-        "katex": 1,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
-        "footnotes": 0,
-        "hr": 0
-      },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><p class=\"markdown-paragraph\">Math / MDX sentinel (must remain math, not MDX):</p><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mtext>MDX_IN_MATH_SENTINEL&nbsp;&lt;InlineComponent&nbsp;/&gt;</mtext><mo>+</mo><mtext>{not-mdx}</mtext></mrow><annotation encoding=\"application/x-tex\">\\text{MDX\\_IN\\_MATH\\_SENTINEL &lt;InlineComponent /&gt;} + \\text{\\{not-mdx\\}}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1.06em;vertical-align:-0.31em;\"></span><span class=\"mord text\"><span class=\"mord\">MDX_IN_MATH_SENTINEL&nbsp;&lt;InlineComponent&nbsp;/&gt;</span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord text\"><span class=\"mord\">{not-mdx}</span></span></span></span></span></span></span></div></div></div></div></div></div></div>",
-      "textSample": "Math / MDX sentinel (must remain math, not MDX):[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-web",
-      "structure": {
-        "topLevelTags": [
-          "div"
-        ],
-        "counts": {
-          "table": 0,
-          "pre": 0,
-          "blockquote": 0,
-          "katex": 1,
-          "footnotes": 0,
-          "hr": 0
-        }
-      },
-      "inspection": {
-        "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     }
@@ -684,20 +560,18 @@
       "hasTable": false,
       "hasPre": false,
       "hasFootnotes": false,
-      "hasMdxPending": false,
-      "hasMdxCompiled": false,
       "hasBlockquote": false,
       "hasMath": true
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><p class=\"markdown-paragraph\">Math / MDX sentinel (must remain math, not MDX):</p><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mtext>MDX_IN_MATH_SENTINEL&nbsp;&lt;InlineComponent&nbsp;/&gt;</mtext><mo>+</mo><mtext>{not-mdx}</mtext></mrow><annotation encoding=\"application/x-tex\">\\text{MDX\\_IN\\_MATH\\_SENTINEL &lt;InlineComponent /&gt;} + \\text{\\{not-mdx\\}}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1.06em;vertical-align:-0.31em;\"></span><span class=\"mord text\"><span class=\"mord\">MDX_IN_MATH_SENTINEL&nbsp;&lt;InlineComponent&nbsp;/&gt;</span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord text\"><span class=\"mord\">{not-mdx}</span></span></span></span></span></span></span></div></div></div></div></div></div></div>",
+    "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><p class=\"markdown-paragraph\">Math / MDX sentinel (must remain math, not MDX):</p><div class=\"markdown-paragraph\"><div class=\"katex-block-wrapper my-2\"><div dir=\"ltr\" class=\"relative overflow-x-hidden w-full max-w-full\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div style=\"min-width: 100%; display: table;\"><span class=\"word-break whitespace-pre-wrap\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mtext>MDX_IN_MATH_SENTINEL&nbsp;&lt;InlineComponent&nbsp;/&gt;</mtext><mo>+</mo><mtext>{not-mdx}</mtext></mrow><annotation encoding=\"application/x-tex\">\\text{MDX\\_IN\\_MATH\\_SENTINEL &lt;InlineComponent /&gt;} + \\text{\\{not-mdx\\}}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:1.06em;vertical-align:-0.31em;\"></span><span class=\"mord text\"><span class=\"mord\">MDX_IN_MATH_SENTINEL&nbsp;&lt;InlineComponent&nbsp;/&gt;</span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord text\"><span class=\"mord\">{not-mdx}</span></span></span></span></span></span></span></div></div></div></div></div></div></div>",
     "runtimeState": {
       "rendererVersion": 18,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
       "lastTx": 15,
-      "lastPatchToDomMs": 12.299999997019768,
-      "lastDurationMs": 0.10000000149011612,
+      "lastPatchToDomMs": 12.5,
+      "lastDurationMs": 0.699999988079071,
       "meta": {
         "fixtureId": "math-mdx-sentinel",
         "scenarioId": "S1_slow_small",
@@ -727,13 +601,12 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "73e0e5b165a6c00010ab84f7561846b993e0e6e7dbd1899b081672806a96404c",
+        "hash": "783bfe2397a158f7eec33b378edd4db37a9120fed165a7998464c51db64ec1b3",
         "textSample": "Math / MDX sentinel (must remain math, not MDX):[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-styl"
       }
     ],
     "inspection": {
       "tables": [],
-      "mdxBlocks": [],
       "codeBlocks": []
     }
   }

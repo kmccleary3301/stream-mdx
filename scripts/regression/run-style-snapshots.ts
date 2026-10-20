@@ -135,8 +135,11 @@ async function run(): Promise<void> {
     await page.goto(`${BASE_URL}/regression/html/`, { waitUntil: "networkidle" });
     await page.waitForFunction(() => Boolean(window.__streammdxRegression));
     await page.evaluate(
-      ({ fixtureId, scenarioId }) => window.__streammdxRegression?.setMeta({ fixtureId, scenarioId }),
-      { fixtureId: fixture.id, scenarioId: scenario.id },
+      async ({ fixtureId, scenarioId, contentPolicy }) => {
+        window.__streammdxRegression?.setMeta({ fixtureId, scenarioId });
+        await window.__streammdxRegression?.setConfig({ contentPolicy });
+      },
+      { fixtureId: fixture.id, scenarioId: scenario.id, contentPolicy: fixture.contentPolicy ?? "markdown" },
     );
     await page.evaluate(() => window.__streammdxRegression?.waitForReady());
 

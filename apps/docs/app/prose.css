@@ -804,13 +804,6 @@
     --shiki-dark-bg: transparent;
   }
 
-  :where(.prose, .prose-stream) .markdown-v2-output .markdown-mdx:has(> figure[data-with-codeblock="true"]) + pre,
-  :where(.prose, .prose-stream) .markdown-v2-output .markdown-mdx:has(> figure[data-with-codeblock="true"]) + figure {
-    margin-top: 0 !important;
-    border-top-width: 0 !important;
-    border-top-left-radius: 0 !important;
-    border-top-right-radius: 0 !important;
-  }
 
   :where(.prose, .prose-stream) .markdown-v2-output figure[data-with-codeblock="true"] {
     margin-bottom: 0;

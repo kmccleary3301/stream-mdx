@@ -29,8 +29,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 1,
-        "lastPatchToDomMs": 0.20000000298023224,
-        "lastDurationMs": 0.20000000298023224,
+        "lastPatchToDomMs": 1.0999999940395355,
+        "lastDurationMs": 0.9000000059604645,
         "meta": {
           "fixtureId": "mdx-transitions",
           "scenarioId": "S3_fast_reasonable",
@@ -47,8 +47,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -57,12 +55,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Transitions\">MDX Transitions</h1><p class=\"markdown-paragraph\">This </p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Transitions\">MDX Transitions</h1><p class=\"markdown-paragraph\">This </p></div>",
       "textSample": "MDX TransitionsThis ",
       "structure": {
         "topLevelTags": [
@@ -79,7 +75,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -93,8 +88,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 2,
-        "lastPatchToDomMs": 0.10000000149011612,
-        "lastDurationMs": 0.10000000149011612,
+        "lastPatchToDomMs": 0.09999999403953552,
+        "lastDurationMs": 0.09999999403953552,
         "meta": {
           "fixtureId": "mdx-transitions",
           "scenarioId": "S3_fast_reasonable",
@@ -111,8 +106,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -121,12 +114,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Transitions\">MDX Transitions</h1><p class=\"markdown-paragraph\">This fixture forces multiple </p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Transitions\">MDX Transitions</h1><p class=\"markdown-paragraph\">This fixture forces multiple </p></div>",
       "textSample": "MDX TransitionsThis fixture forces multiple ",
       "structure": {
         "topLevelTags": [
@@ -143,7 +134,6 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
         "codeBlocks": []
       }
     },
@@ -157,7 +147,7 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 3,
-        "lastPatchToDomMs": 13.700000002980232,
+        "lastPatchToDomMs": 13.400000005960464,
         "lastDurationMs": 0,
         "meta": {
           "fixtureId": "mdx-transitions",
@@ -175,8 +165,6 @@
         "hasTable": false,
         "hasPre": false,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": false,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -185,12 +173,10 @@
         "pre": 0,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Transitions\">MDX Transitions</h1><p class=\"markdown-paragraph\">This fixture forces multiple MDX blocks to compile se</p></div>",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Transitions\">MDX Transitions</h1><p class=\"markdown-paragraph\">This fixture forces multiple MDX blocks to compile se</p></div>",
       "textSample": "MDX TransitionsThis fixture forces multiple MDX blocks to compile se",
       "structure": {
         "topLevelTags": [
@@ -207,229 +193,21 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [],
-        "codeBlocks": []
-      }
-    },
-    {
-      "id": "event-hasMdxPending",
-      "appendedChars": 96,
-      "rootChildCount": 1,
-      "runtimeState": {
-        "rendererVersion": 7,
-        "queueDepth": 0,
-        "pendingBatches": 0,
-        "workerReady": true,
-        "lastTx": 4,
-        "lastPatchToDomMs": 12.200000002980232,
-        "lastDurationMs": 0.20000000298023224,
-        "meta": {
-          "fixtureId": "mdx-transitions",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
-        },
-        "storeCounters": {
-          "appendLineGuardRejected": 0,
-          "staleEpochRejected": 0,
-          "storeInvariantViolationCount": 0
-        }
-      },
-      "selectors": {
-        "hasTable": false,
-        "hasPre": false,
-        "hasFootnotes": false,
-        "hasMdxPending": true,
-        "hasMdxCompiled": false,
-        "hasBlockquote": false,
-        "hasMath": false
-      },
-      "counts": {
-        "table": 0,
-        "pre": 0,
-        "blockquote": 0,
-        "katex": 0,
-        "mdxPending": 1,
-        "mdxCompiled": 0,
-        "footnotes": 0,
-        "hr": 0
-      },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Transitions\">MDX Transitions</h1><p class=\"markdown-paragraph\">This fixture forces multiple MDX blocks to compile separately.</p><div class=\"markdown-mdx\" data-mdx-ref=\"pending\" data-mdx-status=\"pending\" data-mdx-mode=\"server\">Compiling MDX (server)…</div></div>",
-      "textSample": "MDX TransitionsThis fixture forces multiple MDX blocks to compile separately.Compiling MDX (server)…",
-      "structure": {
-        "topLevelTags": [
-          "div"
-        ],
-        "counts": {
-          "table": 0,
-          "pre": 0,
-          "blockquote": 0,
-          "katex": 0,
-          "footnotes": 0,
-          "hr": 0
-        }
-      },
-      "inspection": {
-        "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "pending",
-            "textSample": "Compiling MDX (server)…"
-          }
-        ],
-        "codeBlocks": []
-      }
-    },
-    {
-      "id": "progress-153",
-      "appendedChars": 168,
-      "rootChildCount": 1,
-      "runtimeState": {
-        "rendererVersion": 10,
-        "queueDepth": 0,
-        "pendingBatches": 0,
-        "workerReady": true,
-        "lastTx": 7,
-        "lastPatchToDomMs": 9.100000001490116,
-        "lastDurationMs": 0.10000000149011612,
-        "meta": {
-          "fixtureId": "mdx-transitions",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
-        },
-        "storeCounters": {
-          "appendLineGuardRejected": 0,
-          "staleEpochRejected": 0,
-          "storeInvariantViolationCount": 0
-        }
-      },
-      "selectors": {
-        "hasTable": false,
-        "hasPre": false,
-        "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
-        "hasBlockquote": false,
-        "hasMath": false
-      },
-      "counts": {
-        "table": 0,
-        "pre": 0,
-        "blockquote": 0,
-        "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 1,
-        "footnotes": 0,
-        "hr": 0
-      },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Transitions\">MDX Transitions</h1><p class=\"markdown-paragraph\">This fixture forces multiple MDX blocks to compile separately.</p><div class=\"markdown-mdx\" data-mdx-ref=\"worker:62453005\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Inline <strong class=\"mdx-strong\">bold</strong> with a list:</p><ul class=\"mdx-ul\">\n<li class=\"mdx-li\">Alpha</li>\n<li class=\"mdx-li\">Beta</li>\n<li class=\"mdx-li\">Gamma</li>\n</ul></figure></div></div>",
-      "textSample": "MDX TransitionsThis fixture forces multiple MDX blocks to compile separately.Inline bold with a list:\nAlpha\nBeta\nGamma\n",
-      "structure": {
-        "topLevelTags": [
-          "div"
-        ],
-        "counts": {
-          "table": 0,
-          "pre": 0,
-          "blockquote": 0,
-          "katex": 0,
-          "footnotes": 0,
-          "hr": 0
-        }
-      },
-      "inspection": {
-        "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Inline bold with a list:\nAlpha\nBeta\nGamma\n"
-          }
-        ],
-        "codeBlocks": []
-      }
-    },
-    {
-      "id": "event-hasMdxCompiled",
-      "appendedChars": 168,
-      "rootChildCount": 1,
-      "runtimeState": {
-        "rendererVersion": 10,
-        "queueDepth": 0,
-        "pendingBatches": 0,
-        "workerReady": true,
-        "lastTx": 7,
-        "lastPatchToDomMs": 9.100000001490116,
-        "lastDurationMs": 0.10000000149011612,
-        "meta": {
-          "fixtureId": "mdx-transitions",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
-        },
-        "storeCounters": {
-          "appendLineGuardRejected": 0,
-          "staleEpochRejected": 0,
-          "storeInvariantViolationCount": 0
-        }
-      },
-      "selectors": {
-        "hasTable": false,
-        "hasPre": false,
-        "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
-        "hasBlockquote": false,
-        "hasMath": false
-      },
-      "counts": {
-        "table": 0,
-        "pre": 0,
-        "blockquote": 0,
-        "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 1,
-        "footnotes": 0,
-        "hr": 0
-      },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Transitions\">MDX Transitions</h1><p class=\"markdown-paragraph\">This fixture forces multiple MDX blocks to compile separately.</p><div class=\"markdown-mdx\" data-mdx-ref=\"worker:62453005\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Inline <strong class=\"mdx-strong\">bold</strong> with a list:</p><ul class=\"mdx-ul\">\n<li class=\"mdx-li\">Alpha</li>\n<li class=\"mdx-li\">Beta</li>\n<li class=\"mdx-li\">Gamma</li>\n</ul></figure></div></div>",
-      "textSample": "MDX TransitionsThis fixture forces multiple MDX blocks to compile separately.Inline bold with a list:\nAlpha\nBeta\nGamma\n",
-      "structure": {
-        "topLevelTags": [
-          "div"
-        ],
-        "counts": {
-          "table": 0,
-          "pre": 0,
-          "blockquote": 0,
-          "katex": 0,
-          "footnotes": 0,
-          "hr": 0
-        }
-      },
-      "inspection": {
-        "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Inline bold with a list:\nAlpha\nBeta\nGamma\n"
-          }
-        ],
         "codeBlocks": []
       }
     },
     {
       "id": "event-hasPre",
-      "appendedChars": 192,
+      "appendedChars": 120,
       "rootChildCount": 1,
       "runtimeState": {
-        "rendererVersion": 11,
+        "rendererVersion": 8,
         "queueDepth": 0,
         "pendingBatches": 0,
         "workerReady": true,
-        "lastTx": 8,
-        "lastPatchToDomMs": 8.900000005960464,
-        "lastDurationMs": 0.20000000298023224,
+        "lastTx": 5,
+        "lastPatchToDomMs": 10.900000005960464,
+        "lastDurationMs": 0.09999999403953552,
         "meta": {
           "fixtureId": "mdx-transitions",
           "scenarioId": "S3_fast_reasonable",
@@ -446,8 +224,6 @@
         "hasTable": false,
         "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
         "hasBlockquote": false,
         "hasMath": false
       },
@@ -456,13 +232,11 @@
         "pre": 1,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 1,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Transitions\">MDX Transitions</h1><p class=\"markdown-paragraph\">This fixture forces multiple MDX blocks to compile separately.</p><div class=\"markdown-mdx\" data-mdx-ref=\"worker:62453005\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Inline <strong class=\"mdx-strong\">bold</strong> with a list:</p><ul class=\"mdx-ul\">\n<li class=\"mdx-li\">Alpha</li>\n<li class=\"mdx-li\">Beta</li>\n<li class=\"mdx-li\">Gamma</li>\n</ul></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">Inline **bold** </span></code></pre></div></div></div></div></div></div>",
-      "textSample": "MDX TransitionsThis fixture forces multiple MDX blocks to compile separately.Inline bold with a list:\nAlpha\nBeta\nGamma\n[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-w",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Transitions\">MDX Transitions</h1><p class=\"markdown-paragraph\">This fixture forces multiple MDX blocks to compile separately.</p><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview codeblock&gt;\nInline **bold** w</code></pre></div></div>",
+      "textSample": "MDX TransitionsThis fixture forces multiple MDX blocks to compile separately.<Preview codeblock>\nInline **bold** w",
       "structure": {
         "topLevelTags": [
           "div"
@@ -478,16 +252,74 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Inline bold with a list:\nAlpha\nBeta\nGamma\n"
-          }
-        ],
         "codeBlocks": [
           {
-            "text": "Inline **bold** ",
-            "lineCount": 1
+            "text": "<Preview codeblock>\nInline **bold** w",
+            "lineCount": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "progress-153",
+      "appendedChars": 168,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 10,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 7,
+        "lastPatchToDomMs": 12.299999982118607,
+        "lastDurationMs": 0.19999998807907104,
+        "meta": {
+          "fixtureId": "mdx-transitions",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": true,
+        "hasFootnotes": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 1,
+        "blockquote": 0,
+        "katex": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Transitions\">MDX Transitions</h1><p class=\"markdown-paragraph\">This fixture forces multiple MDX blocks to compile separately.</p><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview codeblock&gt;\nInline **bold** with a list:\n\n- Alpha\n- Beta\n- Gamma\n&lt;/Preview&gt;</code></pre></div></div>",
+      "textSample": "MDX TransitionsThis fixture forces multiple MDX blocks to compile separately.<Preview codeblock>\nInline **bold** with a list:\n\n- Alpha\n- Beta\n- Gamma\n</Preview>",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 1,
+          "blockquote": 0,
+          "katex": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "codeBlocks": [
+          {
+            "text": "<Preview codeblock>\nInline **bold** with a list:\n\n- Alpha\n- Beta\n- Gamma\n</Preview>",
+            "lineCount": 7
           }
         ]
       }
@@ -502,8 +334,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 13,
-        "lastPatchToDomMs": 13.699999995529652,
-        "lastDurationMs": 0.10000000149011612,
+        "lastPatchToDomMs": 13.5,
+        "lastDurationMs": 0.09999999403953552,
         "meta": {
           "fixtureId": "mdx-transitions",
           "scenarioId": "S3_fast_reasonable",
@@ -520,30 +352,26 @@
         "hasTable": false,
         "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
         "hasBlockquote": false,
         "hasMath": false
       },
       "counts": {
         "table": 0,
-        "pre": 1,
+        "pre": 3,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 1,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Transitions\">MDX Transitions</h1><p class=\"markdown-paragraph\">This fixture forces multiple MDX blocks to compile separately.</p><div class=\"markdown-mdx\" data-mdx-ref=\"worker:62453005\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Inline <strong class=\"mdx-strong\">bold</strong> with a list:</p><ul class=\"mdx-ul\">\n<li class=\"mdx-li\">Alpha</li>\n<li class=\"mdx-li\">Beta</li>\n<li class=\"mdx-li\">Gamma</li>\n</ul></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Inline **bold** with a list:</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>- Alpha</span></span>\n<span class=\"line\" data-line=\"4\"><span>- Beta</span></span>\n<span class=\"line\" data-line=\"5\"><span>- Gamma</span></span></code></pre></div></div></div></div></div></div>\n| Model | Latency (ms) | Notes |\n| --- | --- | --- |\n| A | 12 | fast</div>",
-      "textSample": "MDX TransitionsThis fixture forces multiple MDX blocks to compile separately.Inline bold with a list:\nAlpha\nBeta\nGamma\n[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-w",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Transitions\">MDX Transitions</h1><p class=\"markdown-paragraph\">This fixture forces multiple MDX blocks to compile separately.</p><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview codeblock&gt;\nInline **bold** with a list:\n\n- Alpha\n- Beta\n- Gamma\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Inline **bold** with a list:</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>- Alpha</span></span>\n<span class=\"line\" data-line=\"4\"><span>- Beta</span></span>\n<span class=\"line\" data-line=\"5\"><span>- Gamma</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview&gt;\n| Model | Latency (ms) | Notes |\n| --- | --- | --- |\n| A | 12 | fast</code></pre></div></div>",
+      "textSample": "MDX TransitionsThis fixture forces multiple MDX blocks to compile separately.<Preview codeblock>\nInline **bold** with a list:\n\n- Alpha\n- Beta\n- Gamma\n</Preview>[data-radix-scroll-area-viewport]{scroll",
       "structure": {
         "topLevelTags": [
           "div"
         ],
         "counts": {
           "table": 0,
-          "pre": 1,
+          "pre": 3,
           "blockquote": 0,
           "katex": 0,
           "footnotes": 0,
@@ -552,107 +380,18 @@
       },
       "inspection": {
         "tables": [],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Inline bold with a list:\nAlpha\nBeta\nGamma\n"
-          }
-        ],
         "codeBlocks": [
           {
-            "text": "Inline **bold** with a list:\n\n- Alpha\n- Beta\n- Gamma",
-            "lineCount": 5
-          }
-        ]
-      }
-    },
-    {
-      "id": "event-hasTable",
-      "appendedChars": 360,
-      "rootChildCount": 1,
-      "runtimeState": {
-        "rendererVersion": 18,
-        "queueDepth": 0,
-        "pendingBatches": 0,
-        "workerReady": true,
-        "lastTx": 15,
-        "lastPatchToDomMs": 13,
-        "lastDurationMs": 0,
-        "meta": {
-          "fixtureId": "mdx-transitions",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
-        },
-        "storeCounters": {
-          "appendLineGuardRejected": 0,
-          "staleEpochRejected": 0,
-          "storeInvariantViolationCount": 0
-        }
-      },
-      "selectors": {
-        "hasTable": true,
-        "hasPre": true,
-        "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
-        "hasBlockquote": false,
-        "hasMath": false
-      },
-      "counts": {
-        "table": 1,
-        "pre": 2,
-        "blockquote": 0,
-        "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 2,
-        "footnotes": 0,
-        "hr": 0
-      },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Transitions\">MDX Transitions</h1><p class=\"markdown-paragraph\">This fixture forces multiple MDX blocks to compile separately.</p><div class=\"markdown-mdx\" data-mdx-ref=\"worker:62453005\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Inline <strong class=\"mdx-strong\">bold</strong> with a list:</p><ul class=\"mdx-ul\">\n<li class=\"mdx-li\">Alpha</li>\n<li class=\"mdx-li\">Beta</li>\n<li class=\"mdx-li\">Gamma</li>\n</ul></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Inline **bold** with a list:</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>- Alpha</span></span>\n<span class=\"line\" data-line=\"4\"><span>- Beta</span></span>\n<span class=\"line\" data-line=\"5\"><span>- Gamma</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:6272845f\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><table class=\"mdx-table\"><thead class=\"mdx-thead\"><tr class=\"mdx-tr\"><th class=\"mdx-th\">Model</th><th class=\"mdx-th\">Latency (ms)</th><th class=\"mdx-th\">Notes</th></tr></thead><tbody class=\"mdx-tbody\"><tr class=\"mdx-tr\"><td class=\"mdx-td\">A</td><td class=\"mdx-td\">12</td><td class=\"mdx-td\">fast</td></tr><tr class=\"mdx-tr\"><td class=\"mdx-td\">B</td><td class=\"mdx-td\">24</td><td class=\"mdx-td\">medium</td></tr></tbody></table></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">| Mod</span></code></pre></div></div></div></div></div></div>",
-      "textSample": "MDX TransitionsThis fixture forces multiple MDX blocks to compile separately.Inline bold with a list:\nAlpha\nBeta\nGamma\n[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-w",
-      "structure": {
-        "topLevelTags": [
-          "div"
-        ],
-        "counts": {
-          "table": 1,
-          "pre": 2,
-          "blockquote": 0,
-          "katex": 0,
-          "footnotes": 0,
-          "hr": 0
-        }
-      },
-      "inspection": {
-        "tables": [
-          {
-            "headerColumns": 3,
-            "rowCellCounts": [
-              3,
-              3
-            ],
-            "emptyBodyCellCount": 0
-          }
-        ],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Inline bold with a list:\nAlpha\nBeta\nGamma\n"
+            "text": "<Preview codeblock>\nInline **bold** with a list:\n\n- Alpha\n- Beta\n- Gamma\n</Preview>",
+            "lineCount": 7
           },
-          {
-            "status": "compiled",
-            "textSample": "ModelLatency (ms)NotesA12fastB24medium"
-          }
-        ],
-        "codeBlocks": [
           {
             "text": "Inline **bold** with a list:\n\n- Alpha\n- Beta\n- Gamma",
             "lineCount": 5
           },
           {
-            "text": "| Mod",
-            "lineCount": 1
+            "text": "<Preview>\n| Model | Latency (ms) | Notes |\n| --- | --- | --- |\n| A | 12 | fast",
+            "lineCount": 4
           }
         ]
       }
@@ -667,8 +406,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 20,
-        "lastPatchToDomMs": 14.799999997019768,
-        "lastDurationMs": 0.10000000149011612,
+        "lastPatchToDomMs": 12.900000005960464,
+        "lastDurationMs": 0,
         "meta": {
           "fixtureId": "mdx-transitions",
           "scenarioId": "S3_fast_reasonable",
@@ -682,33 +421,29 @@
         }
       },
       "selectors": {
-        "hasTable": true,
+        "hasTable": false,
         "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
         "hasBlockquote": false,
         "hasMath": false
       },
       "counts": {
-        "table": 1,
-        "pre": 2,
+        "table": 0,
+        "pre": 5,
         "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 2,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Transitions\">MDX Transitions</h1><p class=\"markdown-paragraph\">This fixture forces multiple MDX blocks to compile separately.</p><div class=\"markdown-mdx\" data-mdx-ref=\"worker:62453005\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Inline <strong class=\"mdx-strong\">bold</strong> with a list:</p><ul class=\"mdx-ul\">\n<li class=\"mdx-li\">Alpha</li>\n<li class=\"mdx-li\">Beta</li>\n<li class=\"mdx-li\">Gamma</li>\n</ul></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Inline **bold** with a list:</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>- Alpha</span></span>\n<span class=\"line\" data-line=\"4\"><span>- Beta</span></span>\n<span class=\"line\" data-line=\"5\"><span>- Gamma</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:6272845f\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><table class=\"mdx-table\"><thead class=\"mdx-thead\"><tr class=\"mdx-tr\"><th class=\"mdx-th\">Model</th><th class=\"mdx-th\">Latency (ms)</th><th class=\"mdx-th\">Notes</th></tr></thead><tbody class=\"mdx-tbody\"><tr class=\"mdx-tr\"><td class=\"mdx-td\">A</td><td class=\"mdx-td\">12</td><td class=\"mdx-td\">fast</td></tr><tr class=\"mdx-tr\"><td class=\"mdx-td\">B</td><td class=\"mdx-td\">24</td><td class=\"mdx-td\">medium</td></tr></tbody></table></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>| Model | Latency (ms) | Notes |</span></span>\n<span class=\"line\" data-line=\"2\"><span>| --- | --- | --- |</span></span>\n<span class=\"line\" data-line=\"3\"><span>| A | 12 | fast |</span></span>\n<span class=\"line\" data-line=\"4\"><span>| B | 24 | medium |</span></span></code></pre></div></div></div></div></div></div>\n&gt; Blockqu</div>",
-      "textSample": "MDX TransitionsThis fixture forces multiple MDX blocks to compile separately.Inline bold with a list:\nAlpha\nBeta\nGamma\n[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-w",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Transitions\">MDX Transitions</h1><p class=\"markdown-paragraph\">This fixture forces multiple MDX blocks to compile separately.</p><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview codeblock&gt;\nInline **bold** with a list:\n\n- Alpha\n- Beta\n- Gamma\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Inline **bold** with a list:</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>- Alpha</span></span>\n<span class=\"line\" data-line=\"4\"><span>- Beta</span></span>\n<span class=\"line\" data-line=\"5\"><span>- Gamma</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview&gt;\n| Model | Latency (ms) | Notes |\n| --- | --- | --- |\n| A | 12 | fast |\n| B | 24 | medium |\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>| Model | Latency (ms) | Notes |</span></span>\n<span class=\"line\" data-line=\"2\"><span>| --- | --- | --- |</span></span>\n<span class=\"line\" data-line=\"3\"><span>| A | 12 | fast |</span></span>\n<span class=\"line\" data-line=\"4\"><span>| B | 24 | medium |</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview codeblock&gt;\n&gt; Blockqu</code></pre></div></div>",
+      "textSample": "MDX TransitionsThis fixture forces multiple MDX blocks to compile separately.<Preview codeblock>\nInline **bold** with a list:\n\n- Alpha\n- Beta\n- Gamma\n</Preview>[data-radix-scroll-area-viewport]{scroll",
       "structure": {
         "topLevelTags": [
           "div"
         ],
         "counts": {
-          "table": 1,
-          "pre": 2,
+          "table": 0,
+          "pre": 5,
           "blockquote": 0,
           "katex": 0,
           "footnotes": 0,
@@ -716,34 +451,27 @@
         }
       },
       "inspection": {
-        "tables": [
-          {
-            "headerColumns": 3,
-            "rowCellCounts": [
-              3,
-              3
-            ],
-            "emptyBodyCellCount": 0
-          }
-        ],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Inline bold with a list:\nAlpha\nBeta\nGamma\n"
-          },
-          {
-            "status": "compiled",
-            "textSample": "ModelLatency (ms)NotesA12fastB24medium"
-          }
-        ],
+        "tables": [],
         "codeBlocks": [
+          {
+            "text": "<Preview codeblock>\nInline **bold** with a list:\n\n- Alpha\n- Beta\n- Gamma\n</Preview>",
+            "lineCount": 7
+          },
           {
             "text": "Inline **bold** with a list:\n\n- Alpha\n- Beta\n- Gamma",
             "lineCount": 5
           },
           {
+            "text": "<Preview>\n| Model | Latency (ms) | Notes |\n| --- | --- | --- |\n| A | 12 | fast |\n| B | 24 | medium |\n</Preview>",
+            "lineCount": 6
+          },
+          {
             "text": "| Model | Latency (ms) | Notes |\n| --- | --- | --- |\n| A | 12 | fast |\n| B | 24 | medium |",
             "lineCount": 4
+          },
+          {
+            "text": "<Preview codeblock>\n> Blockqu",
+            "lineCount": 2
           }
         ]
       }
@@ -758,8 +486,8 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 23,
-        "lastPatchToDomMs": 13.399999998509884,
-        "lastDurationMs": 0.09999999403953552,
+        "lastPatchToDomMs": 12.200000017881393,
+        "lastDurationMs": 0.20000001788139343,
         "meta": {
           "fixtureId": "mdx-transitions",
           "scenarioId": "S3_fast_reasonable",
@@ -773,171 +501,57 @@
         }
       },
       "selectors": {
-        "hasTable": true,
+        "hasTable": false,
         "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
-        "hasBlockquote": true,
+        "hasBlockquote": false,
         "hasMath": false
       },
       "counts": {
-        "table": 1,
-        "pre": 3,
-        "blockquote": 1,
+        "table": 0,
+        "pre": 6,
+        "blockquote": 0,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 3,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Transitions\">MDX Transitions</h1><p class=\"markdown-paragraph\">This fixture forces multiple MDX blocks to compile separately.</p><div class=\"markdown-mdx\" data-mdx-ref=\"worker:62453005\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Inline <strong class=\"mdx-strong\">bold</strong> with a list:</p><ul class=\"mdx-ul\">\n<li class=\"mdx-li\">Alpha</li>\n<li class=\"mdx-li\">Beta</li>\n<li class=\"mdx-li\">Gamma</li>\n</ul></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Inline **bold** with a list:</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>- Alpha</span></span>\n<span class=\"line\" data-line=\"4\"><span>- Beta</span></span>\n<span class=\"line\" data-line=\"5\"><span>- Gamma</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:6272845f\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><table class=\"mdx-table\"><thead class=\"mdx-thead\"><tr class=\"mdx-tr\"><th class=\"mdx-th\">Model</th><th class=\"mdx-th\">Latency (ms)</th><th class=\"mdx-th\">Notes</th></tr></thead><tbody class=\"mdx-tbody\"><tr class=\"mdx-tr\"><td class=\"mdx-td\">A</td><td class=\"mdx-td\">12</td><td class=\"mdx-td\">fast</td></tr><tr class=\"mdx-tr\"><td class=\"mdx-td\">B</td><td class=\"mdx-td\">24</td><td class=\"mdx-td\">medium</td></tr></tbody></table></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>| Model | Latency (ms) | Notes |</span></span>\n<span class=\"line\" data-line=\"2\"><span>| --- | --- | --- |</span></span>\n<span class=\"line\" data-line=\"3\"><span>| A | 12 | fast |</span></span>\n<span class=\"line\" data-line=\"4\"><span>| B | 24 | medium |</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:2e023dfc\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><blockquote class=\"mdx-blockquote\">\n<p class=\"mdx-p\">Blockquote inside MDX</p>\n</blockquote><p class=\"mdx-p\"><code class=\"mdx-code\">inline code</code> and <strong class=\"mdx-strong\">strong</strong> text</p></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">&gt; </span></code></pre></div></div></div></div></div></div>",
-      "textSample": "MDX TransitionsThis fixture forces multiple MDX blocks to compile separately.Inline bold with a list:\nAlpha\nBeta\nGamma\n[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-w",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Transitions\">MDX Transitions</h1><p class=\"markdown-paragraph\">This fixture forces multiple MDX blocks to compile separately.</p><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview codeblock&gt;\nInline **bold** with a list:\n\n- Alpha\n- Beta\n- Gamma\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Inline **bold** with a list:</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>- Alpha</span></span>\n<span class=\"line\" data-line=\"4\"><span>- Beta</span></span>\n<span class=\"line\" data-line=\"5\"><span>- Gamma</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview&gt;\n| Model | Latency (ms) | Notes |\n| --- | --- | --- |\n| A | 12 | fast |\n| B | 24 | medium |\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>| Model | Latency (ms) | Notes |</span></span>\n<span class=\"line\" data-line=\"2\"><span>| --- | --- | --- |</span></span>\n<span class=\"line\" data-line=\"3\"><span>| A | 12 | fast |</span></span>\n<span class=\"line\" data-line=\"4\"><span>| B | 24 | medium |</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview codeblock&gt;\n&gt; Blockquote inside MDX\n\n`inline code` and **strong** text\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">&gt; </span></code></pre></div></div></div></div></div></div>",
+      "textSample": "MDX TransitionsThis fixture forces multiple MDX blocks to compile separately.<Preview codeblock>\nInline **bold** with a list:\n\n- Alpha\n- Beta\n- Gamma\n</Preview>[data-radix-scroll-area-viewport]{scroll",
       "structure": {
         "topLevelTags": [
           "div"
         ],
         "counts": {
-          "table": 1,
-          "pre": 3,
-          "blockquote": 1,
+          "table": 0,
+          "pre": 6,
+          "blockquote": 0,
           "katex": 0,
           "footnotes": 0,
           "hr": 0
         }
       },
       "inspection": {
-        "tables": [
-          {
-            "headerColumns": 3,
-            "rowCellCounts": [
-              3,
-              3
-            ],
-            "emptyBodyCellCount": 0
-          }
-        ],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Inline bold with a list:\nAlpha\nBeta\nGamma\n"
-          },
-          {
-            "status": "compiled",
-            "textSample": "ModelLatency (ms)NotesA12fastB24medium"
-          },
-          {
-            "status": "compiled",
-            "textSample": "\nBlockquote inside MDX\ninline code and strong text"
-          }
-        ],
+        "tables": [],
         "codeBlocks": [
+          {
+            "text": "<Preview codeblock>\nInline **bold** with a list:\n\n- Alpha\n- Beta\n- Gamma\n</Preview>",
+            "lineCount": 7
+          },
           {
             "text": "Inline **bold** with a list:\n\n- Alpha\n- Beta\n- Gamma",
             "lineCount": 5
+          },
+          {
+            "text": "<Preview>\n| Model | Latency (ms) | Notes |\n| --- | --- | --- |\n| A | 12 | fast |\n| B | 24 | medium |\n</Preview>",
+            "lineCount": 6
           },
           {
             "text": "| Model | Latency (ms) | Notes |\n| --- | --- | --- |\n| A | 12 | fast |\n| B | 24 | medium |",
             "lineCount": 4
           },
           {
-            "text": "> ",
-            "lineCount": 1
-          }
-        ]
-      }
-    },
-    {
-      "id": "event-hasBlockquote",
-      "appendedChars": 552,
-      "rootChildCount": 1,
-      "runtimeState": {
-        "rendererVersion": 26,
-        "queueDepth": 0,
-        "pendingBatches": 0,
-        "workerReady": true,
-        "lastTx": 23,
-        "lastPatchToDomMs": 13.399999998509884,
-        "lastDurationMs": 0.09999999403953552,
-        "meta": {
-          "fixtureId": "mdx-transitions",
-          "scenarioId": "S3_fast_reasonable",
-          "seed": null,
-          "schedulerMode": null
-        },
-        "storeCounters": {
-          "appendLineGuardRejected": 0,
-          "staleEpochRejected": 0,
-          "storeInvariantViolationCount": 0
-        }
-      },
-      "selectors": {
-        "hasTable": true,
-        "hasPre": true,
-        "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
-        "hasBlockquote": true,
-        "hasMath": false
-      },
-      "counts": {
-        "table": 1,
-        "pre": 3,
-        "blockquote": 1,
-        "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 3,
-        "footnotes": 0,
-        "hr": 0
-      },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Transitions\">MDX Transitions</h1><p class=\"markdown-paragraph\">This fixture forces multiple MDX blocks to compile separately.</p><div class=\"markdown-mdx\" data-mdx-ref=\"worker:62453005\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Inline <strong class=\"mdx-strong\">bold</strong> with a list:</p><ul class=\"mdx-ul\">\n<li class=\"mdx-li\">Alpha</li>\n<li class=\"mdx-li\">Beta</li>\n<li class=\"mdx-li\">Gamma</li>\n</ul></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Inline **bold** with a list:</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>- Alpha</span></span>\n<span class=\"line\" data-line=\"4\"><span>- Beta</span></span>\n<span class=\"line\" data-line=\"5\"><span>- Gamma</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:6272845f\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><table class=\"mdx-table\"><thead class=\"mdx-thead\"><tr class=\"mdx-tr\"><th class=\"mdx-th\">Model</th><th class=\"mdx-th\">Latency (ms)</th><th class=\"mdx-th\">Notes</th></tr></thead><tbody class=\"mdx-tbody\"><tr class=\"mdx-tr\"><td class=\"mdx-td\">A</td><td class=\"mdx-td\">12</td><td class=\"mdx-td\">fast</td></tr><tr class=\"mdx-tr\"><td class=\"mdx-td\">B</td><td class=\"mdx-td\">24</td><td class=\"mdx-td\">medium</td></tr></tbody></table></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>| Model | Latency (ms) | Notes |</span></span>\n<span class=\"line\" data-line=\"2\"><span>| --- | --- | --- |</span></span>\n<span class=\"line\" data-line=\"3\"><span>| A | 12 | fast |</span></span>\n<span class=\"line\" data-line=\"4\"><span>| B | 24 | medium |</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:2e023dfc\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><blockquote class=\"mdx-blockquote\">\n<p class=\"mdx-p\">Blockquote inside MDX</p>\n</blockquote><p class=\"mdx-p\"><code class=\"mdx-code\">inline code</code> and <strong class=\"mdx-strong\">strong</strong> text</p></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">&gt; </span></code></pre></div></div></div></div></div></div>",
-      "textSample": "MDX TransitionsThis fixture forces multiple MDX blocks to compile separately.Inline bold with a list:\nAlpha\nBeta\nGamma\n[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-w",
-      "structure": {
-        "topLevelTags": [
-          "div"
-        ],
-        "counts": {
-          "table": 1,
-          "pre": 3,
-          "blockquote": 1,
-          "katex": 0,
-          "footnotes": 0,
-          "hr": 0
-        }
-      },
-      "inspection": {
-        "tables": [
-          {
-            "headerColumns": 3,
-            "rowCellCounts": [
-              3,
-              3
-            ],
-            "emptyBodyCellCount": 0
-          }
-        ],
-        "mdxBlocks": [
-          {
-            "status": "compiled",
-            "textSample": "Inline bold with a list:\nAlpha\nBeta\nGamma\n"
-          },
-          {
-            "status": "compiled",
-            "textSample": "ModelLatency (ms)NotesA12fastB24medium"
-          },
-          {
-            "status": "compiled",
-            "textSample": "\nBlockquote inside MDX\ninline code and strong text"
-          }
-        ],
-        "codeBlocks": [
-          {
-            "text": "Inline **bold** with a list:\n\n- Alpha\n- Beta\n- Gamma",
+            "text": "<Preview codeblock>\n> Blockquote inside MDX\n\n`inline code` and **strong** text\n</Preview>",
             "lineCount": 5
-          },
-          {
-            "text": "| Model | Latency (ms) | Notes |\n| --- | --- | --- |\n| A | 12 | fast |\n| B | 24 | medium |",
-            "lineCount": 4
           },
           {
             "text": "> ",
@@ -956,8 +570,92 @@
         "pendingBatches": 0,
         "workerReady": true,
         "lastTx": 26,
-        "lastPatchToDomMs": 16.399999998509884,
-        "lastDurationMs": 0.29999999701976776,
+        "lastPatchToDomMs": 13.900000005960464,
+        "lastDurationMs": 0.09999999403953552,
+        "meta": {
+          "fixtureId": "mdx-transitions",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": false,
+        "hasPre": true,
+        "hasFootnotes": false,
+        "hasBlockquote": false,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 0,
+        "pre": 6,
+        "blockquote": 0,
+        "katex": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Transitions\">MDX Transitions</h1><p class=\"markdown-paragraph\">This fixture forces multiple MDX blocks to compile separately.</p><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview codeblock&gt;\nInline **bold** with a list:\n\n- Alpha\n- Beta\n- Gamma\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Inline **bold** with a list:</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>- Alpha</span></span>\n<span class=\"line\" data-line=\"4\"><span>- Beta</span></span>\n<span class=\"line\" data-line=\"5\"><span>- Gamma</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview&gt;\n| Model | Latency (ms) | Notes |\n| --- | --- | --- |\n| A | 12 | fast |\n| B | 24 | medium |\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>| Model | Latency (ms) | Notes |</span></span>\n<span class=\"line\" data-line=\"2\"><span>| --- | --- | --- |</span></span>\n<span class=\"line\" data-line=\"3\"><span>| A | 12 | fast |</span></span>\n<span class=\"line\" data-line=\"4\"><span>| B | 24 | medium |</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx-inert\" data-diagnostic=\"MDX requires explicit engines.mdx in trusted-mdx mode\"><pre><code>&lt;Preview codeblock&gt;\n&gt; Blockquote inside MDX\n\n`inline code` and **strong** text\n&lt;/Preview&gt;</code></pre></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">&gt; Blockquote inside MDX</span>\n<span class=\"line\"></span>\n<span class=\"line\">`inline code` and **strong** text</span></code></pre></div></div></div></div></div></div>",
+      "textSample": "MDX TransitionsThis fixture forces multiple MDX blocks to compile separately.<Preview codeblock>\nInline **bold** with a list:\n\n- Alpha\n- Beta\n- Gamma\n</Preview>[data-radix-scroll-area-viewport]{scroll",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 0,
+          "pre": 6,
+          "blockquote": 0,
+          "katex": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [],
+        "codeBlocks": [
+          {
+            "text": "<Preview codeblock>\nInline **bold** with a list:\n\n- Alpha\n- Beta\n- Gamma\n</Preview>",
+            "lineCount": 7
+          },
+          {
+            "text": "Inline **bold** with a list:\n\n- Alpha\n- Beta\n- Gamma",
+            "lineCount": 5
+          },
+          {
+            "text": "<Preview>\n| Model | Latency (ms) | Notes |\n| --- | --- | --- |\n| A | 12 | fast |\n| B | 24 | medium |\n</Preview>",
+            "lineCount": 6
+          },
+          {
+            "text": "| Model | Latency (ms) | Notes |\n| --- | --- | --- |\n| A | 12 | fast |\n| B | 24 | medium |",
+            "lineCount": 4
+          },
+          {
+            "text": "<Preview codeblock>\n> Blockquote inside MDX\n\n`inline code` and **strong** text\n</Preview>",
+            "lineCount": 5
+          },
+          {
+            "text": "> Blockquote inside MDX\n\n`inline code` and **strong** text",
+            "lineCount": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "event-hasTable",
+      "appendedChars": 613,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 31,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 28,
+        "lastPatchToDomMs": 11.300000011920929,
+        "lastDurationMs": 0.800000011920929,
         "meta": {
           "fixtureId": "mdx-transitions",
           "scenarioId": "S3_fast_reasonable",
@@ -974,8 +672,6 @@
         "hasTable": true,
         "hasPre": true,
         "hasFootnotes": false,
-        "hasMdxPending": false,
-        "hasMdxCompiled": true,
         "hasBlockquote": true,
         "hasMath": false
       },
@@ -984,13 +680,11 @@
         "pre": 3,
         "blockquote": 1,
         "katex": 0,
-        "mdxPending": 0,
-        "mdxCompiled": 3,
         "footnotes": 0,
         "hr": 0
       },
-      "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Transitions\">MDX Transitions</h1><p class=\"markdown-paragraph\">This fixture forces multiple MDX blocks to compile separately.</p><div class=\"markdown-mdx\" data-mdx-ref=\"worker:62453005\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Inline <strong class=\"mdx-strong\">bold</strong> with a list:</p><ul class=\"mdx-ul\">\n<li class=\"mdx-li\">Alpha</li>\n<li class=\"mdx-li\">Beta</li>\n<li class=\"mdx-li\">Gamma</li>\n</ul></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Inline **bold** with a list:</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>- Alpha</span></span>\n<span class=\"line\" data-line=\"4\"><span>- Beta</span></span>\n<span class=\"line\" data-line=\"5\"><span>- Gamma</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:6272845f\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><table class=\"mdx-table\"><thead class=\"mdx-thead\"><tr class=\"mdx-tr\"><th class=\"mdx-th\">Model</th><th class=\"mdx-th\">Latency (ms)</th><th class=\"mdx-th\">Notes</th></tr></thead><tbody class=\"mdx-tbody\"><tr class=\"mdx-tr\"><td class=\"mdx-td\">A</td><td class=\"mdx-td\">12</td><td class=\"mdx-td\">fast</td></tr><tr class=\"mdx-tr\"><td class=\"mdx-td\">B</td><td class=\"mdx-td\">24</td><td class=\"mdx-td\">medium</td></tr></tbody></table></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>| Model | Latency (ms) | Notes |</span></span>\n<span class=\"line\" data-line=\"2\"><span>| --- | --- | --- |</span></span>\n<span class=\"line\" data-line=\"3\"><span>| A | 12 | fast |</span></span>\n<span class=\"line\" data-line=\"4\"><span>| B | 24 | medium |</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:2e023dfc\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><blockquote class=\"mdx-blockquote\">\n<p class=\"mdx-p\">Blockquote inside MDX</p>\n</blockquote><p class=\"mdx-p\"><code class=\"mdx-code\">inline code</code> and <strong class=\"mdx-strong\">strong</strong> text</p></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><pre class=\"m-0\"><code><span class=\"line\">&gt; Blockquote inside MDX</span>\n<span class=\"line\"></span>\n<span class=\"line\">`inline code` and **strong** text</span></code></pre></div></div></div></div></div></div>",
-      "textSample": "MDX TransitionsThis fixture forces multiple MDX blocks to compile separately.Inline bold with a list:\nAlpha\nBeta\nGamma\n[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-w",
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Transitions\">MDX Transitions</h1><p class=\"markdown-paragraph\">This fixture forces multiple MDX blocks to compile separately.</p><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"markdown-paragraph\">Inline <strong>bold</strong> with a list:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Alpha</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Beta</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Gamma</li></ul></figure><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Inline **bold** with a list:</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>- Alpha</span></span>\n<span class=\"line\" data-line=\"4\"><span>- Beta</span></span>\n<span class=\"line\" data-line=\"5\"><span>- Gamma</span></span></code></pre></div></div></div></div></div></div><figure class=\"styles_preview__avcYR not-prose\"><div dir=\"ltr\" class=\"relative overflow-x-hidden my-6 w-full rounded border border-border\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max\"><div class=\"relative w-full overflow-auto\"><table class=\"w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Model</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Latency (ms)</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Notes</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">A</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">12</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">fast</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">B</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">24</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">medium</td></tr></tbody></table></div></div></div></div></div></figure><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>| Model | Latency (ms) | Notes |</span></span>\n<span class=\"line\" data-line=\"2\"><span>| --- | --- | --- |</span></span>\n<span class=\"line\" data-line=\"3\"><span>| A | 12 | fast |</span></span>\n<span class=\"line\" data-line=\"4\"><span>| B | 24 | medium |</span></span></code></pre></div></div></div></div></div></div><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote inside MDX</p></blockquote><p class=\"markdown-paragraph\"><code class=\"inline-code\">inline code</code> and <strong>strong</strong> text</p></figure><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>&gt; Blockquote inside MDX</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>`inline code` and **strong** text</span></span></code></pre></div></div></div></div></div></div></div>",
+      "textSample": "MDX TransitionsThis fixture forces multiple MDX blocks to compile separately.Inline bold with a list:AlphaBetaGamma[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webki",
       "structure": {
         "topLevelTags": [
           "div"
@@ -1015,18 +709,85 @@
             "emptyBodyCellCount": 0
           }
         ],
-        "mdxBlocks": [
+        "codeBlocks": [
           {
-            "status": "compiled",
-            "textSample": "Inline bold with a list:\nAlpha\nBeta\nGamma\n"
+            "text": "Inline **bold** with a list:\n\n- Alpha\n- Beta\n- Gamma",
+            "lineCount": 5
           },
           {
-            "status": "compiled",
-            "textSample": "ModelLatency (ms)NotesA12fastB24medium"
+            "text": "| Model | Latency (ms) | Notes |\n| --- | --- | --- |\n| A | 12 | fast |\n| B | 24 | medium |",
+            "lineCount": 4
           },
           {
-            "status": "compiled",
-            "textSample": "\nBlockquote inside MDX\ninline code and strong text"
+            "text": "> Blockquote inside MDX\n\n`inline code` and **strong** text",
+            "lineCount": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "event-hasBlockquote",
+      "appendedChars": 613,
+      "rootChildCount": 1,
+      "runtimeState": {
+        "rendererVersion": 31,
+        "queueDepth": 0,
+        "pendingBatches": 0,
+        "workerReady": true,
+        "lastTx": 28,
+        "lastPatchToDomMs": 11.300000011920929,
+        "lastDurationMs": 0.800000011920929,
+        "meta": {
+          "fixtureId": "mdx-transitions",
+          "scenarioId": "S3_fast_reasonable",
+          "seed": null,
+          "schedulerMode": null
+        },
+        "storeCounters": {
+          "appendLineGuardRejected": 0,
+          "staleEpochRejected": 0,
+          "storeInvariantViolationCount": 0
+        }
+      },
+      "selectors": {
+        "hasTable": true,
+        "hasPre": true,
+        "hasFootnotes": false,
+        "hasBlockquote": true,
+        "hasMath": false
+      },
+      "counts": {
+        "table": 1,
+        "pre": 3,
+        "blockquote": 1,
+        "katex": 0,
+        "footnotes": 0,
+        "hr": 0
+      },
+      "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Transitions\">MDX Transitions</h1><p class=\"markdown-paragraph\">This fixture forces multiple MDX blocks to compile separately.</p><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"markdown-paragraph\">Inline <strong>bold</strong> with a list:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Alpha</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Beta</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Gamma</li></ul></figure><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Inline **bold** with a list:</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>- Alpha</span></span>\n<span class=\"line\" data-line=\"4\"><span>- Beta</span></span>\n<span class=\"line\" data-line=\"5\"><span>- Gamma</span></span></code></pre></div></div></div></div></div></div><figure class=\"styles_preview__avcYR not-prose\"><div dir=\"ltr\" class=\"relative overflow-x-hidden my-6 w-full rounded border border-border\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max\"><div class=\"relative w-full overflow-auto\"><table class=\"w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Model</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Latency (ms)</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Notes</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">A</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">12</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">fast</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">B</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">24</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">medium</td></tr></tbody></table></div></div></div></div></div></figure><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>| Model | Latency (ms) | Notes |</span></span>\n<span class=\"line\" data-line=\"2\"><span>| --- | --- | --- |</span></span>\n<span class=\"line\" data-line=\"3\"><span>| A | 12 | fast |</span></span>\n<span class=\"line\" data-line=\"4\"><span>| B | 24 | medium |</span></span></code></pre></div></div></div></div></div></div><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote inside MDX</p></blockquote><p class=\"markdown-paragraph\"><code class=\"inline-code\">inline code</code> and <strong>strong</strong> text</p></figure><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>&gt; Blockquote inside MDX</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>`inline code` and **strong** text</span></span></code></pre></div></div></div></div></div></div></div>",
+      "textSample": "MDX TransitionsThis fixture forces multiple MDX blocks to compile separately.Inline bold with a list:AlphaBetaGamma[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webki",
+      "structure": {
+        "topLevelTags": [
+          "div"
+        ],
+        "counts": {
+          "table": 1,
+          "pre": 3,
+          "blockquote": 1,
+          "katex": 0,
+          "footnotes": 0,
+          "hr": 0
+        }
+      },
+      "inspection": {
+        "tables": [
+          {
+            "headerColumns": 3,
+            "rowCellCounts": [
+              3,
+              3
+            ],
+            "emptyBodyCellCount": 0
           }
         ],
         "codeBlocks": [
@@ -1054,20 +815,18 @@
       "hasTable": true,
       "hasPre": true,
       "hasFootnotes": false,
-      "hasMdxPending": false,
-      "hasMdxCompiled": true,
       "hasBlockquote": true,
       "hasMath": false
     },
-    "html": "<div class=\"markdown-v2-output\" style=\"contain:content\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Transitions\">MDX Transitions</h1><p class=\"markdown-paragraph\">This fixture forces multiple MDX blocks to compile separately.</p><div class=\"markdown-mdx\" data-mdx-ref=\"worker:62453005\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"mdx-p\">Inline <strong class=\"mdx-strong\">bold</strong> with a list:</p><ul class=\"mdx-ul\">\n<li class=\"mdx-li\">Alpha</li>\n<li class=\"mdx-li\">Beta</li>\n<li class=\"mdx-li\">Gamma</li>\n</ul></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Inline **bold** with a list:</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>- Alpha</span></span>\n<span class=\"line\" data-line=\"4\"><span>- Beta</span></span>\n<span class=\"line\" data-line=\"5\"><span>- Gamma</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:6272845f\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure class=\"styles_preview__avcYR not-prose\"><table class=\"mdx-table\"><thead class=\"mdx-thead\"><tr class=\"mdx-tr\"><th class=\"mdx-th\">Model</th><th class=\"mdx-th\">Latency (ms)</th><th class=\"mdx-th\">Notes</th></tr></thead><tbody class=\"mdx-tbody\"><tr class=\"mdx-tr\"><td class=\"mdx-td\">A</td><td class=\"mdx-td\">12</td><td class=\"mdx-td\">fast</td></tr><tr class=\"mdx-tr\"><td class=\"mdx-td\">B</td><td class=\"mdx-td\">24</td><td class=\"mdx-td\">medium</td></tr></tbody></table></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>| Model | Latency (ms) | Notes |</span></span>\n<span class=\"line\" data-line=\"2\"><span>| --- | --- | --- |</span></span>\n<span class=\"line\" data-line=\"3\"><span>| A | 12 | fast |</span></span>\n<span class=\"line\" data-line=\"4\"><span>| B | 24 | medium |</span></span></code></pre></div></div></div></div></div></div><div class=\"markdown-mdx\" data-mdx-ref=\"worker:2e023dfc\" data-mdx-status=\"compiled\" data-mdx-mode=\"worker\"><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><blockquote class=\"mdx-blockquote\">\n<p class=\"mdx-p\">Blockquote inside MDX</p>\n</blockquote><p class=\"mdx-p\"><code class=\"mdx-code\">inline code</code> and <strong class=\"mdx-strong\">strong</strong> text</p></figure></div><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>&gt; Blockquote inside MDX</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>`inline code` and **strong** text</span></span></code></pre></div></div></div></div></div></div></div>",
+    "html": "<div class=\"markdown-v2-output\" style=\"contain: content;\"><h1 class=\"markdown-heading markdown-h1\" data-heading-text=\"MDX Transitions\">MDX Transitions</h1><p class=\"markdown-paragraph\">This fixture forces multiple MDX blocks to compile separately.</p><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><p class=\"markdown-paragraph\">Inline <strong>bold</strong> with a list:</p><ul class=\"markdown-list unordered\" data-list-depth=\"0\"><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Alpha</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Beta</li><li class=\"markdown-list-item\" data-counter-text=\"•\" data-list-depth=\"0\">Gamma</li></ul></figure><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>Inline **bold** with a list:</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>- Alpha</span></span>\n<span class=\"line\" data-line=\"4\"><span>- Beta</span></span>\n<span class=\"line\" data-line=\"5\"><span>- Gamma</span></span></code></pre></div></div></div></div></div></div><figure class=\"styles_preview__avcYR not-prose\"><div dir=\"ltr\" class=\"relative overflow-x-hidden my-6 w-full rounded border border-border\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max\"><div class=\"relative w-full overflow-auto\"><table class=\"w-full caption-bottom text-base\"><thead class=\"[&amp;_tr]:border-b\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Model</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Latency (ms)</th><th class=\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&amp;:has([role=checkbox])]:pr-0\">Notes</th></tr></thead><tbody class=\"[&amp;_tr:last-child]:border-0\"><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">A</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">12</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">fast</td></tr><tr class=\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">B</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">24</td><td class=\"p-4 align-middle [&amp;:has([role=checkbox])]:pr-0\">medium</td></tr></tbody></table></div></div></div></div></div></figure><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>| Model | Latency (ms) | Notes |</span></span>\n<span class=\"line\" data-line=\"2\"><span>| --- | --- | --- |</span></span>\n<span class=\"line\" data-line=\"3\"><span>| A | 12 | fast |</span></span>\n<span class=\"line\" data-line=\"4\"><span>| B | 24 | medium |</span></span></code></pre></div></div></div></div></div></div><figure data-with-codeblock=\"true\" class=\"styles_preview__avcYR not-prose\"><blockquote class=\"markdown-blockquote\"><p class=\"markdown-paragraph\">Blockquote inside MDX</p></blockquote><p class=\"markdown-paragraph\"><code class=\"inline-code\">inline code</code> and <strong>strong</strong> text</p></figure><div class=\"flex flex-col\"><div dir=\"ltr\" class=\"relative overflow-x-hidden min-w-auto\" style=\"position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;\"><style>[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}</style><div data-radix-scroll-area-viewport=\"\" class=\"h-full w-full rounded-[inherit]\" style=\"overflow: scroll hidden;\"><div style=\"min-width: 100%; display: table;\"><div class=\"min-w-max p-4\"><div class=\"[&amp;_pre]:m-0 [&amp;_pre]:overflow-x-visible [&amp;_pre]:bg-transparent [&amp;_pre]:p-0\"><pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>&gt; Blockquote inside MDX</span></span>\n<span class=\"line\" data-line=\"2\"><span></span></span>\n<span class=\"line\" data-line=\"3\"><span>`inline code` and **strong** text</span></span></code></pre></div></div></div></div></div></div></div>",
     "runtimeState": {
       "rendererVersion": 31,
       "queueDepth": 0,
       "pendingBatches": 0,
       "workerReady": true,
       "lastTx": 28,
-      "lastPatchToDomMs": 11.899999998509884,
-      "lastDurationMs": 0.8999999985098839,
+      "lastPatchToDomMs": 11.300000011920929,
+      "lastDurationMs": 0.800000011920929,
       "meta": {
         "fixtureId": "mdx-transitions",
         "scenarioId": "S3_fast_reasonable",
@@ -1097,8 +856,8 @@
       {
         "index": 0,
         "tag": "div",
-        "hash": "36f3895e02ce7e4c1a257f75afd296e4c6ba6c9753ea1e45bb16606d95b315e2",
-        "textSample": "MDX TransitionsThis fixture forces multiple MDX blocks to compile separately.Inline bold with a list:\nAlpha\nBeta\nGamma\n["
+        "hash": "38ae15fac1f978b4afae30afbcb16b2a3180de1d596269960b46f988ad192506",
+        "textSample": "MDX TransitionsThis fixture forces multiple MDX blocks to compile separately.Inline bold with a list:AlphaBetaGamma[data"
       }
     ],
     "inspection": {
@@ -1110,20 +869,6 @@
             3
           ],
           "emptyBodyCellCount": 0
-        }
-      ],
-      "mdxBlocks": [
-        {
-          "status": "compiled",
-          "textSample": "Inline bold with a list:\nAlpha\nBeta\nGamma\n"
-        },
-        {
-          "status": "compiled",
-          "textSample": "ModelLatency (ms)NotesA12fastB24medium"
-        },
-        {
-          "status": "compiled",
-          "textSample": "\nBlockquote inside MDX\ninline code and strong text"
         }
       ],
       "codeBlocks": [

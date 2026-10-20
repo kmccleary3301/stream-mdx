@@ -94,10 +94,6 @@ type RenderInspection = {
     rowCellCounts: number[];
     emptyBodyCellCount: number;
   }>;
-  mdxBlocks: Array<{
-    status: string | null;
-    textSample: string;
-  }>;
   codeBlocks: Array<{
     text: string;
     lineCount: number;
@@ -304,7 +300,7 @@ async function readInspection(page: import("@playwright/test").Page): Promise<Re
   return await page.evaluate(() => {
     const root = document.getElementById("regression-root");
     if (!root) {
-      return { tables: [], mdxBlocks: [], codeBlocks: [] };
+      return { tables: [], codeBlocks: [] };
     }
 
     const tables = Array.from(root.querySelectorAll("table")).map((table) => {
@@ -323,10 +319,6 @@ async function readInspection(page: import("@playwright/test").Page): Promise<Re
       return { headerColumns, rowCellCounts, emptyBodyCellCount };
     });
 
-    const mdxBlocks = Array.from(root.querySelectorAll(".markdown-mdx")).map((node) => ({
-      status: node instanceof HTMLElement ? node.dataset.mdxStatus ?? null : null,
-      textSample: (node.textContent ?? "").slice(0, 160),
-    }));
 
     const codeBlocks = Array.from(root.querySelectorAll("pre code")).map((node) => {
       const text = (node.textContent ?? "").replace(/\r\n?/g, "\n");
@@ -336,7 +328,7 @@ async function readInspection(page: import("@playwright/test").Page): Promise<Re
       };
     });
 
-    return { tables, mdxBlocks, codeBlocks };
+    return { tables, codeBlocks };
   });
 }
 
@@ -391,7 +383,7 @@ function validateTableInspection(
   label: string,
   failures: string[],
 ): void {
-  if (!fixture.forbidIncompleteTableRows) return;
+  if (!fixture.forbidIncompleteTableRows && typeof fixture.expectedTableColumnCount !== "number") return;
   const expectedColumns = fixture.expectedTableColumnCount ?? null;
   inspection.tables.forEach((table, tableIndex) => {
     const targetColumns = expectedColumns ?? table.headerColumns;
@@ -399,7 +391,7 @@ function validateTableInspection(
       failures.push(`${label}: table ${tableIndex} has no header columns.`);
       return;
     }
-    if (table.headerColumns > 0 && table.headerColumns !== targetColumns) {
+    if (table.headerColumns !== targetColumns) {
       failures.push(`${label}: table ${tableIndex} header column mismatch (${table.headerColumns} vs ${targetColumns}).`);
     }
     table.rowCellCounts.forEach((cellCount, rowIndex) => {
@@ -416,11 +408,11 @@ function validateCodePrefixInvariant(
   finalInspection: RenderInspection,
   failures: string[],
 ): void {
-  if (!fixture.enforceCodeTextPrefix) return;
   const finalCodeBlocks = finalInspection.codeBlocks.map((block) => normalizeCodeText(block.text));
   if (typeof fixture.expectedCodeBlockCount === "number" && finalCodeBlocks.length !== fixture.expectedCodeBlockCount) {
     failures.push(`final code block count mismatch: expected ${fixture.expectedCodeBlockCount}, got ${finalCodeBlocks.length}.`);
   }
+  if (!fixture.enforceCodeTextPrefix) return;
 
   const previousLineCounts = new Map<number, number>();
   for (const checkpoint of checkpoints) {
@@ -605,16 +597,17 @@ async function run(): Promise<void> {
           await page.goto(`${BASE_URL}/regression/html/`, { waitUntil: "load" });
           await page.waitForFunction(() => Boolean(window.__streammdxRegression));
           await page.evaluate(
-            async ({ fixtureId, scenarioId, nextSeed, nextSchedulerMode, preset }) => {
+            async ({ fixtureId, scenarioId, nextSeed, nextSchedulerMode, preset, contentPolicy }) => {
               window.__streammdxRegression?.setMeta({
                 fixtureId,
                 scenarioId,
                 seed: nextSeed,
                 schedulerMode: nextSchedulerMode,
               });
-              if (preset && window.__streammdxRegression?.setConfig) {
-                await window.__streammdxRegression.setConfig(preset);
-              }
+              await window.__streammdxRegression?.setConfig({
+                contentPolicy,
+                ...(preset ?? {}),
+              });
             },
             {
               fixtureId: fixture.id,
@@ -622,6 +615,7 @@ async function run(): Promise<void> {
               nextSeed: activeSeed,
               nextSchedulerMode: schedulerMode,
               preset: getSchedulerPreset(schedulerMode),
+              contentPolicy: fixture.contentPolicy ?? "markdown",
             },
           );
           await page.evaluate(() => window.__streammdxRegression?.waitForReady());
@@ -781,6 +775,22 @@ async function run(): Promise<void> {
           textSample: child.text,
         }));
         const htmlInvariantFailures: string[] = [];
+        if (fixture.contentPolicy === "trusted-mdx") {
+          const diagnosticMessages = await page.evaluate(() => {
+            const root = document.getElementById("regression-root");
+            if (!root) return [];
+            return Array.from(root.querySelectorAll<HTMLElement>("[data-mdx-diagnostic]")).map((node) => {
+              const attribute = node.getAttribute("data-mdx-diagnostic")?.trim();
+              return attribute || node.querySelector(".markdown-mdx-diagnostic")?.textContent?.trim()
+                || `MDX ${node.getAttribute("data-mdx-status") ?? "diagnostic"} without diagnostic detail`;
+            });
+          });
+          if (diagnosticMessages.length > 0) {
+            htmlInvariantFailures.push(
+              `trusted MDX render diagnostics present: ${diagnosticMessages.join("; ")}`,
+            );
+          }
+        }
         const finalHtmlValue = finalHtml ?? "";
         const rawBlockMathNeedle = '<p class="markdown-paragraph">$$';
         const rawInlineCodeNeedle =
@@ -863,11 +873,6 @@ async function run(): Promise<void> {
           if (presentForbiddenHtmlFragments.length > 0) {
             htmlInvariantFailures.push(`forbidden html fragments present: ${presentForbiddenHtmlFragments.join(", ")}.`);
           }
-        }
-        if (typeof fixture.expectedMdxBlockCount === "number" && finalInspection.mdxBlocks.length !== fixture.expectedMdxBlockCount) {
-          htmlInvariantFailures.push(
-            `final mdx block count mismatch: expected ${fixture.expectedMdxBlockCount}, got ${finalInspection.mdxBlocks.length}.`,
-          );
         }
         validateTableInspection(fixture, finalInspection, "after-finalize", htmlInvariantFailures);
         validateCodePrefixInvariant(fixture, checkpoints, finalInspection, htmlInvariantFailures);

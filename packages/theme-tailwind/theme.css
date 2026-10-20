@@ -1330,8 +1330,7 @@
     max-width: 100%;
   }
 
-  .markdown-v2-output .markdown-mdx:has(> figure[data-with-codeblock="true"]) + pre,
-  .markdown-v2-output .markdown-mdx:has(> figure[data-with-codeblock="true"]) + figure {
+  .markdown-v2-output figure[data-with-codeblock="true"] + :is(pre, figure) {
     margin-top: 0 !important;
     border-top-width: 0 !important;
     border-top-left-radius: 0 !important;
@@ -1341,6 +1340,27 @@
   .markdown-v2-output figure[data-with-codeblock="true"] {
     margin-bottom: 0;
   }
+  .markdown-v2-output figure[data-with-codeblock="true"] + div[data-code-block="true"],
+  .markdown-v2-output figure[data-with-codeblock="true"] + div:has(> div > [data-radix-scroll-area-viewport]) {
+    width: 100%;
+    margin: 0 !important;
+    border-color: var(--border) !important;
+    border-top-width: 0 !important;
+    border-right-width: 1px !important;
+    border-bottom-width: 1px !important;
+    border-left-width: 1px !important;
+    border-top-left-radius: 0 !important;
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: var(--radius-base) !important;
+    border-bottom-left-radius: var(--radius-base) !important;
+  }
+
+  .markdown-v2-output figure[data-with-codeblock="true"] + div[data-code-block="true"] pre:has(> code),
+  .markdown-v2-output figure[data-with-codeblock="true"] + div:has(> div > [data-radix-scroll-area-viewport]) pre:has(> code) {
+    border-width: 0 !important;
+    border-radius: 0 !important;
+  }
+
 
   .markdown-v2-output pre {
     margin-top: 0.75rem;

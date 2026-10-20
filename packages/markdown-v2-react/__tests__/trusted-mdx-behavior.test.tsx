@@ -5,6 +5,12 @@ import type { Block } from "@stream-mdx/core";
 import { compileTrustedMdxDocument } from "@stream-mdx/worker/mdx-compile";
 import { createTrustedMdxEngine } from "../src/trusted-mdx";
 import type { TrustedMdxRevision } from "../src/trusted-mdx-contract";
+import fs from "node:fs/promises";
+import { renderToStaticMarkup } from "react-dom/server";
+import { compileMarkdownSnapshotDirect } from "../../markdown-v2-worker/src/direct-compile";
+import { compileTrustedMdxDocument as compileTrustedMdxDocumentFromSource } from "../../markdown-v2-worker/src/mdx-compile";
+import { ComponentRegistry, MarkdownBlocksRenderer } from "../src/server";
+import { TrustedMdxProjectionContext } from "../src/trusted-mdx-boundary";
 declare global {
   var __trustedMdxEffectTrap: string[] | undefined;
 }
@@ -22,6 +28,76 @@ function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void; reje
   return { promise, resolve, reject };
 }
 
+const nestedJsxHostComponents = {
+  Preview: ({ children, codeblock }: { children?: React.ReactNode; codeblock?: boolean }) =>
+    React.createElement("figure", { "data-preview": codeblock ? "codeblock" : "example" }, children),
+  PreviewExample: () =>
+    React.createElement("span", { "data-preview-example": "" }, "Showcase"),
+  YouTube: ({ videoId, caption }: { videoId: string; caption?: string }) =>
+    React.createElement("iframe", {
+      title: caption ?? "YouTube",
+      src: `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}`,
+    }),
+  Image: ({ src, alt, caption }: { src: string; alt?: string; caption?: string }) =>
+    React.createElement(
+      "figure",
+      null,
+      React.createElement("img", { src, alt: alt ?? "" }),
+      caption ? React.createElement("figcaption", null, caption) : null,
+    ),
+};
+
+async function renderTrustedWorkerSource(source: string): Promise<string> {
+  const workerResult = await compileMarkdownSnapshotDirect({
+    text: source,
+    init: {
+      contentPolicy: "trusted-mdx",
+      docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true },
+    },
+  });
+  const engine = createTrustedMdxEngine({
+    components: nestedJsxHostComponents,
+    compile: compileTrustedMdxDocumentFromSource,
+  });
+  const doc = engine.createDocument();
+  try {
+    await doc.compileRevision({ source, blocks: workerResult.blocks });
+    const snapshot = doc.getSnapshot();
+    assert.strictEqual(snapshot.status, "ready", snapshot.error ?? "trusted worker source should project");
+    assert.deepStrictEqual(
+      Object.entries(snapshot.projections).filter(([, projection]) => projection.kind === "unmapped"),
+      [],
+      "worker-owned MDX source spans should not publish unmapped projections",
+    );
+    return renderToStaticMarkup(
+      <TrustedMdxProjectionContext.Provider value={snapshot}>
+        <MarkdownBlocksRenderer
+          blocks={workerResult.blocks}
+          componentRegistry={new ComponentRegistry()}
+        />
+      </TrustedMdxProjectionContext.Provider>,
+    );
+  } finally {
+    doc.dispose();
+    engine.dispose();
+  }
+}
+
+async function testWorkerNestedJsxUsesExactAuthoredOwners(): Promise<void> {
+  const source = await fs.readFile(
+    new URL("../../../tests/regression/fixtures/mdx-components.mdx", import.meta.url),
+    "utf8",
+  );
+  const markup = await renderTrustedWorkerSource(source);
+  assert.strictEqual((markup.match(/<pre\b/g) ?? []).length, 2, "only the two authored fenced-code blocks render");
+  assert.strictEqual((markup.match(/data-preview-example=""/g) ?? []).length, 1);
+  assert.ok(markup.includes("Showcase"), "nested PreviewExample JSX must render through its host binding");
+  assert.ok(markup.includes("<strong>Bold</strong>"), "native Markdown children remain rendered by the worker tree");
+
+  const repeated = "<Preview>\n  <PreviewExample />\n  <PreviewExample />\n</Preview>\n";
+  const repeatedMarkup = await renderTrustedWorkerSource(repeated);
+  assert.strictEqual((repeatedMarkup.match(/data-preview-example=""/g) ?? []).length, 2);
+}
 async function testRealCompilerSharedLexicalStateAndLayout(): Promise<void> {
   const source = [
     'import { Card } from "host:widgets";',
@@ -582,6 +658,7 @@ async function testSubscriberFailuresAreNotCompilerErrors(): Promise<void> {
 }
 
 async function runAllFixtures(): Promise<void> {
+  await testWorkerNestedJsxUsesExactAuthoredOwners();
   await testRealCompilerSharedLexicalStateAndLayout();
   await testStaleBeforeEvalEffectTrap();
   await testOneLeaseClearedWhileAnotherWaits();

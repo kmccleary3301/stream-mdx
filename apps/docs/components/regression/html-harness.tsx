@@ -48,6 +48,7 @@ type RegressionConfig = {
   features: NonNullable<StreamingMarkdownProps["features"]>;
   scheduling: StreamingSchedulerOptions;
   showCodeMeta: boolean;
+  contentPolicy: NonNullable<StreamingMarkdownProps["contentPolicy"]>;
 };
 
 type RegressionSummary = {
@@ -252,6 +253,7 @@ export function HtmlRegressionHarness(): JSX.Element {
     features: DEFAULT_FEATURES,
     scheduling: DEFAULT_SCHEDULING,
     showCodeMeta: false,
+    contentPolicy: "markdown",
   });
   const [instanceKey, setInstanceKey] = useState(0);
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -541,8 +543,8 @@ export function HtmlRegressionHarness(): JSX.Element {
           className="markdown-v2-output"
           features={config.features}
           scheduling={config.scheduling}
-          contentPolicy="trusted-mdx"
-          engines={regressionMdxEngines}
+          contentPolicy={config.contentPolicy}
+          engines={config.contentPolicy === "trusted-mdx" ? regressionMdxEngines : undefined}
           components={registry.getBlockComponentMap()}
           inlineComponents={registry.getInlineComponentMap()}
           tableElements={tableElements}

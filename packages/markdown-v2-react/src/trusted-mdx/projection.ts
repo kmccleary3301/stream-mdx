@@ -838,6 +838,37 @@ function describeOwner(match: MdxBlockMatch): string {
     : `MDX ${match.label} "${match.id}"`;
 }
 
+/** The native tree mirrors an MDX block with an inline owner for the same authored leaf. */
+function isExactNativeMdxAliasRegion(
+  region: TrustedMdxSourceRegion,
+  owners: readonly MdxBlockMatch[],
+): boolean {
+  if (owners.length !== 2) return false;
+  const first = owners[0];
+  const second = owners[1];
+  if (
+    !first ||
+    !second ||
+    first.from === null ||
+    first.to === null ||
+    first.from !== second.from ||
+    first.to !== second.to ||
+    region.from !== first.from ||
+    region.to !== first.to
+  ) {
+    return false;
+  }
+  return (
+    ((first.label === "block" || first.label === "nested block") &&
+      second.label === "inline expression" &&
+      second.id.startsWith(`${first.id}::native-mdx:`)) ||
+    ((second.label === "block" || second.label === "nested block") &&
+      first.label === "inline expression" &&
+      first.id.startsWith(`${second.id}::native-mdx:`))
+  );
+}
+
+
 function placementFields(match: MdxBlockMatch): { readonly placement?: "flow" | "inline" } {
   return match.placement === null ? {} : { placement: match.placement };
 }
@@ -927,7 +958,9 @@ export function projectMdxBlocks(
     }
   }
 
-  for (const owners of ownersByRegion.values()) {
+  for (const [region, owners] of ownersByRegion) {
+    // Keep non-identical, crossing, and unrelated same-span ownership collisions strict.
+    if (isExactNativeMdxAliasRegion(region, owners)) continue;
     for (const owner of owners) owner.ambiguous = true;
   }
 

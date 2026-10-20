@@ -136,7 +136,7 @@ export function collectSemanticDom(root: HTMLElement): SemanticDomRecords {
     // The public native frame owns one highlighted fence, not authored PRE
     // siblings or text. Its inner PRE/CODE structure is renderer-generated.
     const nativeFrame = wrapper.matches("div.markdown-code-block") &&
-      frame?.matches("pre[data-code-block='true'][data-block-id][data-code-total-lines]") === true;
+      frame?.matches("[data-code-block='true'][data-block-id][data-code-total-lines]") === true;
     const ownsNativeFrame = nativeFrame &&
       body.parentElement?.tagName === "PRE" && body.parentElement.parentElement === wrapper &&
       body.parentElement.childNodes.length === 1 && body.parentElement.firstChild === body &&

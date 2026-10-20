@@ -21,7 +21,7 @@ class ResizeObserverStub {
   disconnect() {}
 }
 
-async function renderBlock(block: Block): Promise<{ pre: HTMLElement; requests: Array<Record<string, unknown>> }> {
+async function renderBlock(block: Block): Promise<{ codeFrame: HTMLElement; requests: Array<Record<string, unknown>> }> {
   const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
     pretendToBeVisual: true,
   });
@@ -53,10 +53,10 @@ async function renderBlock(block: Block): Promise<{ pre: HTMLElement; requests: 
     await sleep(20);
   }
 
-  const pre = container.querySelector('pre[data-code-block="true"]') as HTMLElement | null;
-  assert.ok(pre, "expected code block to render");
+  const codeFrame = container.querySelector('[data-code-block="true"]') as HTMLElement | null;
+  assert.ok(codeFrame, "expected code block to render");
   root.unmount();
-  return { pre, requests };
+  return { codeFrame, requests };
 }
 
 async function runVirtualizedCodeStreamingGuardTest(): Promise<void> {
@@ -73,8 +73,8 @@ async function runVirtualizedCodeStreamingGuardTest(): Promise<void> {
     },
   };
 
-  const { pre, requests } = await renderBlock(finalizedLazyBlock);
-  assert.strictEqual(pre.getAttribute("data-code-virtualized"), "false", "lazy-tokenized code must remain non-virtualized");
+  const { codeFrame, requests } = await renderBlock(finalizedLazyBlock);
+  assert.strictEqual(codeFrame.getAttribute("data-code-virtualized"), "false", "lazy-tokenized code must remain non-virtualized");
   assert.ok(requests.length > 0, "finalized lazy non-virtualized code should request a full highlight pass");
   const fullRequest = requests.find((request) => request.blockId === finalizedLazyBlock.id);
   assert.ok(fullRequest, "expected a lazy highlight request for the finalized lazy code block");
@@ -95,8 +95,8 @@ async function runVirtualizedCodeStreamingGuardTest(): Promise<void> {
     },
   };
 
-  const { pre: eagerPre } = await renderBlock(eagerBlock);
-  assert.strictEqual(eagerPre.getAttribute("data-code-virtualized"), "true", "eager finalized code should still virtualize");
+  const { codeFrame: eagerCodeFrame } = await renderBlock(eagerBlock);
+  assert.strictEqual(eagerCodeFrame.getAttribute("data-code-virtualized"), "true", "eager finalized code should still virtualize");
 }
 
 runVirtualizedCodeStreamingGuardTest()

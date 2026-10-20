@@ -1,5 +1,13 @@
 import assert from "node:assert";
 import fs from "node:fs/promises";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { compileTrustedMdxDocument } from "../src/mdx-compile";
+import { projectTrustedMdxServerDocument } from "../../markdown-v2-react/src/trusted-mdx/server";
+import {
+  MarkdownBlocksRenderer,
+  TrustedMdxServerRegionProvider,
+} from "../../markdown-v2-react/src/server";
 
 import { applyPatchBatch, createInitialSnapshot, type Block, type Patch, type WorkerOut } from "@stream-mdx/core";
 import { createRendererStore } from "@stream-mdx/react/renderer/store";
@@ -54,6 +62,63 @@ async function streamFixture(
   const finalizeMessages = await harness.send({ type: "FINALIZE" });
   applyPatchMessages(store, finalizeMessages);
   return store.getBlocks();
+}
+
+async function assertTrustedMdxFlowProjection(content: string, blocks: readonly Block[]): Promise<void> {
+  const artifact = await compileTrustedMdxDocument(content);
+  const Preview = ({ children }: React.PropsWithChildren<Record<string, unknown>>) =>
+    React.createElement("section", { "data-preview": "true" }, children);
+  const projection = await projectTrustedMdxServerDocument({
+    source: content,
+    blocks,
+    artifact,
+    components: { Preview },
+  });
+  const mdxBlocks = blocks.filter((block) => block.type === "mdx");
+  const flowRegions = projection.regions.filter((region) => region.kind === "render" && region.nativeChildren === true);
+  assert.deepStrictEqual(
+    flowRegions.map((region) => region.ownerId),
+    mdxBlocks.map((block) => block.id),
+    "every completed flow root must map to one consumer-renderable MDX region",
+  );
+
+  const projectedChildSources = flowRegions.map((region) => {
+    assert.strictEqual(region.kind, "render");
+    if (region.kind !== "render") return [];
+    const flowChildren = region.flowChildren;
+    const nativeChildOwners = region.nativeChildOwners;
+    assert.ok(flowChildren, `flow projection ${region.ownerId} must retain compiler-authored child spans`);
+    assert.ok(nativeChildOwners, `flow projection ${region.ownerId} must assign native child owners`);
+    assert.strictEqual(nativeChildOwners.length, flowChildren.length);
+    assert.ok(nativeChildOwners.every((owner) => owner !== null), `Markdown flow children must have native owners for ${region.ownerId}`);
+    return flowChildren.map((child) => content.slice(child.from, child.to));
+  });
+  assert.deepStrictEqual(projectedChildSources, [
+    ["Inline **bold** with a list:", "- Alpha\n- Beta\n- Gamma"],
+    ["| Model | Latency (ms) | Notes |\n| --- | --- | --- |\n| A | 12 | fast |\n| B | 24 | medium |"],
+    ["> Blockquote inside MDX", "`inline code` and **strong** text"],
+  ], "consumer projection must preserve each compiler-authored native Markdown child source");
+
+  const markup = renderToStaticMarkup(
+    React.createElement(
+      TrustedMdxServerRegionProvider,
+      { regions: projection.regions },
+      React.createElement(MarkdownBlocksRenderer, { blocks }),
+    ),
+  );
+  const previewBodies = Array.from(
+    markup.matchAll(/<section\b[^>]*data-preview="true"[^>]*>([\s\S]*?)<\/section>/g),
+    ([, body]) => body ?? "",
+  );
+  assert.strictEqual(previewBodies.length, 3, "all three flow roots must render through their compiler-authored Preview components");
+  assert.match(previewBodies[0] ?? "", /Inline <strong>bold<\/strong> with a list:/);
+  assert.match(previewBodies[0] ?? "", /<ul\b/);
+  assert.match(previewBodies[0] ?? "", /Alpha[\s\S]*Beta[\s\S]*Gamma/);
+  assert.match(previewBodies[1] ?? "", /<table\b/);
+  assert.match(previewBodies[1] ?? "", /Model[\s\S]*Latency[\s\S]*medium/);
+  assert.match(previewBodies[2] ?? "", /<blockquote\b/);
+  assert.match(previewBodies[2] ?? "", /<code\b[^>]*>inline code<\/code>/);
+  assert.match(previewBodies[2] ?? "", /<strong>strong<\/strong> text/);
 }
 
 async function runAppendLinesTailGuardTest(): Promise<void> {
@@ -199,15 +264,103 @@ async function runFinalizedMdxStateTest(): Promise<void> {
   ];
 
   for (const { fixture, chunkSize, minMdxCount } of cases) {
-    const blocks = await streamFixture(await loadFixture(fixture), chunkSize, { contentPolicy: "trusted-mdx" });
+    const content = await loadFixture(fixture);
+    const blocks = await streamFixture(content, chunkSize, { contentPolicy: "trusted-mdx" });
     const mdxBlocks = blocks.filter((block) => block.type === "mdx");
     assert.ok(mdxBlocks.length >= minMdxCount, `expected at least ${minMdxCount} mdx blocks for ${fixture} @${chunkSize}, got ${mdxBlocks.length}`);
+    if (fixture === "mdx-transitions.mdx") {
+      await assertTrustedMdxFlowProjection(content, blocks);
+    }
 
     for (const block of mdxBlocks) {
       assert.ok(block.isFinalized, `mdx block must be finalized: ${block.id}`);
     }
   }
 }
+
+async function runTrustedMdxFootnotePhaseTest(): Promise<void> {
+  const harness = await createWorkerHarness();
+  const store = createRendererStore();
+  const initialize = async () => {
+    const messages = await harness.send({
+      type: "INIT",
+      initialContent: "",
+      prewarmLangs: [],
+      docPlugins: DOC_PLUGINS,
+      contentPolicy: "trusted-mdx",
+    });
+    const init = messages.find((message): message is Extract<WorkerOut, { type: "INITIALIZED" }> => message.type === "INITIALIZED");
+    assert.ok(init, "worker failed to initialize trusted MDX footnote document");
+    store.reset(init.blocks);
+  };
+  await initialize();
+
+  const initialContent = [
+    "Earlier[^early].",
+    "",
+    "[^early]: Earlier definition.",
+    "",
+    "<Preview>",
+    "Native child[^late].",
+    "</Preview>",
+    "",
+    "",
+  ].join("\n");
+  const fullContent = `${initialContent}[^late]: Later definition.\n`;
+  applyPatchMessages(store, await harness.send({ type: "APPEND", text: initialContent }));
+  const previousBlocks = store.getBlocks();
+  const previousRoot = previousBlocks.find((block) => block.type === "mdx");
+  assert.ok(previousRoot, "expected completed trusted MDX flow root before its later definition");
+  assert.ok(previousRoot.isFinalized, "native child root must be complete before its later definition arrives");
+  const Preview = ({ children }: React.PropsWithChildren<Record<string, unknown>>) =>
+    React.createElement("section", { "data-preview": "true" }, children);
+  const render = async (source: string, blocks: readonly Block[]) => {
+    const artifact = await compileTrustedMdxDocument(source);
+    const projection = await projectTrustedMdxServerDocument({
+      source,
+      blocks,
+      artifact,
+      components: { Preview },
+    });
+    return renderToStaticMarkup(
+      React.createElement(
+        TrustedMdxServerRegionProvider,
+        { regions: projection.regions },
+        React.createElement(MarkdownBlocksRenderer, { blocks }),
+      ),
+    );
+  };
+
+  const beforeDefinition = await render(initialContent, previousBlocks);
+  assert.match(beforeDefinition, /Native child\[\^late\]/, "unresolved native-child reference should remain literal");
+  assert.doesNotMatch(beforeDefinition, /id="fnref:2"/, "unresolved native-child reference must not publish an anchor");
+
+  applyPatchMessages(store, await harness.send({ type: "APPEND", text: fullContent.slice(initialContent.length) }));
+  applyPatchMessages(store, await harness.send({ type: "FINALIZE" }));
+  const firstDocumentBlocks = store.getBlocks();
+  const firstDocumentRoot = firstDocumentBlocks.find((block) => block.type === "mdx");
+  assert.strictEqual(firstDocumentRoot?.id, previousRoot.id, "later definition should update the same completed MDX root");
+  const afterDefinition = await render(fullContent, firstDocumentBlocks);
+  assert.match(afterDefinition, /Native child<sup class="footnote-ref"><a[^>]*>2<\/a><\/sup>/);
+  assert.match(afterDefinition, /href="#fn:2"/, "native reference should target its numbered footnote item");
+  assert.match(afterDefinition, /<li id="fn:2">Later definition\./, "later definition should publish the matching numbered item");
+  assert.match(afterDefinition, /href="#fnref:2"[^>]*class="footnote-backref"/, "numbered item should backlink to the native reference");
+  assert.strictEqual(
+    await render(initialContent, previousBlocks),
+    beforeDefinition,
+    "updating the completed root must not mutate its previously emitted snapshot",
+  );
+
+  await initialize();
+  const resetContent = "<Preview>\nNative child[^late].\n</Preview>\n\n[^late]: Reset definition.\n";
+  applyPatchMessages(store, await harness.send({ type: "APPEND", text: resetContent }));
+  applyPatchMessages(store, await harness.send({ type: "FINALIZE" }));
+  const resetMarkup = await render(resetContent, store.getBlocks());
+  assert.match(resetMarkup, /Native child<sup class="footnote-ref"><a[^>]*>1<\/a><\/sup>/);
+  assert.match(resetMarkup, /<li id="fn:1">Reset definition\./, "INIT must assign numbering from the new document context");
+  assert.doesNotMatch(resetMarkup, /fnref:2|fn:2/, "previous document numbering must not leak across INIT");
+}
+
 
 async function runMdxTransitionsRendererStoreInvariantTest(): Promise<void> {
   const content = await loadFixture("mdx-transitions.mdx");
@@ -278,5 +431,6 @@ await runStreamingTableDeferralTest();
 await runCurrencyDoesNotTriggerStreamingMathTest();
 await runFinalizedTableShapeTest();
 await runFinalizedMdxStateTest();
+await runTrustedMdxFootnotePhaseTest();
 await runMdxTransitionsRendererStoreInvariantTest();
 console.log("worker structural regressions test passed");

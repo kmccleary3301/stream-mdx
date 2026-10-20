@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-20T03:28:22.869Z",
-  "hash": "90d8e2b816943583687907644b408cc997df3f9e2fb36c999e08fc74d2b84aec",
+  "createdAt": "2026-10-20T10:12:49.396Z",
+  "hash": "ce55f4d03e5c223ec957eba8981de3332537a5be07adb389b97542622166f94f",
   "contentHash": "8ee53b15b2025a28189e5e00612b36b7576c8c95fa28746eab07b2447da6b87f",
-  "configHash": "9b7decf04a45a4ba7dce55c0c28cbf8124227566e833435b54ed3f9085b6ad3b",
-  "hashSalt": "docs-snapshots-v3:57fc6dce208c6381a70c802ae0c878cd6dd059d6277b5ce82cfe193d6a2aaecf",
+  "configHash": "21e9b5aa18684db4c790f7d21476e5854172004f36f9bdf9d9f3c80c32f15b72",
+  "hashSalt": "docs-snapshots-v3:7b5e4d9527a1cdd03f8a9f15c46cef0a07b11874a5ab0721bc22ae9637d7f810",
   "blocks": [
     {
       "id": "db082c0",

@@ -401,7 +401,7 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
       const spacerTop = window.startIndex * lineHeight;
       const spacerBottom = (window.totalLines - window.endIndex) * lineHeight;
       return (
-        <pre className={codeFrameClass} {...codeMetricsAttrs}>
+        <div className={codeFrameClass} {...codeMetricsAttrs}>
           <div
             ref={containerRef}
             className="markdown-code-block-container relative"
@@ -412,13 +412,13 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
             {rendered}
             <div style={{ height: spacerBottom }} aria-hidden="true" />
           </div>
-        </pre>
+        </div>
       );
     })()
   ) : (
-    <pre className={codeFrameClass} {...codeMetricsAttrs}>
+    <div className={codeFrameClass} {...codeMetricsAttrs}>
       {rendered}
-    </pre>
+    </div>
   );
 
   const elementToFilter = (() => {
@@ -478,7 +478,7 @@ export const CodeBlockView: React.FC<{ store: RendererStore; blockId: string; re
       return codeControlsElement ? wrapWithCodeControls(codeControlsElement, diffView) : diffView;
     }
 
-    // Controls sit beside `<pre>`, never inside it, so selecting or copying code text excludes button labels.
+    // Controls sit beside the code frame, never inside it, so selecting or copying code text excludes button labels.
     return codeControlsElement ? wrapWithCodeControls(codeControlsElement, codeView) : codeView;
   })();
 

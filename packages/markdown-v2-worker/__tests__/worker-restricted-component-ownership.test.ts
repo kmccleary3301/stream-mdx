@@ -268,6 +268,64 @@ describe("Worker Restricted Component Ownership & Native HtmlTree", () => {
       assert.notStrictEqual(block.type, "mdx", "no block should be converted to mdx under restricted policy");
     }
   });
+
+  it("keeps restricted registered JSX inert when MDX is disabled", async () => {
+    const harnessComponents = [
+      { name: "Card", renderWhen: "open" as const },
+      { name: "Input", renderWhen: "open" as const },
+    ];
+    const content = [
+      '<Card title="root">Root body.</Card>',
+      "",
+      '- <Input placeholder="nested" /> Nested body.',
+      "",
+      '> <Card title="nested">Quote body.</Card>',
+    ].join("\n");
+    const Card = (props: { title?: string; children?: React.ReactNode }) =>
+      React.createElement("section", { "data-card": props.title }, props.children);
+    const Input = (props: { placeholder?: string }) =>
+      React.createElement("input", { "data-input": props.placeholder });
+    const hostComponents = {
+      Card: defineContentComponent({ component: Card, renderWhen: "open" }),
+      Input: defineContentComponent({ component: Input, renderWhen: "open" }),
+    };
+    const render = async (mdx: boolean) => {
+      const harness = await createWorkerHarness();
+      const messages = await harness.send({
+        type: "INIT",
+        initialContent: content,
+        contentPolicy: "restricted",
+        contentComponents: harnessComponents,
+        docPlugins: { mdx },
+      });
+      const initialized = findMessage(messages, "INITIALIZED");
+      assert.ok(initialized);
+      const dom = new JSDOM(renderToStaticMarkup(
+        React.createElement(MarkdownBlocksRenderer, { blocks: initialized.blocks, contentComponents: hostComponents }),
+      ));
+      try {
+        return {
+          cards: [...dom.window.document.querySelectorAll("section[data-card]")].map((node) => node.getAttribute("data-card")),
+          inputs: [...dom.window.document.querySelectorAll("input[data-input]")].map((node) => node.getAttribute("data-input")),
+          text: dom.window.document.body.textContent ?? "",
+        };
+      } finally {
+        dom.window.close();
+      }
+    };
+
+    const disabled = await render(false);
+    assert.deepStrictEqual(disabled.cards, [], "root and nested registered JSX must not invoke their host descriptor");
+    assert.deepStrictEqual(disabled.inputs, [], "nested registered JSX must not invoke its host descriptor");
+    assert.ok(disabled.text.includes("Root body."));
+    assert.ok(disabled.text.includes("Nested body."));
+    assert.ok(disabled.text.includes("Quote body."));
+
+    const enabled = await render(true);
+    assert.deepStrictEqual(enabled.cards, ["root", "nested"], "enabled MDX must keep root and nested descriptor rendering");
+    assert.deepStrictEqual(enabled.inputs, ["nested"], "enabled MDX must keep nested descriptor rendering");
+  });
+
   it("keeps an incomplete registered opening header literal and non-executable", async () => {
     const harness = await createWorkerHarness();
     const messages = await harness.send({

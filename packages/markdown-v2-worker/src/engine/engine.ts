@@ -352,9 +352,13 @@ export class MarkdownEngine {
     this.buildInlineParser();
   }
 
+  private getActiveContentComponents(): ReadonlyMap<string, RestrictedComponentDescriptor> | undefined {
+    return this.mdxEnabled ? this.contentComponents : undefined;
+  }
+
   private buildMarkdownParser(tables: boolean): void {
     const gfm = tables ? GFM : GFM.filter((extension) => extension !== Table);
-    this.mdParser = mdParser.configure([gfm, createBlockCompatibilityExtension(() => this.contentPolicy === "restricted" ? this.contentComponents : undefined), HtmlContinuationExtension, ...(this.extensions?.markdown ?? [])]);
+    this.mdParser = mdParser.configure([gfm, createBlockCompatibilityExtension(() => this.contentPolicy === "restricted" ? this.getActiveContentComponents() : undefined), HtmlContinuationExtension, ...(this.extensions?.markdown ?? [])]);
   }
 
   private buildInlineParser(): void {
@@ -816,6 +820,7 @@ export class MarkdownEngine {
     this.currentLinkReferences = collectLinkReferences(tree, content);
     this.inlineParser.setReferences(this.currentLinkReferences);
     let extractedBlocks = await this.extractBlocks(tree, content, options);
+    await this.prepareTrustedMdxFlowChildrenForBlocks(extractedBlocks, this.blocks);
     extractedBlocks = this.runDocumentPlugins(extractedBlocks, content);
 
     this.performanceTimer.measure("parse-all");
@@ -851,6 +856,7 @@ export class MarkdownEngine {
       firstChangedPos: oldLen,
       previousBlocks: this.blocks,
     });
+    await this.prepareTrustedMdxFlowChildrenForBlocks(changedBlocks, this.blocks, changedLabels);
     changedBlocks = this.runDocumentPlugins(changedBlocks, newContent);
     const lastRange = changedBlocks.length > 0 ? changedBlocks[changedBlocks.length - 1]?.payload?.range : undefined;
     const lastTo = typeof lastRange?.to === "number" ? lastRange.to : 0;
@@ -865,6 +871,7 @@ export class MarkdownEngine {
         this.currentLinkReferences = fullRefs;
         this.inlineParser.setReferences(fullRefs);
         let fullBlocks = await this.extractBlocks(fullTree, newContent);
+        await this.prepareTrustedMdxFlowChildrenForBlocks(fullBlocks, this.blocks, changedLabels);
         fullBlocks = this.runDocumentPlugins(fullBlocks, newContent);
         const fullLast = fullBlocks.length > 0 ? fullBlocks[fullBlocks.length - 1]?.payload?.range?.to ?? 0 : 0;
         if (fullLast >= newContent.length - 1 || fullBlocks.length >= changedBlocks.length) {
@@ -1010,7 +1017,7 @@ export class MarkdownEngine {
       return groupHtmlOwnership(extracted, this.mdParser, content, this.htmlConfig, sourceOffset, (text) => this.inlineParser.parse(text), {
         mdxComponents: this.mdxEnabled && this.contentPolicy === "trusted-mdx",
         contentPolicy: this.contentPolicy,
-        contentComponents: this.contentComponents,
+        contentComponents: this.getActiveContentComponents(),
         forceFinalize: options.forceFinalize,
       });
     } catch (error) {
@@ -1120,7 +1127,6 @@ export class MarkdownEngine {
     };
 
     await this.enrichBlock(block, options, syntaxNode);
-    await this.prepareTrustedMdxFlowChildren(block);
     return block;
   }
 
@@ -1141,7 +1147,8 @@ export class MarkdownEngine {
       !this.mdxEnabled ||
       !block.isFinalized ||
       !this.hasTrustedNativeSource(block) ||
-      (block.type !== "paragraph" && block.type !== "html")
+      Array.isArray(block.payload.meta?.trustedMdxNativeChildren) ||
+      (block.type !== "paragraph" && block.type !== "html" && block.type !== "mdx")
     ) {
       return;
     }
@@ -1163,9 +1170,6 @@ export class MarkdownEngine {
     const meta = block.payload.meta;
     const treeKey = getActiveHtmlTreeKey(meta);
     const activeTree = treeKey ? (meta?.[treeKey] as HtmlTreeNode[] | undefined) : undefined;
-    const canonicalNativeChildren = Array.isArray(meta?.trustedMdxNativeChildren)
-      ? meta.trustedMdxNativeChildren
-      : undefined;
     const mdxDetection = this.documentPluginRegistry.getAll().find((plugin) => plugin.name === "mdx-detection");
     const nativeChildren: HtmlTreeNode[] = [];
     for (const child of flowRoot.flowChildren) {
@@ -1178,7 +1182,7 @@ export class MarkdownEngine {
       const seenOwners = new Set<Block>();
       const exact = child.kind !== "markdown";
       const mdxOnly = child.kind === "jsx";
-      appendPreparedNativeBlocksInRange(canonicalNativeChildren ?? activeTree, childFrom, childTo, exact, mdxOnly, childBlocks, seenOwners);
+      appendPreparedNativeBlocksInRange(activeTree, childFrom, childTo, exact, mdxOnly, childBlocks, seenOwners);
       if (childBlocks.length === 0) {
         const parsedChildBlocks = child.kind === "inline"
           ? [await this.prepareTrustedMdxInlineChild(childSource, childFrom, childTo)]
@@ -1193,6 +1197,9 @@ export class MarkdownEngine {
         }
         if (parsedChildBlocks.length === 0) continue;
         mdxDetection?.process({ content: childSource, blocks: parsedChildBlocks, state: this.documentPluginState });
+        for (const parsedChildBlock of parsedChildBlocks) {
+          await this.prepareTrustedMdxFlowChildren(parsedChildBlock);
+        }
         childBlocks.push(...parsedChildBlocks);
       }
       for (const childBlock of childBlocks) {
@@ -1204,6 +1211,39 @@ export class MarkdownEngine {
       trustedMdxNativeChildren: nativeChildren,
     };
   }
+  private async prepareTrustedMdxFlowChildrenForBlocks(
+    blocks: Block[],
+    previousBlocks: readonly Block[],
+    changedLabels?: ReadonlySet<string>,
+  ): Promise<void> {
+    const previousById = new Map(previousBlocks.map((block) => [block.id, block]));
+    for (const block of blocks) {
+      const previous = previousById.get(block.id);
+      const previousRange = previous?.payload.range;
+      const currentRange = block.payload.range;
+      const previousChildren = previous?.payload.meta?.trustedMdxNativeChildren;
+      const sameFlowRootType = previous?.type === block.type ||
+        (previous?.type === "mdx" && (block.type === "html" || block.type === "paragraph"));
+      if (
+        previous &&
+        previous.isFinalized &&
+        sameFlowRootType &&
+        block.isFinalized &&
+        previous.payload.raw === block.payload.raw &&
+        previousRange?.from === currentRange?.from &&
+        previousRange?.to === currentRange?.to &&
+        Array.isArray(previousChildren) &&
+        (changedLabels === undefined || changedLabels.size === 0)
+      ) {
+        block.payload.meta = {
+          ...block.payload.meta,
+          trustedMdxNativeChildren: previousChildren,
+        };
+      }
+      await this.prepareTrustedMdxFlowChildren(block);
+    }
+  }
+
 
   private inlineContext(block: Block, ancestorTypes: readonly string[] = [], segmentOrigin: "direct-inline" | "mixed-content" = "direct-inline"): LookaheadContainerContext {
     const context = {
@@ -1412,6 +1452,7 @@ export class MarkdownEngine {
     metrics?.recordBlockSize(block.type, rawLength);
 
     const shouldTrackInline = this.tracksInlineStatus();
+    const contentComponents = this.getActiveContentComponents();
     const allowMixed = this.formatAnticipationConfig.html || this.formatAnticipationConfig.mdx;
     const trustedNativePath = this.hasTrustedNativeSource(block, nativeNode);
 
@@ -1597,9 +1638,9 @@ export class MarkdownEngine {
                         autoClose: true,
                         maxNewlines: MIXED_CONTENT_AUTOCLOSE_NEWLINES,
                         componentAllowlist:
-                          this.contentPolicy === "trusted-mdx" || this.contentComponents.size === 0
+                          this.contentPolicy === "trusted-mdx" || !contentComponents || contentComponents.size === 0
                             ? undefined
-                            : this.contentComponents.keys(),
+                            : contentComponents.keys(),
                       }
                     : undefined,
                 }
@@ -1790,6 +1831,7 @@ export class MarkdownEngine {
   }
 
   private async prepareNestedChildren(block: Block, options?: ParseOptions, ancestorTypes: readonly string[] = [], nativeNode?: SyntaxNode): Promise<void> {
+    const contentComponents = this.getActiveContentComponents();
     const trustedNativeSource = this.hasTrustedNativeSource(block, nativeNode);
     const containerMeta: NonNullable<Block["payload"]["meta"]> = { ...block.payload.meta, mathEnabled: this.enableMath, formatAnticipation: this.formatAnticipationConfig };
     if (trustedNativeSource) containerMeta.trustedMdxSource = true;
@@ -1807,7 +1849,7 @@ export class MarkdownEngine {
           forceFinalize: options?.forceFinalize,
           mdxComponents: this.mdxEnabled && this.contentPolicy === "trusted-mdx",
           contentPolicy: this.contentPolicy,
-          contentComponents: this.contentComponents,
+          contentComponents,
         });
         const retained = new Set<Block>(owned);
         // Markdown leaves absorbed into an owner keep their consumer metadata (code highlighting,
@@ -1899,11 +1941,11 @@ export class MarkdownEngine {
               this.updateInlineLookaheadMeta(nested, parsed, this.tracksInlineStatus());
               if (text.includes("<") || text.includes("{")) {
                 let restrictedInlineTree: HtmlTreeNode[] | null = null;
-                if (this.contentPolicy === "restricted" && text.includes("<")) {
+                if (this.contentPolicy === "restricted" && contentComponents && text.includes("<")) {
                   const protectedRanges = localCodeRanges;
                   if (this.enableMath) protectedRanges.push(...collectMathProtectedRanges(text, protectedRanges));
                   protectedRanges.push(...collectAutolinkProtectedRanges(text));
-                  restrictedInlineTree = buildRestrictedComponentInlineTree(text, this.contentComponents, {
+                  restrictedInlineTree = buildRestrictedComponentInlineTree(text, contentComponents, {
                     forceFinalize: options?.forceFinalize,
                     parseInline: (value) => this.inlineParser.parse(value),
                     parser: this.mdParser,
@@ -1933,9 +1975,9 @@ export class MarkdownEngine {
                           autoClose: !nested.isFinalized && this.formatAnticipationConfig.mdx,
                           maxNewlines: MIXED_CONTENT_AUTOCLOSE_NEWLINES,
                           componentAllowlist:
-                            this.contentPolicy === "trusted-mdx" || this.contentComponents.size === 0
+                            this.contentPolicy === "trusted-mdx" || !contentComponents || contentComponents.size === 0
                               ? undefined
-                              : this.contentComponents.keys(),
+                              : contentComponents.keys(),
                         },
                         protectedRanges: codeRanges,
                         allowedTags: this.htmlConfig?.allowedTags,
@@ -1960,8 +2002,8 @@ export class MarkdownEngine {
                       children: [],
                     }]
                   : segments.some((segment) => segment.kind === "mdx") ? segments.map((segment, index) => {
-                      const restrictedTree = segment.kind === "mdx" && this.contentPolicy === "restricted"
-                        ? buildRestrictedComponentTree(segment.value, this.contentComponents, {
+                      const restrictedTree = segment.kind === "mdx" && this.contentPolicy === "restricted" && contentComponents
+                        ? buildRestrictedComponentTree(segment.value, contentComponents, {
                             forceFinalize: options?.forceFinalize,
                             parseInline: (value) => this.inlineParser.parse(value),
                             parser: this.mdParser,
