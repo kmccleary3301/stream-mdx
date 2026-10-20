@@ -1,5 +1,6 @@
 import type { CodeLineDecorationUpdate, CodeLineRecord } from "./code-records";
 import type { TableBlockSnapshot, TableBlockSourceMetadata, TableHeaderRecord, TableRowRecord } from "./table-records";
+import type { ParagraphBlockSnapshot, ParagraphBlockSourceMetadata, ParagraphSpanRecord, ParagraphSpanUpdate } from "./paragraph-records";
 import type { TableRowIndexUpdate } from "./table-row-index";
 
 /** Matching worker, renderer and NDJSON schema identity; protocol re-exports this value. */
@@ -413,6 +414,7 @@ export interface NodeSnapshot {
   meta?: Record<string, unknown>;
   code?: CodeBlockSnapshot;
   table?: TableBlockSnapshot;
+  paragraph?: ParagraphBlockSnapshot;
 }
 
 export interface NodePath {
@@ -457,6 +459,30 @@ export type Patch =
   | { op: "setPropsBatch"; entries: SetPropsBatchEntry[]; meta?: PatchMeta }
   | { op: "finalize"; at: NodePath; meta?: PatchMeta }
   | { op: "reorder"; at: NodePath; from: number; to: number; count: number; meta?: PatchMeta }
+  | {
+      op: "appendParagraph";
+      at: NodePath;
+      paragraphOwnerId: string;
+      generation: number;
+      expectedRevision: number;
+      revision: number;
+      sourceAppend: string;
+      fromSpan: number;
+      spans: readonly ParagraphSpanRecord[];
+      paragraph: ParagraphBlockSourceMetadata;
+      meta?: PatchMeta;
+    }
+  | {
+      op: "updateParagraphSpans";
+      at: NodePath;
+      paragraphOwnerId: string;
+      generation: number;
+      expectedRevision: number;
+      revision: number;
+      updates: readonly ParagraphSpanUpdate[];
+      paragraph: ParagraphBlockSourceMetadata;
+      meta?: PatchMeta;
+    }
   | {
       op: "appendTableRows";
       at: NodePath;

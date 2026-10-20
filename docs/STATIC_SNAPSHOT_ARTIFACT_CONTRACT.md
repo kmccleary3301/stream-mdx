@@ -66,6 +66,26 @@ provisional tail cannot alter older snapshots or truncate completed source;
 later re-extension validates only the overlap with the retained unfinished tail.
 Full source and row materialization remains a cold `getBlocks()` operation.
 
+
+### Native paragraph ownership
+
+Managed root paragraphs retain owner-scoped `ParagraphBlockSourceMetadata` and
+immutable `ParagraphSpanRecord`s. `appendParagraph` carries the required
+`sourceAppend` for only newly owned authored bytes and the changed span tail;
+`updateParagraphSpans` carries only source-stable prepared meaning changes.
+Owner generation and expected revision guard both operations. Typed
+`ParagraphSpanChildSnapshot`s preserve prepared `paragraph-text`,
+`paragraph-html`, or `paragraph-mdx` children at absolute source ranges.
+
+This cutover does not change static artifact `version: 1`, `schemaId`, or the
+serialized `blocks` format. Live native appends do not materialize a complete
+`Block`. An explicit cold `getParagraphColdBlock()` or `getBlocks()` request
+may materialize authored `payload.raw`, current inline or mixed-segment data,
+the source range, and `meta.paragraph` from the current owner state. Until the
+separate approved P6 API migration, legacy custom paragraph `raw` and `inlines`
+props use this truthful full-source projection, so that path is cold work;
+native prepared children remain the rendering authority.
+
 Nested lazy highlight requests use the code descendant ID on the existing
 `TOKENIZE_RANGE` transport. The owning engine resolves that prepared leaf,
 including markdown block slots in `htmlTree`, and updates its owning root plus

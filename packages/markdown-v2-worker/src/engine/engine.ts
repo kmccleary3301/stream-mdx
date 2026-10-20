@@ -64,6 +64,8 @@ import type {
   ProtectedRange,
   TocHeading,
   TokenLineV1,
+  ParagraphSpanChildSnapshot,
+  ParagraphSpanRecord,
   WorkerErrorPayload,
   WorkerIn,
   WorkerOut,
@@ -103,6 +105,8 @@ import {
   CalloutsPlugin,
   DocumentPluginRegistry,
   type DocumentState,
+  type FootnoteParagraphTargetDelta,
+  type FootnoteParagraphTargetUpdate,
   HTMLBlockPlugin,
   MDXDetectionPlugin,
   TablesPlugin,
@@ -195,6 +199,29 @@ import {
 } from "./root-table-pipeline";
 import { RootTableSourceOwner, type RootTableFootnoteProjection } from "./root-table-owner";
 import {
+  advanceRootParagraphOwner,
+  createRootParagraphOwners,
+  finalizeRootParagraphOwner,
+  isFinalizedRootParagraphAppendCandidate,
+  probeFinalizedRootParagraphAppend,
+  releaseRootParagraphOwner,
+  rootParagraphAppendChange,
+  rootParagraphAppendPatch,
+  rootParagraphChangeNeedsReplacement,
+  rootParagraphNodeSnapshot,
+  rootParagraphPendingRootOffset,
+  rootParagraphSemanticPatch,
+} from "./root-paragraph-pipeline";
+import {
+  attestNativeParagraphWindowGrammar,
+  type NativeParagraphWindowAttestation,
+} from "./native-paragraph-tail";
+import {
+  RootParagraphSourceOwner,
+  type ParagraphInlineSettlementMode,
+  type PreparedParagraphSpanContent,
+} from "./root-paragraph-owner";
+import {
   countChangedBlocksFromPatches,
   dedupeSetPropsByTargetKeepingLatest,
   diffNodeSnapshot,
@@ -221,6 +248,9 @@ import type {
   WorkerMdxMode,
 } from "./types";
 
+const NO_ROOT_PARAGRAPH_OWNERS: readonly RootParagraphSourceOwner[] = Object.freeze([]);
+
+
 const MAX_DEFERRED_PATCHES = 400;
 const MAX_DEFERRED_FLUSH_PATCHES = 120;
 const MAX_MDX_SKIP_LOGS = 20;
@@ -231,11 +261,58 @@ const MIN_APPEND_CHUNK_SIZE = 256;
 const MAX_APPEND_CHUNK_SIZE = 12000;
 const MIN_APPEND_BATCH_MS = 4;
 const MAX_APPEND_BATCH_MS = 50;
+const LINK_REFERENCE_FREE_BLOCKS = new Set([
+  "Paragraph",
+  "ATXHeading1",
+  "ATXHeading2",
+  "ATXHeading3",
+  "ATXHeading4",
+  "ATXHeading5",
+  "ATXHeading6",
+  "SetextHeading1",
+  "SetextHeading2",
+  "FencedCode",
+  "CodeBlock",
+  "HTMLBlock",
+  "CommentBlock",
+  "ProcessingInstructionBlock",
+  "HorizontalRule",
+  "Table",
+]);
+
 type SourceText = string | SourceSnapshot;
 
 function readSourceRange(source: SourceText, from: number, to: number): string {
   return typeof source === "string" ? source.slice(from, to) : source.read(from, to);
 }
+function collectLinkReferenceStarts(
+  tree: Tree,
+  source: SourceText,
+  sourceOffset: number,
+  references: ReadonlyMap<string, LinkReferenceDefinition>,
+): Map<string, number> {
+  const labels = new Map<string, string>();
+  for (const [key, reference] of references) {
+    labels.set(reference.label ?? key, key);
+  }
+  const starts = new Map<string, number>();
+  tree.iterate({
+    enter(node) {
+      if (LINK_REFERENCE_FREE_BLOCKS.has(node.name)) return false;
+      if (node.name !== "LinkReference") return;
+      let labelNode = node.node.firstChild;
+      while (labelNode && labelNode.name !== "LinkLabel") labelNode = labelNode.nextSibling;
+      if (!labelNode) return false;
+      let rawLabel = readSourceRange(source, labelNode.from, labelNode.to);
+      if (rawLabel.startsWith("[") && rawLabel.endsWith("]")) rawLabel = rawLabel.slice(1, -1);
+      const key = labels.get(rawLabel);
+      if (key !== undefined && !starts.has(key)) starts.set(key, sourceOffset + node.from);
+      return false;
+    },
+  });
+  return starts;
+}
+
 
 function sourceCharAt(source: SourceText, index: number): string {
   return typeof source === "string" ? (source[index] ?? "") : source.read(index, index + 1);
@@ -380,6 +457,7 @@ export class MarkdownEngine {
   private readonly postFn: (message: WorkerOut) => void;
   public readonly extensions?: EngineExtensions;
   private mdParser!: typeof mdParser;
+  private rootParagraphWindowAttestation?: NativeParagraphWindowAttestation;
 
   public readonly documentPluginRegistry: DocumentPluginRegistry;
   private readonly documentPluginState: DocumentState = {};
@@ -393,11 +471,16 @@ export class MarkdownEngine {
   private blocks: Block[] = [];
   private lastTree: Tree | null = null;
   private treeFragments: readonly TreeFragment[] = [];
+  private currentLinkReferenceStarts = new Map<string, number>();
   private currentLinkReferences = new Map<string, LinkReferenceDefinition>();
   private blockAttemptedReferences = new Map<string, Set<string>>();
   private sourceDocument: AppendSourceDocument;
   private rootCodeOwners: RootCodeSourceOwner[] = [];
   private rootTableOwners: RootTableSourceOwner[] = [];
+  private rootParagraphOwners: RootParagraphSourceOwner[] = [];
+  private readonly rootParagraphOwnersByStart = new Map<number, RootParagraphSourceOwner>();
+  private readonly emittedRootParagraphIds = new Set<string>();
+  private pendingRootParagraphPatches: Patch[] = [];
   private readonly rootTableOwnersByStart = new Map<number, RootTableSourceOwner>();
   private readonly emittedRootTableIds = new Set<string>();
   private pendingRootTablePatches: Patch[] = [];
@@ -406,6 +489,7 @@ export class MarkdownEngine {
   private readonly emittedRootCodeIds = new Set<string>();
   private readonly rootCodeHighlighter = new RootCodeHighlighter();
   private rootCodeConfigurationRevision = 0;
+  private rootParagraphGeneration = 0;
   private documentGeneration = 0;
 
   private txCounter = 0;
@@ -499,6 +583,169 @@ export class MarkdownEngine {
   private buildMarkdownParser(tables: boolean): void {
     const gfm = tables ? GFM : GFM.filter((extension) => extension !== Table);
     this.mdParser = mdParser.configure([gfm, createBlockCompatibilityExtension(), HtmlContinuationExtension, ...(this.extensions?.markdown ?? [])]);
+    const customMarkdownExtensions = this.extensions?.markdown ?? [];
+    this.rootParagraphWindowAttestation = customMarkdownExtensions.length === 0
+      ? attestNativeParagraphWindowGrammar(this.mdParser, {
+          tablesEnabled: tables,
+          blockCompatibility: true,
+          htmlContinuation: true,
+          customMarkdownExtensions,
+        })
+      : undefined;
+  }
+
+  private rootParagraphOwnershipSupported(): boolean {
+    return Boolean(this.rootParagraphWindowAttestation)
+      && (this.extensions?.documentPlugins?.length ?? 0) === 0
+      && (this.extensions?.inline?.length ?? 0) === 0
+      && this.syntaxRules.length === 0;
+  }
+
+  private rootParagraphInlineSettlement(): ParagraphInlineSettlementMode {
+    return (this.extensions?.inline?.length ?? 0) > 0 || this.syntaxRules.length > 0
+      ? "original-context"
+      : "native-tail";
+  }
+
+  private admitRootParagraphOwners(tree: Tree, sourceOffset = 0, finalized = false): readonly RootParagraphSourceOwner[] {
+    if (!this.rootParagraphOwnershipSupported()) return [];
+    return createRootParagraphOwners(tree, this.sourceDocument, this.rootParagraphGeneration, {
+      parser: this.mdParser,
+      inlineParser: this.inlineParser,
+      inlineSettlement: this.rootParagraphInlineSettlement(),
+      prepareProvisionalInline: (content, onAttemptedReference) => this.parseInlineStreaming(
+        content,
+        this.rootParagraphInlineContext(),
+        undefined,
+        onAttemptedReference,
+        false,
+      ).inline,
+      prepareSpanChildren: (content, baseOffset, provisional, ownerId, ownerGeneration, spanIndex) =>
+        this.rootParagraphSpanChildren(content, baseOffset, provisional, ownerId, ownerGeneration, spanIndex),
+      ...(this.rootParagraphWindowAttestation ? { attestation: this.rootParagraphWindowAttestation } : {}),
+      sourceOffset,
+      finalized,
+      ...(typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && this.campaignCounters
+        ? { counters: this.campaignCounters }
+        : {}),
+    });
+  }
+
+  private rootParagraphInlineContext(
+    segmentOrigin: "direct-inline" | "mixed-content" = "direct-inline",
+  ): LookaheadContainerContext {
+    const context = {
+      blockType: "paragraph",
+      ancestorTypes: [],
+      listDepth: 0,
+      blockquoteDepth: 0,
+      insideHtml: false,
+      insideMdx: false,
+      segmentOrigin,
+      provisional: true,
+      localTextField: segmentOrigin === "mixed-content" ? "paragraph-inline" : "raw",
+    };
+    return { ...context, containerSignature: createContainerSignature(context) };
+  }
+
+  private rootParagraphSpanChildren(
+    content: string,
+    baseOffset: number,
+    provisional: boolean,
+    ownerId: string,
+    ownerGeneration: number,
+    spanIndex: number,
+  ): PreparedParagraphSpanContent | null {
+    if (!content.includes("<") && !content.includes("{")) return null;
+    const protectedRanges = collectCodeProtectedRanges(content);
+    if (this.enableMath) protectedRanges.push(...collectMathProtectedRanges(content, protectedRanges));
+    protectedRanges.push(...collectAutolinkProtectedRanges(content));
+    const absoluteProtectedRanges = protectedRanges.map((range) => ({
+      ...range,
+      from: baseOffset + range.from,
+      to: baseOffset + range.to,
+    }));
+    const context = this.rootParagraphInlineContext("mixed-content");
+    const attemptedReferences = new Set<string>();
+    const onAttemptedReference = (label: string) => attemptedReferences.add(label);
+    const inline = (value: string): InlineNode[] => {
+      const parsed = provisional
+        ? this.parseInlineStreaming(value, context, undefined, onAttemptedReference, false).inline
+        : this.inlineParser.parse(value, { cache: false, onAttemptedReference });
+      return this.mdxEnabled ? preserveInlineComponentSource(parsed) : parsed;
+    };
+    const extraction = extractMixedContentSegmentsWithLookahead(content, baseOffset, inline, {
+      html: provisional && this.formatAnticipationConfig.html
+        ? { autoClose: true, maxNewlines: MIXED_CONTENT_AUTOCLOSE_NEWLINES }
+        : undefined,
+      mdx: {
+        autoClose: provisional && this.mdxEnabled && this.formatAnticipationConfig.mdx,
+        maxNewlines: MIXED_CONTENT_AUTOCLOSE_NEWLINES,
+        componentAllowlist: this.mdxEnabled ? this.mdxComponentAllowlist ?? undefined : [],
+      },
+      protectedRanges: absoluteProtectedRanges,
+      allowedTags: this.htmlConfig?.allowedTags,
+      literalTagContent: this.htmlConfig?.literalTagContent,
+      lookaheadContext: context,
+    });
+    const sourceEnd = baseOffset + content.length;
+    const rangedSegments: Array<{
+      segment: (typeof extraction.segments)[number];
+      range: { readonly from: number; readonly to: number };
+    }> = [];
+    let expectedFrom = baseOffset;
+    for (const segment of extraction.segments) {
+      const range = segment.range;
+      if (!range || !Number.isSafeInteger(range.from) || !Number.isSafeInteger(range.to)
+        || range.from !== expectedFrom || range.to <= range.from || range.to > sourceEnd) {
+        throw new RangeError(`Invalid native paragraph segment range for ${ownerId} span ${spanIndex}`);
+      }
+      if (segment.kind === "text" && !segment.inline) {
+        throw new Error(`Missing prepared inline meaning in native paragraph span ${ownerId}:${spanIndex}`);
+      }
+      rangedSegments.push({ segment, range });
+      expectedFrom = range.to;
+    }
+    if (expectedFrom !== sourceEnd) {
+      throw new RangeError(`Incomplete native paragraph segment coverage for ${ownerId} span ${spanIndex}`);
+    }
+    if (!rangedSegments.some(({ segment }) => segment.kind !== "text")) {
+      return {
+        nodes: rangedSegments.flatMap(({ segment }) => {
+          if (segment.kind !== "text") return [];
+          if (!segment.inline) throw new Error(`Missing prepared inline meaning in native paragraph span ${ownerId}:${spanIndex}`);
+          return segment.inline;
+        }),
+        attemptedReferences: Object.freeze(Array.from(attemptedReferences).sort()),
+      };
+    }
+    const children = rangedSegments.map(({ segment, range }, index) => {
+      const meta = provisional && segment.lookahead?.length ? { lookahead: segment.lookahead } : undefined;
+      let props: Record<string, unknown>;
+      if (segment.kind === "text") {
+        if (!segment.inline) throw new Error(`Missing prepared inline meaning in native paragraph span ${ownerId}:${spanIndex}`);
+        props = { text: segment.value, inline: segment.inline };
+      } else if (segment.kind === "html") {
+        props = {
+          raw: segment.value,
+          html: segment.sanitized ?? segment.value,
+          htmlTree: sanitizeHtmlTreeInWorker(segment.value, this.mixedHtmlConfig, undefined, inline),
+        };
+      } else {
+        props = { raw: segment.value, status: segment.status ?? "pending", error: segment.error };
+      }
+      return {
+        id: `${ownerId}:g${ownerGeneration}:span:${spanIndex}:segment:${index}`,
+        type: `paragraph-${segment.kind}`,
+        range,
+        props,
+        ...(meta ? { meta } : {}),
+      } satisfies ParagraphSpanChildSnapshot;
+    });
+    return {
+      children,
+      attemptedReferences: Object.freeze(Array.from(attemptedReferences).sort()),
+    };
   }
 
   private buildInlineParser(): void {
@@ -534,8 +781,13 @@ export class MarkdownEngine {
     this.lastTree = null;
     this.treeFragments = [];
     this.rootNativeFragmentOffset = null;
+    for (const owner of this.rootParagraphOwners) releaseRootParagraphOwner(owner);
     this.sourceDocument = this.createSourceDocument();
     this.rootCodeOwners = [];
+    this.rootParagraphOwners = [];
+    this.rootParagraphOwnersByStart.clear();
+    this.emittedRootParagraphIds.clear();
+    this.pendingRootParagraphPatches = [];
     this.rootCodeOwnersByStart.clear();
     this.emittedRootCodeIds.clear();
     this.rootTableOwners = [];
@@ -544,6 +796,7 @@ export class MarkdownEngine {
     this.pendingRootTablePatches = [];
     this.rootCodeHighlighter.clear();
     this.currentLinkReferences.clear();
+    this.currentLinkReferenceStarts.clear();
     this.blockAttemptedReferences.clear();
     this.emittedBlockEpochs.clear();
     this.tocHeadings = [];
@@ -912,8 +1165,11 @@ export class MarkdownEngine {
     this.treeFragments = [];
     this.rootNativeFragmentOffset = null;
     this.currentLinkReferences = new Map();
+    this.currentLinkReferenceStarts = new Map();
     this.blockAttemptedReferences = new Map();
+    for (const owner of this.rootParagraphOwners) releaseRootParagraphOwner(owner);
     this.sourceDocument = this.createSourceDocument();
+    this.rootParagraphGeneration = this.documentGeneration;
     this.rootCodeOwners = [];
     this.rootCodeOwnersByStart.clear();
     this.emittedRootCodeIds.clear();
@@ -921,6 +1177,10 @@ export class MarkdownEngine {
     this.rootTableOwnersByStart.clear();
     this.emittedRootTableIds.clear();
     this.pendingRootTablePatches = [];
+    this.rootParagraphOwners = [];
+    this.rootParagraphOwnersByStart.clear();
+    this.emittedRootParagraphIds.clear();
+    this.pendingRootParagraphPatches = [];
     this.rootCodeHighlighter.clear();
     this.rootCodeConfigurationRevision += 1;
     this.deferredPatchQueue = [];
@@ -1037,23 +1297,31 @@ export class MarkdownEngine {
     this.codeThemes = resolvedThemes;
     if (initialContent) {
       this.sourceDocument.append(initialContent);
-      const result = await this.parseAll(initialContent, { admitRootCodeOwners: true, admitRootTableOwners: true });
+      const result = await this.parseAll(initialContent, {
+        admitRootCodeOwners: true,
+        admitRootTableOwners: true,
+        admitRootParagraphOwners: true,
+      });
       this.lastTree = result.lastTree;
       const owners = this.rootCodeOwners;
       const tableOwners = this.rootTableOwners;
+      const paragraphOwners = this.rootParagraphOwners;
       this.blocks = result.blocks.filter((block) => {
         const from = block.payload.range?.from;
         return !this.isRootOwnedBlock(block) && (
-          typeof from !== "number" || (!this.rootCodeOwnersByStart.has(from) && !this.rootTableOwnersByStart.has(from))
+          typeof from !== "number" || (!this.rootCodeOwnersByStart.has(from)
+            && !this.rootTableOwnersByStart.has(from)
+            && !this.rootParagraphOwnersByStart.has(from))
         );
       });
-      if (owners.length > 0 || tableOwners.length > 0) {
+      if (owners.length > 0 || tableOwners.length > 0 || paragraphOwners.length > 0) {
         await this.resetRootNativeTailFragments();
         for (const owner of owners) {
           await this.decorateRootCode(owner);
           this.emittedRootCodeIds.add(owner.id);
         }
         for (const owner of tableOwners) this.emittedRootTableIds.add(owner.id);
+        for (const owner of paragraphOwners) this.emittedRootParagraphIds.add(owner.id);
       }
       if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && this.campaignCounters?.isProgressTraceEnabled?.()) {
         initialProgressPublication = this.createProgressPublication(initialContent.length);
@@ -1093,14 +1361,23 @@ export class MarkdownEngine {
 
       const activeRootCode = this.rootCodeOwners.find((owner) => owner.getMetadata().state === "open");
       const activeRootTable = this.rootTableOwners.find((owner) => owner.getMetadata().state === "open");
+      const lastRootParagraph = this.rootParagraphOwners[this.rootParagraphOwners.length - 1];
+      const activeRootParagraph = lastRootParagraph?.getMetadata().state === "open" ? lastRootParagraph : undefined;
       if (activeRootCode) {
         await this.appendRootCode(activeRootCode, chunk, metricsCollector);
       } else if (activeRootTable) {
         await this.appendRootTable(activeRootTable, chunk, metricsCollector);
-      } else if (this.rootCodeOwners.length > 0 || this.rootTableOwners.length > 0) {
-        await this.appendRootNativeTail(chunk, metricsCollector);
+      } else if (activeRootParagraph) {
+        await this.appendRootParagraph(activeRootParagraph, chunk, metricsCollector);
       } else {
-        await this.appendAndReparse(chunk, metricsCollector);
+        const finalizedParagraph = this.terminalFinalizedRootParagraph();
+        if (finalizedParagraph) {
+          await this.reopenFinalizedRootParagraph(finalizedParagraph, chunk, metricsCollector);
+        } else if (this.rootCodeOwners.length > 0 || this.rootTableOwners.length > 0 || this.rootParagraphOwners.length > 0) {
+          await this.appendRootNativeTail(chunk, metricsCollector);
+        } else {
+          await this.appendAndReparse(chunk, metricsCollector);
+        }
       }
       const hadPatchMetrics = metricsCollector.patchCount > 0;
 
@@ -1147,6 +1424,135 @@ export class MarkdownEngine {
     }
     this.rootTableOwners.sort((a, b) => a.getMetadata().sourceRange.from - b.getMetadata().sourceRange.from);
   }
+  private registerRootParagraphOwners(
+    owners: readonly RootParagraphSourceOwner[],
+  ): readonly RootParagraphSourceOwner[] {
+    let registered: RootParagraphSourceOwner[] | undefined;
+    for (const owner of owners) {
+      const from = owner.getMetadata().sourceRange.from;
+      const existing = this.rootParagraphOwnersByStart.get(from);
+      if (existing) {
+        releaseRootParagraphOwner(owner);
+        continue;
+      }
+      this.rootParagraphOwnersByStart.set(from, owner);
+      (registered ??= []).push(owner);
+    }
+    if (!registered) return NO_ROOT_PARAGRAPH_OWNERS;
+
+    const last = this.rootParagraphOwners[this.rootParagraphOwners.length - 1];
+    if (!last || last.getMetadata().sourceRange.from < registered[0].getMetadata().sourceRange.from) {
+      for (const owner of registered) this.rootParagraphOwners.push(owner);
+    } else {
+      for (const owner of registered) {
+        const from = owner.getMetadata().sourceRange.from;
+        let low = 0;
+        let high = this.rootParagraphOwners.length;
+        while (low < high) {
+          const middle = (low + high) >>> 1;
+          if (this.rootParagraphOwners[middle].getMetadata().sourceRange.from < from) low = middle + 1;
+          else high = middle;
+        }
+        this.rootParagraphOwners.splice(low, 0, owner);
+      }
+    }
+    return registered;
+  }
+
+  private retireRootParagraphOwner(owner: RootParagraphSourceOwner): void {
+    const from = owner.getMetadata().sourceRange.from;
+    if (this.rootParagraphOwnersByStart.get(from) !== owner) return;
+    this.rootParagraphOwnersByStart.delete(from);
+    const index = this.rootParagraphOwners.indexOf(owner);
+    if (index >= 0) this.rootParagraphOwners.splice(index, 1);
+    this.emittedRootParagraphIds.delete(owner.id);
+    releaseRootParagraphOwner(owner);
+  }
+
+  private rootParagraphInsertPatch(owner: RootParagraphSourceOwner): Patch {
+    return {
+      op: "insertChild",
+      at: { blockId: PATCH_ROOT_ID },
+      index: 0,
+      node: rootParagraphNodeSnapshot(owner),
+      meta: { kind: "semantic" },
+    };
+  }
+
+  private rootParagraphFootnoteTargetDelta(
+    owner: RootParagraphSourceOwner,
+    spans: readonly ParagraphSpanRecord[],
+  ): FootnoteParagraphTargetDelta {
+    return {
+      ownerId: owner.id,
+      generation: owner.generation,
+      spans: spans.map((span) => ({
+        index: span.index,
+        sourceRevision: span.sourceRevision,
+        sourceRange: span.sourceRange,
+        nodes: span.nodes,
+        ...(span.children ? { children: span.children } : {}),
+        attemptedReferences: span.attemptedReferences,
+      })),
+    };
+  }
+
+  private takePendingRootParagraphPatches(): Patch[] {
+    const patches = this.pendingRootParagraphPatches;
+    this.pendingRootParagraphPatches = [];
+    return patches;
+  }
+
+  private terminalFinalizedRootParagraph(): RootParagraphSourceOwner | undefined {
+    const candidate = this.rootParagraphOwners[this.rootParagraphOwners.length - 1];
+    if (!candidate) return undefined;
+    const metadata = candidate.getMetadata();
+    if (
+      metadata.state !== "finalized"
+      || metadata.processedTo !== this.sourceDocument.length
+      || !isFinalizedRootParagraphAppendCandidate(candidate)
+    ) return undefined;
+    return candidate;
+  }
+
+  private async reopenFinalizedRootParagraph(
+    owner: RootParagraphSourceOwner,
+    appendedText: string,
+    metrics?: WorkerMetricsCollector,
+  ): Promise<void> {
+    const metadata = owner.getMetadata();
+    const sourceStart = metadata.sourceRange.from;
+    const previousEnd = metadata.sourceRange.to;
+    const oldLength = this.sourceDocument.length;
+    const tailOffset = this.rootNativeFragmentOffset ?? metadata.processedTo;
+    this.sourceDocument.append(appendedText);
+    const source = this.sourceDocument.snapshot();
+    const nativeChange = probeFinalizedRootParagraphAppend(owner, source, appendedText);
+    if (!nativeChange.requiresOwnerReplacement && nativeChange.ownerEnd === previousEnd) {
+      await this.parseRootNativeTail(tailOffset, oldLength, source.length, metrics);
+      return;
+    }
+
+    const previousOwners = this.rootParagraphOwners.slice();
+    this.retireRootParagraphOwner(owner);
+    if (!Number.isSafeInteger(this.rootParagraphGeneration + 1)) {
+      throw new RangeError("Root paragraph owner generation exceeds the safe integer range");
+    }
+    this.rootParagraphGeneration += 1;
+    this.rootNativeFragmentOffset = null;
+    this.treeFragments = [];
+    await this.parseRootNativeTail(
+      sourceStart,
+      oldLength,
+      source.length,
+      metrics,
+      false,
+      [],
+      previousOwners,
+      { removedOwnerIds: [owner.id], rebuild: true },
+    );
+  }
+
   private isRootOwnedBlock(block: Block): boolean {
     if (block.type === "code") {
       for (const owner of this.rootCodeOwnersByStart.values()) {
@@ -1154,6 +1560,10 @@ export class MarkdownEngine {
       }
     } else if (block.type === "table") {
       for (const owner of this.rootTableOwnersByStart.values()) {
+        if (owner.id === block.id) return true;
+      }
+    } else if (block.type === "paragraph") {
+      for (const owner of this.rootParagraphOwnersByStart.values()) {
         if (owner.id === block.id) return true;
       }
     }
@@ -1167,7 +1577,9 @@ export class MarkdownEngine {
   }
 
   private rootManagedTailOffset(): number | null {
-    if (this.rootCodeOwners.length === 0 && this.rootTableOwners.length === 0) return null;
+    if (this.rootCodeOwners.length === 0
+      && this.rootTableOwners.length === 0
+      && this.rootParagraphOwners.length === 0) return null;
     let latestFrom = -1;
     let processedTo: number | null = null;
     for (const owner of this.rootCodeOwners) {
@@ -1185,6 +1597,16 @@ export class MarkdownEngine {
         latestFrom = metadata.sourceRange.from;
         // A table may consume trailing source while classifying its interrupt; restart at its owned end.
         processedTo = metadata.sourceRange.to;
+      }
+    }
+    for (const owner of this.rootParagraphOwners) {
+      const metadata = owner.getMetadata();
+      if (metadata.state === "open") return null;
+      if (metadata.sourceRange.from >= latestFrom) {
+        latestFrom = metadata.sourceRange.from;
+        processedTo = metadata.processedTo;
+        const pendingRootOffset = rootParagraphPendingRootOffset(owner);
+        if (pendingRootOffset !== undefined) processedTo = pendingRootOffset;
       }
     }
     return processedTo;
@@ -1388,7 +1810,10 @@ export class MarkdownEngine {
     const stableBlocks = this.blocks.filter((block) => {
       const from = block.payload.range?.from;
       return !this.isRootOwnedBlock(block) && (
-        typeof from !== "number" || !this.rootTableOwnersByStart.has(from)
+        typeof from !== "number" || (
+          !this.rootTableOwnersByStart.has(from) &&
+          !this.rootParagraphOwnersByStart.has(from)
+        )
       );
     });
     const previousBlocks = stableBlocks.map((block) => cloneBlock(block));
@@ -1408,7 +1833,13 @@ export class MarkdownEngine {
     }
 
     this.pendingRootTablePatches = [];
-    const changedBlocks = this.runDocumentPlugins(stableBlocks, source);
+    this.pendingRootParagraphPatches = [];
+    const changedBlocks = this.runDocumentPlugins(
+      stableBlocks,
+      source,
+      this.rootParagraphOwners.length > 0 ? { rebuild: true } : undefined,
+    );
+    const paragraphPatches = this.takePendingRootParagraphPatches();
     const tablePatches = this.takePendingRootTablePatches();
     this.blocks = changedBlocks;
     const changeRanges: ContentChangeRange[] = newLength > oldLength
@@ -1423,10 +1854,69 @@ export class MarkdownEngine {
       metrics,
       undefined,
       undefined,
-      this.emittedRootTableIds.has(owner.id) ? [appendPatch, ...tablePatches] : [],
+      this.emittedRootTableIds.has(owner.id) ? [appendPatch, ...paragraphPatches, ...tablePatches] : [],
     );
   }
 
+
+  private async appendRootParagraph(
+    owner: RootParagraphSourceOwner,
+    appendedText: string,
+    metrics?: WorkerMetricsCollector,
+  ): Promise<void> {
+    const oldLength = this.sourceDocument.length;
+    const previous = owner.getMetadata();
+    this.sourceDocument.append(appendedText);
+    const source = this.sourceDocument.snapshot();
+    const newLength = this.sourceDocument.length;
+    const change = advanceRootParagraphOwner(owner, source, appendedText);
+    if (rootParagraphChangeNeedsReplacement(change)) {
+      const previousOwners = this.rootParagraphOwners.slice();
+      this.retireRootParagraphOwner(owner);
+      this.rootNativeFragmentOffset = null;
+      this.treeFragments = [];
+      await this.parseRootNativeTail(
+        previous.sourceRange.from,
+        oldLength,
+        newLength,
+        metrics,
+        false,
+        [],
+        previousOwners,
+        { removedOwnerIds: [owner.id], rebuild: true },
+      );
+      return;
+    }
+
+    const appendChange = rootParagraphAppendChange(source, previous, change);
+    const appendPatch = rootParagraphAppendPatch(owner, appendChange);
+    const footnoteTargets = change.spans.length > 0
+      ? { deltas: [this.rootParagraphFootnoteTargetDelta(owner, change.spans)], rebuild: false }
+      : undefined;
+    if (change.paragraph.state !== "open" || appendChange.rootResumeFrom !== undefined) {
+      this.rootNativeFragmentOffset = null;
+      this.treeFragments = [];
+      const tailOffset = appendChange.rootResumeFrom ?? change.paragraph.processedTo;
+      await this.parseRootNativeTail(
+        tailOffset,
+        oldLength,
+        newLength,
+        metrics,
+        false,
+        [appendPatch],
+        undefined,
+        footnoteTargets,
+      );
+      return;
+    }
+
+    this.pendingRootParagraphPatches = [];
+    this.pendingRootTablePatches = [];
+    if (footnoteTargets) this.blocks = this.runDocumentPlugins(this.blocks, source, footnoteTargets);
+    const paragraphPatches = this.takePendingRootParagraphPatches();
+    const tablePatches = this.takePendingRootTablePatches();
+    this.dispatchPatchBatch([appendPatch, ...paragraphPatches, ...tablePatches], metrics);
+  }
 
   private async appendRootNativeTail(
     appendedText: string,
@@ -1446,6 +1936,12 @@ export class MarkdownEngine {
     metrics?: WorkerMetricsCollector,
     forceFinalize = false,
     extraPatches: Patch[] = [],
+    previousRootParagraphOwners: readonly RootParagraphSourceOwner[] = this.rootParagraphOwners,
+    footnoteTargets: {
+      readonly deltas?: readonly FootnoteParagraphTargetDelta[];
+      readonly removedOwnerIds?: readonly string[];
+      readonly rebuild?: boolean;
+    } = {},
   ): Promise<void> {
     this.performanceTimer.mark("incremental-parse");
     metrics?.markParseStart();
@@ -1469,12 +1965,22 @@ export class MarkdownEngine {
     createdOwners = excludeRootCodeOwnersInsideOpenHtml(createdOwners, tree, source, tailOffset, this.mdParser, this.mdxEnabled);
 
     const tailReferences = collectLinkReferences(tree, sourceInput);
+    const tailReferenceStarts = collectLinkReferenceStarts(tree, sourceInput, tailOffset, tailReferences);
     const combinedReferences = new Map(this.currentLinkReferences);
+    const combinedReferenceStarts = new Map(this.currentLinkReferenceStarts);
     for (const [label, reference] of tailReferences) {
-      if (!combinedReferences.has(label)) combinedReferences.set(label, reference);
+      const tailStart = tailReferenceStarts.get(label);
+      const currentStart = combinedReferenceStarts.get(label);
+      if (!combinedReferences.has(label)) {
+        combinedReferences.set(label, reference);
+        if (tailStart !== undefined) combinedReferenceStarts.set(label, tailStart);
+      } else if (tailStart !== undefined && currentStart === tailStart) {
+        combinedReferences.set(label, reference);
+      }
     }
     const changedLabels = diffLinkReferences(this.currentLinkReferences, combinedReferences);
     this.currentLinkReferences = combinedReferences;
+    this.currentLinkReferenceStarts = combinedReferenceStarts;
     this.inlineParser.setReferences(combinedReferences);
     const existingRootTableCount = this.rootTableOwners.length;
     const createdTableOwners = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
@@ -1500,6 +2006,19 @@ export class MarkdownEngine {
         forceFinalize,
       );
     this.registerRootTableOwners(createdTableOwners);
+    const existingRootParagraphCount = this.rootParagraphOwners.length;
+    const createdParagraphOwners = this.registerRootParagraphOwners(
+      this.admitRootParagraphOwners(tree, tailOffset, forceFinalize),
+    );
+    const rootParagraphSemanticPatches: Patch[] = [];
+    if (changedLabels.size > 0) {
+      for (let index = 0; index < existingRootParagraphCount; index += 1) {
+        const owner = this.rootParagraphOwners[index];
+        if (!owner) continue;
+        const patch = rootParagraphSemanticPatch(owner, owner.invalidateLinkReferences(changedLabels));
+        if (patch && this.emittedRootParagraphIds.has(owner.id)) rootParagraphSemanticPatches.push(patch);
+      }
+    }
     const tableSemanticPatches: Patch[] = [];
     if (changedLabels.size > 0) {
       for (let index = 0; index < existingRootTableCount; index += 1) {
@@ -1517,7 +2036,10 @@ export class MarkdownEngine {
     const tailBlocks = parsedTailBlocks.filter((block) => {
       const from = block.payload.range?.from;
       return !this.isRootOwnedBlock(block) && (
-        typeof from !== "number" || !this.rootTableOwnersByStart.has(from)
+        typeof from !== "number" || (
+          !this.rootTableOwnersByStart.has(from) &&
+          !this.rootParagraphOwnersByStart.has(from)
+        )
       );
     });
     const stableBlocks = this.blocks
@@ -1527,7 +2049,8 @@ export class MarkdownEngine {
           typeof from !== "number" || (
             from < tailOffset &&
             !this.rootCodeOwnersByStart.has(from) &&
-            !this.rootTableOwnersByStart.has(from)
+            !this.rootTableOwnersByStart.has(from) &&
+            !this.rootParagraphOwnersByStart.has(from)
           )
         );
       })
@@ -1536,7 +2059,36 @@ export class MarkdownEngine {
         if (forceFinalize) stable.isFinalized = true;
         return stable;
       });
-    let changedBlocks = this.runDocumentPlugins([...stableBlocks, ...tailBlocks], source);
+    const createdParagraphTargets = createdParagraphOwners.map((owner) =>
+      this.rootParagraphFootnoteTargetDelta(owner, owner.getSpans().materialize()));
+    const removedParagraphOwners = previousRootParagraphOwners
+      .filter((owner) => !this.rootParagraphOwners.includes(owner))
+      .map((owner) => owner.id);
+    const removedOwnerIds = Array.from(new Set([
+      ...(footnoteTargets.removedOwnerIds ?? []),
+      ...removedParagraphOwners,
+    ]));
+    const nativeFootnotesChanged = tailBlocks.some((block) =>
+      (block.payload.raw ?? "").includes("[^") || (block.payload.raw ?? "").includes("&"));
+    const paragraphDeltas = [...(footnoteTargets.deltas ?? []), ...createdParagraphTargets];
+    const rebuildParagraphTargets = Boolean(footnoteTargets.rebuild)
+      || nativeFootnotesChanged
+      || removedOwnerIds.length > 0
+      || createdParagraphOwners.length > 0;
+    const paragraphBridge = this.rootParagraphOwners.length > 0 || removedOwnerIds.length > 0
+      ? {
+          deltas: paragraphDeltas,
+          ...(removedOwnerIds.length > 0 ? { removedOwnerIds } : {}),
+          rebuild: rebuildParagraphTargets,
+        }
+      : undefined;
+    this.pendingRootParagraphPatches = [];
+    let changedBlocks = this.runDocumentPlugins(
+      [...stableBlocks, ...tailBlocks],
+      source,
+      paragraphBridge,
+    );
+    rootParagraphSemanticPatches.push(...this.takePendingRootParagraphPatches());
     const nestedCodeIds = nestedCodeBlockIds(changedBlocks);
     createdOwners = createdOwners.filter((owner) => !nestedCodeIds.has(owner.id));
     this.registerRootCodeOwners(createdOwners);
@@ -1571,7 +2123,9 @@ export class MarkdownEngine {
     this.treeFragments = TreeFragment.addTree(tree, updatedFragments);
     this.rootNativeFragmentOffset = tailOffset;
     this.lastTree = tree;
-    if (createdOwners.length > 0 || createdTableOwners.length > 0) await this.resetRootNativeTailFragments();
+    if (createdOwners.length > 0 || createdTableOwners.length > 0 || createdParagraphOwners.length > 0) {
+      await this.resetRootNativeTailFragments();
+    }
     pruneLazyTokenizationStates(this.lazyTokenizationStates, this.blocks);
 
     const rootCodePatches: Patch[] = [];
@@ -1588,6 +2142,13 @@ export class MarkdownEngine {
         this.emittedRootTableIds.add(owner.id);
       }
     }
+    const rootParagraphPatches: Patch[] = [];
+    for (const owner of createdParagraphOwners) {
+      if (!this.emittedRootParagraphIds.has(owner.id)) {
+        rootParagraphPatches.push(this.rootParagraphInsertPatch(owner));
+        this.emittedRootParagraphIds.add(owner.id);
+      }
+    }
     let progressPublication: ProgressPublicationContext | undefined;
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && this.campaignCounters?.isProgressTraceEnabled?.()) {
       progressPublication = this.createProgressPublication(newLength);
@@ -1597,7 +2158,16 @@ export class MarkdownEngine {
       : [];
     metrics?.markParseEnd();
     metrics?.setBlocksProduced(this.blocks.length);
-    await this.emitBlockDiffPatches(previousBlocks, changedBlocks, changeRanges, metrics, progressPublication, undefined, rootCodePatches.concat(extraPatches, tableSemanticPatches));
+    await this.emitBlockDiffPatches(
+      previousBlocks,
+      changedBlocks,
+      changeRanges,
+      metrics,
+      progressPublication,
+      undefined,
+      rootCodePatches.concat(rootParagraphPatches, extraPatches, rootParagraphSemanticPatches, tableSemanticPatches),
+      previousRootParagraphOwners,
+    );
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && progressPublication) {
       this.recordParsedProgressPublication(progressPublication);
     }
@@ -1634,6 +2204,13 @@ export class MarkdownEngine {
         node: rootTableNodeSnapshot(owner),
       });
     }
+    for (const owner of this.rootParagraphOwners) {
+      const metadata = owner.getMetadata();
+      children.push({
+        from: metadata.sourceRange.from,
+        node: rootParagraphNodeSnapshot(owner),
+      });
+    }
     children.sort((a, b) => a.from - b.from);
     return {
       id: PATCH_ROOT_ID,
@@ -1656,6 +2233,10 @@ export class MarkdownEngine {
       const block = owner.materializeBlock();
       entries.push({ from: block.payload.range?.from ?? Number.POSITIVE_INFINITY, block });
     }
+    for (const owner of this.rootParagraphOwners) {
+      const block = owner.materializeBlock();
+      entries.push({ from: block.payload.range?.from ?? Number.POSITIVE_INFINITY, block });
+    }
     entries.sort((a, b) => a.from - b.from);
     return entries.map((entry) => entry.block);
   }
@@ -1671,6 +2252,7 @@ export class MarkdownEngine {
     const tree = input.parse(this.mdParser);
     this.treeFragments = TreeFragment.addTree(tree);
     this.currentLinkReferences = collectLinkReferences(tree, rawInput);
+    this.currentLinkReferenceStarts = collectLinkReferenceStarts(tree, rawInput, 0, this.currentLinkReferences);
     this.inlineParser.setReferences(this.currentLinkReferences);
     let createdRootCodeOwners = options.admitRootCodeOwners
       ? typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
@@ -1704,8 +2286,21 @@ export class MarkdownEngine {
           ),
       );
     }
+    const createdParagraphOwners = options.admitRootParagraphOwners
+      ? this.registerRootParagraphOwners(this.admitRootParagraphOwners(tree, 0, Boolean(options.forceFinalize)))
+      : [];
     let extractedBlocks = await this.extractBlocks(tree, rawInput, options);
-    extractedBlocks = this.runDocumentPlugins(extractedBlocks, this.sourceDocument.snapshot());
+    extractedBlocks = extractedBlocks.filter((block) => !this.isRootOwnedBlock(block));
+    const paragraphTargets = createdParagraphOwners.map((owner) =>
+      this.rootParagraphFootnoteTargetDelta(owner, owner.getSpans().materialize()));
+    this.pendingRootParagraphPatches = [];
+    extractedBlocks = this.runDocumentPlugins(
+      extractedBlocks,
+      this.sourceDocument.snapshot(),
+      createdParagraphOwners.length > 0
+        ? { deltas: paragraphTargets, rebuild: true }
+        : undefined,
+    );
     const nestedCodeIds = nestedCodeBlockIds(extractedBlocks);
     createdRootCodeOwners = createdRootCodeOwners.filter((owner) => !nestedCodeIds.has(owner.id));
     this.registerRootCodeOwners(createdRootCodeOwners);
@@ -1714,6 +2309,7 @@ export class MarkdownEngine {
       extractedBlocks = extractedBlocks.filter((block) => !rootCodeIds.has(block.id));
     }
     this.takePendingRootTablePatches();
+    this.takePendingRootParagraphPatches();
 
     this.performanceTimer.measure("parse-all");
     metrics?.setBlocksProduced(extractedBlocks.length);
@@ -1728,6 +2324,7 @@ export class MarkdownEngine {
     this.performanceTimer.mark("incremental-parse");
     metrics?.markParseStart();
     this.deferredPatchQueue = [];
+    const previousRootParagraphOwners = this.rootParagraphOwners.slice();
 
     const oldLen = this.sourceDocument.length;
     this.sourceDocument.append(appendedText);
@@ -1750,6 +2347,7 @@ export class MarkdownEngine {
     const newReferences = collectLinkReferences(newTree, source);
     const changedLabels = diffLinkReferences(this.currentLinkReferences, newReferences);
     this.currentLinkReferences = newReferences;
+    this.currentLinkReferenceStarts = collectLinkReferenceStarts(newTree, source, 0, newReferences);
     this.inlineParser.setReferences(newReferences);
     const createdRootTableOwners = this.rootTableOwners.length === 0
       ? typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
@@ -1774,24 +2372,44 @@ export class MarkdownEngine {
         )
       : [];
     this.registerRootTableOwners(createdRootTableOwners);
+    const createdRootParagraphOwners = this.rootParagraphOwners.length === 0
+      ? this.registerRootParagraphOwners(this.admitRootParagraphOwners(newTree))
+      : [];
 
     let changedBlocks = await this.extractBlocks(newTree, source, {
       firstChangedPos: oldLen,
       previousBlocks: this.blocks,
     });
-    changedBlocks = this.runDocumentPlugins(changedBlocks, source);
+    changedBlocks = changedBlocks.filter((block) => !this.isRootOwnedBlock(block));
+    const paragraphTargets = createdRootParagraphOwners.map((owner) =>
+      this.rootParagraphFootnoteTargetDelta(owner, owner.getSpans().materialize()));
+    this.pendingRootParagraphPatches = [];
+    changedBlocks = this.runDocumentPlugins(
+      changedBlocks,
+      source,
+      createdRootParagraphOwners.length > 0
+        ? { deltas: paragraphTargets, rebuild: true }
+        : undefined,
+    );
     const nestedCodeIds = nestedCodeBlockIds(changedBlocks);
     createdRootCodeOwners = createdRootCodeOwners.filter((owner) => !nestedCodeIds.has(owner.id));
     this.registerRootCodeOwners(createdRootCodeOwners);
     changedBlocks = changedBlocks.filter((block) => {
       const from = block.payload.range?.from;
       return !this.isRootOwnedBlock(block) && (
-        typeof from !== "number" || !this.rootTableOwnersByStart.has(from)
+        typeof from !== "number" || (
+          !this.rootTableOwnersByStart.has(from) &&
+          !this.rootParagraphOwnersByStart.has(from)
+        )
       );
     });
     const lastRange = changedBlocks.length > 0 ? changedBlocks[changedBlocks.length - 1]?.payload?.range : undefined;
     const lastTo = typeof lastRange?.to === "number" ? lastRange.to : 0;
-    if (createdRootCodeOwners.length === 0 && createdRootTableOwners.length === 0 && lastTo < newLen - 1 && sourceRangeHasNonWhitespace(source, lastTo, newLen)) {
+    if (createdRootCodeOwners.length === 0
+      && createdRootTableOwners.length === 0
+      && createdRootParagraphOwners.length === 0
+      && lastTo < newLen - 1
+      && sourceRangeHasNonWhitespace(source, lastTo, newLen)) {
       const fullInput = new NativeMarkdownInput(source);
       const fullTree = fullInput.parse(this.mdParser);
       this.treeFragments = TreeFragment.addTree(fullTree);
@@ -1799,12 +2417,25 @@ export class MarkdownEngine {
       const fullChangedLabels = diffLinkReferences(this.currentLinkReferences, fullRefs);
       for (const label of fullChangedLabels) changedLabels.add(label);
       this.currentLinkReferences = fullRefs;
+      this.currentLinkReferenceStarts = collectLinkReferenceStarts(fullTree, source, 0, fullRefs);
       this.inlineParser.setReferences(fullRefs);
       let fullBlocks = await this.extractBlocks(fullTree, source);
+      fullBlocks = fullBlocks.filter((block) => {
+        const from = block.payload.range?.from;
+        return !this.isRootOwnedBlock(block) && (
+          typeof from !== "number" || (
+            !this.rootTableOwnersByStart.has(from) &&
+            !this.rootParagraphOwnersByStart.has(from)
+          )
+        );
+      });
       fullBlocks = this.runDocumentPlugins(fullBlocks, source).filter((block) => {
         const from = block.payload.range?.from;
         return !this.isRootOwnedBlock(block) && (
-          typeof from !== "number" || !this.rootTableOwnersByStart.has(from)
+          typeof from !== "number" || (
+            !this.rootTableOwnersByStart.has(from) &&
+            !this.rootParagraphOwnersByStart.has(from)
+          )
         );
       });
       const fullLast = fullBlocks.length > 0 ? fullBlocks[fullBlocks.length - 1]?.payload?.range?.to ?? 0 : 0;
@@ -1836,12 +2467,13 @@ export class MarkdownEngine {
         }
       }
     }
+    const paragraphSemanticPatches = this.takePendingRootParagraphPatches();
     const tableSemanticPatches = this.takePendingRootTablePatches();
     const prevBlocks = this.blocks;
 
     this.blocks = changedBlocks;
     this.lastTree = newTree;
-    if (createdRootCodeOwners.length > 0 || createdRootTableOwners.length > 0) {
+    if (createdRootCodeOwners.length > 0 || createdRootTableOwners.length > 0 || createdRootParagraphOwners.length > 0) {
       await this.resetRootNativeTailFragments();
     }
     pruneLazyTokenizationStates(this.lazyTokenizationStates, this.blocks);
@@ -1863,12 +2495,28 @@ export class MarkdownEngine {
         this.emittedRootTableIds.add(owner.id);
       }
     }
+    const rootParagraphPatches: Patch[] = [];
+    for (const owner of createdRootParagraphOwners) {
+      if (!this.emittedRootParagraphIds.has(owner.id)) {
+        rootParagraphPatches.push(this.rootParagraphInsertPatch(owner));
+        this.emittedRootParagraphIds.add(owner.id);
+      }
+    }
 
     this.performanceTimer.measure("incremental-parse");
     metrics?.markParseEnd();
     metrics?.setBlocksProduced(this.blocks.length);
 
-    await this.emitBlockDiffPatches(prevBlocks, changedBlocks, changeRanges, metrics, progressPublication, undefined, rootCodePatches.concat(tableSemanticPatches));
+    await this.emitBlockDiffPatches(
+      prevBlocks,
+      changedBlocks,
+      changeRanges,
+      metrics,
+      progressPublication,
+      undefined,
+      rootCodePatches.concat(rootParagraphPatches, paragraphSemanticPatches, tableSemanticPatches),
+      previousRootParagraphOwners,
+    );
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__ && progressPublication) {
       this.recordParsedProgressPublication(progressPublication);
     }
@@ -1900,6 +2548,10 @@ export class MarkdownEngine {
             continue;
           }
           if (nodeType === "Table" && this.rootTableOwnersByStart.has(globalFrom)) {
+            hasRecognizedNodes = true;
+            continue;
+          }
+          if (nodeType === "Paragraph" && this.rootParagraphOwnersByStart.has(globalFrom)) {
             hasRecognizedNodes = true;
             continue;
           }
@@ -2091,8 +2743,14 @@ export class MarkdownEngine {
     return { ...context, containerSignature: createContainerSignature(context) };
   }
 
-  private parseInlineStreaming(content: string, context: LookaheadContainerContext, existingInline?: InlineNode[]): InlineStreamingParseResult {
-    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+  private parseInlineStreaming(
+    content: string,
+    context: LookaheadContainerContext,
+    existingInline?: InlineNode[],
+    onAttemptedReference?: (label: string) => void,
+    recordSourceUnits = true,
+  ): InlineStreamingParseResult {
+    if (recordSourceUnits && typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
       this.campaignCounters?.recordInlineSourceUnits(content.length);
     }
     const regexEnabled = this.formatAnticipationConfig.regex || this.syntaxRules.some((rule) => rule.anticipation);
@@ -2103,8 +2761,14 @@ export class MarkdownEngine {
       context,
     });
     const prepared = orchestration.prepared;
+    const inline = existingInline ?? (prepared.kind === "raw"
+      ? [{ kind: "text", text: content }]
+      : this.inlineParser.parse(prepared.content, {
+          cache: false,
+          ...(onAttemptedReference ? { onAttemptedReference } : {}),
+        }));
     return {
-      inline: existingInline ?? (prepared.kind === "raw" ? [{ kind: "text", text: content }] : this.inlineParser.parse(prepared.content, { cache: false })),
+      inline,
       status: prepared.status,
       lookahead: orchestration.trace,
       containerSignature: orchestration.container.containerSignature,
@@ -3149,7 +3813,16 @@ export class MarkdownEngine {
     block.payload.meta = nextMeta;
   }
 
-  private runDocumentPlugins(inputBlocks: Block[], source: SourceSnapshot): Block[] {
+  private runDocumentPlugins(
+    inputBlocks: Block[],
+    source: SourceSnapshot,
+    footnoteTargets?: {
+      readonly deltas?: readonly FootnoteParagraphTargetDelta[];
+      readonly removedOwnerIds?: readonly string[];
+      readonly rebuild?: boolean;
+    },
+  ): Block[] {
+    const documentGeneration = this.documentGeneration;
     const tableProjections = new Map<string, { owner: RootTableSourceOwner; projection: RootTableFootnoteProjection }>();
     const tableBlocks: Block[] = [];
     for (const owner of this.rootTableOwners) {
@@ -3182,7 +3855,8 @@ export class MarkdownEngine {
     }
 
     let hasProvisionalTail = this.rootCodeOwners.some((owner) => owner.getMetadata().state === "open")
-      || this.rootTableOwners.some((owner) => owner.getMetadata().state === "open");
+      || this.rootTableOwners.some((owner) => owner.getMetadata().state === "open")
+      || this.rootParagraphOwners.some((owner) => owner.getMetadata().state === "open");
     if (!hasProvisionalTail) {
       for (let index = blocks.length - 1; index >= 0; index -= 1) {
         const block = blocks[index];
@@ -3192,6 +3866,27 @@ export class MarkdownEngine {
       }
     }
 
+    const footnoteParagraphTargets = footnoteTargets || this.rootParagraphOwners.length > 0
+      ? {
+          deltas: footnoteTargets?.deltas ?? [],
+          ...(footnoteTargets?.removedOwnerIds ? { removedOwnerIds: footnoteTargets.removedOwnerIds } : {}),
+          ...(footnoteTargets?.rebuild === undefined ? {} : { rebuild: footnoteTargets.rebuild }),
+          applyUpdates: (updates: readonly FootnoteParagraphTargetUpdate[]) => {
+            if (documentGeneration !== this.documentGeneration || source !== this.sourceDocument.snapshot()) return;
+            for (const update of updates) {
+              const owner = this.rootParagraphOwners.find((candidate) =>
+                candidate.id === update.ownerId && candidate.generation === update.generation);
+              if (!owner) continue;
+              const metadata = owner.getMetadata();
+              if (metadata.generation !== update.generation
+                || this.rootParagraphOwnersByStart.get(metadata.sourceRange.from) !== owner) continue;
+              const change = owner.applyPreparedSpanUpdates(update.updates, "footnote_reference_numbering");
+              const patch = rootParagraphSemanticPatch(owner, change);
+              if (patch && this.emittedRootParagraphIds.has(owner.id)) this.pendingRootParagraphPatches.push(patch);
+            }
+          },
+        }
+      : undefined;
     const { syntheticBlocks } = this.documentPluginRegistry.run({
       source,
       blocks,
@@ -3199,6 +3894,7 @@ export class MarkdownEngine {
       hasProvisionalTail,
       state: this.documentPluginState,
       protectedRanges: aggregatedProtected,
+      footnoteParagraphTargets,
     });
 
     const updatedTableBlocks = new Map<string, Block>();
@@ -3232,6 +3928,7 @@ export class MarkdownEngine {
     progressPublication?: ProgressPublicationContext,
     parseEpoch?: number,
     extraPatches: Patch[] = [],
+    previousRootParagraphOwners: readonly RootParagraphSourceOwner[] = this.rootParagraphOwners,
   ): Promise<void> {
     const patches: Patch[] = [];
     const { patch: tocPatch, nextHeadings, nextSignature } = maybeBuildTocPatch(nextBlocks, this.tocSignature);
@@ -3244,15 +3941,20 @@ export class MarkdownEngine {
       readonly block?: Block;
       readonly owner?: RootCodeSourceOwner;
       readonly tableOwner?: RootTableSourceOwner;
+      readonly paragraphOwner?: RootParagraphSourceOwner;
     };
     const insertedRootCodeNodes = new Map<string, NodeSnapshot>();
     const insertedRootTableNodes = new Map<string, NodeSnapshot>();
+    const insertedRootParagraphNodes = new Map<string, NodeSnapshot>();
     const additionalPatches: Patch[] = [];
     for (const patch of extraPatches) {
       if (patch.op === "insertChild" && patch.at.blockId === PATCH_ROOT_ID && patch.node.type === "code") {
         insertedRootCodeNodes.set(patch.node.id, patch.node);
       } else if (patch.op === "insertChild" && patch.at.blockId === PATCH_ROOT_ID && patch.node.type === "table") {
         insertedRootTableNodes.set(patch.node.id, patch.node);
+      } else if (patch.op === "insertChild" && patch.at.blockId === PATCH_ROOT_ID
+        && patch.node.type === "paragraph" && "paragraph" in patch.node) {
+        insertedRootParagraphNodes.set(patch.node.id, patch.node);
       } else {
         additionalPatches.push(patch);
       }
@@ -3262,6 +3964,7 @@ export class MarkdownEngine {
       blocks: readonly Block[],
       owners: readonly RootCodeSourceOwner[],
       tableOwners: readonly RootTableSourceOwner[],
+      paragraphOwners: readonly RootParagraphSourceOwner[],
     ): RootChildEntry[] => {
       const entries: RootChildEntry[] = blocks.map((block) => ({
         id: block.id,
@@ -3284,6 +3987,16 @@ export class MarkdownEngine {
           tableOwner: owner,
         });
       }
+      for (const owner of paragraphOwners) {
+        if (paragraphOwners === this.rootParagraphOwners
+          && !this.emittedRootParagraphIds.has(owner.id)
+          && !insertedRootParagraphNodes.has(owner.id)) continue;
+        entries.push({
+          id: owner.id,
+          from: owner.getMetadata().sourceRange.from,
+          paragraphOwner: owner,
+        });
+      }
       entries.sort((a, b) => a.from - b.from);
       return entries;
     };
@@ -3293,14 +4006,22 @@ export class MarkdownEngine {
     const previousTableOwners = this.rootTableOwners.filter((owner) =>
       this.emittedRootTableIds.has(owner.id) && !insertedRootTableNodes.has(owner.id)
     );
-    const previousChildren = orderedChildren(previousBlocks, previousOwners, previousTableOwners);
-    const nextChildren = orderedChildren(nextBlocks, this.rootCodeOwners, this.rootTableOwners);
+    const previousParagraphOwners = previousRootParagraphOwners.filter((owner) =>
+      !insertedRootParagraphNodes.has(owner.id)
+        || this.rootParagraphOwnersByStart.get(owner.getMetadata().sourceRange.from) !== owner
+    );
+    const previousChildren = orderedChildren(previousBlocks, previousOwners, previousTableOwners, previousParagraphOwners);
+    const nextChildren = orderedChildren(nextBlocks, this.rootCodeOwners, this.rootTableOwners, this.rootParagraphOwners);
     if (previousBlocks === nextBlocks && extraPatches.length === 0) return;
 
     const snapshotFor = (entry: RootChildEntry, cloneNative: boolean): NodeSnapshot => {
       if (entry.tableOwner) {
         const pending = insertedRootTableNodes.get(entry.tableOwner.id);
         return pending ?? rootTableNodeSnapshot(entry.tableOwner);
+      }
+      if (entry.paragraphOwner) {
+        const pending = insertedRootParagraphNodes.get(entry.paragraphOwner.id);
+        return pending ?? rootParagraphNodeSnapshot(entry.paragraphOwner);
       }
       if (entry.owner) {
         const pending = insertedRootCodeNodes.get(entry.owner.id);
@@ -3326,7 +4047,8 @@ export class MarkdownEngine {
       }
       if (previousChildren[prefix]?.id !== nextChildren[prefix]?.id ||
         Boolean(previousChildren[prefix]?.owner) !== Boolean(nextChildren[prefix]?.owner) ||
-        Boolean(previousChildren[prefix]?.tableOwner) !== Boolean(nextChildren[prefix]?.tableOwner)) break;
+        Boolean(previousChildren[prefix]?.tableOwner) !== Boolean(nextChildren[prefix]?.tableOwner) ||
+        previousChildren[prefix]?.paragraphOwner !== nextChildren[prefix]?.paragraphOwner) break;
       prefix += 1;
     }
 
@@ -3343,8 +4065,8 @@ export class MarkdownEngine {
       }
       lastNextPosition = nextPosition;
     }
-    const hasRootOwner = previousChildren.some((entry) => entry.owner || entry.tableOwner) ||
-      nextChildren.some((entry) => entry.owner || entry.tableOwner);
+    const hasRootOwner = previousChildren.some((entry) => entry.owner || entry.tableOwner || entry.paragraphOwner) ||
+      nextChildren.some((entry) => entry.owner || entry.tableOwner || entry.paragraphOwner);
     let removeCount = 0;
     let addCount = 0;
     if (hasRootOwner && commonOrderStable) {
@@ -3375,7 +4097,8 @@ export class MarkdownEngine {
           addCount += 1;
         } else if (
           Boolean(current.owner) !== Boolean(entry.owner) ||
-          Boolean(current.tableOwner) !== Boolean(entry.tableOwner)
+          Boolean(current.tableOwner) !== Boolean(entry.tableOwner) ||
+          current.paragraphOwner !== entry.paragraphOwner
         ) {
           patches.push({
             op: "replaceChild",
@@ -3391,7 +4114,8 @@ export class MarkdownEngine {
       while (prevTail >= prefix && nextTail >= prefix) {
         if (previousChildren[prevTail]?.id !== nextChildren[nextTail]?.id ||
           Boolean(previousChildren[prevTail]?.owner) !== Boolean(nextChildren[nextTail]?.owner) ||
-          Boolean(previousChildren[prevTail]?.tableOwner) !== Boolean(nextChildren[nextTail]?.tableOwner)) break;
+          Boolean(previousChildren[prevTail]?.tableOwner) !== Boolean(nextChildren[nextTail]?.tableOwner) ||
+          previousChildren[prevTail]?.paragraphOwner !== nextChildren[nextTail]?.paragraphOwner) break;
         prevTail -= 1;
         nextTail -= 1;
       }
@@ -3655,7 +4379,7 @@ export class MarkdownEngine {
     let progressPublication: ProgressPublicationContext | undefined;
     const sourceLength = this.sourceDocument.length;
 
-    if (this.rootCodeOwners.length > 0 || this.rootTableOwners.length > 0) {
+    if (this.rootCodeOwners.length > 0 || this.rootTableOwners.length > 0 || this.rootParagraphOwners.length > 0) {
       const source = this.sourceDocument.snapshot();
       const semanticPatches: Patch[] = [];
       const ownersToDecorate: RootCodeSourceOwner[] = [];
@@ -3669,6 +4393,9 @@ export class MarkdownEngine {
         }
       }
       let remainingRootFrom: number | undefined;
+      let replacementRootFrom: number | undefined;
+      const previousRootParagraphOwners = this.rootParagraphOwners.slice();
+      const finalizedParagraphTargets: FootnoteParagraphTargetDelta[] = [];
       for (const owner of this.rootTableOwners) {
         const previous = owner.getMetadata();
         const change = owner.finalize();
@@ -3688,9 +4415,40 @@ export class MarkdownEngine {
             : Math.min(remainingRootFrom, appendChange.rootResumeFrom);
         }
       }
+      for (const owner of previousRootParagraphOwners) {
+        const previous = owner.getMetadata();
+        const change = finalizeRootParagraphOwner(owner, source);
+        if (rootParagraphChangeNeedsReplacement(change)) {
+          replacementRootFrom = replacementRootFrom === undefined
+            ? previous.sourceRange.from
+            : Math.min(replacementRootFrom, previous.sourceRange.from);
+          this.retireRootParagraphOwner(owner);
+          continue;
+        }
+        const appendChange = rootParagraphAppendChange(source, previous, change);
+        if (change.spans.length > 0) {
+          finalizedParagraphTargets.push(this.rootParagraphFootnoteTargetDelta(owner, change.spans));
+        }
+        if (!this.emittedRootParagraphIds.has(owner.id)) {
+          semanticPatches.push(this.rootParagraphInsertPatch(owner));
+          this.emittedRootParagraphIds.add(owner.id);
+        } else if (change.paragraph.revision !== previous.revision) {
+          semanticPatches.push(rootParagraphAppendPatch(owner, appendChange));
+        }
+        const rootResumeFrom = appendChange.rootResumeFrom;
+        if (rootResumeFrom !== undefined
+          && !this.rootParagraphOwnersByStart.has(rootResumeFrom)
+          && !this.rootCodeOwnersByStart.has(rootResumeFrom)
+          && !this.rootTableOwnersByStart.has(rootResumeFrom)) {
+          remainingRootFrom = remainingRootFrom === undefined
+            ? rootResumeFrom
+            : Math.min(remainingRootFrom, rootResumeFrom);
+        }
+      }
 
       const managedTailOffset = this.rootManagedTailOffset() ?? sourceLength;
       let tailOffset = Math.min(
+        replacementRootFrom ?? sourceLength,
         remainingRootFrom ?? sourceLength,
         this.rootNativeFragmentOffset ?? sourceLength,
       );
@@ -3707,7 +4465,16 @@ export class MarkdownEngine {
         if (block.isFinalized || (typeof from === "number" && from >= tailOffset)) continue;
         semanticPatches.push({ op: "finalize", at: { blockId: block.id } });
       }
-      await this.parseRootNativeTail(tailOffset, sourceLength, sourceLength, metricsCollector, true, semanticPatches);
+      await this.parseRootNativeTail(
+        tailOffset,
+        sourceLength,
+        sourceLength,
+        metricsCollector,
+        true,
+        semanticPatches,
+        previousRootParagraphOwners,
+        { deltas: finalizedParagraphTargets, rebuild: false },
+      );
       for (const owner of ownersToDecorate) {
         const decorationPatch = await this.decorateRootCode(owner, true);
         const patches: Patch[] = [];

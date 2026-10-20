@@ -115,4 +115,5 @@ export interface ParseOptions {
   sourceOffset?: number;
   admitRootCodeOwners?: boolean;
   admitRootTableOwners?: boolean;
+  admitRootParagraphOwners?: boolean;
 }

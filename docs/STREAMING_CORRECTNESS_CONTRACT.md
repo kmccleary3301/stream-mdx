@@ -1,6 +1,6 @@
 # Streaming Correctness Contract
 
-_Last updated: 2026-04-10_
+_Last updated: 2026-10-19_
 
 This document defines the correctness rules for StreamMDX's streaming renderer.
 
@@ -96,9 +96,56 @@ reducer retains a private append-only source log and exposes immutable prefix
 readers, so retraction cannot change completed raw or prior snapshots.
 
 A native table block in `closed` state has committed source while the document
-input session may remain active. This is not worker `FINALIZED`: dependency
-updates may change only affected inline meaning on closed table rows/header.
-Same-generation table updates after source `finalized` remain rejected.
+input session may remain active. This is not worker `FINALIZED`. Dependency
+updates may change only affected inline meaning on closed or finalized table
+rows/header when owner generation, expected revision, and unchanged source
+identity match. These updates remain valid after worker `FINALIZED` under
+semantic ordering guards. `appendTableRows` cannot grow a same-generation
+finalized table.
+
+Native root paragraphs use owner-scoped source and immutable
+`ParagraphSpanRecord`s. `appendParagraph` is a semantic tail transaction guarded
+by owner ID, generation, and expected revision. Its required `sourceAppend`
+contains exactly authored bytes newly entering the owner's source range, never
+the full prefix, and has no optional or legacy whole-raw payload alternative.
+`fromSpan` identifies the changed tail; a span-changing append starts at
+`completeSpanCount`. Completed span records and authored bytes remain immutable.
+
+Metadata-only progress and closed-to-finalized lifecycle patches carry an empty
+suffix and no new span records. Provisional-tail retraction also carries an
+empty suffix and cannot remove completed source. The reducer rejects stale
+generation or revision, a regressing `processedTo` or completed-span frontier,
+a changed owner start, a suffix-length mismatch, and changed retained
+provisional bytes on re-extension.
+
+Each paragraph span retains its stable ID and index, absolute UTF-16 source
+range, source revision, and provisional flag, alongside prepared inline nodes,
+attempted-reference labels, and optional typed
+`ParagraphSpanChildSnapshot`s. Native mixed children use the `paragraph-text`,
+`paragraph-html`, or `paragraph-mdx` type with stable IDs and absolute ranges.
+Their prepared order and ranges remain authoritative; consumers do not rebuild
+them by reparsing the parent paragraph.
+
+`ParagraphBlockSourceMetadata` records owner ID, generation, revision, state,
+`processedTo`, complete and total span counts, and the owned source range. An
+open paragraph may retain a provisional tail. A closed paragraph has no
+provisional span and may only advance to `finalized` without changing source,
+span boundaries, or processing frontier. `closed` is paragraph-owner state, not
+the worker's document-level `FINALIZED` message. A same-generation finalized
+paragraph cannot accept source growth or reopen. If raw engine input grows a
+finalized EOF paragraph, the engine replaces its owner under a fresh generation.
+
+`updateParagraphSpans` is a semantic, source-neutral update. It carries only
+dependency-affected prepared spans and requires matching owner generation,
+expected revision, next revision, span index, expected span source revision, and
+unchanged span source identity. It preserves authored bytes, source ranges, and
+span boundaries, and remains valid for closed or finalized owners when ordering
+guards pass. A continued reference title may update dependent prepared meaning;
+the first definition keeps precedence.
+
+The default public native paragraph append path emits these owner-scoped changes
+without a global `getBlocks()` projection or document-wide MDX scan. Consumers
+that request a complete `Block` projection perform explicit cold materialization.
 
 Core source preparation uses `AppendSourceDocument.stageAppend(text)` without
 mutating canonical source. Its reader combines the captured canonical prefix
@@ -114,7 +161,7 @@ Inline JSX tags and expressions belong to their paragraph or list-item projectio
 
 Native `InlineCode` spans own their literal contents. Mixed-content projection must not promote braces or tags inside them to MDX or HTML, including multi-backtick spans and code inside prepared quotes or lists. Direct compilation, worker patches, and serialized resets must preserve the same code text.
 
-Registered paragraph wrappers receive each projected inline group through the existing `children` prop, with their original raw, inline, and metadata props intact. Prepared quotes pass their native child projection to the registered quote wrapper. Custom wrappers must consume that projection rather than rebuild incomplete JSX from raw prose. Coordinator-mode standalone MDX retains pending segment metadata for status/signature reconciliation without changing its block-module ownership.
+Registered paragraph wrappers receive their projected inline group through the existing `children` prop and retain their truthful raw, inline, and metadata props. Until the separate approved P6 API migration, the legacy full-source-props path explicitly materializes a cold `Block`; it is not flat append work. Native prepared children remain authoritative, so custom wrappers must consume the supplied `children` projection rather than reconstructing JSX from raw prose.
 
 HTML portions of mixed paragraphs and list items retain owner-prepared sanitized trees through patches and serialization. Registry URL transforms and descendant drop/unwrap policies apply to those trees without reintroducing filtered HTML. Registered quote wrappers remain active while streaming and when the prepared quote is empty.
 

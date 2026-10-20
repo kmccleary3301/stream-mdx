@@ -4,7 +4,9 @@ import { createRoot } from "react-dom/client";
 import { JSDOM } from "jsdom";
 
 import type {
+  ManagedParagraphViewState,
   ManagedTableViewState,
+  ParagraphSpanRecord,
   TableRowRecord,
   WorkerIn,
   WorkerOut,
@@ -66,7 +68,8 @@ export interface ScalingMeasurement {
   workMeasure:
     | "sum of observed counter counts; not literal CPU cost"
     | "legacy plus source-read/materialization, directory-copy, record-slot, and code-preparation counters; not literal CPU cost"
-    | "table source-reader/materialization, parser-input/inline preparation, and engine/store record-slot counters; semantic patch row slots and native row/cell callbacks reported separately; not literal CPU cost";
+    | "table source-reader/materialization, parser-input/inline preparation, and engine/store record-slot counters; semantic patch row slots and native row/cell callbacks reported separately; not literal CPU cost"
+    | "legacy plus paragraph source-read/materialization, directory-copy, and span-record allocation counters; emitted span/source records and native view records asserted separately; not literal CPU cost";
   gatePassed: boolean;
   stageRatios: Record<CounterStage, Partial<Record<keyof StageCounters, StageCounterRatio>>>;
   snapshotN: SessionCountersSnapshot;
@@ -137,6 +140,13 @@ const TABLE_SOURCE_WORK_COUNTERS: readonly (keyof StageCounters)[] = [
   "source_directory_entries_copied",
   "record_slots_allocated",
 ] as const;
+const PARAGRAPH_SOURCE_WORK_COUNTERS: readonly (keyof StageCounters)[] = [
+  ...LEGACY_WORK_COUNTERS,
+  "source_units_read",
+  "source_units_materialized",
+  "source_directory_entries_copied",
+  "record_slots_allocated",
+] as const;
 
 
 
@@ -150,6 +160,18 @@ const REQUIRED_CODE_SOURCE_COUNTERS: readonly {
   { stage: "engine", counter: "code_source_units_prepared" },
   { stage: "store", counter: "record_slots_allocated" },
   { stage: "store", counter: "store_records_touched" },
+] as const;
+
+const REQUIRED_PARAGRAPH_SOURCE_COUNTERS: readonly {
+  readonly stage: CounterStage;
+  readonly counter: keyof StageCounters;
+}[] = [
+  { stage: "engine", counter: "source_units_read" },
+  { stage: "engine", counter: "inline_source_units_prepared" },
+  { stage: "engine", counter: "record_slots_allocated" },
+  { stage: "store", counter: "record_slots_allocated" },
+  { stage: "store", counter: "store_records_touched" },
+  { stage: "view", counter: "store_records_touched" },
 ] as const;
 
 const SCALING_INIT: WorkerIn = { type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
@@ -283,11 +305,19 @@ interface TablePatchCapture {
   unexpectedOperations: string[];
 }
 
+interface ParagraphPatchCapture {
+  appendPatchCount: number;
+  spanRecords: number;
+  sourceUnits: number;
+  sourceParts: string[];
+  unexpectedOperations: string[];
+}
+
 
 async function measureAppendWindowWork(
   workload: ScalingWorkloadDef,
   prefix: string,
-  mode: "legacy" | "code-source" | "table-rows" = "legacy",
+  mode: "legacy" | "code-source" | "paragraph-source" | "table-rows" = "legacy",
 ): Promise<{
   observedWork: number;
   sinkSnapshot: SessionCountersSnapshot;
@@ -295,6 +325,7 @@ async function measureAppendWindowWork(
   tableBoundary?: TableBoundaryEvidence;
 }> {
   const includeCodeSourceWork = mode === "code-source";
+  const includeParagraphSourceWork = mode === "paragraph-source";
   const includeTableBoundary = mode === "table-rows";
   const snapshot = captureDomGlobals();
   const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
@@ -322,8 +353,20 @@ async function measureAppendWindowWork(
 
   const sessionSink = new SessionCounterSink();
   let codeGeneration: number | undefined;
+  let paragraphBlockId: string | undefined;
+  let initialParagraphState: ManagedParagraphViewState | undefined;
+  let firstCompletedParagraphSpan: ParagraphSpanRecord | undefined;
+  let lastCompletedParagraphSpan: ParagraphSpanRecord | undefined;
   let tableBlockId: string | undefined;
+  let observingParagraphAppendWindow = false;
   let observingTableAppendWindow = false;
+  const paragraphPatchCapture: ParagraphPatchCapture = {
+    appendPatchCount: 0,
+    spanRecords: 0,
+    sourceUnits: 0,
+    sourceParts: [],
+    unexpectedOperations: [],
+  };
   const tablePatchCapture: TablePatchCapture = {
     appendPatchCount: 0,
     rowSlots: 0,
@@ -341,6 +384,28 @@ async function measureAppendWindowWork(
       if (msg.type === "INITIALIZED") {
         store.resetSnapshot(msg.snapshot);
       } else if (msg.type === "PATCH") {
+        if (observingParagraphAppendWindow) {
+          for (const patch of msg.patches) {
+            if (
+              patch.op === "appendParagraph" &&
+              patch.paragraphOwnerId === paragraphBlockId &&
+              patch.at.blockId === paragraphBlockId
+            ) {
+              paragraphPatchCapture.appendPatchCount += 1;
+              paragraphPatchCapture.spanRecords += patch.spans.length;
+              paragraphPatchCapture.sourceUnits += patch.sourceAppend.length;
+              paragraphPatchCapture.sourceParts.push(patch.sourceAppend);
+            } else if (
+              patch.op === "updateParagraphSpans" &&
+              patch.paragraphOwnerId === paragraphBlockId &&
+              patch.at.blockId === paragraphBlockId
+            ) {
+              continue;
+            } else {
+              paragraphPatchCapture.unexpectedOperations.push(patch.op);
+            }
+          }
+        }
         if (observingTableAppendWindow) {
           for (const patch of msg.patches) {
             if (
@@ -376,6 +441,9 @@ async function measureAppendWindowWork(
     const matchingBlock = setupBlocks.find((block) => block.type === workload.expectedBlockType);
     const establishedBlockType = matchingBlock ? matchingBlock.type : (setupBlocks[0]?.type ?? "none");
     const codeBlock = includeCodeSourceWork ? setupBlocks.find((block) => block.type === "code") : undefined;
+    const paragraphBlock = includeParagraphSourceWork
+      ? setupBlocks.find((block) => block.type === "paragraph")
+      : undefined;
     let initialTableState: ManagedTableViewState | undefined;
     let initialTableRange: { from: number; to: number } | undefined;
     let initialCompleteRows = 0;
@@ -389,6 +457,33 @@ async function measureAppendWindowWork(
       assert.equal(codeView.source.state, "open", "code-family append window starts open");
       codeGeneration = codeView.source.generation;
       assert.equal(store.getChildren(codeBlock.id).length, 0, "owned code rows must not be per-line NodeRecords");
+    }
+
+    if (includeParagraphSourceWork) {
+      assert.ok(paragraphBlock, "paragraph-family workload must establish its managed root paragraph");
+      paragraphBlockId = paragraphBlock.id;
+      initialParagraphState = store.getParagraphBlock(paragraphBlockId);
+      assert.ok(initialParagraphState, "paragraph-family workload must expose its managed span/source state");
+      assert.equal(initialParagraphState.source.state, "open", "paragraph append window starts with an open owner");
+      assert.equal(initialParagraphState.source.sourceRange.from, 0, "the workload is a root paragraph from offset zero");
+      assert.equal(initialParagraphState.source.processedTo, prefix.length, "the paragraph owner admits the complete setup prefix");
+      assert.equal(
+        initialParagraphState.sourceSnapshot.length,
+        initialParagraphState.source.sourceRange.to - initialParagraphState.source.sourceRange.from,
+        "managed paragraph source snapshot matches its owned source range",
+      );
+      assert.equal(initialParagraphState.spans.length, initialParagraphState.source.spanCount, "managed paragraph span index matches metadata");
+      assert.equal(
+        initialParagraphState.spans.completeSpanCount,
+        initialParagraphState.source.completeSpanCount,
+        "managed paragraph completed-span frontier matches metadata",
+      );
+      if (initialParagraphState.source.completeSpanCount > 0) {
+        firstCompletedParagraphSpan = initialParagraphState.spans.get(0);
+        lastCompletedParagraphSpan = initialParagraphState.spans.get(initialParagraphState.source.completeSpanCount - 1);
+        assert.ok(firstCompletedParagraphSpan, "paragraph setup must expose its first completed span");
+        assert.ok(lastCompletedParagraphSpan, "paragraph setup must expose its last completed span");
+      }
     }
 
     if (includeTableBoundary) {
@@ -440,9 +535,11 @@ async function measureAppendWindowWork(
     sessionSink.reset();
 
     let expectedCodeSource = prefix;
+    let expectedParagraphSuffix = "";
     let expectedTableSuffix = "";
     let nativeDomRows = 0;
     let nativeDomCells = 0;
+    observingParagraphAppendWindow = includeParagraphSourceWork;
     observingTableAppendWindow = includeTableBoundary;
     try {
       for (let appendIndex = 0; appendIndex < workload.appendChunks.length; appendIndex += 1) {
@@ -458,6 +555,71 @@ async function measureAppendWindowWork(
           assert.ok(afterAppend, "managed root code view remains available during the append window");
           assert.equal(afterAppend.source.state, "open", "measured append window contains no close/finalize");
           assert.equal(afterAppend.source.generation, codeGeneration, "managed code generation stays fixed");
+        }
+
+        if (includeParagraphSourceWork && paragraphBlockId && initialParagraphState) {
+          expectedParagraphSuffix += chunk;
+          const currentParagraph = store.getParagraphBlock(paragraphBlockId);
+          assert.ok(currentParagraph, "managed root paragraph remains available during the append window");
+          assert.equal(currentParagraph.source.state, "open", "measured paragraph append window contains no close/finalize");
+          assert.equal(
+            currentParagraph.source.generation,
+            initialParagraphState.source.generation,
+            "managed paragraph generation stays fixed",
+          );
+          assert.equal(
+            currentParagraph.source.sourceRange.from,
+            initialParagraphState.source.sourceRange.from,
+            "managed paragraph source origin stays fixed",
+          );
+          assert.ok(
+            currentParagraph.source.sourceRange.to >= initialParagraphState.source.sourceRange.to,
+            "paragraph owner does not retreat behind its initialized source frontier",
+          );
+          assert.equal(
+            currentParagraph.source.processedTo,
+            initialParagraphState.source.processedTo + expectedParagraphSuffix.length,
+            "paragraph parser frontier advances over every accepted append byte",
+          );
+          assert.equal(
+            currentParagraph.sourceSnapshot.length,
+            currentParagraph.source.sourceRange.to - currentParagraph.source.sourceRange.from,
+            "paragraph source snapshot length matches the advancing owned range",
+          );
+          assert.equal(
+            currentParagraph.spans.length,
+            currentParagraph.source.spanCount,
+            "paragraph append publishes a span index matching current metadata",
+          );
+          assert.equal(
+            currentParagraph.spans.completeSpanCount,
+            currentParagraph.source.completeSpanCount,
+            "paragraph append publishes the current completed-span frontier",
+          );
+          if (firstCompletedParagraphSpan) {
+            assert.strictEqual(
+              currentParagraph.spans.get(firstCompletedParagraphSpan.index),
+              firstCompletedParagraphSpan,
+              "paragraph append retains the first completed span record",
+            );
+          }
+          if (lastCompletedParagraphSpan) {
+            assert.strictEqual(
+              currentParagraph.spans.get(lastCompletedParagraphSpan.index),
+              lastCompletedParagraphSpan,
+              "paragraph append retains the last pre-window completed span record",
+            );
+          }
+          assert.equal(
+            paragraphPatchCapture.appendPatchCount,
+            appendIndex + 1,
+            "each paragraph append chunk emits one native appendParagraph patch",
+          );
+          assert.equal(
+            paragraphPatchCapture.sourceUnits,
+            currentParagraph.source.sourceRange.to - initialParagraphState.source.sourceRange.to,
+            "paragraph patch source units match the advancing owned source range",
+          );
         }
         if (includeTableBoundary && tableBlockId && initialTableState && firstCompletedRow && lastCompletedRow) {
           expectedTableSuffix += chunk;
@@ -496,6 +658,7 @@ async function measureAppendWindowWork(
         }
       }
     } finally {
+      observingParagraphAppendWindow = false;
       observingTableAppendWindow = false;
     }
 
@@ -555,6 +718,63 @@ async function measureAppendWindowWork(
       };
     }
 
+    if (includeParagraphSourceWork && paragraphBlockId && initialParagraphState) {
+      const fullSource = prefix + expectedParagraphSuffix;
+      const finalParagraphState = store.getParagraphBlock(paragraphBlockId);
+      assert.ok(finalParagraphState, "managed paragraph remains available after the append window");
+      assert.equal(finalParagraphState.source.state, "open", "paragraph append proof performs no FINALIZE");
+      assert.equal(
+        finalParagraphState.source.generation,
+        initialParagraphState.source.generation,
+        "paragraph owner generation is unchanged",
+      );
+      assert.ok(
+        finalParagraphState.source.sourceRange.to > initialParagraphState.source.sourceRange.to,
+        "paragraph owner advances its authored source frontier",
+      );
+      assert.ok(finalParagraphState.source.sourceRange.to <= fullSource.length, "paragraph owner stays within authored source");
+      assert.equal(finalParagraphState.source.processedTo, fullSource.length, "paragraph parser processes the complete authored source");
+      assert.equal(
+        finalParagraphState.sourceSnapshot.length,
+        finalParagraphState.source.sourceRange.to - finalParagraphState.source.sourceRange.from,
+        "paragraph source snapshot retains exactly the owned source range",
+      );
+      assert.equal(finalParagraphState.spans.length, finalParagraphState.source.spanCount, "final paragraph span index matches metadata");
+      assert.equal(
+        finalParagraphState.spans.completeSpanCount,
+        finalParagraphState.source.completeSpanCount,
+        "final paragraph completed-span frontier matches metadata",
+      );
+      assert.equal(sinkSnapshot.invalidations.length, 0, "paragraph append window contains no backward invalidation");
+      assert.deepEqual(paragraphPatchCapture.unexpectedOperations, [], "paragraph append window emits only paragraph semantic patches");
+      assert.equal(
+        paragraphPatchCapture.appendPatchCount,
+        workload.appendChunks.length,
+        "every append emits a real appendParagraph patch",
+      );
+      assert.ok(paragraphPatchCapture.spanRecords > 0, "paragraph append patches carry actual changed span records");
+      const expectedOwnedSuffix = fullSource.slice(
+        initialParagraphState.source.sourceRange.to,
+        finalParagraphState.source.sourceRange.to,
+      );
+      assert.ok(expectedOwnedSuffix.length > 0, "paragraph source owner accepts authored append bytes");
+      assert.equal(
+        paragraphPatchCapture.sourceParts.join(""),
+        expectedOwnedSuffix,
+        "paragraph append patches preserve the exact newly owned authored suffix",
+      );
+      assert.equal(
+        paragraphPatchCapture.sourceUnits,
+        expectedOwnedSuffix.length,
+        "paragraph patch source units match the exact owned authored suffix",
+      );
+      assert.equal(
+        sinkSnapshot.source_units_materialized,
+        0,
+        "ordinary paragraph append avoids full-source materialization",
+      );
+    }
+
     if (includeCodeSourceWork && codeBlock) {
       await engine.handle({ type: "DUMP_BLOCKS" });
       assert.equal(dumpedCodeRaw, expectedCodeSource, "cold source export preserves exact authored bytes");
@@ -562,9 +782,11 @@ async function measureAppendWindowWork(
 
     const counters = includeCodeSourceWork
       ? CODE_SOURCE_WORK_COUNTERS
-      : includeTableBoundary
-        ? TABLE_SOURCE_WORK_COUNTERS
-        : LEGACY_WORK_COUNTERS;
+      : includeParagraphSourceWork
+        ? PARAGRAPH_SOURCE_WORK_COUNTERS
+        : includeTableBoundary
+          ? TABLE_SOURCE_WORK_COUNTERS
+          : LEGACY_WORK_COUNTERS;
     const observedWork = counters.reduce((total, counter) => total + sinkSnapshot[counter], 0);
 
     return {
@@ -606,18 +828,22 @@ export async function runScalingDiagnostics(options: {
   const workloads = createScalingWorkloads().filter(
     (workload) => selectedWorkload === undefined || workload.name === selectedWorkload,
   );
-  const workCounters = includeCodeSourceWork
-    ? CODE_SOURCE_WORK_COUNTERS
-    : includeTableBoundary
-      ? TABLE_SOURCE_WORK_COUNTERS
-      : LEGACY_WORK_COUNTERS;
-  const measurementMode = includeCodeSourceWork
-    ? "code-source"
-    : includeTableBoundary
-      ? "table-rows"
-      : "legacy";
 
   for (const wl of workloads) {
+    const measurementMode = includeCodeSourceWork
+      ? "code-source"
+      : includeTableBoundary
+        ? "table-rows"
+        : wl.name === "paragraph"
+          ? "paragraph-source"
+          : "legacy";
+    const workCounters = includeCodeSourceWork
+      ? CODE_SOURCE_WORK_COUNTERS
+      : includeTableBoundary
+        ? TABLE_SOURCE_WORK_COUNTERS
+        : wl.name === "paragraph"
+          ? PARAGRAPH_SOURCE_WORK_COUNTERS
+          : LEGACY_WORK_COUNTERS;
     try {
       const measuredN = await measureAppendWindowWork(wl, wl.setupPrefixN, measurementMode);
       const measured4N = await measureAppendWindowWork(wl, wl.setupPrefix4N, measurementMode);
@@ -653,8 +879,13 @@ export async function runScalingDiagnostics(options: {
       const workPerUnit4N = observedWork4N / wl.windowUnits;
       const totalRatio = workPerUnitN > 0 ? workPerUnit4N / workPerUnitN : (workPerUnit4N > 0 ? Infinity : 1.0);
       let gatePassed = totalRatio <= 1.25;
-      if (includeCodeSourceWork) {
-        for (const { stage, counter } of REQUIRED_CODE_SOURCE_COUNTERS) {
+      const requiredSourceCounters = includeCodeSourceWork
+        ? REQUIRED_CODE_SOURCE_COUNTERS
+        : measurementMode === "paragraph-source"
+          ? REQUIRED_PARAGRAPH_SOURCE_COUNTERS
+          : undefined;
+      if (requiredSourceCounters) {
+        for (const { stage, counter } of requiredSourceCounters) {
           const countN = snapN.stages[stage][counter];
           const count4N = snap4N.stages[stage][counter];
           if (countN === 0 || count4N === 0) {
@@ -667,7 +898,7 @@ export async function runScalingDiagnostics(options: {
               commitIndex: wl.appendChunks.length,
               frontier: wl.windowUnits,
               sourcePrefix: wl.appendChunks[0]?.slice(0, 40) ?? "",
-              message: `Code-family counter '${stage}.${counter}' must report observed work in both windows: N=${countN}, 4N=${count4N}`,
+              message: `${wl.expectedBlockType}-family counter '${stage}.${counter}' must report observed work in both windows: N=${countN}, 4N=${count4N}`,
             });
           }
         }
@@ -793,7 +1024,9 @@ export async function runScalingDiagnostics(options: {
           ? "table source-reader/materialization, parser-input/inline preparation, and engine/store record-slot counters; semantic patch row slots and native row/cell callbacks reported separately; not literal CPU cost"
           : includeCodeSourceWork
             ? "legacy plus source-read/materialization, directory-copy, record-slot, and code-preparation counters; not literal CPU cost"
-            : "sum of observed counter counts; not literal CPU cost",
+            : measurementMode === "paragraph-source"
+              ? "legacy plus paragraph source-read/materialization, directory-copy, and span-record allocation counters; emitted span/source records and native view records asserted separately; not literal CPU cost"
+              : "sum of observed counter counts; not literal CPU cost",
         fourNPrefixUnits: wl.fourNPrefixUnits,
         workPerUnitN,
         workPerUnit4N,

@@ -1,18 +1,16 @@
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 
-import type { Block, CodeHighlightingMode, CompiledMdxModule, FormatAnticipationConfig, PatchMetrics } from "@stream-mdx/core";
+import type { Block, CodeHighlightingMode, FormatAnticipationConfig, PatchMetrics } from "@stream-mdx/core";
 import { MarkdownRenderer } from "./renderer";
 import { MarkdownBlocksRenderer } from "./renderer";
 import { CodeHighlightRequestContext, type CodeHighlightRequest } from "./renderer/code-highlight-context";
 import { DefaultLinkSafetyModal, type LinkSafetyModalProps } from "./components";
-import { useMdxCoordinator } from "./mdx-coordinator";
+import { MdxCoordinatorContext } from "./mdx-coordinator";
 import { MdxHydrationContext, type MdxHydrationOptions, createMdxHydrationController } from "./mdx-hydration-context";
 import { type MdxHydrationSummary, getMdxHydrationSummary, recordMdxHydrationLongTask } from "./mdx-hydration-metrics";
-import { MdxPrefetchQueue } from "./mdx-prefetch";
-import { prefetchMdxRuntime } from "./mdx-runtime";
 import type { AdaptiveBudgetState, PatchFlushResult } from "./renderer/patch-commit-scheduler";
 import { DeferredRenderContext, type DeferredRenderConfig } from "./renderer/deferred-render-context";
-import { useRendererBlocks, useRendererHasProvisionalBlocks } from "./renderer/hooks";
+import { useRendererHasProvisionalBlocks } from "./renderer/hooks";
 import { StreamingActivityContext } from "./renderer/streaming-activity-context";
 import type { RendererStore } from "./renderer/store";
 import { useWorkerSession } from "./worker-session";
@@ -165,74 +163,6 @@ export interface StreamingMarkdownProps extends ElementFilterOptions {
   animated?: AnimatedProp;
 }
 
-const MdxCoordinatorBridge: React.FC<{ store: RendererStore; mode: "server" | "worker" }> = ({ store, mode }) => {
-  const blocks = useRendererBlocks(store);
-  useMdxCoordinator(blocks, undefined, { store, mode });
-  return null;
-};
-
-const MdxPrefetchBridge: React.FC<{ store: RendererStore }> = ({ store }) => {
-  const blocks = useRendererBlocks(store);
-  const prefetchedRuntimeRef = useRef(false);
-  const trackedIdsRef = useRef(new Set<string>());
-  const queueRef = useRef<MdxPrefetchQueue | null>(null);
-
-  if (!queueRef.current) {
-    queueRef.current = new MdxPrefetchQueue();
-  }
-
-  useEffect(() => {
-    const queue = queueRef.current;
-    if (!queue) return;
-    const nextIds = new Map<string, { id: string; compiledModule: CompiledMdxModule | null }>();
-    let shouldPrefetchRuntime = false;
-
-    for (const block of blocks) {
-      if (block.type === "mdx") {
-        shouldPrefetchRuntime = true;
-        const compiledModule = block.payload.compiledMdxModule ?? null;
-        const compiledRef = block.payload.compiledMdxRef;
-        if (compiledModule && typeof compiledModule.id === "string") {
-          nextIds.set(compiledModule.id, { id: compiledModule.id, compiledModule });
-        } else if (compiledRef?.id && compiledRef.id !== "pending") {
-          nextIds.set(compiledRef.id, { id: compiledRef.id, compiledModule: null });
-        }
-      }
-      const meta = block.payload.meta as { mixedSegments?: Array<{ kind?: string }> } | undefined;
-      const segments = Array.isArray(meta?.mixedSegments) ? meta?.mixedSegments : [];
-      if (segments.some((segment) => segment?.kind === "mdx")) {
-        shouldPrefetchRuntime = true;
-      }
-    }
-
-    if (shouldPrefetchRuntime && !prefetchedRuntimeRef.current) {
-      prefetchedRuntimeRef.current = true;
-      prefetchMdxRuntime();
-    }
-
-    for (const id of trackedIdsRef.current) {
-      if (!nextIds.has(id)) {
-        queue.cancel(id);
-      }
-    }
-
-    for (const entry of nextIds.values()) {
-      if (!trackedIdsRef.current.has(entry.id)) {
-        queue.enqueue({ id: entry.id, compiledModule: entry.compiledModule });
-      }
-    }
-
-    trackedIdsRef.current = new Set(nextIds.keys());
-  }, [blocks]);
-
-  useEffect(() => {
-    return () => {
-      queueRef.current?.cancelAll();
-    };
-  }, []);
-
-  return null;
-};
 
 
 const DEFAULT_HISTORY_LIMIT =
@@ -439,6 +369,7 @@ function StreamingMarkdownComponent(
   const adaptiveSwitchedRef = useRef(false);
   const adaptiveFirstFlushRef = useRef(false);
   const mdxMode: "server" | "worker" = mdxCompileMode ?? "server";
+  const mdxCoordinatorContextValue = useMemo(() => ({ store, mode: mdxMode }), [store, mdxMode]);
   const imperativeActivityRef = useRef(false);
   const lastMetricsRef = useRef<RendererMetrics | null>(null);
   const patchHistoryRef = useRef<RendererMetrics[]>([]);
@@ -786,10 +717,9 @@ function StreamingMarkdownComponent(
     : null;
 
   return (
+    <MdxCoordinatorContext.Provider value={mdxCoordinatorContextValue}>
     <MdxHydrationContext.Provider value={mdxHydrationContextValue}>
       <DeferredRenderContext.Provider value={deferredConfig}>
-        <MdxPrefetchBridge store={store} />
-        {mdxMode === "server" ? <MdxCoordinatorBridge store={store} mode={mdxMode} /> : null}
         <CodeHighlightRequestContext.Provider value={highlightRequester}>
         <StreamingActivityContext.Provider value={streamStatus === "streaming" || hasActiveBlocks}>
           <MarkdownBlocksRenderer
@@ -815,6 +745,7 @@ function StreamingMarkdownComponent(
         {linkModal}
       </DeferredRenderContext.Provider>
     </MdxHydrationContext.Provider>
+    </MdxCoordinatorContext.Provider>
   );
 }
 

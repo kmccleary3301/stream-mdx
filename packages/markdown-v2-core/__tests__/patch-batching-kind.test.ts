@@ -1,7 +1,7 @@
 import assert from "node:assert";
 
 import type { Patch } from "../src/types";
-import { getPatchKind, splitPatchBatch } from "../src/perf/patch-batching";
+import { getPatchKind, isHeavyPatch, splitPatchBatch } from "../src/perf/patch-batching";
 
 function testSemanticDefaultClassification(): void {
   const patches: Patch[] = [
@@ -146,6 +146,64 @@ function testConsecutiveSemanticPatchesStayAtomic(): void {
   assert.strictEqual(groups.length, 1, "consecutive semantic patches from one tx must stay in one atomic batch");
   assert.strictEqual(groups[0]?.length, 2, "semantic batch should preserve both patches together");
 }
+
+function testParagraphOperationsStaySemantic(): void {
+  const paragraph = {
+    paragraphOwnerId: "paragraph-1",
+    generation: 1,
+    revision: 2,
+    state: "open" as const,
+    processedTo: 0,
+    completeSpanCount: 0,
+    spanCount: 0,
+    sourceRange: { from: 0, to: 0 },
+  };
+  const append: Patch = {
+    op: "appendParagraph",
+    at: { blockId: "paragraph-1" },
+    paragraphOwnerId: "paragraph-1",
+    generation: 1,
+    expectedRevision: 1,
+    revision: 2,
+    sourceAppend: "",
+    fromSpan: 0,
+    spans: [],
+    paragraph,
+    meta: { kind: "enrichment" },
+  };
+  const update: Patch = {
+    op: "updateParagraphSpans",
+    at: { blockId: "paragraph-1" },
+    paragraphOwnerId: "paragraph-1",
+    generation: 1,
+    expectedRevision: 1,
+    revision: 2,
+    updates: [],
+    paragraph,
+    meta: { kind: "enrichment" },
+  };
+
+  assert.strictEqual(getPatchKind(append), "semantic");
+  assert.strictEqual(getPatchKind(update), "semantic");
+  assert.deepEqual(splitPatchBatch([append, update]), [[append, update]]);
+
+  const spans = Array.from({ length: 5 }, (_value, index) => ({
+    id: `paragraph-1:span:${index}`,
+    index,
+    sourceRange: { from: index, to: index + 1 },
+    sourceRevision: 0,
+    isProvisional: false,
+    nodes: [],
+    attemptedReferences: [],
+  }));
+  assert.equal(isHeavyPatch({ ...append, spans }), true);
+  assert.equal(isHeavyPatch({
+    ...update,
+    updates: spans.map((span) => ({ index: span.index, expectedSourceRevision: 0, span })),
+  }), true);
+}
+
+testParagraphOperationsStaySemantic();
 
 testSemanticDefaultClassification();
 testExplicitEnrichmentClassification();

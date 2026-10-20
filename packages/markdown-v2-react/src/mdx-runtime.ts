@@ -1,14 +1,10 @@
-type MdxRuntimeModule = typeof import("./mdx-client");
+import * as mdxRuntime from "./mdx-client";
+type MdxRuntimeModule = typeof mdxRuntime;
 
-let mdxRuntimePromise: Promise<MdxRuntimeModule> | null = null;
+// Keep registration and hydration on the renderer's single MDX module instance.
+const mdxRuntimePromise: Promise<MdxRuntimeModule> = Promise.resolve(mdxRuntime);
 
 export function loadMdxRuntime(): Promise<MdxRuntimeModule> {
-  if (!mdxRuntimePromise) {
-    mdxRuntimePromise = import("./mdx-client");
-  }
   return mdxRuntimePromise;
 }
 
-export function prefetchMdxRuntime(): void {
-  void loadMdxRuntime();
-}

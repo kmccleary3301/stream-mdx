@@ -1,30 +1,48 @@
 declare const __STREAM_MDX_COUNTERS__: boolean;
 
 import {
+  appendManagedParagraphSpans,
   appendManagedTableRows,
   cloneBlock,
   createBlockSnapshot,
+  createManagedParagraphState,
   createManagedTableState,
   extractCodeWrapperAttributes,
   getDefaultCodeWrapperAttributes,
+  materializeManagedParagraphBlock,
   materializeManagedTableBlock,
   sanitizeCodeHTML,
   sanitizeHTML,
+  updateManagedParagraphSpans,
   updateManagedTableRows,
   type Block,
   type CodeLineRecord,
   type InlineNode,
+  type ManagedParagraphPatchResult,
+  type ManagedParagraphViewState,
   type ManagedTablePatchResult,
   type ManagedTableViewState,
   type NodePath,
   PATCH_ROOT_ID,
   type NodeSnapshot,
+  type ParagraphSpanRecord,
+  type ParagraphBlockSnapshot,
   type Patch,
   type SetPropsBatchEntry,
   type TableRowRecord,
   type TokenLineV1,
 } from "@stream-mdx/core";
 import { getPatchKind } from "@stream-mdx/core/perf/patch-batching";
+import {
+  appendAnchoredPrefixChild,
+  appendBlockRangeProjection,
+  createAnchoredPrefixPlan,
+  createBlockRangeProjection,
+  prefixProjectionCapacity,
+  truncateAnchoredPrefixChildren,
+  type BlockRangeProjection,
+} from "./block-range-projection";
+import { PARAGRAPH_SPAN_RANGE_SIZE } from "./paragraph-span-range";
 import {
   appendLegacyCodeState,
   appendStoredCodeState,
@@ -43,6 +61,42 @@ import { normalizeAllListDepths, normalizeListDepthsForIds } from "./list-utils"
 import { registerNodeSubscriptions } from "./node-subscriptions";
 import { type CoalescingMetrics, DEFAULT_COALESCE_CONFIG, coalescePatchesWithMetrics } from "./patch-coalescing";
 import { TABLE_ROW_RANGE_SIZE } from "./table-row-range";
+export interface ParagraphSegmentPlanEvent {
+  readonly id: string;
+  readonly type: string;
+  readonly range: { readonly from: number; readonly to: number };
+  readonly order: number;
+  readonly nativeChild?: boolean;
+  readonly spanFrom?: number;
+  readonly spanTo?: number;
+}
+
+export interface ParagraphSegmentProjectionLeaf {
+  readonly kind: "leaf";
+  readonly level: 0;
+  readonly eventCount: number;
+  readonly events: readonly ParagraphSegmentPlanEvent[];
+  readonly firstEvent: ParagraphSegmentPlanEvent;
+  readonly lastEvent: ParagraphSegmentPlanEvent;
+}
+
+export interface ParagraphSegmentProjectionBranch {
+  readonly kind: "branch";
+  readonly level: number;
+  readonly eventCount: number;
+  readonly children: readonly ParagraphSegmentProjectionNode[];
+  readonly firstEvent: ParagraphSegmentPlanEvent;
+  readonly lastEvent: ParagraphSegmentPlanEvent;
+}
+
+export type ParagraphSegmentProjectionNode = ParagraphSegmentProjectionLeaf | ParagraphSegmentProjectionBranch;
+
+export interface ParagraphSegmentProjection {
+  readonly root?: ParagraphSegmentProjectionNode;
+  readonly eventCount: number;
+  readonly tailSpanOwnerIndex?: number;
+}
+
 
 export type { CodeBlockViewState } from "./code-state";
 
@@ -81,6 +135,12 @@ export interface RendererStore {
   getTableBlock(id: string): ManagedTableViewState | undefined;
   getTableRows(id: string, from: number, to: number): ReadonlyArray<TableRowRecord>;
   subscribeTableRows(id: string, from: number, to: number, listener: () => void): () => void;
+  getParagraphBlock(id: string): ManagedParagraphViewState | undefined;
+  getParagraphColdBlock(id: string): Block | undefined;
+  getParagraphSpanProjection(id: string): BlockRangeProjection;
+  getParagraphSegmentProjection(id: string): ParagraphSegmentProjection | undefined;
+  getParagraphSpans(id: string, generation: number, from: number, to: number): ReadonlyArray<ParagraphSpanRecord>;
+  subscribeParagraphSpans(id: string, generation: number, from: number, listener: () => void): () => void;
   getVersion(): number;
   getNode(id: string): NodeRecord | undefined;
   getNodeWithVersion(id: string): { version: number; node?: NodeRecord };
@@ -116,9 +176,639 @@ function snapshotToBlock(node: NodeSnapshot): Block | null {
   }
   return null;
 }
+function normalizeParagraphNodeProps(snapshot: NodeSnapshot): Record<string, unknown> {
+  const props = snapshot.props ?? {};
+  const { block: _block, raw: _raw, inline: _inline, ...paragraphProps } = props;
+  return paragraphProps;
+}
+function normalizeParagraphNodeMeta(snapshot: NodeSnapshot): Record<string, unknown> {
+  const block = snapshot.props?.block as Block | undefined;
+  const meta = block?.payload?.meta ?? snapshot.meta ?? normalizeParagraphNodeProps(snapshot);
+  return { ...meta };
+}
+
+
+
+interface ParagraphSpanRangeSubscription {
+  readonly from: number;
+  readonly to: number;
+  readonly listeners: Set<() => void>;
+  readonly listenerGenerations: Map<() => void, number>;
+  spans?: ReadonlyArray<ParagraphSpanRecord>;
+  generation?: number;
+}
+
 
 
 type NodeMap = Map<string, NodeRecord>;
+const paragraphStateByRecord = new WeakMap<NodeRecord, ManagedParagraphViewState>();
+const retiredParagraphGenerationsByMap = new WeakMap<ReadonlyMap<string, NodeRecord>, Map<string, number>>();
+const coldParagraphBlocksByView = new WeakMap<ManagedParagraphViewState, Block>();
+const paragraphNodeRecordViews = new WeakMap<NodeRecord, {
+  readonly version: number;
+  readonly state: ManagedParagraphViewState;
+  readonly meta?: Record<string, unknown>;
+  readonly view: NodeRecord;
+}>();
+const paragraphNodeRecordOrigin = new WeakMap<NodeRecord, NodeRecord>();
+
+function paragraphNodeBlock(record: NodeRecord, state: ManagedParagraphViewState): Block {
+  const payload = Object.defineProperties(
+    {
+      range: { ...state.source.sourceRange },
+      meta: record.meta as Block["payload"]["meta"],
+    },
+    {
+      raw: {
+        enumerable: true,
+        get: () => state.sourceSnapshot.materialize(),
+      },
+      inline: {
+        enumerable: true,
+        get: () => {
+          const inline: InlineNode[] = [];
+          for (let index = 0; index < state.spans.length; index += 1) {
+            const span = state.spans.get(index);
+            if (span) inline.push(...span.nodes);
+          }
+          return inline;
+        },
+      },
+    },
+  ) as unknown as Block["payload"];
+  return {
+    id: record.id,
+    type: "paragraph",
+    isFinalized: state.source.state !== "open",
+    payload,
+  };
+}
+
+function nodeRecordForRead(record: NodeRecord): NodeRecord {
+  const state = paragraphStateByRecord.get(record);
+  if (!state) return record;
+  const cached = paragraphNodeRecordViews.get(record);
+  if (cached && cached.version === record.version && cached.state === state && cached.meta === record.meta) {
+    return cached.view;
+  }
+  const view = { ...record, block: paragraphNodeBlock(record, state) };
+  paragraphNodeRecordViews.set(record, { version: record.version, state, meta: record.meta, view });
+  paragraphNodeRecordOrigin.set(view, record);
+  return view;
+}
+
+function paragraphColdBlockBase(record: NodeRecord, state: ManagedParagraphViewState): Block {
+  return {
+    id: record.id,
+    type: "paragraph",
+    isFinalized: state.source.state !== "open",
+    payload: {
+      raw: state.sourceSnapshot.materialize(),
+      range: { ...state.source.sourceRange },
+      meta: record.meta as Block["payload"]["meta"],
+    },
+  };
+}
+const paragraphProjectionByRecord = new WeakMap<NodeRecord, {
+  generation: number;
+  spanCount: number;
+  projection: BlockRangeProjection;
+}>();
+
+interface StoredParagraphSegmentProjection extends ParagraphSegmentProjection {
+  readonly generation: number;
+  readonly childCount: number;
+  readonly spanCount?: number;
+  readonly lastEvent?: ParagraphSegmentPlanEvent;
+  readonly error?: string;
+  readonly validatedSpanCount: number;
+  readonly synthetic: boolean;
+  readonly tailSpanOwnerIndex?: number;
+}
+
+const paragraphSegmentProjectionByRecord = new WeakMap<NodeRecord, StoredParagraphSegmentProjection>();
+const paragraphCountersByMap: WeakMap<NodeMap, StoreParagraphCounters | undefined> | undefined =
+  typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+    ? new WeakMap<NodeMap, StoreParagraphCounters | undefined>()
+    : undefined;
+const EMPTY_PARAGRAPH_SPANS: ReadonlyArray<ParagraphSpanRecord> = Object.freeze([]);
+
+interface StoreParagraphCounters {
+  recordRecordSlotsAllocated(count: number, stage?: "engine" | "snapshot" | "patch" | "store" | "view"): void;
+  recordPrefixComparisons?(count: number, stage?: "store"): void;
+  recordSourceUnitsRead?(count: number, stage?: "store"): void;
+  recordSourceUnitsMaterialized?(count: number, stage?: "store"): void;
+  recordSourceDirectoryEntriesCopied?(count: number, stage?: "store"): void;
+  recordStoreRecordsTouched?(count: number, stage?: "store" | "view"): void;
+}
+function paragraphSegmentLeaf(events: readonly ParagraphSegmentPlanEvent[]): ParagraphSegmentProjectionLeaf {
+  const firstEvent = events[0];
+  const lastEvent = events[events.length - 1];
+  if (!firstEvent || !lastEvent) throw new RangeError("Paragraph segment projection leaf cannot be empty");
+  return {
+    kind: "leaf",
+    level: 0,
+    eventCount: events.length,
+    events,
+    firstEvent,
+    lastEvent,
+  };
+}
+
+function paragraphSegmentBranch(
+  level: number,
+  children: readonly ParagraphSegmentProjectionNode[],
+): ParagraphSegmentProjectionBranch {
+  const first = children[0];
+  const last = children[children.length - 1];
+  if (!first || !last) throw new RangeError("Paragraph segment projection branch cannot be empty");
+  return {
+    kind: "branch",
+    level,
+    eventCount: children.reduce((count, child) => count + child.eventCount, 0),
+    children,
+    firstEvent: first.firstEvent,
+    lastEvent: last.lastEvent,
+  };
+}
+
+function paragraphSegmentPath(level: number, event: ParagraphSegmentPlanEvent): ParagraphSegmentProjectionNode {
+  return level === 0
+    ? paragraphSegmentLeaf([event])
+    : paragraphSegmentBranch(level, [paragraphSegmentPath(level - 1, event)]);
+}
+
+function appendParagraphSegmentNode(
+  node: ParagraphSegmentProjectionNode,
+  event: ParagraphSegmentPlanEvent,
+): ParagraphSegmentProjectionNode | undefined {
+  if (node.kind === "leaf") {
+    if (node.eventCount >= prefixProjectionCapacity(0)) return undefined;
+    return paragraphSegmentLeaf([...node.events, event]);
+  }
+  const children = [...node.children];
+  const lastIndex = children.length - 1;
+  const last = children[lastIndex];
+  if (!last) return undefined;
+  if (last.eventCount < prefixProjectionCapacity(last.level)) {
+    const appended = appendParagraphSegmentNode(last, event);
+    if (appended) {
+      children[lastIndex] = appended;
+      return paragraphSegmentBranch(node.level, children);
+    }
+  }
+  if (children.length >= prefixProjectionCapacity(0)) return undefined;
+  children.push(paragraphSegmentPath(node.level - 1, event));
+  return paragraphSegmentBranch(node.level, children);
+}
+
+function appendParagraphSegmentProjection(
+  current: ParagraphSegmentProjection,
+  event: ParagraphSegmentPlanEvent,
+): ParagraphSegmentProjection {
+  const root = current.root;
+  if (!root) return { root: paragraphSegmentBranch(-1, [paragraphSegmentLeaf([event])]), eventCount: 1 };
+  if (root.kind !== "branch" || root.level !== -1) {
+    throw new RangeError("Paragraph segment projection root must remain anchored");
+  }
+  const children = appendAnchoredPrefixChild(
+    root.children,
+    current.eventCount,
+    (node) => node.eventCount,
+    (level) => paragraphSegmentPath(level, event),
+    (node) => {
+      const appended = appendParagraphSegmentNode(node, event);
+      if (!appended) throw new RangeError("Paragraph segment projection tail is unexpectedly full");
+      return appended;
+    },
+  );
+  return { root: paragraphSegmentBranch(-1, children), eventCount: current.eventCount + 1 };
+}
+
+function buildParagraphSegmentNode(
+  level: number,
+  firstEventIndex: number,
+  eventCount: number,
+  events: readonly ParagraphSegmentPlanEvent[],
+): ParagraphSegmentProjectionNode {
+  if (level === 0) return paragraphSegmentLeaf(events.slice(firstEventIndex, firstEventIndex + eventCount));
+  const childCapacity = prefixProjectionCapacity(level - 1);
+  const children: ParagraphSegmentProjectionNode[] = [];
+  let remaining = eventCount;
+  let nextEventIndex = firstEventIndex;
+  while (remaining > 0) {
+    const childCount = Math.min(childCapacity, remaining);
+    children.push(buildParagraphSegmentNode(level - 1, nextEventIndex, childCount, events));
+    remaining -= childCount;
+    nextEventIndex += childCount;
+  }
+  return paragraphSegmentBranch(level, children);
+}
+
+function truncateParagraphSegmentNode(
+  node: ParagraphSegmentProjectionNode,
+  keepCount: number,
+): ParagraphSegmentProjectionNode | undefined {
+  if (keepCount <= 0) return undefined;
+  if (keepCount >= node.eventCount) return node;
+  if (node.kind === "leaf") return paragraphSegmentLeaf(node.events.slice(0, keepCount));
+  const children = truncateAnchoredPrefixChildren(
+    node.children,
+    keepCount,
+    (child) => child.eventCount,
+    truncateParagraphSegmentNode,
+  );
+  return children.length > 0 ? paragraphSegmentBranch(node.level, children) : undefined;
+}
+
+function truncateParagraphSegmentProjection(
+  current: ParagraphSegmentProjection,
+  keepCount: number,
+): ParagraphSegmentProjection {
+  if (keepCount >= current.eventCount) return current;
+  if (keepCount <= 0 || !current.root) return { eventCount: 0 };
+  if (current.root.kind !== "branch" || current.root.level !== -1) {
+    throw new RangeError("Paragraph segment projection root must remain anchored");
+  }
+  const children = truncateAnchoredPrefixChildren(
+    current.root.children,
+    keepCount,
+    (child) => child.eventCount,
+    truncateParagraphSegmentNode,
+  );
+  return { root: paragraphSegmentBranch(-1, children), eventCount: keepCount };
+}
+
+function paragraphSegmentEventAt(
+  projection: ParagraphSegmentProjection,
+  index: number,
+): ParagraphSegmentPlanEvent | undefined {
+  if (!projection.root || index < 0 || index >= projection.eventCount) return undefined;
+  let node = projection.root;
+  let remaining = index;
+  while (node.kind === "branch") {
+    let found = false;
+    for (const child of node.children) {
+      if (remaining < child.eventCount) {
+        node = child;
+        found = true;
+        break;
+      }
+      remaining -= child.eventCount;
+    }
+    if (!found) return undefined;
+  }
+  return node.events[remaining];
+}
+
+function paragraphSegmentEvents(events: readonly ParagraphSegmentPlanEvent[]): ParagraphSegmentProjection {
+  if (events.length === 0) return { eventCount: 0 };
+  const children = createAnchoredPrefixPlan(events.length).map(({ level, firstIndex, count }) =>
+    buildParagraphSegmentNode(level, firstIndex, count, events));
+  return { root: paragraphSegmentBranch(-1, children), eventCount: events.length };
+}
+
+function paragraphSegmentOwnerIndex(
+  projection: ParagraphSegmentProjection,
+  state: ManagedParagraphViewState,
+  span: ParagraphSpanRecord,
+): number {
+  if (span.children?.length) return -1;
+  let low = 0;
+  let high = projection.eventCount;
+  while (low < high) {
+    const middle = low + Math.floor((high - low) / 2);
+    const event = paragraphSegmentEventAt(projection, middle);
+    if (!event) return -1;
+    if (event.range.to <= span.sourceRange.from) low = middle + 1;
+    else high = middle;
+  }
+  for (let index = low; index < projection.eventCount; index += 1) {
+    const event = paragraphSegmentEventAt(projection, index);
+    if (!event || event.nativeChild || event.range.from > span.sourceRange.from) break;
+    const end = index === projection.eventCount - 1 && event.type === "paragraph-text"
+      ? state.source.sourceRange.to
+      : event.range.to;
+    if (event.type === "paragraph-text" && event.range.from <= span.sourceRange.from && span.sourceRange.to <= end) return index;
+  }
+  return -1;
+}
+function paragraphSegmentEvent(
+  map: NodeMap,
+  childId: string,
+  order: number,
+  sourceRange: { readonly from: number; readonly to: number },
+  spanIndex?: number,
+): ParagraphSegmentPlanEvent | undefined {
+  const child = map.get(childId);
+  const range = child?.range;
+  if (
+    !child ||
+    !range ||
+    !Number.isSafeInteger(range.from) ||
+    !Number.isSafeInteger(range.to) ||
+    range.from < sourceRange.from ||
+    range.to < range.from ||
+    range.to > sourceRange.to
+  ) return undefined;
+  return {
+    id: child.id,
+    type: child.type,
+    range: { from: range.from, to: range.to },
+    order,
+    nativeChild: spanIndex !== undefined,
+    spanFrom: spanIndex,
+    spanTo: spanIndex,
+  };
+}
+
+function validateParagraphSegmentSpans(
+  projection: ParagraphSegmentProjection,
+  state: ManagedParagraphViewState,
+  fromSpan: number,
+): number {
+  for (let index = fromSpan; index < state.spans.length; index += 1) {
+    const span = state.spans.get(index);
+    if (!span) return index;
+    if (span.children?.length) {
+      if (span.nodes.length !== 0) return index;
+      let previousEnd = span.sourceRange.from;
+      for (const child of span.children) {
+        if (
+          (child.type !== "paragraph-text" && child.type !== "paragraph-html" && child.type !== "paragraph-mdx") ||
+          child.range.from < previousEnd ||
+          child.range.to < child.range.from ||
+          child.range.to > span.sourceRange.to
+        ) return index;
+        previousEnd = child.range.to;
+      }
+    } else if (paragraphSegmentOwnerIndex(projection, state, span) === -1) {
+      return index;
+    }
+  }
+  return state.spans.length;
+}
+
+function buildParagraphSegmentPlan(
+  map: NodeMap,
+  record: NodeRecord,
+  state: ManagedParagraphViewState,
+): StoredParagraphSegmentProjection {
+  const events: ParagraphSegmentPlanEvent[] = [];
+  let plainFrom: number | undefined;
+  let plainTo = 0;
+  let plainSpanFrom = 0;
+  let plainSpanTo = -1;
+  const flushPlain = (): void => {
+    if (plainFrom === undefined) return;
+    events.push({
+      id: `${record.id}::paragraph-text:${plainSpanFrom}`,
+      type: "paragraph-text",
+      range: { from: plainFrom, to: plainTo },
+      order: events.length,
+      nativeChild: false,
+      spanFrom: plainSpanFrom,
+      spanTo: plainSpanTo,
+    });
+    plainFrom = undefined;
+  };
+  let previousSpanEnd = state.source.sourceRange.from;
+  for (let index = 0; index < state.spans.length; index += 1) {
+    const span = state.spans.get(index);
+    if (
+      !span ||
+      span.sourceRange.from < previousSpanEnd ||
+      span.sourceRange.to < span.sourceRange.from ||
+      span.sourceRange.to > state.source.sourceRange.to
+    ) {
+      return {
+        root: undefined, eventCount: 0, generation: state.source.generation, childCount: record.children.length,
+        spanCount: state.spans.length, error: "Managed paragraph span source order is invalid",
+        validatedSpanCount: index, synthetic: false,
+      };
+    }
+    if (!span.children?.length) {
+      if (plainFrom === undefined) {
+        plainFrom = span.sourceRange.from;
+        plainSpanFrom = index;
+      }
+      plainTo = span.sourceRange.to;
+      plainSpanTo = index;
+      previousSpanEnd = span.sourceRange.to;
+      continue;
+    }
+    flushPlain();
+    if (span.nodes.length !== 0) {
+      return {
+        root: undefined, eventCount: 0, generation: state.source.generation, childCount: record.children.length,
+        spanCount: state.spans.length, error: `Mixed paragraph span ${index} contains duplicate inline meaning`,
+        validatedSpanCount: index, synthetic: false,
+      };
+    }
+    let previousChildEnd = span.sourceRange.from;
+    for (const child of span.children) {
+      if (
+        (child.type !== "paragraph-text" && child.type !== "paragraph-html" && child.type !== "paragraph-mdx") ||
+        child.range.from < previousChildEnd ||
+        child.range.to < child.range.from ||
+        child.range.to > span.sourceRange.to
+      ) {
+        return {
+          root: undefined, eventCount: 0, generation: state.source.generation, childCount: record.children.length,
+          spanCount: state.spans.length, error: `Prepared paragraph child range is invalid in span ${index}`,
+          validatedSpanCount: index, synthetic: false,
+        };
+      }
+      const event = paragraphSegmentEvent(map, child.id, events.length, state.source.sourceRange, index);
+      if (!event || event.type !== child.type || event.range.from !== child.range.from || event.range.to !== child.range.to) {
+        return {
+          root: undefined, eventCount: 0, generation: state.source.generation, childCount: record.children.length,
+          spanCount: state.spans.length, error: `Prepared paragraph child ${child.id} is unavailable or stale`,
+          validatedSpanCount: index, synthetic: false,
+        };
+      }
+      events.push(event);
+      previousChildEnd = child.range.to;
+    }
+    previousSpanEnd = span.sourceRange.to;
+  }
+  flushPlain();
+  const synthetic = events.length === 0;
+  if (synthetic) {
+    events.push({
+      id: record.id,
+      type: "paragraph-text",
+      range: { ...state.source.sourceRange },
+      order: 0,
+      nativeChild: false,
+      spanFrom: 0,
+      spanTo: -1,
+    });
+  }
+  const last = events[events.length - 1];
+  let previousEnd = state.source.sourceRange.from;
+  for (const event of events) {
+    if (event.range.from < previousEnd) {
+      return {
+        root: undefined, eventCount: 0, generation: state.source.generation, childCount: record.children.length,
+        spanCount: state.spans.length, error: "Managed paragraph children overlap or regress",
+        validatedSpanCount: 0, synthetic,
+      };
+    }
+    previousEnd = event.range.to;
+  }
+  const projection = paragraphSegmentEvents(events);
+  const invalidSpan = validateParagraphSegmentSpans(projection, state, 0);
+  if (invalidSpan !== state.spans.length) {
+    return {
+      ...projection, generation: state.source.generation, childCount: record.children.length,
+      spanCount: state.spans.length, error: `Prepared paragraph span ${invalidSpan} has no unique text owner`,
+      validatedSpanCount: invalidSpan, synthetic,
+    };
+  }
+  const lastSpan = state.spans.length > 0 ? state.spans.get(state.spans.length - 1) : undefined;
+  return {
+    ...projection,
+    generation: state.source.generation,
+    childCount: record.children.length,
+    spanCount: state.spans.length,
+    lastEvent: last,
+    tailSpanOwnerIndex: synthetic ? 0 : lastSpan ? paragraphSegmentOwnerIndex(projection, state, lastSpan) : undefined,
+    validatedSpanCount: state.spans.length,
+    synthetic,
+  };
+}
+function updateParagraphSegmentPlanAfterAppend(
+  map: NodeMap,
+  parent: NodeRecord,
+  previous: ManagedParagraphViewState,
+  next: ManagedParagraphViewState,
+  fromSpan: number,
+): void {
+  const cache = paragraphSegmentProjectionByRecord.get(parent);
+  if (!cache || cache.error || cache.spanCount !== previous.spans.length) return;
+  const oldTail = previous.spans.get(fromSpan);
+  let projection: ParagraphSegmentProjection;
+  if (oldTail?.children?.length) {
+    projection = truncateParagraphSegmentProjection(cache, cache.eventCount - oldTail.children.length);
+  } else if (oldTail) {
+    let low = 0;
+    let high = cache.eventCount;
+    while (low < high) {
+      const middle = low + Math.floor((high - low) / 2);
+      const event = paragraphSegmentEventAt(cache, middle);
+      if (!event || (event.spanTo ?? -1) >= fromSpan) high = middle;
+      else low = middle + 1;
+    }
+    const priorText = paragraphSegmentEventAt(cache, low);
+    projection = truncateParagraphSegmentProjection(cache, low);
+    if (
+      priorText &&
+      !priorText.nativeChild &&
+      (priorText.spanFrom ?? fromSpan) < fromSpan &&
+      oldTail.sourceRange.from > priorText.range.from
+    ) {
+      projection = appendParagraphSegmentProjection(projection, {
+        ...priorText,
+        range: { from: priorText.range.from, to: oldTail.sourceRange.from },
+        spanTo: fromSpan - 1,
+      });
+    }
+  } else if (cache.synthetic) {
+    projection = truncateParagraphSegmentProjection(cache, 0);
+  } else {
+    projection = cache;
+  }
+  let plainFrom: number | undefined;
+  let plainTo = 0;
+  let plainSpanFrom = fromSpan;
+  let plainSpanTo = fromSpan - 1;
+  const flushPlain = (): void => {
+    if (plainFrom === undefined) return;
+    const previousEvent = projection.root?.lastEvent;
+    if (previousEvent && plainFrom < previousEvent.range.to) {
+      paragraphSegmentProjectionByRecord.set(parent, {
+        ...cache, root: undefined, eventCount: 0, generation: next.source.generation,
+        spanCount: next.spans.length, error: "Managed paragraph children overlap or regress",
+        validatedSpanCount: fromSpan, synthetic: false,
+      });
+      return;
+    }
+    projection = appendParagraphSegmentProjection(projection, {
+      id: `${parent.id}::paragraph-text:${plainSpanFrom}`,
+      type: "paragraph-text",
+      range: { from: plainFrom, to: plainTo },
+      order: projection.eventCount,
+      nativeChild: false,
+      spanFrom: plainSpanFrom,
+      spanTo: plainSpanTo,
+    });
+    plainFrom = undefined;
+  };
+  for (let index = fromSpan; index < next.spans.length; index += 1) {
+    const span = next.spans.get(index);
+    if (!span) continue;
+    if (!span.children?.length) {
+      if (plainFrom === undefined) {
+        plainFrom = oldTail && index === fromSpan
+          ? span.sourceRange.from
+          : cache.synthetic && index === fromSpan
+            ? previous.source.sourceRange.from
+            : span.sourceRange.from;
+        plainSpanFrom = index;
+      }
+      plainTo = span.sourceRange.to;
+      plainSpanTo = index;
+      continue;
+    }
+    flushPlain();
+    for (const child of span.children) {
+      const event = paragraphSegmentEvent(map, child.id, projection.eventCount, next.source.sourceRange, index);
+      if (!event || event.type !== child.type || event.range.from !== child.range.from || event.range.to !== child.range.to) {
+        paragraphSegmentProjectionByRecord.set(parent, {
+          ...cache, root: undefined, eventCount: 0, generation: next.source.generation,
+          spanCount: next.spans.length, error: `Prepared paragraph child ${child.id} is unavailable or stale`,
+          validatedSpanCount: fromSpan, synthetic: false,
+        });
+        return;
+      }
+      const previousEvent = projection.root?.lastEvent;
+      if (previousEvent && event.range.from < previousEvent.range.to) {
+        paragraphSegmentProjectionByRecord.set(parent, {
+          ...cache, root: undefined, eventCount: 0, generation: next.source.generation,
+          spanCount: next.spans.length, error: "Managed paragraph children overlap or regress",
+          validatedSpanCount: fromSpan, synthetic: false,
+        });
+        return;
+      }
+      projection = appendParagraphSegmentProjection(projection, event);
+    }
+  }
+  flushPlain();
+  const synthetic = projection.eventCount === 0;
+  if (synthetic) {
+    projection = appendParagraphSegmentProjection(projection, {
+      id: parent.id,
+      type: "paragraph-text",
+      range: { ...next.source.sourceRange },
+      order: 0,
+      nativeChild: false,
+      spanFrom: 0,
+      spanTo: -1,
+    });
+  }
+  const lastSpan = next.spans.length > 0 ? next.spans.get(next.spans.length - 1) : undefined;
+  paragraphSegmentProjectionByRecord.set(parent, {
+    ...projection,
+    generation: next.source.generation,
+    childCount: parent.children.length,
+    spanCount: next.spans.length,
+    lastEvent: projection.root?.lastEvent,
+    tailSpanOwnerIndex: synthetic ? 0 : lastSpan ? paragraphSegmentOwnerIndex(projection, next, lastSpan) : undefined,
+    validatedSpanCount: next.spans.length,
+    synthetic,
+  });
+}
 
 const codeStateByRecord = new WeakMap<NodeRecord, StoredCodeBlockState>();
 const codeCountersByMap: WeakMap<NodeMap, StoreCodeCounters | undefined> | undefined =
@@ -156,6 +846,22 @@ function retiredTableGenerations(map: NodeMap): Map<string, number> {
   }
   return generations;
 }
+function retiredParagraphGenerations(map: ReadonlyMap<string, NodeRecord>): Map<string, number> {
+  let generations = retiredParagraphGenerationsByMap.get(map);
+  if (!generations) {
+    generations = new Map<string, number>();
+    retiredParagraphGenerationsByMap.set(map, generations);
+  }
+  return generations;
+}
+
+function rememberRetiredParagraphOwner(map: NodeMap, record: NodeRecord): void {
+  const state = paragraphStateByRecord.get(record);
+  if (!state) return;
+  const generations = retiredParagraphGenerations(map);
+  generations.set(record.id, Math.max(generations.get(record.id) ?? -1, state.source.generation));
+}
+
 
 function rememberRetiredTableOwner(map: NodeMap, record: NodeRecord): void {
   const state = tableStateByRecord.get(record);
@@ -196,7 +902,106 @@ function codeSnapshotGenerationAllowed(map: NodeMap, snapshot: NodeSnapshot): bo
       (snapshot.children?.length ?? 0) > 0
     ) return false;
   }
+  if (snapshot.paragraph) {
+    const current = map.get(snapshot.id);
+    const currentState = current && paragraphStateByRecord.get(current);
+    const retired = retiredParagraphGenerations(map).get(snapshot.id) ?? -1;
+    const generationFloor = Math.max(retired, currentState?.source.generation ?? -1);
+    const replacesActiveOwner = currentState !== undefined &&
+      snapshot.paragraph.generation > retired &&
+      paragraphSnapshotPreservesActiveOwner(currentState, snapshot);
+    if (
+      snapshot.type !== "paragraph" ||
+      snapshot.paragraph.paragraphOwnerId !== snapshot.id ||
+      (snapshot.paragraph.generation <= generationFloor && !replacesActiveOwner) ||
+      (snapshot.children?.length ?? 0) > 0
+    ) return false;
+  }
   return (snapshot.children ?? []).every((child) => codeSnapshotGenerationAllowed(map, child));
+}
+
+function sameCompletedParagraphSpanSources(
+  current: ManagedParagraphViewState,
+  next: ParagraphBlockSnapshot,
+): boolean {
+  const completeSpanCount = current.source.completeSpanCount;
+  if (
+    typeof next.raw !== "string" ||
+    !Array.isArray(next.spans) ||
+    next.completeSpanCount < completeSpanCount ||
+    next.spans.length < completeSpanCount
+  ) return false;
+  for (let index = 0; index < completeSpanCount; index += 1) {
+    const prior = current.spans.get(index);
+    const replacement = next.spans[index];
+    if (
+      !prior ||
+      !replacement?.sourceRange ||
+      prior.id !== replacement.id ||
+      prior.index !== replacement.index ||
+      prior.sourceRevision !== replacement.sourceRevision ||
+      prior.isProvisional !== replacement.isProvisional ||
+      prior.sourceRange.from !== replacement.sourceRange.from ||
+      prior.sourceRange.to !== replacement.sourceRange.to
+    ) return false;
+  }
+
+  const source = current.source;
+  const provisional = source.spanCount > completeSpanCount
+    ? current.spans.get(completeSpanCount)
+    : undefined;
+  if (source.spanCount > completeSpanCount && !provisional) return false;
+  const completedLength = (provisional?.sourceRange.from ?? source.sourceRange.to) - source.sourceRange.from;
+  if (!Number.isSafeInteger(completedLength) || completedLength < 0 || next.raw.length < completedLength) return false;
+  for (let from = 0; from < completedLength; from += 4096) {
+    const to = Math.min(completedLength, from + 4096);
+    const retained = current.sourceSnapshot.read(from, to);
+    if (retained.length !== to - from) return false;
+    for (let offset = 0; offset < retained.length; offset += 1) {
+      if (retained.charCodeAt(offset) !== next.raw.charCodeAt(from + offset)) return false;
+    }
+  }
+  return true;
+}
+
+function paragraphSnapshotPreservesActiveOwner(
+  current: ManagedParagraphViewState,
+  snapshot: NodeSnapshot,
+): boolean {
+  const next = snapshot.paragraph;
+  if (
+    !next ||
+    snapshot.type !== "paragraph" ||
+    (snapshot.children?.length ?? 0) > 0 ||
+    typeof next.raw !== "string" ||
+    !next.sourceRange ||
+    !Number.isSafeInteger(next.sourceRange.from) ||
+    !Number.isSafeInteger(next.sourceRange.to) ||
+    next.sourceRange.from < 0 ||
+    next.sourceRange.to < next.sourceRange.from ||
+    next.sourceRange.to - next.sourceRange.from !== next.raw.length ||
+    !Number.isSafeInteger(next.revision) ||
+    !Number.isSafeInteger(next.processedTo) ||
+    !Number.isSafeInteger(next.completeSpanCount) ||
+    !Number.isSafeInteger(next.spanCount) ||
+    (next.state !== "open" && next.state !== "closed" && next.state !== "finalized")
+  ) return false;
+  const source = current.source;
+  return next.paragraphOwnerId === snapshot.id &&
+    next.generation === source.generation &&
+    next.revision >= source.revision &&
+    next.processedTo >= source.processedTo &&
+    next.completeSpanCount >= source.completeSpanCount &&
+    next.spanCount >= source.spanCount &&
+    next.sourceRange.from === source.sourceRange.from &&
+    next.sourceRange.to >= source.sourceRange.to &&
+    (source.state !== "closed" || next.state !== "open") &&
+    (source.state !== "finalized" || (
+      next.state === "finalized" &&
+      next.sourceRange.to === source.sourceRange.to &&
+      next.spanCount === source.spanCount
+    )) &&
+    sameCompletedParagraphSpanSources(current, next);
 }
 
 function carryRetiredCodeGenerations(previous: NodeMap, next: NodeMap): void {
@@ -214,6 +1019,15 @@ function carryRetiredCodeGenerations(previous: NodeMap, next: NodeMap): void {
     if (state) tableGenerations.set(record.id, Math.max(tableGenerations.get(record.id) ?? -1, state.source.generation));
   }
   retiredTableGenerationsByMap.set(next, tableGenerations);
+  const paragraphGenerations = new Map(retiredParagraphGenerations(previous));
+  for (const record of previous.values()) {
+    const state = paragraphStateByRecord.get(record);
+    if (state) paragraphGenerations.set(record.id, Math.max(paragraphGenerations.get(record.id) ?? -1, state.source.generation));
+  }
+  retiredParagraphGenerationsByMap.set(next, paragraphGenerations);
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    paragraphCountersByMap!.set(next, paragraphCountersByMap!.get(previous));
+  }
   if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
     const counters = codeCountersByMap!.get(previous);
     if (counters) codeCountersByMap!.set(next, counters);
@@ -1259,23 +2073,40 @@ function buildNodeFromSnapshot(
   if (snapshot.table && (snapshot.children?.length ?? 0) > 0) {
     throw new TypeError("Managed table snapshots cannot carry a synthetic child tree");
   }
+  if (snapshot.paragraph && snapshot.type !== "paragraph") {
+    throw new TypeError("Paragraph source metadata is only valid on paragraph nodes");
+  }
+  if (snapshot.paragraph && (snapshot.code || snapshot.table)) {
+    throw new TypeError("A snapshot node cannot own multiple managed source families");
+  }
+  if (snapshot.paragraph && (snapshot.children?.length ?? 0) > 0) {
+    throw new TypeError("Managed paragraph children must be sourced from span records");
+  }
   const prior = previous?.get(snapshot.id);
   const tableState = snapshot.table
     ? typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
       ? createManagedTableState(snapshot.table, snapshot.id, { counters: codeCountersByMap!.get(map) } as never)
       : createManagedTableState(snapshot.table, snapshot.id)
     : undefined;
+  const paragraphCounters = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+    ? paragraphCountersByMap!.get(map)
+    : undefined;
+  const paragraphState = snapshot.paragraph
+    ? paragraphCounters
+      ? createManagedParagraphState(snapshot.paragraph, snapshot.id, { counters: paragraphCounters, counterStage: "store" })
+      : createManagedParagraphState(snapshot.paragraph, snapshot.id)
+    : undefined;
   const record: NodeRecord = {
     id: snapshot.id,
     type: snapshot.type,
     parentId,
     children: [],
-    props: prior && codeLineSnapshotMatches(snapshot, prior) ? prior.props : normalizeNodeProps(snapshot),
-    meta: snapshot.meta ? { ...snapshot.meta } : undefined,
+    props: snapshot.paragraph ? normalizeParagraphNodeProps(snapshot) : prior && codeLineSnapshotMatches(snapshot, prior) ? prior.props : normalizeNodeProps(snapshot),
+    meta: snapshot.paragraph ? normalizeParagraphNodeMeta(snapshot) : snapshot.meta ? { ...snapshot.meta } : undefined,
     range: snapshot.range ? { ...snapshot.range } : undefined,
     version: 0,
     blockEpoch,
-    block: snapshotToBlock(snapshot) ?? undefined,
+    block: snapshot.paragraph ? undefined : snapshotToBlock(snapshot) ?? undefined,
   };
   if (tableState && record.block) record.block.isFinalized = tableState.source.state !== "open";
 
@@ -1291,11 +2122,21 @@ function buildNodeFromSnapshot(
   if (codeState) codeStateByRecord.set(record, codeState);
   if (tableState) tableStateByRecord.set(record, tableState);
   markRecordChanged(record.id);
+  if (paragraphState) paragraphStateByRecord.set(record, paragraphState);
 
-  const childSnapshots = tableState ? [] : ensureArray(snapshot.children);
-  for (const child of childSnapshots) {
-    const childRecord = buildNodeFromSnapshot(map, child, record.id, blockEpoch, themes, previous);
-    record.children.push(childRecord.id);
+  if (paragraphState) {
+    for (let spanIndex = 0; spanIndex < paragraphState.spans.length; spanIndex += 1) {
+      const span = paragraphState.spans.get(spanIndex);
+      for (const child of span?.children ?? []) {
+        buildNodeFromSnapshot(map, child as NodeSnapshot, record.id, blockEpoch, themes, previous);
+      }
+    }
+  } else {
+    const childSnapshots = tableState ? [] : ensureArray(snapshot.children);
+    for (const child of childSnapshots) {
+      const childRecord = buildNodeFromSnapshot(map, child, record.id, blockEpoch, themes, previous);
+      record.children.push(childRecord.id);
+    }
   }
 
   if (prior && previous && recordMatchesPrior(map, record, prior, previous)) {
@@ -1310,6 +2151,41 @@ function buildNodeFromSnapshot(
     if (record.block && prior.block && plainDataEqual(record.block, prior.block)) record.block = prior.block;
   }
   return record;
+}
+function updateParagraphSpanChildRecords(
+  map: NodeMap,
+  parent: NodeRecord,
+  previousSpan: ParagraphSpanRecord | undefined,
+  nextSpan: ParagraphSpanRecord | undefined,
+  touched: Set<string>,
+): boolean {
+  const oldChildren = previousSpan?.children ?? [];
+  const nextChildren = nextSpan?.children ?? [];
+  const nextIds = new Set(nextChildren.map((child) => child.id));
+  let stableTopology = oldChildren.length === nextChildren.length;
+  for (const child of oldChildren) {
+    if (!nextIds.has(child.id)) removeSubtree(map, child.id, touched);
+  }
+  for (let index = 0; index < nextChildren.length; index += 1) {
+    const child = nextChildren[index];
+    const previousChild = oldChildren[index];
+    if (
+      !previousChild ||
+      previousChild.id !== child.id ||
+      previousChild.type !== child.type ||
+      previousChild.range.from !== child.range.from ||
+      previousChild.range.to !== child.range.to
+    ) stableTopology = false;
+    const prior = map.get(child.id);
+    const previous = prior ? new Map([[prior.id, prior]]) : undefined;
+    const next = buildNodeFromSnapshot(map, child as NodeSnapshot, parent.id, parent.blockEpoch, undefined, previous);
+    if (prior && next !== prior) {
+      next.version = prior.version + 1;
+      markRecordChanged(next.id);
+      touched.add(next.id);
+    }
+  }
+  return stableTopology;
 }
 
 /**
@@ -1336,6 +2212,7 @@ function recordMatchesPrior(map: NodeMap, record: NodeRecord, prior: NodeRecord,
   if (prior.type !== record.type || prior.parentId !== record.parentId) return false;
   if (record.type === "code") return false;
   if (tableStateByRecord.has(record)) return false;
+  if (paragraphStateByRecord.has(record)) return false;
   if (!arraysEqual(prior.children, record.children)) return false;
   for (const childId of record.children) {
     if (map.get(childId) !== previous.get(childId)) return false;
@@ -1379,6 +2256,12 @@ function collectSubtreeRecords(map: NodeMap, rootId: string): Map<string, NodeRe
     if (!record || records.has(record.id)) continue;
     records.set(record.id, record);
     for (const childId of record.children) stack.push(childId);
+    const paragraph = paragraphStateByRecord.get(record);
+    if (paragraph) {
+      for (let index = 0; index < paragraph.spans.length; index += 1) {
+        for (const child of paragraph.spans.get(index)?.children ?? []) stack.push(child.id);
+      }
+    }
   }
   return records;
 }
@@ -1407,12 +2290,22 @@ function removeSubtree(map: NodeMap, id: string, touched: Set<string>) {
     }
     rememberRetiredCodeOwner(map, node);
     rememberRetiredTableOwner(map, node);
+    rememberRetiredParagraphOwner(map, node);
     map.delete(node.id);
     deleteSnapshotCacheEntry(map, node.id);
     touched.add(node.id);
     for (const childId of node.children) {
       const child = map.get(childId);
       if (child) stack.push(child);
+    }
+    const paragraph = paragraphStateByRecord.get(node);
+    if (paragraph) {
+      for (let index = 0; index < paragraph.spans.length; index += 1) {
+        for (const child of paragraph.spans.get(index)?.children ?? []) {
+          const childRecord = map.get(child.id);
+          if (childRecord) stack.push(childRecord);
+        }
+      }
     }
   }
   for (const parentId of affectedParents) {
@@ -1430,10 +2323,24 @@ function convertNodeToBlocks(map: NodeMap, root: NodeRecord, publicBlocks: WeakM
   for (const childId of root.children) {
     const child = map.get(childId);
     if (!child) continue;
+    const paragraphState = paragraphStateByRecord.get(child);
+    if (paragraphState) {
+      let materialized = coldParagraphBlocksByView.get(paragraphState);
+      if (!materialized) {
+        materialized = materializeManagedParagraphBlock(paragraphColdBlockBase(child, paragraphState), paragraphState);
+        coldParagraphBlocksByView.set(paragraphState, materialized);
+      }
+      let block = publicBlocks.get(materialized);
+      if (!block) {
+        block = cloneBlock(materialized);
+        publicBlocks.set(materialized, block);
+      }
+      result.push(block);
+      continue;
+    }
     const codeState = codeStateByRecord.get(child);
     const tableState = tableStateByRecord.get(child);
     if (tableState) {
-      if (tableState.source.state === "open" && child.block?.payload.meta?.lezerNodeType === "Table") continue;
       let materialized = coldTableBlocksByView.get(tableState);
       if (!materialized) {
         materialized = materializeManagedTableBlock(child.block ?? {
@@ -1498,10 +2405,44 @@ function insertSnapshotAt(
   previous?: ReadonlyMap<string, NodeRecord>,
 ): { record: NodeRecord; insertedIds: string[] } | null {
   if (!parent) return null;
-  if (!codeSnapshotGenerationAllowed(map, snapshot)) return null;
+  const previousRecord = previous?.get(snapshot.id);
+  const previousParagraph = previousRecord && paragraphStateByRecord.get(previousRecord);
+  const previousRetiredParagraphGeneration = previous
+    ? retiredParagraphGenerations(previous).get(snapshot.id) ?? -1
+    : -1;
+  const currentRecord = map.get(snapshot.id);
+  const currentParagraph = currentRecord && paragraphStateByRecord.get(currentRecord);
+  const currentRetiredParagraphGeneration = retiredParagraphGenerations(map).get(snapshot.id) ?? -1;
+  const replacesPreviousActiveParagraph = Boolean(
+    snapshot.paragraph &&
+      previousParagraph &&
+      snapshot.paragraph.generation > previousRetiredParagraphGeneration &&
+      paragraphSnapshotPreservesActiveOwner(previousParagraph, snapshot)
+  );
+  const replacesCurrentActiveParagraph = Boolean(
+    snapshot.paragraph &&
+      currentParagraph &&
+      snapshot.paragraph.generation > currentRetiredParagraphGeneration &&
+      paragraphSnapshotPreservesActiveOwner(currentParagraph, snapshot)
+  );
+  if (
+    !codeSnapshotGenerationAllowed(map, snapshot) &&
+    !replacesPreviousActiveParagraph &&
+    !replacesCurrentActiveParagraph
+  ) return null;
+  if (replacesPreviousActiveParagraph) {
+    const generations = retiredParagraphGenerations(map);
+    if (previousRetiredParagraphGeneration < 0) generations.delete(snapshot.id);
+    else generations.set(snapshot.id, previousRetiredParagraphGeneration);
+  }
   const existingIndex = parent.children.indexOf(snapshot.id);
   if (existingIndex !== -1) {
     removeSubtree(map, parent.children[existingIndex], touched ?? new Set<string>());
+  }
+  if (replacesCurrentActiveParagraph) {
+    const generations = retiredParagraphGenerations(map);
+    if (currentRetiredParagraphGeneration < 0) generations.delete(snapshot.id);
+    else generations.set(snapshot.id, currentRetiredParagraphGeneration);
   }
   const record = buildNodeFromSnapshot(map, snapshot, parent.id, blockEpoch ?? readSnapshotBlockEpoch(snapshot) ?? parent.blockEpoch, themes, previous);
   const insertedIds: string[] = [];
@@ -1514,6 +2455,15 @@ function insertSnapshotAt(
     for (const childId of node.children) {
       const child = map.get(childId);
       if (child) queue.push(child);
+    }
+    const paragraph = paragraphStateByRecord.get(node);
+    if (paragraph) {
+      for (let index = 0; index < paragraph.spans.length; index += 1) {
+        for (const child of paragraph.spans.get(index)?.children ?? []) {
+          const childRecord = map.get(child.id);
+          if (childRecord) queue.push(childRecord);
+        }
+      }
     }
   }
 
@@ -1532,11 +2482,23 @@ function replaceSnapshotAt(
   touched: Set<string>,
   blockEpoch?: number,
   themes?: { light?: string; dark?: string },
+  onParagraphOwnerReplaced?: (id: string) => void,
 ) {
   if (!parent || index < 0 || index >= parent.children.length) return;
   const targetId = parent.children[index];
   const current = map.get(targetId);
   const currentTableState = current && tableStateByRecord.get(current);
+  const currentParagraphState = current && paragraphStateByRecord.get(current);
+  const retiredParagraphGeneration = snapshot.paragraph && targetId === snapshot.id
+    ? retiredParagraphGenerations(map).get(snapshot.id) ?? -1
+    : -1;
+  const replacesActiveParagraph = Boolean(
+    snapshot.paragraph &&
+      currentParagraphState &&
+      targetId === snapshot.id &&
+      snapshot.paragraph.generation > retiredParagraphGeneration &&
+      paragraphSnapshotPreservesActiveOwner(currentParagraphState, snapshot)
+  );
   const retiredTableGeneration = snapshot.table && targetId === snapshot.id
     ? retiredTableGenerations(map).get(snapshot.id) ?? -1
     : -1;
@@ -1569,7 +2531,16 @@ function replaceSnapshotAt(
     if (retiredTableGeneration < 0) generations.delete(targetId);
     else generations.set(targetId, retiredTableGeneration);
   }
+  if (replacesActiveParagraph) {
+    const generations = retiredParagraphGenerations(map);
+    if (retiredParagraphGeneration < 0) generations.delete(targetId);
+    else generations.set(targetId, retiredParagraphGeneration);
+  }
   const inserted = insertSnapshotAt(map, parent, index, snapshot, touched, blockEpoch, themes, previous);
+  if (inserted && onParagraphOwnerReplaced && (currentParagraphState || snapshot.paragraph)) {
+    onParagraphOwnerReplaced(targetId);
+    if (snapshot.paragraph && snapshot.id !== targetId) onParagraphOwnerReplaced(snapshot.id);
+  }
   for (const [id, record] of previous) {
     if (map.get(id) !== record) continue;
     const nodeSnapshot = previousNodeSnapshots.get(id);
@@ -1625,14 +2596,41 @@ function resolveStoreCodeCounters(options?: RendererStoreOptions): StoreCodeCoun
     },
   };
 }
+function resolveStoreParagraphCounters(options?: RendererStoreOptions): StoreParagraphCounters | undefined {
+  if (typeof __STREAM_MDX_COUNTERS__ === "undefined" || !__STREAM_MDX_COUNTERS__) return undefined;
+  const counters = (options as RendererStoreOptions & { campaignCounters?: RendererCampaignCounters } | undefined)?.campaignCounters;
+  if (!counters?.recordRecordSlotsAllocated) return undefined;
+  return {
+    recordRecordSlotsAllocated(count, stage) {
+      counters.recordRecordSlotsAllocated?.(count, stage);
+    },
+    recordPrefixComparisons(count) {
+      counters.recordPrefixComparisons?.(count, "store");
+    },
+    recordSourceUnitsRead(count) {
+      counters.recordSourceUnitsRead?.(count, "store");
+    },
+    recordSourceUnitsMaterialized(count) {
+      counters.recordSourceUnitsMaterialized?.(count, "store");
+    },
+    recordSourceDirectoryEntriesCopied(count) {
+      counters.recordSourceDirectoryEntriesCopied?.(count, "store");
+    },
+    recordStoreRecordsTouched(count, stage) {
+      counters.recordStoreRecordsTouched?.(count, stage);
+    },
+  };
+}
 
 export function createRendererStore(initialBlocks: Block[] = [], options?: RendererStoreOptions): RendererStore {
   let currentThemes = options?.themes;
   let nodes: NodeMap = new Map();
   if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
     codeCountersByMap!.set(nodes, resolveStoreCodeCounters(options));
+    paragraphCountersByMap!.set(nodes, resolveStoreParagraphCounters(options));
   }
   retiredCodeGenerationsByMap.set(nodes, new Map<string, number>());
+  retiredParagraphGenerationsByMap.set(nodes, new Map<string, number>());
   let version = 0;
   let blocksCache: Block[] = [];
   let blocksDirty = true;
@@ -1640,8 +2638,10 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
   const listeners = new Set<() => void>();
   const nodeListeners = new Map<string, Set<() => void>>();
   const tableRowRangesByBlock = new Map<string, Map<number, TableRowRangeSubscription>>();
+  const paragraphSpanRangesByBlock = new Map<string, Map<number, ParagraphSpanRangeSubscription>>();
   let pendingChangedIds = new Set<string>();
   let pendingTableRowRanges = new Map<string, Set<number>>();
+  let pendingParagraphSpanRanges = new Map<string, Set<number>>();
   let notifyAllNodes = true;
   let notifyScheduled = false;
   let lastCoalescingMetrics: CoalescingMetrics | null = null;
@@ -1655,6 +2655,8 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
     const state = codeStateByRecord.get(record);
     const tableState = tableStateByRecord.get(record);
     if (tableState) return tableState.source.state === "open";
+    const paragraphState = paragraphStateByRecord.get(record);
+    if (paragraphState) return paragraphState.source.state === "open";
     if (state?.managed) return state.view.source.state === "open";
     if (state) return record.block ? !record.block.isFinalized : state.view.source.state === "open";
     return Boolean(record.block && !record.block.isFinalized);
@@ -1726,14 +2728,22 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
   function notify() {
     const changedIds = pendingChangedIds;
     const changedTableRanges = pendingTableRowRanges;
+    const changedParagraphRanges = pendingParagraphSpanRanges;
     const wakeAllNodes = notifyAllNodes;
     pendingChangedIds = new Set();
     pendingTableRowRanges = new Map();
+    pendingParagraphSpanRanges = new Map();
     notifyAllNodes = false;
     if (wakeAllNodes) {
       for (const ranges of tableRowRangesByBlock.values()) {
         for (const range of ranges.values()) {
           range.rows = undefined;
+          range.generation = undefined;
+        }
+      }
+      for (const ranges of paragraphSpanRangesByBlock.values()) {
+        for (const range of ranges.values()) {
+          range.spans = undefined;
           range.generation = undefined;
         }
       }
@@ -1749,9 +2759,35 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
         if (!nodeSet) continue;
         for (const listener of nodeSet) callListener(listener);
       }
+      for (const id of changedIds) {
+        const ranges = paragraphSpanRangesByBlock.get(id);
+        if (!ranges) continue;
+        const record = nodes.get(id);
+        const currentGeneration = record ? paragraphStateByRecord.get(record)?.source.generation : undefined;
+        const changedStarts = changedParagraphRanges.get(id);
+        for (const range of ranges.values()) {
+          let staleGeneration = false;
+          for (const generation of range.listenerGenerations.values()) {
+            if (generation !== currentGeneration) {
+              staleGeneration = true;
+              break;
+            }
+          }
+          if (!staleGeneration) continue;
+          range.spans = undefined;
+          range.generation = undefined;
+          if (changedStarts?.has(range.from)) continue;
+          for (const listener of range.listeners) callListener(listener);
+        }
+      }
     }
     if (wakeAllNodes) {
       for (const ranges of tableRowRangesByBlock.values()) {
+        for (const range of ranges.values()) {
+          for (const listener of range.listeners) callListener(listener);
+        }
+      }
+      for (const ranges of paragraphSpanRangesByBlock.values()) {
         for (const range of ranges.values()) {
           for (const listener of range.listeners) callListener(listener);
         }
@@ -1760,6 +2796,15 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
     }
     for (const [blockId, starts] of changedTableRanges) {
       const ranges = tableRowRangesByBlock.get(blockId);
+      if (!ranges) continue;
+      for (const rangeStart of starts) {
+        const range = ranges.get(rangeStart);
+        if (!range) continue;
+        for (const listener of range.listeners) callListener(listener);
+      }
+    }
+    for (const [blockId, starts] of changedParagraphRanges) {
+      const ranges = paragraphSpanRangesByBlock.get(blockId);
       if (!ranges) continue;
       for (const rangeStart of starts) {
         const range = ranges.get(rangeStart);
@@ -1776,6 +2821,55 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
       pendingTableRowRanges.set(blockId, starts);
     }
     starts.add(rangeStart);
+  }
+  function queueParagraphSpanRange(blockId: string, rangeStart: number): void {
+    let starts = pendingParagraphSpanRanges.get(blockId);
+    if (!starts) {
+      starts = new Set<number>();
+      pendingParagraphSpanRanges.set(blockId, starts);
+    }
+    starts.add(rangeStart);
+  }
+
+  function invalidateParagraphSpanRange(blockId: string, from: number, to: number): void {
+    if (from >= to) return;
+    const ranges = paragraphSpanRangesByBlock.get(blockId);
+    if (!ranges) return;
+    const firstRange = Math.floor(from / PARAGRAPH_SPAN_RANGE_SIZE) * PARAGRAPH_SPAN_RANGE_SIZE;
+    const lastRange = Math.floor((to - 1) / PARAGRAPH_SPAN_RANGE_SIZE) * PARAGRAPH_SPAN_RANGE_SIZE;
+    for (let rangeStart = firstRange; rangeStart <= lastRange; rangeStart += PARAGRAPH_SPAN_RANGE_SIZE) {
+      const range = ranges.get(rangeStart);
+      if (!range) continue;
+      range.spans = undefined;
+      queueParagraphSpanRange(blockId, rangeStart);
+    }
+  }
+  function invalidateAllParagraphSpanRanges(blockId: string): void {
+    const ranges = paragraphSpanRangesByBlock.get(blockId);
+    if (!ranges) return;
+    for (const [rangeStart, range] of ranges) {
+      range.spans = undefined;
+      queueParagraphSpanRange(blockId, rangeStart);
+    }
+  }
+
+  function getOrCreateParagraphSpanRange(blockId: string, from: number): ParagraphSpanRangeSubscription {
+    let ranges = paragraphSpanRangesByBlock.get(blockId);
+    if (!ranges) {
+      ranges = new Map<number, ParagraphSpanRangeSubscription>();
+      paragraphSpanRangesByBlock.set(blockId, ranges);
+    }
+    let range = ranges.get(from);
+    if (!range) {
+      range = {
+        from,
+        to: from + PARAGRAPH_SPAN_RANGE_SIZE,
+        listeners: new Set(),
+        listenerGenerations: new Map(),
+      };
+      ranges.set(from, range);
+    }
+    return range;
   }
 
   function invalidateTableRowRange(blockId: string, from: number, to: number): void {
@@ -1841,7 +2935,16 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
     for (let i = 0; i < blocks.length; i++) {
       const block = cloneBlock(blocks[i]);
       const snapshot = createBlockSnapshot(block);
-      insertSnapshotAt(nodes, root, root.children.length, snapshot, undefined, allocateBlockEpoch(readSnapshotBlockEpoch(snapshot)));
+      insertSnapshotAt(
+        nodes,
+        root,
+        root.children.length,
+        snapshot,
+        undefined,
+        allocateBlockEpoch(readSnapshotBlockEpoch(snapshot)),
+        undefined,
+        previousNodes,
+      );
     }
     recountRootProvisionalBlocks(nodes);
     normalizeAllListDepths(nodes, new Set<string>(), PATCH_ROOT_ID);
@@ -1862,8 +2965,14 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
     while (stack.length > 0) {
       const snapshot = stack.pop();
       if (!snapshot) continue;
-      if (snapshot.type === "code" && snapshot.code && !codeSnapshotGenerationAllowed(nodes, snapshot)) {
-        throw new RangeError(`Code owner generation did not advance:${snapshot.id}`);
+      if (
+        (snapshot.type === "code" && snapshot.code) ||
+        (snapshot.type === "paragraph" && snapshot.paragraph)
+      ) {
+        if (!codeSnapshotGenerationAllowed(nodes, snapshot)) {
+          const owner = snapshot.paragraph ? "Paragraph" : "Code";
+          throw new RangeError(`${owner} owner generation or revision did not advance:${snapshot.id}`);
+        }
       }
       for (const child of snapshot.children ?? []) stack.push(child);
     }
@@ -1884,6 +2993,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
         undefined,
         allocateBlockEpoch(readSnapshotBlockEpoch(child)),
         currentThemes,
+        previousNodes,
       );
     }
     recountRootProvisionalBlocks(nextNodes);
@@ -2237,7 +3347,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
             const index = parent ? parent.children.indexOf(target.id) : -1;
             if (parent && index !== -1) {
               const snapshot = createBlockSnapshot(cloneBlock(target.block as Block));
-              replaceSnapshotAt(nodes, parent, index, snapshot, touched, target.blockEpoch);
+              replaceSnapshotAt(nodes, parent, index, snapshot, touched, target.blockEpoch, undefined, invalidateAllParagraphSpanRanges);
               mutatedBlocks = true;
               blockChanged = true;
               rebuiltFromFinalizedBlock = true;
@@ -2338,6 +3448,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
             const parent = resolveParent(nodes, patch.at);
             const previousRootRecord = parent?.id === PATCH_ROOT_ID ? nodes.get(patch.node.id) : undefined;
             const previousWasProvisional = isProvisionalRootBlock(previousRootRecord);
+            const previousParagraphRecord = nodes.get(patch.node.id);
             const inserted = insertSnapshotAt(
               nodes,
               parent,
@@ -2351,6 +3462,11 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
                 if (previousWasProvisional) provisionalBlockCount -= 1;
                 if (isProvisionalRootBlock(inserted.record)) provisionalBlockCount += 1;
               }
+              if (
+                previousParagraphRecord &&
+                previousParagraphRecord !== inserted.record &&
+                (paragraphStateByRecord.has(previousParagraphRecord) || paragraphStateByRecord.has(inserted.record))
+              ) invalidateAllParagraphSpanRanges(patch.node.id);
               for (const id of inserted.insertedIds) {
                 touched.add(id);
               }
@@ -2422,6 +3538,8 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
               patch.node,
               touched,
               allocateBlockEpoch(readPatchParseEpoch(patch) ?? readSnapshotBlockEpoch(patch.node)),
+              undefined,
+              invalidateAllParagraphSpanRanges,
             );
             if (parent.id === PATCH_ROOT_ID && nodes.get(parent.children[patch.index]) !== previousRecord) {
               if (previousWasProvisional) provisionalBlockCount -= 1;
@@ -2480,11 +3598,67 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
             let changed = false;
             const codeState = codeStateByRecord.get(target);
             const tableState = tableStateByRecord.get(target);
+            const paragraphState = paragraphStateByRecord.get(target);
+            if (paragraphState && paragraphState.source.state !== "finalized") {
+              const source = paragraphState.source;
+              const fromSpan = source.completeSpanCount;
+              const provisionalTail = paragraphState.spans.readRange(fromSpan, source.spanCount);
+              const finalizedTail = provisionalTail.map((span, index) => ({
+                ...span,
+                sourceRevision: span.sourceRevision + (index === 0 ? 1 : 0),
+                isProvisional: false,
+              }));
+              const revision = source.revision + 1;
+              const finalizePatch: Extract<Patch, { op: "appendParagraph" }> = {
+                op: "appendParagraph",
+                at: patch.at,
+                paragraphOwnerId: source.paragraphOwnerId,
+                generation: source.generation,
+                expectedRevision: source.revision,
+                revision,
+                sourceAppend: "",
+                fromSpan,
+                spans: finalizedTail,
+                paragraph: {
+                  ...source,
+                  revision,
+                  state: "finalized",
+                  completeSpanCount: source.spanCount,
+                },
+              };
+              let finalized: ManagedParagraphPatchResult;
+              try {
+                finalized = appendManagedParagraphSpans(paragraphState, target.id, finalizePatch);
+              } catch {
+                appendDiagnostic(`finalize paragraph guard rejected:${target.id}:invalid paragraph record`);
+                break;
+              }
+              if ("reason" in finalized) {
+                appendDiagnostic(`finalize paragraph guard rejected:${target.id}:${finalized.reason}`);
+                break;
+              }
+              const changedSpanEnd = Math.max(paragraphState.spans.length, finalized.state.spans.length);
+              for (let index = fromSpan; index < changedSpanEnd; index += 1) {
+                updateParagraphSpanChildRecords(
+                  nodes,
+                  target,
+                  paragraphState.spans.get(index),
+                  finalized.state.spans.get(index),
+                  touched,
+                );
+              }
+              if (fromSpan < paragraphState.spans.length || finalizedTail.length > 0) {
+                updateParagraphSegmentPlanAfterAppend(nodes, target, paragraphState, finalized.state, fromSpan);
+              }
+              paragraphStateByRecord.set(target, finalized.state);
+              if (fromSpan < changedSpanEnd) invalidateParagraphSpanRange(target.id, fromSpan, changedSpanEnd);
+              changed = true;
+            }
             if (codeState && codeState.view.source.state !== "finalized") {
               codeStateByRecord.set(target, finalizeStoredCodeState(codeState));
               changed = true;
             }
-            if (!tableState && target.block && !target.block.isFinalized) {
+            if (!paragraphState && !tableState && target.block && !target.block.isFinalized) {
               target.block = cloneBlock(target.block);
               target.block.isFinalized = true;
               changed = true;
@@ -2495,12 +3669,12 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
               touched.add(target.id);
               mutatedBlocks = true;
               blocksDirty = true;
-              if (!patch.at.nodeId && target.id === patch.at.blockId && target.type !== "code" && target.block && target.parentId) {
+              if (!paragraphState && !patch.at.nodeId && target.id === patch.at.blockId && target.type !== "code" && target.block && target.parentId) {
                 const parent = nodes.get(target.parentId);
                 const index = parent ? parent.children.indexOf(target.id) : -1;
                 if (parent && index !== -1) {
                   const snapshot = createBlockSnapshot(cloneBlock(target.block));
-                  replaceSnapshotAt(nodes, parent, index, snapshot, touched, target.blockEpoch);
+                  replaceSnapshotAt(nodes, parent, index, snapshot, touched, target.blockEpoch, undefined, invalidateAllParagraphSpanRanges);
                   if (isListRelated(target.type) || isListRelated(snapshot.type)) {
                     markListDepthDirty(target.id);
                   }
@@ -2673,6 +3847,109 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
             break;
           }
 
+          case "appendParagraph": {
+            if (rejectStaleEpochPatch(patch, patch.at)) break;
+            const target = resolveParent(nodes, patch.at);
+            if (!target || target.type !== "paragraph") {
+              appendDiagnostic(`appendParagraph target unavailable:${patch.at.blockId}`);
+              break;
+            }
+            const current = paragraphStateByRecord.get(target);
+            if (!current) {
+              appendDiagnostic(`appendParagraph owner unavailable:${target.id}`);
+              break;
+            }
+            let appended: ManagedParagraphPatchResult;
+            try {
+              appended = appendManagedParagraphSpans(current, target.id, patch);
+            } catch {
+              appendDiagnostic(`appendParagraph guard rejected:${target.id}:invalid paragraph record`);
+              break;
+            }
+            if ("reason" in appended) {
+              appendDiagnostic(`appendParagraph guard rejected:${target.id}:${appended.reason}`);
+              break;
+            }
+            const wasProvisional = isProvisionalRootBlock(target);
+            const source = appended.state.source;
+            if (
+              target.range?.from !== source.sourceRange.from ||
+              target.range?.to !== source.sourceRange.to
+            ) target.range = { ...source.sourceRange };
+            const changedSpanEnd = Math.max(current.spans.length, appended.state.spans.length);
+            for (let index = patch.fromSpan; index < changedSpanEnd; index += 1) {
+              updateParagraphSpanChildRecords(
+                nodes,
+                target,
+                current.spans.get(index),
+                appended.state.spans.get(index),
+                touched,
+              );
+            }
+            if (patch.fromSpan < current.spans.length || patch.spans.length > 0) {
+              updateParagraphSegmentPlanAfterAppend(nodes, target, current, appended.state, patch.fromSpan);
+            }
+            paragraphStateByRecord.set(target, appended.state);
+            if (patch.fromSpan < changedSpanEnd) {
+              invalidateParagraphSpanRange(target.id, patch.fromSpan, changedSpanEnd);
+            }
+            updateRootProvisionalCount(target, wasProvisional);
+            bumpVersion(target);
+            touched.add(target.id);
+            mutatedBlocks = true;
+            blocksDirty = true;
+            if (getPatchKind(patch) === "semantic") {
+              advanceBlockEpoch(patch.at.blockId, touched, readPatchParseEpoch(patch), readPatchTx(patch));
+            }
+            break;
+          }
+
+          case "updateParagraphSpans": {
+            if (rejectStaleEpochPatch(patch, patch.at)) break;
+            const target = resolveParent(nodes, patch.at);
+            if (!target || target.type !== "paragraph") {
+              appendDiagnostic(`updateParagraphSpans target unavailable:${patch.at.blockId}`);
+              break;
+            }
+            const current = paragraphStateByRecord.get(target);
+            if (!current) {
+              appendDiagnostic(`updateParagraphSpans owner unavailable:${target.id}`);
+              break;
+            }
+            let updated: ManagedParagraphPatchResult;
+            try {
+              updated = updateManagedParagraphSpans(current, target.id, patch);
+            } catch {
+              appendDiagnostic(`updateParagraphSpans guard rejected:${target.id}:invalid paragraph record`);
+              break;
+            }
+            if ("reason" in updated) {
+              appendDiagnostic(`updateParagraphSpans guard rejected:${target.id}:${updated.reason}`);
+              break;
+            }
+            let stableChildTopology = true;
+            for (const update of patch.updates) {
+              const stable = updateParagraphSpanChildRecords(
+                nodes,
+                target,
+                current.spans.get(update.index),
+                updated.state.spans.get(update.index),
+                touched,
+              );
+              stableChildTopology = stableChildTopology && stable;
+              invalidateParagraphSpanRange(target.id, update.index, update.index + 1);
+            }
+            if (!stableChildTopology) paragraphSegmentProjectionByRecord.delete(target);
+            paragraphStateByRecord.set(target, updated.state);
+            bumpVersion(target);
+            touched.add(target.id);
+            mutatedBlocks = true;
+            blocksDirty = true;
+            if (getPatchKind(patch) === "semantic") {
+              advanceBlockEpoch(patch.at.blockId, touched, readPatchParseEpoch(patch), readPatchTx(patch));
+            }
+            break;
+          }
           case "decorateCode": {
             const target = resolveParent(nodes, patch.at);
             if (!target || target.type !== "code") {
@@ -2964,6 +4241,131 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
       const record = nodes.get(id);
       return record?.type === "table" ? tableStateByRecord.get(record) : undefined;
     },
+    getParagraphBlock(id: string) {
+      const record = nodes.get(id);
+      return record?.type === "paragraph" ? paragraphStateByRecord.get(record) : undefined;
+    },
+
+    getParagraphColdBlock(id: string) {
+      const record = nodes.get(id);
+      const state = record?.type === "paragraph" ? paragraphStateByRecord.get(record) : undefined;
+      if (!record || !state) return undefined;
+      let materialized = coldParagraphBlocksByView.get(state);
+      if (!materialized) {
+        materialized = materializeManagedParagraphBlock(paragraphColdBlockBase(record, state), state);
+        coldParagraphBlocksByView.set(state, materialized);
+      }
+      let block = publicBlocks.get(materialized);
+      if (!block) {
+        block = cloneBlock(materialized);
+        publicBlocks.set(materialized, block);
+      }
+      return block;
+    },
+
+    getParagraphSpanProjection(id: string) {
+      const record = nodes.get(id);
+      const state = record?.type === "paragraph" ? paragraphStateByRecord.get(record) : undefined;
+      if (!record || !state) return createBlockRangeProjection(0, PARAGRAPH_SPAN_RANGE_SIZE);
+      const cached = paragraphProjectionByRecord.get(record);
+      if (cached && cached.generation === state.source.generation && cached.spanCount === state.spans.length) {
+        return cached.projection;
+      }
+      const projection = cached && cached.generation === state.source.generation
+        ? appendBlockRangeProjection(cached.projection, state.spans.length)
+        : createBlockRangeProjection(state.spans.length, PARAGRAPH_SPAN_RANGE_SIZE);
+      paragraphProjectionByRecord.set(record, {
+        generation: state.source.generation,
+        spanCount: state.spans.length,
+        projection,
+      });
+      return projection;
+    },
+
+    getParagraphSegmentProjection(id: string) {
+      const record = nodes.get(id);
+      const state = record?.type === "paragraph" ? paragraphStateByRecord.get(record) : undefined;
+      if (!record || !state) return undefined;
+      let cached = paragraphSegmentProjectionByRecord.get(record);
+      if (!cached || cached.generation !== state.source.generation || cached.spanCount !== state.spans.length) {
+        cached = buildParagraphSegmentPlan(nodes, record, state);
+        paragraphSegmentProjectionByRecord.set(record, cached);
+      }
+      if (cached.error) throw new RangeError(cached.error);
+      if (cached.validatedSpanCount !== state.spans.length) {
+        const fromSpan = Math.min(cached.validatedSpanCount, state.spans.length);
+        const invalidSpan = validateParagraphSegmentSpans(cached, state, fromSpan);
+        if (invalidSpan !== state.spans.length) {
+          cached = { ...cached, error: `Prepared paragraph span ${invalidSpan} has no unique text-segment owner` };
+          paragraphSegmentProjectionByRecord.set(record, cached);
+          throw new RangeError(cached.error);
+        }
+        const lastSpan = state.spans.get(state.spans.length - 1);
+        const tailSpanOwnerIndex = lastSpan
+          ? paragraphSegmentOwnerIndex(cached, state, lastSpan)
+          : undefined;
+        cached = {
+          ...cached,
+          validatedSpanCount: state.spans.length,
+          tailSpanOwnerIndex: tailSpanOwnerIndex !== undefined && tailSpanOwnerIndex >= 0 ? tailSpanOwnerIndex : undefined,
+        };
+        paragraphSegmentProjectionByRecord.set(record, cached);
+      }
+      return {
+        root: cached.root,
+        eventCount: cached.eventCount,
+        tailSpanOwnerIndex: cached.tailSpanOwnerIndex,
+      };
+    },
+
+    getParagraphSpans(id: string, generation: number, from: number, to: number) {
+      if (
+        !Number.isSafeInteger(to) ||
+        !Number.isSafeInteger(from) ||
+        from < 0 ||
+        !Number.isSafeInteger(from + PARAGRAPH_SPAN_RANGE_SIZE) ||
+        from % PARAGRAPH_SPAN_RANGE_SIZE !== 0 ||
+        to !== from + PARAGRAPH_SPAN_RANGE_SIZE
+      ) return EMPTY_PARAGRAPH_SPANS;
+      const record = nodes.get(id);
+      const state = record?.type === "paragraph" ? paragraphStateByRecord.get(record) : undefined;
+      if (!state || state.source.generation !== generation) return EMPTY_PARAGRAPH_SPANS;
+      const range = getOrCreateParagraphSpanRange(id, from);
+      if (range.generation !== generation) {
+        range.spans = undefined;
+        range.generation = generation;
+      }
+      if (range.spans) return range.spans;
+      range.spans = Object.freeze(state.spans.readRange(from, to));
+      if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+        paragraphCountersByMap!.get(nodes)?.recordStoreRecordsTouched?.(range.spans.length, "store");
+      }
+      return range.spans;
+    },
+
+    subscribeParagraphSpans(id: string, generation: number, from: number, listener: () => void) {
+      if (
+        !Number.isSafeInteger(generation) ||
+        generation < 0 ||
+        !Number.isSafeInteger(from + PARAGRAPH_SPAN_RANGE_SIZE) ||
+        !Number.isSafeInteger(from) ||
+        from < 0 ||
+        from % PARAGRAPH_SPAN_RANGE_SIZE !== 0
+      ) throw new RangeError("Paragraph span subscriptions must use fixed aligned ranges");
+      const range = getOrCreateParagraphSpanRange(id, from);
+      const rangeListener = () => listener();
+      range.listeners.add(rangeListener);
+      range.listenerGenerations.set(rangeListener, generation);
+      return () => {
+        range.listeners.delete(rangeListener);
+        range.listenerGenerations.delete(rangeListener);
+        if (range.listeners.size === 0) {
+          const ranges = paragraphSpanRangesByBlock.get(id);
+          ranges?.delete(from);
+          if (ranges?.size === 0) paragraphSpanRangesByBlock.delete(id);
+        }
+      };
+    },
 
     getTableRows(id: string, from: number, to: number) {
       const record = nodes.get(id);
@@ -3006,7 +4408,8 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
     },
 
     getNode(id: string) {
-      return nodes.get(id);
+      const record = nodes.get(id);
+      return record ? nodeRecordForRead(record) : undefined;
     },
 
     getNodeWithVersion(id: string) {
@@ -3016,10 +4419,13 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
       }
       const nodeSnapshotCache = getNodeSnapshotCacheForMap(nodes);
       const cached = nodeSnapshotCache.get(id);
-      if (cached && cached.version === record.version && cached.node === record) {
+      const cachedRecord = cached?.node
+        ? paragraphNodeRecordOrigin.get(cached.node) ?? cached.node
+        : undefined;
+      if (cached && cached.version === record.version && cachedRecord === record) {
         return cached;
       }
-      const snapshot = { version: record.version, node: record } as { version: number; node?: NodeRecord };
+      const snapshot = { version: record.version, node: nodeRecordForRead(record) } as { version: number; node?: NodeRecord };
       nodeSnapshotCache.set(id, snapshot);
       pruneCache(nodeSnapshotCache, NODE_SNAPSHOT_CACHE_LIMIT, NODE_SNAPSHOT_CACHE_BUFFER);
       return snapshot;

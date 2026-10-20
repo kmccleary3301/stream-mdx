@@ -1,18 +1,26 @@
 # Post-Finalize Mutation Ledger
 
-This ledger is the explicit allowlist for visible mutations that may occur after the worker emits `FINALIZED`.
+_Last updated: 2026-10-19_
 
 If a post-finalize visible mutation path is not listed here, it is a bug until proven otherwise.
 
 ## Contract
 
-After `FINALIZED`, blocks are semantically stable. The only allowed follow-up mutations are:
+After worker `FINALIZED`, committed source and block topology stay fixed. The
+allowlist includes source-neutral dependency updates that change prepared
+meaning without growing source or reopening an owner:
 
 | Path | Source | Patch kind | Allowed? | Why |
 | --- | --- | --- | --- | --- |
 | Lazy code tokenization metadata and line HTML/tokens | Worker `TOKENIZE_RANGE` follow-up on finalized code blocks | `enrichment` | Yes | Completes deferred syntax coloring for an already-finalized code block without changing block topology or semantic block identity |
 | MDX compiled status/ref application | Worker `MDX_COMPILED` routed through `handleMdxStatus` | `semantic` | Yes | Makes the finalized MDX block transition from pending to compiled; this is a visible semantic state change and must stay epoch-guarded |
 | MDX error status/message application | Worker `MDX_ERROR` routed through `handleMdxStatus` | `semantic` | Yes | Makes the finalized MDX block transition from pending to error; this is also a visible semantic state change and must stay epoch-guarded |
+| Paragraph dependency meaning | Worker `updateParagraphSpans` for link, footnote, or numbering invalidation | `semantic` | Yes | Changes only affected prepared spans whose owner generation, expected revision, span source revision, and source identity still match |
+| Table dependency meaning | Worker `updateTableRows` for reference, footnote, or numbering invalidation | `semantic` | Yes | Changes only affected row/header meaning while preserving table source identity under owner generation, expected revision, and row source identity guards |
+
+All semantic entries remain subject to epoch and transaction ordering and stale
+patch rejection. The paragraph and table entries cannot append source, change
+span/row boundaries, or reopen finalized owners.
 
 Everything else is disallowed unless it happens under a newer parse epoch / semantic transaction.
 
@@ -83,17 +91,24 @@ Guard coverage:
 - `packages/markdown-v2-react/__tests__/finalized-semantic-stability.test.ts`
 - `packages/markdown-v2-react/__tests__/post-finalize-contract.test.ts`
 
-## Closed Tables During Live Input
+## Source-Neutral Native Updates
 
-A table block in `closed` state has a committed native source prefix even when the
-document input session continues. Reference, footnote, and numbering dependencies
-may therefore invalidate affected row or header inline meaning while that input
-session is live. This is not a post-`FINALIZED` mutation and does not extend the
-allowlist above.
+A table in `closed` state has a committed native source prefix while document
+input may continue. This is paragraph/table owner state, not worker
+`FINALIZED`. `updateTableRows` may change dependency-affected meaning on a closed
+or finalized table, including after worker `FINALIZED`, only when owner
+generation, expected revision, and row/header source identities match. It never
+appends table source.
 
-Once the table source is `finalized`, same-generation `updateTableRows` is
-rejected. Supporting a later update requires an explicit newer owner generation
-or parse epoch; a finalized document is never reopened by a table-row patch.
+`updateParagraphSpans` follows the same source-neutral rule for closed or
+finalized paragraph owners. It updates only dependency-affected prepared spans
+whose source revision and source identity still match, and preserves the
+paragraph's authored bytes and span boundaries.
+
+`appendTableRows` and `appendParagraph` cannot grow or reopen same-generation
+finalized source. When raw engine input extends a finalized EOF paragraph, the
+engine replaces that owner under a fresh generation; it does not reopen the old
+owner.
 
 ## Disallowed Post-Finalize Mutations
 

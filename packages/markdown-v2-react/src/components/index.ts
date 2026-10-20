@@ -21,6 +21,7 @@ import { markMdxHydrated, markMdxHydrationError, markMdxHydrationStart } from ".
 import { MdxHydrationContext } from "../mdx-hydration-context";
 import { loadMdxRuntime } from "../mdx-runtime";
 import { useDeferredRender } from "../renderer/use-deferred-render";
+import { MdxCoordinatorLeaf } from "../mdx-coordinator";
 import type {
   Block,
   FootnoteItem,
@@ -102,7 +103,7 @@ class MdxRuntimeBoundary extends React.Component<
  * Render inline nodes to React elements
  */
 export function renderInlineNodes(
-  nodes: InlineNode[],
+  nodes: ReadonlyArray<InlineNode>,
   components: InlineComponents,
   urlTransform?: UrlTransform,
   registry?: ComponentRegistry,
@@ -1657,11 +1658,20 @@ export class ComponentRegistry {
         if (filtered === null || filtered === undefined) {
           return React.createElement(React.Fragment, { key: block.id });
         }
-        return React.isValidElement(filtered) ? filtered : React.createElement(React.Fragment, { key: block.id }, filtered);
+        return this.attachMdxCoordinator(block, React.isValidElement(filtered) ? filtered : React.createElement(React.Fragment, { key: block.id }, filtered));
       }
     }
 
-    return finalElement;
+    return this.attachMdxCoordinator(block, finalElement);
+  }
+  private attachMdxCoordinator(block: Block, element: React.ReactElement): React.ReactElement {
+    if (block.type !== "mdx") return element;
+    return React.createElement(
+      React.Fragment,
+      { key: block.id },
+      React.createElement(MdxCoordinatorLeaf, { key: `${block.id}:coordinator`, block }),
+      element,
+    );
   }
 
   /**

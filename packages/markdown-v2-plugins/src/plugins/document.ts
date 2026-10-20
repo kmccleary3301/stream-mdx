@@ -1,5 +1,41 @@
 // Document-phase plugin system for post-parse aggregation (e.g., footnotes)
-import type { Block, InlineNode, ProtectedRange, SourceSnapshot } from "@stream-mdx/core";
+import type { Block, InlineNode, ParagraphSpanChildSnapshot, ProtectedRange, SourceSnapshot } from "@stream-mdx/core";
+
+/** Changed native paragraph spans; ranges are authored absolute UTF-16 offsets. */
+export interface FootnoteParagraphSpanTarget {
+  readonly index: number;
+  readonly sourceRevision: number;
+  readonly sourceRange: { readonly from: number; readonly to: number };
+  readonly nodes: readonly InlineNode[];
+  readonly children?: readonly ParagraphSpanChildSnapshot[];
+  readonly attemptedReferences: readonly string[];
+}
+
+export interface FootnoteParagraphTargetDelta {
+  readonly ownerId: string;
+  readonly generation: number;
+  readonly spans: readonly FootnoteParagraphSpanTarget[];
+}
+
+export interface FootnoteParagraphTargetUpdate {
+  readonly ownerId: string;
+  readonly generation: number;
+  readonly updates: readonly {
+    readonly index: number;
+    readonly expectedSourceRevision: number;
+    readonly nodes: readonly InlineNode[];
+    readonly children?: readonly ParagraphSpanChildSnapshot[];
+    readonly attemptedReferences: readonly string[];
+  }[];
+}
+
+/** Engine-owned semantic updates; never synthetic or partially materialized Blocks. */
+export interface FootnoteParagraphTargetBridge {
+  readonly deltas: readonly FootnoteParagraphTargetDelta[];
+  readonly removedOwnerIds?: readonly string[];
+  readonly rebuild?: boolean;
+  applyUpdates(updates: readonly FootnoteParagraphTargetUpdate[]): void;
+}
 
 type InlineParserAdapter = {
   parse: (input: string) => InlineNode[];
@@ -23,6 +59,8 @@ export interface DocumentContext {
   state: DocumentState;
   /** Aggregated protected ranges (math, html, and other native protected regions). */
   protectedRanges?: ReadonlyArray<ProtectedRange>;
+  /** Private native-paragraph dependency bridge. */
+  footnoteParagraphTargets?: FootnoteParagraphTargetBridge;
 }
 
 export interface DocumentContribution {

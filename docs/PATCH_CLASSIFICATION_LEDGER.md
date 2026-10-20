@@ -1,6 +1,6 @@
 # Patch Classification Ledger
 
-_Last updated: 2026-04-10_
+_Last updated: 2026-10-19_
 
 This ledger is the canonical semantic/enrichment map for the `Patch` union in
 `packages/markdown-v2-core/src/types.ts`.
@@ -33,6 +33,8 @@ Ambiguous work defaults to `semantic`.
 | `reorder` | `semantic` | No | Changes committed ordering |
 | `appendLines` | `semantic` | No | Changes committed code-line structure and visible content |
 | `appendCode` | `semantic` | No | Atomically replaces the unfinished code tail and advances its exact authored-source frontier; never carries completed-prefix records |
+| `appendParagraph` | `semantic` | No | Replaces only the changed paragraph span tail and carries the exact authored source suffix under owner generation and expected revision guards |
+| `updateParagraphSpans` | `semantic` | No | Updates dependency-affected prepared paragraph meaning while preserving source identity under owner and span revision guards |
 | `appendTableRows` | `semantic` | No | Atomically replaces only the provisional tail and appends stable table rows under owner generation, source revision and exact source-frontier guards |
 | `updateTableRows` | `semantic` | No | Applies dependency-targeted inline meaning changes to unchanged row/header source identities under one atomic owner revision gate |
 | `decorateCode` | `enrichment` | Only | Revision-matched line decoration; cannot change source, line topology or lifecycle |
@@ -103,11 +105,45 @@ Re-extension verifies overlap inside the previously logged unfinished tail and
 appends only bytes not yet present. `processedTo` remains monotonic across both
 transitions.
 
-`closed` means the native table block prefix is committed while document input may
-continue. It is distinct from worker `FINALIZED`; dependency invalidation may
-target a closed table during live input, but same-generation updates to a
-`finalized` table are rejected.
+`closed` means the native table source prefix is committed while document input
+may continue; it is distinct from worker `FINALIZED`. Dependency invalidation may
+update affected row/header meaning on closed tables during live input and may
+update source-identical rows/header after owner-source or document finalization
+when generation, expected revision, and row source identity guards pass.
+`appendTableRows` cannot grow or reopen a same-generation finalized table owner.
 
+
+### `appendParagraph` and `updateParagraphSpans`
+
+`appendParagraph` is always semantic, including metadata-only progress and a
+closed-to-finalized lifecycle transition. Its required string `sourceAppend`
+contains exactly the authored bytes newly entering the owner's source range,
+never the full prefix. Metadata-only progress, source-neutral finalization, and
+provisional-tail retraction carry an empty suffix. A span-changing append starts
+at `completeSpanCount` and replaces only the provisional tail plus new spans;
+metadata-only progress starts at the current `spanCount` and carries no spans.
+
+The reducer checks paragraph owner ID, generation, expected and next revision,
+source range, `processedTo`, complete-span frontier, span counts, and retained
+source bytes before mutation. Re-extension must match any retained provisional
+overlap. `closed` has no provisional span and can only finalize without source
+growth; it is not worker `FINALIZED`. A same-generation finalized owner cannot
+grow or reopen. Raw engine EOF growth may replace that owner under a fresh
+generation.
+
+`updateParagraphSpans` is also semantic, never enrichment. It changes only
+dependency-affected prepared meaning and preserves the paragraph source,
+span boundaries, and each updated span's source identity. Owner generation,
+expected revision, consecutive next revision, and each `expectedSourceRevision`
+guard the update. Same-source meaning updates remain valid on closed and
+finalized owners, including after worker `FINALIZED`, while stale source or
+ordering is rejected. Continued reference titles update dependent spans without
+displacing the first definition.
+
+The default public native paragraph append path does not run global
+`getBlocks()` or document-wide MDX scans. A complete `Block` projection remains
+explicit cold work; legacy custom paragraph props use that truthful full-source
+path.
 
 ### `setProps`
 

@@ -15,6 +15,25 @@ export {
 } from "./table-block-state";
 export type { ManagedTableViewState, ManagedTablePatchResult } from "./table-block-state";
 export type { CodeLineDecoration, CodeLineDecorationUpdate, CodeLineIndex, CodeLineRecord, CodeTokenLine, CodeTokenSpan } from "./code-records";
+export { freezeParagraphSpanRecord } from "./paragraph-records";
+export { createParagraphSpanIndex } from "./paragraph-span-index";
+export {
+  createManagedParagraphState,
+  appendManagedParagraphSpans,
+  updateManagedParagraphSpans,
+  materializeManagedParagraphSnapshot,
+} from "./paragraph-block-state";
+export type { ManagedParagraphViewState, ManagedParagraphPatchResult } from "./paragraph-block-state";
+export type {
+  ParagraphBlockSnapshot,
+  ParagraphBlockSourceMetadata,
+  ParagraphBlockState,
+  ParagraphSpanIndex,
+  ParagraphSpanChildSnapshot,
+  ParagraphSpanRecord,
+  ParagraphSpanUpdate,
+} from "./paragraph-records";
+export type { ParagraphRecordCounterStage, ParagraphRecordWorkCounters, ParagraphSpanIndexOptions } from "./paragraph-span-index";
 export { AppendSourceDocument, createSourceWindow } from "./source-document";
 export type { SourceSnapshot, StagedSourceAppend } from "./source-document";
 export * from "./utils";

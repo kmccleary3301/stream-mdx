@@ -17,6 +17,14 @@ import {
   type ManagedTableViewState,
 } from "./table-block-state";
 import {
+  appendManagedParagraphSpans,
+  createManagedParagraphState,
+  materializeManagedParagraphSnapshot,
+  updateManagedParagraphSpans,
+  type ManagedParagraphPatchResult,
+  type ManagedParagraphViewState,
+} from "./paragraph-block-state";
+import {
   extractCodeLines,
   extractCodeWrapperAttributes,
   extractHighlightedLines,
@@ -28,6 +36,7 @@ import { InlineParser } from "./inline-parser";
 import { prepareNestedBlockSnapshot, type PreparedNestedSnapshot } from "./nested-block-snapshot";
 import { createBlockCompatibilityExtension } from "./block-compatibility";
 import type { TableBlockSnapshot, TableCellRecord, TableHeaderRecord, TableRowRecord } from "./table-records";
+import type { ParagraphBlockSnapshot, ParagraphSpanRecord } from "./paragraph-records";
 import type {
   Block,
   CodeBlockSnapshot,
@@ -103,6 +112,118 @@ function stripManagedTableMetadata(block: Block): Block {
   }
   return { ...block, payload: { ...block.payload, raw: "", meta } };
 }
+function managedParagraphSnapshot(block: Block): ParagraphBlockSnapshot | undefined {
+  if (block.type !== "paragraph") return undefined;
+  const candidate = block.payload.meta?.paragraph;
+  if (!candidate || typeof candidate !== "object") return undefined;
+  const paragraph = candidate as Partial<ParagraphBlockSnapshot>;
+  return paragraph.paragraphOwnerId === block.id &&
+    typeof paragraph.raw === "string" &&
+    Array.isArray(paragraph.spans)
+    ? candidate as ParagraphBlockSnapshot
+    : undefined;
+}
+
+function stripManagedParagraphMetadata(block: Block): Block {
+  const meta = block.payload.meta ? { ...block.payload.meta } : undefined;
+  if (meta) {
+    delete meta.paragraph;
+    delete meta.mixedSegments;
+    delete meta.mixedHtmlTrees;
+  }
+  return { ...block, payload: { ...block.payload, raw: "", inline: undefined, meta } };
+}
+
+function paragraphSourceSlice(paragraph: ParagraphBlockSnapshot, range: { readonly from: number; readonly to: number }): string {
+  const base = paragraph.sourceRange.from;
+  if (range.from < base || range.to < range.from || range.to > paragraph.sourceRange.to) {
+    throw new RangeError("Paragraph child range is outside its source owner");
+  }
+  return paragraph.raw.slice(range.from - base, range.to - base);
+}
+
+function materializeParagraphMixedSegments(
+  paragraph: ParagraphBlockSnapshot,
+): { readonly segments: MixedContentSegment[]; readonly htmlTrees: Record<number, HtmlTreeNode[]> } | undefined {
+  if (!paragraph.spans.some((span) => (span.children?.length ?? 0) > 0)) return undefined;
+  const segments: MixedContentSegment[] = [];
+  const htmlTrees: Record<number, HtmlTreeNode[]> = {};
+  const appendText = (from: number, to: number, inline?: readonly InlineNode[]): void => {
+    if (to <= from) return;
+    const range = { from, to };
+    segments.push({
+      kind: "text",
+      value: paragraphSourceSlice(paragraph, range),
+      range,
+      ...(inline ? { inline: cloneInlineNodes(inline) } : {}),
+    });
+  };
+  let cursor = paragraph.sourceRange.from;
+  for (const span of paragraph.spans) {
+    if (span.sourceRange.from < cursor || span.sourceRange.to > paragraph.sourceRange.to) {
+      throw new RangeError("Paragraph spans overlap or exceed their source owner");
+    }
+    appendText(cursor, span.sourceRange.from);
+    if (!span.children?.length) {
+      appendText(span.sourceRange.from, span.sourceRange.to, span.nodes);
+      cursor = span.sourceRange.to;
+      continue;
+    }
+    if (span.nodes.length !== 0) throw new TypeError("Mixed paragraph spans must use children as their sole meaning");
+    let childCursor = span.sourceRange.from;
+    for (const child of span.children) {
+      const range = child.range;
+      if (range.from < childCursor || range.to > span.sourceRange.to) {
+        throw new RangeError("Paragraph child ranges overlap or exceed their span");
+      }
+      appendText(childCursor, range.from);
+      const source = paragraphSourceSlice(paragraph, range);
+      const props = child.props ?? {};
+      if (child.type === "paragraph-text") {
+        if (!Array.isArray(props.inline)) throw new TypeError("Paragraph text child is missing prepared inline nodes");
+        segments.push({ kind: "text", value: source, inline: cloneInlineNodes(props.inline as InlineNode[]), range: { ...range } });
+      } else if (child.type === "paragraph-html") {
+        const segment: MixedContentSegment = { kind: "html", value: typeof props.raw === "string" ? props.raw : source, range: { ...range } };
+        if (child.meta?.sanitized === true && typeof props.html === "string") segment.sanitized = props.html;
+        if (Array.isArray(props.htmlTree)) htmlTrees[segments.length] = props.htmlTree as HtmlTreeNode[];
+        segments.push(segment);
+      } else if (child.type === "paragraph-mdx") {
+        const segment: MixedContentSegment = { kind: "mdx", value: typeof props.raw === "string" ? props.raw : source, range: { ...range } };
+        if (props.status === "pending" || props.status === "compiled" || props.status === "error") segment.status = props.status;
+        if (typeof props.error === "string") segment.error = props.error;
+        segments.push(segment);
+      } else {
+        throw new TypeError(`Unsupported native paragraph child type: ${child.type}`);
+      }
+      childCursor = range.to;
+    }
+    appendText(childCursor, span.sourceRange.to);
+    cursor = span.sourceRange.to;
+  }
+  appendText(cursor, paragraph.sourceRange.to);
+  return { segments, htmlTrees };
+}
+
+export function materializeManagedParagraphBlock(block: Block, state: ManagedParagraphViewState): Block {
+  const paragraph = materializeManagedParagraphSnapshot(state);
+  const result = cloneBlock(block);
+  const mixed = materializeParagraphMixedSegments(paragraph);
+  result.payload.raw = paragraph.raw;
+  result.payload.inline = mixed ? [] : paragraph.spans.flatMap((span) => cloneInlineNodes(span.nodes));
+  result.payload.range = { ...paragraph.sourceRange };
+  const meta: NonNullable<Block["payload"]["meta"]> = { ...(result.payload.meta ?? {}), paragraph };
+  if (mixed) {
+    meta.mixedSegments = mixed.segments;
+    if (Object.keys(mixed.htmlTrees).length > 0) meta.mixedHtmlTrees = mixed.htmlTrees;
+    else delete meta.mixedHtmlTrees;
+  } else {
+    delete meta.mixedSegments;
+    delete meta.mixedHtmlTrees;
+  }
+  result.payload.meta = meta;
+  result.isFinalized = paragraph.state !== "open";
+  return result;
+}
 
 export function materializeManagedTableBlock(block: Block, state: ManagedTableViewState): Block {
   const sourceTable = materializeManagedTableSnapshot(state);
@@ -132,8 +253,12 @@ export function createBlockSnapshot(
   onNodeCreated?: (node: NodeSnapshot) => void,
 ): NodeSnapshot {
   const table = managedTableSnapshot(block);
-  const blockForSnapshot = cloneBlock(table ? stripManagedTableMetadata(block) : block);
+  const paragraph = managedParagraphSnapshot(block);
+  const blockForSnapshot = cloneBlock(
+    table ? stripManagedTableMetadata(block) : paragraph ? stripManagedParagraphMetadata(block) : block,
+  );
   const tableSnapshot = table ? structuredCloneIfPossible(table) : undefined;
+  const paragraphSnapshot = paragraph ? structuredCloneIfPossible(paragraph) : undefined;
   const base: NodeSnapshot = {
     id: block.id,
     type: block.type,
@@ -143,6 +268,7 @@ export function createBlockSnapshot(
     meta: blockForSnapshot.payload.meta ? structuredCloneIfPossible(blockForSnapshot.payload.meta) : undefined,
     range: block.payload.range ? { ...block.payload.range } : undefined,
     table: tableSnapshot,
+    paragraph: paragraphSnapshot,
     children: [],
   };
   if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
@@ -151,6 +277,7 @@ export function createBlockSnapshot(
 
   switch (block.type) {
     case "paragraph":
+      if (paragraph) return base;
       return (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__)
         ? enrichParagraphSnapshot(block, base, onNodeCreated)
         : enrichParagraphSnapshot(block, base);
@@ -603,6 +730,7 @@ interface SnapshotNode {
   range?: { from: number; to: number };
   codeState?: SnapshotCodeState;
   tableState?: ManagedTableViewState;
+  paragraphState?: ManagedParagraphViewState;
 }
 
 export interface DocumentSnapshot {
@@ -619,6 +747,7 @@ interface MaterializedBlockCache {
 const materializedBlocksBySnapshot = new WeakMap<DocumentSnapshot, MaterializedBlockCache>();
 const retiredCodeGenerationsBySnapshot = new WeakMap<DocumentSnapshot, Map<string, number>>();
 const retiredTableGenerationsBySnapshot = new WeakMap<DocumentSnapshot, Map<string, number>>();
+const retiredParagraphGenerationsBySnapshot = new WeakMap<DocumentSnapshot, Map<string, number>>();
 
 export function createInitialSnapshot(initialBlocks?: Block[]): DocumentSnapshot;
 export function createInitialSnapshot(rootSnapshot: NodeSnapshot): DocumentSnapshot;
@@ -641,6 +770,7 @@ export function createInitialSnapshot(initial: Block[] | NodeSnapshot = []): Doc
   };
   retiredCodeGenerationsBySnapshot.set(snapshot, new Map());
   retiredTableGenerationsBySnapshot.set(snapshot, new Map());
+  retiredParagraphGenerationsBySnapshot.set(snapshot, new Map());
   materializedBlocksBySnapshot.set(snapshot, { blocks: [], dirty: true });
 
   if (Array.isArray(initial)) {
@@ -711,7 +841,7 @@ export function applyPatchBatch(snapshot: DocumentSnapshot, patches: Patch[]): v
             source: { ...target.codeState.source, state: "finalized" },
           };
         }
-        if (target?.tableState) break;
+        if (target?.tableState || target?.paragraphState) break;
         if (target?.block) {
           target.block = cloneBlock(target.block);
           target.block.isFinalized = true;
@@ -766,6 +896,37 @@ export function applyPatchBatch(snapshot: DocumentSnapshot, patches: Patch[]): v
         }
         if (!("state" in result)) break;
         target.tableState = result.state;
+        break;
+      }
+      case "appendParagraph": {
+        const target = resolveTargetNode(snapshot, patch.at);
+        if (!target?.paragraphState || target.type !== "paragraph") break;
+        let result: ManagedParagraphPatchResult;
+        try {
+          result = appendManagedParagraphSpans(target.paragraphState, target.id, patch);
+        } catch {
+          break;
+        }
+        if (!("state" in result)) break;
+        target.paragraphState = result.state;
+        const finalized = result.state.source.state !== "open";
+        if (target.block && target.block.isFinalized !== finalized) {
+          target.block = cloneBlock(target.block);
+          target.block.isFinalized = finalized;
+        }
+        break;
+      }
+      case "updateParagraphSpans": {
+        const target = resolveTargetNode(snapshot, patch.at);
+        if (!target?.paragraphState || target.type !== "paragraph") break;
+        let result: ManagedParagraphPatchResult;
+        try {
+          result = updateManagedParagraphSpans(target.paragraphState, target.id, patch);
+        } catch {
+          break;
+        }
+        if (!("state" in result)) break;
+        target.paragraphState = result.state;
         break;
       }
       case "decorateCode": {
@@ -831,7 +992,9 @@ function buildBlocks(snapshot: DocumentSnapshot): Block[] {
   for (const childId of root.children) {
     const child = snapshot.nodes.get(childId);
     if (!child) continue;
-    if (child.tableState && child.block) {
+    if (child.paragraphState && child.block) {
+      result.push(materializeManagedParagraphBlock(child.block, child.paragraphState));
+    } else if (child.tableState && child.block) {
       result.push(materializeManagedTableBlock(child.block, child.tableState));
     } else if (child.codeState) {
       result.push(materializeCodeBlock(child));
@@ -1176,6 +1339,12 @@ interface ActiveTableOwnerReplacement {
   readonly generation: number;
   readonly parentId: string;
 }
+interface ActiveParagraphOwnerReplacement {
+  readonly id: string;
+  readonly generation: number;
+  readonly parentId: string;
+}
+
 
 function sameTableCellSourceIdentity(prior: TableCellRecord, next: TableCellRecord): boolean {
   return Boolean(next)
@@ -1237,14 +1406,68 @@ function sameCompletedTableRowSources(
   return true;
 }
 
+function sameParagraphSpanSourceIdentity(prior: ParagraphSpanRecord, next: ParagraphSpanRecord | undefined): boolean {
+  if (!next?.sourceRange) return false;
+  return prior.id === next.id
+    && prior.index === next.index
+    && prior.sourceRevision === next.sourceRevision
+    && prior.isProvisional === next.isProvisional
+    && prior.sourceRange.from === next.sourceRange.from
+    && prior.sourceRange.to === next.sourceRange.to;
+}
+function sameCompletedParagraphSourceBytes(
+  current: ManagedParagraphViewState,
+  next: ParagraphBlockSnapshot,
+): boolean {
+  if (typeof next.raw !== "string") return false;
+  const source = current.source;
+  const provisional = source.spanCount > source.completeSpanCount
+    ? current.spans.get(source.completeSpanCount)
+    : undefined;
+  if (source.spanCount > source.completeSpanCount && !provisional) return false;
+  const completedLength = (provisional?.sourceRange.from ?? source.sourceRange.to) - source.sourceRange.from;
+  if (!Number.isSafeInteger(completedLength) || completedLength < 0 || next.raw.length < completedLength) return false;
+  for (let from = 0; from < completedLength; from += 4096) {
+    const to = Math.min(completedLength, from + 4096);
+    const retained = current.sourceSnapshot.read(from, to);
+    if (retained.length !== to - from) return false;
+    for (let offset = 0; offset < retained.length; offset += 1) {
+      if (retained.charCodeAt(offset) !== next.raw.charCodeAt(from + offset)) return false;
+    }
+  }
+  return true;
+}
+
+
+function sameCompletedParagraphSpanSources(
+  current: ManagedParagraphViewState,
+  next: ParagraphBlockSnapshot,
+): boolean {
+  const completeSpanCount = current.source.completeSpanCount;
+  if (
+    !Array.isArray(next.spans) ||
+    next.completeSpanCount < completeSpanCount ||
+    next.spans.length < completeSpanCount
+  ) return false;
+  for (let index = 0; index < completeSpanCount; index += 1) {
+    const prior = current.spans.get(index);
+    const replacement = next.spans[index];
+    if (!prior || !replacement || !sameParagraphSpanSourceIdentity(prior, replacement)) return false;
+  }
+  return sameCompletedParagraphSourceBytes(current, next);
+}
+
+
 function canInsertSnapshot(
   snapshot: DocumentSnapshot,
   root: NodeSnapshot,
   activeCodeReplacement?: ActiveCodeOwnerReplacement,
   activeTableReplacement?: ActiveTableOwnerReplacement,
+  activeParagraphReplacement?: ActiveParagraphOwnerReplacement,
 ): boolean {
   const retired = retiredCodeGenerationsBySnapshot.get(snapshot);
   const retiredTables = retiredTableGenerationsBySnapshot.get(snapshot);
+  const retiredParagraphs = retiredParagraphGenerationsBySnapshot.get(snapshot);
   const visit = (candidate: NodeSnapshot, isRoot: boolean): boolean => {
     if (candidate.code) {
       if (candidate.code.codeOwnerId !== candidate.id || !Number.isSafeInteger(candidate.code.generation) || candidate.code.generation < 0) {
@@ -1300,6 +1523,63 @@ function canInsertSnapshot(
         && retiredGeneration < candidate.table.generation;
       if (candidate.table.generation <= Math.max(currentGeneration, retiredGeneration) && !isActiveReplacement) return false;
     }
+    if (candidate.paragraph) {
+      const paragraph = candidate.paragraph;
+      if (
+        candidate.type !== "paragraph" ||
+        paragraph.paragraphOwnerId !== candidate.id ||
+        !Number.isSafeInteger(paragraph.generation) ||
+        paragraph.generation < 0 ||
+        !Number.isSafeInteger(paragraph.revision) ||
+        paragraph.revision < 0 ||
+        !Number.isSafeInteger(paragraph.processedTo) ||
+        paragraph.processedTo < 0 ||
+        !Number.isSafeInteger(paragraph.completeSpanCount) ||
+        paragraph.completeSpanCount < 0 ||
+        !Number.isSafeInteger(paragraph.spanCount) ||
+        paragraph.spanCount < paragraph.completeSpanCount ||
+        !Array.isArray(paragraph.spans) ||
+        paragraph.spanCount !== paragraph.spans.length ||
+        (paragraph.state !== "open" && paragraph.state !== "closed" && paragraph.state !== "finalized") ||
+        (paragraph.state !== "open" && paragraph.spanCount !== paragraph.completeSpanCount) ||
+        typeof paragraph.raw !== "string" ||
+        !paragraph.sourceRange ||
+        !Number.isSafeInteger(paragraph.sourceRange.from) ||
+        !Number.isSafeInteger(paragraph.sourceRange.to) ||
+        paragraph.sourceRange.from < 0 ||
+        paragraph.sourceRange.to < paragraph.sourceRange.from ||
+        paragraph.sourceRange.to - paragraph.sourceRange.from !== paragraph.raw.length ||
+        (candidate.children?.length ?? 0) > 0
+      ) return false;
+      const current = snapshot.nodes.get(candidate.id);
+      const currentParagraph = current?.paragraphState;
+      const currentSource = currentParagraph?.source;
+      const currentGeneration = currentSource?.generation ?? -1;
+      const retiredGeneration = retiredParagraphs?.get(candidate.id) ?? -1;
+      const isActiveReplacement = isRoot
+        && activeParagraphReplacement !== undefined
+        && activeParagraphReplacement.id === candidate.id
+        && activeParagraphReplacement.generation === paragraph.generation
+        && current?.parentId === activeParagraphReplacement.parentId
+        && currentParagraph !== undefined
+        && currentSource !== undefined
+        && currentGeneration === paragraph.generation
+        && paragraph.revision >= currentSource.revision
+        && paragraph.processedTo >= currentSource.processedTo
+        && paragraph.completeSpanCount >= currentSource.completeSpanCount
+        && paragraph.spanCount >= currentSource.spanCount
+        && paragraph.sourceRange.from === currentSource.sourceRange.from
+        && paragraph.sourceRange.to >= currentSource.sourceRange.to
+        && (currentSource.state !== "closed" || paragraph.state !== "open")
+        && (currentSource.state !== "finalized" || (
+          paragraph.state === "finalized"
+          && paragraph.sourceRange.to === currentSource.sourceRange.to
+          && paragraph.spanCount === currentSource.spanCount
+        ))
+        && sameCompletedParagraphSpanSources(currentParagraph, paragraph)
+        && retiredGeneration < paragraph.generation;
+      if (paragraph.generation <= Math.max(currentGeneration, retiredGeneration) && !isActiveReplacement) return false;
+    }
     return !candidate.children || candidate.children.every((child) => visit(child, false));
   };
   return visit(root, true);
@@ -1311,8 +1591,9 @@ function prepareSnapshotNode(
   nodeSnapshot: NodeSnapshot,
   activeCodeReplacement?: ActiveCodeOwnerReplacement,
   activeTableReplacement?: ActiveTableOwnerReplacement,
+  activeParagraphReplacement?: ActiveParagraphOwnerReplacement,
 ): { node: SnapshotNode; nodes: Map<string, SnapshotNode> } | null {
-  if (!parent || !canInsertSnapshot(snapshot, nodeSnapshot, activeCodeReplacement, activeTableReplacement)) return null;
+  if (!parent || !canInsertSnapshot(snapshot, nodeSnapshot, activeCodeReplacement, activeTableReplacement, activeParagraphReplacement)) return null;
   const nodes = new Map<string, SnapshotNode>();
   const node = buildNodeFromSnapshot(snapshot, nodeSnapshot, parent.id, nodes);
   return node ? { node, nodes } : null;
@@ -1352,9 +1633,15 @@ function replaceSnapshotAt(snapshot: DocumentSnapshot, parent: SnapshotNode, ind
     && replacedNode.tableState?.source.generation === nodeSnapshot.table.generation
     ? { id: replacedId, generation: nodeSnapshot.table.generation, parentId: parent.id }
     : undefined;
-  const prepared = prepareSnapshotNode(snapshot, parent, nodeSnapshot, activeCodeReplacement, activeTableReplacement);
+  const activeParagraphReplacement = replacedId === nodeSnapshot.id
+    && nodeSnapshot.paragraph
+    && replacedNode?.parentId === parent.id
+    && replacedNode.paragraphState?.source.generation === nodeSnapshot.paragraph.generation
+    ? { id: replacedId, generation: nodeSnapshot.paragraph.generation, parentId: parent.id }
+    : undefined;
+  const prepared = prepareSnapshotNode(snapshot, parent, nodeSnapshot, activeCodeReplacement, activeTableReplacement, activeParagraphReplacement);
   if (!prepared) return null;
-  if (replacedId) removeSubtree(snapshot, replacedId, activeCodeReplacement, activeTableReplacement);
+  if (replacedId) removeSubtree(snapshot, replacedId, activeCodeReplacement, activeTableReplacement, activeParagraphReplacement);
   if (prepared.node.id !== replacedId) removeSubtree(snapshot, prepared.node.id);
   for (const [id, node] of prepared.nodes) snapshot.nodes.set(id, node);
   const clamped = clamp(index, 0, parent.children.length);
@@ -1379,6 +1666,12 @@ function buildNodeFromSnapshot(
   if (snapshotNode.table && (snapshotNode.children?.length ?? 0) > 0) {
     throw new TypeError("Managed table snapshots cannot carry a synthetic child tree");
   }
+  if (snapshotNode.paragraph && snapshotNode.type !== "paragraph") {
+    throw new TypeError("Paragraph source metadata is only valid on paragraph nodes");
+  }
+  if (snapshotNode.paragraph && (snapshotNode.children?.length ?? 0) > 0) {
+    throw new TypeError("Managed paragraph snapshots cannot carry a synthetic child tree");
+  }
   const props = { ...(snapshotNode.props ?? {}) };
   let block: Block | undefined;
   if (props.block && typeof props.block === "object") {
@@ -1386,6 +1679,7 @@ function buildNodeFromSnapshot(
     delete props.block;
   }
   const tableState = snapshotNode.table ? createManagedTableState(snapshotNode.table, snapshotNode.id) : undefined;
+  const paragraphState = snapshotNode.paragraph ? createManagedParagraphState(snapshotNode.paragraph, snapshotNode.id) : undefined;
   if (!block && tableState) {
     block = {
       id: snapshotNode.id,
@@ -1395,6 +1689,15 @@ function buildNodeFromSnapshot(
     };
   }
   if (tableState && block) block.isFinalized = tableState.source.state !== "open";
+  if (!block && paragraphState) {
+    block = {
+      id: snapshotNode.id,
+      type: "paragraph",
+      isFinalized: paragraphState.source.state !== "open",
+      payload: { raw: "", inline: [], range: { ...paragraphState.source.sourceRange }, meta: {} },
+    };
+  }
+  if (paragraphState && block) block.isFinalized = paragraphState.source.state !== "open";
   const node: SnapshotNode = {
     id: snapshotNode.id,
     type: snapshotNode.type,
@@ -1404,12 +1707,13 @@ function buildNodeFromSnapshot(
     range: snapshotNode.range ? { ...snapshotNode.range } : block?.payload.range ? { ...block.payload.range } : undefined,
     block,
     tableState,
+    paragraphState,
   };
   targetNodes.set(node.id, node);
   if (snapshotNode.code) {
     node.codeState = createManagedCodeState(snapshotNode.code, node.id);
   }
-  if (!tableState) {
+  if (!tableState && !paragraphState) {
     const childSnapshots = Array.isArray(snapshotNode.children) ? snapshotNode.children : [];
     for (const child of childSnapshots) {
       const built = buildNodeFromSnapshot(snapshot, child, node.id, targetNodes);
@@ -1428,6 +1732,7 @@ function removeSubtree(
   nodeId: string,
   activeCodeReplacement?: ActiveCodeOwnerReplacement,
   activeTableReplacement?: ActiveTableOwnerReplacement,
+  activeParagraphReplacement?: ActiveParagraphOwnerReplacement,
 ) {
   const node = snapshot.nodes.get(nodeId);
   if (!node) return;
@@ -1453,8 +1758,19 @@ function removeSubtree(
       if (retired) retired.set(node.id, Math.max(retired.get(node.id) ?? -1, generation));
     }
   }
+  if (node.paragraphState) {
+    const generation = node.paragraphState.source.generation;
+    const isPreservedActiveOwner = activeParagraphReplacement !== undefined
+      && node.id === activeParagraphReplacement.id
+      && node.parentId === activeParagraphReplacement.parentId
+      && generation === activeParagraphReplacement.generation;
+    if (!isPreservedActiveOwner) {
+      const retired = retiredParagraphGenerationsBySnapshot.get(snapshot);
+      if (retired) retired.set(node.id, Math.max(retired.get(node.id) ?? -1, generation));
+    }
+  }
   for (const childId of [...node.children]) {
-    removeSubtree(snapshot, childId, activeCodeReplacement, activeTableReplacement);
+    removeSubtree(snapshot, childId, activeCodeReplacement, activeTableReplacement, activeParagraphReplacement);
   }
   snapshot.nodes.delete(node.id);
   if (node.parentId) {

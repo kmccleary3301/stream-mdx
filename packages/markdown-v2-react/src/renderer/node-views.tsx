@@ -22,6 +22,7 @@ import { StreamingActivityContext } from "./streaming-activity-context";
 import { createRendererStore, isListPatchDebugEnabled, type NodeRecord, type RendererStore } from "./store";
 import { useVirtualizedTable, type TableVirtualizationProps } from "./virtualized-table";
 import { CodeBlockView } from "./code-block-view";
+import { ManagedParagraphBlockView } from "./paragraph-block-view";
 import { ManagedTableBlockView } from "./table-block-view";
 import { useLazyCodeHighlightRequest } from "./use-lazy-code-highlight-request";
 
@@ -80,8 +81,36 @@ function recordViewRecords(store: RendererStore, count: number): void {
 
 export const BlockNodeRenderer: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = ({ store, blockId, registry }) => {
   const node = useRendererNode(store, blockId);
-  const block = node?.block;
+  const renderParagraphChild = React.useCallback(
+    (nodeId: string) => (
+      <MixedSegmentView
+        key={nodeId}
+        store={store}
+        nodeId={nodeId}
+        inlineComponents={registry.getInlineComponents()}
+        urlTransform={registry.getUrlTransform()}
+        registry={registry}
+        parentTagName="p"
+      />
+    ),
+    [registry, store],
+  );
   if (!node) return null;
+  if (node.type === "paragraph" && store.getParagraphBlock(blockId)) {
+    const block = node.block;
+    if (!block) return null;
+    const element = (
+      <ManagedParagraphBlockView
+        store={store}
+        blockId={blockId}
+        registry={registry}
+        renderNested={renderParagraphChild}
+      />
+    );
+    return <>{registry.renderFinalizedBlock(block, element)}</>;
+  }
+
+  const block = node.block;
   if (!block && node.type === "code" && store.getCodeBlock(blockId)) {
     return <CodeBlockView store={store} blockId={blockId} registry={registry} />;
   }

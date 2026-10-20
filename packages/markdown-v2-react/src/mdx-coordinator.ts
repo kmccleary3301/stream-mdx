@@ -1,7 +1,7 @@
 "use client";
 
 import type { Block } from "@stream-mdx/core";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { getMDXClient, registerInlineMdxModule } from "./mdx-client";
 import type { RendererStore } from "./renderer/store";
 
@@ -20,6 +20,17 @@ interface MdxCoordinatorOptions {
   workerClient?: MdxWorkerClientLike;
   store?: RendererStore;
   mode?: "server" | "worker";
+}
+export const MdxCoordinatorContext = createContext<MdxCoordinatorOptions | null>(null);
+
+export function MdxCoordinatorLeaf({ block }: { block: Block }): null {
+  const coordinator = useContext(MdxCoordinatorContext);
+  const blocks = useMemo(() => [block], [block]);
+  useMdxCoordinator(blocks, undefined, {
+    store: coordinator?.store,
+    mode: coordinator?.mode ?? "worker",
+  });
+  return null;
 }
 
 export function useMdxCoordinator(blocks: ReadonlyArray<Block>, compileEndpoint?: string, options?: MdxCoordinatorOptions): ReadonlyArray<Block> {
@@ -45,11 +56,8 @@ export function useMdxCoordinator(blocks: ReadonlyArray<Block>, compileEndpoint?
         // Fallback: rely on local state
         return;
       }
-      const currentBlocks = store.getBlocks();
-      const index = currentBlocks.findIndex((candidate) => candidate.id === block.id);
-      if (index === -1) return;
-      const current = currentBlocks[index];
-      if ((current.payload.raw ?? "") !== (block.payload.raw ?? "")) {
+      const current = store.getNodeWithVersion(block.id).node?.block;
+      if (!current || (current.payload.raw ?? "") !== (block.payload.raw ?? "")) {
         return;
       }
       if (current.payload.compiledMdxRef?.id === compiledId) {
@@ -119,8 +127,7 @@ export function useMdxCoordinator(blocks: ReadonlyArray<Block>, compileEndpoint?
           if (options?.workerClient) {
             options.workerClient.setMdxError(block.id, e instanceof Error ? e.message : String(e), block.payload.raw ?? "");
           } else if (options?.store) {
-            const currentBlocks = options.store.getBlocks();
-            const current = currentBlocks.find((candidate) => candidate.id === block.id);
+            const current = options.store.getNodeWithVersion(block.id).node?.block;
             if (!current || (current.payload.raw ?? "") !== (block.payload.raw ?? "")) {
               continue;
             }

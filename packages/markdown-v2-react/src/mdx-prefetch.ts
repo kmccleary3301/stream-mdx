@@ -20,6 +20,22 @@ export type MdxPrefetchQueueOptions = {
 
 const DEFAULT_PREFETCH_CONCURRENCY = 2;
 const DEFAULT_PREFETCH_IDLE_TIMEOUT = 120;
+type RequestIdleCallbackGlobal = typeof globalThis & {
+  requestIdleCallback: (callback: () => void, options?: { timeout?: number }) => number;
+};
+
+type CancelIdleCallbackGlobal = typeof globalThis & {
+  cancelIdleCallback: (id: number) => void;
+};
+
+function hasRequestIdleCallback(globalRef: typeof globalThis): globalRef is RequestIdleCallbackGlobal {
+  return "requestIdleCallback" in globalRef && typeof globalRef.requestIdleCallback === "function";
+}
+
+function hasCancelIdleCallback(globalRef: typeof globalThis): globalRef is CancelIdleCallbackGlobal {
+  return "cancelIdleCallback" in globalRef && typeof globalRef.cancelIdleCallback === "function";
+}
+
 
 export class MdxPrefetchQueue {
   private queue: MdxPrefetchRequest[] = [];
@@ -27,7 +43,7 @@ export class MdxPrefetchQueue {
   private inflight = new Map<string, AbortController>();
   private active = 0;
   private scheduled = false;
-  private idleId: number | ReturnType<typeof setTimeout> | null = null;
+  private cancelIdle: (() => void) | null = null;
   private options: MdxPrefetchQueueOptions;
 
   constructor(options?: MdxPrefetchQueueOptions) {
@@ -80,34 +96,25 @@ export class MdxPrefetchQueue {
       void this.drain();
     };
     const idleTimeoutMs = this.options.idleTimeoutMs ?? DEFAULT_PREFETCH_IDLE_TIMEOUT;
-    const globalRef = globalThis as typeof globalThis & {
-      requestIdleCallback?: (cb: () => void, opts?: { timeout?: number }) => number;
-      cancelIdleCallback?: (id: number) => void;
-      setTimeout: typeof setTimeout;
-      clearTimeout: typeof clearTimeout;
-    };
-    if (typeof globalRef.requestIdleCallback === "function") {
-      this.idleId = globalRef.requestIdleCallback(run, { timeout: idleTimeoutMs });
+    const globalRef = globalThis;
+    if (hasRequestIdleCallback(globalRef)) {
+      const idleId = globalRef.requestIdleCallback(run, { timeout: idleTimeoutMs });
+      this.cancelIdle = () => {
+        if (hasCancelIdleCallback(globalRef)) {
+          globalRef.cancelIdleCallback(idleId);
+        }
+      };
     } else {
-      this.idleId = globalRef.setTimeout(run, idleTimeoutMs);
+      const timeoutId = globalThis.setTimeout(run, idleTimeoutMs);
+      this.cancelIdle = () => globalThis.clearTimeout(timeoutId);
     }
   }
 
   private clearIdle(): void {
-    if (this.idleId === null) return;
-    const idleId = this.idleId;
-    const globalRef = globalThis as typeof globalThis & {
-      cancelIdleCallback?: (id: number) => void;
-      clearTimeout: typeof clearTimeout;
-    };
-    if (typeof globalRef.cancelIdleCallback === "function") {
-      if (typeof idleId === "number") {
-        globalRef.cancelIdleCallback(idleId);
-      }
-    } else {
-      globalRef.clearTimeout(idleId as ReturnType<typeof setTimeout>);
-    }
-    this.idleId = null;
+    const cancelIdle = this.cancelIdle;
+    if (!cancelIdle) return;
+    this.cancelIdle = null;
+    cancelIdle();
   }
 
   private async drain(): Promise<void> {
@@ -143,7 +150,7 @@ export class MdxPrefetchQueue {
 
 function isAbortError(error: unknown, signal?: AbortSignal): boolean {
   if (signal?.aborted) return true;
-  return Boolean(error && typeof error === "object" && "name" in error && (error as { name?: string }).name === "AbortError");
+  return error !== null && typeof error === "object" && "name" in error && error.name === "AbortError";
 }
 
 function throwIfAborted(signal?: AbortSignal): void {
