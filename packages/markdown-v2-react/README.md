@@ -113,6 +113,7 @@ import { StreamingMarkdown } from "@stream-mdx/react";
 Table virtualization is disabled by default. Only finalized tables meeting `minRows` virtualize after mounting in a browser and after the surrounding stream ends. SSR, unfinished tables, and active streams render every row.
 
 Virtualized tables retain native table elements, a sticky header, measured variable row heights, and `aria-hidden` spacer rows. The last row remains reachable by scrolling.
+When detached from the bottom, row measurements preserve the visible row and its pixel offset, including content partly covered by the sticky header. Scrolling chooses a new anchor; bottom attachment still follows measured tail growth.
 
 ## When To Use This Package Directly
 

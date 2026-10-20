@@ -128,6 +128,12 @@ interface TableDOMTargets {
   rows: HTMLTableRowElement[];
 }
 
+interface TableViewportAnchor {
+  rowId: string;
+  offset: number;
+  identity: object;
+}
+
 /** Measurements follow stable renderer row IDs, not positions in the current window. */
 export function useVirtualizedTable(
   rowIds: TableRows,
@@ -153,6 +159,7 @@ export function useVirtualizedTable(
   const [naturalLayout, setNaturalLayout] = useState<NaturalTableLayout | null>(null);
   const [headerBackgroundColor, setHeaderBackgroundColor] = useState("Canvas");
   const atBottom = useRef(false);
+  const viewportAnchor = useRef<TableViewportAnchor | null>(null);
   const rowCount = rowIds.length;
   const hasIndexedRows = indexedRows(rowIds);
   const rowIdentity = hasIndexedRows ? rowIds.identity : rowIds;
@@ -208,9 +215,25 @@ export function useVirtualizedTable(
     const target = event.currentTarget;
     if (target !== containerRef.current) return;
     atBottom.current = target.scrollTop > 0 && target.scrollHeight - target.clientHeight - target.scrollTop <= 1;
+    viewportAnchor.current = null;
+    const targets = targetsRef.current;
+    if (!atBottom.current && targets) {
+      const top = target.getBoundingClientRect().top + target.clientTop;
+      const headerCell = targets.header?.rows.item((targets.header?.rows.length ?? 1) - 1)?.cells.item(0);
+      const visibleTop = Math.max(top, headerCell?.getBoundingClientRect().bottom ?? top);
+      for (const row of targets.rows) {
+        const id = row.dataset.rowId;
+        if (!id || !row.isConnected) continue;
+        const rect = row.getBoundingClientRect();
+        if (rect.bottom > visibleTop && rect.top < top + target.clientHeight) {
+          viewportAnchor.current = { rowId: id, offset: rect.top - top, identity: rowIdentity };
+          break;
+        }
+      }
+    }
     setScrollTop(target.scrollTop);
     setContainerHeight(target.clientHeight);
-  }, []);
+  }, [rowIdentity]);
 
   const window = useMemo(() => {
     if (!isVirtualized || rowCount === 0) {
@@ -253,6 +276,7 @@ export function useVirtualizedTable(
     indexedOffsets.current.clear();
     measuredWidth.current = 0;
     atBottom.current = false;
+    viewportAnchor.current = null;
     setNaturalLayout(null);
     setMeasureVersion((version) => version + 1);
   }, []);
@@ -394,12 +418,31 @@ export function useVirtualizedTable(
     const measureRows = () => {
       if (!active || measurementGeneration.current !== generation) return;
       if (container.querySelector("table") !== domTargets.table || naturalLayout?.viewportWidth !== container.clientWidth) return;
+      const top = container.getBoundingClientRect().top + container.clientTop;
+      const anchor = viewportAnchor.current;
+      if (!atBottom.current && anchor?.identity === rowIdentity) {
+        const row = rows.find((candidate) => candidate.dataset.rowId === anchor.rowId);
+        if (row?.isConnected && container.contains(row)) {
+          const delta = row.getBoundingClientRect().top - top - anchor.offset;
+          if (Math.abs(delta) > 0.5) {
+            container.scrollTop += delta;
+            setScrollTop(container.scrollTop);
+          }
+        }
+      }
+      const headerCell = domTargets.header?.rows.item((domTargets.header?.rows.length ?? 1) - 1)?.cells.item(0);
+      const visibleTop = Math.max(top, headerCell?.getBoundingClientRect().bottom ?? top);
+      let nextAnchor: TableViewportAnchor | null = null;
       let changed = false;
       for (const row of rows) {
         if (!row.isConnected || !container.contains(row)) continue;
         const id = row.dataset.rowId;
-        const height = row.getBoundingClientRect().height || row.offsetHeight;
+        const rect = row.getBoundingClientRect();
+        const height = rect.height || row.offsetHeight;
         if (!id || height <= 0) continue;
+        if (!nextAnchor && rect.bottom > visibleTop && rect.top < top + container.clientHeight) {
+          nextAnchor = { rowId: id, offset: rect.top - top, identity: rowIdentity };
+        }
         if (hasIndexedRows) {
           const rowIndex = Number(row.dataset.rowIndex);
           if (!Number.isSafeInteger(rowIndex) || rowIndex < 0 || rowIndex >= rowCount) continue;
@@ -417,6 +460,7 @@ export function useVirtualizedTable(
           }
         }
       }
+      viewportAnchor.current = nextAnchor;
       if (changed) setMeasureVersion((version) => version + 1);
     };
     measureRows();
@@ -427,7 +471,7 @@ export function useVirtualizedTable(
       active = false;
       observer.disconnect();
     };
-  }, [isVirtualized, domTargets?.rows, rowIds, rowCount, hasIndexedRows, window.startIndex, window.endIndex, containerWidth, config.estimatedRowHeight]);
+  }, [isVirtualized, domTargets?.rows, rowIds, rowCount, rowIdentity, hasIndexedRows, window.startIndex, window.endIndex, containerWidth, config.estimatedRowHeight]);
 
   // Newly measured tail rows may move the scroll boundary. Keep a bottom scroll at the bottom.
   useEffect(() => {
