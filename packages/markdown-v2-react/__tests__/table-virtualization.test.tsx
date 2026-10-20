@@ -219,6 +219,8 @@ try {
   await waitFor(() => container.textContent?.includes("Row-119") === true &&
     viewport.scrollTop === viewport.scrollHeight - viewport.clientHeight,
   "last row remains visible after row measurements and tail pinning settle");
+  assert.ok(rows().length < 120, "the settled tail window keeps mounted data rows below the full source");
+  assert.notEqual(rows()[0].dataset.rowId, firstId, "the tail window no longer includes the first source row");
 
   render({ enabled: true, minRows: 40, overscan: 10000, maxHeight: 320 });
   await waitFor(() => viewport.style.maxHeight === "320px", "maxHeight config updates a mounted table");
