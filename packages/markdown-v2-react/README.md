@@ -76,6 +76,8 @@ import { ComponentRegistry, MarkdownBlocksRenderer } from "@stream-mdx/react/ser
 return <MarkdownBlocksRenderer blocks={blocks} componentRegistry={new ComponentRegistry()} />;
 ```
 
+Default math stays as authored TeX source on the server and on the client's first render. KaTeX loads after commit and replaces that source after mount, so cold and preloaded clients hydrate from the same markup.
+
 ### Bottom-stick scroll area
 
 ```tsx
