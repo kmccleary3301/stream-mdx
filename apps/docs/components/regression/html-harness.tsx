@@ -152,6 +152,13 @@ function nextFrame(): Promise<void> {
   return new Promise((resolve) => requestAnimationFrame(() => resolve()));
 }
 
+type WorkerBarrierRejector = (error: Error) => void;
+
+function rejectWorkerBarriers(barriers: Set<WorkerBarrierRejector>, error: Error): void {
+  for (const reject of barriers) reject(error);
+}
+
+
 function collectInvariantViolations(state: RendererStateSnapshot): InvariantViolation[] {
   const violations: InvariantViolation[] = [];
   const seenIds = new Set<string>();
@@ -288,7 +295,6 @@ export function HtmlRegressionHarness(): JSX.Element {
     finalized: boolean;
     errors: string[];
     events: Array<{ type: string; details?: string; timestamp: number }>;
-    parseEventCount: number;
     patchEventCount: number;
   };
 
@@ -297,68 +303,97 @@ export function HtmlRegressionHarness(): JSX.Element {
     finalized: false,
     errors: [],
     events: [],
-    parseEventCount: 0,
     patchEventCount: 0,
   });
+  const workerRef = useRef<Worker | null>(null);
+  const expectedContentLengthRef = useRef(0);
+  const pendingWorkerBarriersRef = useRef(new Set<WorkerBarrierRejector>());
   const harnessErrorsRef = useRef<string[]>([]);
 
   const handleStreamingError = useCallback((error: Error) => {
     const message = error?.message || String(error);
     harnessErrorsRef.current.push(message);
     if (harnessErrorsRef.current.length > 50) harnessErrorsRef.current.shift();
+    rejectWorkerBarriers(
+      pendingWorkerBarriersRef.current,
+      new Error(`[appendAndFlush] Harness error while processing chunk: ${message}`),
+    );
   }, []);
 
   const createHarnessWorker = useCallback((): Worker => {
-    workerLifecycleRef.current = {
+    if (workerRef.current) {
+      rejectWorkerBarriers(
+        pendingWorkerBarriersRef.current,
+        new Error("[appendAndFlush] Worker replaced before the complete APPEND checkpoint."),
+      );
+      workerRef.current = null;
+    }
+
+    const lifecycle: WorkerLifecycle = {
       initialized: false,
       finalized: false,
       errors: [],
       events: [],
-      parseEventCount: 0,
       patchEventCount: 0,
     };
+    workerLifecycleRef.current = lifecycle;
     const worker = new Worker("/workers/markdown-worker.js", { type: "module" });
+    workerRef.current = worker;
+    expectedContentLengthRef.current = 0;
+
     const pushEvent = (type: string, details?: string) => {
-      const events = workerLifecycleRef.current.events;
-      events.push({ type, details, timestamp: Date.now() });
-      if (events.length > 50) events.shift();
+      lifecycle.events.push({ type, details, timestamp: Date.now() });
+      if (lifecycle.events.length > 50) lifecycle.events.shift();
     };
 
     worker.addEventListener("message", (event: MessageEvent<any>) => {
+      if (workerRef.current !== worker) return;
       const data = event.data;
       if (!data || typeof data !== "object") return;
       if (data.type === "INITIALIZED") {
-        workerLifecycleRef.current.initialized = true;
+        lifecycle.initialized = true;
         pushEvent("INITIALIZED", `blocks=${Array.isArray(data.blocks) ? data.blocks.length : 0}`);
       } else if (data.type === "FINALIZED") {
-        workerLifecycleRef.current.finalized = true;
+        lifecycle.finalized = true;
         pushEvent("FINALIZED");
       } else if (data.type === "PATCH") {
-        workerLifecycleRef.current.parseEventCount += 1;
-        workerLifecycleRef.current.patchEventCount += 1;
+        lifecycle.patchEventCount += 1;
         pushEvent("PATCH", `tx=${data.tx} patches=${Array.isArray(data.patches) ? data.patches.length : 0}`);
       } else if (data.type === "METRICS") {
-        workerLifecycleRef.current.parseEventCount += 1;
         pushEvent("METRICS", `parseMs=${data.metrics?.parseMs ?? 0}`);
       } else if (data.type === "RESET") {
         pushEvent("RESET", typeof data.reason === "string" ? data.reason : "");
       } else if (data.type === "ERROR") {
         const msg = data.error?.message ?? "Worker reported ERROR";
-        workerLifecycleRef.current.errors.push(msg);
+        lifecycle.errors.push(msg);
         pushEvent("ERROR", msg);
+        rejectWorkerBarriers(
+          pendingWorkerBarriersRef.current,
+          new Error(`[appendAndFlush] Worker error while processing chunk: ${msg}`),
+        );
       }
     });
 
     worker.addEventListener("error", (event: ErrorEvent) => {
+      if (workerRef.current !== worker) return;
       const msg = event.message || "Worker runtime error";
-      workerLifecycleRef.current.errors.push(msg);
+      lifecycle.errors.push(msg);
       pushEvent("WORKER_ERROR", msg);
+      rejectWorkerBarriers(
+        pendingWorkerBarriersRef.current,
+        new Error(`[appendAndFlush] Worker error while processing chunk: ${msg}`),
+      );
     });
 
     worker.addEventListener("messageerror", () => {
+      if (workerRef.current !== worker) return;
       const msg = "Worker message deserialization error";
-      workerLifecycleRef.current.errors.push(msg);
+      lifecycle.errors.push(msg);
       pushEvent("MESSAGE_ERROR", msg);
+      rejectWorkerBarriers(
+        pendingWorkerBarriersRef.current,
+        new Error(`[appendAndFlush] Worker error while processing chunk: ${msg}`),
+      );
     });
 
     return worker;
@@ -383,11 +418,18 @@ export function HtmlRegressionHarness(): JSX.Element {
 
   const handleInstanceRef = useCallback(
     (handle: StreamingMarkdownHandle | null) => {
-      handleRef.current = handle;
       if (handle) {
+        handleRef.current = handle;
         activeInstanceKeyRef.current = instanceKey;
       } else if (activeInstanceKeyRef.current === instanceKey) {
+        handleRef.current = null;
         activeInstanceKeyRef.current = null;
+        workerRef.current = null;
+        expectedContentLengthRef.current = 0;
+        rejectWorkerBarriers(
+          pendingWorkerBarriersRef.current,
+          new Error("[appendAndFlush] Renderer was unmounted before the complete APPEND checkpoint."),
+        );
       }
     },
     [instanceKey],
@@ -448,28 +490,130 @@ export function HtmlRegressionHarness(): JSX.Element {
         if (timer !== undefined) window.clearTimeout(timer);
       }
     };
+    const waitForWorkerContentLength = (
+      worker: Worker,
+      handle: StreamingMarkdownHandle,
+      rendererKey: number,
+      expectedContentLength: number,
+      timeoutMs = FLUSH_TIMEOUT_MS,
+    ): Promise<void> => {
+      // Keep the executor form compatible with the docs app's Node 20 promise declarations.
+      let resolvePromise!: (value: void | PromiseLike<void>) => void;
+      let rejectPromise!: (reason?: unknown) => void;
+      const promise = new Promise<void>((resolve, reject) => {
+        resolvePromise = resolve;
+        rejectPromise = reject;
+      });
+      let settled = false;
+      let timer: number | undefined;
+      let onMessage: (event: MessageEvent<any>) => void;
+      let onError: (event: ErrorEvent) => void;
+      let onMessageError: () => void;
+      let invalidate: WorkerBarrierRejector;
+
+      const cleanup = () => {
+        if (timer !== undefined) window.clearTimeout(timer);
+        worker.removeEventListener("message", onMessage);
+        worker.removeEventListener("error", onError);
+        worker.removeEventListener("messageerror", onMessageError);
+        pendingWorkerBarriersRef.current.delete(invalidate);
+      };
+      const settle = (error?: Error) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        if (error) rejectPromise(error);
+        else resolvePromise(undefined);
+      };
+      const isCurrentRenderer = () => {
+        if (
+          workerRef.current !== worker ||
+          handleRef.current !== handle ||
+          activeInstanceKeyRef.current !== rendererKey
+        ) {
+          settle(new Error("[appendAndFlush] Worker or renderer was replaced before the complete APPEND checkpoint."));
+          return false;
+        }
+        return true;
+      };
+      onMessage = (event) => {
+        if (!isCurrentRenderer()) return;
+        const data = event.data;
+        if (!data || typeof data !== "object") return;
+        if (data.type === "ERROR") {
+          settle(
+            new Error(
+              `[appendAndFlush] Worker error while processing chunk: ${data.error?.message ?? "Worker reported ERROR"}`,
+            ),
+          );
+          return;
+        }
+        if (data.type !== "DEBUG_STATE") return;
+        const actualContentLength = data.state?.contentLength;
+        if (actualContentLength === expectedContentLength) settle();
+      };
+      onError = (event) => {
+        settle(new Error(`[appendAndFlush] Worker error while processing chunk: ${event.message || "Worker runtime error"}`));
+      };
+      onMessageError = () => {
+        settle(new Error("[appendAndFlush] Worker message deserialization error while processing chunk."));
+      };
+      invalidate = (error) => settle(error);
+
+      worker.addEventListener("message", onMessage);
+      worker.addEventListener("error", onError);
+      worker.addEventListener("messageerror", onMessageError);
+      pendingWorkerBarriersRef.current.add(invalidate);
+      timer = window.setTimeout(() => {
+        settle(
+          new Error(
+            `[appendAndFlush] Worker did not reach complete APPEND source length within ${timeoutMs}ms (` +
+              `expectedContentLength=${expectedContentLength}, fixture=${metaRef.current.fixtureId ?? "unknown"}, ` +
+              `scenario=${metaRef.current.scenarioId ?? "unknown"}, seed=${metaRef.current.seed ?? "baseline"}).`,
+          ),
+        );
+      }, timeoutMs);
+
+      try {
+        worker.postMessage({ type: "DEBUG_STATE" });
+      } catch (error) {
+        settle(error instanceof Error ? error : new Error(String(error)));
+      }
+
+      return promise;
+    };
+    const remountRenderer = (nextConfig?: Partial<RegressionConfig>): number => {
+      const targetKey = instanceKeyRef.current + 1;
+      rejectWorkerBarriers(
+        pendingWorkerBarriersRef.current,
+        new Error("[appendAndFlush] Renderer replaced before the complete APPEND checkpoint."),
+      );
+      workerRef.current = null;
+      expectedContentLengthRef.current = 0;
+      workerLifecycleRef.current = {
+        initialized: false,
+        finalized: false,
+        errors: [],
+        events: [],
+        patchEventCount: 0,
+      };
+      harnessErrorsRef.current.length = 0;
+      handleRef.current = null;
+      activeInstanceKeyRef.current = null;
+      instanceKeyRef.current = targetKey;
+      if (nextConfig !== undefined) setConfig((prev) => ({ ...prev, ...nextConfig }));
+      setInstanceKey(targetKey);
+      return targetKey;
+    };
+
 
     const api: RegressionApi = {
       async setConfig(next) {
-        const targetKey = instanceKeyRef.current + 1;
-        workerLifecycleRef.current = {
-          initialized: false,
-          finalized: false,
-          errors: [],
-          events: [],
-          parseEventCount: 0,
-          patchEventCount: 0,
-        };
-        harnessErrorsRef.current.length = 0;
-        setConfig((prev) => ({ ...prev, ...next }));
-        setInstanceKey(targetKey);
-        instanceKeyRef.current = targetKey;
-        handleRef.current = null;
-        activeInstanceKeyRef.current = null;
+        const targetKey = remountRenderer(next);
         const timeoutMs = 15000;
         const start = Date.now();
         while (true) {
-          if (handleRef.current && activeInstanceKeyRef.current === targetKey) {
+          if (handleRef.current && instanceKeyRef.current >= targetKey && activeInstanceKeyRef.current === instanceKeyRef.current) {
             return;
           }
           if (Date.now() - start > timeoutMs) {
@@ -519,53 +663,46 @@ export function HtmlRegressionHarness(): JSX.Element {
           );
         }
 
-        const prevParseCount = workerLifecycleRef.current.parseEventCount;
-        const prevPatchCount = workerLifecycleRef.current.patchEventCount;
-        const prevVersion = handle.getState().rendererVersion;
-
-        handle.append(chunk);
-
-        // Await worker parse response (either PATCH or METRICS) within genuine timeout
-        const start = Date.now();
-        while (workerLifecycleRef.current.parseEventCount === prevParseCount) {
-          if (workerLifecycleRef.current.errors.length > 0) {
-            throw new Error(
-              `[appendAndFlush] Worker error while processing chunk: ${workerLifecycleRef.current.errors.join("; ")}`,
-            );
-          }
-          if (harnessErrorsRef.current.length > 0) {
-            throw new Error(
-              `[appendAndFlush] Harness error while processing chunk: ${harnessErrorsRef.current.join("; ")}`,
-            );
-          }
-          if (Date.now() - start > FLUSH_TIMEOUT_MS) {
-            throw new Error(
-              `[appendAndFlush] Worker did not acknowledge APPEND parse within ${FLUSH_TIMEOUT_MS}ms (` +
-                `chunkLength=${chunk.length}, prevParseEvents=${prevParseCount}, ` +
-                `fixture=${meta.fixtureId ?? "unknown"}, scenario=${meta.scenarioId ?? "unknown"}, seed=${meta.seed ?? "baseline"}` +
-                `).`,
-            );
-          }
-          await nextFrame();
+        const worker = workerRef.current;
+        const rendererKey = activeInstanceKeyRef.current;
+        if (!worker || rendererKey === null || rendererKey !== instanceKeyRef.current || handleRef.current !== handle) {
+          throw new Error(
+            `[appendAndFlush] Worker/renderer absent or replaced while appending source (` +
+              `instanceKey=${instanceKeyRef.current}, activeKey=${rendererKey}).`,
+          );
         }
 
+        const prevPatchCount = workerLifecycleRef.current.patchEventCount;
+        const prevVersion = handle.getState().rendererVersion;
+        const expectedContentLength = expectedContentLengthRef.current + chunk.length;
+        expectedContentLengthRef.current = expectedContentLength;
+
+        handle.append(chunk);
+        await waitForWorkerContentLength(worker, handle, rendererKey, expectedContentLength, FLUSH_TIMEOUT_MS);
+
         const hadNewPatches = workerLifecycleRef.current.patchEventCount > prevPatchCount;
+        let waitForDomCommit = hadNewPatches;
         if (hadNewPatches) {
-          // Worker produced patches: flush and wait for React commit
+          // Worker produced patches: flush and wait for the real renderer commit.
           handle.flushPending();
           await waitForFlushAfter(prevVersion);
           await waitForIdleWithTimeout(handle, FLUSH_TIMEOUT_MS);
         } else {
           // Chunk was no-op/whitespace/partial delimiter without AST patch.
-          // Still flush any previously pending queue and wait if queue was active.
+          // Still flush any previously pending queue and wait if it was active.
+          const stateBeforeFlush = handle.getState();
+          waitForDomCommit = stateBeforeFlush.queueDepth > 0 || stateBeforeFlush.pendingBatches > 0;
           handle.flushPending();
           if (handle.getState().queueDepth > 0 || handle.getState().pendingBatches > 0) {
+            waitForDomCommit = true;
             await waitForIdleWithTimeout(handle, FLUSH_TIMEOUT_MS);
           }
         }
 
-        await nextFrame();
-        await nextFrame();
+        if (waitForDomCommit) {
+          // Store subscriptions are requestAnimationFrame-batched; allow the React DOM commit to land.
+          await nextFrame();
+        }
       },
       async finalizeAndFlush() {
         const meta = metaRef.current;
@@ -631,8 +768,8 @@ export function HtmlRegressionHarness(): JSX.Element {
         await nextFrame();
       },
       restart() {
-        workerLifecycleRef.current.finalized = false;
-        handleRef.current?.restart();
+        // A new keyed renderer makes readiness wait for the replacement worker's INITIALIZED event.
+        remountRenderer();
       },
       async waitForReady(timeoutMs = 15000) {
         const start = Date.now();

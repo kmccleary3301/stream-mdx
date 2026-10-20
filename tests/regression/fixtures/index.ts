@@ -443,6 +443,13 @@ export const REGRESSION_FIXTURES: RegressionFixture[] = [
     requiredSelectors: ["pre", "code"],
   },
   {
+    id: "complete-append-frontier",
+    title: "Complete Append Frontier",
+    file: "complete-append-frontier.md",
+    tags: ["split-markers"],
+    requiredSelectors: ["p.markdown-paragraph"],
+  },
+  {
     id: "code-highlight-incremental",
     title: "Incremental Code Highlighting",
     file: "code-highlight-incremental.md",

@@ -750,6 +750,18 @@ async function run(): Promise<void> {
           await awaitScenario(() =>
             page.evaluate((timeout) => window.__streammdxRegression?.waitForReady(timeout), remainingTimeout()),
           );
+          if (fixture.id === "complete-append-frontier" && usesFixedSplit) {
+            await awaitScenario(() =>
+              page.evaluate(async (timeout) => {
+                const api = window.__streammdxRegression;
+                if (!api) throw new Error("Regression API unavailable before empty restart.");
+                const configuring = api.setConfig({ showCodeMeta: false });
+                api.restart();
+                await configuring;
+                await api.waitForReady(timeout);
+              }, remainingTimeout()),
+            );
+          }
           let appended = 0;
           let firstChunkCaptured = false;
           let tableFirstSeenAt: number | null = null;
@@ -809,10 +821,38 @@ async function run(): Promise<void> {
         };
 
           for (const chunk of chunks) {
-            await awaitScenario(() =>
-              page.evaluate((value) => window.__streammdxRegression?.appendAndFlush(value), chunk),
-            );
-            appended += chunk.length;
+            const nextAppended = appended + chunk.length;
+            if (fixture.id === "complete-append-frontier" && usesFixedSplit) {
+              const expectedFrontier = text.slice(0, nextAppended);
+              const frontier = await awaitScenario(() =>
+                page.evaluate(async ({ value, expected }) => {
+                  const api = window.__streammdxRegression;
+                  if (!api) throw new Error("Regression API unavailable while checking append frontier.");
+                  await api.appendAndFlush(value);
+                  const root = document.getElementById("regression-root");
+                  const paragraphs = root?.querySelectorAll("p.markdown-paragraph");
+                  const paragraphCount = paragraphs?.length ?? 0;
+                  const paragraphText = paragraphCount === 1 ? paragraphs?.[0]?.textContent ?? "" : null;
+                  return {
+                    matches: paragraphCount === 1 && paragraphText === expected,
+                    paragraphCount,
+                    textLength: paragraphText?.length ?? -1,
+                  };
+                }, { value: chunk, expected: expectedFrontier }),
+              );
+              if (!frontier.matches) {
+                streamInvariantFailures.push(
+                  `append frontier mismatch at ${nextAppended} source units: expected one paragraph with ` +
+                    `${expectedFrontier.length} UTF-16 units, got ${frontier.paragraphCount} paragraph(s) and ` +
+                    `${frontier.textLength} UTF-16 units.`,
+                );
+              }
+            } else {
+              await awaitScenario(() =>
+                page.evaluate((value) => window.__streammdxRegression?.appendAndFlush(value), chunk),
+              );
+            }
+            appended = nextAppended;
 
             const summary = await awaitScenario(() => readSummary(page, remainingTimeout));
             if (tableFirstSeenAt === null && summary.selectors.hasTable) {
@@ -969,6 +1009,27 @@ async function run(): Promise<void> {
            },
          };
          const htmlInvariantFailures: string[] = [];
+        if (fixture.id === "complete-append-frontier" && usesFixedSplit) {
+          const finalFrontier = await awaitScenario(() =>
+            page.evaluate((expected) => {
+              const root = document.getElementById("regression-root");
+              const paragraphs = root?.querySelectorAll("p.markdown-paragraph");
+              const paragraphCount = paragraphs?.length ?? 0;
+              const paragraphText = paragraphCount === 1 ? paragraphs?.[0]?.textContent ?? "" : null;
+              return {
+                matches: paragraphCount === 1 && paragraphText === expected,
+                paragraphCount,
+                textLength: paragraphText?.length ?? -1,
+              };
+            }, text),
+          );
+          if (!finalFrontier.matches) {
+            htmlInvariantFailures.push(
+              `after-finalize: expected one paragraph with ${text.length} UTF-16 units, got ` +
+                `${finalFrontier.paragraphCount} paragraph(s) and ${finalFrontier.textLength} UTF-16 units.`,
+            );
+          }
+        }
          const finalHtmlValue = finalHtml ?? "";
          const rawBlockMathNeedle = '<p class="markdown-paragraph">$$';
          const rawInlineCodeNeedle =
