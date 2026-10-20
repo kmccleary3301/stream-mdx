@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-10T04:53:44.323Z",
-  "hash": "5d5cebf1ca4e31838da46966aeb1dc71b06b8bf22b4be2de685c6a09c1a30ef1",
+  "createdAt": "2026-10-20T02:27:50.654Z",
+  "hash": "8cdc3648807f2047108cc68773dc7cb16206a20b3866b6b28592c2b10e357ff1",
   "contentHash": "5607015c67a2458ef7ece4d66f1a6d3ec09fe2ff36cef657d2de584bd04eceb2",
-  "configHash": "a4b31dc6e15c2cd96906124ef06fadc77e60ad148c40ed5ba066e3518a02e37b",
-  "hashSalt": "docs-snapshots-v2:42a0722c827a5ff05bc7f9b0b2c880b732fb655e91e2b7c5196767915dd07177",
+  "configHash": "f4db748a14dd58be84461bc4cded0b689d48b92567d27cc5fe37ce2bb6acbd86",
+  "hashSalt": "docs-snapshots-v3:8b3fa816098a184f70b086c61607699a9f773e230e33134df864cbac0b066681",
   "blocks": [
     {
       "id": "db082c0",
@@ -38,7 +38,14 @@
       "payload": {
         "raw": "This log tracks perf harness snapshots used to make scheduling decisions. Values are p95 unless noted. Paths point to local `tmp/` outputs.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 124,
+              "to": 130,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 36,
@@ -7551,9 +7558,6 @@
       "math": true,
       "footnotes": true,
       "callouts": true
-    },
-    "mdx": {
-      "compileMode": "server"
     },
     "prewarmLangs": [
       "typescript",

@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-10T04:53:49.402Z",
-  "hash": "5658ca210e4431973058125fd0272fa0c2928dd74b9da3c5be9b148b13730ffc",
-  "contentHash": "ba0345e79851ac46ad1b6dd53b7211d9e8972debb2da5310088c16d4c7242634",
-  "configHash": "a4b31dc6e15c2cd96906124ef06fadc77e60ad148c40ed5ba066e3518a02e37b",
-  "hashSalt": "docs-snapshots-v2:42a0722c827a5ff05bc7f9b0b2c880b732fb655e91e2b7c5196767915dd07177",
+  "createdAt": "2026-10-20T02:27:55.134Z",
+  "hash": "2e9990553cf300d1f8600f12b67c0930963b9932d967e2e73a8cd9267b04c3f6",
+  "contentHash": "8ee53b15b2025a28189e5e00612b36b7576c8c95fa28746eab07b2447da6b87f",
+  "configHash": "f4db748a14dd58be84461bc4cded0b689d48b92567d27cc5fe37ce2bb6acbd86",
+  "hashSalt": "docs-snapshots-v3:8b3fa816098a184f70b086c61607699a9f773e230e33134df864cbac0b066681",
   "blocks": [
     {
       "id": "db082c0",
@@ -1168,9 +1168,119 @@
           "lezerNodeType": "Paragraph",
           "protectedRanges": [
             {
-              "from": 989,
-              "to": 1014,
-              "kind": "html-block"
+              "from": 58,
+              "to": 69,
+              "kind": "code-inline"
+            },
+            {
+              "from": 149,
+              "to": 154,
+              "kind": "code-inline"
+            },
+            {
+              "from": 155,
+              "to": 161,
+              "kind": "code-inline"
+            },
+            {
+              "from": 162,
+              "to": 168,
+              "kind": "code-inline"
+            },
+            {
+              "from": 169,
+              "to": 174,
+              "kind": "code-inline"
+            },
+            {
+              "from": 175,
+              "to": 179,
+              "kind": "code-inline"
+            },
+            {
+              "from": 185,
+              "to": 192,
+              "kind": "code-inline"
+            },
+            {
+              "from": 194,
+              "to": 202,
+              "kind": "code-inline"
+            },
+            {
+              "from": 208,
+              "to": 215,
+              "kind": "code-inline"
+            },
+            {
+              "from": 323,
+              "to": 347,
+              "kind": "code-inline"
+            },
+            {
+              "from": 401,
+              "to": 409,
+              "kind": "code-inline"
+            },
+            {
+              "from": 559,
+              "to": 570,
+              "kind": "code-inline"
+            },
+            {
+              "from": 710,
+              "to": 720,
+              "kind": "code-inline"
+            },
+            {
+              "from": 721,
+              "to": 738,
+              "kind": "code-inline"
+            },
+            {
+              "from": 867,
+              "to": 872,
+              "kind": "code-inline"
+            },
+            {
+              "from": 874,
+              "to": 884,
+              "kind": "code-inline"
+            },
+            {
+              "from": 886,
+              "to": 894,
+              "kind": "code-inline"
+            },
+            {
+              "from": 896,
+              "to": 902,
+              "kind": "code-inline"
+            },
+            {
+              "from": 904,
+              "to": 911,
+              "kind": "code-inline"
+            },
+            {
+              "from": 913,
+              "to": 920,
+              "kind": "code-inline"
+            },
+            {
+              "from": 988,
+              "to": 1015,
+              "kind": "code-inline"
+            },
+            {
+              "from": 1125,
+              "to": 1129,
+              "kind": "code-inline"
+            },
+            {
+              "from": 1141,
+              "to": 1151,
+              "kind": "code-inline"
             }
           ]
         },
@@ -1399,271 +1509,94 @@
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "MDX is code execution by design. Treat MDX input as trusted content unless you have a hardened compilation boundary.",
+        "raw": "MDX execution is opt-in. `contentPolicy` defaults to `\"restricted\"` and does not evaluate authored expressions. Register fixed native source components with `defineContentComponent` in `contentComponents`; the worker receives only names and render conditions, while validators and component callbacks remain on the host. Native projected children are separate React nodes. This registry is inactive under `\"markdown\"` and `\"trusted-mdx\"`.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 25,
+              "to": 40,
+              "kind": "code-inline"
+            },
+            {
+              "from": 53,
+              "to": 67,
+              "kind": "code-inline"
+            },
+            {
+              "from": 157,
+              "to": 181,
+              "kind": "code-inline"
+            },
+            {
+              "from": 185,
+              "to": 204,
+              "kind": "code-inline"
+            },
+            {
+              "from": 405,
+              "to": 417,
+              "kind": "code-inline"
+            },
+            {
+              "from": 422,
+              "to": 437,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 2664,
-          "to": 2780
+          "to": 3102
         },
         "inline": [
           {
             "kind": "text",
-            "text": "MDX is code execution by design. Treat MDX input as trusted content unless you have a hardened compilation boundary."
-          }
-        ]
-      }
-    },
-    {
-      "id": "6bcdc0a3",
-      "type": "list",
-      "isFinalized": true,
-      "payload": {
-        "raw": "- For user-generated content, keep `features.mdx` disabled.\n- For trusted editorial content, enforce review + snapshot tests before publish.",
-        "meta": {
-          "lezerNodeType": "BulletList",
-          "mathEnabled": true,
-          "formatAnticipation": {
-            "inline": false,
-            "mathInline": false,
-            "mathBlock": false,
-            "html": false,
-            "mdx": false,
-            "regex": false
-          },
-          "ordered": false,
-          "loose": false,
-          "items": [
-            [
-              {
-                "kind": "text",
-                "text": "For user-generated content, keep "
-              },
-              {
-                "kind": "code",
-                "text": "features.mdx"
-              },
-              {
-                "kind": "text",
-                "text": " disabled."
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "For trusted editorial content, enforce review + snapshot tests before publish."
-              }
-            ]
-          ],
-          "preparedNested": {
-            "props": {
-              "ordered": false,
-              "loose": false
-            },
-            "children": [
-              {
-                "id": "6bcdc0a3::item:0",
-                "type": "list-item",
-                "range": {
-                  "from": 2782,
-                  "to": 2841
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "6bcdc0a3::item:0",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- For user-generated content, keep `features.mdx` disabled.",
-                      "inline": [
-                        {
-                          "kind": "text",
-                          "text": "For user-generated content, keep "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "features.mdx"
-                        },
-                        {
-                          "kind": "text",
-                          "text": " disabled."
-                        }
-                      ],
-                      "range": {
-                        "from": 2782,
-                        "to": 2841
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 0,
-                            "inline": [
-                              {
-                                "kind": "text",
-                                "text": "For user-generated content, keep "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "features.mdx"
-                              },
-                              {
-                                "kind": "text",
-                                "text": " disabled."
-                              }
-                            ],
-                            "text": "For user-generated content, keep features.mdx disabled.",
-                            "raw": "- For user-generated content, keep `features.mdx` disabled."
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 0,
-                  "inline": [
-                    {
-                      "kind": "text",
-                      "text": "For user-generated content, keep "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "features.mdx"
-                    },
-                    {
-                      "kind": "text",
-                      "text": " disabled."
-                    }
-                  ],
-                  "text": "For user-generated content, keep features.mdx disabled.",
-                  "raw": "- For user-generated content, keep `features.mdx` disabled."
-                },
-                "children": []
-              },
-              {
-                "id": "6bcdc0a3::item:1",
-                "type": "list-item",
-                "range": {
-                  "from": 2842,
-                  "to": 2922
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "6bcdc0a3::item:1",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- For trusted editorial content, enforce review + snapshot tests before publish.",
-                      "inline": [
-                        {
-                          "kind": "text",
-                          "text": "For trusted editorial content, enforce review + snapshot tests before publish."
-                        }
-                      ],
-                      "range": {
-                        "from": 2842,
-                        "to": 2922
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 1,
-                            "inline": [
-                              {
-                                "kind": "text",
-                                "text": "For trusted editorial content, enforce review + snapshot tests before publish."
-                              }
-                            ],
-                            "text": "For trusted editorial content, enforce review + snapshot tests before publish.",
-                            "raw": "- For trusted editorial content, enforce review + snapshot tests before publish."
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 1,
-                  "inline": [
-                    {
-                      "kind": "text",
-                      "text": "For trusted editorial content, enforce review + snapshot tests before publish."
-                    }
-                  ],
-                  "text": "For trusted editorial content, enforce review + snapshot tests before publish.",
-                  "raw": "- For trusted editorial content, enforce review + snapshot tests before publish."
-                },
-                "children": []
-              }
-            ]
-          }
-        },
-        "range": {
-          "from": 2782,
-          "to": 2922
-        }
-      }
-    },
-    {
-      "id": "7ae8b4c9",
-      "type": "heading",
-      "isFinalized": true,
-      "payload": {
-        "raw": "Sandboxed agent artifacts and code renderers",
-        "meta": {
-          "lezerNodeType": "ATXHeading2",
-          "headingLevel": 2,
-          "headingText": "Sandboxed agent artifacts and code renderers",
-          "headingId": "sandboxed-agent-artifacts-and-code-renderers"
-        },
-        "range": {
-          "from": 2924,
-          "to": 2971
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "Sandboxed agent artifacts and code renderers"
-          }
-        ]
-      }
-    },
-    {
-      "id": "126c1e5d",
-      "type": "paragraph",
-      "isFinalized": true,
-      "payload": {
-        "raw": "When streaming content generated by AI agents, LLMs, or untrusted external users, you must maintain strict isolation between the host application DOM and dynamic output. An executable reference implementation is available at [`/showcase/assistant-stream`](/showcase/assistant-stream).",
-        "meta": {
-          "lezerNodeType": "Paragraph"
-        },
-        "range": {
-          "from": 2973,
-          "to": 3257
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "When streaming content generated by AI agents, LLMs, or untrusted external users, you must maintain strict isolation between the host application DOM and dynamic output. An executable reference implementation is available at "
+            "text": "MDX execution is opt-in. "
           },
           {
-            "kind": "link",
-            "href": "/showcase/assistant-stream",
-            "children": [
-              {
-                "kind": "code",
-                "text": "/showcase/assistant-stream"
-              }
-            ]
+            "kind": "code",
+            "text": "contentPolicy"
+          },
+          {
+            "kind": "text",
+            "text": " defaults to "
+          },
+          {
+            "kind": "code",
+            "text": "\"restricted\""
+          },
+          {
+            "kind": "text",
+            "text": " and does not evaluate authored expressions. Register fixed native source components with "
+          },
+          {
+            "kind": "code",
+            "text": "defineContentComponent"
+          },
+          {
+            "kind": "text",
+            "text": " in "
+          },
+          {
+            "kind": "code",
+            "text": "contentComponents"
+          },
+          {
+            "kind": "text",
+            "text": "; the worker receives only names and render conditions, while validators and component callbacks remain on the host. Native projected children are separate React nodes. This registry is inactive under "
+          },
+          {
+            "kind": "code",
+            "text": "\"markdown\""
+          },
+          {
+            "kind": "text",
+            "text": " and "
+          },
+          {
+            "kind": "code",
+            "text": "\"trusted-mdx\""
           },
           {
             "kind": "text",
@@ -1673,7 +1606,279 @@
       }
     },
     {
-      "id": "328bf543",
+      "id": "459d5b9e",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Full MDX requires an explicit `createTrustedMdxEngine` from `@stream-mdx/react/trusted-mdx`, passed with `contentPolicy=\"trusted-mdx\"` and `engines.mdx`. The host import map grants explicit module bindings only; unresolved imports are not fetched. Evaluation runs authored code in the host realm, requires `unsafe-eval` in `script-src`, and is not a sandbox. Use it only for trusted, reviewed content. For user-generated input, keep the restricted policy and leave `engines.mdx` unset.",
+        "meta": {
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 30,
+              "to": 54,
+              "kind": "code-inline"
+            },
+            {
+              "from": 60,
+              "to": 91,
+              "kind": "code-inline"
+            },
+            {
+              "from": 105,
+              "to": 134,
+              "kind": "code-inline"
+            },
+            {
+              "from": 139,
+              "to": 152,
+              "kind": "code-inline"
+            },
+            {
+              "from": 306,
+              "to": 319,
+              "kind": "code-inline"
+            },
+            {
+              "from": 323,
+              "to": 335,
+              "kind": "code-inline"
+            },
+            {
+              "from": 465,
+              "to": 478,
+              "kind": "code-inline"
+            }
+          ]
+        },
+        "range": {
+          "from": 3104,
+          "to": 3589
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Full MDX requires an explicit "
+          },
+          {
+            "kind": "code",
+            "text": "createTrustedMdxEngine"
+          },
+          {
+            "kind": "text",
+            "text": " from "
+          },
+          {
+            "kind": "code",
+            "text": "@stream-mdx/react/trusted-mdx"
+          },
+          {
+            "kind": "text",
+            "text": ", passed with "
+          },
+          {
+            "kind": "code",
+            "text": "contentPolicy=\"trusted-mdx\""
+          },
+          {
+            "kind": "text",
+            "text": " and "
+          },
+          {
+            "kind": "code",
+            "text": "engines.mdx"
+          },
+          {
+            "kind": "text",
+            "text": ". The host import map grants explicit module bindings only; unresolved imports are not fetched. Evaluation runs authored code in the host realm, requires "
+          },
+          {
+            "kind": "code",
+            "text": "unsafe-eval"
+          },
+          {
+            "kind": "text",
+            "text": " in "
+          },
+          {
+            "kind": "code",
+            "text": "script-src"
+          },
+          {
+            "kind": "text",
+            "text": ", and is not a sandbox. Use it only for trusted, reviewed content. For user-generated input, keep the restricted policy and leave "
+          },
+          {
+            "kind": "code",
+            "text": "engines.mdx"
+          },
+          {
+            "kind": "text",
+            "text": " unset."
+          }
+        ]
+      }
+    },
+    {
+      "id": "5008986",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Native worker `FINALIZED` reports native semantic completion, not trusted compilation or host render readiness. The trusted document distinguishes requested, projected, and actually rendered revisions; lease/request/engine checks reject stale work before evaluation. A failed render may restore prior committed UI, but cannot undo side effects from code that already executed.",
+        "meta": {
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 14,
+              "to": 25,
+              "kind": "code-inline"
+            }
+          ]
+        },
+        "range": {
+          "from": 3591,
+          "to": 3967
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Native worker "
+          },
+          {
+            "kind": "code",
+            "text": "FINALIZED"
+          },
+          {
+            "kind": "text",
+            "text": " reports native semantic completion, not trusted compilation or host render readiness. The trusted document distinguishes requested, projected, and actually rendered revisions; lease/request/engine checks reject stale work before evaluation. A failed render may restore prior committed UI, but cannot undo side effects from code that already executed."
+          }
+        ]
+      }
+    },
+    {
+      "id": "391649a9",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Agent content and code renderers",
+        "meta": {
+          "lezerNodeType": "ATXHeading2",
+          "headingLevel": 2,
+          "headingText": "Agent content and code renderers",
+          "headingId": "agent-content-and-code-renderers"
+        },
+        "range": {
+          "from": 3969,
+          "to": 4004
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Agent content and code renderers"
+          }
+        ]
+      }
+    },
+    {
+      "id": "287932fe",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "For agent or user content, disable raw HTML unless needed and keep full MDX evaluation off. Set `features.mdx: false` if the feed does not need component syntax. Enable `linkSafety` for links rendered by StreamMDX; it does not control navigation from custom renderers.",
+        "meta": {
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 96,
+              "to": 117,
+              "kind": "code-inline"
+            },
+            {
+              "from": 169,
+              "to": 181,
+              "kind": "code-inline"
+            }
+          ]
+        },
+        "range": {
+          "from": 4006,
+          "to": 4274
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "For agent or user content, disable raw HTML unless needed and keep full MDX evaluation off. Set "
+          },
+          {
+            "kind": "code",
+            "text": "features.mdx: false"
+          },
+          {
+            "kind": "text",
+            "text": " if the feed does not need component syntax. Enable "
+          },
+          {
+            "kind": "code",
+            "text": "linkSafety"
+          },
+          {
+            "kind": "text",
+            "text": " for links rendered by StreamMDX; it does not control navigation from custom renderers."
+          }
+        ]
+      }
+    },
+    {
+      "id": "1597a063",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Fences labeled `artifact` or `html-artifact` render as code by default. StreamMDX does not provide a built-in artifact iframe or sandbox. Do not map untrusted content to an execution-capable renderer unless your application supplies and reviews its own isolation and security policy.",
+        "meta": {
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 15,
+              "to": 25,
+              "kind": "code-inline"
+            },
+            {
+              "from": 29,
+              "to": 44,
+              "kind": "code-inline"
+            }
+          ]
+        },
+        "range": {
+          "from": 4276,
+          "to": 4559
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Fences labeled "
+          },
+          {
+            "kind": "code",
+            "text": "artifact"
+          },
+          {
+            "kind": "text",
+            "text": " or "
+          },
+          {
+            "kind": "code",
+            "text": "html-artifact"
+          },
+          {
+            "kind": "text",
+            "text": " render as code by default. StreamMDX does not provide a built-in artifact iframe or sandbox. Do not map untrusted content to an execution-capable renderer unless your application supplies and reviews its own isolation and security policy."
+          }
+        ]
+      }
+    },
+    {
+      "id": "4b11abfc",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -1685,8 +1890,8 @@
           "headingId": "safe-defaults-for-agent-content"
         },
         "range": {
-          "from": 3259,
-          "to": 3294
+          "from": 4561,
+          "to": 4596
         },
         "inline": [
           {
@@ -1697,11 +1902,11 @@
       }
     },
     {
-      "id": "5cca6bc0",
+      "id": "2c1c129c",
       "type": "list",
       "isFinalized": true,
       "payload": {
-        "raw": "1. **Disable MDX (`features.mdx: false`)**: MDX compiles into executable React components in the host document. Untrusted agent output with MDX enabled can execute arbitrary client-side code (XSS/RCE). Keep `features.mdx: false` for all agent feeds.\n2. **Disable raw HTML (`features.html: false`)**: Prevent unsandboxed HTML injection into the application container.\n3. **Enable link safety (`linkSafety: { enabled: true }`)**: The default markdown link renderer and ArtifactFrame's intercepted anchor-click path request confirmation before opening permitted URLs. Artifact link messages with unsafe protocols such as `javascript:` and `data:` are dropped. This does not mediate every script-initiated navigation.",
+        "raw": "1. Keep `contentPolicy=\"restricted\"` and do not supply a trusted MDX engine for untrusted source.\n2. Set `features.html: false` unless the feed needs sanitized raw HTML.\n3. Use `linkSafety: { enabled: true }` for Markdown links. It does not mediate every navigation initiated by custom output.",
         "meta": {
           "lezerNodeType": "OrderedList",
           "mathEnabled": true,
@@ -1718,95 +1923,44 @@
           "items": [
             [
               {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Disable MDX ("
-                  },
-                  {
-                    "kind": "code",
-                    "text": "features.mdx: false"
-                  },
-                  {
-                    "kind": "text",
-                    "text": ")"
-                  }
-                ]
-              },
-              {
                 "kind": "text",
-                "text": ": MDX compiles into executable React components in the host document. Untrusted agent output with MDX enabled can execute arbitrary client-side code (XSS/RCE). Keep "
+                "text": "Keep "
               },
               {
                 "kind": "code",
-                "text": "features.mdx: false"
+                "text": "contentPolicy=\"restricted\""
               },
               {
                 "kind": "text",
-                "text": " for all agent feeds."
+                "text": " and do not supply a trusted MDX engine for untrusted source."
               }
             ],
             [
               {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Disable raw HTML ("
-                  },
-                  {
-                    "kind": "code",
-                    "text": "features.html: false"
-                  },
-                  {
-                    "kind": "text",
-                    "text": ")"
-                  }
-                ]
+                "kind": "text",
+                "text": "Set "
+              },
+              {
+                "kind": "code",
+                "text": "features.html: false"
               },
               {
                 "kind": "text",
-                "text": ": Prevent unsandboxed HTML injection into the application container."
+                "text": " unless the feed needs sanitized raw HTML."
               }
             ],
             [
               {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Enable link safety ("
-                  },
-                  {
-                    "kind": "code",
-                    "text": "linkSafety: { enabled: true }"
-                  },
-                  {
-                    "kind": "text",
-                    "text": ")"
-                  }
-                ]
-              },
-              {
                 "kind": "text",
-                "text": ": The default markdown link renderer and ArtifactFrame's intercepted anchor-click path request confirmation before opening permitted URLs. Artifact link messages with unsafe protocols such as "
+                "text": "Use "
               },
               {
                 "kind": "code",
-                "text": "javascript:"
+                "text": "linkSafety: { enabled: true }"
               },
               {
                 "kind": "text",
-                "text": " and "
-              },
-              {
-                "kind": "code",
-                "text": "data:"
-              },
-              {
-                "kind": "text",
-                "text": " are dropped. This does not mediate every script-initiated navigation."
+                "text": " for Markdown links. It does not mediate every navigation initiated by custom output."
               }
             ]
           ],
@@ -1817,55 +1971,38 @@
             },
             "children": [
               {
-                "id": "5cca6bc0::item:0",
+                "id": "2c1c129c::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 3296,
-                  "to": 3545
+                  "from": 4598,
+                  "to": 4695
                 },
                 "props": {
                   "ordered": true,
                   "loose": false,
                   "block": {
-                    "id": "5cca6bc0::item:0",
+                    "id": "2c1c129c::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
-                      "raw": "1. **Disable MDX (`features.mdx: false`)**: MDX compiles into executable React components in the host document. Untrusted agent output with MDX enabled can execute arbitrary client-side code (XSS/RCE). Keep `features.mdx: false` for all agent feeds.",
+                      "raw": "1. Keep `contentPolicy=\"restricted\"` and do not supply a trusted MDX engine for untrusted source.",
                       "inline": [
                         {
-                          "kind": "strong",
-                          "children": [
-                            {
-                              "kind": "text",
-                              "text": "Disable MDX ("
-                            },
-                            {
-                              "kind": "code",
-                              "text": "features.mdx: false"
-                            },
-                            {
-                              "kind": "text",
-                              "text": ")"
-                            }
-                          ]
-                        },
-                        {
                           "kind": "text",
-                          "text": ": MDX compiles into executable React components in the host document. Untrusted agent output with MDX enabled can execute arbitrary client-side code (XSS/RCE). Keep "
+                          "text": "Keep "
                         },
                         {
                           "kind": "code",
-                          "text": "features.mdx: false"
+                          "text": "contentPolicy=\"restricted\""
                         },
                         {
                           "kind": "text",
-                          "text": " for all agent feeds."
+                          "text": " and do not supply a trusted MDX engine for untrusted source."
                         }
                       ],
                       "range": {
-                        "from": 3296,
-                        "to": 3545
+                        "from": 4598,
+                        "to": 4695
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1876,37 +2013,20 @@
                             "index": 0,
                             "inline": [
                               {
-                                "kind": "strong",
-                                "children": [
-                                  {
-                                    "kind": "text",
-                                    "text": "Disable MDX ("
-                                  },
-                                  {
-                                    "kind": "code",
-                                    "text": "features.mdx: false"
-                                  },
-                                  {
-                                    "kind": "text",
-                                    "text": ")"
-                                  }
-                                ]
-                              },
-                              {
                                 "kind": "text",
-                                "text": ": MDX compiles into executable React components in the host document. Untrusted agent output with MDX enabled can execute arbitrary client-side code (XSS/RCE). Keep "
+                                "text": "Keep "
                               },
                               {
                                 "kind": "code",
-                                "text": "features.mdx: false"
+                                "text": "contentPolicy=\"restricted\""
                               },
                               {
                                 "kind": "text",
-                                "text": " for all agent feeds."
+                                "text": " and do not supply a trusted MDX engine for untrusted source."
                               }
                             ],
-                            "text": "Disable MDX (features.mdx: false): MDX compiles into executable React components in the host document. Untrusted agent output with MDX enabled can execute arbitrary client-side code (XSS/RCE). Keep features.mdx: false for all agent feeds.",
-                            "raw": "1. **Disable MDX (`features.mdx: false`)**: MDX compiles into executable React components in the host document. Untrusted agent output with MDX enabled can execute arbitrary client-side code (XSS/RCE). Keep `features.mdx: false` for all agent feeds."
+                            "text": "Keep contentPolicy=\"restricted\" and do not supply a trusted MDX engine for untrusted source.",
+                            "raw": "1. Keep `contentPolicy=\"restricted\"` and do not supply a trusted MDX engine for untrusted source."
                           },
                           "children": []
                         }
@@ -1916,129 +2036,43 @@
                   "index": 0,
                   "inline": [
                     {
-                      "kind": "strong",
-                      "children": [
-                        {
-                          "kind": "text",
-                          "text": "Disable MDX ("
-                        },
-                        {
-                          "kind": "code",
-                          "text": "features.mdx: false"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ")"
-                        }
-                      ]
-                    },
-                    {
                       "kind": "text",
-                      "text": ": MDX compiles into executable React components in the host document. Untrusted agent output with MDX enabled can execute arbitrary client-side code (XSS/RCE). Keep "
+                      "text": "Keep "
                     },
                     {
                       "kind": "code",
-                      "text": "features.mdx: false"
+                      "text": "contentPolicy=\"restricted\""
                     },
                     {
                       "kind": "text",
-                      "text": " for all agent feeds."
+                      "text": " and do not supply a trusted MDX engine for untrusted source."
                     }
                   ],
-                  "text": "Disable MDX (features.mdx: false): MDX compiles into executable React components in the host document. Untrusted agent output with MDX enabled can execute arbitrary client-side code (XSS/RCE). Keep features.mdx: false for all agent feeds.",
-                  "raw": "1. **Disable MDX (`features.mdx: false`)**: MDX compiles into executable React components in the host document. Untrusted agent output with MDX enabled can execute arbitrary client-side code (XSS/RCE). Keep `features.mdx: false` for all agent feeds."
+                  "text": "Keep contentPolicy=\"restricted\" and do not supply a trusted MDX engine for untrusted source.",
+                  "raw": "1. Keep `contentPolicy=\"restricted\"` and do not supply a trusted MDX engine for untrusted source."
                 },
                 "children": []
               },
               {
-                "id": "5cca6bc0::item:1",
+                "id": "2c1c129c::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 3546,
-                  "to": 3662
+                  "from": 4696,
+                  "to": 4767
                 },
                 "props": {
                   "ordered": true,
                   "loose": false,
                   "block": {
-                    "id": "5cca6bc0::item:1",
+                    "id": "2c1c129c::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
-                      "raw": "2. **Disable raw HTML (`features.html: false`)**: Prevent unsandboxed HTML injection into the application container.",
+                      "raw": "2. Set `features.html: false` unless the feed needs sanitized raw HTML.",
                       "inline": [
                         {
-                          "kind": "strong",
-                          "children": [
-                            {
-                              "kind": "text",
-                              "text": "Disable raw HTML ("
-                            },
-                            {
-                              "kind": "code",
-                              "text": "features.html: false"
-                            },
-                            {
-                              "kind": "text",
-                              "text": ")"
-                            }
-                          ]
-                        },
-                        {
                           "kind": "text",
-                          "text": ": Prevent unsandboxed HTML injection into the application container."
-                        }
-                      ],
-                      "range": {
-                        "from": 3546,
-                        "to": 3662
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": true,
-                            "loose": false,
-                            "index": 1,
-                            "inline": [
-                              {
-                                "kind": "strong",
-                                "children": [
-                                  {
-                                    "kind": "text",
-                                    "text": "Disable raw HTML ("
-                                  },
-                                  {
-                                    "kind": "code",
-                                    "text": "features.html: false"
-                                  },
-                                  {
-                                    "kind": "text",
-                                    "text": ")"
-                                  }
-                                ]
-                              },
-                              {
-                                "kind": "text",
-                                "text": ": Prevent unsandboxed HTML injection into the application container."
-                              }
-                            ],
-                            "text": "Disable raw HTML (features.html: false): Prevent unsandboxed HTML injection into the application container.",
-                            "raw": "2. **Disable raw HTML (`features.html: false`)**: Prevent unsandboxed HTML injection into the application container."
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 1,
-                  "inline": [
-                    {
-                      "kind": "strong",
-                      "children": [
-                        {
-                          "kind": "text",
-                          "text": "Disable raw HTML ("
+                          "text": "Set "
                         },
                         {
                           "kind": "code",
@@ -2046,78 +2080,95 @@
                         },
                         {
                           "kind": "text",
-                          "text": ")"
+                          "text": " unless the feed needs sanitized raw HTML."
                         }
-                      ]
+                      ],
+                      "range": {
+                        "from": 4696,
+                        "to": 4767
+                      },
+                      "meta": {
+                        "sourceContainer": "list",
+                        "preparedNested": {
+                          "props": {
+                            "ordered": true,
+                            "loose": false,
+                            "index": 1,
+                            "inline": [
+                              {
+                                "kind": "text",
+                                "text": "Set "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "features.html: false"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " unless the feed needs sanitized raw HTML."
+                              }
+                            ],
+                            "text": "Set features.html: false unless the feed needs sanitized raw HTML.",
+                            "raw": "2. Set `features.html: false` unless the feed needs sanitized raw HTML."
+                          },
+                          "children": []
+                        }
+                      }
+                    }
+                  },
+                  "index": 1,
+                  "inline": [
+                    {
+                      "kind": "text",
+                      "text": "Set "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "features.html: false"
                     },
                     {
                       "kind": "text",
-                      "text": ": Prevent unsandboxed HTML injection into the application container."
+                      "text": " unless the feed needs sanitized raw HTML."
                     }
                   ],
-                  "text": "Disable raw HTML (features.html: false): Prevent unsandboxed HTML injection into the application container.",
-                  "raw": "2. **Disable raw HTML (`features.html: false`)**: Prevent unsandboxed HTML injection into the application container."
+                  "text": "Set features.html: false unless the feed needs sanitized raw HTML.",
+                  "raw": "2. Set `features.html: false` unless the feed needs sanitized raw HTML."
                 },
                 "children": []
               },
               {
-                "id": "5cca6bc0::item:2",
+                "id": "2c1c129c::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 3663,
-                  "to": 4009
+                  "from": 4768,
+                  "to": 4891
                 },
                 "props": {
                   "ordered": true,
                   "loose": false,
                   "block": {
-                    "id": "5cca6bc0::item:2",
+                    "id": "2c1c129c::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
-                      "raw": "3. **Enable link safety (`linkSafety: { enabled: true }`)**: The default markdown link renderer and ArtifactFrame's intercepted anchor-click path request confirmation before opening permitted URLs. Artifact link messages with unsafe protocols such as `javascript:` and `data:` are dropped. This does not mediate every script-initiated navigation.",
+                      "raw": "3. Use `linkSafety: { enabled: true }` for Markdown links. It does not mediate every navigation initiated by custom output.",
                       "inline": [
                         {
-                          "kind": "strong",
-                          "children": [
-                            {
-                              "kind": "text",
-                              "text": "Enable link safety ("
-                            },
-                            {
-                              "kind": "code",
-                              "text": "linkSafety: { enabled: true }"
-                            },
-                            {
-                              "kind": "text",
-                              "text": ")"
-                            }
-                          ]
-                        },
-                        {
                           "kind": "text",
-                          "text": ": The default markdown link renderer and ArtifactFrame's intercepted anchor-click path request confirmation before opening permitted URLs. Artifact link messages with unsafe protocols such as "
+                          "text": "Use "
                         },
                         {
                           "kind": "code",
-                          "text": "javascript:"
+                          "text": "linkSafety: { enabled: true }"
                         },
                         {
                           "kind": "text",
-                          "text": " and "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "data:"
-                        },
-                        {
-                          "kind": "text",
-                          "text": " are dropped. This does not mediate every script-initiated navigation."
+                          "text": " for Markdown links. It does not mediate every navigation initiated by custom output."
                         }
                       ],
                       "range": {
-                        "from": 3663,
-                        "to": 4009
+                        "from": 4768,
+                        "to": 4891
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -2128,1247 +2179,20 @@
                             "index": 2,
                             "inline": [
                               {
-                                "kind": "strong",
-                                "children": [
-                                  {
-                                    "kind": "text",
-                                    "text": "Enable link safety ("
-                                  },
-                                  {
-                                    "kind": "code",
-                                    "text": "linkSafety: { enabled: true }"
-                                  },
-                                  {
-                                    "kind": "text",
-                                    "text": ")"
-                                  }
-                                ]
-                              },
-                              {
                                 "kind": "text",
-                                "text": ": The default markdown link renderer and ArtifactFrame's intercepted anchor-click path request confirmation before opening permitted URLs. Artifact link messages with unsafe protocols such as "
+                                "text": "Use "
                               },
                               {
                                 "kind": "code",
-                                "text": "javascript:"
+                                "text": "linkSafety: { enabled: true }"
                               },
                               {
                                 "kind": "text",
-                                "text": " and "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "data:"
-                              },
-                              {
-                                "kind": "text",
-                                "text": " are dropped. This does not mediate every script-initiated navigation."
+                                "text": " for Markdown links. It does not mediate every navigation initiated by custom output."
                               }
                             ],
-                            "text": "Enable link safety (linkSafety: { enabled: true }): The default markdown link renderer and ArtifactFrame's intercepted anchor-click path request confirmation before opening permitted URLs. Artifact link messages with unsafe protocols such as javascript: and data: are dropped. This does not mediate every script-initiated navigation.",
-                            "raw": "3. **Enable link safety (`linkSafety: { enabled: true }`)**: The default markdown link renderer and ArtifactFrame's intercepted anchor-click path request confirmation before opening permitted URLs. Artifact link messages with unsafe protocols such as `javascript:` and `data:` are dropped. This does not mediate every script-initiated navigation."
-                          },
-                          "children": [
-                            {
-                              "id": "5cca6bc0::item:2::list-item:segment:0",
-                              "type": "list-item-text",
-                              "props": {
-                                "inline": [
-                                  {
-                                    "kind": "text",
-                                    "text": "**Enable link safety (`linkSafety: "
-                                  }
-                                ],
-                                "text": "**Enable link safety (`linkSafety: "
-                              },
-                              "children": []
-                            },
-                            {
-                              "id": "5cca6bc0::item:2::list-item:segment:1",
-                              "type": "list-item-mdx",
-                              "props": {
-                                "raw": "{ enabled: true }",
-                                "status": "pending"
-                              },
-                              "children": []
-                            },
-                            {
-                              "id": "5cca6bc0::item:2::list-item:segment:2",
-                              "type": "list-item-text",
-                              "props": {
-                                "inline": [
-                                  {
-                                    "kind": "code",
-                                    "text": ")**: The default markdown link renderer and ArtifactFrame's intercepted anchor-click path request confirmation before opening permitted URLs. Artifact link messages with unsafe protocols such as "
-                                  },
-                                  {
-                                    "kind": "text",
-                                    "text": "javascript:"
-                                  },
-                                  {
-                                    "kind": "code",
-                                    "text": "and"
-                                  },
-                                  {
-                                    "kind": "text",
-                                    "text": "data:` are dropped. This does not mediate every script-initiated navigation."
-                                  }
-                                ],
-                                "text": "`)**: The default markdown link renderer and ArtifactFrame's intercepted anchor-click path request confirmation before opening permitted URLs. Artifact link messages with unsafe protocols such as `javascript:` and `data:` are dropped. This does not mediate every script-initiated navigation."
-                              },
-                              "children": []
-                            }
-                          ]
-                        }
-                      }
-                    }
-                  },
-                  "index": 2,
-                  "inline": [
-                    {
-                      "kind": "strong",
-                      "children": [
-                        {
-                          "kind": "text",
-                          "text": "Enable link safety ("
-                        },
-                        {
-                          "kind": "code",
-                          "text": "linkSafety: { enabled: true }"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ")"
-                        }
-                      ]
-                    },
-                    {
-                      "kind": "text",
-                      "text": ": The default markdown link renderer and ArtifactFrame's intercepted anchor-click path request confirmation before opening permitted URLs. Artifact link messages with unsafe protocols such as "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "javascript:"
-                    },
-                    {
-                      "kind": "text",
-                      "text": " and "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "data:"
-                    },
-                    {
-                      "kind": "text",
-                      "text": " are dropped. This does not mediate every script-initiated navigation."
-                    }
-                  ],
-                  "text": "Enable link safety (linkSafety: { enabled: true }): The default markdown link renderer and ArtifactFrame's intercepted anchor-click path request confirmation before opening permitted URLs. Artifact link messages with unsafe protocols such as javascript: and data: are dropped. This does not mediate every script-initiated navigation.",
-                  "raw": "3. **Enable link safety (`linkSafety: { enabled: true }`)**: The default markdown link renderer and ArtifactFrame's intercepted anchor-click path request confirmation before opening permitted URLs. Artifact link messages with unsafe protocols such as `javascript:` and `data:` are dropped. This does not mediate every script-initiated navigation."
-                },
-                "children": [
-                  {
-                    "id": "5cca6bc0::item:2::list-item:segment:0",
-                    "type": "list-item-text",
-                    "props": {
-                      "inline": [
-                        {
-                          "kind": "text",
-                          "text": "**Enable link safety (`linkSafety: "
-                        }
-                      ],
-                      "text": "**Enable link safety (`linkSafety: "
-                    },
-                    "children": []
-                  },
-                  {
-                    "id": "5cca6bc0::item:2::list-item:segment:1",
-                    "type": "list-item-mdx",
-                    "props": {
-                      "raw": "{ enabled: true }",
-                      "status": "pending"
-                    },
-                    "children": []
-                  },
-                  {
-                    "id": "5cca6bc0::item:2::list-item:segment:2",
-                    "type": "list-item-text",
-                    "props": {
-                      "inline": [
-                        {
-                          "kind": "code",
-                          "text": ")**: The default markdown link renderer and ArtifactFrame's intercepted anchor-click path request confirmation before opening permitted URLs. Artifact link messages with unsafe protocols such as "
-                        },
-                        {
-                          "kind": "text",
-                          "text": "javascript:"
-                        },
-                        {
-                          "kind": "code",
-                          "text": "and"
-                        },
-                        {
-                          "kind": "text",
-                          "text": "data:` are dropped. This does not mediate every script-initiated navigation."
-                        }
-                      ],
-                      "text": "`)**: The default markdown link renderer and ArtifactFrame's intercepted anchor-click path request confirmation before opening permitted URLs. Artifact link messages with unsafe protocols such as `javascript:` and `data:` are dropped. This does not mediate every script-initiated navigation."
-                    },
-                    "children": []
-                  }
-                ]
-              }
-            ]
-          }
-        },
-        "range": {
-          "from": 3296,
-          "to": 4009
-        }
-      }
-    },
-    {
-      "id": "62d50764",
-      "type": "heading",
-      "isFinalized": true,
-      "payload": {
-        "raw": "Sandbox restrictions with ArtifactFrame",
-        "meta": {
-          "lezerNodeType": "ATXHeading3",
-          "headingLevel": 3,
-          "headingText": "Sandbox restrictions with ArtifactFrame",
-          "headingId": "sandbox-restrictions-with-artifactframe"
-        },
-        "range": {
-          "from": 4011,
-          "to": 4054
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "Sandbox restrictions with ArtifactFrame"
-          }
-        ]
-      }
-    },
-    {
-      "id": "200f823",
-      "type": "paragraph",
-      "isFinalized": true,
-      "payload": {
-        "raw": "Interactive visualizations and dashboards generated by agents must be sandboxed using `ArtifactFrame` (mapped to fence languages such as ````html-artifact```` or ````artifact````):",
-        "meta": {
-          "lezerNodeType": "Paragraph"
-        },
-        "range": {
-          "from": 4056,
-          "to": 4236
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "Interactive visualizations and dashboards generated by agents must be sandboxed using "
-          },
-          {
-            "kind": "code",
-            "text": "ArtifactFrame"
-          },
-          {
-            "kind": "text",
-            "text": " (mapped to fence languages such as "
-          },
-          {
-            "kind": "code",
-            "text": "html-artifact"
-          },
-          {
-            "kind": "text",
-            "text": " or "
-          },
-          {
-            "kind": "code",
-            "text": "artifact"
-          },
-          {
-            "kind": "text",
-            "text": "):"
-          }
-        ]
-      }
-    },
-    {
-      "id": "48ecd787",
-      "type": "list",
-      "isFinalized": true,
-      "payload": {
-        "raw": "- **Iframe sandbox**: Mounts `<iframe sandbox=\"allow-scripts\" srcdoc=\"...\">` without `allow-same-origin`. The artifact has an opaque origin and cannot directly access the host DOM or host-origin cookies/storage. Its bootstrap communicates with the parent through `postMessage`.\n- **Strict CSP baseline**: The embedded `srcdoc` injects a strict meta policy:\n  ```text\n  default-src 'none';\n  script-src 'unsafe-inline';\n  style-src 'unsafe-inline';\n  img-src data: blob:;\n  font-src data:;\n  connect-src 'none';\n  base-uri 'none';\n  form-action 'none';\n  ```\n  `connect-src 'none'` blocks connection APIs such as `fetch`, `XMLHttpRequest`, and `WebSocket`; the other directives restrict resource loads. This is not a guarantee of total network isolation or prevention of iframe self-navigation.\n- **Self-contained content**: Artifacts must bundle their CSS and inline SVG or canvas graphics locally, without external asset fetching.\n- **Streaming lifecycle**: While the block is streaming (`isFinalized === false`), `ArtifactFrame` displays the raw syntax code block. Once finalized (`isFinalized === true`), the isolated iframe mounts and auto-sizes via a postMessage height protocol.\n- **Link handling**: Intercepted anchor clicks are posted to the host window, checked against allowed protocols (`http:`, `https:`, `mailto:`), and passed to the host `linkSafety` handler. This path does not cover every navigation a script can initiate.",
-        "meta": {
-          "lezerNodeType": "BulletList",
-          "mathEnabled": true,
-          "formatAnticipation": {
-            "inline": false,
-            "mathInline": false,
-            "mathBlock": false,
-            "html": false,
-            "mdx": false,
-            "regex": false
-          },
-          "ordered": false,
-          "loose": false,
-          "items": [
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Iframe sandbox"
-                  }
-                ]
-              },
-              {
-                "kind": "text",
-                "text": ": Mounts "
-              },
-              {
-                "kind": "code",
-                "text": "<iframe sandbox=\"allow-scripts\" srcdoc=\"...\">"
-              },
-              {
-                "kind": "text",
-                "text": " without "
-              },
-              {
-                "kind": "code",
-                "text": "allow-same-origin"
-              },
-              {
-                "kind": "text",
-                "text": ". The artifact has an opaque origin and cannot directly access the host DOM or host-origin cookies/storage. Its bootstrap communicates with the parent through "
-              },
-              {
-                "kind": "code",
-                "text": "postMessage"
-              },
-              {
-                "kind": "text",
-                "text": "."
-              }
-            ],
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Strict CSP baseline"
-                  }
-                ]
-              },
-              {
-                "kind": "text",
-                "text": ": The embedded "
-              },
-              {
-                "kind": "code",
-                "text": "srcdoc"
-              },
-              {
-                "kind": "text",
-                "text": " injects a strict meta policy:"
-              }
-            ],
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Self-contained content"
-                  }
-                ]
-              },
-              {
-                "kind": "text",
-                "text": ": Artifacts must bundle their CSS and inline SVG or canvas graphics locally, without external asset fetching."
-              }
-            ],
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Streaming lifecycle"
-                  }
-                ]
-              },
-              {
-                "kind": "text",
-                "text": ": While the block is streaming ("
-              },
-              {
-                "kind": "code",
-                "text": "isFinalized === false"
-              },
-              {
-                "kind": "text",
-                "text": "), "
-              },
-              {
-                "kind": "code",
-                "text": "ArtifactFrame"
-              },
-              {
-                "kind": "text",
-                "text": " displays the raw syntax code block. Once finalized ("
-              },
-              {
-                "kind": "code",
-                "text": "isFinalized === true"
-              },
-              {
-                "kind": "text",
-                "text": "), the isolated iframe mounts and auto-sizes via a postMessage height protocol."
-              }
-            ],
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "Link handling"
-                  }
-                ]
-              },
-              {
-                "kind": "text",
-                "text": ": Intercepted anchor clicks are posted to the host window, checked against allowed protocols ("
-              },
-              {
-                "kind": "code",
-                "text": "http:"
-              },
-              {
-                "kind": "text",
-                "text": ", "
-              },
-              {
-                "kind": "code",
-                "text": "https:"
-              },
-              {
-                "kind": "text",
-                "text": ", "
-              },
-              {
-                "kind": "code",
-                "text": "mailto:"
-              },
-              {
-                "kind": "text",
-                "text": "), and passed to the host "
-              },
-              {
-                "kind": "code",
-                "text": "linkSafety"
-              },
-              {
-                "kind": "text",
-                "text": " handler. This path does not cover every navigation a script can initiate."
-              }
-            ]
-          ],
-          "preparedNested": {
-            "props": {
-              "ordered": false,
-              "loose": false
-            },
-            "children": [
-              {
-                "id": "48ecd787::item:0",
-                "type": "list-item",
-                "range": {
-                  "from": 4238,
-                  "to": 4515
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "48ecd787::item:0",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- **Iframe sandbox**: Mounts `<iframe sandbox=\"allow-scripts\" srcdoc=\"...\">` without `allow-same-origin`. The artifact has an opaque origin and cannot directly access the host DOM or host-origin cookies/storage. Its bootstrap communicates with the parent through `postMessage`.",
-                      "inline": [
-                        {
-                          "kind": "strong",
-                          "children": [
-                            {
-                              "kind": "text",
-                              "text": "Iframe sandbox"
-                            }
-                          ]
-                        },
-                        {
-                          "kind": "text",
-                          "text": ": Mounts "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "<iframe sandbox=\"allow-scripts\" srcdoc=\"...\">"
-                        },
-                        {
-                          "kind": "text",
-                          "text": " without "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "allow-same-origin"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ". The artifact has an opaque origin and cannot directly access the host DOM or host-origin cookies/storage. Its bootstrap communicates with the parent through "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "postMessage"
-                        },
-                        {
-                          "kind": "text",
-                          "text": "."
-                        }
-                      ],
-                      "range": {
-                        "from": 4238,
-                        "to": 4515
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 0,
-                            "inline": [
-                              {
-                                "kind": "strong",
-                                "children": [
-                                  {
-                                    "kind": "text",
-                                    "text": "Iframe sandbox"
-                                  }
-                                ]
-                              },
-                              {
-                                "kind": "text",
-                                "text": ": Mounts "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "<iframe sandbox=\"allow-scripts\" srcdoc=\"...\">"
-                              },
-                              {
-                                "kind": "text",
-                                "text": " without "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "allow-same-origin"
-                              },
-                              {
-                                "kind": "text",
-                                "text": ". The artifact has an opaque origin and cannot directly access the host DOM or host-origin cookies/storage. Its bootstrap communicates with the parent through "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "postMessage"
-                              },
-                              {
-                                "kind": "text",
-                                "text": "."
-                              }
-                            ],
-                            "text": "Iframe sandbox: Mounts <iframe sandbox=\"allow-scripts\" srcdoc=\"...\"> without allow-same-origin. The artifact has an opaque origin and cannot directly access the host DOM or host-origin cookies/storage. Its bootstrap communicates with the parent through postMessage.",
-                            "raw": "- **Iframe sandbox**: Mounts `<iframe sandbox=\"allow-scripts\" srcdoc=\"...\">` without `allow-same-origin`. The artifact has an opaque origin and cannot directly access the host DOM or host-origin cookies/storage. Its bootstrap communicates with the parent through `postMessage`."
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 0,
-                  "inline": [
-                    {
-                      "kind": "strong",
-                      "children": [
-                        {
-                          "kind": "text",
-                          "text": "Iframe sandbox"
-                        }
-                      ]
-                    },
-                    {
-                      "kind": "text",
-                      "text": ": Mounts "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "<iframe sandbox=\"allow-scripts\" srcdoc=\"...\">"
-                    },
-                    {
-                      "kind": "text",
-                      "text": " without "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "allow-same-origin"
-                    },
-                    {
-                      "kind": "text",
-                      "text": ". The artifact has an opaque origin and cannot directly access the host DOM or host-origin cookies/storage. Its bootstrap communicates with the parent through "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "postMessage"
-                    },
-                    {
-                      "kind": "text",
-                      "text": "."
-                    }
-                  ],
-                  "text": "Iframe sandbox: Mounts <iframe sandbox=\"allow-scripts\" srcdoc=\"...\"> without allow-same-origin. The artifact has an opaque origin and cannot directly access the host DOM or host-origin cookies/storage. Its bootstrap communicates with the parent through postMessage.",
-                  "raw": "- **Iframe sandbox**: Mounts `<iframe sandbox=\"allow-scripts\" srcdoc=\"...\">` without `allow-same-origin`. The artifact has an opaque origin and cannot directly access the host DOM or host-origin cookies/storage. Its bootstrap communicates with the parent through `postMessage`."
-                },
-                "children": []
-              },
-              {
-                "id": "48ecd787::item:1",
-                "type": "list-item",
-                "range": {
-                  "from": 4516,
-                  "to": 5031
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "48ecd787::item:1",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- **Strict CSP baseline**: The embedded `srcdoc` injects a strict meta policy:\n  ```text\n  default-src 'none';\n  script-src 'unsafe-inline';\n  style-src 'unsafe-inline';\n  img-src data: blob:;\n  font-src data:;\n  connect-src 'none';\n  base-uri 'none';\n  form-action 'none';\n  ```\n  `connect-src 'none'` blocks connection APIs such as `fetch`, `XMLHttpRequest`, and `WebSocket`; the other directives restrict resource loads. This is not a guarantee of total network isolation or prevention of iframe self-navigation.",
-                      "inline": [
-                        {
-                          "kind": "strong",
-                          "children": [
-                            {
-                              "kind": "text",
-                              "text": "Strict CSP baseline"
-                            }
-                          ]
-                        },
-                        {
-                          "kind": "text",
-                          "text": ": The embedded "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "srcdoc"
-                        },
-                        {
-                          "kind": "text",
-                          "text": " injects a strict meta policy:"
-                        }
-                      ],
-                      "range": {
-                        "from": 4516,
-                        "to": 5031
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 1,
-                            "inline": [
-                              {
-                                "kind": "strong",
-                                "children": [
-                                  {
-                                    "kind": "text",
-                                    "text": "Strict CSP baseline"
-                                  }
-                                ]
-                              },
-                              {
-                                "kind": "text",
-                                "text": ": The embedded "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "srcdoc"
-                              },
-                              {
-                                "kind": "text",
-                                "text": " injects a strict meta policy:"
-                              }
-                            ],
-                            "text": "Strict CSP baseline: The embedded srcdoc injects a strict meta policy:",
-                            "raw": "- **Strict CSP baseline**: The embedded `srcdoc` injects a strict meta policy:\n  ```text\n  default-src 'none';\n  script-src 'unsafe-inline';\n  style-src 'unsafe-inline';\n  img-src data: blob:;\n  font-src data:;\n  connect-src 'none';\n  base-uri 'none';\n  form-action 'none';\n  ```\n  `connect-src 'none'` blocks connection APIs such as `fetch`, `XMLHttpRequest`, and `WebSocket`; the other directives restrict resource loads. This is not a guarantee of total network isolation or prevention of iframe self-navigation."
-                          },
-                          "children": [
-                            {
-                              "id": "48ecd787::item:1::fencedcode:1",
-                              "type": "code",
-                              "props": {
-                                "block": {
-                                  "id": "48ecd787::item:1::fencedcode:1",
-                                  "type": "code",
-                                  "isFinalized": true,
-                                  "payload": {
-                                    "raw": "```text\n  default-src 'none';\n  script-src 'unsafe-inline';\n  style-src 'unsafe-inline';\n  img-src data: blob:;\n  font-src data:;\n  connect-src 'none';\n  base-uri 'none';\n  form-action 'none';\n  ```",
-                                    "range": {
-                                      "from": 4597,
-                                      "to": 4795
-                                    },
-                                    "meta": {
-                                      "sourceContainer": "list",
-                                      "code": "default-src 'none';\nscript-src 'unsafe-inline';\nstyle-src 'unsafe-inline';\nimg-src data: blob:;\nfont-src data:;\nconnect-src 'none';\nbase-uri 'none';\nform-action 'none';",
-                                      "info": "text",
-                                      "lang": "text",
-                                      "highlightLang": "text"
-                                    },
-                                    "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>default-src 'none';</span></span>\n<span class=\"line\" data-line=\"2\"><span>script-src 'unsafe-inline';</span></span>\n<span class=\"line\" data-line=\"3\"><span>style-src 'unsafe-inline';</span></span>\n<span class=\"line\" data-line=\"4\"><span>img-src data: blob:;</span></span>\n<span class=\"line\" data-line=\"5\"><span>font-src data:;</span></span>\n<span class=\"line\" data-line=\"6\"><span>connect-src 'none';</span></span>\n<span class=\"line\" data-line=\"7\"><span>base-uri 'none';</span></span>\n<span class=\"line\" data-line=\"8\"><span>form-action 'none';</span></span></code></pre>"
-                                  }
-                                },
-                                "lang": "text",
-                                "preAttrs": {
-                                  "class": "shiki shiki-themes github-dark github-light",
-                                  "style": "--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff"
-                                },
-                                "codeAttrs": {
-                                  "class": "language-text",
-                                  "data-language": "text"
-                                }
-                              },
-                              "meta": {
-                                "sourceContainer": "list",
-                                "code": "default-src 'none';\nscript-src 'unsafe-inline';\nstyle-src 'unsafe-inline';\nimg-src data: blob:;\nfont-src data:;\nconnect-src 'none';\nbase-uri 'none';\nform-action 'none';",
-                                "info": "text",
-                                "lang": "text",
-                                "highlightLang": "text"
-                              },
-                              "range": {
-                                "from": 4597,
-                                "to": 4795
-                              },
-                              "children": [
-                                {
-                                  "id": "48ecd787::item:1::fencedcode:1::line:0",
-                                  "type": "code-line",
-                                  "props": {
-                                    "index": 0,
-                                    "text": "default-src 'none';",
-                                    "html": "<span>default-src 'none';</span>"
-                                  },
-                                  "children": []
-                                },
-                                {
-                                  "id": "48ecd787::item:1::fencedcode:1::line:1",
-                                  "type": "code-line",
-                                  "props": {
-                                    "index": 1,
-                                    "text": "script-src 'unsafe-inline';",
-                                    "html": "<span>script-src 'unsafe-inline';</span>"
-                                  },
-                                  "children": []
-                                },
-                                {
-                                  "id": "48ecd787::item:1::fencedcode:1::line:2",
-                                  "type": "code-line",
-                                  "props": {
-                                    "index": 2,
-                                    "text": "style-src 'unsafe-inline';",
-                                    "html": "<span>style-src 'unsafe-inline';</span>"
-                                  },
-                                  "children": []
-                                },
-                                {
-                                  "id": "48ecd787::item:1::fencedcode:1::line:3",
-                                  "type": "code-line",
-                                  "props": {
-                                    "index": 3,
-                                    "text": "img-src data: blob:;",
-                                    "html": "<span>img-src data: blob:;</span>"
-                                  },
-                                  "children": []
-                                },
-                                {
-                                  "id": "48ecd787::item:1::fencedcode:1::line:4",
-                                  "type": "code-line",
-                                  "props": {
-                                    "index": 4,
-                                    "text": "font-src data:;",
-                                    "html": "<span>font-src data:;</span>"
-                                  },
-                                  "children": []
-                                },
-                                {
-                                  "id": "48ecd787::item:1::fencedcode:1::line:5",
-                                  "type": "code-line",
-                                  "props": {
-                                    "index": 5,
-                                    "text": "connect-src 'none';",
-                                    "html": "<span>connect-src 'none';</span>"
-                                  },
-                                  "children": []
-                                },
-                                {
-                                  "id": "48ecd787::item:1::fencedcode:1::line:6",
-                                  "type": "code-line",
-                                  "props": {
-                                    "index": 6,
-                                    "text": "base-uri 'none';",
-                                    "html": "<span>base-uri 'none';</span>"
-                                  },
-                                  "children": []
-                                },
-                                {
-                                  "id": "48ecd787::item:1::fencedcode:1::line:7",
-                                  "type": "code-line",
-                                  "props": {
-                                    "index": 7,
-                                    "text": "form-action 'none';",
-                                    "html": "<span>form-action 'none';</span>"
-                                  },
-                                  "children": []
-                                }
-                              ]
-                            },
-                            {
-                              "id": "48ecd787::item:1::paragraph:2",
-                              "type": "paragraph",
-                              "props": {
-                                "block": {
-                                  "id": "48ecd787::item:1::paragraph:2",
-                                  "type": "paragraph",
-                                  "isFinalized": true,
-                                  "payload": {
-                                    "raw": "`connect-src 'none'` blocks connection APIs such as `fetch`, `XMLHttpRequest`, and `WebSocket`; the other directives restrict resource loads. This is not a guarantee of total network isolation or prevention of iframe self-navigation.",
-                                    "inline": [
-                                      {
-                                        "kind": "code",
-                                        "text": "connect-src 'none'"
-                                      },
-                                      {
-                                        "kind": "text",
-                                        "text": " blocks connection APIs such as "
-                                      },
-                                      {
-                                        "kind": "code",
-                                        "text": "fetch"
-                                      },
-                                      {
-                                        "kind": "text",
-                                        "text": ", "
-                                      },
-                                      {
-                                        "kind": "code",
-                                        "text": "XMLHttpRequest"
-                                      },
-                                      {
-                                        "kind": "text",
-                                        "text": ", and "
-                                      },
-                                      {
-                                        "kind": "code",
-                                        "text": "WebSocket"
-                                      },
-                                      {
-                                        "kind": "text",
-                                        "text": "; the other directives restrict resource loads. This is not a guarantee of total network isolation or prevention of iframe self-navigation."
-                                      }
-                                    ],
-                                    "range": {
-                                      "from": 4798,
-                                      "to": 5031
-                                    },
-                                    "meta": {
-                                      "sourceContainer": "list"
-                                    }
-                                  }
-                                },
-                                "inline": [
-                                  {
-                                    "kind": "code",
-                                    "text": "connect-src 'none'"
-                                  },
-                                  {
-                                    "kind": "text",
-                                    "text": " blocks connection APIs such as "
-                                  },
-                                  {
-                                    "kind": "code",
-                                    "text": "fetch"
-                                  },
-                                  {
-                                    "kind": "text",
-                                    "text": ", "
-                                  },
-                                  {
-                                    "kind": "code",
-                                    "text": "XMLHttpRequest"
-                                  },
-                                  {
-                                    "kind": "text",
-                                    "text": ", and "
-                                  },
-                                  {
-                                    "kind": "code",
-                                    "text": "WebSocket"
-                                  },
-                                  {
-                                    "kind": "text",
-                                    "text": "; the other directives restrict resource loads. This is not a guarantee of total network isolation or prevention of iframe self-navigation."
-                                  }
-                                ],
-                                "text": "connect-src 'none' blocks connection APIs such as fetch, XMLHttpRequest, and WebSocket; the other directives restrict resource loads. This is not a guarantee of total network isolation or prevention of iframe self-navigation.",
-                                "tight": true
-                              },
-                              "meta": {
-                                "sourceContainer": "list"
-                              },
-                              "range": {
-                                "from": 4798,
-                                "to": 5031
-                              },
-                              "children": []
-                            }
-                          ]
-                        }
-                      }
-                    }
-                  },
-                  "index": 1,
-                  "inline": [
-                    {
-                      "kind": "strong",
-                      "children": [
-                        {
-                          "kind": "text",
-                          "text": "Strict CSP baseline"
-                        }
-                      ]
-                    },
-                    {
-                      "kind": "text",
-                      "text": ": The embedded "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "srcdoc"
-                    },
-                    {
-                      "kind": "text",
-                      "text": " injects a strict meta policy:"
-                    }
-                  ],
-                  "text": "Strict CSP baseline: The embedded srcdoc injects a strict meta policy:",
-                  "raw": "- **Strict CSP baseline**: The embedded `srcdoc` injects a strict meta policy:\n  ```text\n  default-src 'none';\n  script-src 'unsafe-inline';\n  style-src 'unsafe-inline';\n  img-src data: blob:;\n  font-src data:;\n  connect-src 'none';\n  base-uri 'none';\n  form-action 'none';\n  ```\n  `connect-src 'none'` blocks connection APIs such as `fetch`, `XMLHttpRequest`, and `WebSocket`; the other directives restrict resource loads. This is not a guarantee of total network isolation or prevention of iframe self-navigation."
-                },
-                "children": [
-                  {
-                    "id": "48ecd787::item:1::fencedcode:1",
-                    "type": "code",
-                    "props": {
-                      "block": {
-                        "id": "48ecd787::item:1::fencedcode:1",
-                        "type": "code",
-                        "isFinalized": true,
-                        "payload": {
-                          "raw": "```text\n  default-src 'none';\n  script-src 'unsafe-inline';\n  style-src 'unsafe-inline';\n  img-src data: blob:;\n  font-src data:;\n  connect-src 'none';\n  base-uri 'none';\n  form-action 'none';\n  ```",
-                          "range": {
-                            "from": 4597,
-                            "to": 4795
-                          },
-                          "meta": {
-                            "sourceContainer": "list",
-                            "code": "default-src 'none';\nscript-src 'unsafe-inline';\nstyle-src 'unsafe-inline';\nimg-src data: blob:;\nfont-src data:;\nconnect-src 'none';\nbase-uri 'none';\nform-action 'none';",
-                            "info": "text",
-                            "lang": "text",
-                            "highlightLang": "text"
-                          },
-                          "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-text\" data-language=\"text\"><span class=\"line\" data-line=\"1\"><span>default-src 'none';</span></span>\n<span class=\"line\" data-line=\"2\"><span>script-src 'unsafe-inline';</span></span>\n<span class=\"line\" data-line=\"3\"><span>style-src 'unsafe-inline';</span></span>\n<span class=\"line\" data-line=\"4\"><span>img-src data: blob:;</span></span>\n<span class=\"line\" data-line=\"5\"><span>font-src data:;</span></span>\n<span class=\"line\" data-line=\"6\"><span>connect-src 'none';</span></span>\n<span class=\"line\" data-line=\"7\"><span>base-uri 'none';</span></span>\n<span class=\"line\" data-line=\"8\"><span>form-action 'none';</span></span></code></pre>"
-                        }
-                      },
-                      "lang": "text",
-                      "preAttrs": {
-                        "class": "shiki shiki-themes github-dark github-light",
-                        "style": "--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff"
-                      },
-                      "codeAttrs": {
-                        "class": "language-text",
-                        "data-language": "text"
-                      }
-                    },
-                    "meta": {
-                      "sourceContainer": "list",
-                      "code": "default-src 'none';\nscript-src 'unsafe-inline';\nstyle-src 'unsafe-inline';\nimg-src data: blob:;\nfont-src data:;\nconnect-src 'none';\nbase-uri 'none';\nform-action 'none';",
-                      "info": "text",
-                      "lang": "text",
-                      "highlightLang": "text"
-                    },
-                    "range": {
-                      "from": 4597,
-                      "to": 4795
-                    },
-                    "children": [
-                      {
-                        "id": "48ecd787::item:1::fencedcode:1::line:0",
-                        "type": "code-line",
-                        "props": {
-                          "index": 0,
-                          "text": "default-src 'none';",
-                          "html": "<span>default-src 'none';</span>"
-                        },
-                        "children": []
-                      },
-                      {
-                        "id": "48ecd787::item:1::fencedcode:1::line:1",
-                        "type": "code-line",
-                        "props": {
-                          "index": 1,
-                          "text": "script-src 'unsafe-inline';",
-                          "html": "<span>script-src 'unsafe-inline';</span>"
-                        },
-                        "children": []
-                      },
-                      {
-                        "id": "48ecd787::item:1::fencedcode:1::line:2",
-                        "type": "code-line",
-                        "props": {
-                          "index": 2,
-                          "text": "style-src 'unsafe-inline';",
-                          "html": "<span>style-src 'unsafe-inline';</span>"
-                        },
-                        "children": []
-                      },
-                      {
-                        "id": "48ecd787::item:1::fencedcode:1::line:3",
-                        "type": "code-line",
-                        "props": {
-                          "index": 3,
-                          "text": "img-src data: blob:;",
-                          "html": "<span>img-src data: blob:;</span>"
-                        },
-                        "children": []
-                      },
-                      {
-                        "id": "48ecd787::item:1::fencedcode:1::line:4",
-                        "type": "code-line",
-                        "props": {
-                          "index": 4,
-                          "text": "font-src data:;",
-                          "html": "<span>font-src data:;</span>"
-                        },
-                        "children": []
-                      },
-                      {
-                        "id": "48ecd787::item:1::fencedcode:1::line:5",
-                        "type": "code-line",
-                        "props": {
-                          "index": 5,
-                          "text": "connect-src 'none';",
-                          "html": "<span>connect-src 'none';</span>"
-                        },
-                        "children": []
-                      },
-                      {
-                        "id": "48ecd787::item:1::fencedcode:1::line:6",
-                        "type": "code-line",
-                        "props": {
-                          "index": 6,
-                          "text": "base-uri 'none';",
-                          "html": "<span>base-uri 'none';</span>"
-                        },
-                        "children": []
-                      },
-                      {
-                        "id": "48ecd787::item:1::fencedcode:1::line:7",
-                        "type": "code-line",
-                        "props": {
-                          "index": 7,
-                          "text": "form-action 'none';",
-                          "html": "<span>form-action 'none';</span>"
-                        },
-                        "children": []
-                      }
-                    ]
-                  },
-                  {
-                    "id": "48ecd787::item:1::paragraph:2",
-                    "type": "paragraph",
-                    "props": {
-                      "block": {
-                        "id": "48ecd787::item:1::paragraph:2",
-                        "type": "paragraph",
-                        "isFinalized": true,
-                        "payload": {
-                          "raw": "`connect-src 'none'` blocks connection APIs such as `fetch`, `XMLHttpRequest`, and `WebSocket`; the other directives restrict resource loads. This is not a guarantee of total network isolation or prevention of iframe self-navigation.",
-                          "inline": [
-                            {
-                              "kind": "code",
-                              "text": "connect-src 'none'"
-                            },
-                            {
-                              "kind": "text",
-                              "text": " blocks connection APIs such as "
-                            },
-                            {
-                              "kind": "code",
-                              "text": "fetch"
-                            },
-                            {
-                              "kind": "text",
-                              "text": ", "
-                            },
-                            {
-                              "kind": "code",
-                              "text": "XMLHttpRequest"
-                            },
-                            {
-                              "kind": "text",
-                              "text": ", and "
-                            },
-                            {
-                              "kind": "code",
-                              "text": "WebSocket"
-                            },
-                            {
-                              "kind": "text",
-                              "text": "; the other directives restrict resource loads. This is not a guarantee of total network isolation or prevention of iframe self-navigation."
-                            }
-                          ],
-                          "range": {
-                            "from": 4798,
-                            "to": 5031
-                          },
-                          "meta": {
-                            "sourceContainer": "list"
-                          }
-                        }
-                      },
-                      "inline": [
-                        {
-                          "kind": "code",
-                          "text": "connect-src 'none'"
-                        },
-                        {
-                          "kind": "text",
-                          "text": " blocks connection APIs such as "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "fetch"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ", "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "XMLHttpRequest"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ", and "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "WebSocket"
-                        },
-                        {
-                          "kind": "text",
-                          "text": "; the other directives restrict resource loads. This is not a guarantee of total network isolation or prevention of iframe self-navigation."
-                        }
-                      ],
-                      "text": "connect-src 'none' blocks connection APIs such as fetch, XMLHttpRequest, and WebSocket; the other directives restrict resource loads. This is not a guarantee of total network isolation or prevention of iframe self-navigation.",
-                      "tight": true
-                    },
-                    "meta": {
-                      "sourceContainer": "list"
-                    },
-                    "range": {
-                      "from": 4798,
-                      "to": 5031
-                    },
-                    "children": []
-                  }
-                ]
-              },
-              {
-                "id": "48ecd787::item:2",
-                "type": "list-item",
-                "range": {
-                  "from": 5032,
-                  "to": 5169
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "48ecd787::item:2",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- **Self-contained content**: Artifacts must bundle their CSS and inline SVG or canvas graphics locally, without external asset fetching.",
-                      "inline": [
-                        {
-                          "kind": "strong",
-                          "children": [
-                            {
-                              "kind": "text",
-                              "text": "Self-contained content"
-                            }
-                          ]
-                        },
-                        {
-                          "kind": "text",
-                          "text": ": Artifacts must bundle their CSS and inline SVG or canvas graphics locally, without external asset fetching."
-                        }
-                      ],
-                      "range": {
-                        "from": 5032,
-                        "to": 5169
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 2,
-                            "inline": [
-                              {
-                                "kind": "strong",
-                                "children": [
-                                  {
-                                    "kind": "text",
-                                    "text": "Self-contained content"
-                                  }
-                                ]
-                              },
-                              {
-                                "kind": "text",
-                                "text": ": Artifacts must bundle their CSS and inline SVG or canvas graphics locally, without external asset fetching."
-                              }
-                            ],
-                            "text": "Self-contained content: Artifacts must bundle their CSS and inline SVG or canvas graphics locally, without external asset fetching.",
-                            "raw": "- **Self-contained content**: Artifacts must bundle their CSS and inline SVG or canvas graphics locally, without external asset fetching."
+                            "text": "Use linkSafety: { enabled: true } for Markdown links. It does not mediate every navigation initiated by custom output.",
+                            "raw": "3. Use `linkSafety: { enabled: true }` for Markdown links. It does not mediate every navigation initiated by custom output."
                           },
                           "children": []
                         }
@@ -3378,361 +2202,20 @@
                   "index": 2,
                   "inline": [
                     {
-                      "kind": "strong",
-                      "children": [
-                        {
-                          "kind": "text",
-                          "text": "Self-contained content"
-                        }
-                      ]
+                      "kind": "text",
+                      "text": "Use "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "linkSafety: { enabled: true }"
                     },
                     {
                       "kind": "text",
-                      "text": ": Artifacts must bundle their CSS and inline SVG or canvas graphics locally, without external asset fetching."
+                      "text": " for Markdown links. It does not mediate every navigation initiated by custom output."
                     }
                   ],
-                  "text": "Self-contained content: Artifacts must bundle their CSS and inline SVG or canvas graphics locally, without external asset fetching.",
-                  "raw": "- **Self-contained content**: Artifacts must bundle their CSS and inline SVG or canvas graphics locally, without external asset fetching."
-                },
-                "children": []
-              },
-              {
-                "id": "48ecd787::item:3",
-                "type": "list-item",
-                "range": {
-                  "from": 5170,
-                  "to": 5422
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "48ecd787::item:3",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- **Streaming lifecycle**: While the block is streaming (`isFinalized === false`), `ArtifactFrame` displays the raw syntax code block. Once finalized (`isFinalized === true`), the isolated iframe mounts and auto-sizes via a postMessage height protocol.",
-                      "inline": [
-                        {
-                          "kind": "strong",
-                          "children": [
-                            {
-                              "kind": "text",
-                              "text": "Streaming lifecycle"
-                            }
-                          ]
-                        },
-                        {
-                          "kind": "text",
-                          "text": ": While the block is streaming ("
-                        },
-                        {
-                          "kind": "code",
-                          "text": "isFinalized === false"
-                        },
-                        {
-                          "kind": "text",
-                          "text": "), "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "ArtifactFrame"
-                        },
-                        {
-                          "kind": "text",
-                          "text": " displays the raw syntax code block. Once finalized ("
-                        },
-                        {
-                          "kind": "code",
-                          "text": "isFinalized === true"
-                        },
-                        {
-                          "kind": "text",
-                          "text": "), the isolated iframe mounts and auto-sizes via a postMessage height protocol."
-                        }
-                      ],
-                      "range": {
-                        "from": 5170,
-                        "to": 5422
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 3,
-                            "inline": [
-                              {
-                                "kind": "strong",
-                                "children": [
-                                  {
-                                    "kind": "text",
-                                    "text": "Streaming lifecycle"
-                                  }
-                                ]
-                              },
-                              {
-                                "kind": "text",
-                                "text": ": While the block is streaming ("
-                              },
-                              {
-                                "kind": "code",
-                                "text": "isFinalized === false"
-                              },
-                              {
-                                "kind": "text",
-                                "text": "), "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "ArtifactFrame"
-                              },
-                              {
-                                "kind": "text",
-                                "text": " displays the raw syntax code block. Once finalized ("
-                              },
-                              {
-                                "kind": "code",
-                                "text": "isFinalized === true"
-                              },
-                              {
-                                "kind": "text",
-                                "text": "), the isolated iframe mounts and auto-sizes via a postMessage height protocol."
-                              }
-                            ],
-                            "text": "Streaming lifecycle: While the block is streaming (isFinalized === false), ArtifactFrame displays the raw syntax code block. Once finalized (isFinalized === true), the isolated iframe mounts and auto-sizes via a postMessage height protocol.",
-                            "raw": "- **Streaming lifecycle**: While the block is streaming (`isFinalized === false`), `ArtifactFrame` displays the raw syntax code block. Once finalized (`isFinalized === true`), the isolated iframe mounts and auto-sizes via a postMessage height protocol."
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 3,
-                  "inline": [
-                    {
-                      "kind": "strong",
-                      "children": [
-                        {
-                          "kind": "text",
-                          "text": "Streaming lifecycle"
-                        }
-                      ]
-                    },
-                    {
-                      "kind": "text",
-                      "text": ": While the block is streaming ("
-                    },
-                    {
-                      "kind": "code",
-                      "text": "isFinalized === false"
-                    },
-                    {
-                      "kind": "text",
-                      "text": "), "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "ArtifactFrame"
-                    },
-                    {
-                      "kind": "text",
-                      "text": " displays the raw syntax code block. Once finalized ("
-                    },
-                    {
-                      "kind": "code",
-                      "text": "isFinalized === true"
-                    },
-                    {
-                      "kind": "text",
-                      "text": "), the isolated iframe mounts and auto-sizes via a postMessage height protocol."
-                    }
-                  ],
-                  "text": "Streaming lifecycle: While the block is streaming (isFinalized === false), ArtifactFrame displays the raw syntax code block. Once finalized (isFinalized === true), the isolated iframe mounts and auto-sizes via a postMessage height protocol.",
-                  "raw": "- **Streaming lifecycle**: While the block is streaming (`isFinalized === false`), `ArtifactFrame` displays the raw syntax code block. Once finalized (`isFinalized === true`), the isolated iframe mounts and auto-sizes via a postMessage height protocol."
-                },
-                "children": []
-              },
-              {
-                "id": "48ecd787::item:4",
-                "type": "list-item",
-                "range": {
-                  "from": 5423,
-                  "to": 5676
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "48ecd787::item:4",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- **Link handling**: Intercepted anchor clicks are posted to the host window, checked against allowed protocols (`http:`, `https:`, `mailto:`), and passed to the host `linkSafety` handler. This path does not cover every navigation a script can initiate.",
-                      "inline": [
-                        {
-                          "kind": "strong",
-                          "children": [
-                            {
-                              "kind": "text",
-                              "text": "Link handling"
-                            }
-                          ]
-                        },
-                        {
-                          "kind": "text",
-                          "text": ": Intercepted anchor clicks are posted to the host window, checked against allowed protocols ("
-                        },
-                        {
-                          "kind": "code",
-                          "text": "http:"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ", "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "https:"
-                        },
-                        {
-                          "kind": "text",
-                          "text": ", "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "mailto:"
-                        },
-                        {
-                          "kind": "text",
-                          "text": "), and passed to the host "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "linkSafety"
-                        },
-                        {
-                          "kind": "text",
-                          "text": " handler. This path does not cover every navigation a script can initiate."
-                        }
-                      ],
-                      "range": {
-                        "from": 5423,
-                        "to": 5676
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 4,
-                            "inline": [
-                              {
-                                "kind": "strong",
-                                "children": [
-                                  {
-                                    "kind": "text",
-                                    "text": "Link handling"
-                                  }
-                                ]
-                              },
-                              {
-                                "kind": "text",
-                                "text": ": Intercepted anchor clicks are posted to the host window, checked against allowed protocols ("
-                              },
-                              {
-                                "kind": "code",
-                                "text": "http:"
-                              },
-                              {
-                                "kind": "text",
-                                "text": ", "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "https:"
-                              },
-                              {
-                                "kind": "text",
-                                "text": ", "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "mailto:"
-                              },
-                              {
-                                "kind": "text",
-                                "text": "), and passed to the host "
-                              },
-                              {
-                                "kind": "code",
-                                "text": "linkSafety"
-                              },
-                              {
-                                "kind": "text",
-                                "text": " handler. This path does not cover every navigation a script can initiate."
-                              }
-                            ],
-                            "text": "Link handling: Intercepted anchor clicks are posted to the host window, checked against allowed protocols (http:, https:, mailto:), and passed to the host linkSafety handler. This path does not cover every navigation a script can initiate.",
-                            "raw": "- **Link handling**: Intercepted anchor clicks are posted to the host window, checked against allowed protocols (`http:`, `https:`, `mailto:`), and passed to the host `linkSafety` handler. This path does not cover every navigation a script can initiate."
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 4,
-                  "inline": [
-                    {
-                      "kind": "strong",
-                      "children": [
-                        {
-                          "kind": "text",
-                          "text": "Link handling"
-                        }
-                      ]
-                    },
-                    {
-                      "kind": "text",
-                      "text": ": Intercepted anchor clicks are posted to the host window, checked against allowed protocols ("
-                    },
-                    {
-                      "kind": "code",
-                      "text": "http:"
-                    },
-                    {
-                      "kind": "text",
-                      "text": ", "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "https:"
-                    },
-                    {
-                      "kind": "text",
-                      "text": ", "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "mailto:"
-                    },
-                    {
-                      "kind": "text",
-                      "text": "), and passed to the host "
-                    },
-                    {
-                      "kind": "code",
-                      "text": "linkSafety"
-                    },
-                    {
-                      "kind": "text",
-                      "text": " handler. This path does not cover every navigation a script can initiate."
-                    }
-                  ],
-                  "text": "Link handling: Intercepted anchor clicks are posted to the host window, checked against allowed protocols (http:, https:, mailto:), and passed to the host linkSafety handler. This path does not cover every navigation a script can initiate.",
-                  "raw": "- **Link handling**: Intercepted anchor clicks are posted to the host window, checked against allowed protocols (`http:`, `https:`, `mailto:`), and passed to the host `linkSafety` handler. This path does not cover every navigation a script can initiate."
+                  "text": "Use linkSafety: { enabled: true } for Markdown links. It does not mediate every navigation initiated by custom output.",
+                  "raw": "3. Use `linkSafety: { enabled: true }` for Markdown links. It does not mediate every navigation initiated by custom output."
                 },
                 "children": []
               }
@@ -3740,13 +2223,13 @@
           }
         },
         "range": {
-          "from": 4238,
-          "to": 5676
+          "from": 4598,
+          "to": 4891
         }
       }
     },
     {
-      "id": "162f81be",
+      "id": "f24f59e",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -3758,8 +2241,8 @@
           "headingId": "replacing-and-customizing-coderenderers"
         },
         "range": {
-          "from": 5678,
-          "to": 5721
+          "from": 4893,
+          "to": 4936
         },
         "inline": [
           {
@@ -3770,17 +2253,24 @@
       }
     },
     {
-      "id": "7051095d",
+      "id": "7b005d2a",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "StreamMDX engine-v2 allows granular code fence renderer customization via the `codeRenderers` prop. You can map specific fence languages to specialized renderers while letting standard code blocks use the default highlighter:",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 78,
+              "to": 93,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
-          "from": 5723,
-          "to": 5948
+          "from": 4938,
+          "to": 5163
         },
         "inline": [
           {
@@ -3799,37 +2289,44 @@
       }
     },
     {
-      "id": "7e79905",
+      "id": "98289a1",
       "type": "code",
       "isFinalized": true,
       "payload": {
-        "raw": "```tsx\nimport { ArtifactFrame, StreamingMarkdown, type CodeFenceRenderer } from \"@stream-mdx/react\";\nimport { MermaidBlock } from \"@stream-mdx/mermaid\";\n\nconst CustomMetricRenderer: CodeFenceRenderer = ({ code, language, isFinalized, renderCode }) => {\n  try {\n    const data = JSON.parse(code);\n    return (\n      <div className=\"metric-panel\">\n        <span className=\"badge\">{isFinalized ? \"Finalized\" : \"Streaming...\"}</span>\n        <pre>{JSON.stringify(data, null, 2)}</pre>\n      </div>\n    );\n  } catch {\n    return <>{renderCode}</>;\n  }\n};\n\nexport function AgentChatStream({ text }: { text: string }) {\n  return (\n    <StreamingMarkdown\n      text={text}\n      engine=\"worker\" // or \"main-thread\"\n      features={{ mdx: false, html: false, tables: true, math: true }}\n      linkSafety={{ enabled: true }}\n      codeRenderers={{\n        mermaid: MermaidBlock,\n        \"html-artifact\": ArtifactFrame,\n        artifact: ArtifactFrame,\n        metric: CustomMetricRenderer,\n      }}\n    />\n  );\n}\n```",
+        "raw": "```tsx\nimport { StreamingMarkdown, type CodeFenceRenderer } from \"@stream-mdx/react\";\nimport { MermaidBlock } from \"@stream-mdx/mermaid\";\n\nconst CustomMetricRenderer: CodeFenceRenderer = ({ code, language, isFinalized, renderCode }) => {\n  try {\n    const data = JSON.parse(code);\n    return (\n      <div className=\"metric-panel\">\n        <span className=\"badge\">{isFinalized ? \"Finalized\" : \"Streaming...\"}</span>\n        <pre>{JSON.stringify(data, null, 2)}</pre>\n      </div>\n    );\n  } catch {\n    return <>{renderCode}</>;\n  }\n};\n\nexport function AgentChatStream({ text }: { text: string }) {\n  return (\n    <StreamingMarkdown\n      text={text}\n      engine=\"worker\" // or \"main-thread\"\n      features={{ mdx: false, html: false, tables: true, math: true }}\n      linkSafety={{ enabled: true }}\n      codeRenderers={{\n        mermaid: MermaidBlock,\n        metric: CustomMetricRenderer,\n      }}\n    />\n  );\n}\n```",
         "meta": {
           "lezerNodeType": "FencedCode",
-          "code": "import { ArtifactFrame, StreamingMarkdown, type CodeFenceRenderer } from \"@stream-mdx/react\";\nimport { MermaidBlock } from \"@stream-mdx/mermaid\";\n\nconst CustomMetricRenderer: CodeFenceRenderer = ({ code, language, isFinalized, renderCode }) => {\n  try {\n    const data = JSON.parse(code);\n    return (\n      <div className=\"metric-panel\">\n        <span className=\"badge\">{isFinalized ? \"Finalized\" : \"Streaming...\"}</span>\n        <pre>{JSON.stringify(data, null, 2)}</pre>\n      </div>\n    );\n  } catch {\n    return <>{renderCode}</>;\n  }\n};\n\nexport function AgentChatStream({ text }: { text: string }) {\n  return (\n    <StreamingMarkdown\n      text={text}\n      engine=\"worker\" // or \"main-thread\"\n      features={{ mdx: false, html: false, tables: true, math: true }}\n      linkSafety={{ enabled: true }}\n      codeRenderers={{\n        mermaid: MermaidBlock,\n        \"html-artifact\": ArtifactFrame,\n        artifact: ArtifactFrame,\n        metric: CustomMetricRenderer,\n      }}\n    />\n  );\n}",
+          "code": "import { StreamingMarkdown, type CodeFenceRenderer } from \"@stream-mdx/react\";\nimport { MermaidBlock } from \"@stream-mdx/mermaid\";\n\nconst CustomMetricRenderer: CodeFenceRenderer = ({ code, language, isFinalized, renderCode }) => {\n  try {\n    const data = JSON.parse(code);\n    return (\n      <div className=\"metric-panel\">\n        <span className=\"badge\">{isFinalized ? \"Finalized\" : \"Streaming...\"}</span>\n        <pre>{JSON.stringify(data, null, 2)}</pre>\n      </div>\n    );\n  } catch {\n    return <>{renderCode}</>;\n  }\n};\n\nexport function AgentChatStream({ text }: { text: string }) {\n  return (\n    <StreamingMarkdown\n      text={text}\n      engine=\"worker\" // or \"main-thread\"\n      features={{ mdx: false, html: false, tables: true, math: true }}\n      linkSafety={{ enabled: true }}\n      codeRenderers={{\n        mermaid: MermaidBlock,\n        metric: CustomMetricRenderer,\n      }}\n    />\n  );\n}",
           "info": "tsx",
           "lang": "tsx",
           "highlightLang": "tsx"
         },
         "range": {
-          "from": 5950,
-          "to": 6956
+          "from": 5165,
+          "to": 6083
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { ArtifactFrame, StreamingMarkdown, </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">type</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> CodeFenceRenderer } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/react\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { MermaidBlock } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/mermaid\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> CustomMetricRenderer</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> CodeFenceRenderer</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> ({ </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">code</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">language</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">isFinalized</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">renderCode</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  try</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">    const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> data</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> JSON</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">parse</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(code);</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">    return</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> (</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      &#x3C;</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> className</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"metric-panel\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">        &#x3C;</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">span</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> className</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"badge\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>{isFinalized </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"Finalized\"</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> :</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"Streaming...\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}&#x3C;/</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">span</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">        &#x3C;</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">pre</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>{</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">JSON</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">stringify</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(data, </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">null</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">2</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)}&#x3C;/</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">pre</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      &#x3C;/</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    );</span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">catch</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">    return</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x3C;>{renderCode}&#x3C;/>;</span></span>\n<span class=\"line\" data-line=\"15\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }</span></span>\n<span class=\"line\" data-line=\"16\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">};</span></span>\n<span class=\"line\" data-line=\"17\"></span>\n<span class=\"line\" data-line=\"18\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">export</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> function</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> AgentChatStream</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">({ </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">text</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }) {</span></span>\n<span class=\"line\" data-line=\"19\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  return</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> (</span></span>\n<span class=\"line\" data-line=\"20\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    &#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"21\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">      text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{text}</span></span>\n<span class=\"line\" data-line=\"22\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">      engine</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"worker\"</span><span style=\"--shiki-dark:#6A737D;--shiki-light:#6A737D\"> // or \"main-thread\"</span></span>\n<span class=\"line\" data-line=\"23\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">      features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">false</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">false</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, tables: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, math: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }}</span></span>\n<span class=\"line\" data-line=\"24\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">      linkSafety</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ enabled: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }}</span></span>\n<span class=\"line\" data-line=\"25\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">      codeRenderers</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"26\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">        mermaid: MermaidBlock,</span></span>\n<span class=\"line\" data-line=\"27\"><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">        \"html-artifact\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: ArtifactFrame,</span></span>\n<span class=\"line\" data-line=\"28\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">        artifact: ArtifactFrame,</span></span>\n<span class=\"line\" data-line=\"29\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">        metric: CustomMetricRenderer,</span></span>\n<span class=\"line\" data-line=\"30\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      }}</span></span>\n<span class=\"line\" data-line=\"31\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    /></span></span>\n<span class=\"line\" data-line=\"32\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  );</span></span>\n<span class=\"line\" data-line=\"33\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}</span></span></code></pre>"
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { StreamingMarkdown, </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">type</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> CodeFenceRenderer } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/react\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { MermaidBlock } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/mermaid\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> CustomMetricRenderer</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> CodeFenceRenderer</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> ({ </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">code</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">language</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">isFinalized</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">renderCode</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  try</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">    const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> data</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> JSON</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">parse</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(code);</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">    return</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> (</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      &#x3C;</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> className</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"metric-panel\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">        &#x3C;</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">span</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> className</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"badge\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>{isFinalized </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">?</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"Finalized\"</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> :</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"Streaming...\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}&#x3C;/</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">span</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">        &#x3C;</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">pre</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>{</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">JSON</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">stringify</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">(data, </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">null</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">2</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)}&#x3C;/</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">pre</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      &#x3C;/</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    );</span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">catch</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">    return</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> &#x3C;>{renderCode}&#x3C;/>;</span></span>\n<span class=\"line\" data-line=\"15\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  }</span></span>\n<span class=\"line\" data-line=\"16\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">};</span></span>\n<span class=\"line\" data-line=\"17\"></span>\n<span class=\"line\" data-line=\"18\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">export</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> function</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> AgentChatStream</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">({ </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">text</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }) {</span></span>\n<span class=\"line\" data-line=\"19\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  return</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> (</span></span>\n<span class=\"line\" data-line=\"20\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    &#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"21\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">      text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{text}</span></span>\n<span class=\"line\" data-line=\"22\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">      engine</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"worker\"</span><span style=\"--shiki-dark:#6A737D;--shiki-light:#6A737D\"> // or \"main-thread\"</span></span>\n<span class=\"line\" data-line=\"23\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">      features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">false</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">false</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, tables: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, math: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }}</span></span>\n<span class=\"line\" data-line=\"24\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">      linkSafety</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ enabled: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }}</span></span>\n<span class=\"line\" data-line=\"25\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">      codeRenderers</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{</span></span>\n<span class=\"line\" data-line=\"26\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">        mermaid: MermaidBlock,</span></span>\n<span class=\"line\" data-line=\"27\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">        metric: CustomMetricRenderer,</span></span>\n<span class=\"line\" data-line=\"28\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      }}</span></span>\n<span class=\"line\" data-line=\"29\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    /></span></span>\n<span class=\"line\" data-line=\"30\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  );</span></span>\n<span class=\"line\" data-line=\"31\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}</span></span></code></pre>"
       }
     },
     {
-      "id": "4e1f3b26",
+      "id": "43ead877",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "See the runnable chat-thread demonstration at [`/showcase/assistant-stream`](/showcase/assistant-stream).",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 47,
+              "to": 75,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
-          "from": 6958,
-          "to": 7063
+          "from": 6085,
+          "to": 6190
         },
         "inline": [
           {
@@ -3854,7 +2351,7 @@
       }
     },
     {
-      "id": "353f25a8",
+      "id": "7802ee14",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -3866,8 +2363,8 @@
           "headingId": "release-hardening-checklist"
         },
         "range": {
-          "from": 7065,
-          "to": 7095
+          "from": 6192,
+          "to": 6222
         },
         "inline": [
           {
@@ -3878,7 +2375,7 @@
       }
     },
     {
-      "id": "2031595b",
+      "id": "5c1d9742",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -3947,17 +2444,17 @@
             },
             "children": [
               {
-                "id": "2031595b::item:0",
+                "id": "5c1d9742::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 7097,
-                  "to": 7169
+                  "from": 6224,
+                  "to": 6296
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "2031595b::item:0",
+                    "id": "5c1d9742::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -3969,8 +2466,8 @@
                         }
                       ],
                       "range": {
-                        "from": 7097,
-                        "to": 7169
+                        "from": 6224,
+                        "to": 6296
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -4010,17 +2507,17 @@
                 "children": []
               },
               {
-                "id": "2031595b::item:1",
+                "id": "5c1d9742::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 7170,
-                  "to": 7221
+                  "from": 6297,
+                  "to": 6348
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "2031595b::item:1",
+                    "id": "5c1d9742::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -4032,8 +2529,8 @@
                         }
                       ],
                       "range": {
-                        "from": 7170,
-                        "to": 7221
+                        "from": 6297,
+                        "to": 6348
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -4073,17 +2570,17 @@
                 "children": []
               },
               {
-                "id": "2031595b::item:2",
+                "id": "5c1d9742::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 7222,
-                  "to": 7314
+                  "from": 6349,
+                  "to": 6441
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "2031595b::item:2",
+                    "id": "5c1d9742::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -4107,8 +2604,8 @@
                         }
                       ],
                       "range": {
-                        "from": 7222,
-                        "to": 7314
+                        "from": 6349,
+                        "to": 6441
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -4172,17 +2669,17 @@
                 "children": []
               },
               {
-                "id": "2031595b::item:3",
+                "id": "5c1d9742::item:3",
                 "type": "list-item",
                 "range": {
-                  "from": 7315,
-                  "to": 7363
+                  "from": 6442,
+                  "to": 6490
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "2031595b::item:3",
+                    "id": "5c1d9742::item:3",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -4194,8 +2691,8 @@
                         }
                       ],
                       "range": {
-                        "from": 7315,
-                        "to": 7363
+                        "from": 6442,
+                        "to": 6490
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -4235,17 +2732,17 @@
                 "children": []
               },
               {
-                "id": "2031595b::item:4",
+                "id": "5c1d9742::item:4",
                 "type": "list-item",
                 "range": {
-                  "from": 7364,
-                  "to": 7413
+                  "from": 6491,
+                  "to": 6540
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "2031595b::item:4",
+                    "id": "5c1d9742::item:4",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -4257,8 +2754,8 @@
                         }
                       ],
                       "range": {
-                        "from": 7364,
-                        "to": 7413
+                        "from": 6491,
+                        "to": 6540
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -4301,13 +2798,13 @@
           }
         },
         "range": {
-          "from": 7097,
-          "to": 7413
+          "from": 6224,
+          "to": 6540
         }
       }
     },
     {
-      "id": "58e46fc1",
+      "id": "626837d",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -4319,8 +2816,8 @@
           "headingId": "incident-response-quick-path"
         },
         "range": {
-          "from": 7415,
-          "to": 7446
+          "from": 6542,
+          "to": 6573
         },
         "inline": [
           {
@@ -4331,7 +2828,7 @@
       }
     },
     {
-      "id": "7fbc3ee1",
+      "id": "1b37ac63",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -4340,8 +2837,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 7448,
-          "to": 7497
+          "from": 6575,
+          "to": 6624
         },
         "inline": [
           {
@@ -4352,7 +2849,7 @@
       }
     },
     {
-      "id": "7d42f4a1",
+      "id": "46d0cd78",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -4419,17 +2916,17 @@
             },
             "children": [
               {
-                "id": "7d42f4a1::item:0",
+                "id": "46d0cd78::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 7499,
-                  "to": 7553
+                  "from": 6626,
+                  "to": 6680
                 },
                 "props": {
                   "ordered": true,
                   "loose": false,
                   "block": {
-                    "id": "7d42f4a1::item:0",
+                    "id": "46d0cd78::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -4457,8 +2954,8 @@
                         }
                       ],
                       "range": {
-                        "from": 7499,
-                        "to": 7553
+                        "from": 6626,
+                        "to": 6680
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -4526,17 +3023,17 @@
                 "children": []
               },
               {
-                "id": "7d42f4a1::item:1",
+                "id": "46d0cd78::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 7554,
-                  "to": 7607
+                  "from": 6681,
+                  "to": 6734
                 },
                 "props": {
                   "ordered": true,
                   "loose": false,
                   "block": {
-                    "id": "7d42f4a1::item:1",
+                    "id": "46d0cd78::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -4548,8 +3045,8 @@
                         }
                       ],
                       "range": {
-                        "from": 7554,
-                        "to": 7607
+                        "from": 6681,
+                        "to": 6734
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -4585,17 +3082,17 @@
                 "children": []
               },
               {
-                "id": "7d42f4a1::item:2",
+                "id": "46d0cd78::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 7608,
-                  "to": 7671
+                  "from": 6735,
+                  "to": 6798
                 },
                 "props": {
                   "ordered": true,
                   "loose": false,
                   "block": {
-                    "id": "7d42f4a1::item:2",
+                    "id": "46d0cd78::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -4607,8 +3104,8 @@
                         }
                       ],
                       "range": {
-                        "from": 7608,
-                        "to": 7671
+                        "from": 6735,
+                        "to": 6798
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -4644,17 +3141,17 @@
                 "children": []
               },
               {
-                "id": "7d42f4a1::item:3",
+                "id": "46d0cd78::item:3",
                 "type": "list-item",
                 "range": {
-                  "from": 7672,
-                  "to": 7726
+                  "from": 6799,
+                  "to": 6853
                 },
                 "props": {
                   "ordered": true,
                   "loose": false,
                   "block": {
-                    "id": "7d42f4a1::item:3",
+                    "id": "46d0cd78::item:3",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -4666,8 +3163,8 @@
                         }
                       ],
                       "range": {
-                        "from": 7672,
-                        "to": 7726
+                        "from": 6799,
+                        "to": 6853
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -4706,13 +3203,13 @@
           }
         },
         "range": {
-          "from": 7499,
-          "to": 7726
+          "from": 6626,
+          "to": 6853
         }
       }
     },
     {
-      "id": "3756b9da",
+      "id": "75eb59e2",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -4724,8 +3221,8 @@
           "headingId": "vercel-notes"
         },
         "range": {
-          "from": 7728,
-          "to": 7743
+          "from": 6855,
+          "to": 6870
         },
         "inline": [
           {
@@ -4736,7 +3233,7 @@
       }
     },
     {
-      "id": "7368c5df",
+      "id": "e5cb123",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -4745,8 +3242,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 7745,
-          "to": 7782
+          "from": 6872,
+          "to": 6909
         },
         "inline": [
           {
@@ -4757,7 +3254,7 @@
       }
     },
     {
-      "id": "7cf21ba0",
+      "id": "4105ddb9",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -4839,17 +3336,17 @@
             },
             "children": [
               {
-                "id": "7cf21ba0::item:0",
+                "id": "4105ddb9::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 7784,
-                  "to": 7813
+                  "from": 6911,
+                  "to": 6940
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "7cf21ba0::item:0",
+                    "id": "4105ddb9::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -4865,8 +3362,8 @@
                         }
                       ],
                       "range": {
-                        "from": 7784,
-                        "to": 7813
+                        "from": 6911,
+                        "to": 6940
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -4910,17 +3407,17 @@
                 "children": []
               },
               {
-                "id": "7cf21ba0::item:1",
+                "id": "4105ddb9::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 7814,
-                  "to": 7863
+                  "from": 6941,
+                  "to": 6990
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "7cf21ba0::item:1",
+                    "id": "4105ddb9::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -4936,8 +3433,8 @@
                         }
                       ],
                       "range": {
-                        "from": 7814,
-                        "to": 7863
+                        "from": 6941,
+                        "to": 6990
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -4981,17 +3478,17 @@
                 "children": []
               },
               {
-                "id": "7cf21ba0::item:2",
+                "id": "4105ddb9::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 7864,
-                  "to": 7903
+                  "from": 6991,
+                  "to": 7030
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "7cf21ba0::item:2",
+                    "id": "4105ddb9::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -5007,8 +3504,8 @@
                         }
                       ],
                       "range": {
-                        "from": 7864,
-                        "to": 7903
+                        "from": 6991,
+                        "to": 7030
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -5052,17 +3549,17 @@
                 "children": []
               },
               {
-                "id": "7cf21ba0::item:3",
+                "id": "4105ddb9::item:3",
                 "type": "list-item",
                 "range": {
-                  "from": 7904,
-                  "to": 7939
+                  "from": 7031,
+                  "to": 7066
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "7cf21ba0::item:3",
+                    "id": "4105ddb9::item:3",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -5078,8 +3575,8 @@
                         }
                       ],
                       "range": {
-                        "from": 7904,
-                        "to": 7939
+                        "from": 7031,
+                        "to": 7066
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -5123,17 +3620,17 @@
                 "children": []
               },
               {
-                "id": "7cf21ba0::item:4",
+                "id": "4105ddb9::item:4",
                 "type": "list-item",
                 "range": {
-                  "from": 7940,
-                  "to": 7991
+                  "from": 7067,
+                  "to": 7118
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "7cf21ba0::item:4",
+                    "id": "4105ddb9::item:4",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -5154,8 +3651,8 @@
                         }
                       ],
                       "range": {
-                        "from": 7940,
-                        "to": 7991
+                        "from": 7067,
+                        "to": 7118
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -5212,13 +3709,13 @@
           }
         },
         "range": {
-          "from": 7784,
-          "to": 7991
+          "from": 6911,
+          "to": 7118
         }
       }
     },
     {
-      "id": "664c1c7c",
+      "id": "255b568",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -5227,8 +3724,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 7993,
-          "to": 8078
+          "from": 7120,
+          "to": 7205
         },
         "inline": [
           {
@@ -5239,7 +3736,7 @@
       }
     },
     {
-      "id": "2a50c910",
+      "id": "635a7722",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -5251,8 +3748,8 @@
           "headingId": "custom-domain-verification"
         },
         "range": {
-          "from": 8080,
-          "to": 8109
+          "from": 7207,
+          "to": 7236
         },
         "inline": [
           {
@@ -5263,17 +3760,24 @@
       }
     },
     {
-      "id": "6cbb2199",
+      "id": "64fb7380",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
         "raw": "If you attach a custom domain such as `stream-mdx.dev`, verify all of this after the DNS change:",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 38,
+              "to": 54,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
-          "from": 8111,
-          "to": 8207
+          "from": 7238,
+          "to": 7334
         },
         "inline": [
           {
@@ -5292,7 +3796,7 @@
       }
     },
     {
-      "id": "6b270b59",
+      "id": "27a80ee3",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -5361,17 +3865,17 @@
             },
             "children": [
               {
-                "id": "6b270b59::item:0",
+                "id": "27a80ee3::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 8209,
-                  "to": 8281
+                  "from": 7336,
+                  "to": 7408
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "6b270b59::item:0",
+                    "id": "27a80ee3::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -5383,8 +3887,8 @@
                         }
                       ],
                       "range": {
-                        "from": 8209,
-                        "to": 8281
+                        "from": 7336,
+                        "to": 7408
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -5420,17 +3924,17 @@
                 "children": []
               },
               {
-                "id": "6b270b59::item:1",
+                "id": "27a80ee3::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 8282,
-                  "to": 8357
+                  "from": 7409,
+                  "to": 7484
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "6b270b59::item:1",
+                    "id": "27a80ee3::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -5446,8 +3950,8 @@
                         }
                       ],
                       "range": {
-                        "from": 8282,
-                        "to": 8357
+                        "from": 7409,
+                        "to": 7484
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -5491,17 +3995,17 @@
                 "children": []
               },
               {
-                "id": "6b270b59::item:2",
+                "id": "27a80ee3::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 8358,
-                  "to": 8439
+                  "from": 7485,
+                  "to": 7566
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "6b270b59::item:2",
+                    "id": "27a80ee3::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -5521,8 +4025,8 @@
                         }
                       ],
                       "range": {
-                        "from": 8358,
-                        "to": 8439
+                        "from": 7485,
+                        "to": 7566
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -5574,17 +4078,17 @@
                 "children": []
               },
               {
-                "id": "6b270b59::item:3",
+                "id": "27a80ee3::item:3",
                 "type": "list-item",
                 "range": {
-                  "from": 8440,
-                  "to": 8518
+                  "from": 7567,
+                  "to": 7645
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "6b270b59::item:3",
+                    "id": "27a80ee3::item:3",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -5596,8 +4100,8 @@
                         }
                       ],
                       "range": {
-                        "from": 8440,
-                        "to": 8518
+                        "from": 7567,
+                        "to": 7645
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -5633,17 +4137,17 @@
                 "children": []
               },
               {
-                "id": "6b270b59::item:4",
+                "id": "27a80ee3::item:4",
                 "type": "list-item",
                 "range": {
-                  "from": 8519,
-                  "to": 8581
+                  "from": 7646,
+                  "to": 7708
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "6b270b59::item:4",
+                    "id": "27a80ee3::item:4",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -5655,8 +4159,8 @@
                         }
                       ],
                       "range": {
-                        "from": 8519,
-                        "to": 8581
+                        "from": 7646,
+                        "to": 7708
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -5695,13 +4199,13 @@
           }
         },
         "range": {
-          "from": 8209,
-          "to": 8581
+          "from": 7336,
+          "to": 7708
         }
       }
     },
     {
-      "id": "7993d948",
+      "id": "72f533c1",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -5710,8 +4214,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 8583,
-          "to": 8702
+          "from": 7710,
+          "to": 7829
         },
         "inline": [
           {
@@ -5754,50 +4258,44 @@
       "text": "MDX policy"
     },
     {
-      "id": "sandboxed-agent-artifacts-and-code-renderers",
-      "blockId": "7ae8b4c9",
+      "id": "agent-content-and-code-renderers",
+      "blockId": "391649a9",
       "level": 2,
-      "text": "Sandboxed agent artifacts and code renderers"
+      "text": "Agent content and code renderers"
     },
     {
       "id": "safe-defaults-for-agent-content",
-      "blockId": "328bf543",
+      "blockId": "4b11abfc",
       "level": 3,
       "text": "Safe defaults for agent content"
     },
     {
-      "id": "sandbox-restrictions-with-artifactframe",
-      "blockId": "62d50764",
-      "level": 3,
-      "text": "Sandbox restrictions with ArtifactFrame"
-    },
-    {
       "id": "replacing-and-customizing-coderenderers",
-      "blockId": "162f81be",
+      "blockId": "f24f59e",
       "level": 3,
       "text": "Replacing and customizing codeRenderers"
     },
     {
       "id": "release-hardening-checklist",
-      "blockId": "353f25a8",
+      "blockId": "7802ee14",
       "level": 2,
       "text": "Release hardening checklist"
     },
     {
       "id": "incident-response-quick-path",
-      "blockId": "58e46fc1",
+      "blockId": "626837d",
       "level": 2,
       "text": "Incident response quick path"
     },
     {
       "id": "vercel-notes",
-      "blockId": "3756b9da",
+      "blockId": "75eb59e2",
       "level": 2,
       "text": "Vercel notes"
     },
     {
       "id": "custom-domain-verification",
-      "blockId": "2a50c910",
+      "blockId": "635a7722",
       "level": 2,
       "text": "Custom domain verification"
     }
@@ -5810,9 +4308,6 @@
       "math": true,
       "footnotes": true,
       "callouts": true
-    },
-    "mdx": {
-      "compileMode": "server"
     },
     "prewarmLangs": [
       "typescript",

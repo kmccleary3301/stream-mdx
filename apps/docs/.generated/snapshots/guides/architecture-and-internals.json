@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-10T04:53:48.780Z",
-  "hash": "6106434bb481296d0bb469aac20513d4216581525fe34d2601fda59687955c2b",
-  "contentHash": "00afb1c7c4a688a0be1139d5cf44d0cd516274b488713c4766eb3598f0f6f9bb",
-  "configHash": "a4b31dc6e15c2cd96906124ef06fadc77e60ad148c40ed5ba066e3518a02e37b",
-  "hashSalt": "docs-snapshots-v2:42a0722c827a5ff05bc7f9b0b2c880b732fb655e91e2b7c5196767915dd07177",
+  "createdAt": "2026-10-20T02:27:54.605Z",
+  "hash": "0ac0050c850f0607ec0246f08c2e82e49cffa8846291bb4aa332ba698dafd47b",
+  "contentHash": "8a76742d5e6f4b4b091bcf834ee767aaea2b6a0c8efcf6ab48fad805a8e2365e",
+  "configHash": "f4db748a14dd58be84461bc4cded0b689d48b92567d27cc5fe37ce2bb6acbd86",
+  "hashSalt": "docs-snapshots-v3:8b3fa816098a184f70b086c61607699a9f773e230e33134df864cbac0b066681",
   "blocks": [
     {
       "id": "db082c0",
@@ -1250,28 +1250,28 @@
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "MDX compilation is decoupled from core markdown parsing:",
+        "raw": "MDX syntax recognition is part of parsing; evaluating authored modules is a separate trust decision:",
         "meta": {
           "lezerNodeType": "Paragraph"
         },
         "range": {
           "from": 1196,
-          "to": 1252
+          "to": 1296
         },
         "inline": [
           {
             "kind": "text",
-            "text": "MDX compilation is decoupled from core markdown parsing:"
+            "text": "MDX syntax recognition is part of parsing; evaluating authored modules is a separate trust decision:"
           }
         ]
       }
     },
     {
-      "id": "5d3eef7c",
+      "id": "37ab3efc",
       "type": "list",
       "isFinalized": true,
       "payload": {
-        "raw": "- HTML/MDX is segmented into mixed content blocks.\n- MDX blocks can be compiled in the worker or server.\n- Inline protected ranges prevent false MDX detection inside code/math.",
+        "raw": "- Mixed-content parsing preserves exact MDX source and block ownership.\n- Restricted source components use `defineContentComponent` adapters in `contentComponents`; validators and components stay on the host while serializable descriptors cross the worker boundary.\n- Full MDX evaluation requires trusted input, `contentPolicy=\"trusted-mdx\"`, and an explicit `TrustedMdxEngine` with a host import map. Imports are not fetched; evaluation runs in the host realm, requires `unsafe-eval` in `script-src`, and is not a sandbox.",
         "meta": {
           "lezerNodeType": "BulletList",
           "mathEnabled": true,
@@ -1289,19 +1289,67 @@
             [
               {
                 "kind": "text",
-                "text": "HTML/MDX is segmented into mixed content blocks."
+                "text": "Mixed-content parsing preserves exact MDX source and block ownership."
               }
             ],
             [
               {
                 "kind": "text",
-                "text": "MDX blocks can be compiled in the worker or server."
+                "text": "Restricted source components use "
+              },
+              {
+                "kind": "code",
+                "text": "defineContentComponent"
+              },
+              {
+                "kind": "text",
+                "text": " adapters in "
+              },
+              {
+                "kind": "code",
+                "text": "contentComponents"
+              },
+              {
+                "kind": "text",
+                "text": "; validators and components stay on the host while serializable descriptors cross the worker boundary."
               }
             ],
             [
               {
                 "kind": "text",
-                "text": "Inline protected ranges prevent false MDX detection inside code/math."
+                "text": "Full MDX evaluation requires trusted input, "
+              },
+              {
+                "kind": "code",
+                "text": "contentPolicy=\"trusted-mdx\""
+              },
+              {
+                "kind": "text",
+                "text": ", and an explicit "
+              },
+              {
+                "kind": "code",
+                "text": "TrustedMdxEngine"
+              },
+              {
+                "kind": "text",
+                "text": " with a host import map. Imports are not fetched; evaluation runs in the host realm, requires "
+              },
+              {
+                "kind": "code",
+                "text": "unsafe-eval"
+              },
+              {
+                "kind": "text",
+                "text": " in "
+              },
+              {
+                "kind": "code",
+                "text": "script-src"
+              },
+              {
+                "kind": "text",
+                "text": ", and is not a sandbox."
               }
             ]
           ],
@@ -1312,30 +1360,30 @@
             },
             "children": [
               {
-                "id": "5d3eef7c::item:0",
+                "id": "37ab3efc::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 1254,
-                  "to": 1304
+                  "from": 1298,
+                  "to": 1369
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "5d3eef7c::item:0",
+                    "id": "37ab3efc::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
-                      "raw": "- HTML/MDX is segmented into mixed content blocks.",
+                      "raw": "- Mixed-content parsing preserves exact MDX source and block ownership.",
                       "inline": [
                         {
                           "kind": "text",
-                          "text": "HTML/MDX is segmented into mixed content blocks."
+                          "text": "Mixed-content parsing preserves exact MDX source and block ownership."
                         }
                       ],
                       "range": {
-                        "from": 1254,
-                        "to": 1304
+                        "from": 1298,
+                        "to": 1369
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1347,11 +1395,11 @@
                             "inline": [
                               {
                                 "kind": "text",
-                                "text": "HTML/MDX is segmented into mixed content blocks."
+                                "text": "Mixed-content parsing preserves exact MDX source and block ownership."
                               }
                             ],
-                            "text": "HTML/MDX is segmented into mixed content blocks.",
-                            "raw": "- HTML/MDX is segmented into mixed content blocks."
+                            "text": "Mixed-content parsing preserves exact MDX source and block ownership.",
+                            "raw": "- Mixed-content parsing preserves exact MDX source and block ownership."
                           },
                           "children": []
                         }
@@ -1362,39 +1410,55 @@
                   "inline": [
                     {
                       "kind": "text",
-                      "text": "HTML/MDX is segmented into mixed content blocks."
+                      "text": "Mixed-content parsing preserves exact MDX source and block ownership."
                     }
                   ],
-                  "text": "HTML/MDX is segmented into mixed content blocks.",
-                  "raw": "- HTML/MDX is segmented into mixed content blocks."
+                  "text": "Mixed-content parsing preserves exact MDX source and block ownership.",
+                  "raw": "- Mixed-content parsing preserves exact MDX source and block ownership."
                 },
                 "children": []
               },
               {
-                "id": "5d3eef7c::item:1",
+                "id": "37ab3efc::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 1305,
-                  "to": 1358
+                  "from": 1370,
+                  "to": 1563
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "5d3eef7c::item:1",
+                    "id": "37ab3efc::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
-                      "raw": "- MDX blocks can be compiled in the worker or server.",
+                      "raw": "- Restricted source components use `defineContentComponent` adapters in `contentComponents`; validators and components stay on the host while serializable descriptors cross the worker boundary.",
                       "inline": [
                         {
                           "kind": "text",
-                          "text": "MDX blocks can be compiled in the worker or server."
+                          "text": "Restricted source components use "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "defineContentComponent"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " adapters in "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "contentComponents"
+                        },
+                        {
+                          "kind": "text",
+                          "text": "; validators and components stay on the host while serializable descriptors cross the worker boundary."
                         }
                       ],
                       "range": {
-                        "from": 1305,
-                        "to": 1358
+                        "from": 1370,
+                        "to": 1563
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1406,11 +1470,27 @@
                             "inline": [
                               {
                                 "kind": "text",
-                                "text": "MDX blocks can be compiled in the worker or server."
+                                "text": "Restricted source components use "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "defineContentComponent"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " adapters in "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "contentComponents"
+                              },
+                              {
+                                "kind": "text",
+                                "text": "; validators and components stay on the host while serializable descriptors cross the worker boundary."
                               }
                             ],
-                            "text": "MDX blocks can be compiled in the worker or server.",
-                            "raw": "- MDX blocks can be compiled in the worker or server."
+                            "text": "Restricted source components use defineContentComponent adapters in contentComponents; validators and components stay on the host while serializable descriptors cross the worker boundary.",
+                            "raw": "- Restricted source components use `defineContentComponent` adapters in `contentComponents`; validators and components stay on the host while serializable descriptors cross the worker boundary."
                           },
                           "children": []
                         }
@@ -1421,39 +1501,87 @@
                   "inline": [
                     {
                       "kind": "text",
-                      "text": "MDX blocks can be compiled in the worker or server."
+                      "text": "Restricted source components use "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "defineContentComponent"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " adapters in "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "contentComponents"
+                    },
+                    {
+                      "kind": "text",
+                      "text": "; validators and components stay on the host while serializable descriptors cross the worker boundary."
                     }
                   ],
-                  "text": "MDX blocks can be compiled in the worker or server.",
-                  "raw": "- MDX blocks can be compiled in the worker or server."
+                  "text": "Restricted source components use defineContentComponent adapters in contentComponents; validators and components stay on the host while serializable descriptors cross the worker boundary.",
+                  "raw": "- Restricted source components use `defineContentComponent` adapters in `contentComponents`; validators and components stay on the host while serializable descriptors cross the worker boundary."
                 },
                 "children": []
               },
               {
-                "id": "5d3eef7c::item:2",
+                "id": "37ab3efc::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 1359,
-                  "to": 1430
+                  "from": 1564,
+                  "to": 1821
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "5d3eef7c::item:2",
+                    "id": "37ab3efc::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
-                      "raw": "- Inline protected ranges prevent false MDX detection inside code/math.",
+                      "raw": "- Full MDX evaluation requires trusted input, `contentPolicy=\"trusted-mdx\"`, and an explicit `TrustedMdxEngine` with a host import map. Imports are not fetched; evaluation runs in the host realm, requires `unsafe-eval` in `script-src`, and is not a sandbox.",
                       "inline": [
                         {
                           "kind": "text",
-                          "text": "Inline protected ranges prevent false MDX detection inside code/math."
+                          "text": "Full MDX evaluation requires trusted input, "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "contentPolicy=\"trusted-mdx\""
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", and an explicit "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "TrustedMdxEngine"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " with a host import map. Imports are not fetched; evaluation runs in the host realm, requires "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "unsafe-eval"
+                        },
+                        {
+                          "kind": "text",
+                          "text": " in "
+                        },
+                        {
+                          "kind": "code",
+                          "text": "script-src"
+                        },
+                        {
+                          "kind": "text",
+                          "text": ", and is not a sandbox."
                         }
                       ],
                       "range": {
-                        "from": 1359,
-                        "to": 1430
+                        "from": 1564,
+                        "to": 1821
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1465,11 +1593,43 @@
                             "inline": [
                               {
                                 "kind": "text",
-                                "text": "Inline protected ranges prevent false MDX detection inside code/math."
+                                "text": "Full MDX evaluation requires trusted input, "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "contentPolicy=\"trusted-mdx\""
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", and an explicit "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "TrustedMdxEngine"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " with a host import map. Imports are not fetched; evaluation runs in the host realm, requires "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "unsafe-eval"
+                              },
+                              {
+                                "kind": "text",
+                                "text": " in "
+                              },
+                              {
+                                "kind": "code",
+                                "text": "script-src"
+                              },
+                              {
+                                "kind": "text",
+                                "text": ", and is not a sandbox."
                               }
                             ],
-                            "text": "Inline protected ranges prevent false MDX detection inside code/math.",
-                            "raw": "- Inline protected ranges prevent false MDX detection inside code/math."
+                            "text": "Full MDX evaluation requires trusted input, contentPolicy=\"trusted-mdx\", and an explicit TrustedMdxEngine with a host import map. Imports are not fetched; evaluation runs in the host realm, requires unsafe-eval in script-src, and is not a sandbox.",
+                            "raw": "- Full MDX evaluation requires trusted input, `contentPolicy=\"trusted-mdx\"`, and an explicit `TrustedMdxEngine` with a host import map. Imports are not fetched; evaluation runs in the host realm, requires `unsafe-eval` in `script-src`, and is not a sandbox."
                           },
                           "children": []
                         }
@@ -1480,11 +1640,43 @@
                   "inline": [
                     {
                       "kind": "text",
-                      "text": "Inline protected ranges prevent false MDX detection inside code/math."
+                      "text": "Full MDX evaluation requires trusted input, "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "contentPolicy=\"trusted-mdx\""
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", and an explicit "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "TrustedMdxEngine"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " with a host import map. Imports are not fetched; evaluation runs in the host realm, requires "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "unsafe-eval"
+                    },
+                    {
+                      "kind": "text",
+                      "text": " in "
+                    },
+                    {
+                      "kind": "code",
+                      "text": "script-src"
+                    },
+                    {
+                      "kind": "text",
+                      "text": ", and is not a sandbox."
                     }
                   ],
-                  "text": "Inline protected ranges prevent false MDX detection inside code/math.",
-                  "raw": "- Inline protected ranges prevent false MDX detection inside code/math."
+                  "text": "Full MDX evaluation requires trusted input, contentPolicy=\"trusted-mdx\", and an explicit TrustedMdxEngine with a host import map. Imports are not fetched; evaluation runs in the host realm, requires unsafe-eval in script-src, and is not a sandbox.",
+                  "raw": "- Full MDX evaluation requires trusted input, `contentPolicy=\"trusted-mdx\"`, and an explicit `TrustedMdxEngine` with a host import map. Imports are not fetched; evaluation runs in the host realm, requires `unsafe-eval` in `script-src`, and is not a sandbox."
                 },
                 "children": []
               }
@@ -1492,13 +1684,13 @@
           }
         },
         "range": {
-          "from": 1254,
-          "to": 1430
+          "from": 1298,
+          "to": 1821
         }
       }
     },
     {
-      "id": "568024c2",
+      "id": "4a0deda8",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -1510,8 +1702,8 @@
           "headingId": "scheduling-and-backpressure"
         },
         "range": {
-          "from": 1432,
-          "to": 1462
+          "from": 1823,
+          "to": 1853
         },
         "inline": [
           {
@@ -1522,7 +1714,7 @@
       }
     },
     {
-      "id": "fa5fb1f",
+      "id": "37992c47",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -1531,8 +1723,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 1464,
-          "to": 1506
+          "from": 1855,
+          "to": 1897
         },
         "inline": [
           {
@@ -1543,7 +1735,7 @@
       }
     },
     {
-      "id": "6cc94fb0",
+      "id": "5758db2b",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -1600,17 +1792,17 @@
             },
             "children": [
               {
-                "id": "6cc94fb0::item:0",
+                "id": "5758db2b::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 1508,
-                  "to": 1550
+                  "from": 1899,
+                  "to": 1941
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "6cc94fb0::item:0",
+                    "id": "5758db2b::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1631,8 +1823,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1508,
-                        "to": 1550
+                        "from": 1899,
+                        "to": 1941
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1686,17 +1878,17 @@
                 "children": []
               },
               {
-                "id": "6cc94fb0::item:1",
+                "id": "5758db2b::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 1551,
-                  "to": 1590
+                  "from": 1942,
+                  "to": 1981
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "6cc94fb0::item:1",
+                    "id": "5758db2b::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1717,8 +1909,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1551,
-                        "to": 1590
+                        "from": 1942,
+                        "to": 1981
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1775,13 +1967,13 @@
           }
         },
         "range": {
-          "from": 1508,
-          "to": 1590
+          "from": 1899,
+          "to": 1981
         }
       }
     },
     {
-      "id": "33d76a03",
+      "id": "1367bd63",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -1790,8 +1982,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 1592,
-          "to": 1669
+          "from": 1983,
+          "to": 2060
         },
         "inline": [
           {
@@ -1841,7 +2033,7 @@
     },
     {
       "id": "scheduling-and-backpressure",
-      "blockId": "568024c2",
+      "blockId": "4a0deda8",
       "level": 2,
       "text": "Scheduling and backpressure"
     }
@@ -1854,9 +2046,6 @@
       "math": true,
       "footnotes": true,
       "callouts": true
-    },
-    "mdx": {
-      "compileMode": "server"
     },
     "prewarmLangs": [
       "typescript",

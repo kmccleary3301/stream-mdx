@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-10T04:53:48.250Z",
-  "hash": "8d3b65b9a2b569fbd8c90e4cb63f45f66ed74ef3255e961164bd5534f4633362",
-  "contentHash": "a3b6c0c5ec64693f8a237c919acc1886fbaf7869cd549b5228a513fc378996bd",
-  "configHash": "a4b31dc6e15c2cd96906124ef06fadc77e60ad148c40ed5ba066e3518a02e37b",
-  "hashSalt": "docs-snapshots-v2:42a0722c827a5ff05bc7f9b0b2c880b732fb655e91e2b7c5196767915dd07177",
+  "createdAt": "2026-10-20T02:27:54.183Z",
+  "hash": "59dcc90959446a1347981e359c117d02749584b756df467619a85afadf6eec8b",
+  "contentHash": "3e3c672fed6c9eb00ecb691cbb920b7b1eeb3518710e096003f399637b32660d",
+  "configHash": "f4db748a14dd58be84461bc4cded0b689d48b92567d27cc5fe37ce2bb6acbd86",
+  "hashSalt": "docs-snapshots-v3:8b3fa816098a184f70b086c61607699a9f773e230e33134df864cbac0b066681",
   "blocks": [
     {
       "id": "db082c0",
@@ -458,7 +458,7 @@
       "type": "list",
       "isFinalized": true,
       "payload": {
-        "raw": "- HTML: only allowlisted tags are eligible for anticipation.\n- MDX: anticipation applies to known component tags provided in `mdxComponents`.",
+        "raw": "- HTML: only allowlisted tags are eligible for anticipation.\n- MDX: anticipation applies to host-registered component tags in `contentComponents` under the restricted policy.",
         "meta": {
           "lezerNodeType": "BulletList",
           "mathEnabled": true,
@@ -482,15 +482,15 @@
             [
               {
                 "kind": "text",
-                "text": "MDX: anticipation applies to known component tags provided in "
+                "text": "MDX: anticipation applies to host-registered component tags in "
               },
               {
                 "kind": "code",
-                "text": "mdxComponents"
+                "text": "contentComponents"
               },
               {
                 "kind": "text",
-                "text": "."
+                "text": " under the restricted policy."
               }
             ]
           ],
@@ -564,7 +564,7 @@
                 "type": "list-item",
                 "range": {
                   "from": 1062,
-                  "to": 1142
+                  "to": 1175
                 },
                 "props": {
                   "ordered": false,
@@ -574,24 +574,24 @@
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
-                      "raw": "- MDX: anticipation applies to known component tags provided in `mdxComponents`.",
+                      "raw": "- MDX: anticipation applies to host-registered component tags in `contentComponents` under the restricted policy.",
                       "inline": [
                         {
                           "kind": "text",
-                          "text": "MDX: anticipation applies to known component tags provided in "
+                          "text": "MDX: anticipation applies to host-registered component tags in "
                         },
                         {
                           "kind": "code",
-                          "text": "mdxComponents"
+                          "text": "contentComponents"
                         },
                         {
                           "kind": "text",
-                          "text": "."
+                          "text": " under the restricted policy."
                         }
                       ],
                       "range": {
                         "from": 1062,
-                        "to": 1142
+                        "to": 1175
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -603,19 +603,19 @@
                             "inline": [
                               {
                                 "kind": "text",
-                                "text": "MDX: anticipation applies to known component tags provided in "
+                                "text": "MDX: anticipation applies to host-registered component tags in "
                               },
                               {
                                 "kind": "code",
-                                "text": "mdxComponents"
+                                "text": "contentComponents"
                               },
                               {
                                 "kind": "text",
-                                "text": "."
+                                "text": " under the restricted policy."
                               }
                             ],
-                            "text": "MDX: anticipation applies to known component tags provided in mdxComponents.",
-                            "raw": "- MDX: anticipation applies to known component tags provided in `mdxComponents`."
+                            "text": "MDX: anticipation applies to host-registered component tags in contentComponents under the restricted policy.",
+                            "raw": "- MDX: anticipation applies to host-registered component tags in `contentComponents` under the restricted policy."
                           },
                           "children": []
                         }
@@ -626,19 +626,19 @@
                   "inline": [
                     {
                       "kind": "text",
-                      "text": "MDX: anticipation applies to known component tags provided in "
+                      "text": "MDX: anticipation applies to host-registered component tags in "
                     },
                     {
                       "kind": "code",
-                      "text": "mdxComponents"
+                      "text": "contentComponents"
                     },
                     {
                       "kind": "text",
-                      "text": "."
+                      "text": " under the restricted policy."
                     }
                   ],
-                  "text": "MDX: anticipation applies to known component tags provided in mdxComponents.",
-                  "raw": "- MDX: anticipation applies to known component tags provided in `mdxComponents`."
+                  "text": "MDX: anticipation applies to host-registered component tags in contentComponents under the restricted policy.",
+                  "raw": "- MDX: anticipation applies to host-registered component tags in `contentComponents` under the restricted policy."
                 },
                 "children": []
               }
@@ -647,12 +647,12 @@
         },
         "range": {
           "from": 1001,
-          "to": 1142
+          "to": 1175
         }
       }
     },
     {
-      "id": "156da6a0",
+      "id": "14cf5100",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
@@ -661,8 +661,8 @@
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 1144,
-          "to": 1240
+          "from": 1177,
+          "to": 1273
         },
         "inline": [
           {
@@ -673,7 +673,7 @@
       }
     },
     {
-      "id": "2100305f",
+      "id": "45562f41",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -685,8 +685,8 @@
           "headingId": "when-to-keep-it-off"
         },
         "range": {
-          "from": 1242,
-          "to": 1264
+          "from": 1275,
+          "to": 1297
         },
         "inline": [
           {
@@ -697,7 +697,7 @@
       }
     },
     {
-      "id": "6a712405",
+      "id": "3960179b",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -752,17 +752,17 @@
             },
             "children": [
               {
-                "id": "6a712405::item:0",
+                "id": "3960179b::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 1266,
-                  "to": 1337
+                  "from": 1299,
+                  "to": 1370
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "6a712405::item:0",
+                    "id": "3960179b::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -790,8 +790,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1266,
-                        "to": 1337
+                        "from": 1299,
+                        "to": 1370
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -859,17 +859,17 @@
                 "children": []
               },
               {
-                "id": "6a712405::item:1",
+                "id": "3960179b::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 1338,
-                  "to": 1426
+                  "from": 1371,
+                  "to": 1459
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "6a712405::item:1",
+                    "id": "3960179b::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -881,8 +881,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1338,
-                        "to": 1426
+                        "from": 1371,
+                        "to": 1459
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -921,13 +921,13 @@
           }
         },
         "range": {
-          "from": 1266,
-          "to": 1426
+          "from": 1299,
+          "to": 1459
         }
       }
     },
     {
-      "id": "242eb257",
+      "id": "60e7f6e2",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -939,8 +939,8 @@
           "headingId": "toggles-and-caveats"
         },
         "range": {
-          "from": 1428,
-          "to": 1450
+          "from": 1461,
+          "to": 1483
         },
         "inline": [
           {
@@ -951,7 +951,7 @@
       }
     },
     {
-      "id": "299797fc",
+      "id": "32972c64",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -1038,17 +1038,17 @@
             },
             "children": [
               {
-                "id": "299797fc::item:0",
+                "id": "32972c64::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 1452,
-                  "to": 1526
+                  "from": 1485,
+                  "to": 1559
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "299797fc::item:0",
+                    "id": "32972c64::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1069,8 +1069,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1452,
-                        "to": 1526
+                        "from": 1485,
+                        "to": 1559
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1124,17 +1124,17 @@
                 "children": []
               },
               {
-                "id": "299797fc::item:1",
+                "id": "32972c64::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 1527,
-                  "to": 1635
+                  "from": 1560,
+                  "to": 1668
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "299797fc::item:1",
+                    "id": "32972c64::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1155,8 +1155,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1527,
-                        "to": 1635
+                        "from": 1560,
+                        "to": 1668
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1210,17 +1210,17 @@
                 "children": []
               },
               {
-                "id": "299797fc::item:2",
+                "id": "32972c64::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 1636,
-                  "to": 1716
+                  "from": 1669,
+                  "to": 1749
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "299797fc::item:2",
+                    "id": "32972c64::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1241,8 +1241,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1636,
-                        "to": 1716
+                        "from": 1669,
+                        "to": 1749
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1296,17 +1296,17 @@
                 "children": []
               },
               {
-                "id": "299797fc::item:3",
+                "id": "32972c64::item:3",
                 "type": "list-item",
                 "range": {
-                  "from": 1717,
-                  "to": 1798
+                  "from": 1750,
+                  "to": 1831
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "299797fc::item:3",
+                    "id": "32972c64::item:3",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1327,8 +1327,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1717,
-                        "to": 1798
+                        "from": 1750,
+                        "to": 1831
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1385,13 +1385,13 @@
           }
         },
         "range": {
-          "from": 1452,
-          "to": 1798
+          "from": 1485,
+          "to": 1831
         }
       }
     },
     {
-      "id": "5b524199",
+      "id": "3e575ec7",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -1403,8 +1403,8 @@
           "headingId": "debugging-tips"
         },
         "range": {
-          "from": 1800,
-          "to": 1817
+          "from": 1833,
+          "to": 1850
         },
         "inline": [
           {
@@ -1415,7 +1415,7 @@
       }
     },
     {
-      "id": "1754acd",
+      "id": "36e3b488",
       "type": "list",
       "isFinalized": true,
       "payload": {
@@ -1454,17 +1454,17 @@
             },
             "children": [
               {
-                "id": "1754acd::item:0",
+                "id": "36e3b488::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 1819,
-                  "to": 1865
+                  "from": 1852,
+                  "to": 1898
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "1754acd::item:0",
+                    "id": "36e3b488::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1476,8 +1476,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1819,
-                        "to": 1865
+                        "from": 1852,
+                        "to": 1898
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1513,17 +1513,17 @@
                 "children": []
               },
               {
-                "id": "1754acd::item:1",
+                "id": "36e3b488::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 1866,
-                  "to": 1929
+                  "from": 1899,
+                  "to": 1962
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "1754acd::item:1",
+                    "id": "36e3b488::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
@@ -1535,8 +1535,8 @@
                         }
                       ],
                       "range": {
-                        "from": 1866,
-                        "to": 1929
+                        "from": 1899,
+                        "to": 1962
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1575,8 +1575,8 @@
           }
         },
         "range": {
-          "from": 1819,
-          "to": 1929
+          "from": 1852,
+          "to": 1962
         }
       }
     }
@@ -1614,19 +1614,19 @@
     },
     {
       "id": "when-to-keep-it-off",
-      "blockId": "2100305f",
+      "blockId": "45562f41",
       "level": 2,
       "text": "When to keep it off"
     },
     {
       "id": "toggles-and-caveats",
-      "blockId": "242eb257",
+      "blockId": "60e7f6e2",
       "level": 2,
       "text": "Toggles and caveats"
     },
     {
       "id": "debugging-tips",
-      "blockId": "5b524199",
+      "blockId": "3e575ec7",
       "level": 2,
       "text": "Debugging tips"
     }
@@ -1639,9 +1639,6 @@
       "math": true,
       "footnotes": true,
       "callouts": true
-    },
-    "mdx": {
-      "compileMode": "server"
     },
     "prewarmLangs": [
       "typescript",

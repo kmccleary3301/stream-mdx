@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-10T04:53:44.635Z",
-  "hash": "b7de0b12191dc392d5af7afd03678acaa06e8ef3b7d9ffad5f15352aeca63799",
+  "createdAt": "2026-10-20T02:27:50.938Z",
+  "hash": "94b109ed269d2296c0154a69fed66bdac01e0f4e9bb947b69fbcd3d691838224",
   "contentHash": "88cc98f452ed74055c3b7c25ee82e20f61cfdfc5a6fd5579ff9b4c4a369c64c8",
-  "configHash": "a4b31dc6e15c2cd96906124ef06fadc77e60ad148c40ed5ba066e3518a02e37b",
-  "hashSalt": "docs-snapshots-v2:42a0722c827a5ff05bc7f9b0b2c880b732fb655e91e2b7c5196767915dd07177",
+  "configHash": "f4db748a14dd58be84461bc4cded0b689d48b92567d27cc5fe37ce2bb6acbd86",
+  "hashSalt": "docs-snapshots-v3:8b3fa816098a184f70b086c61607699a9f773e230e33134df864cbac0b066681",
   "blocks": [
     {
       "id": "db082c0",
@@ -2429,7 +2429,14 @@
       "payload": {
         "raw": "Harness: `scripts/conformance/run-commonmark.mts` evaluating 675 examples (652 CommonMark 0.31.2 + 23 GFM extension fixtures).",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 9,
+              "to": 49,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 5176,
@@ -2458,7 +2465,14 @@
       "payload": {
         "raw": "Comparing Streamdown with default chat sanitization against StreamMDX with `docPlugins.html: true` is unfair on HTML sections. Streamdown is evaluated under two configurations:",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 75,
+              "to": 98,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 5304,
@@ -2637,54 +2651,7 @@
                             "text": "Default: chat sanitization and hardening enabled (linkSafety: { enabled: false }).",
                             "raw": "1. **Default**: chat sanitization and hardening enabled (`linkSafety: { enabled: false }`)."
                           },
-                          "children": [
-                            {
-                              "id": "17a72d24::item:0::list-item:segment:0",
-                              "type": "list-item-text",
-                              "props": {
-                                "inline": [
-                                  {
-                                    "kind": "strong",
-                                    "children": [
-                                      {
-                                        "kind": "text",
-                                        "text": "Default"
-                                      }
-                                    ]
-                                  },
-                                  {
-                                    "kind": "text",
-                                    "text": ": chat sanitization and hardening enabled (`linkSafety: "
-                                  }
-                                ],
-                                "text": "**Default**: chat sanitization and hardening enabled (`linkSafety: "
-                              },
-                              "children": []
-                            },
-                            {
-                              "id": "17a72d24::item:0::list-item:segment:1",
-                              "type": "list-item-mdx",
-                              "props": {
-                                "raw": "{ enabled: false }",
-                                "status": "pending"
-                              },
-                              "children": []
-                            },
-                            {
-                              "id": "17a72d24::item:0::list-item:segment:2",
-                              "type": "list-item-text",
-                              "props": {
-                                "inline": [
-                                  {
-                                    "kind": "text",
-                                    "text": "`)."
-                                  }
-                                ],
-                                "text": "`)."
-                              },
-                              "children": []
-                            }
-                          ]
+                          "children": []
                         }
                       }
                     }
@@ -2716,54 +2683,7 @@
                   "text": "Default: chat sanitization and hardening enabled (linkSafety: { enabled: false }).",
                   "raw": "1. **Default**: chat sanitization and hardening enabled (`linkSafety: { enabled: false }`)."
                 },
-                "children": [
-                  {
-                    "id": "17a72d24::item:0::list-item:segment:0",
-                    "type": "list-item-text",
-                    "props": {
-                      "inline": [
-                        {
-                          "kind": "strong",
-                          "children": [
-                            {
-                              "kind": "text",
-                              "text": "Default"
-                            }
-                          ]
-                        },
-                        {
-                          "kind": "text",
-                          "text": ": chat sanitization and hardening enabled (`linkSafety: "
-                        }
-                      ],
-                      "text": "**Default**: chat sanitization and hardening enabled (`linkSafety: "
-                    },
-                    "children": []
-                  },
-                  {
-                    "id": "17a72d24::item:0::list-item:segment:1",
-                    "type": "list-item-mdx",
-                    "props": {
-                      "raw": "{ enabled: false }",
-                      "status": "pending"
-                    },
-                    "children": []
-                  },
-                  {
-                    "id": "17a72d24::item:0::list-item:segment:2",
-                    "type": "list-item-text",
-                    "props": {
-                      "inline": [
-                        {
-                          "kind": "text",
-                          "text": "`)."
-                        }
-                      ],
-                      "text": "`)."
-                    },
-                    "children": []
-                  }
-                ]
+                "children": []
               },
               {
                 "id": "17a72d24::item:1",
@@ -2857,62 +2777,7 @@
                             "text": "Raw HTML: raw HTML enabled and sanitization/hardening disabled via rehypePlugins: [defaultRehypePlugins.raw] (linkSafety: { enabled: false }).",
                             "raw": "2. **Raw HTML**: raw HTML enabled and sanitization/hardening disabled via `rehypePlugins: [defaultRehypePlugins.raw]` (`linkSafety: { enabled: false }`)."
                           },
-                          "children": [
-                            {
-                              "id": "17a72d24::item:1::list-item:segment:0",
-                              "type": "list-item-text",
-                              "props": {
-                                "inline": [
-                                  {
-                                    "kind": "strong",
-                                    "children": [
-                                      {
-                                        "kind": "text",
-                                        "text": "Raw HTML"
-                                      }
-                                    ]
-                                  },
-                                  {
-                                    "kind": "text",
-                                    "text": ": raw HTML enabled and sanitization/hardening disabled via "
-                                  },
-                                  {
-                                    "kind": "code",
-                                    "text": "rehypePlugins: [defaultRehypePlugins.raw]"
-                                  },
-                                  {
-                                    "kind": "text",
-                                    "text": " (`linkSafety: "
-                                  }
-                                ],
-                                "text": "**Raw HTML**: raw HTML enabled and sanitization/hardening disabled via `rehypePlugins: [defaultRehypePlugins.raw]` (`linkSafety: "
-                              },
-                              "children": []
-                            },
-                            {
-                              "id": "17a72d24::item:1::list-item:segment:1",
-                              "type": "list-item-mdx",
-                              "props": {
-                                "raw": "{ enabled: false }",
-                                "status": "pending"
-                              },
-                              "children": []
-                            },
-                            {
-                              "id": "17a72d24::item:1::list-item:segment:2",
-                              "type": "list-item-text",
-                              "props": {
-                                "inline": [
-                                  {
-                                    "kind": "text",
-                                    "text": "`)."
-                                  }
-                                ],
-                                "text": "`)."
-                              },
-                              "children": []
-                            }
-                          ]
+                          "children": []
                         }
                       }
                     }
@@ -2952,62 +2817,7 @@
                   "text": "Raw HTML: raw HTML enabled and sanitization/hardening disabled via rehypePlugins: [defaultRehypePlugins.raw] (linkSafety: { enabled: false }).",
                   "raw": "2. **Raw HTML**: raw HTML enabled and sanitization/hardening disabled via `rehypePlugins: [defaultRehypePlugins.raw]` (`linkSafety: { enabled: false }`)."
                 },
-                "children": [
-                  {
-                    "id": "17a72d24::item:1::list-item:segment:0",
-                    "type": "list-item-text",
-                    "props": {
-                      "inline": [
-                        {
-                          "kind": "strong",
-                          "children": [
-                            {
-                              "kind": "text",
-                              "text": "Raw HTML"
-                            }
-                          ]
-                        },
-                        {
-                          "kind": "text",
-                          "text": ": raw HTML enabled and sanitization/hardening disabled via "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "rehypePlugins: [defaultRehypePlugins.raw]"
-                        },
-                        {
-                          "kind": "text",
-                          "text": " (`linkSafety: "
-                        }
-                      ],
-                      "text": "**Raw HTML**: raw HTML enabled and sanitization/hardening disabled via `rehypePlugins: [defaultRehypePlugins.raw]` (`linkSafety: "
-                    },
-                    "children": []
-                  },
-                  {
-                    "id": "17a72d24::item:1::list-item:segment:1",
-                    "type": "list-item-mdx",
-                    "props": {
-                      "raw": "{ enabled: false }",
-                      "status": "pending"
-                    },
-                    "children": []
-                  },
-                  {
-                    "id": "17a72d24::item:1::list-item:segment:2",
-                    "type": "list-item-text",
-                    "props": {
-                      "inline": [
-                        {
-                          "kind": "text",
-                          "text": "`)."
-                        }
-                      ],
-                      "text": "`)."
-                    },
-                    "children": []
-                  }
-                ]
+                "children": []
               }
             ]
           }
@@ -4873,7 +4683,29 @@
       "payload": {
         "raw": "The locked quiet-AC run attempted preserved runtime `4350a2a`, engine-v2 runtime\n`342b378`, and Streamdown `2.7.0` on `naive-bayes` in S2, S3, and S6. Each set\nrequested one unreported warmup and three measured streams. All six engine-v2\nand Streamdown sets completed, producing 18 measured streams. All three\npreserved-runtime warmups failed the final-DOM/highlighting completion guard;\nthere are no baseline measurements.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 52,
+              "to": 61,
+              "kind": "code-inline"
+            },
+            {
+              "from": 81,
+              "to": 90,
+              "kind": "code-inline"
+            },
+            {
+              "from": 107,
+              "to": 114,
+              "kind": "code-inline"
+            },
+            {
+              "from": 118,
+              "to": 131,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 7986,
@@ -4947,7 +4779,34 @@
       "payload": {
         "raw": "The primary metric is main-thread CDP `TaskDuration`, not total process CPU.\nRaw samples, median/spread, frame p95, peak JS heap, first committed content,\nduration, live attached DOM, failed attempts, and semantic evidence are retained\nin the isolated consumer worktree's\n`.codex-optimization/runs/20261007-211411-engine-v2-comparison/` directory\n(`results.md`, `summary.json`, and `final-quiet/`).",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 38,
+              "to": 52,
+              "kind": "code-inline"
+            },
+            {
+              "from": 272,
+              "to": 336,
+              "kind": "code-inline"
+            },
+            {
+              "from": 348,
+              "to": 360,
+              "kind": "code-inline"
+            },
+            {
+              "from": 362,
+              "to": 376,
+              "kind": "code-inline"
+            },
+            {
+              "from": 382,
+              "to": 396,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 8769,
@@ -5032,7 +4891,19 @@
       "payload": {
         "raw": "Streamdown `2.7.0` vs StreamMDX on long, full-feature documents (headings, nested and task lists, tables, multi-language code, inline and display math, blockquotes, inline HTML, footnotes) streamed at 5k, 10k, and 20k characters per second. Minified production docs build, Chrome 153 headless, Apple M5 Pro. Each row is one warmup plus three measured streams; the metric is median main-thread CDP `TaskDuration`.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 11,
+              "to": 18,
+              "kind": "code-inline"
+            },
+            {
+              "from": 397,
+              "to": 411,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 9202,
@@ -5814,7 +5685,29 @@
       "payload": {
         "raw": "Raw runs, spreads, guardrails, and the per-change before/after evidence are in the engine-v2 worktree's `.codex-optimization/runs/20261008-171503-firehose-vs-streamdown/` directory (`contract.md`, `results.md`, `final/`). That directory is not committed.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 104,
+              "to": 170,
+              "kind": "code-inline"
+            },
+            {
+              "from": 182,
+              "to": 195,
+              "kind": "code-inline"
+            },
+            {
+              "from": 197,
+              "to": 209,
+              "kind": "code-inline"
+            },
+            {
+              "from": 211,
+              "to": 219,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 10870,
@@ -6403,9 +6296,6 @@
       "math": true,
       "footnotes": true,
       "callouts": true
-    },
-    "mdx": {
-      "compileMode": "server"
     },
     "prewarmLangs": [
       "typescript",

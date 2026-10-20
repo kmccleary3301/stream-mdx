@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-10T04:53:47.055Z",
-  "hash": "cd30ed0f99119d1a6724f2d1a3bb0ba362c7a1dbdd1e0f40a6ace96cad479e59",
+  "createdAt": "2026-10-20T02:27:53.117Z",
+  "hash": "10fe1bc6b1fde68c179bb5d1a8a3019005655af1997119a77b7b4d1ccaaadc3f",
   "contentHash": "9236b87fd26874eecb6a1b39cc4ad3a06d0d78114ddacab080c7aff6e8f634ef",
-  "configHash": "a4b31dc6e15c2cd96906124ef06fadc77e60ad148c40ed5ba066e3518a02e37b",
-  "hashSalt": "docs-snapshots-v2:42a0722c827a5ff05bc7f9b0b2c880b732fb655e91e2b7c5196767915dd07177",
+  "configHash": "f4db748a14dd58be84461bc4cded0b689d48b92567d27cc5fe37ce2bb6acbd86",
+  "hashSalt": "docs-snapshots-v3:8b3fa816098a184f70b086c61607699a9f773e230e33134df864cbac0b066681",
   "blocks": [
     {
       "id": "db082c0",
@@ -326,7 +326,34 @@
       "payload": {
         "raw": "The renderer emits semantic markup and stable renderer classes such as `.markdown-v2-output`, `.markdown-list`, `.markdown-list-item`, `.markdown-code-block`, and `.markdown-link`. It does not inject CSS at runtime.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 71,
+              "to": 92,
+              "kind": "code-inline"
+            },
+            {
+              "from": 94,
+              "to": 110,
+              "kind": "code-inline"
+            },
+            {
+              "from": 112,
+              "to": 133,
+              "kind": "code-inline"
+            },
+            {
+              "from": 135,
+              "to": 157,
+              "kind": "code-inline"
+            },
+            {
+              "from": 163,
+              "to": 179,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 416,
@@ -428,7 +455,24 @@
       "payload": {
         "raw": "The `.prose` parent owns the typography context. The `.markdown-v2-output` class is the renderer output hook used by the app stylesheet, not a second app-shell/card styling layer. Do not stack a legacy `.markdown` wrapper in new docs-app code.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 4,
+              "to": 12,
+              "kind": "code-inline"
+            },
+            {
+              "from": 53,
+              "to": 74,
+              "kind": "code-inline"
+            },
+            {
+              "from": 202,
+              "to": 213,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 823,
@@ -861,7 +905,14 @@
       "payload": {
         "raw": "Enable copy and download buttons for code blocks, tables, and Mermaid diagrams using the opt-in `controls` prop:",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 96,
+              "to": 106,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 3844,
@@ -910,7 +961,14 @@
       "payload": {
         "raw": "Controls are disabled (`false`) by default so existing rendered output and snapshots remain unchanged. When enabled:",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 23,
+              "to": 30,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 4245,
@@ -1339,7 +1397,19 @@
       "payload": {
         "raw": "When `animated` is `true` or an configuration object:",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 5,
+              "to": 15,
+              "kind": "code-inline"
+            },
+            {
+              "from": 19,
+              "to": 25,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 5610,
@@ -1920,7 +1990,14 @@
       "payload": {
         "raw": "When `features.html` is enabled, HTML blocks can be mapped onto custom components:",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 5,
+              "to": 20,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 6263,
@@ -2137,7 +2214,14 @@
       "payload": {
         "raw": "The package keeps some legacy compatibility selectors for consumers that already used `.markdown`, but new integrations should use a single prose owner and treat renderer classes as output hooks.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 86,
+              "to": 97,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 7400,
@@ -2236,9 +2320,6 @@
       "math": true,
       "footnotes": true,
       "callouts": true
-    },
-    "mdx": {
-      "compileMode": "server"
     },
     "prewarmLangs": [
       "typescript",

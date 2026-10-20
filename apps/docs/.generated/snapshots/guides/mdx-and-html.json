@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-10T04:53:47.319Z",
-  "hash": "4629d96147ba238473fc0525bc90ca476ae268850399c86b7fca8972b82535dd",
-  "contentHash": "85e1603d391d43fd36416feff36054573349a08edc485d53f00b8ef6f1e809c3",
-  "configHash": "a4b31dc6e15c2cd96906124ef06fadc77e60ad148c40ed5ba066e3518a02e37b",
-  "hashSalt": "docs-snapshots-v2:42a0722c827a5ff05bc7f9b0b2c880b732fb655e91e2b7c5196767915dd07177",
+  "createdAt": "2026-10-20T02:27:53.361Z",
+  "hash": "fe53ac9e2bcf825e22e7e774df01596a0d9db732eb6203ff4bf9d3eb714b6c33",
+  "contentHash": "f4f4bf6abb74453a32a0a848f830704bc6bb9482a961711a5b57d0848699be0a",
+  "configHash": "f4db748a14dd58be84461bc4cded0b689d48b92567d27cc5fe37ce2bb6acbd86",
+  "hashSalt": "docs-snapshots-v3:8b3fa816098a184f70b086c61607699a9f773e230e33134df864cbac0b066681",
   "blocks": [
     {
       "id": "db082c0",
@@ -36,728 +36,398 @@
       "type": "heading",
       "isFinalized": true,
       "payload": {
-        "raw": "Why MDX is optional",
+        "raw": "Safe default",
         "meta": {
           "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
-          "headingText": "Why MDX is optional",
-          "headingId": "why-mdx-is-optional"
+          "headingText": "Safe default",
+          "headingId": "safe-default"
         },
         "range": {
           "from": 29,
-          "to": 51
+          "to": 44
         },
         "inline": [
           {
             "kind": "text",
-            "text": "Why MDX is optional"
+            "text": "Safe default"
           }
         ]
       }
     },
     {
-      "id": "58a5361e",
+      "id": "fa1a902",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "StreamMDX treats MDX as an opt-in feature. Plain Markdown streams fast and predictably. MDX adds custom components, but requires compilation. You can enable it only where you need it:",
+        "raw": "`StreamingMarkdown` keeps Markdown native and uses the restricted content policy by default. It does not compile or evaluate arbitrary MDX modules. Leave full-MDX support out of views that render user- or agent-generated text.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 0,
+              "to": 19,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
-          "from": 53,
-          "to": 236
+          "from": 46,
+          "to": 272
         },
         "inline": [
           {
+            "kind": "code",
+            "text": "StreamingMarkdown"
+          },
+          {
             "kind": "text",
-            "text": "StreamMDX treats MDX as an opt-in feature. Plain Markdown streams fast and predictably. MDX adds custom components, but requires compilation. You can enable it only where you need it:"
+            "text": " keeps Markdown native and uses the restricted content policy by default. It does not compile or evaluate arbitrary MDX modules. Leave full-MDX support out of views that render user- or agent-generated text."
           }
         ]
       }
     },
     {
-      "id": "14b537a3",
+      "id": "4cece537",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "For approved source components, use `defineContentComponent` adapters under the restricted policy. A type-predicate validator checks narrower source JSON props; the worker receives only serializable names and render conditions, while the component and validator remain on the host. Native projected `children` are supplied separately as host React nodes.",
+        "meta": {
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 36,
+              "to": 60,
+              "kind": "code-inline"
+            },
+            {
+              "from": 299,
+              "to": 309,
+              "kind": "code-inline"
+            }
+          ]
+        },
+        "range": {
+          "from": 274,
+          "to": 628
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "For approved source components, use "
+          },
+          {
+            "kind": "code",
+            "text": "defineContentComponent"
+          },
+          {
+            "kind": "text",
+            "text": " adapters under the restricted policy. A type-predicate validator checks narrower source JSON props; the worker receives only serializable names and render conditions, while the component and validator remain on the host. Native projected "
+          },
+          {
+            "kind": "code",
+            "text": "children"
+          },
+          {
+            "kind": "text",
+            "text": " are supplied separately as host React nodes."
+          }
+        ]
+      }
+    },
+    {
+      "id": "7d28b6e1",
       "type": "code",
       "isFinalized": true,
       "payload": {
-        "raw": "```tsx\n<StreamingMarkdown\n  text={content}\n  features={{ mdx: true, html: true }}\n  mdxCompileMode=\"worker\"\n/>\n```",
+        "raw": "```tsx\nimport { defineContentComponent, StreamingMarkdown, type ContentComponentProps, type ContentComponentsMap } from \"@stream-mdx/react\";\nimport type { ComponentProps } from \"react\";\nimport { Callout } from \"./Callout\";\n\ntype CalloutSourceProps = Pick<ComponentProps<typeof Callout>, \"type\">;\nconst validateCalloutProps = (\n  props: ContentComponentProps,\n): props is ContentComponentProps & CalloutSourceProps =>\n  props.type === \"info\" || props.type === \"warning\";\n\nconst contentComponents = {\n  Callout: defineContentComponent({ component: Callout, validateProps: validateCalloutProps }),\n} satisfies ContentComponentsMap;\n\n<StreamingMarkdown\n  text={content}\n  contentPolicy=\"restricted\"\n  features={{ mdx: true }}\n  contentComponents={contentComponents}\n/>\n```",
         "meta": {
           "lezerNodeType": "FencedCode",
-          "code": "<StreamingMarkdown\n  text={content}\n  features={{ mdx: true, html: true }}\n  mdxCompileMode=\"worker\"\n/>",
+          "code": "import { defineContentComponent, StreamingMarkdown, type ContentComponentProps, type ContentComponentsMap } from \"@stream-mdx/react\";\nimport type { ComponentProps } from \"react\";\nimport { Callout } from \"./Callout\";\n\ntype CalloutSourceProps = Pick<ComponentProps<typeof Callout>, \"type\">;\nconst validateCalloutProps = (\n  props: ContentComponentProps,\n): props is ContentComponentProps & CalloutSourceProps =>\n  props.type === \"info\" || props.type === \"warning\";\n\nconst contentComponents = {\n  Callout: defineContentComponent({ component: Callout, validateProps: validateCalloutProps }),\n} satisfies ContentComponentsMap;\n\n<StreamingMarkdown\n  text={content}\n  contentPolicy=\"restricted\"\n  features={{ mdx: true }}\n  contentComponents={contentComponents}\n/>",
           "info": "tsx",
           "lang": "tsx",
           "highlightLang": "tsx"
         },
         "range": {
-          "from": 238,
-          "to": 352
+          "from": 630,
+          "to": 1398
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content}</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }}</span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  mdxCompileMode</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"worker\"</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/></span></span></code></pre>"
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { defineContentComponent, StreamingMarkdown, </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">type</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> ContentComponentProps, </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">type</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> ContentComponentsMap } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/react\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> type</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { ComponentProps } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"react\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { Callout } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"./Callout\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"4\"></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">type</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> CalloutSourceProps</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> Pick</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">ComponentProps</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">typeof</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> Callout>, </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"type\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>;</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> validateCalloutProps</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> (</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">  props</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> ContentComponentProps</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">,</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">)</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\"> props</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> is</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> ContentComponentProps</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> &#x26;</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> CalloutSourceProps</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =></span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  props.type </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">===</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"info\"</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> ||</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> props.type </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">===</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"warning\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"10\"></span>\n<span class=\"line\" data-line=\"11\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> contentComponents</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  Callout: </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">defineContentComponent</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">({ component: Callout, validateProps: validateCalloutProps }),</span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">} </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">satisfies</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> ContentComponentsMap</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"14\"></span>\n<span class=\"line\" data-line=\"15\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"16\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content}</span></span>\n<span class=\"line\" data-line=\"17\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  contentPolicy</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"restricted\"</span></span>\n<span class=\"line\" data-line=\"18\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ mdx: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }}</span></span>\n<span class=\"line\" data-line=\"19\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  contentComponents</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{contentComponents}</span></span>\n<span class=\"line\" data-line=\"20\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">/></span></span></code></pre>"
       }
     },
     {
-      "id": "2c0ca0fa",
+      "id": "6e9d59a3",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "If you do not need MDX, leave it off for the simplest and fastest path.",
+        "raw": "`renderWhen: \"closed\"` suppresses only an open native component. A finalized incomplete body that passes validation still renders with its diagnostic; an incomplete opening header remains literal and does not invoke the host callback. When constructing this registration in a React Server Component, import `defineContentComponent` from `@stream-mdx/react/server`.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 0,
+              "to": 22,
+              "kind": "code-inline"
+            },
+            {
+              "from": 307,
+              "to": 331,
+              "kind": "code-inline"
+            },
+            {
+              "from": 337,
+              "to": 363,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
-          "from": 354,
-          "to": 425
+          "from": 1400,
+          "to": 1764
         },
         "inline": [
           {
+            "kind": "code",
+            "text": "renderWhen: \"closed\""
+          },
+          {
             "kind": "text",
-            "text": "If you do not need MDX, leave it off for the simplest and fastest path."
+            "text": " suppresses only an open native component. A finalized incomplete body that passes validation still renders with its diagnostic; an incomplete opening header remains literal and does not invoke the host callback. When constructing this registration in a React Server Component, import "
+          },
+          {
+            "kind": "code",
+            "text": "defineContentComponent"
+          },
+          {
+            "kind": "text",
+            "text": " from "
+          },
+          {
+            "kind": "code",
+            "text": "@stream-mdx/react/server"
+          },
+          {
+            "kind": "text",
+            "text": "."
           }
         ]
       }
     },
     {
-      "id": "12b41477",
+      "id": "431c4c66",
       "type": "heading",
       "isFinalized": true,
       "payload": {
-        "raw": "Compile strategies",
+        "raw": "Trusted authored MDX",
         "meta": {
           "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
-          "headingText": "Compile strategies",
-          "headingId": "compile-strategies"
+          "headingText": "Trusted authored MDX",
+          "headingId": "trusted-authored-mdx"
         },
         "range": {
-          "from": 427,
-          "to": 448
+          "from": 1766,
+          "to": 1789
         },
         "inline": [
           {
             "kind": "text",
-            "text": "Compile strategies"
+            "text": "Trusted authored MDX"
           }
         ]
       }
     },
     {
-      "id": "43b6ca21",
-      "type": "heading",
-      "isFinalized": true,
-      "payload": {
-        "raw": "Worker mode (default recommendation)",
-        "meta": {
-          "lezerNodeType": "ATXHeading3",
-          "headingLevel": 3,
-          "headingText": "Worker mode (default recommendation)",
-          "headingId": "worker-mode-default-recommendation"
-        },
-        "range": {
-          "from": 450,
-          "to": 490
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "Worker mode (default recommendation)"
-          }
-        ]
-      }
-    },
-    {
-      "id": "2c5ee907",
-      "type": "list",
-      "isFinalized": true,
-      "payload": {
-        "raw": "- all compilation happens in the worker\n- no server endpoint needed\n- worker and server behavior are identical",
-        "meta": {
-          "lezerNodeType": "BulletList",
-          "mathEnabled": true,
-          "formatAnticipation": {
-            "inline": false,
-            "mathInline": false,
-            "mathBlock": false,
-            "html": false,
-            "mdx": false,
-            "regex": false
-          },
-          "ordered": false,
-          "loose": false,
-          "items": [
-            [
-              {
-                "kind": "text",
-                "text": "all compilation happens in the worker"
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "no server endpoint needed"
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "worker and server behavior are identical"
-              }
-            ]
-          ],
-          "preparedNested": {
-            "props": {
-              "ordered": false,
-              "loose": false
-            },
-            "children": [
-              {
-                "id": "2c5ee907::item:0",
-                "type": "list-item",
-                "range": {
-                  "from": 492,
-                  "to": 531
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "2c5ee907::item:0",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- all compilation happens in the worker",
-                      "inline": [
-                        {
-                          "kind": "text",
-                          "text": "all compilation happens in the worker"
-                        }
-                      ],
-                      "range": {
-                        "from": 492,
-                        "to": 531
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 0,
-                            "inline": [
-                              {
-                                "kind": "text",
-                                "text": "all compilation happens in the worker"
-                              }
-                            ],
-                            "text": "all compilation happens in the worker",
-                            "raw": "- all compilation happens in the worker"
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 0,
-                  "inline": [
-                    {
-                      "kind": "text",
-                      "text": "all compilation happens in the worker"
-                    }
-                  ],
-                  "text": "all compilation happens in the worker",
-                  "raw": "- all compilation happens in the worker"
-                },
-                "children": []
-              },
-              {
-                "id": "2c5ee907::item:1",
-                "type": "list-item",
-                "range": {
-                  "from": 532,
-                  "to": 559
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "2c5ee907::item:1",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- no server endpoint needed",
-                      "inline": [
-                        {
-                          "kind": "text",
-                          "text": "no server endpoint needed"
-                        }
-                      ],
-                      "range": {
-                        "from": 532,
-                        "to": 559
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 1,
-                            "inline": [
-                              {
-                                "kind": "text",
-                                "text": "no server endpoint needed"
-                              }
-                            ],
-                            "text": "no server endpoint needed",
-                            "raw": "- no server endpoint needed"
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 1,
-                  "inline": [
-                    {
-                      "kind": "text",
-                      "text": "no server endpoint needed"
-                    }
-                  ],
-                  "text": "no server endpoint needed",
-                  "raw": "- no server endpoint needed"
-                },
-                "children": []
-              },
-              {
-                "id": "2c5ee907::item:2",
-                "type": "list-item",
-                "range": {
-                  "from": 560,
-                  "to": 602
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "2c5ee907::item:2",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- worker and server behavior are identical",
-                      "inline": [
-                        {
-                          "kind": "text",
-                          "text": "worker and server behavior are identical"
-                        }
-                      ],
-                      "range": {
-                        "from": 560,
-                        "to": 602
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 2,
-                            "inline": [
-                              {
-                                "kind": "text",
-                                "text": "worker and server behavior are identical"
-                              }
-                            ],
-                            "text": "worker and server behavior are identical",
-                            "raw": "- worker and server behavior are identical"
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 2,
-                  "inline": [
-                    {
-                      "kind": "text",
-                      "text": "worker and server behavior are identical"
-                    }
-                  ],
-                  "text": "worker and server behavior are identical",
-                  "raw": "- worker and server behavior are identical"
-                },
-                "children": []
-              }
-            ]
-          }
-        },
-        "range": {
-          "from": 492,
-          "to": 602
-        }
-      }
-    },
-    {
-      "id": "1ab69866",
-      "type": "code",
-      "isFinalized": true,
-      "payload": {
-        "raw": "```tsx\n<StreamingMarkdown mdxCompileMode=\"worker\" />\n```",
-        "meta": {
-          "lezerNodeType": "FencedCode",
-          "code": "<StreamingMarkdown mdxCompileMode=\"worker\" />",
-          "info": "tsx",
-          "lang": "tsx",
-          "highlightLang": "tsx"
-        },
-        "range": {
-          "from": 604,
-          "to": 660
-        },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> mdxCompileMode</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"worker\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> /></span></span></code></pre>"
-      }
-    },
-    {
-      "id": "2e4ea82",
-      "type": "heading",
-      "isFinalized": true,
-      "payload": {
-        "raw": "Server mode",
-        "meta": {
-          "lezerNodeType": "ATXHeading3",
-          "headingLevel": 3,
-          "headingText": "Server mode",
-          "headingId": "server-mode"
-        },
-        "range": {
-          "from": 662,
-          "to": 677
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "Server mode"
-          }
-        ]
-      }
-    },
-    {
-      "id": "61b94764",
-      "type": "list",
-      "isFinalized": true,
-      "payload": {
-        "raw": "- you host a compile endpoint (useful for stricter build control)\n- the worker requests compiled output\n- you must keep server and worker compile settings aligned",
-        "meta": {
-          "lezerNodeType": "BulletList",
-          "mathEnabled": true,
-          "formatAnticipation": {
-            "inline": false,
-            "mathInline": false,
-            "mathBlock": false,
-            "html": false,
-            "mdx": false,
-            "regex": false
-          },
-          "ordered": false,
-          "loose": false,
-          "items": [
-            [
-              {
-                "kind": "text",
-                "text": "you host a compile endpoint (useful for stricter build control)"
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "the worker requests compiled output"
-              }
-            ],
-            [
-              {
-                "kind": "text",
-                "text": "you must keep server and worker compile settings aligned"
-              }
-            ]
-          ],
-          "preparedNested": {
-            "props": {
-              "ordered": false,
-              "loose": false
-            },
-            "children": [
-              {
-                "id": "61b94764::item:0",
-                "type": "list-item",
-                "range": {
-                  "from": 679,
-                  "to": 744
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "61b94764::item:0",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- you host a compile endpoint (useful for stricter build control)",
-                      "inline": [
-                        {
-                          "kind": "text",
-                          "text": "you host a compile endpoint (useful for stricter build control)"
-                        }
-                      ],
-                      "range": {
-                        "from": 679,
-                        "to": 744
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 0,
-                            "inline": [
-                              {
-                                "kind": "text",
-                                "text": "you host a compile endpoint (useful for stricter build control)"
-                              }
-                            ],
-                            "text": "you host a compile endpoint (useful for stricter build control)",
-                            "raw": "- you host a compile endpoint (useful for stricter build control)"
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 0,
-                  "inline": [
-                    {
-                      "kind": "text",
-                      "text": "you host a compile endpoint (useful for stricter build control)"
-                    }
-                  ],
-                  "text": "you host a compile endpoint (useful for stricter build control)",
-                  "raw": "- you host a compile endpoint (useful for stricter build control)"
-                },
-                "children": []
-              },
-              {
-                "id": "61b94764::item:1",
-                "type": "list-item",
-                "range": {
-                  "from": 745,
-                  "to": 782
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "61b94764::item:1",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- the worker requests compiled output",
-                      "inline": [
-                        {
-                          "kind": "text",
-                          "text": "the worker requests compiled output"
-                        }
-                      ],
-                      "range": {
-                        "from": 745,
-                        "to": 782
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 1,
-                            "inline": [
-                              {
-                                "kind": "text",
-                                "text": "the worker requests compiled output"
-                              }
-                            ],
-                            "text": "the worker requests compiled output",
-                            "raw": "- the worker requests compiled output"
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 1,
-                  "inline": [
-                    {
-                      "kind": "text",
-                      "text": "the worker requests compiled output"
-                    }
-                  ],
-                  "text": "the worker requests compiled output",
-                  "raw": "- the worker requests compiled output"
-                },
-                "children": []
-              },
-              {
-                "id": "61b94764::item:2",
-                "type": "list-item",
-                "range": {
-                  "from": 783,
-                  "to": 841
-                },
-                "props": {
-                  "ordered": false,
-                  "loose": false,
-                  "block": {
-                    "id": "61b94764::item:2",
-                    "type": "list-item",
-                    "isFinalized": true,
-                    "payload": {
-                      "raw": "- you must keep server and worker compile settings aligned",
-                      "inline": [
-                        {
-                          "kind": "text",
-                          "text": "you must keep server and worker compile settings aligned"
-                        }
-                      ],
-                      "range": {
-                        "from": 783,
-                        "to": 841
-                      },
-                      "meta": {
-                        "sourceContainer": "list",
-                        "preparedNested": {
-                          "props": {
-                            "ordered": false,
-                            "loose": false,
-                            "index": 2,
-                            "inline": [
-                              {
-                                "kind": "text",
-                                "text": "you must keep server and worker compile settings aligned"
-                              }
-                            ],
-                            "text": "you must keep server and worker compile settings aligned",
-                            "raw": "- you must keep server and worker compile settings aligned"
-                          },
-                          "children": []
-                        }
-                      }
-                    }
-                  },
-                  "index": 2,
-                  "inline": [
-                    {
-                      "kind": "text",
-                      "text": "you must keep server and worker compile settings aligned"
-                    }
-                  ],
-                  "text": "you must keep server and worker compile settings aligned",
-                  "raw": "- you must keep server and worker compile settings aligned"
-                },
-                "children": []
-              }
-            ]
-          }
-        },
-        "range": {
-          "from": 679,
-          "to": 841
-        }
-      }
-    },
-    {
-      "id": "79102a43",
-      "type": "code",
-      "isFinalized": true,
-      "payload": {
-        "raw": "```tsx\n<StreamingMarkdown mdxCompileMode=\"server\" />\n```",
-        "meta": {
-          "lezerNodeType": "FencedCode",
-          "code": "<StreamingMarkdown mdxCompileMode=\"server\" />",
-          "info": "tsx",
-          "lang": "tsx",
-          "highlightLang": "tsx"
-        },
-        "range": {
-          "from": 843,
-          "to": 899
-        },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> mdxCompileMode</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"server\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> /></span></span></code></pre>"
-      }
-    },
-    {
-      "id": "7395ed0a",
-      "type": "heading",
-      "isFinalized": true,
-      "payload": {
-        "raw": "MDX component registry",
-        "meta": {
-          "lezerNodeType": "ATXHeading2",
-          "headingLevel": 2,
-          "headingText": "MDX component registry",
-          "headingId": "mdx-component-registry"
-        },
-        "range": {
-          "from": 901,
-          "to": 926
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "MDX component registry"
-          }
-        ]
-      }
-    },
-    {
-      "id": "635d19",
+      "id": "1449f03e",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "MDX components are passed separately from block overrides:",
+        "raw": "Full MDX is an explicit trust boundary. Use it only for content whose authors are trusted to execute code in your application. The engine is exported from `@stream-mdx/react/trusted-mdx`; the ordinary React root entry does not load the compiler or evaluator.",
+        "meta": {
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 155,
+              "to": 186,
+              "kind": "code-inline"
+            }
+          ]
+        },
+        "range": {
+          "from": 1791,
+          "to": 2049
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Full MDX is an explicit trust boundary. Use it only for content whose authors are trusted to execute code in your application. The engine is exported from "
+          },
+          {
+            "kind": "code",
+            "text": "@stream-mdx/react/trusted-mdx"
+          },
+          {
+            "kind": "text",
+            "text": "; the ordinary React root entry does not load the compiler or evaluator."
+          }
+        ]
+      }
+    },
+    {
+      "id": "51cbf6da",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "The host must create the engine and provide both the render components and the allowed import bindings. Imports are not fetched from a server or resolved from the network. Reuse the engine for the lifetime of its host component set instead of creating one during every render:",
         "meta": {
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 928,
-          "to": 986
+          "from": 2051,
+          "to": 2327
         },
         "inline": [
           {
             "kind": "text",
-            "text": "MDX components are passed separately from block overrides:"
+            "text": "The host must create the engine and provide both the render components and the allowed import bindings. Imports are not fetched from a server or resolved from the network. Reuse the engine for the lifetime of its host component set instead of creating one during every render:"
           }
         ]
       }
     },
     {
-      "id": "350dd545",
+      "id": "3cacf892",
       "type": "code",
       "isFinalized": true,
       "payload": {
-        "raw": "```tsx\nconst mdxComponents = {\n  Callout: ({ title, children }: { title: string; children: React.ReactNode }) => (\n    <div className=\"rounded border border-border p-4\">\n      <div className=\"font-semibold\">{title}</div>\n      <div className=\"mt-2\">{children}</div>\n    </div>\n  ),\n};\n\n<StreamingMarkdown text={content} mdxComponents={mdxComponents} />\n```",
+        "raw": "```tsx\nimport { StreamingMarkdown } from \"@stream-mdx/react\";\nimport { createTrustedMdxEngine } from \"@stream-mdx/react/trusted-mdx\";\nimport { Callout } from \"./Callout\";\n\nconst trustedWidgets = { Callout };\nconst trustedMdxEngine = createTrustedMdxEngine({\n  components: trustedWidgets,\n  imports: { \"host:widgets\": trustedWidgets },\n});\nconst trustedMdxEngines = { mdx: trustedMdxEngine };\n\nexport function TrustedArticle({ source }: { source: string }) {\n  return (\n    <StreamingMarkdown\n      text={source}\n      contentPolicy=\"trusted-mdx\"\n      engines={trustedMdxEngines}\n    />\n  );\n}\n```",
         "meta": {
           "lezerNodeType": "FencedCode",
-          "code": "const mdxComponents = {\n  Callout: ({ title, children }: { title: string; children: React.ReactNode }) => (\n    <div className=\"rounded border border-border p-4\">\n      <div className=\"font-semibold\">{title}</div>\n      <div className=\"mt-2\">{children}</div>\n    </div>\n  ),\n};\n\n<StreamingMarkdown text={content} mdxComponents={mdxComponents} />",
+          "code": "import { StreamingMarkdown } from \"@stream-mdx/react\";\nimport { createTrustedMdxEngine } from \"@stream-mdx/react/trusted-mdx\";\nimport { Callout } from \"./Callout\";\n\nconst trustedWidgets = { Callout };\nconst trustedMdxEngine = createTrustedMdxEngine({\n  components: trustedWidgets,\n  imports: { \"host:widgets\": trustedWidgets },\n});\nconst trustedMdxEngines = { mdx: trustedMdxEngine };\n\nexport function TrustedArticle({ source }: { source: string }) {\n  return (\n    <StreamingMarkdown\n      text={source}\n      contentPolicy=\"trusted-mdx\"\n      engines={trustedMdxEngines}\n    />\n  );\n}",
           "info": "tsx",
           "lang": "tsx",
           "highlightLang": "tsx"
         },
         "range": {
-          "from": 988,
-          "to": 1344
+          "from": 2329,
+          "to": 2926
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> mdxComponents</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  Callout</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: ({ </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">title</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">, </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">children</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">title</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">; </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">children</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> React</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">ReactNode</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> (</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    &#x3C;</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> className</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"rounded border border-border p-4\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      &#x3C;</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> className</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"font-semibold\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>{title}&#x3C;/</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">      &#x3C;</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> className</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"mt-2\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>{children}&#x3C;/</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    &#x3C;/</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">div</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  ),</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">};</span></span>\n<span class=\"line\" data-line=\"9\"></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">mdxComponents</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{mdxComponents} /></span></span></code></pre>"
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { StreamingMarkdown } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/react\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { createTrustedMdxEngine } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"@stream-mdx/react/trusted-mdx\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">import</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { Callout } </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">from</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\"> \"./Callout\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">;</span></span>\n<span class=\"line\" data-line=\"4\"></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> trustedWidgets</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { Callout };</span></span>\n<span class=\"line\" data-line=\"6\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> trustedMdxEngine</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> createTrustedMdxEngine</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">({</span></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  components: trustedWidgets,</span></span>\n<span class=\"line\" data-line=\"8\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  imports: { </span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"host:widgets\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: trustedWidgets },</span></span>\n<span class=\"line\" data-line=\"9\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">});</span></span>\n<span class=\"line\" data-line=\"10\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> trustedMdxEngines</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { mdx: trustedMdxEngine };</span></span>\n<span class=\"line\" data-line=\"11\"></span>\n<span class=\"line\" data-line=\"12\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">export</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> function</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> TrustedArticle</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">({ </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">source</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">source</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> string</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }) {</span></span>\n<span class=\"line\" data-line=\"13\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">  return</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> (</span></span>\n<span class=\"line\" data-line=\"14\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    &#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span></span>\n<span class=\"line\" data-line=\"15\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">      text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{source}</span></span>\n<span class=\"line\" data-line=\"16\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">      contentPolicy</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"trusted-mdx\"</span></span>\n<span class=\"line\" data-line=\"17\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">      engines</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{trustedMdxEngines}</span></span>\n<span class=\"line\" data-line=\"18\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    /></span></span>\n<span class=\"line\" data-line=\"19\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  );</span></span>\n<span class=\"line\" data-line=\"20\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">}</span></span></code></pre>"
       }
     },
     {
-      "id": "6f69f24",
+      "id": "506cdb73",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Use an explicit import map containing only the host bindings required by authored imports such as `import { Callout } from \"host:widgets\"`; unresolved imports are not fetched. Trusted evaluation runs in the host realm, requires `unsafe-eval` in the application's `script-src`, and is not a sandbox. Keep untrusted/user-generated content on the restricted path. Pass the trusted engine to `StreamingMarkdown` once; do not separately render a second full MDX module beside the native Markdown tree.",
+        "meta": {
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 98,
+              "to": 138,
+              "kind": "code-inline"
+            },
+            {
+              "from": 228,
+              "to": 241,
+              "kind": "code-inline"
+            },
+            {
+              "from": 263,
+              "to": 275,
+              "kind": "code-inline"
+            },
+            {
+              "from": 388,
+              "to": 407,
+              "kind": "code-inline"
+            }
+          ]
+        },
+        "range": {
+          "from": 2928,
+          "to": 3424
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Use an explicit import map containing only the host bindings required by authored imports such as "
+          },
+          {
+            "kind": "code",
+            "text": "import { Callout } from \"host:widgets\""
+          },
+          {
+            "kind": "text",
+            "text": "; unresolved imports are not fetched. Trusted evaluation runs in the host realm, requires "
+          },
+          {
+            "kind": "code",
+            "text": "unsafe-eval"
+          },
+          {
+            "kind": "text",
+            "text": " in the application's "
+          },
+          {
+            "kind": "code",
+            "text": "script-src"
+          },
+          {
+            "kind": "text",
+            "text": ", and is not a sandbox. Keep untrusted/user-generated content on the restricted path. Pass the trusted engine to "
+          },
+          {
+            "kind": "code",
+            "text": "StreamingMarkdown"
+          },
+          {
+            "kind": "text",
+            "text": " once; do not separately render a second full MDX module beside the native Markdown tree."
+          }
+        ]
+      }
+    },
+    {
+      "id": "40e797db",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Native worker `FINALIZED` confirms only native semantic completion. Trusted whole-document preparation and evaluation run separately; the trusted document distinguishes requested, projected, and actually rendered revisions. A stale result is rejected after a newer revision or lease/engine invalidation and is checked immediately before authored code runs. Render failure may restore the last committed UI, but it cannot roll back side effects already caused by trusted code.",
+        "meta": {
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 14,
+              "to": 25,
+              "kind": "code-inline"
+            }
+          ]
+        },
+        "range": {
+          "from": 3426,
+          "to": 3901
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Native worker "
+          },
+          {
+            "kind": "code",
+            "text": "FINALIZED"
+          },
+          {
+            "kind": "text",
+            "text": " confirms only native semantic completion. Trusted whole-document preparation and evaluation run separately; the trusted document distinguishes requested, projected, and actually rendered revisions. A stale result is rejected after a newer revision or lease/engine invalidation and is checked immediately before authored code runs. Render failure may restore the last committed UI, but it cannot roll back side effects already caused by trusted code."
+          }
+        ]
+      }
+    },
+    {
+      "id": "5c308e9",
       "type": "heading",
       "isFinalized": true,
       "payload": {
@@ -769,8 +439,8 @@
           "headingId": "html-blocks"
         },
         "range": {
-          "from": 1346,
-          "to": 1360
+          "from": 3903,
+          "to": 3917
         },
         "inline": [
           {
@@ -781,76 +451,145 @@
       }
     },
     {
-      "id": "27f26722",
+      "id": "1ea3fb8e",
       "type": "paragraph",
       "isFinalized": true,
       "payload": {
-        "raw": "When HTML is enabled, raw HTML blocks are sanitized and rendered with a configurable allowlist. You can also swap HTML tags for your own components:",
+        "raw": "Raw HTML is a separate feature from MDX. When enabled, HTML is sanitized and rendered with the configured allowlist:",
         "meta": {
           "lezerNodeType": "Paragraph"
         },
         "range": {
-          "from": 1362,
-          "to": 1510
+          "from": 3919,
+          "to": 4035
         },
         "inline": [
           {
             "kind": "text",
-            "text": "When HTML is enabled, raw HTML blocks are sanitized and rendered with a configurable allowlist. You can also swap HTML tags for your own components:"
+            "text": "Raw HTML is a separate feature from MDX. When enabled, HTML is sanitized and rendered with the configured allowlist:"
           }
         ]
       }
     },
     {
-      "id": "3752bbb5",
+      "id": "5f0ed9fa",
       "type": "code",
       "isFinalized": true,
       "payload": {
-        "raw": "```tsx\nconst htmlElements = {\n  blockquote: ({ children }: { children: React.ReactNode }) => (\n    <blockquote className=\"border-l-2 border-border pl-4 text-muted-old\">{children}</blockquote>\n  ),\n};\n\n<StreamingMarkdown text={content} htmlElements={htmlElements} features={{ html: true }} />\n```",
+        "raw": "```tsx\n<StreamingMarkdown text={content} features={{ html: true }} />\n```",
         "meta": {
           "lezerNodeType": "FencedCode",
-          "code": "const htmlElements = {\n  blockquote: ({ children }: { children: React.ReactNode }) => (\n    <blockquote className=\"border-l-2 border-border pl-4 text-muted-old\">{children}</blockquote>\n  ),\n};\n\n<StreamingMarkdown text={content} htmlElements={htmlElements} features={{ html: true }} />",
+          "code": "<StreamingMarkdown text={content} features={{ html: true }} />",
           "info": "tsx",
           "lang": "tsx",
           "highlightLang": "tsx"
         },
         "range": {
-          "from": 1512,
-          "to": 1807
+          "from": 4037,
+          "to": 4110
         },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">const</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\"> htmlElements</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\"> =</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> {</span></span>\n<span class=\"line\" data-line=\"2\"><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">  blockquote</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">: ({ </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">children</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> { </span><span style=\"--shiki-dark:#FFAB70;--shiki-light:#E36209\">children</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">:</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> React</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">.</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">ReactNode</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }) </span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=></span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> (</span></span>\n<span class=\"line\" data-line=\"3\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">    &#x3C;</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">blockquote</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> className</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#9ECBFF;--shiki-light:#032F62\">\"border-l-2 border-border pl-4 text-muted-old\"</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">>{children}&#x3C;/</span><span style=\"--shiki-dark:#85E89D;--shiki-light:#22863A\">blockquote</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">></span></span>\n<span class=\"line\" data-line=\"4\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">  ),</span></span>\n<span class=\"line\" data-line=\"5\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">};</span></span>\n<span class=\"line\" data-line=\"6\"></span>\n<span class=\"line\" data-line=\"7\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">htmlElements</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{htmlElements} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }} /></span></span></code></pre>"
+        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code class=\"language-tsx\" data-language=\"tsx\"><span class=\"line\" data-line=\"1\"><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">&#x3C;</span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">StreamingMarkdown</span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\"> text</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{content} </span><span style=\"--shiki-dark:#B392F0;--shiki-light:#6F42C1\">features</span><span style=\"--shiki-dark:#F97583;--shiki-light:#D73A49\">=</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\">{{ html: </span><span style=\"--shiki-dark:#79B8FF;--shiki-light:#005CC5\">true</span><span style=\"--shiki-dark:#E1E4E8;--shiki-light:#24292E\"> }} /></span></span></code></pre>"
       }
     },
     {
-      "id": "24ea5a90",
+      "id": "39abe5a2",
       "type": "heading",
       "isFinalized": true,
       "payload": {
-        "raw": "When to use each feature",
+        "raw": "Fenced HTML",
         "meta": {
           "lezerNodeType": "ATXHeading2",
           "headingLevel": 2,
-          "headingText": "When to use each feature",
-          "headingId": "when-to-use-each-feature"
+          "headingText": "Fenced HTML",
+          "headingId": "fenced-html"
         },
         "range": {
-          "from": 1809,
-          "to": 1836
+          "from": 4112,
+          "to": 4126
         },
         "inline": [
           {
             "kind": "text",
-            "text": "When to use each feature"
+            "text": "Fenced HTML"
           }
         ]
       }
     },
     {
-      "id": "698ce8b0",
+      "id": "c97c3d",
+      "type": "paragraph",
+      "isFinalized": true,
+      "payload": {
+        "raw": "`artifact` and `html-artifact` fences are code by default. They do not mount a preview or execute scripts. If an application later adds a visualization renderer, it must be an explicit host-owned code-renderer capability, not an automatic fence behavior.",
+        "meta": {
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 0,
+              "to": 10,
+              "kind": "code-inline"
+            },
+            {
+              "from": 15,
+              "to": 30,
+              "kind": "code-inline"
+            }
+          ]
+        },
+        "range": {
+          "from": 4128,
+          "to": 4382
+        },
+        "inline": [
+          {
+            "kind": "code",
+            "text": "artifact"
+          },
+          {
+            "kind": "text",
+            "text": " and "
+          },
+          {
+            "kind": "code",
+            "text": "html-artifact"
+          },
+          {
+            "kind": "text",
+            "text": " fences are code by default. They do not mount a preview or execute scripts. If an application later adds a visualization renderer, it must be an explicit host-owned code-renderer capability, not an automatic fence behavior."
+          }
+        ]
+      }
+    },
+    {
+      "id": "39578a45",
+      "type": "heading",
+      "isFinalized": true,
+      "payload": {
+        "raw": "Choosing a policy",
+        "meta": {
+          "lezerNodeType": "ATXHeading2",
+          "headingLevel": 2,
+          "headingText": "Choosing a policy",
+          "headingId": "choosing-a-policy"
+        },
+        "range": {
+          "from": 4384,
+          "to": 4404
+        },
+        "inline": [
+          {
+            "kind": "text",
+            "text": "Choosing a policy"
+          }
+        ]
+      }
+    },
+    {
+      "id": "1b46e0ca",
       "type": "list",
       "isFinalized": true,
       "payload": {
-        "raw": "- **Markdown only**: most content, best performance\n- **HTML**: when you need raw HTML tags (tables, custom spans)\n- **MDX**: when you need React components in content",
+        "raw": "- **Markdown / restricted (default)**: user input, agent output, and ordinary docs.\n- **Trusted MDX**: authored modules from a controlled trust boundary, with an explicit engine and import allowlist.\n- **HTML**: separately sanitized raw HTML when the application needs it.",
         "meta": {
           "lezerNodeType": "BulletList",
           "mathEnabled": true,
@@ -871,13 +610,28 @@
                 "children": [
                   {
                     "kind": "text",
-                    "text": "Markdown only"
+                    "text": "Markdown / restricted (default)"
                   }
                 ]
               },
               {
                 "kind": "text",
-                "text": ": most content, best performance"
+                "text": ": user input, agent output, and ordinary docs."
+              }
+            ],
+            [
+              {
+                "kind": "strong",
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "Trusted MDX"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": ": authored modules from a controlled trust boundary, with an explicit engine and import allowlist."
               }
             ],
             [
@@ -892,22 +646,7 @@
               },
               {
                 "kind": "text",
-                "text": ": when you need raw HTML tags (tables, custom spans)"
-              }
-            ],
-            [
-              {
-                "kind": "strong",
-                "children": [
-                  {
-                    "kind": "text",
-                    "text": "MDX"
-                  }
-                ]
-              },
-              {
-                "kind": "text",
-                "text": ": when you need React components in content"
+                "text": ": separately sanitized raw HTML when the application needs it."
               }
             ]
           ],
@@ -918,39 +657,39 @@
             },
             "children": [
               {
-                "id": "698ce8b0::item:0",
+                "id": "1b46e0ca::item:0",
                 "type": "list-item",
                 "range": {
-                  "from": 1838,
-                  "to": 1889
+                  "from": 4406,
+                  "to": 4489
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "698ce8b0::item:0",
+                    "id": "1b46e0ca::item:0",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
-                      "raw": "- **Markdown only**: most content, best performance",
+                      "raw": "- **Markdown / restricted (default)**: user input, agent output, and ordinary docs.",
                       "inline": [
                         {
                           "kind": "strong",
                           "children": [
                             {
                               "kind": "text",
-                              "text": "Markdown only"
+                              "text": "Markdown / restricted (default)"
                             }
                           ]
                         },
                         {
                           "kind": "text",
-                          "text": ": most content, best performance"
+                          "text": ": user input, agent output, and ordinary docs."
                         }
                       ],
                       "range": {
-                        "from": 1838,
-                        "to": 1889
+                        "from": 4406,
+                        "to": 4489
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -965,17 +704,17 @@
                                 "children": [
                                   {
                                     "kind": "text",
-                                    "text": "Markdown only"
+                                    "text": "Markdown / restricted (default)"
                                   }
                                 ]
                               },
                               {
                                 "kind": "text",
-                                "text": ": most content, best performance"
+                                "text": ": user input, agent output, and ordinary docs."
                               }
                             ],
-                            "text": "Markdown only: most content, best performance",
-                            "raw": "- **Markdown only**: most content, best performance"
+                            "text": "Markdown / restricted (default): user input, agent output, and ordinary docs.",
+                            "raw": "- **Markdown / restricted (default)**: user input, agent output, and ordinary docs."
                           },
                           "children": []
                         }
@@ -989,54 +728,54 @@
                       "children": [
                         {
                           "kind": "text",
-                          "text": "Markdown only"
+                          "text": "Markdown / restricted (default)"
                         }
                       ]
                     },
                     {
                       "kind": "text",
-                      "text": ": most content, best performance"
+                      "text": ": user input, agent output, and ordinary docs."
                     }
                   ],
-                  "text": "Markdown only: most content, best performance",
-                  "raw": "- **Markdown only**: most content, best performance"
+                  "text": "Markdown / restricted (default): user input, agent output, and ordinary docs.",
+                  "raw": "- **Markdown / restricted (default)**: user input, agent output, and ordinary docs."
                 },
                 "children": []
               },
               {
-                "id": "698ce8b0::item:1",
+                "id": "1b46e0ca::item:1",
                 "type": "list-item",
                 "range": {
-                  "from": 1890,
-                  "to": 1952
+                  "from": 4490,
+                  "to": 4605
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "698ce8b0::item:1",
+                    "id": "1b46e0ca::item:1",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
-                      "raw": "- **HTML**: when you need raw HTML tags (tables, custom spans)",
+                      "raw": "- **Trusted MDX**: authored modules from a controlled trust boundary, with an explicit engine and import allowlist.",
                       "inline": [
                         {
                           "kind": "strong",
                           "children": [
                             {
                               "kind": "text",
-                              "text": "HTML"
+                              "text": "Trusted MDX"
                             }
                           ]
                         },
                         {
                           "kind": "text",
-                          "text": ": when you need raw HTML tags (tables, custom spans)"
+                          "text": ": authored modules from a controlled trust boundary, with an explicit engine and import allowlist."
                         }
                       ],
                       "range": {
-                        "from": 1890,
-                        "to": 1952
+                        "from": 4490,
+                        "to": 4605
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1051,17 +790,17 @@
                                 "children": [
                                   {
                                     "kind": "text",
-                                    "text": "HTML"
+                                    "text": "Trusted MDX"
                                   }
                                 ]
                               },
                               {
                                 "kind": "text",
-                                "text": ": when you need raw HTML tags (tables, custom spans)"
+                                "text": ": authored modules from a controlled trust boundary, with an explicit engine and import allowlist."
                               }
                             ],
-                            "text": "HTML: when you need raw HTML tags (tables, custom spans)",
-                            "raw": "- **HTML**: when you need raw HTML tags (tables, custom spans)"
+                            "text": "Trusted MDX: authored modules from a controlled trust boundary, with an explicit engine and import allowlist.",
+                            "raw": "- **Trusted MDX**: authored modules from a controlled trust boundary, with an explicit engine and import allowlist."
                           },
                           "children": []
                         }
@@ -1075,54 +814,54 @@
                       "children": [
                         {
                           "kind": "text",
-                          "text": "HTML"
+                          "text": "Trusted MDX"
                         }
                       ]
                     },
                     {
                       "kind": "text",
-                      "text": ": when you need raw HTML tags (tables, custom spans)"
+                      "text": ": authored modules from a controlled trust boundary, with an explicit engine and import allowlist."
                     }
                   ],
-                  "text": "HTML: when you need raw HTML tags (tables, custom spans)",
-                  "raw": "- **HTML**: when you need raw HTML tags (tables, custom spans)"
+                  "text": "Trusted MDX: authored modules from a controlled trust boundary, with an explicit engine and import allowlist.",
+                  "raw": "- **Trusted MDX**: authored modules from a controlled trust boundary, with an explicit engine and import allowlist."
                 },
                 "children": []
               },
               {
-                "id": "698ce8b0::item:2",
+                "id": "1b46e0ca::item:2",
                 "type": "list-item",
                 "range": {
-                  "from": 1953,
-                  "to": 2005
+                  "from": 4606,
+                  "to": 4678
                 },
                 "props": {
                   "ordered": false,
                   "loose": false,
                   "block": {
-                    "id": "698ce8b0::item:2",
+                    "id": "1b46e0ca::item:2",
                     "type": "list-item",
                     "isFinalized": true,
                     "payload": {
-                      "raw": "- **MDX**: when you need React components in content",
+                      "raw": "- **HTML**: separately sanitized raw HTML when the application needs it.",
                       "inline": [
                         {
                           "kind": "strong",
                           "children": [
                             {
                               "kind": "text",
-                              "text": "MDX"
+                              "text": "HTML"
                             }
                           ]
                         },
                         {
                           "kind": "text",
-                          "text": ": when you need React components in content"
+                          "text": ": separately sanitized raw HTML when the application needs it."
                         }
                       ],
                       "range": {
-                        "from": 1953,
-                        "to": 2005
+                        "from": 4606,
+                        "to": 4678
                       },
                       "meta": {
                         "sourceContainer": "list",
@@ -1137,17 +876,17 @@
                                 "children": [
                                   {
                                     "kind": "text",
-                                    "text": "MDX"
+                                    "text": "HTML"
                                   }
                                 ]
                               },
                               {
                                 "kind": "text",
-                                "text": ": when you need React components in content"
+                                "text": ": separately sanitized raw HTML when the application needs it."
                               }
                             ],
-                            "text": "MDX: when you need React components in content",
-                            "raw": "- **MDX**: when you need React components in content"
+                            "text": "HTML: separately sanitized raw HTML when the application needs it.",
+                            "raw": "- **HTML**: separately sanitized raw HTML when the application needs it."
                           },
                           "children": []
                         }
@@ -1161,17 +900,17 @@
                       "children": [
                         {
                           "kind": "text",
-                          "text": "MDX"
+                          "text": "HTML"
                         }
                       ]
                     },
                     {
                       "kind": "text",
-                      "text": ": when you need React components in content"
+                      "text": ": separately sanitized raw HTML when the application needs it."
                     }
                   ],
-                  "text": "MDX: when you need React components in content",
-                  "raw": "- **MDX**: when you need React components in content"
+                  "text": "HTML: separately sanitized raw HTML when the application needs it.",
+                  "raw": "- **HTML**: separately sanitized raw HTML when the application needs it."
                 },
                 "children": []
               }
@@ -1179,73 +918,9 @@
           }
         },
         "range": {
-          "from": 1838,
-          "to": 2005
+          "from": 4406,
+          "to": 4678
         }
-      }
-    },
-    {
-      "id": "1318d6c5",
-      "type": "heading",
-      "isFinalized": true,
-      "payload": {
-        "raw": "Example MDX snippet",
-        "meta": {
-          "lezerNodeType": "ATXHeading2",
-          "headingLevel": 2,
-          "headingText": "Example MDX snippet",
-          "headingId": "example-mdx-snippet"
-        },
-        "range": {
-          "from": 2007,
-          "to": 2029
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "Example MDX snippet"
-          }
-        ]
-      }
-    },
-    {
-      "id": "2c48e83e",
-      "type": "code",
-      "isFinalized": true,
-      "payload": {
-        "raw": "```\n<Callout title=\"Heads up\">\n  This is a custom component rendered inside the stream.\n</Callout>\n\nHere is a YouTube embed:\n\n<YouTube videoId=\"dQw4w9WgXcQ\" />\n```",
-        "meta": {
-          "lezerNodeType": "FencedCode",
-          "code": "<Callout title=\"Heads up\">\n  This is a custom component rendered inside the stream.\n</Callout>\n\nHere is a YouTube embed:\n\n<YouTube videoId=\"dQw4w9WgXcQ\" />",
-          "info": "",
-          "highlightLang": "text"
-        },
-        "range": {
-          "from": 2031,
-          "to": 2194
-        },
-        "highlightedHtml": "<pre class=\"shiki shiki-themes github-dark github-light\" style=\"--shiki-dark:#e1e4e8;--shiki-light:#24292e;--shiki-dark-bg:#24292e;--shiki-light-bg:#fff\" tabindex=\"0\"><code><span class=\"line\" data-line=\"1\"><span>&#x3C;Callout title=\"Heads up\"></span></span>\n<span class=\"line\" data-line=\"2\"><span>  This is a custom component rendered inside the stream.</span></span>\n<span class=\"line\" data-line=\"3\"><span>&#x3C;/Callout></span></span>\n<span class=\"line\" data-line=\"4\"><span></span></span>\n<span class=\"line\" data-line=\"5\"><span>Here is a YouTube embed:</span></span>\n<span class=\"line\" data-line=\"6\"><span></span></span>\n<span class=\"line\" data-line=\"7\"><span>&#x3C;YouTube videoId=\"dQw4w9WgXcQ\" /></span></span></code></pre>"
-      }
-    },
-    {
-      "id": "478d109c",
-      "type": "paragraph",
-      "isFinalized": true,
-      "payload": {
-        "raw": "In worker mode, this compiles inside the worker and renders as soon as the block completes.",
-        "meta": {
-          "lezerNodeType": "Paragraph"
-        },
-        "range": {
-          "from": 2196,
-          "to": 2287
-        },
-        "inline": [
-          {
-            "kind": "text",
-            "text": "In worker mode, this compiles inside the worker and renders as soon as the block completes."
-          }
-        ]
       }
     }
   ],
@@ -1257,52 +932,34 @@
       "text": "MDX and HTML in StreamMDX"
     },
     {
-      "id": "why-mdx-is-optional",
+      "id": "safe-default",
       "blockId": "592dfbb9",
       "level": 2,
-      "text": "Why MDX is optional"
+      "text": "Safe default"
     },
     {
-      "id": "compile-strategies",
-      "blockId": "12b41477",
+      "id": "trusted-authored-mdx",
+      "blockId": "431c4c66",
       "level": 2,
-      "text": "Compile strategies"
-    },
-    {
-      "id": "worker-mode-default-recommendation",
-      "blockId": "43b6ca21",
-      "level": 3,
-      "text": "Worker mode (default recommendation)"
-    },
-    {
-      "id": "server-mode",
-      "blockId": "2e4ea82",
-      "level": 3,
-      "text": "Server mode"
-    },
-    {
-      "id": "mdx-component-registry",
-      "blockId": "7395ed0a",
-      "level": 2,
-      "text": "MDX component registry"
+      "text": "Trusted authored MDX"
     },
     {
       "id": "html-blocks",
-      "blockId": "6f69f24",
+      "blockId": "5c308e9",
       "level": 2,
       "text": "HTML blocks"
     },
     {
-      "id": "when-to-use-each-feature",
-      "blockId": "24ea5a90",
+      "id": "fenced-html",
+      "blockId": "39abe5a2",
       "level": 2,
-      "text": "When to use each feature"
+      "text": "Fenced HTML"
     },
     {
-      "id": "example-mdx-snippet",
-      "blockId": "1318d6c5",
+      "id": "choosing-a-policy",
+      "blockId": "39578a45",
       "level": 2,
-      "text": "Example MDX snippet"
+      "text": "Choosing a policy"
     }
   ],
   "init": {
@@ -1313,9 +970,6 @@
       "math": true,
       "footnotes": true,
       "callouts": true
-    },
-    "mdx": {
-      "compileMode": "server"
     },
     "prewarmLangs": [
       "typescript",

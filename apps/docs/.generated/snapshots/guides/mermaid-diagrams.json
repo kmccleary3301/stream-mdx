@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-10T04:53:49.707Z",
-  "hash": "0a8a4525d2216ac756f85b65f1c75e81318ceeea894ec2645a83e9da1b497574",
+  "createdAt": "2026-10-20T02:27:55.387Z",
+  "hash": "8d051b74fdea114c6d9a6f066b1b1f7949a40fc2ef876bd761a1ccac970e3fe4",
   "contentHash": "cd99889e7c1bdd5757cf78eb1a5ad0a5022535a846fa30ddc9263406626ccfc2",
-  "configHash": "a4b31dc6e15c2cd96906124ef06fadc77e60ad148c40ed5ba066e3518a02e37b",
-  "hashSalt": "docs-snapshots-v2:42a0722c827a5ff05bc7f9b0b2c880b732fb655e91e2b7c5196767915dd07177",
+  "configHash": "f4db748a14dd58be84461bc4cded0b689d48b92567d27cc5fe37ce2bb6acbd86",
+  "hashSalt": "docs-snapshots-v3:8b3fa816098a184f70b086c61607699a9f773e230e33134df864cbac0b066681",
   "blocks": [
     {
       "id": "db082c0",
@@ -382,7 +382,14 @@
       "payload": {
         "raw": "Mermaid rendering is provided via a code fence renderer mapped to `mermaid` code fences.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 66,
+              "to": 75,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 406,
@@ -564,7 +571,14 @@
       "payload": {
         "raw": "Use `defaultView` to control first render mode:",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 4,
+              "to": 17,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 1144,
@@ -637,7 +651,14 @@
       "payload": {
         "raw": "Use `createMermaidBlock` to configure global Mermaid options, default views, debounce intervals, a custom/pinned Mermaid module or async loader, or a custom error component with retry capability:",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 4,
+              "to": 24,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 1343,
@@ -1390,62 +1411,7 @@
                             "text": "No diagram appears: verify @stream-mdx/mermaid is installed and registered in codeRenderers={{ mermaid: MermaidBlock }}.",
                             "raw": "- **No diagram appears**: verify `@stream-mdx/mermaid` is installed and registered in `codeRenderers={{ mermaid: MermaidBlock }}`."
                           },
-                          "children": [
-                            {
-                              "id": "77ed0b2a::item:0::list-item:segment:0",
-                              "type": "list-item-text",
-                              "props": {
-                                "inline": [
-                                  {
-                                    "kind": "strong",
-                                    "children": [
-                                      {
-                                        "kind": "text",
-                                        "text": "No diagram appears"
-                                      }
-                                    ]
-                                  },
-                                  {
-                                    "kind": "text",
-                                    "text": ": verify "
-                                  },
-                                  {
-                                    "kind": "code",
-                                    "text": "@stream-mdx/mermaid"
-                                  },
-                                  {
-                                    "kind": "text",
-                                    "text": " is installed and registered in `codeRenderers={"
-                                  }
-                                ],
-                                "text": "**No diagram appears**: verify `@stream-mdx/mermaid` is installed and registered in `codeRenderers={"
-                              },
-                              "children": []
-                            },
-                            {
-                              "id": "77ed0b2a::item:0::list-item:segment:1",
-                              "type": "list-item-mdx",
-                              "props": {
-                                "raw": "{ mermaid: MermaidBlock }",
-                                "status": "pending"
-                              },
-                              "children": []
-                            },
-                            {
-                              "id": "77ed0b2a::item:0::list-item:segment:2",
-                              "type": "list-item-text",
-                              "props": {
-                                "inline": [
-                                  {
-                                    "kind": "text",
-                                    "text": "}`."
-                                  }
-                                ],
-                                "text": "}`."
-                              },
-                              "children": []
-                            }
-                          ]
+                          "children": []
                         }
                       }
                     }
@@ -1485,62 +1451,7 @@
                   "text": "No diagram appears: verify @stream-mdx/mermaid is installed and registered in codeRenderers={{ mermaid: MermaidBlock }}.",
                   "raw": "- **No diagram appears**: verify `@stream-mdx/mermaid` is installed and registered in `codeRenderers={{ mermaid: MermaidBlock }}`."
                 },
-                "children": [
-                  {
-                    "id": "77ed0b2a::item:0::list-item:segment:0",
-                    "type": "list-item-text",
-                    "props": {
-                      "inline": [
-                        {
-                          "kind": "strong",
-                          "children": [
-                            {
-                              "kind": "text",
-                              "text": "No diagram appears"
-                            }
-                          ]
-                        },
-                        {
-                          "kind": "text",
-                          "text": ": verify "
-                        },
-                        {
-                          "kind": "code",
-                          "text": "@stream-mdx/mermaid"
-                        },
-                        {
-                          "kind": "text",
-                          "text": " is installed and registered in `codeRenderers={"
-                        }
-                      ],
-                      "text": "**No diagram appears**: verify `@stream-mdx/mermaid` is installed and registered in `codeRenderers={"
-                    },
-                    "children": []
-                  },
-                  {
-                    "id": "77ed0b2a::item:0::list-item:segment:1",
-                    "type": "list-item-mdx",
-                    "props": {
-                      "raw": "{ mermaid: MermaidBlock }",
-                      "status": "pending"
-                    },
-                    "children": []
-                  },
-                  {
-                    "id": "77ed0b2a::item:0::list-item:segment:2",
-                    "type": "list-item-text",
-                    "props": {
-                      "inline": [
-                        {
-                          "kind": "text",
-                          "text": "}`."
-                        }
-                      ],
-                      "text": "}`."
-                    },
-                    "children": []
-                  }
-                ]
+                "children": []
               },
               {
                 "id": "77ed0b2a::item:1",
@@ -2127,9 +2038,6 @@
       "math": true,
       "footnotes": true,
       "callouts": true
-    },
-    "mdx": {
-      "compileMode": "server"
     },
     "prewarmLangs": [
       "typescript",

@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-10T04:53:47.884Z",
-  "hash": "4150e91162ba3317886269280680e5e69ca112d9afae5dcab4a1bcd6e1886bc1",
+  "createdAt": "2026-10-20T02:27:53.857Z",
+  "hash": "c8653f191ba1de8ce0153824581689a2c6145c4845b8b7846aec2028e5f14711",
   "contentHash": "2091adec7e68e86ed0d6f69b6d94e89e2790b8095862cae8b7b2011592009111",
-  "configHash": "a4b31dc6e15c2cd96906124ef06fadc77e60ad148c40ed5ba066e3518a02e37b",
-  "hashSalt": "docs-snapshots-v2:42a0722c827a5ff05bc7f9b0b2c880b732fb655e91e2b7c5196767915dd07177",
+  "configHash": "f4db748a14dd58be84461bc4cded0b689d48b92567d27cc5fe37ce2bb6acbd86",
+  "hashSalt": "docs-snapshots-v3:8b3fa816098a184f70b086c61607699a9f773e230e33134df864cbac0b066681",
   "blocks": [
     {
       "id": "db082c0",
@@ -553,7 +553,14 @@
       "payload": {
         "raw": "`onMetrics` lets you capture timing data:",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 0,
+              "to": 11,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 871,
@@ -1129,7 +1136,14 @@
       "payload": {
         "raw": "In those cases, use `features` flags to turn off unused blocks, or chunk your content.",
         "meta": {
-          "lezerNodeType": "Paragraph"
+          "lezerNodeType": "Paragraph",
+          "protectedRanges": [
+            {
+              "from": 20,
+              "to": 30,
+              "kind": "code-inline"
+            }
+          ]
         },
         "range": {
           "from": 1545,
@@ -1198,9 +1212,6 @@
       "math": true,
       "footnotes": true,
       "callouts": true
-    },
-    "mdx": {
-      "compileMode": "server"
     },
     "prewarmLangs": [
       "typescript",

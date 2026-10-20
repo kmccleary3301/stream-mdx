@@ -34,9 +34,14 @@ This document defines the artifact format produced by `npm run docs:snapshots:bu
 ## Determinism guarantees
 
 - `hash` is computed from markdown text + compile init options + optional `hashSalt`.
-- Identical input and init produce identical artifact hashes.
+- Identical text, init, and `hashSalt` produce identical artifact hashes.
 - Renderer output uses `blocks` and does not depend on stream chunk boundaries.
 - `tocHeadings` is derived from block metadata, not DOM reads.
+
+- The `docs-snapshots-v3` salt covers root runtime config and lockfile, docs target catalogs, generator and provenance code, the source Node compiler, workspace package manifests, the resolved core runtime, selected thread bootstrap, and hosted parser worker.
+- The source compiler imports Node builtins and `@stream-mdx/core`, with no relative imports. The core entry uses the same CommonJS resolution as the TSX generator. `@stream-mdx/worker/node` locates the package root; its unused compiled wrapper is not hashed.
+- The bootstrap follows the runtime's `.mjs`/`.cjs`/source fallback order, and the hosted worker is selected by `getHostedWorkerBundleUrl()`. Stable role and package-relative or repository-relative labels identify inputs; absolute checkout paths are excluded.
+- The generator init must match the canonical worker init recorded in `SnapshotArtifactV1.init`. Retired or unrecorded options must not affect artifact hashes.
 
 ## Nested block ownership
 

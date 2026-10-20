@@ -1,11 +1,11 @@
 {
   "version": 1,
   "schemaId": "streammdx.snapshot.v1",
-  "createdAt": "2026-10-12T19:58:12.614Z",
-  "hash": "d23d4fd0ea6b65cfc6a0ec89e1f993224b38173220837a3203d1688bf4350291",
+  "createdAt": "2026-10-20T02:27:50.512Z",
+  "hash": "ec79ded34eaa16de392f1c57c3a7c9701e2745e2225a481e7be409ae1e23cafe",
   "contentHash": "227898a9fba9734e8cee383cf32e432910b09edec8f7c4a5140da3c91baadf1a",
-  "configHash": "a4b31dc6e15c2cd96906124ef06fadc77e60ad148c40ed5ba066e3518a02e37b",
-  "hashSalt": "docs-snapshots-v2:42a0722c827a5ff05bc7f9b0b2c880b732fb655e91e2b7c5196767915dd07177",
+  "configHash": "f4db748a14dd58be84461bc4cded0b689d48b92567d27cc5fe37ce2bb6acbd86",
+  "hashSalt": "docs-snapshots-v3:8b3fa816098a184f70b086c61607699a9f773e230e33134df864cbac0b066681",
   "blocks": [
     {
       "id": "db082c0",
@@ -4597,9 +4597,6 @@
       "math": true,
       "footnotes": true,
       "callouts": true
-    },
-    "mdx": {
-      "compileMode": "server"
     },
     "prewarmLangs": [
       "typescript",
