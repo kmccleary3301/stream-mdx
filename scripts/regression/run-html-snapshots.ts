@@ -457,8 +457,6 @@ async function validateDisplayFormula(
 }
 
 async function run(): Promise<void> {
-  const workerTraceEnabled = Boolean(process.env.CI) && process.argv.includes("mdx-transitions");
-
   const fixtureFilter = getArg("--filter");
   const scenarioFilter = getArg("--scenario");
   const seed = getArg("--seed");
@@ -491,122 +489,6 @@ async function run(): Promise<void> {
   let context: BrowserContext | undefined;
   try {
     context = await browser.newContext();
-  if (workerTraceEnabled) {
-    await context.addInitScript({
-      content: String.raw`(() => {
-        const trace = { entries: [] };
-        Object.defineProperty(window, "__streamMdxWorkerTrace", { configurable: true, value: trace });
-        const NativeWorker = window.Worker;
-        let nextWorkerGeneration = 0;
-        const scalar = value => typeof value === "number" || typeof value === "string" ? value : null;
-        const finiteNumber = value => typeof value === "number" && Number.isFinite(value) ? value : undefined;
-        const record = (event, workerGeneration, details) =>
-          trace.entries.push({ atMs: performance.now(), event, workerGeneration, ...details });
-        const ObservedWorker = new Proxy(NativeWorker, {
-          construct(target, args, newTarget) {
-            const workerGeneration = ++nextWorkerGeneration;
-            const requestedUrl = args[0];
-            const constructorUrl = requestedUrl instanceof URL ? requestedUrl.href : String(requestedUrl);
-            let resolvedUrl = constructorUrl;
-            try { resolvedUrl = new URL(constructorUrl, document.baseURI).href; } catch {}
-            record("construct", workerGeneration, { constructorUrl, resolvedUrl });
-            const worker = Reflect.construct(target, args, newTarget);
-            let inputSequence = 0;
-            let outputSequence = 0;
-            const nativePostMessage = worker.postMessage;
-            Object.defineProperty(worker, "postMessage", {
-              configurable: true,
-              enumerable: false,
-              writable: true,
-              value: new Proxy(nativePostMessage, {
-                apply(postMessage, thisArg, args) {
-                  const inputMessage = args[0];
-                  const inputRecord = inputMessage !== null && typeof inputMessage === "object" ? inputMessage : null;
-                  const inputText = inputRecord?.text;
-                  const initialContent = inputRecord?.initialContent;
-                  record("WorkerIn", workerGeneration, {
-                    sequence: ++inputSequence,
-                    type: typeof inputRecord?.type === "string" ? inputRecord.type : "UNKNOWN",
-                    messageGeneration: scalar(inputRecord?.generation),
-                    messageSeq: scalar(inputRecord?.seq ?? inputRecord?.sequence),
-                    inputLength: typeof inputText === "string" ? inputText.length : typeof initialContent === "string" ? initialContent.length : null,
-                  });
-                  return Reflect.apply(postMessage, thisArg, args);
-                },
-              }),
-            });
-            worker.addEventListener("message", event => {
-              const outputMessage = event.data;
-              const outputRecord = outputMessage !== null && typeof outputMessage === "object" ? outputMessage : null;
-              const outputType = typeof outputRecord?.type === "string" ? outputRecord.type : "UNKNOWN";
-              const patches = Array.isArray(outputRecord?.patches) ? outputRecord.patches : null;
-              const patchOps = Object.create(null);
-              const patchMetadata = { streamSeq: new Set(), parseEpoch: new Set(), tx: new Set(), blockEpoch: new Set() };
-              if (patches) {
-                for (const patch of patches) {
-                  if (patch === null || typeof patch !== "object") continue;
-                  const operation = typeof patch.op === "string" ? patch.op : "UNKNOWN";
-                  patchOps[operation] = (patchOps[operation] ?? 0) + 1;
-                  const metadata = patch.meta;
-                  if (metadata === null || typeof metadata !== "object") continue;
-                  for (const field of Object.keys(patchMetadata)) {
-                    const value = finiteNumber(metadata[field]);
-                    if (value !== undefined) patchMetadata[field].add(value);
-                  }
-                }
-              }
-              const outputEntry = {
-                sequence: ++outputSequence,
-                type: outputType,
-                messageGeneration: scalar(outputRecord?.generation),
-                messageSeq: scalar(outputRecord?.seq ?? outputRecord?.sequence),
-                tx: finiteNumber(outputRecord?.tx) ?? null,
-              };
-              if (patches) {
-                outputEntry.patchCount = patches.length;
-                outputEntry.patchOps = patchOps;
-                outputEntry.patchMetadata = Object.fromEntries(
-                  Object.entries(patchMetadata).map(([field, values]) => [field, [...values].sort((a, b) => a - b)]),
-                );
-              }
-              if (outputType === "ERROR") {
-                const errorValue = outputRecord?.error;
-                const errorRecord = errorValue !== null && typeof errorValue === "object" ? errorValue : null;
-                outputEntry.phase = typeof outputRecord?.phase === "string" ? outputRecord.phase : undefined;
-                outputEntry.blockId = typeof outputRecord?.blockId === "string" ? outputRecord.blockId : undefined;
-                outputEntry.errorName = typeof errorRecord?.name === "string" ? errorRecord.name : undefined;
-                outputEntry.errorMessage = typeof errorRecord?.message === "string" ? errorRecord.message : undefined;
-              }
-              record("WorkerOut", workerGeneration, outputEntry);
-            });
-            worker.addEventListener("error", event => record("error", workerGeneration, {
-              errorName: event.error instanceof Error ? event.error.name : undefined,
-              errorMessage: event.message || undefined,
-              filename: event.filename || undefined,
-              line: event.lineno || undefined,
-              column: event.colno || undefined,
-            }));
-            worker.addEventListener("messageerror", () => record("messageerror", workerGeneration, {}));
-            return worker;
-          },
-        });
-        window.Worker = ObservedWorker;
-      })()`,
-    });
-    const workerUrl = `${BASE_URL}/workers/markdown-worker.js`;
-    try {
-      const response = await context.request.get(workerUrl);
-      if (response.ok()) {
-        const workerSha256 = crypto.createHash("sha256").update(await response.body()).digest("hex");
-        console.log(`[P9-worker-trace:worker] url=${workerUrl} status=${response.status()} sha256=${workerSha256}`);
-      } else {
-        console.error(`[P9-worker-trace:worker] url=${workerUrl} status=${response.status()} hash=unavailable`);
-      }
-    } catch (error) {
-      console.error(`[P9-worker-trace:worker] url=${workerUrl} fetchError=${String(error)}`);
-    }
-  }
-
   const suppressedConsole = {
     nameNotResolved: 0,
     nameNotResolvedByFixture: {} as Record<string, number>,
@@ -685,7 +567,6 @@ async function run(): Promise<void> {
         executedByScenario.set(scenario.id, (executedByScenario.get(scenario.id) ?? 0) + 1);
         const page = await context.newPage();
         attachPageObservers(page);
-        let pendingChunkDiagnostic: { index: number; inputLength: number; startedAt: bigint } | null = null;
 
         const usesFixedSplit = activeSeed === null && isSplitScenario(scenario) && Boolean(split);
         const chunks = activeSeed !== null
@@ -787,26 +668,11 @@ async function run(): Promise<void> {
             });
           };
 
-          let chunkNumber = 0;
           for (const chunk of chunks) {
-            const startedAt = workerTraceEnabled ? process.hrtime.bigint() : 0n;
-            if (workerTraceEnabled) {
-              pendingChunkDiagnostic = { index: ++chunkNumber, inputLength: chunk.length, startedAt };
-            }
             await page.evaluate((value) => window.__streammdxRegression?.appendAndFlush(value), chunk);
             appended += chunk.length;
 
             const summary = await readSummary(page);
-            if (workerTraceEnabled) {
-              const runtimeState = (await page.evaluate(
-                () => window.__streammdxRegression?.getRuntimeState?.(),
-              )) as SnapshotCheckpoint["runtimeState"];
-              const elapsedMs = Number(process.hrtime.bigint() - startedAt) / 1_000_000;
-              console.log(
-                `[P9-worker-trace:chunk] ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"} chunk=${chunkNumber}/${chunks.length} inputLength=${chunk.length} elapsedMs=${elapsedMs.toFixed(2)} summary=${JSON.stringify(summary)} runtime=${JSON.stringify(runtimeState)}`,
-              );
-              pendingChunkDiagnostic = null;
-            }
             if (tableFirstSeenAt === null && summary.selectors.hasTable) {
               tableFirstSeenAt = appended;
             }
@@ -1171,35 +1037,6 @@ async function run(): Promise<void> {
             console.log(`ok ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}`);
           }
         } finally {
-          if (workerTraceEnabled) {
-            try {
-              const diagnostics = await page.evaluate(() => {
-                const api = window.__streammdxRegression;
-                const trace = (window as Window & { __streamMdxWorkerTrace?: { entries: unknown[] } })
-                  .__streamMdxWorkerTrace;
-                return {
-                  summary: api?.getSummary(),
-                  runtimeState: api?.getRuntimeState?.(),
-                  workerTrace: trace?.entries ?? [],
-                };
-              });
-              const unfinishedChunk = pendingChunkDiagnostic
-                ? {
-                    index: pendingChunkDiagnostic.index,
-                    inputLength: pendingChunkDiagnostic.inputLength,
-                    elapsedMs:
-                      Number(process.hrtime.bigint() - pendingChunkDiagnostic.startedAt) / 1_000_000,
-                  }
-                : null;
-              console.log(
-                `[P9-worker-trace:final] ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"} strictFailure=${scenarioFailed} ${JSON.stringify({ unfinishedChunk, ...diagnostics })}`,
-              );
-            } catch (diagnosticError) {
-              console.error(
-                `[P9-worker-trace:final] ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"} traceUnavailable=${String(diagnosticError)}`,
-              );
-            }
-          }
           await page.close().catch((error) => {
             console.error(`Failed to close regression page for ${fixture.id}/${scenario.id} seed=${activeSeed ?? "baseline"}:`, error);
             process.exitCode = 1;
