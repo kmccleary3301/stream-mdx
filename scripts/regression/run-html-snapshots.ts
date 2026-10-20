@@ -20,6 +20,10 @@ import {
   findMissingRequiredTextFragments,
 } from "./utils";
 import type { RegressionScenario } from "./utils";
+import {
+  extractTopLevelElementHtml,
+  normalizeInlineStyleSerialization,
+} from "./html-style-normalization";
 
 const UPDATE = process.env.UPDATE_SNAPSHOTS === "1" || process.env.UPDATE_SNAPSHOTS === "true";
 const BASE_URL = process.env.STREAM_MDX_REGRESSION_BASE_URL || "http://localhost:3000";
@@ -170,7 +174,7 @@ async function writeComparisonArtifacts(
   return artifactDir;
 }
 
-function compareFinalSnapshots(expected: HtmlSnapshot, received: HtmlSnapshot): { ok: boolean; message?: string } {
+function compareNormalizedFinalSnapshots(expected: HtmlSnapshot, received: HtmlSnapshot): { ok: boolean; message?: string } {
   if (expected.final.structure && received.final.structure) {
     const expStructure = JSON.stringify(expected.final.structure);
     const recStructure = JSON.stringify(received.final.structure);
@@ -233,6 +237,28 @@ function compareFinalSnapshots(expected: HtmlSnapshot, received: HtmlSnapshot): 
   }
 
   return { ok: true };
+}
+// Persisted hashes describe raw HTML; derive comparison hashes only after style normalization.
+async function normalizeSnapshotForComparison(page: Page, snapshot: HtmlSnapshot): Promise<HtmlSnapshot> {
+  const html = await normalizeInlineStyleSerialization(page, snapshot.final.html);
+  const childHtml = extractTopLevelElementHtml(html);
+  const children = snapshot.final.children?.map((child, index) => {
+    const normalizedChild = childHtml[index];
+    return { ...child, hash: hashHtml(normalizedChild?.html ?? "") };
+  });
+  return { ...snapshot, final: { ...snapshot.final, html, children } };
+}
+
+async function compareFinalSnapshots(
+  page: Page,
+  expected: HtmlSnapshot,
+  received: HtmlSnapshot,
+): Promise<{ ok: boolean; message?: string }> {
+  const [normalizedExpected, normalizedReceived] = await Promise.all([
+    normalizeSnapshotForComparison(page, expected),
+    normalizeSnapshotForComparison(page, received),
+  ]);
+  return compareNormalizedFinalSnapshots(normalizedExpected, normalizedReceived);
 }
 
 function hashHtml(value: string): string {
@@ -931,7 +957,7 @@ async function run(): Promise<void> {
             continue;
           }
 
-          const result = compareFinalSnapshots(expected, snapshot);
+          const result = await compareFinalSnapshots(page, expected, snapshot);
           if (!result.ok) {
             failures += 1;
             const artifactDir = await writeComparisonArtifacts({
@@ -960,7 +986,7 @@ async function run(): Promise<void> {
             scenarioFailed = true;
           }
           if (expected) {
-          const result = compareFinalSnapshots(expected, snapshot);
+          const result = await compareFinalSnapshots(page, expected, snapshot);
           if (!result.ok) {
             failures += 1;
             scenarioFailed = true;
@@ -982,7 +1008,7 @@ async function run(): Promise<void> {
           if (!baselineReplaySnapshot) {
           baselineReplaySnapshot = snapshot;
         } else {
-          const replayResult = compareFinalSnapshots(baselineReplaySnapshot, snapshot);
+          const replayResult = await compareFinalSnapshots(page, baselineReplaySnapshot, snapshot);
           if (!replayResult.ok) {
             failures += 1;
             scenarioFailed = true;

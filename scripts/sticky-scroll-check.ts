@@ -291,12 +291,38 @@ async function main() {
     }
 
     await page.goto(demoUrl, { waitUntil: "domcontentloaded" });
-    await waitFor(
-      async () => page.locator("h1").first().textContent(),
-      (value) => (value ?? "").toLowerCase().includes("streaming markdown demo"),
-      5000,
+    await page.waitForSelector('.studio-sample-grid[data-studio-ready="true"]', { timeout: 12_000 });
+
+    const demoSampleCount = await page.locator(".studio-sample-button").count();
+    if (demoSampleCount < 5) {
+      fail(`Studio demo exposes too few stress samples (count=${demoSampleCount})`);
+    }
+    const activeSamplesBefore = await page.locator('.studio-sample-button[aria-pressed="true"]').count();
+    if (activeSamplesBefore !== 1) {
+      fail(`Studio demo should have one active sample before selection (count=${activeSamplesBefore})`);
+    }
+
+    await page.getByRole("button", { name: /large table/i }).click();
+    await page.waitForFunction(() =>
+      document.querySelector('.studio-sample-button[aria-pressed="true"]')?.textContent?.includes("Large table"),
     );
-    await assertLockedComponent("streaming demo page");
+    await page.waitForFunction(() => document.querySelector(".studio-renderer-shell")?.textContent?.includes("Large table"));
+
+    await page.waitForSelector('[data-testid="markdown-output"] table', { timeout: 15_000 });
+    const demoOutputTableHeading = await page.locator('[data-testid="markdown-output"] table thead').innerText();
+    if (!demoOutputTableHeading.includes("Hedge Fund")) {
+      fail(`Studio demo did not render the selected large-table sample (header=${JSON.stringify(demoOutputTableHeading)})`);
+    }
+    const demoOutputTextLength = await page.locator('[data-testid="markdown-output"]').evaluate((node) => node.textContent?.trim().length ?? 0);
+    if (demoOutputTextLength === 0) {
+      fail("Studio demo renderer output is empty");
+    }
+
+    await page.getByRole("button", { name: "Pause", exact: true }).click();
+    await page.getByRole("button", { name: "Resume", exact: true }).waitFor({ state: "visible", timeout: 5000 });
+    await page.getByRole("button", { name: "Resume", exact: true }).click();
+    await page.getByRole("button", { name: "Pause", exact: true }).waitFor({ state: "visible", timeout: 5000 });
+
     await capture("07-demo-surface");
 
     const demoMainTextLength = await page.evaluate(() => {
@@ -306,6 +332,8 @@ async function main() {
     if (demoMainTextLength < 120) {
       fail(`demo surface looks under-rendered (main text length=${demoMainTextLength})`);
     }
+
+    const demoControlsToggled = true;
 
     await page.goto(docsUrl, { waitUntil: "domcontentloaded" });
     await waitFor(
@@ -329,6 +357,9 @@ async function main() {
         maxFrameDrop,
         stickyAfterReturn,
         finalDebug,
+        demoSampleCount,
+        demoOutputTextLength,
+        demoControlsToggled,
         demoMainTextLength,
         docsCodeBlocks,
         jumpVisual,

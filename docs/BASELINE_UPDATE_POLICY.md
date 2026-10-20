@@ -42,6 +42,8 @@ Refreshing snapshots without adding the missing guard is not sufficient.
 
 HTML baselines lock the complete final HTML bytes, root-child hashes, and final structural signatures. Provisional checkpoint captures are diagnostic evidence, not count/order/HTML/structure equality assertions. Do not refresh snapshots to re-pin incidental partial classes, event timing, or older invalid KaTeX states.
 
+Comparisons canonicalize inline `style` values through Chromium's `CSSStyleDeclaration.cssText` before comparing HTML or hashing root children. Declaration order, values, priorities, custom-property values, and every non-style HTML byte remain strict.
+
 Removing a provisional byte assertion does not remove a behavior lock. Keep streaming security/math error bans, code-prefix and table/list guards, MDX state expectations, required rendered text/selectors, and explicit split-boundary assertions. The display-checkpoint fixture must render its formula at the ordinary S5 marker and converge to the complete formula and prose.
 
 Seeded replay must actually vary marker-stripped chunks using the existing seed options. Split-marker seeded S2 requests use the ordinary S5 final oracle; unseeded S5 still tests the authored critical boundary. Same-build seed and scheduler final comparisons stay exact. Zero executed requested cases are failures, not coverage.
