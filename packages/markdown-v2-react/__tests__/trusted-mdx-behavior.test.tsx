@@ -8,6 +8,19 @@ import type { TrustedMdxRevision } from "../src/trusted-mdx-contract";
 declare global {
   var __trustedMdxEffectTrap: string[] | undefined;
 }
+/**
+ * File-local deferred (Node 20 has no `Promise.withResolvers`) with the same resolve/reject
+ * surface, so compiler gates preserve their ordering without a global polyfill.
+ */
+function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void; reject: (error: Error) => void } {
+  let resolve!: (value: T) => void;
+  let reject!: (error: Error) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+}
 
 async function testRealCompilerSharedLexicalStateAndLayout(): Promise<void> {
   const source = [
@@ -195,8 +208,8 @@ async function testRealCompilerSharedLexicalStateAndLayout(): Promise<void> {
 async function testStaleBeforeEvalEffectTrap(): Promise<void> {
   globalThis.__trustedMdxEffectTrap = [];
 
-  const compilerGate = Promise.withResolvers<void>();
-  const compilerStarted = Promise.withResolvers<void>();
+  const compilerGate = deferred<void>();
+  const compilerStarted = deferred<void>();
   const engine = createTrustedMdxEngine({
     compile: async (source: string) => {
       compilerStarted.resolve();
@@ -228,8 +241,8 @@ async function testStaleBeforeEvalEffectTrap(): Promise<void> {
 }
 
 async function testOneLeaseClearedWhileAnotherWaits(): Promise<void> {
-  const compilerGate = Promise.withResolvers<void>();
-  const compilerStarted = Promise.withResolvers<void>();
+  const compilerGate = deferred<void>();
+  const compilerStarted = deferred<void>();
   let compilerCalls = 0;
   const engine = createTrustedMdxEngine({
     compile: async (source: string) => {
@@ -387,12 +400,9 @@ async function testLastValidRevisionOnCompileOrRenderFailure(): Promise<void> {
 }
 
 async function testClearDoesNotDeleteReplacementInflight(): Promise<void> {
-  const compilerGates = [
-    Promise.withResolvers<void>(),
-    Promise.withResolvers<void>(),
-  ];
-  const firstCompilerStarted = Promise.withResolvers<void>();
-  const replacementCompilerStarted = Promise.withResolvers<void>();
+  const compilerGates = [deferred<void>(), deferred<void>()];
+  const firstCompilerStarted = deferred<void>();
+  const replacementCompilerStarted = deferred<void>();
   let compilerCalls = 0;
   const engine = createTrustedMdxEngine({
     compile: async (source: string) => {

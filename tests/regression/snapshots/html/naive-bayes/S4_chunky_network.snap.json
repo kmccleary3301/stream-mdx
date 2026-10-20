@@ -76,8 +76,6 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -142,8 +140,6 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 6,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -208,8 +204,6 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 6,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -274,8 +268,6 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 14,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -340,8 +332,6 @@
           "pre": 0,
           "blockquote": 0,
           "katex": 15,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -406,8 +396,6 @@
           "pre": 1,
           "blockquote": 0,
           "katex": 15,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -477,8 +465,6 @@
           "pre": 1,
           "blockquote": 0,
           "katex": 15,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -565,8 +551,6 @@
           "pre": 1,
           "blockquote": 0,
           "katex": 15,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -653,8 +637,6 @@
           "pre": 2,
           "blockquote": 1,
           "katex": 15,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -753,8 +735,6 @@
           "pre": 6,
           "blockquote": 1,
           "katex": 21,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 1
         }
@@ -869,8 +849,6 @@
           "pre": 6,
           "blockquote": 2,
           "katex": 27,
-          "mdxPending": 0,
-          "mdxCompiled": 2,
           "footnotes": 0,
           "hr": 1
         }
@@ -994,8 +972,6 @@
           "pre": 12,
           "blockquote": 3,
           "katex": 27,
-          "mdxPending": 0,
-          "mdxCompiled": 6,
           "footnotes": 0,
           "hr": 1
         }
@@ -1151,8 +1127,6 @@
           "pre": 22,
           "blockquote": 3,
           "katex": 27,
-          "mdxPending": 0,
-          "mdxCompiled": 9,
           "footnotes": 0,
           "hr": 1
         }
@@ -1348,8 +1322,6 @@
           "pre": 22,
           "blockquote": 3,
           "katex": 27,
-          "mdxPending": 0,
-          "mdxCompiled": 9,
           "footnotes": 1,
           "hr": 2
         }
@@ -1535,8 +1507,6 @@
         "pre": 22,
         "blockquote": 3,
         "katex": 27,
-        "mdxPending": 0,
-        "mdxCompiled": 9,
         "footnotes": 1,
         "hr": 2
       }

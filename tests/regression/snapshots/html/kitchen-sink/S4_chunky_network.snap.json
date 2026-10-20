@@ -73,8 +73,6 @@
           "pre": 1,
           "blockquote": 1,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -154,8 +152,6 @@
           "pre": 1,
           "blockquote": 1,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -235,8 +231,6 @@
           "pre": 1,
           "blockquote": 1,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -316,8 +310,6 @@
           "pre": 1,
           "blockquote": 1,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -397,8 +389,6 @@
           "pre": 1,
           "blockquote": 1,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -478,8 +468,6 @@
           "pre": 1,
           "blockquote": 1,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -559,8 +547,6 @@
           "pre": 1,
           "blockquote": 1,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -640,8 +626,6 @@
           "pre": 1,
           "blockquote": 1,
           "katex": 0,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -721,8 +705,6 @@
           "pre": 1,
           "blockquote": 1,
           "katex": 3,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -802,8 +784,6 @@
           "pre": 1,
           "blockquote": 1,
           "katex": 3,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -883,8 +863,6 @@
           "pre": 1,
           "blockquote": 1,
           "katex": 3,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -964,8 +942,6 @@
           "pre": 1,
           "blockquote": 1,
           "katex": 3,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 0,
           "hr": 0
         }
@@ -1045,8 +1021,6 @@
           "pre": 1,
           "blockquote": 1,
           "katex": 3,
-          "mdxPending": 0,
-          "mdxCompiled": 0,
           "footnotes": 1,
           "hr": 1
         }
@@ -1116,8 +1090,6 @@
         "pre": 1,
         "blockquote": 1,
         "katex": 3,
-        "mdxPending": 0,
-        "mdxCompiled": 0,
         "footnotes": 1,
         "hr": 1
       }
