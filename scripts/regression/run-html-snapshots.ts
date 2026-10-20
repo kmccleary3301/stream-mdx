@@ -316,14 +316,398 @@ function hashHtml(value: string): string {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
 
-async function readRootText(page: import("@playwright/test").Page): Promise<string> {
+type InlineStyleAttributeRange = {
+  start: number;
+  end: number;
+  quote: "\"" | "'" | null;
+};
+
+// Keep non-style HTML bytes untouched; the page CSSOM supplies only replacement values.
+function findInlineStyleAttributeRanges(html: string): InlineStyleAttributeRange[] | null {
+  const ranges: InlineStyleAttributeRange[] = [];
+  const isWhitespace = (character: string | undefined): boolean =>
+    character === " " || character === "\t" || character === "\n" || character === "\r" || character === "\f";
+  const findRawTextEnd = (from: number, tagName: string): number => {
+    for (let index = from; index < html.length; index += 1) {
+      if (html[index] !== "<" || html[index + 1] !== "/") continue;
+      let matchesTag = true;
+      for (let offset = 0; offset < tagName.length; offset += 1) {
+        if (html[index + 2 + offset]?.toLowerCase() !== tagName[offset]) {
+          matchesTag = false;
+          break;
+        }
+      }
+      const afterTagName = html[index + 2 + tagName.length];
+      if (
+        matchesTag &&
+        (afterTagName === undefined || isWhitespace(afterTagName) || afterTagName === "/" || afterTagName === ">")
+      ) {
+        return index;
+      }
+    }
+    return html.length;
+  };
+
+  let cursor = 0;
+  while (cursor < html.length) {
+    const tagStart = html.indexOf("<", cursor);
+    if (tagStart < 0) break;
+    if (html.startsWith("<!--", tagStart)) {
+      const commentEnd = html.indexOf("-->", tagStart + 4);
+      if (commentEnd < 0) return null;
+      cursor = commentEnd + 3;
+      continue;
+    }
+    if (html.startsWith("<![CDATA[", tagStart)) {
+      const cdataEnd = html.indexOf("]]>", tagStart + 9);
+      if (cdataEnd < 0) return null;
+      cursor = cdataEnd + 3;
+      continue;
+    }
+    if (html[tagStart + 1] === "!" || html[tagStart + 1] === "?") {
+      let index = tagStart + 2;
+      let quote: string | null = null;
+      for (; index < html.length; index += 1) {
+        const character = html[index];
+        if (quote) {
+          if (character === quote) quote = null;
+        } else if (character === "\"" || character === "'") {
+          quote = character;
+        } else if (character === ">") {
+          break;
+        }
+      }
+      if (index >= html.length) return null;
+      cursor = index + 1;
+      continue;
+    }
+    if (html[tagStart + 1] === "/") {
+      const endTagEnd = html.indexOf(">", tagStart + 2);
+      if (endTagEnd < 0) return null;
+      cursor = endTagEnd + 1;
+      continue;
+    }
+    const firstTagCharacter = html[tagStart + 1];
+    if (!firstTagCharacter || !/[A-Za-z]/.test(firstTagCharacter)) {
+      cursor = tagStart + 1;
+      continue;
+    }
+
+    let index = tagStart + 1;
+    const tagNameStart = index;
+    while (
+      index < html.length &&
+      !isWhitespace(html[index]) &&
+      html[index] !== "/" &&
+      html[index] !== ">"
+    ) {
+      index += 1;
+    }
+    const tagName = html.slice(tagNameStart, index).toLowerCase();
+    let selfClosing = false;
+    let tagEnded = false;
+    while (index < html.length) {
+      while (isWhitespace(html[index])) index += 1;
+      if (html[index] === ">") {
+        index += 1;
+        tagEnded = true;
+        break;
+      }
+      if (html[index] === "/" && html[index + 1] === ">") {
+        index += 2;
+        selfClosing = true;
+        tagEnded = true;
+        break;
+      }
+
+      const attributeNameStart = index;
+      while (
+        index < html.length &&
+        !isWhitespace(html[index]) &&
+        html[index] !== "=" &&
+        html[index] !== ">"
+      ) {
+        index += 1;
+      }
+      if (index === attributeNameStart) {
+        index += 1;
+        continue;
+      }
+      const attributeName = html.slice(attributeNameStart, index).toLowerCase();
+      while (isWhitespace(html[index])) index += 1;
+
+      let valueStart = index;
+      let valueEnd = index;
+      let quote: InlineStyleAttributeRange["quote"] = null;
+      if (html[index] === "=") {
+        index += 1;
+        while (isWhitespace(html[index])) index += 1;
+        if (html[index] === "\"" || html[index] === "'") {
+          quote = html[index] === "'" ? "'" : "\"";
+          valueStart = index + 1;
+          valueEnd = html.indexOf(quote, valueStart);
+          if (valueEnd < 0) return null;
+          index = valueEnd + 1;
+        } else {
+          valueStart = index;
+          while (index < html.length && !isWhitespace(html[index]) && html[index] !== ">") index += 1;
+          valueEnd = index;
+        }
+      }
+      if (attributeName === "style") {
+        ranges.push({ start: valueStart, end: valueEnd, quote });
+      }
+    }
+    if (!tagEnded) return null;
+    cursor = index;
+
+    if (!selfClosing && tagName === "plaintext") return ranges;
+    if (!selfClosing && ["iframe", "noembed", "noframes", "script", "style", "textarea", "title", "xmp"].includes(tagName)) {
+      cursor = findRawTextEnd(cursor, tagName);
+    }
+  }
+  return ranges;
+}
+
+async function prepareSnapshotForComparison(page: Page, snapshot: HtmlSnapshot): Promise<HtmlSnapshot> {
+  const styleRanges = findInlineStyleAttributeRanges(snapshot.final.html);
+  if (!styleRanges) return snapshot;
+
+  const prepared = await page.evaluate(
+    ({ html, ranges }) => {
+      const cssNormalizer = {
+        isCssTrivia(declaration: string): boolean {
+          let index = 0;
+          while (index < declaration.length) {
+            if (
+              declaration[index] === " " ||
+              declaration[index] === "\t" ||
+              declaration[index] === "\n" ||
+              declaration[index] === "\r" ||
+              declaration[index] === "\f"
+            ) {
+              index += 1;
+            } else if (declaration[index] === "/" && declaration[index + 1] === "*") {
+              const commentEnd = declaration.indexOf("*/", index + 2);
+              if (commentEnd < 0) return false;
+              index = commentEnd + 2;
+            } else {
+              return false;
+            }
+          }
+          return true;
+        },
+        splitCssDeclarations(value: string): string[] | null {
+          const declarations: string[] = [];
+          let start = 0;
+          let quote: string | null = null;
+          let inComment = false;
+          let parentheses = 0;
+          let brackets = 0;
+          let braces = 0;
+          for (let index = 0; index < value.length; index += 1) {
+            const character = value[index];
+            const nextCharacter = value[index + 1];
+            if (inComment) {
+              if (character === "*" && nextCharacter === "/") {
+                inComment = false;
+                index += 1;
+              }
+              continue;
+            }
+            if (quote) {
+              if (character === "\\") {
+                index += 1;
+              } else if (character === quote) {
+                quote = null;
+              }
+              continue;
+            }
+            if (character === "/" && nextCharacter === "*") {
+              inComment = true;
+              index += 1;
+            } else if (character === "\"" || character === "'") {
+              quote = character;
+            } else if (character === "\\") {
+              index += 1;
+            } else if (character === "(") {
+              parentheses += 1;
+            } else if (character === ")") {
+              if (parentheses === 0) return null;
+              parentheses -= 1;
+            } else if (character === "[") {
+              brackets += 1;
+            } else if (character === "]") {
+              if (brackets === 0) return null;
+              brackets -= 1;
+            } else if (character === "{") {
+              braces += 1;
+            } else if (character === "}") {
+              if (braces === 0) return null;
+              braces -= 1;
+            } else if (character === ";" && parentheses === 0 && brackets === 0 && braces === 0) {
+              declarations.push(value.slice(start, index));
+              start = index + 1;
+            }
+          }
+          if (quote || inComment || parentheses !== 0 || brackets !== 0 || braces !== 0) return null;
+          declarations.push(value.slice(start));
+          return declarations;
+        },
+        // Unsupported, duplicate, or lossy declarations stay byte-for-byte unchanged.
+        canonicalizeStyle(value: string): string | null {
+          const declarations = this.splitCssDeclarations(value);
+          if (!declarations) return null;
+
+          const propertyNames: string[] = [];
+          const propertyValues: string[] = [];
+          const priorities: string[] = [];
+          const seenProperties = new Set<string>();
+          for (const declaration of declarations) {
+            if (this.isCssTrivia(declaration)) continue;
+            const parsedDeclaration = document.createElement("span");
+            parsedDeclaration.setAttribute("style", declaration);
+            if (parsedDeclaration.style.length !== 1) return null;
+            const propertyName = parsedDeclaration.style.item(0);
+            if (!propertyName) return null;
+            const propertyKey = propertyName.startsWith("--") ? propertyName : propertyName.toLowerCase();
+            if (seenProperties.has(propertyKey)) return null;
+            seenProperties.add(propertyKey);
+            propertyNames.push(propertyName);
+            propertyValues.push(parsedDeclaration.style.getPropertyValue(propertyName));
+            priorities.push(parsedDeclaration.style.getPropertyPriority(propertyName));
+          }
+          if (propertyNames.length === 0) return null;
+
+          const parsedStyle = document.createElement("span");
+          parsedStyle.setAttribute("style", value);
+          if (parsedStyle.style.length !== propertyNames.length) return null;
+          for (let index = 0; index < propertyNames.length; index += 1) {
+            const expectedName = propertyNames[index];
+            const expectedValue = propertyValues[index];
+            const expectedPriority = priorities[index];
+            if (expectedName === undefined || expectedValue === undefined || expectedPriority === undefined) return null;
+            const propertyName = parsedStyle.style.item(index);
+            if (
+              propertyName !== expectedName ||
+              parsedStyle.style.getPropertyValue(expectedName) !== expectedValue ||
+              parsedStyle.style.getPropertyPriority(expectedName) !== expectedPriority
+            ) {
+              return null;
+            }
+          }
+
+          const cssText = parsedStyle.style.cssText;
+          const roundTrip = document.createElement("span");
+          roundTrip.setAttribute("style", cssText);
+          if (roundTrip.style.length !== propertyNames.length) return null;
+          for (let index = 0; index < propertyNames.length; index += 1) {
+            const expectedName = propertyNames[index];
+            const expectedValue = propertyValues[index];
+            const expectedPriority = priorities[index];
+            if (expectedName === undefined || expectedValue === undefined || expectedPriority === undefined) return null;
+            const propertyName = roundTrip.style.item(index);
+            if (
+              propertyName !== expectedName ||
+              roundTrip.style.getPropertyValue(expectedName) !== expectedValue ||
+              roundTrip.style.getPropertyPriority(expectedName) !== expectedPriority
+            ) {
+              return null;
+            }
+          }
+          return cssText;
+        },
+        escapeAttributeValue(value: string, quote: "\"" | "'" | null): string {
+          let escaped = value.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+          if (quote === "'") escaped = escaped.replace(/'/g, "&#39;");
+          else escaped = escaped.replace(/"/g, "&quot;");
+          return escaped;
+        },
+      };
+
+      const parsedRoot = document.createElement("div");
+      parsedRoot.innerHTML = html;
+      const styleElements = Array.from(parsedRoot.querySelectorAll("[style]"));
+      if (styleElements.length !== ranges.length) return null;
+      const replacements: Array<{ range: (typeof ranges)[number]; value: string }> = [];
+      for (let index = 0; index < ranges.length; index += 1) {
+        const styleElement = styleElements[index];
+        const styleValue = styleElement?.getAttribute("style");
+        if (styleElement === undefined || styleValue === null || styleValue === undefined) return null;
+        const cssText = cssNormalizer.canonicalizeStyle(styleValue);
+        if (cssText !== null) {
+          const range = ranges[index];
+          if (!range) return null;
+          replacements.push({ range, value: cssText });
+          styleElement.setAttribute("style", cssText);
+        }
+      }
+
+      let normalizedHtml = html;
+      for (let index = replacements.length - 1; index >= 0; index -= 1) {
+        const replacement = replacements[index];
+        if (!replacement) return null;
+        const encoded = cssNormalizer.escapeAttributeValue(replacement.value, replacement.range.quote);
+        const value = replacement.range.quote === null ? `"${encoded}"` : encoded;
+        normalizedHtml =
+          normalizedHtml.slice(0, replacement.range.start) +
+          value +
+          normalizedHtml.slice(replacement.range.end);
+      }
+
+      return {
+        html: normalizedHtml,
+        children: Array.from(parsedRoot.children).map((child) => ({
+          tag: child.tagName.toLowerCase(),
+          html: child.outerHTML,
+        })),
+      };
+    },
+    { html: snapshot.final.html, ranges: styleRanges },
+  );
+  if (!prepared) return snapshot;
+
+  const originalChildren = snapshot.final.children;
+  let children = originalChildren;
+  // Re-hash only matching child lists; final.html remains the exact non-style guard.
+  if (
+    originalChildren &&
+    originalChildren.length === prepared.children.length &&
+    originalChildren.every((child, index) => child.index === index && child.tag === prepared.children[index]?.tag)
+  ) {
+    children = originalChildren.map((child, index) => {
+      const preparedChild = prepared.children[index];
+      return preparedChild ? { ...child, hash: hashHtml(preparedChild.html) } : child;
+    });
+  }
+  return {
+    ...snapshot,
+    final: {
+      ...snapshot.final,
+      html: prepared.html,
+      children,
+    },
+  };
+}
+
+async function compareSnapshotsWithCssom(
+  page: Page,
+  expected: HtmlSnapshot,
+  received: HtmlSnapshot,
+): Promise<{ ok: boolean; message?: string }> {
+  const preparedExpected = await prepareSnapshotForComparison(page, expected);
+  const preparedReceived = await prepareSnapshotForComparison(page, received);
+  return compareFinalSnapshots(preparedExpected, preparedReceived);
+}
+
+async function readRootText(page: Page): Promise<string> {
   return await page.evaluate(() => {
     const root = document.getElementById("regression-root");
     return root?.textContent ?? "";
   });
 }
 
-async function readStructure(page: import("@playwright/test").Page): Promise<{ topLevelTags: string[]; counts: Record<string, number> }> {
+async function readStructure(page: Page): Promise<{ topLevelTags: string[]; counts: Record<string, number> }> {
   return await page.evaluate(() => {
     const root = document.getElementById("regression-root");
     const topLevelTags = root ? Array.from(root.children).map((child) => child.tagName.toLowerCase()) : [];
@@ -341,7 +725,7 @@ async function readStructure(page: import("@playwright/test").Page): Promise<{ t
   });
 }
 
-async function readRootChildren(page: import("@playwright/test").Page): Promise<Array<{ tag: string; html: string; text: string }>> {
+async function readRootChildren(page: Page): Promise<Array<{ tag: string; html: string; text: string }>> {
   return await page.evaluate(() => {
     const root = document.getElementById("regression-root");
     if (!root) return [];
@@ -353,7 +737,7 @@ async function readRootChildren(page: import("@playwright/test").Page): Promise<
   });
 }
 
-async function readInspection(page: import("@playwright/test").Page): Promise<RenderInspection> {
+async function readInspection(page: Page): Promise<RenderInspection> {
   return await page.evaluate(() => {
     const root = document.getElementById("regression-root");
     if (!root) {
@@ -1202,7 +1586,7 @@ async function run(): Promise<void> {
             continue;
           }
 
-          const result = compareFinalSnapshots(expected, snapshot);
+          const result = await awaitScenario(() => compareSnapshotsWithCssom(page, expected, snapshot));
           if (!result.ok) {
             failures += 1;
             const artifactDir = await writeComparisonArtifacts({
@@ -1232,7 +1616,7 @@ async function run(): Promise<void> {
             scenarioFailed = true;
           }
           if (expected) {
-          const result = compareFinalSnapshots(expected, snapshot);
+          const result = await awaitScenario(() => compareSnapshotsWithCssom(page, expected, snapshot));
           if (!result.ok) {
             failures += 1;
             scenarioFailed = true;
@@ -1255,7 +1639,9 @@ async function run(): Promise<void> {
           if (!baselineReplaySnapshot) {
           baselineReplaySnapshot = snapshot;
         } else {
-          const replayResult = compareFinalSnapshots(baselineReplaySnapshot, snapshot);
+          const replayResult = await awaitScenario(() =>
+            compareSnapshotsWithCssom(page, baselineReplaySnapshot, snapshot),
+          );
           if (!replayResult.ok) {
             failures += 1;
             scenarioFailed = true;

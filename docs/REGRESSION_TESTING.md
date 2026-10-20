@@ -6,7 +6,7 @@ This document covers the HTML/style regression harnesses, the seeded replay guar
 
 The regression stack currently locks in:
 
-- exact final HTML, root-child hashes, and final structural signatures for curated fixtures and streaming scenarios
+- final HTML, root-child hashes, structural signatures and inline style semantics for curated fixtures and streaming scenarios
 - deterministic seeded final-HTML convergence for promoted high-risk fixtures
 - scheduler-mode final-HTML parity for representative fixtures
 - computed style snapshots and explicit geometry/color invariants for high-risk surfaces
@@ -36,7 +36,7 @@ Failure artifacts are written under:
 
 The HTML runner captures first-chunk, progress, and first-seen selector checkpoints for debugging. Their count, order, serialized HTML, and broad structural signatures are not baseline assertions. Event timing, provisional wrappers, and generated partial-math markup may change without changing the consumer contract.
 
-Final HTML remains byte-for-byte compared, including root-child hashes and final structure. There is no blanket KaTeX, whitespace, or wrapper normalization. Live guards still enforce text/code prefixes, code line order, table integrity and visibility deadlines, list integrity, security restrictions, MDX state, and fixture-specific selectors/text.
+Final HTML remains byte-for-byte compared outside canonicalizable inline style declaration spelling. Both inputs use the same browser CSSOM preparation, preserving declaration values, priorities and order; root-child hashes are recomputed from that preparation. Unsupported, invalid, duplicate or lossy declarations stay raw. Comparison does not rewrite baselines. There is no blanket KaTeX, text-whitespace or wrapper normalization. Live guards still enforce text/code prefixes, code line order, table integrity and visibility deadlines, list integrity, security restrictions, MDX state, and fixture-specific selectors/text.
 
 `math-display-checkpoint-supported` retains a dedicated ordinary S5 boundary assertion. Immediately after its explicit marker, the open display formula `a_n = \frac{1}{n}` must have renderable display KaTeX with matching TeX/MathML and no KaTeX error. After finalize, the formula must include the `\sqrt{x}` tail, and the fixture's trailing prose must remain present. An eventual `.katex` selector alone does not satisfy the boundary contract.
 

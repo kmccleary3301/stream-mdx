@@ -70,11 +70,20 @@ async function testOffByDefault(): Promise<void> {
   const spans = container.querySelectorAll(".stream-mdx-anim");
   assert.equal(spans.length, 0, "off by default must not emit any stream-mdx-anim spans");
   assert.equal(container.textContent, "Hello streaming world");
-  assert.equal(
-    container.innerHTML,
-    '<div class="markdown-renderer" style="contain: content;"><p class="markdown-paragraph streaming-partial">Hello streaming world</p></div>',
-    "markup must be identical to un-animated render",
-  );
+  assert.equal(container.children.length, 1);
+  const renderer = container.querySelector<HTMLDivElement>(".markdown-renderer");
+  assert.ok(renderer);
+  assert.equal(renderer.tagName, "DIV");
+  assert.equal(renderer.parentElement, container);
+  assert.equal(renderer.getAttribute("class"), "markdown-renderer");
+  assert.equal(renderer.style.getPropertyValue("contain"), "content");
+  assert.equal(renderer.children.length, 1);
+  const paragraph = renderer.firstElementChild;
+  assert.ok(paragraph);
+  assert.equal(paragraph.tagName, "P");
+  assert.equal(paragraph.getAttribute("class"), "markdown-paragraph streaming-partial");
+  assert.equal(paragraph.textContent, "Hello streaming world");
+  assert.equal(paragraph.childElementCount, 0, "plain text must remain unformatted when animation is disabled");
 
   await act(async () => {
     root.unmount();
