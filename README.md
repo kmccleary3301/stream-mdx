@@ -347,7 +347,7 @@ stream-mdx/
 | Build everything | `npm run build` | Includes the starter app build. |
 | Run all workspace tests | `npm test` | Package-level tests across the monorepo. |
 | Build hosted worker for docs/app surfaces | `npm run docs:worker:build` | Produces and copies `markdown-worker.js`. |
-| Build docs snapshots | `npm run docs:snapshots:build` | Compiles markdown docs into snapshot artifacts. |
+| Build docs snapshots | `npm run docs:snapshots:build` | Builds packages and the hosted worker, then compiles doc snapshots. |
 | Run docs locally | `npm run docs:dev` | Prepares packages, worker, docs snapshots, then starts Next dev. |
 | Build docs for production | `npm run docs:build` | End-to-end docs build/export path. |
 | Run regression suites | `npm run test:regression` | HTML + style snapshot suites. |

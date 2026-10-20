@@ -194,7 +194,9 @@ Notes:
 
 ## Build integration
 
-- `npm run docs:build` and `npm run docs:dev` run `docs:snapshots:build`.
+- `npm run docs:snapshots:build` prepares packages, rebuilds and copies the hosted worker, then generates snapshots. Package builds may clean hosted outputs, so the worker stage must follow them.
+- `npm run docs:build` and `npm run docs:dev` use that same prerequisite order before starting Next.
+- Screenshot capture invokes the snapshot wrapper once; it must not rebuild packages between the hosted-worker and snapshot stages.
 - Pages default to snapshot render mode unless `STREAM_MDX_DOCS_ARTICLE_MODE=streaming`.
 
 Direct compilation owns a private engine and output queue. It does not install or
