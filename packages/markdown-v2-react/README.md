@@ -89,6 +89,8 @@ Behavior notes:
 - sticks to bottom while content appends
 - detaches on upward user scroll
 - supports smooth return-to-bottom behavior
+- honors `prefers-reduced-motion: reduce` with instant jumps and no jump-chrome transition
+- interrupts an active smooth return on wheel, touch, or scroll-key input without preventing native behavior
 - exposes debug hooks used by deterministic checks in the repo
 
 ### Table row virtualization
