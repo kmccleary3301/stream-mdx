@@ -1,6 +1,7 @@
 import assert from "node:assert";
 import fs from "node:fs/promises";
 import React from "react";
+import { JSDOM } from "jsdom";
 import { renderToStaticMarkup } from "react-dom/server";
 import { compileTrustedMdxDocument } from "../src/mdx-compile";
 import { projectTrustedMdxServerDocument } from "../../markdown-v2-react/src/trusted-mdx/server";
@@ -9,10 +10,12 @@ import {
   TrustedMdxServerRegionProvider,
 } from "../../markdown-v2-react/src/server";
 
-import { applyPatchBatch, createInitialSnapshot, type Block, type Patch, type WorkerOut } from "@stream-mdx/core";
+import { applyPatchBatch, createInitialSnapshot, type Block, type HtmlOptions, type Patch, type WorkerOut } from "@stream-mdx/core";
 import { createRendererStore } from "@stream-mdx/react/renderer/store";
 
 import { createWorkerHarness } from "./worker-test-harness";
+import { buildSeededChunks } from "../../../scripts/regression/utils";
+
 
 const DOC_PLUGINS = {
   footnotes: true,
@@ -37,7 +40,19 @@ function applyPatchMessages(store: ReturnType<typeof createRendererStore>, messa
 async function streamFixture(
   content: string,
   chunkSize: number,
-  options: { contentPolicy?: "markdown" | "restricted" | "trusted-mdx" } = {},
+  options: { contentPolicy?: "markdown" | "restricted" | "trusted-mdx"; html?: HtmlOptions } = {},
+): Promise<Block[]> {
+  const chunks: string[] = [];
+  for (let index = 0; index < content.length; index += chunkSize) {
+    chunks.push(content.slice(index, index + chunkSize));
+  }
+  return await streamFixtureChunks(content, chunks, options);
+}
+
+async function streamFixtureChunks(
+  content: string,
+  chunks: readonly string[],
+  options: { contentPolicy?: "markdown" | "restricted" | "trusted-mdx"; html?: HtmlOptions } = {},
 ): Promise<Block[]> {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
@@ -48,13 +63,13 @@ async function streamFixture(
     prewarmLangs: [],
     docPlugins: DOC_PLUGINS,
     contentPolicy: options.contentPolicy,
+    html: options.html,
   });
   const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
   assert.ok(init, "worker failed to initialize");
   store.reset(init.blocks);
 
-  for (let index = 0; index < content.length; index += chunkSize) {
-    const chunk = content.slice(index, index + chunkSize);
+  for (const chunk of chunks) {
     const appendMessages = await harness.send({ type: "APPEND", text: chunk });
     applyPatchMessages(store, appendMessages);
   }
@@ -64,10 +79,11 @@ async function streamFixture(
   return store.getBlocks();
 }
 
+
 async function assertTrustedMdxFlowProjection(content: string, blocks: readonly Block[]): Promise<void> {
   const artifact = await compileTrustedMdxDocument(content);
   const Preview = ({ children }: React.PropsWithChildren<Record<string, unknown>>) =>
-    React.createElement("section", { "data-preview": "true" }, children);
+    React.createElement("figure", { "data-preview": "true" }, children);
   const projection = await projectTrustedMdxServerDocument({
     source: content,
     blocks,
@@ -107,10 +123,10 @@ async function assertTrustedMdxFlowProjection(content: string, blocks: readonly 
     ),
   );
   const previewBodies = Array.from(
-    markup.matchAll(/<section\b[^>]*data-preview="true"[^>]*>([\s\S]*?)<\/section>/g),
+    markup.matchAll(/<figure\b[^>]*data-preview="true"[^>]*>([\s\S]*?)<\/figure>/g),
     ([, body]) => body ?? "",
   );
-  assert.strictEqual(previewBodies.length, 3, "all three flow roots must render through their compiler-authored Preview components");
+  assert.strictEqual(previewBodies.length, 3, "all three flow roots must render through their compiler-authored Preview figures");
   assert.match(previewBodies[0] ?? "", /Inline <strong>bold<\/strong> with a list:/);
   assert.match(previewBodies[0] ?? "", /<ul\b/);
   assert.match(previewBodies[0] ?? "", /Alpha[\s\S]*Beta[\s\S]*Gamma/);
@@ -119,6 +135,17 @@ async function assertTrustedMdxFlowProjection(content: string, blocks: readonly 
   assert.match(previewBodies[2] ?? "", /<blockquote\b/);
   assert.match(previewBodies[2] ?? "", /<code\b[^>]*>inline code<\/code>/);
   assert.match(previewBodies[2] ?? "", /<strong>strong<\/strong> text/);
+  assert.strictEqual(
+    (markup.match(/<pre\b/g) ?? []).length,
+    3,
+    "all three authored fenced code blocks must remain visible beside the MDX flow roots",
+  );
+  assert.strictEqual(
+    (markup.match(/<figure\b/g) ?? []).length,
+    3,
+    "all three Preview roots must render their authored figure element",
+  );
+
 }
 
 async function runAppendLinesTailGuardTest(): Promise<void> {
@@ -176,6 +203,29 @@ async function runFinalizedTableShapeTest(): Promise<void> {
     assert.strictEqual(row.length, headerColumns, `finalized table row ${rowIndex} width mismatch`);
   });
 }
+
+async function runHtmlBackslashAttributeOwnershipTest(): Promise<void> {
+  const paragraphText = "Native paragraph inside the authored div.";
+  const content = `<div title="C:\\">\n\n${paragraphText}\n\n</div>\n`;
+  const blocks = await streamFixture(content, 11, {
+    contentPolicy: "markdown",
+    html: { allowedTags: { div: ["title"] } },
+  });
+  const markup = renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks }));
+  const dom = new JSDOM(markup);
+  try {
+    const wrapper = [...dom.window.document.querySelectorAll("div[title]")]
+      .find((node) => node.getAttribute("title") === "C:\\");
+    const paragraph = [...dom.window.document.querySelectorAll("p")]
+      .find((node) => node.textContent === paragraphText);
+    assert.ok(wrapper, "the authored HTML div must render");
+    assert.ok(paragraph, "the blank-line-separated native paragraph must render");
+    assert.ok(wrapper.contains(paragraph), "the native paragraph must remain inside the authored div");
+  } finally {
+    dom.window.close();
+  }
+}
+
 
 async function runStreamingTableDeferralTest(): Promise<void> {
   const content = await loadFixture("table-boundary.md");
@@ -277,6 +327,20 @@ async function runFinalizedMdxStateTest(): Promise<void> {
     }
   }
 }
+
+async function runSeededMdxTransitionsProjectionTest(): Promise<void> {
+  const content = await loadFixture("mdx-transitions.mdx");
+  const chunks = buildSeededChunks(content, {
+    id: "S2_typical",
+    label: "Typical streaming",
+    updateIntervalMs: 16,
+    charRateCps: 1200,
+    maxChunkChars: 256,
+  }, "mdx-transitions:S2_typical:seed-2");
+  const blocks = await streamFixtureChunks(content, chunks, { contentPolicy: "trusted-mdx" });
+  await assertTrustedMdxFlowProjection(content, blocks);
+}
+
 
 async function runTrustedMdxFootnotePhaseTest(): Promise<void> {
   const harness = await createWorkerHarness();
@@ -430,7 +494,9 @@ await runAppendLinesTailGuardTest();
 await runStreamingTableDeferralTest();
 await runCurrencyDoesNotTriggerStreamingMathTest();
 await runFinalizedTableShapeTest();
+await runHtmlBackslashAttributeOwnershipTest();
 await runFinalizedMdxStateTest();
+await runSeededMdxTransitionsProjectionTest();
 await runTrustedMdxFootnotePhaseTest();
 await runMdxTransitionsRendererStoreInvariantTest();
 console.log("worker structural regressions test passed");

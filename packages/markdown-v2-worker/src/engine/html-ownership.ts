@@ -6,6 +6,21 @@ import { escapeHtml, inlineHtml, normalizeNativeInlineParagraph } from "./native
 
 const VOID: Record<string, true> = { area: true, base: true, br: true, col: true, embed: true, hr: true, img: true, input: true, link: true, meta: true, param: true, source: true, track: true, wbr: true };
 
+function isCompleteHtmlTag(tag: string): boolean {
+  if (!tag.endsWith(">")) return false;
+  let quote: "'" | '"' | null = null;
+  for (let index = 0; index < tag.length; index += 1) {
+    const char = tag[index];
+    if (quote !== null) {
+      if (char === quote) quote = null;
+    } else if (char === "'" || char === '"') {
+      quote = char;
+    }
+  }
+  return quote === null;
+}
+
+
 function blockHtml(block: Block, attribute: string, index: number): string {
   const marker = ` ${attribute}="${index}"`;
   const meta = block.payload.meta ?? {};
@@ -49,20 +64,22 @@ export function applyHtmlTagBalance(
       if (nodeName === "InlineCode" || nodeName === "Escape") continue;
       if (nodeName === "HTMLTag") {
         const tag = raw.slice(element.from, element.to);
-        const written = /^<\/?([a-zA-Z][^\s/>]*)/.exec(tag)?.[1];
-        if (written) {
-          const isUppercase = /^[A-Z]/.test(written);
-          const isRegistered = Boolean(contentComponents && isRegisteredRestrictedComponent(written, contentComponents));
-          if (!isRegistered && !(contentComponents && isUppercase && !mdxComponents)) {
-            const component = isUppercase && mdxComponents;
-            tags.push({
-              from: element.from,
-              to: element.to,
-              name: component ? written : written.toLowerCase(),
-              isClose: tag.startsWith("</"),
-              isSelfClosing: tag.endsWith("/>"),
-              component,
-            });
+        if (isCompleteHtmlTag(tag)) {
+          const written = /^<\/?([a-zA-Z][^\s/>]*)/.exec(tag)?.[1];
+          if (written) {
+            const isUppercase = /^[A-Z]/.test(written);
+            const isRegistered = Boolean(contentComponents && isRegisteredRestrictedComponent(written, contentComponents));
+            if (!isRegistered && !(contentComponents && isUppercase && !mdxComponents)) {
+              const component = isUppercase && mdxComponents;
+              tags.push({
+                from: element.from,
+                to: element.to,
+                name: component ? written : written.toLowerCase(),
+                isClose: tag.startsWith("</"),
+                isSelfClosing: tag.endsWith("/>"),
+                component,
+              });
+            }
           }
         }
       }
