@@ -31,6 +31,12 @@ Worker boot/parse/highlighter timings and fingerprints:
 - `bootMs`, `parseMs`, `highlighterMs`
 - dev fingerprints in worker bundle are captured by `dump-browser-html.ts`
 
+### Diagnostic work counters
+
+Use `scripts/perf/build-diagnostic-bundle.ts` for private campaign work counters, not the normal package build. Normal builds fold out counter reads, sink calls, diagnostic options and extra forwarded counter arguments. Inert private parameter names may remain in emitted JavaScript; a string-marker match alone does not prove executed bookkeeping.
+
+Work counts describe inspected source, records and prepared rows, not elapsed CPU time. Keep their source/artifact identities separate from production timing evidence.
+
 ---
 
 ## 2) Scheduling Controls (client)
@@ -83,16 +89,18 @@ Use `liveCodeHighlighting` sparingly; it can spike CPU on large blocks.
 
 ## 4) Code Virtualization
 
-Large code blocks are windowed to reduce DOM cost.
+Large code blocks are windowed to limit mounted DOM rows. Geometry and native row preparation are separate owners:
 
+- `useVirtualizedCode` in `packages/markdown-v2-react/src/renderer/virtualized-code.tsx` owns viewport geometry and scroll behavior only.
+- `CodeLineRangeView` in `packages/markdown-v2-react/src/renderer/code-line-range.tsx` subscribes to fixed 64-row store ranges and prepares native rows. Completed range snapshots remain stable across tail appends.
+- Below the virtualization threshold, or when virtualization is explicitly disabled, the geometry range covers the full code block; native rendering still includes every row.
 - Config: `DEFAULT_VIRTUALIZED_CODE_CONFIG` in `packages/markdown-v2-react/src/renderer/virtualized-code.tsx`
 - Metrics emitted in capture summaries:
   - `virtualized`, `totalLines`, `mountedLines`, `windowSize`
 
-**Guidance**
+This owner split does not change the virtualization threshold or establish an efficiency claim. Compare actual mapped-row counters on the original campaign before making such a claim.
 
-- For documents with 500+ line blocks, keep virtualization enabled.
-- If you must disable it, set `STREAM_MDX_DISABLE_VIRTUALIZED_CODE=true`.
+The outer code frame is a `div`; native prepared rows render inside one semantic `pre`/`code` pair. Copy and download materialize the complete code body only when invoked. They use the same LF and closing-separator normalization as cold code metadata, while authored source exports retain original line endings. A language engine or legacy controls component that explicitly requests a full code string still pays that cold-read cost.
 
 ---
 

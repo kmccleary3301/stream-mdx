@@ -1,4 +1,5 @@
 import type { MarkdownConfig } from "@lezer/markdown";
+import { reportUnfinishedNativeToken } from "./native-inline-state";
 
 /**
  * Lezer markdown extension for LaTeX math syntax ($...$ and $$...$$).
@@ -20,13 +21,15 @@ export function createMathExtension(): MarkdownConfig {
           const isDisplay = cx.char(pos + 1) === 36;
           const delimLen = isDisplay ? 2 : 1;
           let close = -1;
+          let crossedInlineLine = false;
 
           for (let i = pos + delimLen; i < cx.end; i++) {
             const ch = cx.char(i);
             if (!isDisplay && (ch === 10 || ch === 13)) {
+              crossedInlineLine = true;
               break;
             }
-            if (ch === 92 /* \ */) {
+            if (ch === 92 /* \\ */) {
               i++;
               continue;
             }
@@ -43,8 +46,12 @@ export function createMathExtension(): MarkdownConfig {
             }
           }
 
-          // Math expressions must contain at least 1 character between delimiters
-          if (close === -1 || close === pos + delimLen) {
+          if (close === -1) {
+            if (isDisplay || !crossedInlineLine) reportUnfinishedNativeToken(cx, pos);
+            return -1;
+          }
+          // Math expressions must contain at least 1 character between delimiters.
+          if (close === pos + delimLen) {
             return -1;
           }
 

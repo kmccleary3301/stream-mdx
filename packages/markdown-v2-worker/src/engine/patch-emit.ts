@@ -375,7 +375,11 @@ export function diffListChildren(
       counters?.recordPrefixComparisons?.(1, "patch");
     }
     if (prevChildren[prefix].id !== nextChildren[prefix].id) break;
-    diffNodeSnapshot(blockId, prevChildren[prefix], nextChildren[prefix], patches, metrics, counters);
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      diffNodeSnapshot(blockId, prevChildren[prefix], nextChildren[prefix], patches, metrics, counters);
+    } else {
+      diffNodeSnapshot(blockId, prevChildren[prefix], nextChildren[prefix], patches, metrics);
+    }
     prefix++;
   }
 
@@ -417,7 +421,11 @@ export function diffListChildren(
     const prevIdx = prevLength - 1 - suffix;
     const nextIdx = nextLength - 1 - suffix;
     if (prevChildren[prevIdx].id !== nextChildren[nextIdx].id) break;
-    diffNodeSnapshot(blockId, prevChildren[prevIdx], nextChildren[nextIdx], patches, metrics, counters);
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      diffNodeSnapshot(blockId, prevChildren[prevIdx], nextChildren[nextIdx], patches, metrics, counters);
+    } else {
+      diffNodeSnapshot(blockId, prevChildren[prevIdx], nextChildren[nextIdx], patches, metrics);
+    }
     suffix++;
   }
 
@@ -549,7 +557,11 @@ export function diffNodeSnapshot(
 
   if (prevNode.type === "list" && nextNode.type === "list") {
     emitSetProps();
-    diffListChildren(blockId, prevNode, prevChildren, nextChildren, patches, metrics, counters);
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      diffListChildren(blockId, prevNode, prevChildren, nextChildren, patches, metrics, counters);
+    } else {
+      diffListChildren(blockId, prevNode, prevChildren, nextChildren, patches, metrics);
+    }
     return;
   }
 
@@ -631,7 +643,11 @@ export function diffNodeSnapshot(
       counters?.recordPrefixComparisons?.(1, "patch");
     }
     if (prevChildren[prefix].id !== nextChildren[prefix].id) break;
-    diffNodeSnapshot(blockId, prevChildren[prefix], nextChildren[prefix], patches, metrics, counters);
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      diffNodeSnapshot(blockId, prevChildren[prefix], nextChildren[prefix], patches, metrics, counters);
+    } else {
+      diffNodeSnapshot(blockId, prevChildren[prefix], nextChildren[prefix], patches, metrics);
+    }
     prefix++;
   }
 
@@ -643,7 +659,11 @@ export function diffNodeSnapshot(
     const prevIdx = prevChildren.length - 1 - suffix;
     const nextIdx = nextChildren.length - 1 - suffix;
     if (prevChildren[prevIdx].id !== nextChildren[nextIdx].id) break;
-    diffNodeSnapshot(blockId, prevChildren[prevIdx], nextChildren[nextIdx], patches, metrics, counters);
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      diffNodeSnapshot(blockId, prevChildren[prevIdx], nextChildren[nextIdx], patches, metrics, counters);
+    } else {
+      diffNodeSnapshot(blockId, prevChildren[prevIdx], nextChildren[nextIdx], patches, metrics);
+    }
     suffix++;
   }
 

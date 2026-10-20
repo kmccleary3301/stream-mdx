@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import type { Block, Patch, WorkerIn, WorkerOut } from "@stream-mdx/core";
-import { createBlockSnapshot, PATCH_ROOT_ID } from "@stream-mdx/core";
+import { createBlockSnapshot, PATCH_ROOT_ID, STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
 import { MarkdownRenderer } from "../src/renderer";
 
 class ResetTestWorker {
@@ -57,7 +57,7 @@ function testResetRecovery(): void {
   const worker = new ResetTestWorker();
   renderer.attachWorker(worker as unknown as Worker);
 
-  worker.emit({ type: "INITIALIZED", blocks: [] });
+  worker.emit({ type: "INITIALIZED", schemaVersion: STREAM_MDX_SCHEMA_VERSION, generation: 1, snapshot: { id: PATCH_ROOT_ID, type: "__root__", children: [] } });
   assert.strictEqual(renderer.getStore().getBlocks().length, 0, "store should start empty");
 
   worker.emit({ type: "PATCH", tx: 1, patches: [buildInsertPatch(makeParagraph("a", "Hello world"))] });
@@ -68,7 +68,7 @@ function testResetRecovery(): void {
 
   // Simulate worker crash/reset, then re-init.
   worker.emit({ type: "RESET", reason: "simulated-crash" });
-  worker.emit({ type: "INITIALIZED", blocks: [] });
+  worker.emit({ type: "INITIALIZED", schemaVersion: STREAM_MDX_SCHEMA_VERSION, generation: 2, snapshot: { id: PATCH_ROOT_ID, type: "__root__", children: [] } });
   assert.strictEqual(renderer.getStore().getBlocks().length, 0, "store should clear after reset+reinit");
 
   worker.emit({ type: "PATCH", tx: 2, patches: [buildInsertPatch(makeParagraph("b", "Recovered"))] });

@@ -1,24 +1,50 @@
 declare const __STREAM_MDX_COUNTERS__: boolean;
 
 import {
+  appendManagedTableRows,
   cloneBlock,
   createBlockSnapshot,
+  createManagedTableState,
   extractCodeWrapperAttributes,
   getDefaultCodeWrapperAttributes,
+  materializeManagedTableBlock,
   sanitizeCodeHTML,
   sanitizeHTML,
+  updateManagedTableRows,
   type Block,
+  type CodeLineRecord,
+  type InlineNode,
+  type ManagedTablePatchResult,
+  type ManagedTableViewState,
   type NodePath,
-  type NodeSnapshot,
   PATCH_ROOT_ID,
+  type NodeSnapshot,
   type Patch,
   type SetPropsBatchEntry,
+  type TableRowRecord,
   type TokenLineV1,
 } from "@stream-mdx/core";
 import { getPatchKind } from "@stream-mdx/core/perf/patch-batching";
+import {
+  appendLegacyCodeState,
+  appendStoredCodeState,
+  createStoredCodeBlockState,
+  decorateStoredCodeState,
+  finalizeStoredCodeState,
+  materializeStoredCodeBlock,
+  readStoredCodeLines,
+  refreshLegacyCodeSource,
+  updateLegacyCodeLineState,
+  type CodeBlockViewState,
+  type StoreCodeCounters,
+  type StoredCodeBlockState,
+} from "./code-state";
 import { normalizeAllListDepths, normalizeListDepthsForIds } from "./list-utils";
 import { registerNodeSubscriptions } from "./node-subscriptions";
 import { type CoalescingMetrics, DEFAULT_COALESCE_CONFIG, coalescePatchesWithMetrics } from "./patch-coalescing";
+import { TABLE_ROW_RANGE_SIZE } from "./table-row-range";
+
+export type { CodeBlockViewState } from "./code-state";
 
 export interface NodeRecord {
   id: string;
@@ -46,8 +72,15 @@ export interface RendererStoreOptions {
 
 export interface RendererStore {
   reset(blocks: Block[]): void;
+  resetSnapshot(snapshot: NodeSnapshot): void;
   applyPatches(patches: Patch[], options?: ApplyPatchesOptions): Set<string>;
   getBlocks(): ReadonlyArray<Block>;
+  hasProvisionalBlocks(): boolean;
+  getCodeBlock(id: string): CodeBlockViewState | undefined;
+  getCodeLines(id: string, from: number, to: number): ReadonlyArray<CodeLineRecord>;
+  getTableBlock(id: string): ManagedTableViewState | undefined;
+  getTableRows(id: string, from: number, to: number): ReadonlyArray<TableRowRecord>;
+  subscribeTableRows(id: string, from: number, to: number, listener: () => void): () => void;
   getVersion(): number;
   getNode(id: string): NodeRecord | undefined;
   getNodeWithVersion(id: string): { version: number; node?: NodeRecord };
@@ -66,6 +99,9 @@ function snapshotToBlock(node: NodeSnapshot): Block | null {
   if (candidate && typeof candidate === "object") {
     return cloneBlock(candidate as Block);
   }
+  if (node.type === "code") {
+    return null;
+  }
   if (node.type && node.id) {
     return {
       id: node.id,
@@ -73,7 +109,7 @@ function snapshotToBlock(node: NodeSnapshot): Block | null {
       isFinalized: true,
       payload: {
         raw: typeof node.props?.raw === "string" ? node.props.raw : typeof node.props?.text === "string" ? node.props.text : "",
-        inline: Array.isArray(node.props?.inline) ? (node.props.inline as any) : undefined,
+        inline: Array.isArray(node.props?.inline) ? (node.props.inline as InlineNode[]) : undefined,
         meta: node.props ?? {},
       },
     };
@@ -81,7 +117,108 @@ function snapshotToBlock(node: NodeSnapshot): Block | null {
   return null;
 }
 
+
 type NodeMap = Map<string, NodeRecord>;
+
+const codeStateByRecord = new WeakMap<NodeRecord, StoredCodeBlockState>();
+const codeCountersByMap: WeakMap<NodeMap, StoreCodeCounters | undefined> | undefined =
+  typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+    ? new WeakMap<NodeMap, StoreCodeCounters | undefined>()
+    : undefined;
+const retiredCodeGenerationsByMap = new WeakMap<NodeMap, Map<string, number>>();
+const coldCodeBlocksByView = new WeakMap<CodeBlockViewState, Block>();
+const tableStateByRecord = new WeakMap<NodeRecord, ManagedTableViewState>();
+const retiredTableGenerationsByMap = new WeakMap<NodeMap, Map<string, number>>();
+const coldTableBlocksByView = new WeakMap<ManagedTableViewState, Block>();
+const EMPTY_TABLE_ROWS: ReadonlyArray<TableRowRecord> = Object.freeze([]);
+
+interface TableRowRangeSubscription {
+  readonly from: number;
+  readonly to: number;
+  readonly listeners: Set<() => void>;
+  rows?: ReadonlyArray<TableRowRecord>;
+  generation?: number;
+}
+
+function retiredCodeGenerations(map: NodeMap): Map<string, number> {
+  let generations = retiredCodeGenerationsByMap.get(map);
+  if (!generations) {
+    generations = new Map<string, number>();
+    retiredCodeGenerationsByMap.set(map, generations);
+  }
+  return generations;
+}
+function retiredTableGenerations(map: NodeMap): Map<string, number> {
+  let generations = retiredTableGenerationsByMap.get(map);
+  if (!generations) {
+    generations = new Map<string, number>();
+    retiredTableGenerationsByMap.set(map, generations);
+  }
+  return generations;
+}
+
+function rememberRetiredTableOwner(map: NodeMap, record: NodeRecord): void {
+  const state = tableStateByRecord.get(record);
+  if (!state) return;
+  const generations = retiredTableGenerations(map);
+  generations.set(record.id, Math.max(generations.get(record.id) ?? -1, state.source.generation));
+}
+
+function rememberRetiredCodeOwner(map: NodeMap, record: NodeRecord): void {
+  const state = codeStateByRecord.get(record);
+  if (!state?.managed) return;
+  const generations = retiredCodeGenerations(map);
+  const generation = state.view.source.generation;
+  generations.set(record.id, Math.max(generations.get(record.id) ?? -1, generation));
+}
+
+function codeSnapshotGenerationAllowed(map: NodeMap, snapshot: NodeSnapshot): boolean {
+  if (snapshot.code) {
+    const current = map.get(snapshot.id);
+    const currentState = current && codeStateByRecord.get(current);
+    const retired = retiredCodeGenerations(map).get(snapshot.id) ?? -1;
+    const generationFloor = Math.max(retired, currentState?.managed ? currentState.view.source.generation : -1);
+    if (snapshot.code.codeOwnerId !== snapshot.id || snapshot.code.generation <= generationFloor) return false;
+  }
+  if (snapshot.table) {
+    const current = map.get(snapshot.id);
+    const currentState = current && tableStateByRecord.get(current);
+    const retired = retiredTableGenerations(map).get(snapshot.id) ?? -1;
+    const generationFloor = Math.max(retired, currentState?.source.generation ?? -1);
+    // The current owner may be replaced atomically at the same revision; retired generations stay blocked below.
+    const replacesActiveOwner = currentState?.source.generation === snapshot.table.generation &&
+      snapshot.table.generation > retired &&
+      snapshot.table.revision >= currentState.source.revision;
+    if (
+      snapshot.type !== "table" ||
+      snapshot.table.tableOwnerId !== snapshot.id ||
+      (snapshot.table.generation <= generationFloor && !replacesActiveOwner) ||
+      (snapshot.children?.length ?? 0) > 0
+    ) return false;
+  }
+  return (snapshot.children ?? []).every((child) => codeSnapshotGenerationAllowed(map, child));
+}
+
+function carryRetiredCodeGenerations(previous: NodeMap, next: NodeMap): void {
+  const generations = new Map(retiredCodeGenerations(previous));
+  for (const record of previous.values()) {
+    const state = codeStateByRecord.get(record);
+    if (state?.managed) {
+      generations.set(record.id, Math.max(generations.get(record.id) ?? -1, state.view.source.generation));
+    }
+  }
+  retiredCodeGenerationsByMap.set(next, generations);
+  const tableGenerations = new Map(retiredTableGenerations(previous));
+  for (const record of previous.values()) {
+    const state = tableStateByRecord.get(record);
+    if (state) tableGenerations.set(record.id, Math.max(tableGenerations.get(record.id) ?? -1, state.source.generation));
+  }
+  retiredTableGenerationsByMap.set(next, tableGenerations);
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    const counters = codeCountersByMap!.get(previous);
+    if (counters) codeCountersByMap!.set(next, counters);
+  }
+}
 
 // Ids whose record object or version changed during the current synchronous store mutation. Keyed node
 // subscriptions wake exactly these ids: the same condition `getNodeWithVersion` snapshots change on.
@@ -142,6 +279,7 @@ function clearSnapshotCaches(map: NodeMap) {
   getChildrenSnapshotCacheForMap(map).clear();
 }
 const EMPTY_CHILDREN: ReadonlyArray<string> = Object.freeze([]);
+const EMPTY_CODE_LINES: ReadonlyArray<CodeLineRecord> = Object.freeze([]);
 const EMPTY_NODE_SNAPSHOT = Object.freeze<{ version: number; node?: NodeRecord }>({ version: -1, node: undefined });
 const EMPTY_CHILDREN_SNAPSHOT = Object.freeze<{ version: number; children: ReadonlyArray<string> }>({
   version: -1,
@@ -562,7 +700,7 @@ function sanitizeLineInnerHtml(innerHtml: string | null, fallbackText: string): 
 }
 
 function normalizeCodeBlockChildren(nodes: NodeMap, parent: NodeRecord, touched: Set<string>) {
-  if (parent.type !== "code") return;
+  if (parent.type !== "code" || codeStateByRecord.get(parent)?.managed) return;
 
   const previousChildren = parent.children.slice();
   const originalOrder = new Map<string, number>();
@@ -663,6 +801,9 @@ function normalizeCodeBlockChildren(nodes: NodeMap, parent: NodeRecord, touched:
     if (Object.prototype.hasOwnProperty.call(node.props ?? {}, "tokens")) {
       incoming.tokens = (node.props as Record<string, unknown>).tokens;
     }
+    if (Object.prototype.hasOwnProperty.call(node.props ?? {}, "isProvisional")) {
+      incoming.isProvisional = node.props?.isProvisional;
+    }
     const normalizedProps = normalizeCodeLineProps(incoming, node.props);
     if (normalizedProps !== node.props) {
       node.props = normalizedProps;
@@ -741,17 +882,24 @@ function normalizeCodeLineProps(incoming: Record<string, unknown>, previous?: Re
   const hasIncomingText = typeof incoming.text === "string";
   const hasIncomingHtml = typeof incoming.html === "string" || incoming.html === null;
   const hasIncomingTokens = Object.prototype.hasOwnProperty.call(incoming, "tokens");
+  const hasIncomingProvisional = typeof incoming.isProvisional === "boolean";
   const incomingTokens = hasIncomingTokens ? (incoming.tokens as TokenLineV1 | null) : undefined;
+  const previousIsProvisional = typeof previous?.isProvisional === "boolean" ? previous.isProvisional : undefined;
+  const isProvisional = hasIncomingProvisional
+    ? incoming.isProvisional as boolean
+    : previousIsProvisional;
+  const provisionalUnchanged = !hasIncomingProvisional || incoming.isProvisional === previousIsProvisional;
   const rawText = hasIncomingText ? (incoming.text as string) : previousText;
   // Re-normalizing a line with its own props (code-block normalization) must keep the props object: re-running
   // the sanitizer on already-sanitized html cannot change it, and a new object re-renders every line.
   const tokensUnchanged = !hasIncomingTokens || incomingTokens === previousTokens;
 
-  if (previous && !hasIncomingHtml && tokensUnchanged && index === previousIndex && (!hasIncomingText || rawText === previousText)) {
+  if (previous && provisionalUnchanged && !hasIncomingHtml && tokensUnchanged && index === previousIndex && (!hasIncomingText || rawText === previousText)) {
     return previous;
   }
   if (
     previous &&
+    provisionalUnchanged &&
     hasIncomingHtml &&
     tokensUnchanged &&
     incoming.html === previousHtml &&
@@ -779,6 +927,7 @@ function normalizeCodeLineProps(incoming: Record<string, unknown>, previous?: Re
     tokens = null;
   }
   const normalized = createCodeLineProps(index, rawText, highlight, tokens);
+  if (isProvisional !== undefined) normalized.isProvisional = isProvisional;
   return previous && shallowEqualRecords(previous, normalized) ? previous : normalized;
 }
 
@@ -875,7 +1024,9 @@ function normalizeNodeProps(snapshot: NodeSnapshot): Record<string, unknown> {
     const tokens = Object.prototype.hasOwnProperty.call(snapshot.props ?? {}, "tokens")
       ? (snapshot.props?.tokens as TokenLineV1 | null)
       : undefined;
-    return createCodeLineProps(index, text, html, tokens);
+    const normalized = createCodeLineProps(index, text, html, tokens);
+    if (typeof snapshot.props?.isProvisional === "boolean") normalized.isProvisional = snapshot.props.isProvisional;
+    return normalized;
   }
 
   if (isInlineSegmentType(snapshot.type)) {
@@ -991,6 +1142,55 @@ function arraysEqual<T>(a: ReadonlyArray<T>, b: ReadonlyArray<T>): boolean {
 function expectedCodeLineId(parentId: string, index: number): string {
   return `${parentId}::line:${index}`;
 }
+function syncManagedCodeChildren(
+  nodes: NodeMap,
+  parent: NodeRecord,
+  state: StoredCodeBlockState,
+  touched: Set<string>,
+): void {
+  const previousChildren = parent.children;
+  const children: string[] = [];
+  const keep = new Set<string>();
+  for (let index = 0; index < state.view.lines.length; index += 1) {
+    const line = state.view.lines.get(index);
+    if (!line) continue;
+    const id = expectedCodeLineId(parent.id, index);
+    const previous = nodes.get(id);
+    const incoming: Record<string, unknown> = { index, text: line.text };
+    if (line.decoration) incoming.tokens = line.decoration.tokens as TokenLineV1;
+    const normalized = normalizeCodeLineProps(incoming, previous?.props);
+    const props = {
+      ...(previous?.props ?? {}),
+      ...normalized,
+      isProvisional: line.isProvisional,
+      ...(line.diffKind !== undefined ? { diffKind: line.diffKind } : {}),
+      ...(line.oldNo !== undefined ? { oldNo: line.oldNo } : {}),
+      ...(line.newNo !== undefined ? { newNo: line.newNo } : {}),
+    };
+    const child: NodeRecord = previous ?? {
+      id,
+      type: "code-line",
+      parentId: parent.id,
+      children: [],
+      props,
+      version: 0,
+      blockEpoch: parent.blockEpoch,
+    };
+    child.parentId = parent.id;
+    child.type = "code-line";
+    child.props = props;
+    if (previous) bumpVersion(child);
+    nodes.set(id, child);
+    touched.add(id);
+    keep.add(id);
+    children.push(id);
+  }
+  for (const id of previousChildren) {
+    if (!keep.has(id)) removeSubtree(nodes, id, touched);
+  }
+  parent.children = children;
+}
+
 
 function collectStoreInvariantViolations(nodes: NodeMap): string[] {
   const violations: string[] = [];
@@ -1050,7 +1250,21 @@ function buildNodeFromSnapshot(
   themes?: { light?: string; dark?: string },
   previous?: ReadonlyMap<string, NodeRecord>,
 ): NodeRecord {
+  if (snapshot.code && snapshot.type !== "code") {
+    throw new TypeError("Code source metadata is only valid on code nodes");
+  }
+  if (snapshot.table && snapshot.type !== "table") {
+    throw new TypeError("Table source metadata is only valid on table nodes");
+  }
+  if (snapshot.table && (snapshot.children?.length ?? 0) > 0) {
+    throw new TypeError("Managed table snapshots cannot carry a synthetic child tree");
+  }
   const prior = previous?.get(snapshot.id);
+  const tableState = snapshot.table
+    ? typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+      ? createManagedTableState(snapshot.table, snapshot.id, { counters: codeCountersByMap!.get(map) } as never)
+      : createManagedTableState(snapshot.table, snapshot.id)
+    : undefined;
   const record: NodeRecord = {
     id: snapshot.id,
     type: snapshot.type,
@@ -1063,15 +1277,22 @@ function buildNodeFromSnapshot(
     blockEpoch,
     block: snapshotToBlock(snapshot) ?? undefined,
   };
+  if (tableState && record.block) record.block.isFinalized = tableState.source.state !== "open";
 
+  let codeState: StoredCodeBlockState | undefined;
   if (record.type === "code") {
     applyCodeBlockMetadata(record, themes);
+    codeState = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+      ? createStoredCodeBlockState(snapshot, record.block, codeCountersByMap!.get(map))
+      : createStoredCodeBlockState(snapshot, record.block);
   }
 
   map.set(record.id, record);
+  if (codeState) codeStateByRecord.set(record, codeState);
+  if (tableState) tableStateByRecord.set(record, tableState);
   markRecordChanged(record.id);
 
-  const childSnapshots = ensureArray(snapshot.children);
+  const childSnapshots = tableState ? [] : ensureArray(snapshot.children);
   for (const child of childSnapshots) {
     const childRecord = buildNodeFromSnapshot(map, child, record.id, blockEpoch, themes, previous);
     record.children.push(childRecord.id);
@@ -1113,7 +1334,8 @@ function codeLineSnapshotMatches(snapshot: NodeSnapshot, prior: NodeRecord): boo
  */
 function recordMatchesPrior(map: NodeMap, record: NodeRecord, prior: NodeRecord, previous: ReadonlyMap<string, NodeRecord>): boolean {
   if (prior.type !== record.type || prior.parentId !== record.parentId) return false;
-  if (record.type === "code-line") return record.props === prior.props && record.children.length === 0 && prior.children.length === 0;
+  if (record.type === "code") return false;
+  if (tableStateByRecord.has(record)) return false;
   if (!arraysEqual(prior.children, record.children)) return false;
   for (const childId of record.children) {
     if (map.get(childId) !== previous.get(childId)) return false;
@@ -1183,6 +1405,8 @@ function removeSubtree(map: NodeMap, id: string, touched: Set<string>) {
         }
       }
     }
+    rememberRetiredCodeOwner(map, node);
+    rememberRetiredTableOwner(map, node);
     map.delete(node.id);
     deleteSnapshotCacheEntry(map, node.id);
     touched.add(node.id);
@@ -1205,7 +1429,44 @@ function convertNodeToBlocks(map: NodeMap, root: NodeRecord, publicBlocks: WeakM
   const result: Block[] = [];
   for (const childId of root.children) {
     const child = map.get(childId);
-    if (!child || !child.block) continue;
+    if (!child) continue;
+    const codeState = codeStateByRecord.get(child);
+    const tableState = tableStateByRecord.get(child);
+    if (tableState) {
+      if (tableState.source.state === "open" && child.block?.payload.meta?.lezerNodeType === "Table") continue;
+      let materialized = coldTableBlocksByView.get(tableState);
+      if (!materialized) {
+        materialized = materializeManagedTableBlock(child.block ?? {
+          id: child.id,
+          type: "table",
+          isFinalized: true,
+          payload: { raw: "", range: { ...tableState.source.sourceRange }, meta: {} },
+        }, tableState);
+        coldTableBlocksByView.set(tableState, materialized);
+      }
+      let block = publicBlocks.get(materialized);
+      if (!block) {
+        block = cloneBlock(materialized);
+        publicBlocks.set(materialized, block);
+      }
+      result.push(block);
+      continue;
+    }
+    if (codeState) {
+      let materialized = coldCodeBlocksByView.get(codeState.view);
+      if (!materialized) {
+        materialized = materializeStoredCodeBlock(codeState, child.block, child.id, child.props, child.range);
+        coldCodeBlocksByView.set(codeState.view, materialized);
+      }
+      let block = publicBlocks.get(materialized);
+      if (!block) {
+        block = cloneBlock(materialized);
+        publicBlocks.set(materialized, block);
+      }
+      result.push(block);
+      continue;
+    }
+    if (!child.block) continue;
     let block = publicBlocks.get(child.block);
     if (!block) {
       block = cloneBlock(child.block);
@@ -1237,6 +1498,7 @@ function insertSnapshotAt(
   previous?: ReadonlyMap<string, NodeRecord>,
 ): { record: NodeRecord; insertedIds: string[] } | null {
   if (!parent) return null;
+  if (!codeSnapshotGenerationAllowed(map, snapshot)) return null;
   const existingIndex = parent.children.indexOf(snapshot.id);
   if (existingIndex !== -1) {
     removeSubtree(map, parent.children[existingIndex], touched ?? new Set<string>());
@@ -1271,9 +1533,22 @@ function replaceSnapshotAt(
   blockEpoch?: number,
   themes?: { light?: string; dark?: string },
 ) {
-  if (!parent) return;
-  if (index < 0 || index >= parent.children.length) return;
+  if (!parent || index < 0 || index >= parent.children.length) return;
   const targetId = parent.children[index];
+  const current = map.get(targetId);
+  const currentTableState = current && tableStateByRecord.get(current);
+  const retiredTableGeneration = snapshot.table && targetId === snapshot.id
+    ? retiredTableGenerations(map).get(snapshot.id) ?? -1
+    : -1;
+  const replacesActiveTable = Boolean(
+    snapshot.table &&
+      currentTableState &&
+      targetId === snapshot.id &&
+      currentTableState.source.generation === snapshot.table.generation &&
+      snapshot.table.generation > retiredTableGeneration &&
+      snapshot.table.revision >= currentTableState.source.revision
+  );
+  if (!codeSnapshotGenerationAllowed(map, snapshot)) return;
   // Rebuild from the snapshot, but let unchanged records keep their identity (and their React snapshots), so a
   // canonical replace of an already-correct block re-renders nothing.
   const previous = collectSubtreeRecords(map, targetId);
@@ -1289,6 +1564,11 @@ function replaceSnapshotAt(
   }
   parent.children.splice(index, 1);
   removeSubtree(map, targetId, touched);
+  if (replacesActiveTable) {
+    const generations = retiredTableGenerations(map);
+    if (retiredTableGeneration < 0) generations.delete(targetId);
+    else generations.set(targetId, retiredTableGeneration);
+  }
   const inserted = insertSnapshotAt(map, parent, index, snapshot, touched, blockEpoch, themes, previous);
   for (const [id, record] of previous) {
     if (map.get(id) !== record) continue;
@@ -1311,24 +1591,57 @@ function replaceSnapshotAt(
 
 // Only the counter-enabled diagnostic entry supplies this sink; normal builds erase its guarded accesses.
 interface RendererCampaignCounters {
+  recordRecordSlotsAllocated?(count: number, stage?: "engine" | "snapshot" | "patch" | "store" | "view"): void;
   recordPrefixComparisons?(count?: number, stage?: string): void;
   recordStoreRecordsTouched?(count?: number, stage?: string): void;
   recordSnapshotNodes?(count?: number, stage?: string): void;
+  recordSourceUnitsRead?(count: number, stage?: "engine" | "snapshot" | "patch" | "store" | "view"): void;
+  recordSourceUnitsMaterialized?(count: number, stage?: "engine" | "snapshot" | "patch" | "store" | "view"): void;
+  recordSourceDirectoryEntriesCopied?(count: number, stage?: "engine" | "snapshot" | "patch" | "store" | "view"): void;
   reset?(): void;
 }
 
 type CampaignRendererStore = RendererStore & { campaignCounters?: RendererCampaignCounters };
 
+function resolveStoreCodeCounters(options?: RendererStoreOptions): StoreCodeCounters | undefined {
+  if (typeof __STREAM_MDX_COUNTERS__ === "undefined" || !__STREAM_MDX_COUNTERS__) return undefined;
+  const counters = (options as RendererStoreOptions & { campaignCounters?: RendererCampaignCounters } | undefined)?.campaignCounters;
+  if (!counters?.recordRecordSlotsAllocated) return undefined;
+  return {
+    recordRecordSlotsAllocated(count, stage) {
+      counters.recordRecordSlotsAllocated?.(count, stage);
+    },
+    recordPrefixComparisons(count) {
+      counters.recordPrefixComparisons?.(count, "store");
+    },
+    recordSourceUnitsRead(count) {
+      counters.recordSourceUnitsRead?.(count, "store");
+    },
+    recordSourceUnitsMaterialized(count) {
+      counters.recordSourceUnitsMaterialized?.(count, "store");
+    },
+    recordSourceDirectoryEntriesCopied(count) {
+      counters.recordSourceDirectoryEntriesCopied?.(count, "store");
+    },
+  };
+}
+
 export function createRendererStore(initialBlocks: Block[] = [], options?: RendererStoreOptions): RendererStore {
   let currentThemes = options?.themes;
   let nodes: NodeMap = new Map();
+  if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+    codeCountersByMap!.set(nodes, resolveStoreCodeCounters(options));
+  }
+  retiredCodeGenerationsByMap.set(nodes, new Map<string, number>());
   let version = 0;
   let blocksCache: Block[] = [];
   let blocksDirty = true;
   const publicBlocks = new WeakMap<Block, Block>();
   const listeners = new Set<() => void>();
   const nodeListeners = new Map<string, Set<() => void>>();
+  const tableRowRangesByBlock = new Map<string, Map<number, TableRowRangeSubscription>>();
   let pendingChangedIds = new Set<string>();
+  let pendingTableRowRanges = new Map<string, Set<number>>();
   let notifyAllNodes = true;
   let notifyScheduled = false;
   let lastCoalescingMetrics: CoalescingMetrics | null = null;
@@ -1336,6 +1649,29 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
   let structuralViolations: string[] | null = null;
   let transientDiagnostics: string[] = [];
   let nextBlockEpoch = 1;
+  let provisionalBlockCount = 0;
+  const isProvisionalRootBlock = (record: NodeRecord | undefined): boolean => {
+    if (!record || record.parentId !== PATCH_ROOT_ID) return false;
+    const state = codeStateByRecord.get(record);
+    const tableState = tableStateByRecord.get(record);
+    if (tableState) return tableState.source.state === "open";
+    if (state?.managed) return state.view.source.state === "open";
+    if (state) return record.block ? !record.block.isFinalized : state.view.source.state === "open";
+    return Boolean(record.block && !record.block.isFinalized);
+  };
+  const updateRootProvisionalCount = (record: NodeRecord | undefined, wasProvisional: boolean): void => {
+    if (!record || record.parentId !== PATCH_ROOT_ID) return;
+    const isProvisional = isProvisionalRootBlock(record);
+    if (wasProvisional !== isProvisional) provisionalBlockCount += isProvisional ? 1 : -1;
+  };
+  const recountRootProvisionalBlocks = (map: NodeMap): void => {
+    const root = map.get(PATCH_ROOT_ID);
+    let count = 0;
+    for (const id of root?.children ?? []) {
+      if (isProvisionalRootBlock(map.get(id))) count += 1;
+    }
+    provisionalBlockCount = count;
+  };
   const debugCounters: StoreDebugCounters = {
     appendLineGuardRejected: 0,
     staleEpochRejected: 0,
@@ -1387,25 +1723,103 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
       console.error("RendererStore listener failed", error);
     }
   }
-
   function notify() {
     const changedIds = pendingChangedIds;
+    const changedTableRanges = pendingTableRowRanges;
     const wakeAllNodes = notifyAllNodes;
     pendingChangedIds = new Set();
+    pendingTableRowRanges = new Map();
     notifyAllNodes = false;
+    if (wakeAllNodes) {
+      for (const ranges of tableRowRangesByBlock.values()) {
+        for (const range of ranges.values()) {
+          range.rows = undefined;
+          range.generation = undefined;
+        }
+      }
+    }
     for (const listener of listeners) callListener(listener);
     if (wakeAllNodes) {
       for (const nodeSet of nodeListeners.values()) {
         for (const listener of nodeSet) callListener(listener);
       }
+    } else {
+      for (const id of changedIds) {
+        const nodeSet = nodeListeners.get(id);
+        if (!nodeSet) continue;
+        for (const listener of nodeSet) callListener(listener);
+      }
+    }
+    if (wakeAllNodes) {
+      for (const ranges of tableRowRangesByBlock.values()) {
+        for (const range of ranges.values()) {
+          for (const listener of range.listeners) callListener(listener);
+        }
+      }
       return;
     }
-    for (const id of changedIds) {
-      const nodeSet = nodeListeners.get(id);
-      if (!nodeSet) continue;
-      for (const listener of nodeSet) callListener(listener);
+    for (const [blockId, starts] of changedTableRanges) {
+      const ranges = tableRowRangesByBlock.get(blockId);
+      if (!ranges) continue;
+      for (const rangeStart of starts) {
+        const range = ranges.get(rangeStart);
+        if (!range) continue;
+        for (const listener of range.listeners) callListener(listener);
+      }
     }
   }
+
+  function queueTableRowRange(blockId: string, rangeStart: number): void {
+    let starts = pendingTableRowRanges.get(blockId);
+    if (!starts) {
+      starts = new Set<number>();
+      pendingTableRowRanges.set(blockId, starts);
+    }
+    starts.add(rangeStart);
+  }
+
+  function invalidateTableRowRange(blockId: string, from: number, to: number): void {
+    if (from >= to) return;
+    const ranges = tableRowRangesByBlock.get(blockId);
+    if (!ranges) return;
+    const firstRange = Math.floor(from / TABLE_ROW_RANGE_SIZE) * TABLE_ROW_RANGE_SIZE;
+    const lastRange = Math.floor((to - 1) / TABLE_ROW_RANGE_SIZE) * TABLE_ROW_RANGE_SIZE;
+    for (let rangeStart = firstRange; rangeStart <= lastRange; rangeStart += TABLE_ROW_RANGE_SIZE) {
+      const range = ranges.get(rangeStart);
+      if (!range) continue;
+      range.rows = undefined;
+      queueTableRowRange(blockId, rangeStart);
+    }
+  }
+
+  function invalidateTableRowIndices(blockId: string, indices: ReadonlyArray<number>): void {
+    if (indices.length === 0) return;
+    const ranges = tableRowRangesByBlock.get(blockId);
+    if (!ranges) return;
+    const changedRanges = new Set<number>();
+    for (const index of indices) changedRanges.add(Math.floor(index / TABLE_ROW_RANGE_SIZE) * TABLE_ROW_RANGE_SIZE);
+    for (const rangeStart of changedRanges) {
+      const range = ranges.get(rangeStart);
+      if (!range) continue;
+      range.rows = undefined;
+      queueTableRowRange(blockId, rangeStart);
+    }
+  }
+
+  function getOrCreateTableRowRange(blockId: string, from: number, to: number): TableRowRangeSubscription {
+    let ranges = tableRowRangesByBlock.get(blockId);
+    if (!ranges) {
+      ranges = new Map<number, TableRowRangeSubscription>();
+      tableRowRangesByBlock.set(blockId, ranges);
+    }
+    let range = ranges.get(from);
+    if (!range) {
+      range = { from, to, listeners: new Set() };
+      ranges.set(from, range);
+    }
+    return range;
+  }
+
 
   function appendDiagnostic(message: string) {
     transientDiagnostics = [...transientDiagnostics, message];
@@ -1416,8 +1830,10 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
     if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
       (store as CampaignRendererStore).campaignCounters?.reset?.();
     }
-    clearSnapshotCaches(nodes);
+    const previousNodes = nodes;
+    clearSnapshotCaches(previousNodes);
     nodes = new Map();
+    carryRetiredCodeGenerations(previousNodes, nodes);
     const root = createRootRecord();
     nodes.set(root.id, root);
     root.children = [];
@@ -1427,6 +1843,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
       const snapshot = createBlockSnapshot(block);
       insertSnapshotAt(nodes, root, root.children.length, snapshot, undefined, allocateBlockEpoch(readSnapshotBlockEpoch(snapshot)));
     }
+    recountRootProvisionalBlocks(nodes);
     normalizeAllListDepths(nodes, new Set<string>(), PATCH_ROOT_ID);
     transientDiagnostics = [];
     structuralViolations = null;
@@ -1437,11 +1854,59 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
     // Use rAF (or fallback) to align with frame updates
     scheduleNotify();
   }
+  function rebuildFromSnapshot(rootSnapshot: NodeSnapshot) {
+    if (rootSnapshot.id !== PATCH_ROOT_ID || rootSnapshot.type !== "__root__" || !Array.isArray(rootSnapshot.children)) {
+      throw new TypeError("Renderer snapshot root must be the __root__ node");
+    }
+    const stack = [...rootSnapshot.children];
+    while (stack.length > 0) {
+      const snapshot = stack.pop();
+      if (!snapshot) continue;
+      if (snapshot.type === "code" && snapshot.code && !codeSnapshotGenerationAllowed(nodes, snapshot)) {
+        throw new RangeError(`Code owner generation did not advance:${snapshot.id}`);
+      }
+      for (const child of snapshot.children ?? []) stack.push(child);
+    }
+    if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
+      (store as CampaignRendererStore).campaignCounters?.reset?.();
+    }
+    const previousNodes = nodes;
+    const nextNodes: NodeMap = new Map();
+    carryRetiredCodeGenerations(previousNodes, nextNodes);
+    const root = createRootRecord();
+    nextNodes.set(root.id, root);
+    for (const child of rootSnapshot.children) {
+      insertSnapshotAt(
+        nextNodes,
+        root,
+        root.children.length,
+        child,
+        undefined,
+        allocateBlockEpoch(readSnapshotBlockEpoch(child)),
+        currentThemes,
+      );
+    }
+    recountRootProvisionalBlocks(nextNodes);
+    normalizeAllListDepths(nextNodes, new Set<string>(), PATCH_ROOT_ID);
+    clearSnapshotCaches(previousNodes);
+    nodes = nextNodes;
+    lastCoalescingMetrics = null;
+    transientDiagnostics = [];
+    structuralViolations = null;
+    version++;
+    blocksDirty = true;
+    notifyAllNodes = true;
+    scheduleNotify();
+  }
 
 
   const store: RendererStore = {
     reset(nextBlocks: Block[]) {
       rebuildFromBlocks(nextBlocks);
+    },
+
+    resetSnapshot(snapshot: NodeSnapshot) {
+      rebuildFromSnapshot(snapshot);
     },
 
     applyPatches(patches: Patch[], options?: ApplyPatchesOptions) {
@@ -1607,11 +2072,33 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
           if (Object.prototype.hasOwnProperty.call(props ?? {}, "tokens")) {
             incoming.tokens = (props as Record<string, unknown>).tokens;
           }
+          if (Object.prototype.hasOwnProperty.call(props ?? {}, "isProvisional")) {
+            incoming.isProvisional = (props as Record<string, unknown>).isProvisional;
+          }
           const normalized = normalizeCodeLineProps(incoming, target.props);
           if (perfEnabled) {
             recordSetPropsStage("code-line:normalize-props", getPerfNow() - normalizeStart);
           }
+          const parent = target.parentId ? nodes.get(target.parentId) : undefined;
+          let nextLegacyCodeState: StoredCodeBlockState | undefined;
           if (normalized !== target.props) {
+            if (parent?.type === "code") {
+              const currentCodeState = codeStateByRecord.get(parent);
+              if (currentCodeState && !currentCodeState.managed) {
+                const updatedLine = {
+                  id: target.id,
+                  index: typeof normalized.index === "number" ? normalized.index : Number.NaN,
+                  props: normalized,
+                };
+                nextLegacyCodeState = typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+                  ? updateLegacyCodeLineState(currentCodeState, updatedLine, codeCountersByMap!.get(nodes), semanticUpdate)
+                  : updateLegacyCodeLineState(currentCodeState, updatedLine, undefined, semanticUpdate);
+                if (!nextLegacyCodeState) {
+                  appendDiagnostic(`code line state update rejected:${parent.id}:${target.id}`);
+                  return;
+                }
+              }
+            }
             target.props = normalized;
             propsChanged = true;
           }
@@ -1621,7 +2108,6 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
             }
             bumpVersion(target);
             touched.add(target.id);
-            const parent = target.parentId ? nodes.get(target.parentId) : undefined;
             if (parent) {
               bumpVersion(parent);
               touched.add(parent.id);
@@ -1630,6 +2116,11 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
                 normalizeCodeBlockChildren(nodes, parent, touched);
                 if (perfEnabled) {
                   recordSetPropsStage("code-line:normalize-parent-code", getPerfNow() - parentNormalizeStart);
+                }
+                if (nextLegacyCodeState) {
+                  codeStateByRecord.set(parent, nextLegacyCodeState);
+                  mutatedBlocks = true;
+                  blocksDirty = true;
                 }
               }
             }
@@ -1702,6 +2193,15 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
         if (incomingBlock && typeof incomingBlock === "object") {
           const cloneStart = perfEnabled ? getPerfNow() : 0;
           target.block = cloneBlock(incomingBlock as Block);
+          const existingCodeState = codeStateByRecord.get(target);
+          if (target.type === "code" && existingCodeState && !existingCodeState.managed) {
+            codeStateByRecord.set(
+              target,
+              typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__
+                ? refreshLegacyCodeSource(existingCodeState, target.block, codeCountersByMap!.get(nodes))
+                : refreshLegacyCodeSource(existingCodeState, target.block),
+            );
+          }
           if (perfEnabled) {
             recordSetPropsStage(`${target.type || "unknown"}:clone-block`, getPerfNow() - cloneStart);
           }
@@ -1727,7 +2227,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
           }
 
           const shouldRebuildFinalizedTree =
-            !at.nodeId &&
+            (at.nodeId === undefined || at.nodeId === at.blockId) &&
             target.id === at.blockId &&
             Boolean(target.block?.isFinalized) &&
             target.type !== "code" &&
@@ -1811,12 +2311,33 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
           setPropsBySize[sizeKey] = sizeEntry;
         }
       };
+      const applyPropsUpdateTracked = (
+        at: NodePath,
+        props: Record<string, unknown> | undefined,
+        preferredEpoch?: number,
+        tx?: number,
+        semanticUpdate = false,
+      ) => {
+        const targetId = at.nodeId ?? at.blockId;
+        const record = nodes.get(targetId);
+        const wasProvisional = isProvisionalRootBlock(record);
+        applyPropsUpdate(at, props, preferredEpoch, tx, semanticUpdate);
+        const updated = nodes.get(targetId);
+        if (record?.parentId === PATCH_ROOT_ID && updated !== record) {
+          if (wasProvisional) provisionalBlockCount -= 1;
+          if (isProvisionalRootBlock(updated)) provisionalBlockCount += 1;
+        } else {
+          updateRootProvisionalCount(updated, wasProvisional);
+        }
 
+      };
       const applyPatch = (patch: Patch) => {
         switch (patch.op) {
           case "insertChild": {
             if (rejectStaleEpochPatch(patch, patch.at)) break;
             const parent = resolveParent(nodes, patch.at);
+            const previousRootRecord = parent?.id === PATCH_ROOT_ID ? nodes.get(patch.node.id) : undefined;
+            const previousWasProvisional = isProvisionalRootBlock(previousRootRecord);
             const inserted = insertSnapshotAt(
               nodes,
               parent,
@@ -1826,6 +2347,10 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
               allocateBlockEpoch(readPatchParseEpoch(patch) ?? readSnapshotBlockEpoch(patch.node)),
             );
             if (inserted) {
+              if (parent?.id === PATCH_ROOT_ID) {
+                if (previousWasProvisional) provisionalBlockCount -= 1;
+                if (isProvisionalRootBlock(inserted.record)) provisionalBlockCount += 1;
+              }
               for (const id of inserted.insertedIds) {
                 touched.add(id);
               }
@@ -1858,6 +2383,9 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
             const childId = parent.children.splice(patch.index, 1)[0];
             if (childId) {
               const removedNode = nodes.get(childId);
+              if (parent.id === PATCH_ROOT_ID && isProvisionalRootBlock(removedNode)) {
+                provisionalBlockCount -= 1;
+              }
               removeSubtree(nodes, childId, touched);
               bumpVersion(parent);
               touched.add(parent.id);
@@ -1884,6 +2412,9 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
             if (rejectStaleEpochPatch(patch, patch.at)) break;
             const parent = resolveParent(nodes, patch.at);
             if (!parent) break;
+            if (!codeSnapshotGenerationAllowed(nodes, patch.node)) break;
+            const previousRecord = nodes.get(parent.children[patch.index]);
+            const previousWasProvisional = parent.id === PATCH_ROOT_ID && isProvisionalRootBlock(previousRecord);
             replaceSnapshotAt(
               nodes,
               parent,
@@ -1892,6 +2423,10 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
               touched,
               allocateBlockEpoch(readPatchParseEpoch(patch) ?? readSnapshotBlockEpoch(patch.node)),
             );
+            if (parent.id === PATCH_ROOT_ID && nodes.get(parent.children[patch.index]) !== previousRecord) {
+              if (previousWasProvisional) provisionalBlockCount -= 1;
+              if (isProvisionalRootBlock(nodes.get(parent.children[patch.index]))) provisionalBlockCount += 1;
+            }
             touched.add(parent.id);
             mutatedBlocks = true;
             advanceBlockEpoch(patch.at.blockId, touched, readPatchParseEpoch(patch), readPatchTx(patch));
@@ -1911,7 +2446,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
 
           case "setProps": {
             if (rejectStaleEpochPatch(patch, patch.at)) break;
-            applyPropsUpdate(patch.at, patch.props, readPatchParseEpoch(patch), readPatchTx(patch), getPatchKind(patch) === "semantic");
+            applyPropsUpdateTracked(patch.at, patch.props, readPatchParseEpoch(patch), readPatchTx(patch), getPatchKind(patch) === "semantic");
             break;
           }
 
@@ -1926,7 +2461,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
                 meta: entry.meta ?? patch.meta,
               };
               if (rejectStaleEpochPatch(entryPatch, entry.at)) continue;
-              applyPropsUpdate(
+              applyPropsUpdateTracked(
                 entry.at,
                 entry.props,
                 readPatchParseEpoch(entryPatch),
@@ -1940,15 +2475,27 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
           case "finalize": {
             if (rejectStaleEpochPatch(patch, patch.at)) break;
             const target = nodes.get(patch.at.nodeId ?? patch.at.blockId);
-            if (!target || !target.block) break;
-            if (!target.block.isFinalized) {
+            if (!target) break;
+            const wasProvisional = isProvisionalRootBlock(target);
+            let changed = false;
+            const codeState = codeStateByRecord.get(target);
+            const tableState = tableStateByRecord.get(target);
+            if (codeState && codeState.view.source.state !== "finalized") {
+              codeStateByRecord.set(target, finalizeStoredCodeState(codeState));
+              changed = true;
+            }
+            if (!tableState && target.block && !target.block.isFinalized) {
               target.block = cloneBlock(target.block);
               target.block.isFinalized = true;
+              changed = true;
+            }
+            if (changed) {
+              updateRootProvisionalCount(target, wasProvisional);
               bumpVersion(target);
               touched.add(target.id);
               mutatedBlocks = true;
-
-              if (!patch.at.nodeId && target.id === patch.at.blockId && target.type !== "code" && target.parentId) {
+              blocksDirty = true;
+              if (!patch.at.nodeId && target.id === patch.at.blockId && target.type !== "code" && target.block && target.parentId) {
                 const parent = nodes.get(target.parentId);
                 const index = parent ? parent.children.indexOf(target.id) : -1;
                 if (parent && index !== -1) {
@@ -2006,6 +2553,151 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
             break;
           }
 
+          case "appendCode": {
+            if (rejectStaleEpochPatch(patch, patch.at)) break;
+            const target = resolveParent(nodes, patch.at);
+            if (!target) {
+              appendDiagnostic(`appendCode target missing:${patch.at.blockId}`);
+              break;
+            }
+            if (target.type !== "code") {
+              appendDiagnostic(`appendCode target not code:${target.id}:${target.type}`);
+              break;
+            }
+            const codeState = codeStateByRecord.get(target);
+            if (!codeState) {
+              appendDiagnostic(`appendCode owner unavailable:${target.id}`);
+              break;
+            }
+            const wasProvisional = isProvisionalRootBlock(target);
+            const appended = appendStoredCodeState(codeState, patch);
+            if (!appended.state) {
+              appendDiagnostic(`appendCode guard rejected:${target.id}:${appended.reason ?? "invalid source tail"}`);
+              break;
+            }
+            codeStateByRecord.set(target, appended.state);
+            syncManagedCodeChildren(nodes, target, appended.state, touched);
+            updateRootProvisionalCount(target, wasProvisional);
+            bumpVersion(target);
+            touched.add(target.id);
+            mutatedBlocks = true;
+            blocksDirty = true;
+            if (getPatchKind(patch) === "semantic") {
+              advanceBlockEpoch(patch.at.blockId, touched, readPatchParseEpoch(patch), readPatchTx(patch));
+            }
+            break;
+          }
+
+          case "appendTableRows": {
+            if (rejectStaleEpochPatch(patch, patch.at)) break;
+            const target = resolveParent(nodes, patch.at);
+            if (!target || target.type !== "table") {
+              appendDiagnostic(`appendTableRows target unavailable:${patch.at.blockId}`);
+              break;
+            }
+            const current = tableStateByRecord.get(target);
+            if (!current) {
+              appendDiagnostic(`appendTableRows owner unavailable:${target.id}`);
+              break;
+            }
+            let appended: ManagedTablePatchResult;
+            try {
+              appended = appendManagedTableRows(current, target.id, patch);
+            } catch {
+              appendDiagnostic(`appendTableRows guard rejected:${target.id}:invalid table record`);
+              break;
+            }
+            if ("reason" in appended) {
+              appendDiagnostic(`appendTableRows guard rejected:${target.id}:${appended.reason}`);
+              break;
+            }
+            const isFinalized = appended.state.source.state !== "open";
+            if (target.block) {
+              const range = appended.state.source.sourceRange;
+              if (
+                target.block.isFinalized !== isFinalized ||
+                target.block.payload.range?.from !== range.from ||
+                target.block.payload.range?.to !== range.to
+              ) {
+                target.block = cloneBlock(target.block);
+                target.block.isFinalized = isFinalized;
+                target.block.payload.range = { ...range };
+              }
+            }
+            const wasProvisional = isProvisionalRootBlock(target);
+            tableStateByRecord.set(target, appended.state);
+            invalidateTableRowRange(target.id, patch.fromRow, Math.max(current.rows.length, appended.state.rows.length));
+            updateRootProvisionalCount(target, wasProvisional);
+            bumpVersion(target);
+            touched.add(target.id);
+            mutatedBlocks = true;
+            blocksDirty = true;
+            if (getPatchKind(patch) === "semantic") {
+              advanceBlockEpoch(patch.at.blockId, touched, readPatchParseEpoch(patch), readPatchTx(patch));
+            }
+            break;
+          }
+
+          case "updateTableRows": {
+            if (rejectStaleEpochPatch(patch, patch.at)) break;
+            const target = resolveParent(nodes, patch.at);
+            if (!target || target.type !== "table") {
+              appendDiagnostic(`updateTableRows target unavailable:${patch.at.blockId}`);
+              break;
+            }
+            const current = tableStateByRecord.get(target);
+            if (!current) {
+              appendDiagnostic(`updateTableRows owner unavailable:${target.id}`);
+              break;
+            }
+            let updated: ManagedTablePatchResult;
+            try {
+              updated = updateManagedTableRows(current, target.id, patch);
+            } catch {
+              appendDiagnostic(`updateTableRows guard rejected:${target.id}:invalid table record`);
+              break;
+            }
+            if ("reason" in updated) {
+              appendDiagnostic(`updateTableRows guard rejected:${target.id}:${updated.reason}`);
+              break;
+            }
+            tableStateByRecord.set(target, updated.state);
+            invalidateTableRowIndices(target.id, patch.updates.map((update) => update.index));
+            bumpVersion(target);
+            touched.add(target.id);
+            mutatedBlocks = true;
+            blocksDirty = true;
+            if (getPatchKind(patch) === "semantic") {
+              advanceBlockEpoch(patch.at.blockId, touched, readPatchParseEpoch(patch), readPatchTx(patch));
+            }
+            break;
+          }
+
+          case "decorateCode": {
+            const target = resolveParent(nodes, patch.at);
+            if (!target || target.type !== "code") {
+              appendDiagnostic(`decorateCode target unavailable:${patch.at.blockId}`);
+              break;
+            }
+            const codeState = codeStateByRecord.get(target);
+            if (!codeState) {
+              appendDiagnostic(`decorateCode owner unavailable:${target.id}`);
+              break;
+            }
+            const decorated = decorateStoredCodeState(codeState, patch);
+            if (decorated.reason) {
+              appendDiagnostic(`decorateCode guard rejected:${target.id}:${decorated.reason}`);
+              break;
+            }
+            if (!decorated.changed || !decorated.state) break;
+            codeStateByRecord.set(target, decorated.state);
+            syncManagedCodeChildren(nodes, target, decorated.state, touched);
+            bumpVersion(target);
+            touched.add(target.id);
+            mutatedBlocks = true;
+            blocksDirty = true;
+            break;
+          }
           case "appendLines": {
             if (rejectStaleEpochPatch(patch, patch.at)) break;
             const parent = resolveParent(nodes, patch.at);
@@ -2015,6 +2707,22 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
               appendDiagnostic(`appendLines target not code:${parent.id}:${parent.type}`);
               break;
             }
+            const currentCodeState = codeStateByRecord.get(parent);
+            let nextLegacyCodeState: StoredCodeBlockState | undefined;
+            if (currentCodeState?.managed) {
+              debugCounters.appendLineGuardRejected += 1;
+              appendDiagnostic(`appendLines guard rejected:${parent.id}:sourceAppend is required for source-managed code`);
+              break;
+            }
+            if (currentCodeState) {
+              const legacyAppend = appendLegacyCodeState(currentCodeState, patch);
+              if (!legacyAppend.state) {
+                debugCounters.appendLineGuardRejected += 1;
+                appendDiagnostic(`appendLines guard rejected:${parent.id}:${legacyAppend.reason ?? "invalid legacy tail"}`);
+                break;
+              }
+              nextLegacyCodeState = legacyAppend.state;
+            }
             const requestedStartIndex = Math.max(0, patch.startIndex);
             const startIndex = Math.max(0, Math.min(requestedStartIndex, parent.children.length));
             const lineCount = patch.lines?.length ?? 0;
@@ -2022,10 +2730,16 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
 
             if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
               const campaignCounters = (store as CampaignRendererStore).campaignCounters;
-              campaignCounters?.recordPrefixComparisons?.(parent.children.length, "store");
-              campaignCounters?.recordStoreRecordsTouched?.(parent.children.length, "store");
+              campaignCounters?.recordPrefixComparisons?.(parent.children.length > 0 ? 1 : 0, "store");
+              campaignCounters?.recordStoreRecordsTouched?.(lineCount, "store");
             }
-            const prefixMatches = parent.children.every((childId, index) => childId === expectedCodeLineId(parent.id, index));
+            const lastIndex = parent.children.length - 1;
+            const lastChildId = lastIndex >= 0 ? parent.children[lastIndex] : undefined;
+            const indexedTail = currentCodeState?.view.lines;
+            const prefixMatches =
+              (parent.children.length === 0 || lastChildId === expectedCodeLineId(parent.id, lastIndex)) &&
+              (!indexedTail ||
+                (indexedTail.length === parent.children.length && indexedTail.get(lastIndex)?.id === lastChildId));
             const isStrictTailAppend = requestedStartIndex === parent.children.length;
             if (!isStrictTailAppend || !prefixMatches) {
               debugCounters.appendLineGuardRejected += 1;
@@ -2034,20 +2748,23 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
               );
               break;
             }
-
-            const originalChildren = parent.children.slice();
-            const insertedIds: string[] = [];
-            const insertedSet = new Set<string>();
-            const isTrailingAppend = true;
             let parentChildrenChanged = false;
             let codeLinesMutated = false;
+            const previousTail = indexedTail?.get(lastIndex);
+            if (nextLegacyCodeState && previousTail?.isProvisional && lastChildId) {
+              const tailNode = nodes.get(lastChildId);
+              if (tailNode?.type === "code-line") {
+                tailNode.props = { ...(tailNode.props ?? {}), isProvisional: false };
+                bumpVersion(tailNode);
+                touched.add(tailNode.id);
+                codeLinesMutated = true;
+              }
+            }
+
 
             for (let offset = 0; offset < lineCount; offset++) {
               const absoluteIndex = startIndex + offset;
               const lineId = `${parent.id}::line:${absoluteIndex}`;
-              insertedIds.push(lineId);
-              insertedSet.add(lineId);
-
               const hasTokens = Object.prototype.hasOwnProperty.call(patch, "tokens");
               const nextTokens = hasTokens ? (patch.tokens?.[offset] ?? null) : undefined;
               const nextLineProps = createCodeLineProps(
@@ -2058,11 +2775,6 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
               );
               const existing = nodes.get(lineId);
               if (existing && existing.type === "code-line") {
-                const existingIndex = parent.children.indexOf(lineId);
-                if (existingIndex !== -1) {
-                  parent.children.splice(existingIndex, 1);
-                  parentChildrenChanged = true;
-                }
                 if (existing.parentId !== parent.id) {
                   existing.parentId = parent.id;
                   bumpVersion(existing);
@@ -2090,49 +2802,19 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
                 touched.add(lineId);
                 codeLinesMutated = true;
               }
-            }
-
-            if (insertedIds.length > 0) {
-              let nextChildren: string[];
-              if (isTrailingAppend) {
-                nextChildren = [...originalChildren, ...insertedIds];
-              } else {
-                const cleanedChildren = originalChildren.filter((childId) => !insertedSet.has(childId));
-                const clampedStart = Math.max(0, Math.min(startIndex, cleanedChildren.length));
-                nextChildren = [...cleanedChildren.slice(0, clampedStart), ...insertedIds, ...cleanedChildren.slice(clampedStart)];
-              }
-              if (!arraysEqual(originalChildren, nextChildren)) {
-                parent.children = nextChildren;
-                parentChildrenChanged = true;
-              }
-            }
-
-            if (!isTrailingAppend) {
-              for (let idx = 0; idx < parent.children.length; idx++) {
-                const childId = parent.children[idx];
-                const child = nodes.get(childId);
-                if (child && child.type === "code-line") {
-                  const incoming: Record<string, unknown> = { index: idx, text: child.props?.text, html: child.props?.html };
-                  if (Object.prototype.hasOwnProperty.call(child.props ?? {}, "tokens")) {
-                    incoming.tokens = (child.props as Record<string, unknown>).tokens;
-                  }
-                  const normalized = normalizeCodeLineProps(incoming, child.props);
-                  if (normalized !== child.props) {
-                    child.props = normalized;
-                    bumpVersion(child);
-                    touched.add(child.id);
-                    codeLinesMutated = true;
-                  }
-                }
-              }
+              parent.children.push(lineId);
+              parentChildrenChanged = true;
             }
 
             if (parentChildrenChanged || codeLinesMutated) {
               bumpVersion(parent);
               touched.add(parent.id);
-              if (!isTrailingAppend) {
-                normalizeCodeBlockChildren(nodes, parent, touched);
-              }
+            }
+
+            if (nextLegacyCodeState && (parentChildrenChanged || codeLinesMutated)) {
+              codeStateByRecord.set(parent, nextLegacyCodeState);
+              mutatedBlocks = true;
+              blocksDirty = true;
             }
             break;
           }
@@ -2141,6 +2823,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
             if (rejectStaleEpochPatch(patch, patch.at)) break;
             const target = nodes.get(patch.at.nodeId ?? patch.at.blockId);
             if (!target) break;
+            const wasProvisional = isProvisionalRootBlock(target);
             const sanitized = patch.sanitized ? patch.html : sanitizeHTML(patch.html);
             target.props = {
               ...(target.props ?? {}),
@@ -2157,6 +2840,7 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
               target.block.payload.sanitizedHtml = sanitized;
               mutatedBlocks = true;
             }
+              updateRootProvisionalCount(target, wasProvisional);
 
             bumpVersion(target);
             touched.add(target.id);
@@ -2189,30 +2873,6 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
         }
       }
 
-      const finalizedTableRoots = new Set<string>();
-      for (const touchedId of touched) {
-        let cursor = nodes.get(touchedId);
-        while (cursor && cursor.id !== PATCH_ROOT_ID) {
-          if (cursor.type === "table" && cursor.block?.isFinalized && cursor.parentId) {
-            finalizedTableRoots.add(cursor.id);
-            break;
-          }
-          cursor = cursor.parentId ? nodes.get(cursor.parentId) : undefined;
-        }
-      }
-      if (finalizedTableRoots.size > 0) {
-        for (const tableId of finalizedTableRoots) {
-          const tableNode = nodes.get(tableId);
-          if (!tableNode || !tableNode.block || !tableNode.parentId) continue;
-          const parent = nodes.get(tableNode.parentId);
-          if (!parent) continue;
-          const index = parent.children.indexOf(tableNode.id);
-          if (index === -1) continue;
-          const snapshot = createBlockSnapshot(cloneBlock(tableNode.block));
-          replaceSnapshotAt(nodes, parent, index, snapshot, touched, tableNode.blockEpoch);
-          mutatedBlocks = true;
-        }
-      }
 
       if (mutatedBlocks) {
         blocksDirty = true;
@@ -2286,6 +2946,59 @@ export function createRendererStore(initialBlocks: Block[] = [], options?: Rende
       }
       blocksDirty = false;
       return blocksCache;
+    },
+    hasProvisionalBlocks() {
+      return provisionalBlockCount > 0;
+    },
+    getCodeBlock(id: string) {
+      const record = nodes.get(id);
+      return record?.type === "code" ? codeStateByRecord.get(record)?.view : undefined;
+    },
+
+    getCodeLines(id: string, from: number, to: number) {
+      const record = nodes.get(id);
+      const codeState = record?.type === "code" ? codeStateByRecord.get(record) : undefined;
+      return codeState ? readStoredCodeLines(codeState, from, to) : EMPTY_CODE_LINES;
+    },
+    getTableBlock(id: string) {
+      const record = nodes.get(id);
+      return record?.type === "table" ? tableStateByRecord.get(record) : undefined;
+    },
+
+    getTableRows(id: string, from: number, to: number) {
+      const record = nodes.get(id);
+      const tableState = record?.type === "table" ? tableStateByRecord.get(record) : undefined;
+      if (!tableState) return EMPTY_TABLE_ROWS;
+      if (Number.isSafeInteger(from) && from >= 0 && from % TABLE_ROW_RANGE_SIZE === 0 && to === from + TABLE_ROW_RANGE_SIZE) {
+        const range = getOrCreateTableRowRange(id, from, to);
+        if (range.generation !== tableState.source.generation) {
+          range.rows = undefined;
+          range.generation = tableState.source.generation;
+        }
+        if (range.rows) return range.rows;
+        range.rows = tableState.rows.readRange(from, to);
+        return range.rows;
+      }
+      return tableState.rows.readRange(from, to);
+    },
+
+    subscribeTableRows(id: string, from: number, to: number, listener: () => void) {
+      if (
+        !Number.isSafeInteger(from) ||
+        from < 0 ||
+        from % TABLE_ROW_RANGE_SIZE !== 0 ||
+        to !== from + TABLE_ROW_RANGE_SIZE
+      ) throw new RangeError("Table row subscriptions must use fixed aligned ranges");
+      const range = getOrCreateTableRowRange(id, from, to);
+      range.listeners.add(listener);
+      return () => {
+        range.listeners.delete(listener);
+        if (range.listeners.size === 0) {
+          const ranges = tableRowRangesByBlock.get(id);
+          ranges?.delete(from);
+          if (ranges?.size === 0) tableRowRangesByBlock.delete(id);
+        }
+      };
     },
 
     getVersion() {

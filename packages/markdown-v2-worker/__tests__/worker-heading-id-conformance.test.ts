@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 
 import type { TocHeading, WorkerOut } from "@stream-mdx/core";
@@ -37,12 +39,9 @@ async function collectTocForChunks(chunks: string[]): Promise<TocHeading[]> {
   assert.ok(chunks.length > 0, "expected at least one chunk");
   const harness = await createWorkerHarness();
 
-  await harness.send({
-    type: "INIT",
-    initialContent: chunks[0],
-    prewarmLangs: [],
-    docPlugins: DOC_PLUGINS,
-  });
+  await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: chunks[0],
+  prewarmLangs: [],
+  docPlugins: DOC_PLUGINS, });
 
   for (const chunk of chunks.slice(1)) {
     await harness.send({ type: "APPEND", text: chunk });

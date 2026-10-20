@@ -1,4 +1,5 @@
 import type { MarkdownConfig } from "@lezer/markdown";
+import { reportUnfinishedNativeToken } from "./native-inline-state";
 
 /** CommonMark 0.31 comment endings, before Lezer's older HTML comment grammar. */
 export const HtmlCommentCompatibility: MarkdownConfig = {
@@ -13,7 +14,10 @@ export const HtmlCommentCompatibility: MarkdownConfig = {
       else if (rest.startsWith("->")) length = 2;
       else {
         const close = rest.indexOf("-->");
-        if (close < 0) return -1;
+        if (close < 0) {
+          reportUnfinishedNativeToken(context, start);
+          return -1;
+        }
         length = close + 3;
       }
       return context.addElement(context.elt("Comment", start, start + 4 + length));

@@ -1,9 +1,15 @@
 import assert from "node:assert";
-
+import { GFM, parser } from "@lezer/markdown";
+import { AppendSourceDocument, createBlockCompatibilityExtension, freezeTableCellRecord, freezeTableRowRecord, InlineParser } from "@stream-mdx/core";
 import type { Block, InlineNode, Patch } from "@stream-mdx/core";
 import DOMPurifyFactory from "dompurify";
 
+import { NativeMarkdownInput } from "../../markdown-v2-worker/src/engine/native-markdown-input";
+import { createRootTableOwners, rootTableNodeSnapshot } from "../../markdown-v2-worker/src/engine/root-table-pipeline";
+import { HtmlContinuationExtension } from "../../markdown-v2-worker/src/parser/html-extension";
 import { createRendererStore } from "../src/renderer/store";
+
+const markdownParser = parser.configure([GFM, createBlockCompatibilityExtension(), HtmlContinuationExtension]);
 
 const dompurifyShim = DOMPurifyFactory as unknown as { sanitize?: (html: string, config?: unknown) => string };
 if (typeof dompurifyShim.sanitize !== "function") {
@@ -249,11 +255,68 @@ async function runFinalizedTableSemanticStabilityTest(): Promise<void> {
   assert.ok(afterValid.blockEpoch > initialEpoch, "valid semantic table replacement must advance block epoch");
 }
 
+async function runFinalizedManagedTableSemanticUpdateTest(): Promise<void> {
+  const source = new AppendSourceDocument();
+  source.append("| Name | Value |\n| --- | --- |\n| Alpha | 1 |\n");
+  const tree = new NativeMarkdownInput(source.snapshot()).parse(markdownParser);
+  const owner = createRootTableOwners(
+    tree,
+    source,
+    4,
+    markdownParser,
+    new InlineParser(),
+    "header-independent",
+  )[0];
+  assert.ok(owner, "expected native root table owner");
+  owner!.finalize();
+
+  const store = createRendererStore();
+  const rootNode = {
+    id: "__root__",
+    type: "__root__",
+    children: [rootTableNodeSnapshot(owner!)],
+  };
+  store.resetSnapshot(rootNode);
+  const initialState = store.getTableBlock(owner!.id);
+  const initialRow = initialState?.rows.get(0);
+  const initialCell = initialRow?.cells[0];
+  assert.ok(initialState && initialRow && initialCell, "expected finalized managed table row");
+  assert.strictEqual(initialState.source.state, "finalized", "owner snapshot remains finalized");
+
+  const updatedCells = initialRow!.cells.slice();
+  updatedCells[0] = freezeTableCellRecord({ ...initialCell!, inline: [textNode("Omega")] });
+  const updatedRow = freezeTableRowRecord({ ...initialRow!, cells: updatedCells });
+  store.applyPatches([{
+    op: "updateTableRows",
+    at: { blockId: owner!.id },
+    tableOwnerId: owner!.id,
+    generation: owner!.generation,
+    expectedRevision: initialState!.source.revision,
+    revision: initialState!.source.revision + 1,
+    updates: [{
+      index: initialRow!.index,
+      expectedSourceRevision: initialRow!.sourceRevision,
+      row: updatedRow,
+    }],
+    meta: { kind: "semantic" },
+  } satisfies Patch]);
+
+  const updatedState = store.getTableBlock(owner!.id);
+  const updatedCell = updatedState?.rows.get(0)?.cells[0];
+  const updatedBlock = store.getBlocks().find((block) => block.id === owner!.id);
+  assert.strictEqual((updatedCell?.inline[0] as InlineNode | undefined)?.text, "Omega",
+    "valid semantic row update must land on a finalized table");
+  assert.strictEqual(updatedState?.source.state, "finalized", "semantic update must preserve finalized owner state");
+  assert.strictEqual(updatedBlock?.isFinalized, true, "semantic update must not reopen the rendered table");
+}
+
 async function main() {
   await runFinalizedCodeSemanticStabilityTest();
   await runFinalizedListSemanticStabilityTest();
   await runFinalizedTableSemanticStabilityTest();
+  await runFinalizedManagedTableSemanticUpdateTest();
 }
 
 await main();
 console.log("finalized-semantic-stability test passed");
+

@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 import { applyPatchBatch, createInitialSnapshot, extractHighlightedLines, sanitizeCodeHTML, type Block, type CodeHighlightOutputMode, type DiffBlock, type HtmlTreeNode, type Patch, type TokenLineV1, type WorkerOut } from "@stream-mdx/core";
 import React from "react";
@@ -40,27 +42,24 @@ function sanitizeLineInnerHtml(innerHtml: string | null, fallbackText: string): 
 async function renderWithWorker(snippet: string, lazyEnabled: boolean, outputMode: CodeHighlightOutputMode = "html", emitDiffBlocks = false) {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
-  const initMessages = await harness.send({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: [],
-    docPlugins: {
-      html: true,
-      mdx: false,
-      math: false,
-      tables: false,
-      callouts: false,
-      outputMode,
-      emitHighlightTokens: true,
-      emitDiffBlocks,
-      footnotes: false,
-      lazyTokenization: { enabled: lazyEnabled, thresholdLines: 10 },
-    },
-  });
+  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: [],
+  docPlugins: {
+    html: true,
+    mdx: false,
+    math: false,
+    tables: false,
+    callouts: false,
+    outputMode,
+    emitHighlightTokens: true,
+    emitDiffBlocks,
+    footnotes: false,
+    lazyTokenization: { enabled: lazyEnabled, thresholdLines: 10 },
+  }, });
   const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
   assert.ok(init, "worker did not initialize");
-  store.reset(init.blocks);
-  const document = createInitialSnapshot(init.blocks);
+  store.resetSnapshot(init.snapshot);
+  const document = createInitialSnapshot(init.snapshot);
   const consume = (messages: WorkerOut[]) => {
     for (const message of messages) {
       if (message.type === "PATCH") {
@@ -70,7 +69,7 @@ async function renderWithWorker(snippet: string, lazyEnabled: boolean, outputMod
         throw new Error(message.error.message);
       }
     }
-    assert.deepStrictEqual(document.blocks, store.getBlocks(), "core and React must retain the same lazy nested artifact");
+    assert.deepStrictEqual(document.getBlocks(), store.getBlocks(), "core and React must retain the same lazy nested artifact");
     assert.deepStrictEqual(store.getInvariantViolations(), []);
   };
 

@@ -59,6 +59,7 @@ That example does four things only:
 
 ```ts
 import { createWorkerThread } from "stream-mdx/worker/node";
+import { STREAM_MDX_SCHEMA_VERSION } from "stream-mdx/core";
 import { createSnapshotStore } from "@stream-mdx/tui";
 
 const worker = createWorkerThread({ stdout: true, stderr: true });
@@ -73,6 +74,7 @@ worker.on("message", (msg) => {
 
 worker.postMessage({
   type: "INIT",
+  schemaVersion: STREAM_MDX_SCHEMA_VERSION,
   initialContent: "",
   docPlugins: { tables: true, html: true, mdx: false, math: false, footnotes: true },
   mdx: { compileMode: "server" },
@@ -92,9 +94,9 @@ You **do** want it when:
 
 ```ts
 import { NdjsonDecoder, createSnapshotStore } from "@stream-mdx/tui";
-import type { StreamMdxEventV1 } from "@stream-mdx/protocol";
+import type { StreamMdxEvent } from "@stream-mdx/protocol";
 
-const decoder = new NdjsonDecoder<StreamMdxEventV1>();
+const decoder = new NdjsonDecoder<StreamMdxEvent>();
 const store = createSnapshotStore();
 
 for (const event of decoder.push(chunk)) {

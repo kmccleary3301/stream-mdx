@@ -1,3 +1,4 @@
+import { createNativeTableCompatibilityRule } from "./native-table-compatibility";
 import type { BlockContext, Element, MarkdownConfig } from "@lezer/markdown";
 
 // Lezer's native Type 6/7 start grammar. Only their blank-line terminator differs:
@@ -5,7 +6,7 @@ import type { BlockContext, Element, MarkdownConfig } from "@lezer/markdown";
 const htmlBlockTagStart = /^<\/?(?:address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|frame|frameset|h1|h2|h3|h4|h5|h6|head|header|hr|html|iframe|legend|li|link|main|menu|menuitem|nav|noframes|ol|optgroup|option|p|param|section|source|summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul)(?:\s|\/?>|$)/i;
 const htmlCompleteTag = /^(?:<\/[a-z][\w-]*\s*>|<[a-z][\w-]*(\s+[a-z:_][\w-.]*(?:\s*=\s*(?:[^\s"'=<>`]+|'[^']*'|"[^"]*"))?)*\s*>)\s*$/i;
 
-/** CommonMark block rules missing from Lezer's container HTML, empty-item, and tab-heading parsing. */
+/** Native CommonMark/GFM compatibility for tables, container HTML, empty items and tab headings. */
 export function createBlockCompatibilityExtension(): MarkdownConfig {
   const activeEmptyItems = new WeakMap<BlockContext, Set<number>>();
   return {
@@ -21,7 +22,7 @@ export function createBlockCompatibilityExtension(): MarkdownConfig {
         return true;
       },
     }],
-    parseBlock: [{
+    parseBlock: [createNativeTableCompatibilityRule(), {
       name: "ContainerHTMLBlock",
       before: "HTMLBlock",
       parse(cx, line) {

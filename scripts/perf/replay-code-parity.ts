@@ -4,7 +4,7 @@
  */
 
 import { fromMarkdown } from "mdast-util-from-markdown";
-import type { Block, TokenLineV1, TokenSpan } from "@stream-mdx/core";
+import { PATCH_ROOT_ID, type Block, type TokenSpan } from "@stream-mdx/core";
 import type { Code, ListItem, RootContent } from "mdast";
 import { bundledLanguages, type Highlighter, type BundledLanguage, type SpecialLanguage } from "shiki";
 import type { NodeRecord, RendererStore } from "@stream-mdx/react/renderer/store";
@@ -114,6 +114,74 @@ function collectAuthoredCodeOwners(source: string): AuthoredCodeOwner[] {
   const renderedRootChildren = fromMarkdown(source).children.filter((node) => node.type !== "definition");
   renderedRootChildren.forEach((node, index) => visit(node, [index], []));
   return owners;
+}
+export interface AuthoredCodeFixtureExpectation {
+  readonly lang?: string;
+  readonly codeLines: readonly string[];
+  readonly openingFenceIndent?: number;
+  readonly closingFenceIndent?: number;
+}
+
+export function verifyAuthoredCodeExpectations(
+  source: string,
+  expectedBlocks: readonly AuthoredCodeFixtureExpectation[],
+): { ok: boolean; message?: string } {
+  let owners: AuthoredCodeOwner[];
+  try {
+    owners = collectAuthoredCodeOwners(source);
+  } catch (error) {
+    return { ok: false, message: `Failed to parse authored code expectations: ${error instanceof Error ? error.message : String(error)}` };
+  }
+  if (owners.length !== expectedBlocks.length) {
+    return {
+      ok: false,
+      message: `CommonMark code owner count mismatch: parsed=${owners.length} expected=${expectedBlocks.length}`,
+    };
+  }
+
+  const sourceLines = source.split(/\r\n|\n|\r/);
+  for (let index = 0; index < expectedBlocks.length; index += 1) {
+    const owner = owners[index];
+    const expected = expectedBlocks[index];
+    if (expected.lang !== undefined && owner.lang !== expected.lang) {
+      return {
+        ok: false,
+        message: `CommonMark code owner ${index} language mismatch: parsed=${JSON.stringify(owner.lang)} expected=${JSON.stringify(expected.lang)}`,
+      };
+    }
+    const actualLines = owner.value.split("\n");
+    if (actualLines.length !== expected.codeLines.length) {
+      return {
+        ok: false,
+        message: `CommonMark code owner ${index} line count mismatch: parsed=${actualLines.length} expected=${expected.codeLines.length}`,
+      };
+    }
+    for (let lineIndex = 0; lineIndex < expected.codeLines.length; lineIndex += 1) {
+      if (actualLines[lineIndex] !== expected.codeLines[lineIndex]) {
+        return {
+          ok: false,
+          message: `CommonMark code owner ${index} line ${lineIndex} mismatch: parsed=${JSON.stringify(actualLines[lineIndex])} expected=${JSON.stringify(expected.codeLines[lineIndex])}`,
+        };
+      }
+    }
+
+    const fenceIndents: readonly [string, number | undefined, number][] = [
+      ["opening", expected.openingFenceIndent, owner.position.startLine],
+      ["closing", expected.closingFenceIndent, owner.position.endLine],
+    ];
+    for (const [edge, expectedIndent, lineNumber] of fenceIndents) {
+      if (expectedIndent === undefined) continue;
+      const sourceLine = sourceLines[lineNumber - 1];
+      const actualIndent = sourceLine?.match(/^ */)?.[0].length;
+      if (actualIndent !== expectedIndent) {
+        return {
+          ok: false,
+          message: `CommonMark code owner ${index} ${edge} fence indentation mismatch: source=${actualIndent ?? "missing"} expected=${expectedIndent} spaces`,
+        };
+      }
+    }
+  }
+  return { ok: true };
 }
 
 
@@ -285,52 +353,6 @@ function describeContainerAncestry(containers: readonly SemanticContainer[]): st
 }
 
 
-function isTokenStyle(value: unknown): value is NonNullable<TokenSpan["s"]> {
-  if (typeof value !== "object" || value === null) return false;
-  const style = value as Record<string, unknown>;
-  return (style.fg === undefined || typeof style.fg === "string")
-    && (style.bg === undefined || typeof style.bg === "string")
-    && (style.fs === undefined || typeof style.fs === "number");
-}
-
-function isTokenLine(value: unknown): value is TokenLineV1 {
-  if (typeof value !== "object" || value === null) return false;
-  const spans = (value as Record<string, unknown>).spans;
-  if (!Array.isArray(spans)) return false;
-  return (spans as unknown[]).every((span) => {
-    if (typeof span !== "object" || span === null) return false;
-    const token = span as Record<string, unknown>;
-    const variants = token.v;
-    const validVariants = variants === undefined || (
-      typeof variants === "object" && variants !== null
-      && ((variants as Record<string, unknown>).dark === undefined || isTokenStyle((variants as Record<string, unknown>).dark))
-      && ((variants as Record<string, unknown>).light === undefined || isTokenStyle((variants as Record<string, unknown>).light))
-    );
-    return typeof token.t === "string"
-      && (token.s === undefined || isTokenStyle(token.s))
-      && validVariants;
-  });
-}
-
-function readTokenLines(value: unknown): { lines?: Array<TokenLineV1 | null>; malformed: boolean } {
-  if (value === undefined || value === null) return { malformed: false };
-  if (!Array.isArray(value)) return { malformed: true };
-  const lines: Array<TokenLineV1 | null> = [];
-  for (const candidate of value as unknown[]) {
-    if (candidate === null) lines.push(null);
-    else if (isTokenLine(candidate)) lines.push(candidate);
-    else return { malformed: true };
-  }
-  return { lines, malformed: false };
-}
-
-function coversRequestedLines(lines: ReadonlyArray<TokenLineV1 | null> | undefined, count: number): boolean {
-  if (!lines || lines.length < count) return false;
-  for (let index = 0; index < count; index++) {
-    if (lines[index] === null || lines[index] === undefined) return false;
-  }
-  return true;
-}
 
 
 export interface NormalizedTokenRun {
@@ -369,7 +391,7 @@ export function coalesceRuns(runs: NormalizedTokenRun[]): NormalizedTokenRun[] {
   return coalesced;
 }
 
-export function actualSpansToRuns(spans: TokenSpan[]): NormalizedTokenRun[] {
+export function actualSpansToRuns(spans: readonly TokenSpan[]): NormalizedTokenRun[] {
   const runs: NormalizedTokenRun[] = [];
   let offset = 0;
   for (const span of spans) {
@@ -432,6 +454,7 @@ export async function verifyCompletedLineTokens(
   engine: MarkdownEngine,
   store: RendererStore,
   authoredSource: string,
+  expectedGeneration?: number,
 ): Promise<{ ok: boolean; message?: string }> {
   let authoredOwners: AuthoredCodeOwner[];
   try {
@@ -468,6 +491,56 @@ export async function verifyCompletedLineTokens(
         ok: false,
         message: `Code language mismatch for block ${block.id} at source range [${authored.position.startOffset}, ${authored.position.endOffset}): actual=${JSON.stringify(getCodeBlockLang(meta))} authored=${JSON.stringify(authored.lang)}`,
       };
+    }
+
+    const codeView = store.getCodeBlock(block.id);
+    if (!codeView) {
+      return { ok: false, message: `No prepared code owner state for block ${block.id}` };
+    }
+    if (codeView.source.codeOwnerId !== block.id) {
+      return { ok: false, message: `Code source owner mismatch for block ${block.id}: ${codeView.source.codeOwnerId}` };
+    }
+    const ownerRecord = store.getNode(block.id);
+    const isRootManagedCode = ownerRecord?.parentId === PATCH_ROOT_ID;
+    if (isRootManagedCode) {
+      if (expectedGeneration !== undefined && codeView.source.generation !== expectedGeneration) {
+        return {
+          ok: false,
+          message: `Root code generation mismatch for block ${block.id}: actual=${codeView.source.generation} INITIALIZED=${expectedGeneration}`,
+        };
+      }
+      if (store.getChildren(block.id).length !== 0) {
+        return { ok: false, message: `Root code block ${block.id} has per-line NodeRecords instead of owned records` };
+      }
+      const { from, to } = codeView.source.sourceRange;
+      if (
+        from < 0 ||
+        to < from ||
+        to > authoredSource.length ||
+        block.payload.range?.from !== from ||
+        block.payload.range?.to !== to ||
+        block.payload.raw !== authoredSource.slice(from, to)
+      ) {
+        return {
+          ok: false,
+          message: `Root code cold export did not preserve authored source range/text for block ${block.id}`,
+        };
+      }
+      if (block.payload.meta?.code !== authored.value) {
+        return {
+          ok: false,
+          message: `Root code metadata text mismatch for block ${block.id}: actual=${JSON.stringify(block.payload.meta?.code)} CommonMark=${JSON.stringify(authored.value)}`,
+        };
+      }
+      if (codeView.info !== (typeof block.payload.meta?.info === "string" ? block.payload.meta.info : "")) {
+        return { ok: false, message: `Root code info metadata mismatch for block ${block.id}` };
+      }
+      if (codeView.language !== (authored.lang || undefined)) {
+        return {
+          ok: false,
+          message: `Root code language metadata mismatch for block ${block.id}: actual=${JSON.stringify(codeView.language)} CommonMark=${JSON.stringify(authored.lang || undefined)}`,
+        };
+      }
     }
 
     const targetLang = authored.lang || "text";
@@ -515,13 +588,23 @@ export async function verifyCompletedLineTokens(
       };
     }
 
-    const parsedLines = readTokenLines(meta?.tokenLines);
-    if (parsedLines.malformed) {
-      return { ok: false, message: `Malformed token line data for code block ${block.id}` };
+    if (codeView.source.lineCount !== expectedLineCount) {
+      return {
+        ok: false,
+        message: `Prepared code line count mismatch for block ${block.id}: actual=${codeView.source.lineCount} expected=${expectedLineCount}`,
+      };
     }
-    let tokenLines = parsedLines.lines;
+    let preparedRows = store.getCodeLines(block.id, 0, expectedLineCount);
+    if (preparedRows.length !== expectedLineCount) {
+      return {
+        ok: false,
+        message: `Bounded prepared code read returned ${preparedRows.length} rows for block ${block.id}; expected=${expectedLineCount}`,
+      };
+    }
+
     const isDeferred = Boolean(meta?.deferredTokenization || meta?.lazyTokenization);
-    if (isDeferred && !coversRequestedLines(tokenLines, expectedLineCount)) {
+    const hasPreparedTokens = () => preparedRows.every((line) => line.decoration !== undefined);
+    if (isDeferred && !hasPreparedTokens()) {
       await engine.handle({
         type: "TOKENIZE_RANGE",
         blockId: block.id,
@@ -532,42 +615,46 @@ export async function verifyCompletedLineTokens(
 
       const startWait = Date.now();
       while (Date.now() - startWait < 1500) {
-        const fresh = store.getNode(block.id);
-        const freshBlock = fresh?.block ?? store.getBlocks().find((candidate) => candidate.id === block.id);
-        const propsBlock = fresh?.props?.block as Block | undefined;
-        const freshLines = readTokenLines(
-          freshBlock?.payload.meta?.tokenLines ?? propsBlock?.payload.meta?.tokenLines,
-        );
-        if (freshLines.malformed) {
-          return { ok: false, message: `Malformed resolved token line data for code block ${block.id}` };
-        }
-        if (freshLines.lines) tokenLines = freshLines.lines;
-        if (coversRequestedLines(tokenLines, expectedLineCount)) break;
+        preparedRows = store.getCodeLines(block.id, 0, expectedLineCount);
+        if (preparedRows.length === expectedLineCount && hasPreparedTokens()) break;
         await delay(20);
       }
     }
 
-    if (!tokenLines) {
-      return { ok: false, message: `No token lines resolved for code block ${block.id}` };
-    }
-    if (tokenLines.length !== expectedLineCount) {
-      const difference = tokenLines.length < expectedLineCount ? "Missing" : "Extra";
+    if (!hasPreparedTokens()) {
+      const missing = preparedRows.findIndex((line) => line.decoration === undefined);
       return {
         ok: false,
-        message: `${difference} token line coverage for code block ${block.id}: actual=${tokenLines.length} expected=${expectedLineCount} (authored value lines=${authoredLines.length})`,
+        message: `No prepared token decoration for code block ${block.id} line ${missing}`,
       };
     }
-
-    for (let lineIndex = 0; lineIndex < expectedLineCount; lineIndex++) {
-      const actualLine = tokenLines[lineIndex];
+    for (let lineIndex = 0; lineIndex < expectedLineCount; lineIndex += 1) {
+      const actualLine = preparedRows[lineIndex];
       if (!actualLine) {
+        return { ok: false, message: `Missing prepared code line ${lineIndex} for block ${block.id}` };
+      }
+      if (actualLine.text !== authoredLines[lineIndex]) {
         return {
           ok: false,
-          message: `Unresolved token line at index ${lineIndex} for code block ${block.id}`,
+          message: `Prepared code text mismatch at line ${lineIndex}: actual=${JSON.stringify(actualLine.text)} CommonMark=${JSON.stringify(authoredLines[lineIndex])}`,
+        };
+      }
+      const decoration = actualLine.decoration;
+      if (!decoration) {
+        return { ok: false, message: `Unresolved prepared token line at index ${lineIndex} for code block ${block.id}` };
+      }
+      if (
+        decoration.lineId !== actualLine.id ||
+        decoration.sourceRevision !== actualLine.sourceRevision ||
+        decoration.configurationRevision !== codeView.configurationRevision
+      ) {
+        return {
+          ok: false,
+          message: `Prepared token ownership mismatch at line ${lineIndex} for code block ${block.id}`,
         };
       }
       const expectedLine = expectedTokens[lineIndex];
-      const actualText = actualLine.spans.map((span) => span.t).join("");
+      const actualText = decoration.tokens.spans.map((span) => span.t).join("");
       const expectedText = expectedLine.map((token) => token.content).join("");
       if (actualText !== expectedText) {
         return {
@@ -576,7 +663,7 @@ export async function verifyCompletedLineTokens(
         };
       }
 
-      const actualRuns = actualSpansToRuns(actualLine.spans);
+      const actualRuns = actualSpansToRuns(decoration.tokens.spans);
       const expectedRuns = shikiTokensToRuns(expectedLine);
       if (actualRuns.length !== expectedRuns.length) {
         return {

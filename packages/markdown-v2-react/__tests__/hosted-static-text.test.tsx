@@ -3,7 +3,7 @@ import { execSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { Worker as NodeWorker } from "node:worker_threads";
-import type { SyntaxRuleSpec, WorkerIn, WorkerOut } from "@stream-mdx/core";
+import type { Block, SyntaxRuleSpec, WorkerIn, WorkerOut } from "@stream-mdx/core";
 import { MarkdownRenderer, StreamingMarkdown, type StreamingMarkdownHandle } from "@stream-mdx/react";
 import { createWorkerThread } from "@stream-mdx/worker/node";
 import { JSDOM } from "jsdom";
@@ -23,12 +23,25 @@ class HostedWorker extends EventTarget {
   readonly output: WorkerOut[] = [];
   private heldMessages: WorkerOut[] = [];
   private heldInitialization: { heading: string; replacementSource: string } | null = null;
+  private heldInitErrors: WorkerOut[] = [];
+  private holdNextInitError = false;
+  private failNextInitialization = false;
+
   constructor() {
     super();
     this.thread.on("message", (data: WorkerOut) => {
       this.output.push(data);
+      if (this.holdNextInitError && data.type === "ERROR" && data.phase === "INIT") {
+        this.holdNextInitError = false;
+        this.heldInitErrors.push(data);
+        return;
+      }
+
+      const initializedHeading = data.type === "INITIALIZED"
+        ? (data.snapshot.children?.[0]?.props?.block as Block | undefined)?.payload.raw
+        : undefined;
       if (this.heldMessages.length > 0 ||
-        (this.heldInitialization !== null && data.type === "INITIALIZED" && this.heldInitialization.heading === data.blocks[0]?.payload.raw)) {
+        (this.heldInitialization !== null && this.heldInitialization.heading === initializedHeading)) {
         this.heldMessages.push(data);
         return;
       }
@@ -49,7 +62,14 @@ class HostedWorker extends EventTarget {
   }
   postMessage(message: WorkerIn) {
     this.input.push(message);
-    this.thread.postMessage(message);
+    const failInitialization = this.failNextInitialization && message.type === "INIT";
+    if (failInitialization) this.failNextInitialization = false;
+    this.thread.postMessage(failInitialization ? { ...message, schemaVersion: -1 } : message);
+    if (message.type === "INIT" && this.heldInitErrors.length > 0) {
+      const errors = this.heldInitErrors;
+      this.heldInitErrors = [];
+      for (const error of errors) this.deliver(error);
+    }
     if (this.heldInitialization !== null && message.type === "INIT" && message.initialContent === this.heldInitialization.replacementSource) {
       this.heldInitialization = null;
       const heldMessages = this.heldMessages;
@@ -57,9 +77,19 @@ class HostedWorker extends EventTarget {
       for (const held of heldMessages) this.deliver(held);
     }
   }
+  holdInitErrorUntilReplacement(): void {
+    this.holdNextInitError = true;
+  }
+  failNextInitializationSchema(): void {
+    this.failNextInitialization = true;
+  }
+  hasHeldInitializationError(): boolean {
+    return this.heldInitErrors.some((message) => message.type === "ERROR" && message.phase === "INIT");
+  }
   terminate() { return this.thread.terminate(); }
   asBrowserWorker(): Worker { return this as unknown as Worker; }
 }
+
 
 const dom = new JSDOM("<!doctype html><html><body></body></html>", { pretendToBeVisual: true });
 const globals = {
@@ -95,6 +125,75 @@ async function waitFor(predicate: () => boolean, message: string) {
     await new Promise<void>((resolve) => setTimeout(resolve, 10));
   }
 }
+
+const orderedWorker = new HostedWorker();
+const orderedRenderer = new MarkdownRenderer({ plugins: features });
+let initializationReady = false;
+try {
+  orderedRenderer.attachWorker(orderedWorker.asBrowserWorker());
+  const readiness = orderedRenderer.whenInitialized().then(() => {
+    initializationReady = true;
+  });
+  orderedRenderer.append("# Queued before initialization ACK\n\n");
+  orderedRenderer.finalize();
+  assert.strictEqual(initializationReady, false,
+    "queued commands do not publish readiness before INITIALIZED");
+  assert.deepStrictEqual(orderedWorker.input.map((message) => message.type), ["INIT"],
+    "stream commands remain queued until the matching initialization ACK");
+  await waitFor(() => orderedWorker.input.length === 3, "matching ACK releases queued commands");
+  assert.deepStrictEqual(
+    orderedWorker.input.map((message) => message.type),
+    ["INIT", "APPEND", "FINALIZE"],
+    "accepted streaming commands retain FIFO order behind INIT",
+  );
+  await readiness;
+  assert.strictEqual(initializationReady, true, "matching initialization ACK publishes readiness");
+  await waitFor(() => {
+    const blocks = orderedRenderer.getStore().getBlocks();
+    return blocks.some((block) => block.payload.raw.includes("Queued before initialization ACK"))
+      && blocks.every((block) => block.isFinalized);
+  }, "pre-ACK append and finalize are applied after initialization");
+} finally {
+  orderedRenderer.detachWorker();
+  await orderedWorker.terminate();
+}
+{
+  const worker = new HostedWorker();
+  const detachedRenderer = new MarkdownRenderer({ plugins: features });
+  let currentRenderer: MarkdownRenderer | undefined;
+  try {
+    worker.holdInitErrorUntilReplacement();
+    worker.failNextInitializationSchema();
+    detachedRenderer.attachWorker(worker.asBrowserWorker());
+    const detachedReadiness = assert.rejects(
+      detachedRenderer.whenInitialized(),
+      /Worker detached before initialization completed/,
+    );
+    await waitFor(() => worker.hasHeldInitializationError(), "real worker emits and holds the detached INIT error");
+    detachedRenderer.detachWorker();
+    await detachedReadiness;
+
+    currentRenderer = new MarkdownRenderer({ plugins: features });
+    currentRenderer.attachWorker(worker.asBrowserWorker());
+    const readiness = currentRenderer.whenInitialized();
+    currentRenderer.append("# Current initialization owner\n\n");
+    currentRenderer.finalize();
+    await readiness;
+    await waitFor(() => {
+      const blocks = currentRenderer?.getStore().getBlocks() ?? [];
+      return blocks.some((block) => block.payload.raw.includes("Current initialization owner"))
+        && blocks.every((block) => block.isFinalized);
+    }, "new renderer initializes, appends, and finalizes after the detached INIT error");
+    assert.ok(currentRenderer.getStore().getBlocks().some(
+      (block) => block.payload.raw === "Current initialization owner",
+    ));
+  } finally {
+    detachedRenderer.detachWorker();
+    currentRenderer?.detachWorker();
+    await worker.terminate();
+  }
+}
+
 
 try {
   const worker = new HostedWorker();

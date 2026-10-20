@@ -1,6 +1,17 @@
 import type { SyntaxNode, Tree } from "@lezer/common";
 import { cleanTitle, cleanUrl } from "./lezer-converter";
 import type { LinkReferenceDefinition } from "./types";
+import type { SourceSnapshot } from "../source-document";
+
+type SourceText = string | SourceSnapshot;
+
+function readSourceRange(source: SourceText, from: number, to: number): string {
+  return typeof source === "string" ? source.slice(from, to) : source.read(from, to);
+}
+
+function sourceCharAt(source: SourceText, index: number): string {
+  return typeof source === "string" ? (source[index] ?? "") : source.read(index, index + 1);
+}
 
 export function normalizeLinkLabel(raw: string): string {
   return raw.trim().toLowerCase().replace(/ß|ẞ/g, "ss").replace(/\s+/g, " ");
@@ -10,7 +21,7 @@ export function normalizeLinkLabel(raw: string): string {
  * Extracts raw source text for a node, removing blockquote quote markers and prefixes
  * per source positions when the node spans across blockquote continuations.
  */
-function extractNodeText(node: SyntaxNode, content: string): string {
+function extractNodeText(node: SyntaxNode, content: SourceText): string {
   const quoteMarks: { from: number; to: number }[] = [];
   const cur = node.cursor();
   function findQuotes(cursor: typeof cur) {
@@ -27,7 +38,7 @@ function extractNodeText(node: SyntaxNode, content: string): string {
   findQuotes(cur);
 
   if (quoteMarks.length === 0) {
-    return content.slice(node.from, node.to);
+    return readSourceRange(content, node.from, node.to);
   }
 
   let result = "";
@@ -35,17 +46,17 @@ function extractNodeText(node: SyntaxNode, content: string): string {
 
   for (const qm of quoteMarks) {
     let prefixStart = qm.from;
-    while (prefixStart > lastPos && (content[prefixStart - 1] === " " || content[prefixStart - 1] === "\t")) {
+    while (prefixStart > lastPos && (sourceCharAt(content, prefixStart - 1) === " " || sourceCharAt(content, prefixStart - 1) === "\t")) {
       prefixStart--;
     }
     let prefixEnd = qm.to;
-    if (prefixEnd < node.to && content[prefixEnd] === " ") {
+    if (prefixEnd < node.to && sourceCharAt(content, prefixEnd) === " ") {
       prefixEnd++;
     }
-    result += content.slice(lastPos, prefixStart);
+    result += readSourceRange(content, lastPos, prefixStart);
     lastPos = prefixEnd;
   }
-  result += content.slice(lastPos, node.to);
+  result += readSourceRange(content, lastPos, node.to);
   return result;
 }
 
@@ -75,7 +86,7 @@ const REFERENCE_FREE_BLOCKS = new Set([
 /**
  * Collects all link reference definitions ([label]: url "title") recursively from a Lezer parse tree.
  */
-export function collectLinkReferences(tree: Tree, content: string): Map<string, LinkReferenceDefinition> {
+export function collectLinkReferences(tree: Tree, content: string | SourceSnapshot): Map<string, LinkReferenceDefinition> {
   const references = new Map<string, LinkReferenceDefinition>();
 
   tree.iterate({

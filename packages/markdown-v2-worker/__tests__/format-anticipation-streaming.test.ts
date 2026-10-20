@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 import { PATCH_ROOT_ID, type InlineNode, type Patch, type WorkerOut } from "@stream-mdx/core";
 import { createRendererStore } from "@stream-mdx/react/renderer/store";
@@ -42,15 +44,12 @@ async function runFormatAnticipationStreamingTest(): Promise<void> {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
 
-  const initMessages = await harness.send({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: [],
-    docPlugins: { footnotes: true, html: true, mdx: true, tables: true, callouts: true, math: true, formatAnticipation: true },
-  });
+  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: [],
+  docPlugins: { footnotes: true, html: true, mdx: true, tables: true, callouts: true, math: true, formatAnticipation: true }, });
   const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
   assert.ok(init, "worker did not emit INITIALIZED");
-  store.reset(init.blocks);
+  store.resetSnapshot(init.snapshot);
 
   // No closing '*' yet.
   const appendMessages = await harness.send({ type: "APPEND", text: "This is *italic" });
@@ -107,23 +106,20 @@ async function runMathAnticipationStreamingTest(): Promise<void> {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
 
-  const initMessages = await harness.send({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: [],
-    docPlugins: {
-      footnotes: true,
-      html: true,
-      mdx: true,
-      tables: true,
-      callouts: true,
-      math: true,
-      formatAnticipation: { mathInline: true },
-    },
-  });
+  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: [],
+  docPlugins: {
+    footnotes: true,
+    html: true,
+    mdx: true,
+    tables: true,
+    callouts: true,
+    math: true,
+    formatAnticipation: { mathInline: true },
+  }, });
   const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
   assert.ok(init, "worker did not emit INITIALIZED");
-  store.reset(init.blocks);
+  store.resetSnapshot(init.snapshot);
 
   const appendMessages = await harness.send({ type: "APPEND", text: "Value $x" });
   const patchMessages = appendMessages.filter((msg): msg is Extract<WorkerOut, { type: "PATCH" }> => msg.type === "PATCH");
@@ -149,23 +145,20 @@ async function runMathBlockAnticipationStreamingTest(): Promise<void> {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
 
-  const initMessages = await harness.send({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: [],
-    docPlugins: {
-      footnotes: true,
-      html: true,
-      mdx: true,
-      tables: true,
-      callouts: true,
-      math: true,
-      formatAnticipation: { mathBlock: true },
-    },
-  });
+  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: [],
+  docPlugins: {
+    footnotes: true,
+    html: true,
+    mdx: true,
+    tables: true,
+    callouts: true,
+    math: true,
+    formatAnticipation: { mathBlock: true },
+  }, });
   const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
   assert.ok(init, "worker did not emit INITIALIZED");
-  store.reset(init.blocks);
+  store.resetSnapshot(init.snapshot);
 
   const appendMessages = await harness.send({ type: "APPEND", text: "$$\nR_{\\rho\\sigma}" });
   const patchMessages = appendMessages.filter((msg): msg is Extract<WorkerOut, { type: "PATCH" }> => msg.type === "PATCH");

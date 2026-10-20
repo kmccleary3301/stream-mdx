@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 import React from "react";
 import ReactDOMServer from "react-dom/server";
@@ -33,14 +35,14 @@ async function compileBlocks(text: string): Promise<ReadonlyArray<Block>> {
   let finalized = false;
   const engine = new MarkdownEngine({
     post(message) {
-      if (message.type === "INITIALIZED") store.reset(message.blocks);
+      if (message.type === "INITIALIZED") store.resetSnapshot(message.snapshot);
       if (message.type === "PATCH") store.applyPatches(message.patches);
       if (message.type === "ERROR") throw new Error(message.error.message);
       if (message.type === "FINALIZED") finalized = true;
     },
   });
   try {
-    await engine.handle({ type: "INIT", initialContent: text, prewarmLangs: [] });
+    await engine.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: text, prewarmLangs: [] });
     await engine.handle({ type: "SET_CREDITS", credits: 10000 });
     await engine.handle({ type: "FINALIZE" });
     assert.ok(finalized, "Compiler must reach terminal FINALIZED");
@@ -166,7 +168,7 @@ async function runTests() {
     worker.onmessage = (event: MessageEvent<WorkerOut>) => {
       const message = event.data;
       if (message.type === "INITIALIZED") {
-        store.reset(message.blocks);
+        store.resetSnapshot(message.snapshot);
         initialized = true;
       } else if (message.type === "PATCH") {
         store.applyPatches(message.patches);
@@ -184,7 +186,7 @@ async function runTests() {
         store,
         blockRenderer: createUnifiedRenderer(options),
       }));
-      worker.postMessage({ type: "INIT", initialContent: "", prewarmLangs: [] });
+      worker.postMessage({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "", prewarmLangs: [] });
       await waitUntil(() => initialized || failure !== undefined, "INITIALIZED");
       if (failure) throw failure;
       worker.postMessage({ type: "SET_CREDITS", credits: 10000 });

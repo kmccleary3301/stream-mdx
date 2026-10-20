@@ -60,6 +60,7 @@ terminal renderer
 import { createWorkerThread } from "stream-mdx/worker/node";
 import { createSnapshotStore } from "@stream-mdx/tui";
 import type { WorkerOut } from "stream-mdx/core";
+import { STREAM_MDX_SCHEMA_VERSION } from "stream-mdx/core";
 
 const worker = createWorkerThread({ stdout: true, stderr: true });
 const store = createSnapshotStore();
@@ -72,6 +73,7 @@ worker.on("message", (msg: WorkerOut) => {
 
 worker.postMessage({
   type: "INIT",
+  schemaVersion: STREAM_MDX_SCHEMA_VERSION,
   initialContent: "",
   docPlugins: { tables: true, html: true, mdx: true, math: true, footnotes: true },
   mdx: { compileMode: "worker" },

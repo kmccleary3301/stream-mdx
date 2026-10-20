@@ -1,4 +1,5 @@
 import type { Block, PatchMetrics, WorkerIn, WorkerOut } from "@stream-mdx/core";
+import { createInitialSnapshot, STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
 // Main V2 Markdown Renderer
 // Client-side renderer with component registry and worker integration
 import type { PatchCommitSchedulerOptions, PatchFlushResult } from "./renderer/patch-commit-scheduler";
@@ -88,10 +89,18 @@ function getWorkerInitializations(worker: Worker): WorkerInitializationQueue {
       const initialization = queue.pending.shift();
       if (initialization) {
         queue.acknowledgements.set(event, initialization);
-        initialization.resolve?.(message.blocks);
+        if (message.schemaVersion !== STREAM_MDX_SCHEMA_VERSION) {
+          initialization.reject?.(new Error(`Incompatible worker schema: expected ${STREAM_MDX_SCHEMA_VERSION}, received ${message.schemaVersion}`));
+        } else {
+          initialization.resolve?.(createInitialSnapshot(message.snapshot).getBlocks());
+        }
       }
     } else if (message.type === "ERROR" && message.phase === "INIT" && typeof message.meta?.rule !== "string") {
-      queue.pending.shift()?.reject?.(new Error(message.error.message));
+      const initialization = queue.pending.shift();
+      if (initialization) {
+        queue.acknowledgements.set(event, initialization);
+        initialization.reject?.(new Error(message.error.message));
+      }
     }
   });
   worker.addEventListener("error", (event: Event) => {
@@ -110,7 +119,11 @@ export class MarkdownRenderer implements Renderer {
   private worker: Worker | null = null;
   private skipWorkerInit = false;
   private workerHasContent = false;
+  private workerSchemaReady = false;
   private initializationQueue: WorkerInitializationQueue | null = null;
+  private currentInitialization: OwnedInitialization | null = null;
+  private pendingStreamCommands: Array<Extract<WorkerIn, { type: "APPEND" | "FINALIZE" }>> = [];
+  private initializationWaiters = new Set<{ resolve(): void; reject(error: Error): void }>();
   private blocks: Block[] = [];
   private updateCallbacks: Array<(blocks: ReadonlyArray<Block>) => void> = [];
   private componentRegistry: ComponentRegistry;
@@ -187,6 +200,9 @@ export class MarkdownRenderer implements Renderer {
     this.worker = worker;
     this.skipWorkerInit = options?.skipInit ?? false;
     this.workerHasContent = false;
+    // A caller-managed worker is already initialized; it won't send our INIT_READY handshake.
+    this.workerSchemaReady = this.skipWorkerInit;
+    this.lastWorkerError = null;
     this.initializationQueue = getWorkerInitializations(worker);
     this.workerMessageListener = this.handleWorkerMessage.bind(this);
     this.worker.addEventListener("message", this.workerMessageListener);
@@ -220,10 +236,15 @@ export class MarkdownRenderer implements Renderer {
       ...(emitDiffBlocks !== undefined ? { emitDiffBlocks } : {}),
       ...(mdxComponentNames ? { mdxComponentNames } : {}),
     };
-    this.initializationQueue?.pending.push({ ...completion, owner: this });
+    const initialization = { ...completion, owner: this };
+    this.pendingStreamCommands = [];
+    this.currentInitialization = initialization;
+    this.initializationQueue?.pending.push(initialization);
+    this.workerSchemaReady = false;
     try {
       this.worker.postMessage({
         type: "INIT",
+        schemaVersion: STREAM_MDX_SCHEMA_VERSION,
         initialContent,
         prewarmLangs: this.config.highlight?.langs || [],
         docPlugins,
@@ -235,12 +256,46 @@ export class MarkdownRenderer implements Renderer {
       this.workerHasContent = initialContent.length > 0;
     } catch (error) {
       this.initializationQueue?.pending.pop();
+      if (this.currentInitialization === initialization) this.currentInitialization = null;
+      this.pendingStreamCommands = [];
       throw error;
     }
   }
+  /** Wait for this attachment's matching schema-validated initial root; no source export. */
+  whenInitialized(): Promise<void> {
+    if (!this.worker) return Promise.reject(new Error("Worker not attached"));
+    if (this.workerSchemaReady) return Promise.resolve();
+    if (this.lastWorkerError) {
+      const error = new Error(this.lastWorkerError.error.message);
+      error.name = this.lastWorkerError.error.name ?? "WorkerInitializationError";
+      return Promise.reject(error);
+    }
+    return new Promise((resolve, reject) => this.initializationWaiters.add({ resolve, reject }));
+  }
+
+  private settleInitialization(error?: Error): void {
+    for (const waiter of this.initializationWaiters) {
+      if (error) waiter.reject(error);
+      else waiter.resolve();
+    }
+    this.initializationWaiters.clear();
+  }
+
+  private flushPendingStreamCommands(initialization: OwnedInitialization): void {
+    if (this.currentInitialization !== initialization || !this.workerSchemaReady || !this.worker) return;
+    const commands = this.pendingStreamCommands;
+    this.pendingStreamCommands = [];
+    this.currentInitialization = null;
+    for (const command of commands) this.worker.postMessage(command);
+  }
+
 
   detachWorker(options: { terminate?: boolean } = {}): void {
     this.patchScheduler.clear();
+    this.workerSchemaReady = false;
+    this.settleInitialization(new Error("Worker detached before initialization completed"));
+    this.pendingStreamCommands = [];
+    this.currentInitialization = null;
     if (!this.worker) return;
     const shouldTerminate = options.terminate ?? false;
     for (const initialization of this.initializationQueue?.pending ?? []) {
@@ -272,6 +327,9 @@ export class MarkdownRenderer implements Renderer {
   }
   private handleWorkerError(event: Event): void {
     const error = extractWorkerError(event);
+    this.pendingStreamCommands = [];
+    this.currentInitialization = null;
+    this.settleInitialization(error);
     this.lastWorkerError = {
       type: "ERROR",
       phase: "UNKNOWN",
@@ -298,12 +356,13 @@ export class MarkdownRenderer implements Renderer {
     if (!this.worker) {
       throw new Error("Worker not attached");
     }
+    if (!this.workerSchemaReady && this.currentInitialization?.owner !== this) {
+      throw new Error("Wait for matching worker initialization before appending source");
+    }
     this.workerHasContent ||= text.length > 0;
-
-    this.worker.postMessage({
-      type: "APPEND",
-      text,
-    } as WorkerIn);
+    // PATCH handling stays closed until this owner's INIT ACK, so queue source commands behind it.
+    if (this.workerSchemaReady) this.worker.postMessage({ type: "APPEND", text } as WorkerIn);
+    else this.pendingStreamCommands.push({ type: "APPEND", text });
   }
 
   /**
@@ -408,13 +467,36 @@ export class MarkdownRenderer implements Renderer {
       case "INITIALIZED": {
         const initialization = this.initializationQueue?.acknowledgements.get(event);
         if (initialization && initialization.owner !== this) break;
-        if (this.initializationQueue?.pending.length === 0) {
+        if (message.schemaVersion !== STREAM_MDX_SCHEMA_VERSION) {
+          this.workerSchemaReady = false;
+          if (initialization && initialization === this.currentInitialization) {
+            this.pendingStreamCommands = [];
+            this.currentInitialization = null;
+          }
+          this.lastWorkerError = {
+            type: "ERROR",
+            phase: "INIT",
+            error: { name: "WorkerSchemaMismatch", message: `Incompatible worker schema: expected ${STREAM_MDX_SCHEMA_VERSION}, received ${message.schemaVersion}` },
+          };
+          const error = new Error(this.lastWorkerError.error.message);
+          error.name = "WorkerSchemaMismatch";
+          this.settleInitialization(error);
+          break;
+        }
+        const matchesCurrentInitialization = initialization !== undefined
+          ? initialization === this.currentInitialization
+          : this.currentInitialization === null;
+        if (this.initializationQueue?.pending.length === 0 && matchesCurrentInitialization) {
           this.patchScheduler.clear();
-          this.store.reset(message.blocks);
+          this.store.resetSnapshot(message.snapshot);
+          this.workerSchemaReady = true;
+          this.lastWorkerError = null;
           if (this.updateCallbacks.length > 0) {
             this.blocks = this.store.getBlocks() as Block[];
             this.notifyUpdateCallbacks();
           }
+          if (initialization) this.flushPendingStreamCommands(initialization);
+          this.settleInitialization();
         }
         break;
       }
@@ -428,6 +510,7 @@ export class MarkdownRenderer implements Renderer {
         break;
 
       case "PATCH": {
+        if (!this.workerSchemaReady) break;
         if (this.initializationQueue && this.initializationQueue.pending.length > 0) break;
         if (message.metrics) {
           this.lastPatchMetrics = message.metrics;
@@ -456,8 +539,16 @@ export class MarkdownRenderer implements Renderer {
         this.patchScheduler.clear();
         break;
 
-      case "ERROR":
+      case "ERROR": {
+        const initialization = this.initializationQueue?.acknowledgements.get(event);
+        if (initialization && (initialization.owner !== this || initialization !== this.currentInitialization)) break;
         this.lastWorkerError = message;
+        if (message.phase === "INIT") {
+          this.workerSchemaReady = false;
+          const error = new Error(message.error.message);
+          error.name = message.error.name ?? "WorkerInitializationError";
+          this.settleInitialization(error);
+        }
         console.error("V2 Markdown worker reported an error", {
           phase: message.phase,
           blockId: message.blockId,
@@ -465,6 +556,7 @@ export class MarkdownRenderer implements Renderer {
           meta: message.meta,
         });
         break;
+      }
 
       case "DEBUG_STATE":
         // Debug-only worker payloads; ignore in the renderer.
@@ -508,7 +600,13 @@ export class MarkdownRenderer implements Renderer {
     this.patchScheduler.restart();
     this.componentRegistry.resetAnimationTimeline();
     this.store.reset([]);
-    this.blocks = [];
+    // A source session can restart before its attachment receives the initial ACK.
+    // Keep that empty initialization so its matching ACK can release the session.
+    const preservePendingEmptyInitialization = !this.workerSchemaReady
+      && !this.workerHasContent
+      && this.currentInitialization?.owner === this;
+    this.pendingStreamCommands = [];
+    if (!preservePendingEmptyInitialization) this.currentInitialization = null;
     if (this.updateCallbacks.length > 0) {
       this.notifyUpdateCallbacks();
     }
@@ -520,7 +618,11 @@ export class MarkdownRenderer implements Renderer {
 
   finalize(): void {
     if (!this.worker) return;
-    this.worker.postMessage({ type: "FINALIZE" } as WorkerIn);
+    if (this.workerSchemaReady) {
+      this.worker.postMessage({ type: "FINALIZE" } as WorkerIn);
+    } else if (this.currentInitialization?.owner === this) {
+      this.pendingStreamCommands.push({ type: "FINALIZE" });
+    }
   }
 
   setCredits(value: number): void {

@@ -5,7 +5,12 @@
 
 export interface FixtureExpectations {
   headings?: Array<{ level: number; text: string }>;
-  codeBlocks?: Array<{ lang?: string; codeLines: string[] }>;
+  codeBlocks?: Array<{
+    lang?: string;
+    codeLines: string[];
+    openingFenceIndent?: number;
+    closingFenceIndent?: number;
+  }>;
   tables?: Array<{
     columnCount: number;
     rowCount?: number;
@@ -112,8 +117,7 @@ export const DENSE_FIXTURES: DenseFixture[] = [
   {
     id: "fence-indent-multiline",
     name: "Opening/Closing Fence Indent with Multiline Grammar",
-    stage: "engine:fence-indent",
-    description: "Exercises CommonMark fence dedent, independent Shiki tokenization, and multiline grammar",
+    description: "Exercises CommonMark dedent from a two-space opening fence against an unindented closing fence, independent Shiki tokenization, and multiline grammar",
     source:
       "Paragraph before fence.\n\n" +
       "  ```typescript\n" +
@@ -132,6 +136,8 @@ export const DENSE_FIXTURES: DenseFixture[] = [
     expectations: {
       codeBlocks: [
         {
+          openingFenceIndent: 2,
+          closingFenceIndent: 0,
           lang: "typescript",
           codeLines: [
             "interface User {",

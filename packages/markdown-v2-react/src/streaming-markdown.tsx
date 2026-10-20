@@ -12,7 +12,7 @@ import { MdxPrefetchQueue } from "./mdx-prefetch";
 import { prefetchMdxRuntime } from "./mdx-runtime";
 import type { AdaptiveBudgetState, PatchFlushResult } from "./renderer/patch-commit-scheduler";
 import { DeferredRenderContext, type DeferredRenderConfig } from "./renderer/deferred-render-context";
-import { useRendererBlocks } from "./renderer/hooks";
+import { useRendererBlocks, useRendererHasProvisionalBlocks } from "./renderer/hooks";
 import { StreamingActivityContext } from "./renderer/streaming-activity-context";
 import type { RendererStore } from "./renderer/store";
 import { useWorkerSession } from "./worker-session";
@@ -435,7 +435,7 @@ function StreamingMarkdownComponent(
     [renderer],
   );
   const store = renderer.getStore();
-  const blocks = useRendererBlocks(store);
+  const hasActiveBlocks = useRendererHasProvisionalBlocks(store);
   const adaptiveSwitchedRef = useRef(false);
   const adaptiveFirstFlushRef = useRef(false);
   const mdxMode: "server" | "worker" = mdxCompileMode ?? "server";
@@ -742,7 +742,6 @@ function StreamingMarkdownComponent(
     [renderer, store],
   );
 
-  const hasActiveBlocks = useMemo(() => blocks.some((block) => !block.isFinalized), [blocks]);
   const caretValue = useMemo(() => {
     if (!caret) {
       return null;

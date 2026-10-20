@@ -6,6 +6,31 @@ import { extractMixedContentSegments } from "./mixed-content";
 import { normalizeFormatAnticipation, prepareInlineStreamingContent } from "./streaming/inline-streaming";
 import type { Block, FormatAnticipationConfig, InlineNode, NodeSnapshot, ProtectedRange } from "./types";
 import { parseCodeFenceInfo, removeHeadingMarkers } from "./utils";
+import type { SourceSnapshot } from "./source-document";
+
+type SourceText = string | SourceSnapshot;
+
+function readSourceRange(source: SourceText, from: number, to: number): string {
+  return typeof source === "string" ? source.slice(from, to) : source.read(from, to);
+}
+
+function sourceCharAt(source: SourceText, index: number): string {
+  return typeof source === "string" ? (source[index] ?? "") : source.read(index, index + 1);
+}
+
+function lineStartAt(source: SourceText, before: number): number {
+  if (typeof source === "string") return source.lastIndexOf("\n", before - 1) + 1;
+  let cursor = Math.max(0, Math.min(source.length, before));
+  while (cursor > 0) {
+    const start = Math.max(0, cursor - 4096);
+    const window = source.read(start, cursor);
+    const newline = window.lastIndexOf("\n");
+    if (newline >= 0) return start + newline + 1;
+    cursor = start;
+  }
+  return 0;
+}
+
 
 /** Serializable container structure prepared by the owning engine, not by renderers. */
 export interface PreparedNestedSnapshot {
@@ -173,11 +198,11 @@ export function prepareNestedBlockSnapshot(block: Block, inlineParser: InlinePar
 }
 
 /** CodeText ranges already exclude container indentation, unlike the enclosing raw block. */
-export function extractLezerCode(node: SyntaxNode, source: string): { code: string; info: string } {
+export function extractLezerCode(node: SyntaxNode, source: SourceText): { code: string; info: string } {
   const columnAt = (position: number): number => {
-    const start = source.lastIndexOf("\n", position - 1) + 1;
+    const start = lineStartAt(source, position);
     let columns = 0;
-    for (let index = start; index < position; index++) columns += source[index] === "\t" ? 4 - (columns % 4) : 1;
+    for (const char of readSourceRange(source, start, position)) columns += char === "\t" ? 4 - (columns % 4) : 1;
     return columns;
   };
   let baseIndent = 0;
@@ -188,14 +213,14 @@ export function extractLezerCode(node: SyntaxNode, source: string): { code: stri
       const mark = parent.getChild("ListMark");
       if (mark) {
         let end = mark.to;
-        while (source[end] === " " || source[end] === "\t") end++;
+        while (sourceCharAt(source, end) === " " || sourceCharAt(source, end) === "\t") end++;
         const afterMark = columnAt(mark.to);
         const spacing = columnAt(end) - afterMark;
         baseIndent = afterMark + (spacing >= 1 && spacing <= 4 ? spacing : 1);
       }
     } else if (parent.type.name === "Blockquote") {
       const mark = parent.getChild("QuoteMark");
-      if (mark) baseIndent = columnAt(mark.to) + (source[mark.to] === " " || source[mark.to] === "\t" ? 1 : 0);
+      if (mark) baseIndent = columnAt(mark.to) + (sourceCharAt(source, mark.to) === " " || sourceCharAt(source, mark.to) === "\t" ? 1 : 0);
     }
   }
   const fenced = node.type.name === "FencedCode";
@@ -204,26 +229,24 @@ export function extractLezerCode(node: SyntaxNode, source: string): { code: stri
   let previousCodeEnd = node.from;
   for (let child = node.firstChild; child; child = child.nextSibling) {
     if (child.type.name !== "CodeText") continue;
-    let text = source.slice(child.from, child.to);
-    // Lezer emits only a newline for internal blank lines, omitting their indentation.
-    // Recover that whitespace from the native range gap, dedenting only the required columns.
-    if (!fenced && source[child.from] === "\n") {
-      const lineStart = source.lastIndexOf("\n", child.from - 1) + 1;
+    let text = readSourceRange(source, child.from, child.to);
+    if (!fenced && sourceCharAt(source, child.from) === "\n") {
+      const lineStart = lineStartAt(source, child.from);
       if (lineStart >= previousCodeEnd) {
         let position = lineStart;
         const requiredColumns = baseIndent + 4;
         let columns = 0;
         while (position < child.from && columns < requiredColumns) {
-          columns += source[position] === "\t" ? 4 - (columns % 4) : 1;
+          columns += sourceCharAt(source, position) === "\t" ? 4 - (columns % 4) : 1;
           position++;
         }
-        const remaining = source.slice(position, child.from);
+        const remaining = readSourceRange(source, position, child.from);
         if (/^[ \t]*$/.test(remaining)) {
           text = " ".repeat(Math.max(0, columns - requiredColumns)) + remaining + text;
         }
       }
     }
-    if (!fenced && source[child.from] !== "\n" && source[child.from - 1] === "\t") {
+    if (!fenced && sourceCharAt(source, child.from) !== "\n" && sourceCharAt(source, child.from - 1) === "\t") {
       text = " ".repeat(Math.max(0, columnAt(child.from) - baseIndent - 4)) + text;
     }
     if (fenceIndent > 0) text = text.split("\n").map((line) => line.replace(new RegExp(`^ {0,${fenceIndent}}`), "")).join("\n");
@@ -231,5 +254,5 @@ export function extractLezerCode(node: SyntaxNode, source: string): { code: stri
     previousCodeEnd = child.to;
   }
   const infoNode = node.getChild("CodeInfo");
-  return { code, info: infoNode ? source.slice(infoNode.from, infoNode.to) : "" };
+  return { code, info: infoNode ? readSourceRange(source, infoNode.from, infoNode.to) : "" };
 }

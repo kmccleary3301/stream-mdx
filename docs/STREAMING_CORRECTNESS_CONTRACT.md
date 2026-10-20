@@ -89,6 +89,27 @@ At every committed semantic state:
 5. A committed code block must preserve stable line ordering and contiguous line identity.
 6. A committed MDX block must not silently lose content between states.
 
+Managed table rows are immutable fixed-range records, not child `NodeRecord`s.
+Tail append, provisional-row retraction, and re-extension are atomic under the
+owner generation and expected revision; `processedTo` never regresses. The
+reducer retains a private append-only source log and exposes immutable prefix
+readers, so retraction cannot change completed raw or prior snapshots.
+
+A native table block in `closed` state has committed source while the document
+input session may remain active. This is not worker `FINALIZED`: dependency
+updates may change only affected inline meaning on closed table rows/header.
+Same-generation table updates after source `finalized` remain rejected.
+
+Core source preparation uses `AppendSourceDocument.stageAppend(text)` without
+mutating canonical source. Its reader combines the captured canonical prefix
+and offered suffix; it never chains earlier staged readers or copies the
+completed source directory. `commit()` appends once only while its exact base
+remains current, returns false for a stale base, and is idempotent after success.
+Higher-level semantic guards must all pass before calling it.
+`createSourceWindow(snapshot, from, to)` exposes a capped, zero-origin UTF-16
+reader for that authored range. Old windows and staged readers remain unchanged
+after later appends; full materialization is explicit cold work.
+
 Inline JSX tags and expressions belong to their paragraph or list-item projection. They must preserve surrounding prose and component allowlists without gaining block-module evaluation. A complete standalone component owns its source as block MDX and uses the existing evaluator. Normalized inline HTML, including quoted `code` elements, must retain the paragraph's text and elements.
 
 Native `InlineCode` spans own their literal contents. Mixed-content projection must not promote braces or tags inside them to MDX or HTML, including multi-backtick spans and code inside prepared quotes or lists. Direct compilation, worker patches, and serialized resets must preserve the same code text.
@@ -157,10 +178,19 @@ If the system is unsure, the tail remains provisional.
 - Header and body rows commit only after row integrity is stable.
 - Tail rows remain provisional until delimiters and cell boundaries are known.
 
+- Managed table rows use stable owner-derived row/cell identities and exact authored UTF-16 ranges.
+- `appendTableRows` replaces only a provisional tail and appends rows; it never resends or materializes the completed prefix.
+- `updateTableRows` carries only dependency-affected inline meaning changes. Row/header source identity, raw slices and ranges stay unchanged; a header-only update does not traverse body rows.
+- Owner generation, expected revision and row source revision guard each atomic table mutation. Stale commands leave the index and visible snapshot unchanged.
+- The fixed-range row index preserves historical readers; explicit cold `getBlocks()` materialization is allowed to read the complete table.
+- Configured row virtualization remains available while the table is streaming; streaming state alone does not disable it.
 ### Code blocks
 
 - Append-only line fast paths are allowed only when append safety is provable.
 - Any non-tail mutation or ordering ambiguity falls back to semantic replace.
+- Owned code uses semantic `appendCode` changed-tail transactions and decoration-only `decorateCode`.
+- Owner generation and semantic source revision are separate from each line's last source-change revision. Unchanged completed rows and historical readers remain immutable.
+- Exact authored raw source is retained independently of dedented display lines. Full source, HTML and cold snapshots are explicit O(N) reads, not routine append payloads or finalize repairs.
 
 ## 8) Lookahead Rules
 

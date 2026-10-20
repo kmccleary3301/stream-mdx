@@ -1,5 +1,5 @@
 // Document-phase plugin system for post-parse aggregation (e.g., footnotes)
-import type { Block, InlineNode, ProtectedRange } from "@stream-mdx/core";
+import type { Block, InlineNode, ProtectedRange, SourceSnapshot } from "@stream-mdx/core";
 
 type InlineParserAdapter = {
   parse: (input: string) => InlineNode[];
@@ -11,13 +11,17 @@ export interface DocumentState {
 }
 
 export interface DocumentContext {
-  /** Full markdown content */
-  content: string;
-  /** Current blocks (mutable copy provided to plugin runner) */
+  /** Full authored source, readable by source-global UTF-16 range. */
+  source: SourceSnapshot;
+  /** Current prepared native blocks only; independently owned root code is excluded. */
   blocks: Block[];
+  /** Explicit cold read of every authored block, including materialized owned code. */
+  readBlocks(): readonly Block[];
+  /** True while the whole document has an open code owner or unfinished native tail. */
+  hasProvisionalTail: boolean;
   /** Persistent state across streaming updates */
   state: DocumentState;
-  /** Aggregated protected ranges (math, code, html) for the current document */
+  /** Aggregated protected ranges (math, html, and other native protected regions). */
   protectedRanges?: ReadonlyArray<ProtectedRange>;
 }
 

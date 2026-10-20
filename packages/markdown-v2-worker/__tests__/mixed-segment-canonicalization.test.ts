@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 import type { Block, Patch, WorkerOut } from "@stream-mdx/core";
 import { blocksStructurallyEqual } from "@stream-mdx/core";
@@ -29,24 +31,21 @@ function applyPatchMessages(store: ReturnType<typeof createRendererStore>, messa
 async function createInitializedHarnessStore() {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
-  const initMessages = await harness.send({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: [],
-    docPlugins: {
-      footnotes: false,
-      html: true,
-      mdx: true,
-      tables: true,
-      callouts: true,
-      math: true,
-      formatAnticipation: true,
-      liveCodeHighlighting: false,
-    },
-  });
+  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: [],
+  docPlugins: {
+    footnotes: false,
+    html: true,
+    mdx: true,
+    tables: true,
+    callouts: true,
+    math: true,
+    formatAnticipation: true,
+    liveCodeHighlighting: false,
+  }, });
   const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
   assert.ok(init, "worker failed to emit INITIALIZED");
-  store.reset(init.blocks);
+  store.resetSnapshot(init.snapshot);
   return { harness, store };
 }
 

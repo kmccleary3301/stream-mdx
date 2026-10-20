@@ -18,10 +18,11 @@ import {
 import type { ComponentRegistry } from "../components";
 import { DEFAULT_INLINE_HTML_RENDERERS, renderHtmlOwnershipTree, renderInlineHtmlSegment } from "../utils/inline-html";
 import { RenderConfigVersionContext, useRendererChildren, useRendererNode } from "./hooks";
+import { StreamingActivityContext } from "./streaming-activity-context";
 import { createRendererStore, isListPatchDebugEnabled, type NodeRecord, type RendererStore } from "./store";
 import { useVirtualizedTable, type TableVirtualizationProps } from "./virtualized-table";
-import { StreamingActivityContext } from "./streaming-activity-context";
 import { CodeBlockView } from "./code-block-view";
+import { ManagedTableBlockView } from "./table-block-view";
 import { useLazyCodeHighlightRequest } from "./use-lazy-code-highlight-request";
 
 const CustomCodeBlockView: React.FC<{
@@ -81,6 +82,9 @@ export const BlockNodeRenderer: React.FC<{ store: RendererStore; blockId: string
   const node = useRendererNode(store, blockId);
   const block = node?.block;
   if (!node) return null;
+  if (!block && node.type === "code" && store.getCodeBlock(blockId)) {
+    return <CodeBlockView store={store} blockId={blockId} registry={registry} />;
+  }
   if (!block) {
     const parentTagName = node.type.startsWith("list-item-") ? "li" : node.type.startsWith("blockquote-") ? "blockquote" : "p";
     return <MixedSegmentView store={store} nodeId={blockId} inlineComponents={registry.getInlineComponents()} urlTransform={registry.getUrlTransform()} registry={registry} parentTagName={parentTagName} />;
@@ -115,7 +119,9 @@ export const BlockNodeRenderer: React.FC<{ store: RendererStore; blockId: string
       element = <ListBlockView store={store} blockId={block.id} registry={registry} depth={0} />;
       break;
     case "table":
-      element = <TableBlockView store={store} blockId={block.id} registry={registry} />;
+      element = store.getTableBlock(block.id)
+        ? <ManagedTableBlockView store={store} blockId={block.id} registry={registry} />
+        : <TableBlockView store={store} blockId={block.id} registry={registry} />;
       break;
     case "code":
       element = <CodeBlockView store={store} blockId={block.id} registry={registry} />;
@@ -405,7 +411,6 @@ const BlockquoteBlockView: React.FC<{ store: RendererStore; blockId: string; reg
               React.createElement("span", {
                 key: `blockquote-html-${block.id}-${segmentIndex}`,
                 className: "markdown-inline-html",
-                /* biome-ignore lint/security/noDangerouslySetInnerHtml: segment content is sanitized by the worker before streaming */
                 dangerouslySetInnerHTML: { __html: segment.sanitized ?? segment.value },
               }),
             );
@@ -602,7 +607,6 @@ const MixedSegmentView: React.FC<{
       if (!html) return null;
       return React.createElement("span", {
         className: "markdown-inline-html",
-        /* biome-ignore lint/security/noDangerouslySetInnerHtml: html is sanitized upstream before reaching the renderer */
         dangerouslySetInnerHTML: { __html: html },
       });
     }
@@ -981,6 +985,7 @@ ListItemView.displayName = "ListItemView";
 
 const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry: ComponentRegistry }> = React.memo(({ store, blockId, registry }) => {
   const node = useRendererNode(store, blockId);
+  const streamingActive = React.useContext(StreamingActivityContext);
   const tableElements = registry.getTableElements();
   const childIds = useRendererChildren(store, blockId);
 
@@ -1037,9 +1042,8 @@ const TableBlockView: React.FC<{ store: RendererStore; blockId: string; registry
     return 1;
   }, [theadCellIds.length, rowIds, store]);
 
-  const sessionActive = React.useContext(StreamingActivityContext);
   const isFinalized = Boolean(node?.block?.isFinalized);
-  const canVirtualize = mounted && typeof window !== "undefined" && isFinalized && !sessionActive && !virtualizationDisabled;
+  const canVirtualize = mounted && typeof window !== "undefined" && !virtualizationDisabled && isFinalized && !streamingActive;
 
   const virtualization = useVirtualizedTable(rowIds, virtualizationConfig, canVirtualize);
   const { isEligible, isVirtualized, containerRef, handleScroll, window: virtualWindow, config, naturalLayout, headerBackgroundColor } = virtualization;

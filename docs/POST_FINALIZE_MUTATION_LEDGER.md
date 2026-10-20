@@ -83,6 +83,18 @@ Guard coverage:
 - `packages/markdown-v2-react/__tests__/finalized-semantic-stability.test.ts`
 - `packages/markdown-v2-react/__tests__/post-finalize-contract.test.ts`
 
+## Closed Tables During Live Input
+
+A table block in `closed` state has a committed native source prefix even when the
+document input session continues. Reference, footnote, and numbering dependencies
+may therefore invalidate affected row or header inline meaning while that input
+session is live. This is not a post-`FINALIZED` mutation and does not extend the
+allowlist above.
+
+Once the table source is `finalized`, same-generation `updateTableRows` is
+rejected. Supporting a later update requires an explicit newer owner generation
+or parse epoch; a finalized document is never reopened by a table-row patch.
+
 ## Disallowed Post-Finalize Mutations
 
 These are not allowed after `FINALIZED` unless they arrive under a newer semantic epoch:

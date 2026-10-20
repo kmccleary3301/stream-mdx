@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 
 import type { WorkerOut } from "@stream-mdx/core";
@@ -13,20 +15,17 @@ function findDumpBlocks(messages: WorkerOut[]): Extract<WorkerOut, { type: "DUMP
 async function main() {
   const harness = await createWorkerHarness();
 
-  await harness.send({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: [],
-    docPlugins: {
-      footnotes: true,
-      html: true,
-      mdx: true,
-      tables: true,
-      callouts: true,
-      math: true,
-    },
-    mdx: { compileMode: "server" },
-  });
+  await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: [],
+  docPlugins: {
+    footnotes: true,
+    html: true,
+    mdx: true,
+    tables: true,
+    callouts: true,
+    math: true,
+  },
+  mdx: { compileMode: "server" }, });
 
   const raw = "<Preview message=\"hello\" />";
   await harness.send({ type: "APPEND", text: raw });

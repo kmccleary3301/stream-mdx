@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 import type { Block, Patch, WorkerOut } from "@stream-mdx/core";
 import { createRendererStore } from "../../markdown-v2-react/src/renderer/store";
@@ -8,16 +10,13 @@ import { MarkdownEngine } from "../src/engine/engine";
 async function highlightedCode(source: string): Promise<string> {
   const messages: WorkerOut[] = [];
   const engine = new MarkdownEngine({ post: (msg) => messages.push(msg) });
-  await engine.handle({
-    type: "INIT",
-    initialContent: source,
-    docPlugins: { codeHighlighting: "final", outputMode: "html", lazyTokenization: { enabled: false } },
-  });
+  await engine.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: source,
+  docPlugins: { codeHighlighting: "final", outputMode: "html", lazyTokenization: { enabled: false } }, });
   await engine.handle({ type: "FINALIZE" });
   engine.dispose();
   const store = createRendererStore();
   for (const msg of messages) {
-    if (msg.type === "INITIALIZED") store.reset(msg.blocks);
+    if (msg.type === "INITIALIZED") store.resetSnapshot(msg.snapshot);
     else if (msg.type === "PATCH") store.applyPatches(msg.patches as Patch[], { captureMetrics: false });
   }
   const block = store.getBlocks().find((b: Block) => b.type === "code");

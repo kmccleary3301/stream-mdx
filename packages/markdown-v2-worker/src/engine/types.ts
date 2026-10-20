@@ -112,4 +112,7 @@ export interface ParseOptions {
   forceFinalize?: boolean;
   firstChangedPos?: number;
   previousBlocks?: Block[];
+  sourceOffset?: number;
+  admitRootCodeOwners?: boolean;
+  admitRootTableOwners?: boolean;
 }

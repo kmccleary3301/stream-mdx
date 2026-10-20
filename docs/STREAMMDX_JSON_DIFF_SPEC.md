@@ -40,11 +40,11 @@ HTML/web pipeline.
 - Bounded performance under streaming loads.
 - Backwards compatibility with existing web pipeline.
 
-## 6) Protocol v1
+## 6) Protocol v2
 ### 6.1 Event Envelope
 All events must include:
 - `protocol`: `"streammdx"`
-- `schemaVersion`: `"1.0"`
+- `schemaVersion`: `"2.0"`
 - `streamId`: string (uuid)
 - `event`: `"init" | "snapshot" | "patch" | "metrics" | "error" | "done"`
 - `tx`: number (monotonic for `patch` events; optional otherwise)
@@ -53,7 +53,7 @@ Example:
 ```json
 {
   "protocol": "streammdx",
-  "schemaVersion": "1.0",
+  "schemaVersion": "2.0",
   "streamId": "a9f2c0c1-7c9c-4b2b-8c29-f2df20c30f6a",
   "event": "patch",
   "tx": 42,
@@ -65,6 +65,9 @@ Example:
 Include capability negotiation and theme metadata.
 ```json
 {
+  "protocol": "streammdx",
+  "schemaVersion": "2.0",
+  "streamId": "a9f2c0c1-7c9c-4b2b-8c29-f2df20c30f6a",
   "event": "init",
   "capabilities": {
     "tokens": "v1",
@@ -77,13 +80,31 @@ Include capability negotiation and theme metadata.
 }
 ```
 
-### 6.3 Done Event
+### 6.3 Snapshot Event
+Snapshot events publish the root `NodeSnapshot` used to establish or replace
+the live document:
+```json
+{
+  "protocol": "streammdx",
+  "schemaVersion": "2.0",
+  "streamId": "a9f2c0c1-7c9c-4b2b-8c29-f2df20c30f6a",
+  "event": "snapshot",
+  "snapshot": {
+    "id": "__root__",
+    "type": "__root__",
+    "props": {},
+    "children": []
+  }
+}
+```
+
+### 6.4 Done Event
 Explicit end-of-stream semantics:
 ```json
 { "event": "done", "finalTx": 128, "status": "ok" }
 ```
 
-### 6.4 Compatibility Rules
+### 6.5 Compatibility Rules
 - New fields are additive only in minor versions.
 - Consumers must ignore unknown fields and unknown node types.
 - Breaking changes require a major schema version bump.
@@ -91,8 +112,8 @@ Explicit end-of-stream semantics:
 ## 7) Node Taxonomy and Props
 ### 7.1 Root
 - `id`: `"__root__"`
-- `type`: `"root"`
-- `children`: block ids
+- `type`: `"__root__"`
+- `children`: `NodeSnapshot` children
 
 ### 7.2 Core Block Types (Minimum)
 - `paragraph`, `heading`, `blockquote`
@@ -249,7 +270,7 @@ diff markers only. Optional base language can be inferred from file headers.
 ## 10) Patch Extensions
 Extend `appendLines` patches to carry tokens and diff metadata:
 ```ts
-type AppendLinesPatchV1 = {
+type AppendLinesPatch = {
   op: "appendLines";
   at: NodePath;
   startIndex: number;
@@ -261,6 +282,43 @@ type AppendLinesPatchV1 = {
   newNo?: (number | null)[];
 };
 ```
+
+Managed GFM tables use the same versioned `Patch[]` transport:
+
+```ts
+type AppendTableRowsPatch = {
+  op: "appendTableRows";
+  at: NodePath;
+  table: TableBlockSourceMetadata;
+  expectedRevision: number;
+  fromRow: number;
+  rows: readonly TableRowRecord[];
+  sourceAppend: string;
+  meta?: PatchMeta;
+};
+
+type UpdateTableRowsPatch = {
+  op: "updateTableRows";
+  at: NodePath;
+  tableOwnerId: string;
+  generation: number;
+  expectedRevision: number;
+  revision: number;
+  updates: readonly { index: number; expectedSourceRevision: number; row: TableRowRecord }[];
+  header?: TableHeaderRecord;
+  meta?: PatchMeta;
+};
+```
+
+`appendTableRows` is an atomic semantic tail transaction. `updateTableRows` is
+an atomic semantic dependency update; only inline meaning may change, while
+row/header source identities, raw slices and ranges remain stable. The optional
+header supports a header-only invalidation with `updates: []`. Managed table
+source and rows travel on `NodeSnapshot.table`; routine patches do not resend
+completed rows. The Core `applyPatchBatch` reducer and TUI snapshot store consume
+the declared `Patch` union directly.
+The Core reducer derives native headers, rows, alignment and exact authored raw from this record. `TableHeaderRecord.sourceRange` spans native header start through delimiter end, excluding the delimiter EOL. The table view keeps a bounded immutable source prefix over a private append-only log; retraction never deletes logged bytes, and re-extension validates only unfinished-tail overlap. It does not build a synthetic table child tree.
+`closed` table blocks are committed while document input may continue; this is distinct from worker `FINALIZED`. Same-generation `updateTableRows` is rejected for finalized owners.
 
 ## 11) Transport
 ### 11.1 Default Transport

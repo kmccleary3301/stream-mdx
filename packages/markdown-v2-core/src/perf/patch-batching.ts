@@ -72,6 +72,14 @@ export function isHeavyPatch(patch: Patch): boolean {
       return true;
     case "appendLines":
       return (patch.lines?.length ?? LIGHT_APPEND_LINE_THRESHOLD + 1) > LIGHT_APPEND_LINE_THRESHOLD;
+    case "appendCode":
+      return patch.lines.length > LIGHT_APPEND_LINE_THRESHOLD;
+    case "appendTableRows":
+      return patch.rows.length > LIGHT_APPEND_LINE_THRESHOLD;
+    case "updateTableRows":
+      return patch.updates.length > LIGHT_APPEND_LINE_THRESHOLD;
+    case "decorateCode":
+      return patch.decorations.length > LIGHT_APPEND_LINE_THRESHOLD;
     case "insertChild":
       return !isLightweightInsert(patch.node);
     case "replaceChild":
@@ -90,6 +98,8 @@ export function isHeavyPatch(patch: Patch): boolean {
 }
 
 export function getPatchKind(patch: Patch): PatchKind {
+  if (patch.op === "appendCode" || patch.op === "appendTableRows" || patch.op === "updateTableRows") return "semantic";
+  if (patch.op === "decorateCode") return "enrichment";
   const explicitKind = patch.op === "setHTML" ? patch.patchMeta?.kind : patch.meta?.kind;
   if (explicitKind === "semantic" || explicitKind === "enrichment") {
     return explicitKind;

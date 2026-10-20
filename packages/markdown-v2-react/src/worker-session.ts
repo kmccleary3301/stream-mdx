@@ -156,8 +156,8 @@ export function useWorkerSession({
       renderer.detachWorker();
       renderer.attachWorker(lease.worker, { skipInit: managedWorker });
       readyRendererRef.current = renderer;
-      setWorkerReady(true);
       workerReadyRef.current = true;
+      setWorkerReady(true);
     };
     const existing = activeInstanceRef.current;
     if (existing && existing.source === workerSource && existing.engine === engine && existing.managedWorker === managedWorker && (managedWorker || existing.session === session)) {

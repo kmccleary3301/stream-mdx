@@ -64,10 +64,16 @@ async function main(): Promise<void> {
   await sleep(30);
 
   const html = container.innerHTML;
-  assert.ok(
-    html.includes('<span class="line" data-line="2"><span style="--shiki-dark:#E1E4E8;--shiki-light:#24292E">console.</span><span style="--shiki-dark:#B392F0;--shiki-light:#6F42C1">log</span><span style="--shiki-dark:#E1E4E8;--shiki-light:#24292E">(a);</span></span>'),
-    "expected finalized token fallback to render deterministic highlighted html for the missing line",
-  );
+  const tokenizedLine = container.querySelector('[data-line="2"]');
+  assert.equal(tokenizedLine?.textContent, "console.log(a);", "token fallback must preserve the line text");
+  const tokenSpans = tokenizedLine ? Array.from(tokenizedLine.querySelectorAll(":scope > span")) : [];
+  assert.deepStrictEqual(tokenSpans.map((span) => span.textContent), ["console.", "log", "(a);"],
+    "missing line HTML must fall back to its token spans");
+  assert.deepStrictEqual(tokenSpans.map((span) => (span.getAttribute("style") ?? "").replace(/\s/g, "")), [
+    "--shiki-dark:#E1E4E8;--shiki-light:#24292E;",
+    "--shiki-dark:#B392F0;--shiki-light:#6F42C1;",
+    "--shiki-dark:#E1E4E8;--shiki-light:#24292E;",
+  ], "token fallback must preserve deterministic theme colors");
   assert.ok(!html.includes('<span class="line" data-line="2">console.log(a);</span>'), "expected plain-text fallback to be bypassed when token spans exist");
 
   root.unmount();

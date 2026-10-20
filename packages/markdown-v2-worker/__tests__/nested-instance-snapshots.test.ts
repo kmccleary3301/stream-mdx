@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert/strict";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -43,17 +45,15 @@ async function run(): Promise<void> {
   const engine = new MarkdownEngine({ extensions: { inline: [nativeBadge("first-instance")] }, post(message) {
     emitted.push(message);
     if (message.type === "INITIALIZED") {
-      store.reset(message.blocks);
-      const initial = createInitialSnapshot(message.blocks);
-      snapshot.nodes = initial.nodes;
-      snapshot.blocks = initial.blocks;
+      store.resetSnapshot(message.snapshot);
+      Object.assign(snapshot, createInitialSnapshot(message.snapshot));
     } else if (message.type === "PATCH") {
       applyPatchBatch(snapshot, message.patches);
       store.applyPatches(message.patches, { captureMetrics: false });
     } else if (message.type === "ERROR") throw new Error(message.error.message);
   } });
   const markdown = "- @@ #ABC-12 [forward]\n\n  > # @@ #ABC-12 [forward]\n\n  ```js\n  const nested = 1;\n  ```";
-  await engine.handle({ type: "INIT", initialContent: markdown, prewarmLangs: [],
+  await engine.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: markdown, prewarmLangs: [],
     syntax: [{ name: "ticket", pattern: { source: "#([A-Z]+-\\d+)" }, attrs: { id: 1 } }],
     docPlugins: { html: true, tables: true, mdx: false, math: true, callouts: false, footnotes: false } });
   assert.equal(emitted.some((message) => message.type === "ERROR"), false);
@@ -90,7 +90,7 @@ async function run(): Promise<void> {
   assert.equal(code.children?.length, 1);
   assert.equal(code.children?.[0].props?.text, "const nested = 1;");
   assert.deepEqual(store.getInvariantViolations(), []);
-  assert.deepEqual(snapshot.blocks, store.getBlocks(), "core and React patch consumers must retain identical serialized blocks");
+  assert.deepEqual(snapshot.getBlocks(), store.getBlocks(), "core and React patch consumers must retain identical serialized blocks");
   const resetStore = createRendererStore(JSON.parse(JSON.stringify(store.getBlocks())) as Block[]);
   assert.equal(resetStore.getChildren(code.id).length, code.children?.length, "serialized reset must not need line-count repair");
   const root = resetStore.getNode(PATCH_ROOT_ID);
@@ -106,15 +106,15 @@ async function run(): Promise<void> {
 
   const other: Block[] = [];
   const second = new MarkdownEngine({ extensions: { inline: [nativeBadge("second-instance")] }, post(message) {
-    if (message.type === "INITIALIZED") other.push(...message.blocks);
+    if (message.type === "INITIALIZED") other.push(...createInitialSnapshot(message.snapshot).getBlocks());
     if (message.type === "ERROR") throw new Error(message.error.message);
   } });
-  await second.handle({ type: "INIT", initialContent: "> @@", prewarmLangs: [], docPlugins: { mdx: false, callouts: false } });
+  await second.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "> @@", prewarmLangs: [], docPlugins: { mdx: false, callouts: false } });
   const secondPrepared = other[0].payload.meta?.preparedNested as PreparedNestedSnapshot;
   assert.ok(descendants({ id: "root", type: "root", children: secondPrepared.children }).some((node) => inlineNodes(node).some((inline) => inline.kind === "plugin" && inline.attrs.label === "second-instance")));
   assert.equal(JSON.stringify(other).includes("first-instance"), false, "owning parser state must not leak across engines");
   other.length = 0;
-  await second.handle({ type: "INIT", initialContent: "> <pre>\n>     literal\n> </pre>\n", prewarmLangs: [], docPlugins: { mdx: false, callouts: false } });
+  await second.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "> <pre>\n>     literal\n> </pre>\n", prewarmLangs: [], docPlugins: { mdx: false, callouts: false } });
   const literalHtml = renderToStaticMarkup(React.createElement(MarkdownBlocksRenderer, { blocks: other }));
   assert.equal(new JSDOM(literalHtml).window.document.querySelector("pre")?.textContent, "    literal\n", "native pre consumes only the first source LF and preserves nested indentation");
   second.dispose();

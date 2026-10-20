@@ -31,7 +31,7 @@ export class DebugV2Wrapper {
     this.workerClient.onMessage((message: WorkerOut) => {
       // Capture blocks and call debug hooks
       if (message.type === "INITIALIZED") {
-        this.store.reset(message.blocks);
+        this.store.resetSnapshot(message.snapshot);
         this.capturedBlocks = [...this.store.getBlocks()];
       } else if (message.type === "PATCH") {
         if (message.patches.length > 0) {

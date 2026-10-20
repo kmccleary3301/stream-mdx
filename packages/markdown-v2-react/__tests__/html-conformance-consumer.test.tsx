@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import React, { act } from "react";
@@ -40,7 +42,7 @@ async function streamed(text: string, config: Pick<Extract<WorkerIn, { type: "IN
   const { promise, resolve, reject } = deferred<RendererStore>();
   worker.onmessage = (event: MessageEvent<WorkerOut>) => {
     const message = event.data;
-    if (message.type === "INITIALIZED") store.reset(message.blocks);
+    if (message.type === "INITIALIZED") store.resetSnapshot(message.snapshot);
     else if (message.type === "PATCH") store.applyPatches(message.patches);
     else if (message.type === "FINALIZED") {
       worker.terminate();
@@ -50,7 +52,7 @@ async function streamed(text: string, config: Pick<Extract<WorkerIn, { type: "IN
       reject(new Error(message.error.message));
     }
   };
-  worker.postMessage({ type: "INIT", initialContent: "", ...init, ...config });
+  worker.postMessage({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "", ...init, ...config });
   for (const char of text) worker.postMessage({ type: "APPEND", text: char });
   worker.postMessage({ type: "FINALIZE" });
   return promise;

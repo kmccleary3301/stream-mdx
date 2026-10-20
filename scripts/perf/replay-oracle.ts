@@ -1,32 +1,50 @@
 #!/usr/bin/env tsx
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 /**
- * P1 Dense Replay Oracle
- * Implements validation-plan.md §2, baseline-protocol.md, and P1 repair contract.
- * Runs in-process under Node (>=20), targeting < 60s.
+ * P2 Root-Code Replay Oracle
+ * Preserves the frozen P1 dense replay on the no-flag path while exposing focused P2 proofs.
+ * Runs in-process under Node (>=20).
  *
  * Imports directly from ./diagnostic-dist/index.mjs to execute with __STREAM_MDX_COUNTERS__ = true.
  *
  * Verifies:
  * 1. Committed-prefix equality against cold non-finalizing parse at every actual PATCH publication frontier
  * 2. Final semantic store equality against cold canonical finalize
- * 3. Independent pinned Shiki validation for completed-line code tokens (with deferred TOKENIZE_RANGE resolution)
- * 4. Independent CommonMark/GFM syntax expectations (fence indent dedent, table escaping/alignment, footnotes, looseness)
- * 5. FIFO monotonic tx, atomic patch application, and generation reset/disposal invariants
- * 6. Live React mounted createRoot append, update, unmount, exact DOM content, and ambient global cleanup
- * 7. Bounded equal-append N-vs-4N scaling diagnostic using SessionCounterSink with real view consumer work
+ * 3. Independent pinned Shiki validation from bounded prepared code-line records
+ * 4. Independent CommonMark/GFM syntax expectations, including distinct opening/closing fence indents
+ * 5. INITIALIZED root reset, source-owner generation and append/decorate wire invariants
+ * 6. Live mounted native root-code append, update, finalize, unmount and disposal behavior (mdx:false)
+ * 7. Bounded equal-append N-vs-4N scaling with the actual private counter sink
  *
  * Usage:
- *   npx tsx scripts/perf/replay-oracle.ts [--fixture <id>] [--seed <number>] [--bail] [--json <path>]
+ *   npx tsx scripts/perf/replay-oracle.ts
+ *   npx tsx scripts/perf/replay-oracle.ts --section engine-fixture --fixture fence-indent-multiline --json /tmp/stream-mdx-p2-engine.json
+ *   npx tsx scripts/perf/replay-oracle.ts --section mounted-code --json /tmp/stream-mdx-p2-mounted-code.json
+ *   npx tsx scripts/perf/replay-oracle.ts --section code-scaling --json /tmp/stream-mdx-p2-code-scaling.json
+ *   node --import tsx scripts/perf/replay-oracle.ts --section table-scaling --json /tmp/stream-mdx-p2-table-scaling.json
+ *
+ * The no-flag command retains the complete P1 fixture matrix and aggregate path.
+ * Section selection runs only the named proof; engine-fixture defaults to the root-code fixture.
  */
 
 import fs from "node:fs";
 import { createJavaScriptRegexEngine } from "@shikijs/engine-javascript";
 import { createHighlighter, type Highlighter } from "shiki";
 
-import type { Block, FootnoteItem, InlineNode, Patch, TokenLineV1, WorkerIn, WorkerOut } from "@stream-mdx/core";
-import { blocksStructurallyEqual, cloneBlock } from "@stream-mdx/core";
-import type { RendererStore, RendererStoreOptions } from "@stream-mdx/react/renderer/store";
+import type {
+  Block,
+  CodeBlockSourceMetadata,
+  CodeLineRecord,
+  FootnoteItem,
+  InlineNode,
+  Patch,
+  WorkerIn,
+  WorkerOut,
+} from "@stream-mdx/core";
+import { blocksStructurallyEqual, cloneBlock, PATCH_ROOT_ID } from "@stream-mdx/core";
 import type { MarkdownEngineOptions } from "../../packages/markdown-v2-worker/src/engine/types";
+import type { RendererStore, RendererStoreOptions } from "../../packages/markdown-v2-react/src/renderer/store";
 import {
   MarkdownEngine,
   createRendererStore,
@@ -43,32 +61,30 @@ import {
 } from "./scaling-diagnostics";
 import {
   getCodeBlockLang,
+  verifyAuthoredCodeExpectations,
   verifyCompletedLineTokens,
 } from "./replay-code-parity";
 
 import { verifyRenderedExpectations } from "./replay-semantic-expectations";
 // --- Configuration & Constants ---
 
-const PARITY_INIT: WorkerIn = {
-  type: "INIT",
-  initialContent: "",
-  prewarmLangs: ["typescript", "javascript", "markdown"],
-  docPlugins: {
-    footnotes: true,
-    html: true,
-    mdx: false,
-    tables: true,
-    callouts: false,
-    math: true,
-    formatAnticipation: { inline: true, mathInline: true, mathBlock: true, html: true, mdx: false, regex: false },
-    codeHighlighting: "incremental",
-    outputMode: "both",
-    emitHighlightTokens: true,
-    emitDiffBlocks: false,
-    themes: { dark: "github-dark", light: "github-light" },
-  },
-  mdx: { compileMode: "server" },
-};
+const PARITY_INIT: WorkerIn = { type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+prewarmLangs: ["typescript", "javascript", "markdown"],
+docPlugins: {
+  footnotes: true,
+  html: true,
+  mdx: false,
+  tables: true,
+  callouts: false,
+  math: true,
+  formatAnticipation: { inline: true, mathInline: true, mathBlock: true, html: true, mdx: false, regex: false },
+  codeHighlighting: "incremental",
+  outputMode: "both",
+  emitHighlightTokens: true,
+  emitDiffBlocks: false,
+  themes: { dark: "github-dark", light: "github-light" },
+},
+mdx: { compileMode: "server" }, };
 
 export interface OracleSummary {
   passed: boolean;
@@ -147,6 +163,184 @@ function diffBlockFields(curr: Block, other: Block): string {
   }
   return diffs.length > 0 ? diffs.join("; ") : "payload structural difference";
 }
+interface PriorCodeOwnerState {
+  readonly source: CodeBlockSourceMetadata;
+  readonly completedRows: ReadonlyArray<CodeLineRecord>;
+}
+
+interface CodeWireFailure {
+  readonly stage: "wire:appendCode" | "wire:decorateCode";
+  readonly message: string;
+}
+
+function capturePriorCodeOwners(
+  patches: ReadonlyArray<Patch>,
+  store: RendererStore,
+): Map<string, PriorCodeOwnerState> {
+  const prior = new Map<string, PriorCodeOwnerState>();
+  for (const patch of patches) {
+    if (patch.op !== "appendCode" || prior.has(patch.code.codeOwnerId)) continue;
+    const view = store.getCodeBlock(patch.code.codeOwnerId);
+    if (!view) continue;
+    prior.set(patch.code.codeOwnerId, {
+      source: view.source,
+      completedRows: store.getCodeLines(patch.code.codeOwnerId, 0, view.source.completeLineCount),
+    });
+  }
+  return prior;
+}
+
+function verifyCodeWirePatches(
+  patches: ReadonlyArray<Patch>,
+  prior: ReadonlyMap<string, PriorCodeOwnerState>,
+  store: RendererStore,
+  authoredSource: string,
+  initializedGeneration: number,
+): CodeWireFailure[] {
+  const failures: CodeWireFailure[] = [];
+  for (const patch of patches) {
+    if (patch.op === "appendCode") {
+      const ownerId = patch.code.codeOwnerId;
+      const before = prior.get(ownerId);
+      if (!before) {
+        failures.push({
+          stage: "wire:appendCode",
+          message: `appendCode for ${ownerId} has no previously initialized owner state`,
+        });
+        continue;
+      }
+      if (patch.meta?.kind !== "semantic" || patch.at.blockId !== ownerId) {
+        failures.push({
+          stage: "wire:appendCode",
+          message: `appendCode for ${ownerId} is not a semantic patch addressed to its owner`,
+        });
+      }
+      if (
+        patch.expectedRevision !== before.source.revision ||
+        patch.code.revision !== before.source.revision + 1 ||
+        patch.code.codeOwnerId !== ownerId ||
+        patch.code.generation !== before.source.generation ||
+        patch.code.generation !== initializedGeneration ||
+        patch.code.sourceRange.from !== before.source.sourceRange.from
+      ) {
+        failures.push({
+          stage: "wire:appendCode",
+          message: `appendCode owner/revision/generation envelope mismatch for ${ownerId}`,
+        });
+      }
+      const sourceFrom = before.source.sourceRange.to;
+      const sourceTo = patch.code.sourceRange.to;
+      if (
+        sourceFrom < 0 ||
+        sourceTo < sourceFrom ||
+        sourceTo > authoredSource.length ||
+        patch.sourceAppend !== authoredSource.slice(sourceFrom, sourceTo) ||
+        sourceFrom + patch.sourceAppend.length !== sourceTo
+      ) {
+        failures.push({
+          stage: "wire:appendCode",
+          message: `appendCode sourceAppend for ${ownerId} differs from its exact authored source interval`,
+        });
+      }
+      if (
+        patch.fromLine !== before.source.completeLineCount ||
+        patch.code.completeLineCount < before.source.completeLineCount ||
+        patch.code.lineCount !== patch.fromLine + patch.lines.length
+      ) {
+        failures.push({
+          stage: "wire:appendCode",
+          message: `appendCode for ${ownerId} did not carry only its bounded changed line tail`,
+        });
+      }
+      const current = store.getCodeBlock(ownerId);
+      if (!current) {
+        failures.push({ stage: "wire:appendCode", message: `appendCode owner ${ownerId} is absent after apply` });
+        continue;
+      }
+      const changedRows = store.getCodeLines(ownerId, patch.fromLine, patch.code.lineCount);
+      if (changedRows.length !== patch.lines.length) {
+        failures.push({
+          stage: "wire:appendCode",
+          message: `appendCode for ${ownerId} installed ${changedRows.length} changed rows for ${patch.lines.length} records`,
+        });
+      } else {
+        for (let offset = 0; offset < patch.lines.length; offset += 1) {
+          const sent = patch.lines[offset];
+          const stored = changedRows[offset];
+          if (
+            !sent ||
+            !stored ||
+            sent.id !== stored.id ||
+            sent.index !== stored.index ||
+            sent.text !== stored.text ||
+            sent.ending !== stored.ending ||
+            sent.sourceRange.from !== stored.sourceRange.from ||
+            sent.sourceRange.to !== stored.sourceRange.to ||
+            sent.sourceRevision !== stored.sourceRevision ||
+            sent.isProvisional !== stored.isProvisional ||
+            stored.index !== patch.fromLine + offset
+          ) {
+            failures.push({
+              stage: "wire:appendCode",
+              message: `appendCode changed record ${offset} for ${ownerId} differs from the bounded prepared store row`,
+            });
+            break;
+          }
+        }
+      }
+      const stableRows = store.getCodeLines(ownerId, 0, before.source.completeLineCount);
+      if (
+        stableRows.length !== before.completedRows.length ||
+        stableRows.some((row, index) => row !== before.completedRows[index])
+      ) {
+        failures.push({
+          stage: "wire:appendCode",
+          message: `appendCode for ${ownerId} replaced a previously completed source row`,
+        });
+      }
+    } else if (patch.op === "decorateCode") {
+      const ownerId = patch.codeOwnerId;
+      const current = store.getCodeBlock(ownerId);
+      if (
+        patch.meta?.kind !== "enrichment" ||
+        patch.at.blockId !== ownerId ||
+        !current ||
+        patch.generation !== current.source.generation ||
+        patch.generation !== initializedGeneration ||
+        patch.configurationRevision !== current.configurationRevision
+      ) {
+        failures.push({
+          stage: "wire:decorateCode",
+          message: `decorateCode enrichment owner/generation/configuration envelope mismatch for ${ownerId}`,
+        });
+        continue;
+      }
+      for (const decoration of patch.decorations) {
+        const rows = store.getCodeLines(ownerId, decoration.index, decoration.index + 1);
+        const row = rows[0];
+        const identityMatches =
+          row !== undefined &&
+          row.id === decoration.lineId &&
+          row.sourceRevision === decoration.sourceRevision &&
+          decoration.configurationRevision === patch.configurationRevision;
+        const storedDecorationMatches =
+          decoration.tokens === null
+            ? row?.decoration === undefined
+            : row?.decoration?.lineId === decoration.lineId &&
+              row?.decoration?.sourceRevision === decoration.sourceRevision &&
+              row?.decoration?.configurationRevision === patch.configurationRevision;
+        if (!identityMatches || !storedDecorationMatches) {
+          failures.push({
+            stage: "wire:decorateCode",
+            message: `decorateCode row identity/source revision/configuration mismatch for ${ownerId} line ${decoration.index}`,
+          });
+          break;
+        }
+      }
+    }
+  }
+  return failures;
+}
 
 function collectBlocksRecursively(blocks: ReadonlyArray<Block>): Block[] {
   const result: Block[] = [];
@@ -210,9 +404,9 @@ async function coldNonFinalizingParse(prefixSource: string): Promise<ReadonlyArr
   const engine = new MarkdownEngine({
     post: (msg: WorkerOut) => {
       if (msg.type === "INITIALIZED") {
-        store.reset(msg.blocks);
+        store.resetSnapshot(msg.snapshot);
       } else if (msg.type === "PATCH") {
-        store.applyPatches(msg.patches as Patch[]);
+        store.applyPatches(msg.patches);
       }
     },
   });
@@ -232,9 +426,9 @@ async function coldFinalizeParse(fullSource: string): Promise<ReadonlyArray<Bloc
   const engine = new MarkdownEngine({
     post: (msg: WorkerOut) => {
       if (msg.type === "INITIALIZED") {
-        store.reset(msg.blocks);
+        store.resetSnapshot(msg.snapshot);
       } else if (msg.type === "PATCH") {
-        store.applyPatches(msg.patches as Patch[]);
+        store.applyPatches(msg.patches);
       }
     },
   });
@@ -251,20 +445,6 @@ async function coldFinalizeParse(fullSource: string): Promise<ReadonlyArray<Bloc
 }
 
 
-function collectCodeLinesFromStore(store: RendererStore | undefined, blockId: string): string[] {
-  if (!store) return [];
-  const lineIds = store.getChildren(blockId);
-  const lines: Array<{ index: number; text: string }> = [];
-  for (const lineId of lineIds) {
-    const lineNode = store.getNode(lineId);
-    if (!lineNode || lineNode.type !== "code-line") continue;
-    const index = typeof lineNode.props?.index === "number" ? (lineNode.props.index as number) : lines.length;
-    const text = typeof lineNode.props?.text === "string" ? (lineNode.props.text as string) : "";
-    lines.push({ index, text });
-  }
-  lines.sort((a, b) => a.index - b.index);
-  return lines.map((l) => l.text);
-}
 
 // --- Independent CommonMark/GFM Expectations ---
 
@@ -288,7 +468,7 @@ function extractFootnoteItemText(item: FootnoteItem): string {
 function verifyIndependentExpectations(
   blocks: ReadonlyArray<Block>,
   fixture: DenseFixture,
-  store?: RendererStore,
+  store: RendererStore,
 ): { ok: boolean; message?: string } {
   const exp = fixture.expectations;
   if (!exp) return { ok: true };
@@ -298,6 +478,9 @@ function verifyIndependentExpectations(
   const listBlock = allBlocks.find((b) => b.type === "list");
 
   if (exp.codeBlocks) {
+    const authoredResult = verifyAuthoredCodeExpectations(fixture.source, exp.codeBlocks);
+    if (!authoredResult.ok) return authoredResult;
+
     for (const expCb of exp.codeBlocks) {
       const match = codeBlocks.find((cb) => {
         const meta = cb.payload.meta as Record<string, unknown> | undefined;
@@ -307,40 +490,37 @@ function verifyIndependentExpectations(
         return {
           ok: false,
           message: `Missing expected code block with lang='${expCb.lang}' (observed code langs: [${codeBlocks
-            .map((c) => getCodeBlockLang(c.payload.meta as Record<string, unknown> | undefined))
+            .map((codeBlock) => getCodeBlockLang(codeBlock.payload.meta as Record<string, unknown> | undefined))
             .filter(Boolean)
             .join(", ")}])`,
         };
       }
 
-      // Explicit code fixture expectations compare exact ordered prepared/emitted code lines (not raw.includes)
-      let actualLines: string[] = [];
-      if (store) {
-        actualLines = collectCodeLinesFromStore(store, match.id);
+      const codeView = store.getCodeBlock(match.id);
+      if (!codeView) {
+        return { ok: false, message: `Missing prepared code owner state for block ${match.id}` };
       }
-      if (actualLines.length === 0 && typeof match.payload.meta?.code === "string") {
-        actualLines = (match.payload.meta.code as string).split("\n");
+      if (codeView.source.lineCount !== expCb.codeLines.length) {
+        return {
+          ok: false,
+          message: `Code block lang='${expCb.lang}' line count mismatch: actual=${codeView.source.lineCount} expected=${expCb.codeLines.length}`,
+        };
       }
-      if (actualLines.length === 0 && Array.isArray(match.payload.meta?.tokenLines)) {
-        actualLines = (match.payload.meta.tokenLines as TokenLineV1[]).map((tl) =>
-          tl ? tl.spans.map((s) => s.t).join("").replace(/\r$/, "") : ""
-        );
-      }
-
+      const actualLines = store.getCodeLines(match.id, 0, codeView.source.lineCount);
       if (actualLines.length !== expCb.codeLines.length) {
         return {
           ok: false,
-          message: `Code block lang='${expCb.lang}' line count mismatch: actual=${actualLines.length} expected=${expCb.codeLines.length}`,
+          message: `Bounded prepared code read returned ${actualLines.length} rows for lang='${expCb.lang}'; expected=${expCb.codeLines.length}`,
         };
       }
 
-      for (let l = 0; l < expCb.codeLines.length; l++) {
-        const expectedLine = expCb.codeLines[l];
-        const actualLine = actualLines[l]?.replace(/\r$/, "");
-        if (actualLine !== expectedLine) {
+      for (let lineIndex = 0; lineIndex < expCb.codeLines.length; lineIndex += 1) {
+        const expectedLine = expCb.codeLines[lineIndex];
+        const actualLine = actualLines[lineIndex];
+        if (actualLine?.text !== expectedLine) {
           return {
             ok: false,
-            message: `Code block lang='${expCb.lang}' line ${l} mismatch: actual=${JSON.stringify(actualLine)} expected=${JSON.stringify(expectedLine)}`,
+            message: `Code block lang='${expCb.lang}' line ${lineIndex} mismatch: actual=${JSON.stringify(actualLine?.text)} expected=${JSON.stringify(expectedLine)}`,
           };
         }
       }
@@ -419,11 +599,55 @@ async function runEngineLayerFixture(
     } as RendererStoreOptions & { campaignCounters?: SessionCounterSink });
     const capturedPublications: CapturedPublication[] = [];
     let lastTx = -1;
+    let initializedGeneration: number | undefined;
+    let initializationCount = 0;
+    const codeInsertions = new Map<string, number>();
     let stopChunking = false;
 
     const engine = new MarkdownEngine({
       post: (msg: WorkerOut) => {
+        if (msg.type === "INITIALIZED") {
+          if (initializationCount > 0) {
+            recordDivergence(
+              divergences,
+              fixture,
+              chunking,
+              "invariant:initialized",
+              msg.generation,
+              sessionSink.processed_frontier,
+              `Unexpected additional INITIALIZED message for generation ${msg.generation}`,
+            );
+          }
+          initializationCount += 1;
+          initializedGeneration = msg.generation;
+          try {
+            store.resetSnapshot(msg.snapshot);
+          } catch (error) {
+            recordDivergence(
+              divergences,
+              fixture,
+              chunking,
+              "invariant:initialized-root",
+              msg.generation,
+              0,
+              `INITIALIZED root snapshot could not reset the renderer store: ${String(error)}`,
+            );
+            stopChunking = true;
+          }
+          return;
+        }
         if (msg.type === "PATCH") {
+          if (initializedGeneration === undefined) {
+            recordDivergence(
+              divergences,
+              fixture,
+              chunking,
+              "invariant:initialized-order",
+              msg.tx,
+              sessionSink.processed_frontier,
+              "PATCH arrived before the store consumed INITIALIZED.snapshot",
+            );
+          }
           // FIFO invariant check
           if (msg.tx <= lastTx) {
             recordDivergence(
@@ -439,10 +663,27 @@ async function runEngineLayerFixture(
             return;
           }
           lastTx = msg.tx;
+          for (const patch of msg.patches) {
+            if (patch.op !== "insertChild" || patch.at.blockId !== PATCH_ROOT_ID || patch.node.type !== "code") continue;
+            const insertions = (codeInsertions.get(patch.node.id) ?? 0) + 1;
+            codeInsertions.set(patch.node.id, insertions);
+            if (insertions > 1) {
+              recordDivergence(
+                divergences,
+                fixture,
+                chunking,
+                "invariant:duplicate-code-insert",
+                msg.tx,
+                sessionSink.processed_frontier,
+                `Root code owner ${patch.node.id} was inserted ${insertions} times after INITIALIZED.snapshot`,
+              );
+            }
+          }
+          const priorCodeOwners = capturePriorCodeOwners(msg.patches, store);
 
           // Atomic store mutation
           try {
-            store.applyPatches(msg.patches as Patch[]);
+            store.applyPatches(msg.patches);
           } catch (err) {
             recordDivergence(
               divergences,
@@ -455,6 +696,23 @@ async function runEngineLayerFixture(
             );
             stopChunking = true;
             return;
+          }
+          for (const failure of verifyCodeWirePatches(
+            msg.patches,
+            priorCodeOwners,
+            store,
+            fixture.source,
+            initializedGeneration ?? -1,
+          )) {
+            recordDivergence(
+              divergences,
+              fixture,
+              chunking,
+              failure.stage,
+              msg.tx,
+              sessionSink.processed_frontier,
+              failure.message,
+            );
           }
 
           const violations = store.getInvariantViolations();
@@ -488,6 +746,18 @@ async function runEngineLayerFixture(
 
     try {
       await engine.handle(PARITY_INIT);
+      if (initializationCount !== 1 || initializedGeneration === undefined) {
+        recordDivergence(
+          divergences,
+          fixture,
+          chunking,
+          "invariant:initialized",
+          initializationCount,
+          0,
+          `Expected one INITIALIZED root reset before streaming; observed ${initializationCount}`,
+        );
+        stopChunking = true;
+      }
 
       // Stream chunks
       for (let c = 0; c < chunking.chunks.length; c++) {
@@ -595,7 +865,14 @@ async function runEngineLayerFixture(
 
       // Shiki token validation on completed lines (including nested blocks)
       const allFinalBlocks = collectBlocksRecursively(finalStoreBlocks);
-      const tokenResult = await verifyCompletedLineTokens(allFinalBlocks, highlighter, engine, store, fixture.source);
+      const tokenResult = await verifyCompletedLineTokens(
+        allFinalBlocks,
+        highlighter,
+        engine,
+        store,
+        fixture.source,
+        initializedGeneration ?? -1,
+      );
       if (!tokenResult.ok) {
         recordDivergence(
           divergences,
@@ -641,9 +918,413 @@ async function runEngineLayerFixture(
   return divergences;
 }
 
+async function runRootCodeInitializationTrace(
+  fixture: DenseFixture,
+  highlighter: Highlighter,
+): Promise<DivergenceReport[]> {
+  const divergences: DivergenceReport[] = [];
+  const plan: ChunkingPlan = { mode: "whole", seed: 0, chunks: [] };
+  const followup = "\nPost-initialization source append.\n";
+  const fullSource = fixture.source + followup;
+  const store = createRendererStore();
+  let initializationCount = 0;
+  let initializedGeneration: number | undefined;
+  let initialCodeOwners = new Set<string>();
+  let patchTx = -1;
+  const engine = new MarkdownEngine({
+    post: (msg: WorkerOut) => {
+      if (msg.type === "INITIALIZED") {
+        initializationCount += 1;
+        if (initializationCount > 1) {
+          recordDivergence(
+            divergences,
+            fixture,
+            plan,
+            "initialized-root:duplicate",
+            msg.generation,
+            0,
+            `Root-code trace received ${initializationCount} INITIALIZED messages`,
+          );
+        }
+        if (msg.schemaVersion !== STREAM_MDX_SCHEMA_VERSION) {
+          recordDivergence(
+            divergences,
+            fixture,
+            plan,
+            "initialized-root:schema",
+            msg.generation,
+            0,
+            `INITIALIZED schema ${msg.schemaVersion} does not match ${STREAM_MDX_SCHEMA_VERSION}`,
+          );
+        }
+        initializedGeneration = msg.generation;
+        try {
+          store.resetSnapshot(msg.snapshot);
+        } catch (error) {
+          recordDivergence(
+            divergences,
+            fixture,
+            plan,
+            "initialized-root:store-reset",
+            msg.generation,
+            0,
+            `INITIALIZED root snapshot could not reset the renderer store: ${String(error)}`,
+          );
+          return;
+        }
+        initialCodeOwners = new Set(
+          store.getBlocks()
+            .filter((block) => block.type === "code" && store.getNode(block.id)?.parentId === PATCH_ROOT_ID)
+            .map((block) => block.id),
+        );
+        return;
+      }
+      if (msg.type === "PATCH") {
+        if (initializationCount !== 1) {
+          recordDivergence(
+            divergences,
+            fixture,
+            plan,
+            "initialized-root:patch-order",
+            msg.tx,
+            0,
+            "PATCH was published outside the single INITIALIZED root generation",
+          );
+        }
+        if (msg.tx <= patchTx) {
+          recordDivergence(
+            divergences,
+            fixture,
+            plan,
+            "initialized-root:fifo",
+            msg.tx,
+            0,
+            `PATCH tx ${msg.tx} did not advance beyond ${patchTx}`,
+          );
+        }
+        patchTx = msg.tx;
+        const prior = capturePriorCodeOwners(msg.patches, store);
+        try {
+          store.applyPatches(msg.patches);
+        } catch (error) {
+          recordDivergence(
+            divergences,
+            fixture,
+            plan,
+            "initialized-root:patch-apply",
+            msg.tx,
+            0,
+            `Store rejected root-code followup PATCH: ${String(error)}`,
+          );
+          return;
+        }
+        for (const patch of msg.patches) {
+          if (
+            patch.op === "insertChild" &&
+            patch.at.blockId === PATCH_ROOT_ID &&
+            initialCodeOwners.has(patch.node.id)
+          ) {
+            recordDivergence(
+              divergences,
+              fixture,
+              plan,
+              "initialized-root:duplicate-code-insert",
+              msg.tx,
+              fixture.source.length,
+              `INITIALIZED code owner ${patch.node.id} was inserted again by PATCH`,
+            );
+          }
+        }
+        for (const failure of verifyCodeWirePatches(
+          msg.patches,
+          prior,
+          store,
+          fullSource,
+          initializedGeneration ?? -1,
+        )) {
+          recordDivergence(
+            divergences,
+            fixture,
+            plan,
+            `initialized-root:${failure.stage}`,
+            msg.tx,
+            fixture.source.length,
+            failure.message,
+          );
+        }
+        return;
+      }
+      if (msg.type === "ERROR" || msg.type === "RESET") {
+        recordDivergence(
+          divergences,
+          fixture,
+          plan,
+          `initialized-root:${msg.type.toLowerCase()}`,
+          -1,
+          0,
+          msg.type === "ERROR" ? msg.error.message : msg.reason,
+        );
+      }
+    },
+  });
+
+  try {
+    await engine.handle({ ...PARITY_INIT, initialContent: fixture.source });
+    if (initializationCount !== 1 || initializedGeneration === undefined) {
+      recordDivergence(
+        divergences,
+        fixture,
+        plan,
+        "initialized-root:missing",
+        initializationCount,
+        0,
+        `Expected one INITIALIZED root snapshot; observed ${initializationCount}`,
+      );
+      return divergences;
+    }
+
+    const blocks = store.getBlocks();
+    const rootCodeBlocks = blocks.filter(
+      (block) => block.type === "code" && store.getNode(block.id)?.parentId === PATCH_ROOT_ID,
+    );
+    if (rootCodeBlocks.length !== fixture.expectations?.codeBlocks?.length) {
+      recordDivergence(
+        divergences,
+        fixture,
+        plan,
+        "initialized-root:code-owner-count",
+        0,
+        fixture.source.length,
+        `INITIALIZED root code owners=${rootCodeBlocks.length} expected=${fixture.expectations?.codeBlocks?.length ?? 0}`,
+      );
+    }
+    for (const block of rootCodeBlocks) {
+      const codeView = store.getCodeBlock(block.id);
+      if (!codeView) {
+        recordDivergence(
+          divergences,
+          fixture,
+          plan,
+          "initialized-root:code-state",
+          0,
+          fixture.source.length,
+          `INITIALIZED code owner ${block.id} has no prepared store view`,
+        );
+        continue;
+      }
+      if (
+        codeView.source.codeOwnerId !== block.id ||
+        codeView.source.generation !== initializedGeneration ||
+        codeView.source.state !== "closed" ||
+        store.getChildren(block.id).length !== 0
+      ) {
+        recordDivergence(
+          divergences,
+          fixture,
+          plan,
+          "initialized-root:code-state",
+          0,
+          fixture.source.length,
+          `INITIALIZED code owner ${block.id} has mismatched owner/generation/state or per-line NodeRecords`,
+        );
+      }
+      const { from, to } = codeView.source.sourceRange;
+      if (
+        block.payload.range?.from !== from ||
+        block.payload.range?.to !== to ||
+        block.payload.raw !== fixture.source.slice(from, to)
+      ) {
+        recordDivergence(
+          divergences,
+          fixture,
+          plan,
+          "initialized-root:authored-source",
+          0,
+          fixture.source.length,
+          `INITIALIZED code owner ${block.id} did not cold-export its exact authored source range`,
+        );
+      }
+      const expected = fixture.expectations?.codeBlocks?.find(
+        (code) => code.lang === codeView.language,
+      );
+      if (expected) {
+        const rows = store.getCodeLines(block.id, 0, codeView.source.lineCount);
+        if (rows.length !== expected.codeLines.length) {
+          recordDivergence(
+            divergences,
+            fixture,
+            plan,
+            "initialized-root:bounded-lines",
+            0,
+            fixture.source.length,
+            `INITIALIZED code owner ${block.id} returned ${rows.length} rows; expected ${expected.codeLines.length}`,
+          );
+        } else {
+          for (let index = 0; index < rows.length; index += 1) {
+            const row = rows[index];
+            const expectedText = expected.codeLines[index];
+            const authoredLine = fixture.source.slice(row.sourceRange.from, row.sourceRange.to);
+            const expectedAuthoredLine = `${" ".repeat(expected.openingFenceIndent ?? 0)}${expectedText}`;
+            const authoredEnding = fixture.source.slice(
+              row.sourceRange.to,
+              row.sourceRange.to + row.ending.length,
+            );
+            if (
+              row.text !== expectedText ||
+              authoredLine !== expectedAuthoredLine ||
+              authoredEnding !== row.ending
+            ) {
+              recordDivergence(
+                divergences,
+                fixture,
+                plan,
+                "initialized-root:authored-line",
+                0,
+                row.sourceRange.to,
+                `INITIALIZED code owner ${block.id} line ${index} lost dedented text or authored source/ending`,
+              );
+              break;
+            }
+            if (store.getNode(row.id)) {
+              recordDivergence(
+                divergences,
+                fixture,
+                plan,
+                "initialized-root:line-record",
+                0,
+                row.sourceRange.to,
+                `INITIALIZED source-owned code line ${row.id} was materialized as a NodeRecord`,
+              );
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    const expectationResult = verifyIndependentExpectations(blocks, fixture, store);
+    if (!expectationResult.ok) {
+      recordDivergence(
+        divergences,
+        fixture,
+        plan,
+        "initialized-root:expectations",
+        0,
+        fixture.source.length,
+        expectationResult.message ?? "CommonMark root-code expectation failed",
+      );
+    }
+    const tokenResult = await verifyCompletedLineTokens(
+      collectBlocksRecursively(blocks),
+      highlighter,
+      engine,
+      store,
+      fixture.source,
+      initializedGeneration,
+    );
+    if (!tokenResult.ok) {
+      recordDivergence(
+        divergences,
+        fixture,
+        plan,
+        "initialized-root:tokens",
+        0,
+        fixture.source.length,
+        tokenResult.message ?? "INITIALIZED root-code token parity failed",
+      );
+    }
+
+    const initialRowsByOwner = new Map<string, ReadonlyArray<CodeLineRecord>>();
+    for (const block of rootCodeBlocks) {
+      const view = store.getCodeBlock(block.id);
+      if (view) initialRowsByOwner.set(block.id, store.getCodeLines(block.id, 0, view.source.lineCount));
+    }
+    await engine.handle({ type: "APPEND", text: followup });
+    if (initializationCount !== 1) {
+      recordDivergence(
+        divergences,
+        fixture,
+        plan,
+        "initialized-root:followup-reset",
+        initializationCount,
+        fixture.source.length,
+        "Tail append promoted the existing initialized root code through a new snapshot generation",
+      );
+    }
+    for (const block of rootCodeBlocks) {
+      const view = store.getCodeBlock(block.id);
+      const rows = view ? store.getCodeLines(block.id, 0, view.source.lineCount) : [];
+      const initialRows = initialRowsByOwner.get(block.id) ?? [];
+      if (
+        !view ||
+        view.source.generation !== initializedGeneration ||
+        view.source.state !== "closed" ||
+        rows.length !== initialRows.length ||
+        rows.some((row, index) => row !== initialRows[index])
+      ) {
+        recordDivergence(
+          divergences,
+          fixture,
+          plan,
+          "initialized-root:followup-stability",
+          patchTx,
+          fixture.source.length,
+          `Post-INITIALIZED tail append changed root code owner ${block.id}`,
+        );
+      }
+    }
+  } catch (error) {
+    recordDivergence(
+      divergences,
+      fixture,
+      plan,
+      "initialized-root:exception",
+      -1,
+      -1,
+      error instanceof Error ? error.stack ?? error.message : String(error),
+    );
+  } finally {
+    engine.dispose();
+  }
+  return divergences;
+}
+
 // --- Main Oracle Runner ---
 
+type ReplaySection = "all" | "engine-fixture" | "mounted-code" | "code-scaling" | "table-scaling";
+
+function summarizeFocusedSection(
+  section: Exclude<ReplaySection, "all">,
+  startedAt: number,
+  divergences: DivergenceReport[],
+  jsonPath: string | undefined,
+  scalingMeasurements?: ScalingMeasurement[],
+): OracleSummary {
+  const passed = divergences.length === 0;
+  const summary: OracleSummary = {
+    passed,
+    totalFixtures: 1,
+    passedFixtures: passed ? 1 : 0,
+    failedFixtures: passed ? 0 : 1,
+    divergenceCount: divergences.length,
+    divergences,
+    scalingMeasurements,
+    durationMs: Date.now() - startedAt,
+  };
+  console.log(`\n=== P2 scoped proof: ${section} ===`);
+  console.log(`${passed ? "PASS" : "FAIL"} | divergences: ${divergences.length} | ${summary.durationMs}ms`);
+  for (const divergence of divergences) {
+    console.log(`  - [${divergence.stage}] ${divergence.message}`);
+  }
+  if (jsonPath) {
+    fs.writeFileSync(jsonPath, JSON.stringify(summary, null, 2), "utf8");
+    console.log(`Evidence report saved to: ${jsonPath}`);
+  }
+  return summary;
+}
+
 export async function runReplayOracle(options: {
+  section?: ReplaySection;
   fixtureId?: string;
   seed?: number;
   bail?: boolean;
@@ -651,21 +1332,58 @@ export async function runReplayOracle(options: {
 } = {}): Promise<OracleSummary> {
   const startTime = Date.now();
   const seed = options.seed ?? 42;
-  const highlighter = await getHighlighter();
-
-  const targetFixtures = options.fixtureId
-    ? DENSE_FIXTURES.filter((f) => f.id === options.fixtureId)
-    : DENSE_FIXTURES;
-
-  if (targetFixtures.length === 0) {
-    throw new Error(`Fixture not found: ${options.fixtureId}`);
+  const section = options.section ?? "all";
+  if (section === "mounted-code") {
+    return summarizeFocusedSection(section, startTime, await runLiveReactLayer(), options.jsonPath);
   }
+  if (section === "code-scaling") {
+    const result = await runScalingDiagnostics({ codeFamilyOnly: true });
+    if (result.measurements.length !== 1) {
+      result.divergences.push({
+        fixtureId: "scaling-code-lines",
+        planMode: "window-append",
+        seed,
+        stage: "diagnostic:scaling:missing-code-family",
+        commitIndex: 0,
+        frontier: 0,
+        sourcePrefix: "",
+        message: `Expected exactly one code-family measurement; observed ${result.measurements.length}`,
+      });
+    }
+    return summarizeFocusedSection(section, startTime, result.divergences, options.jsonPath, result.measurements);
+  }
+  if (section === "table-scaling") {
+    const result = await runScalingDiagnostics({ tableFamilyOnly: true });
+    if (result.measurements.length !== 1 || !result.measurements[0]?.tableBoundary) {
+      result.divergences.push({
+        fixtureId: "scaling-table-rows",
+        planMode: "window-append",
+        seed,
+        stage: "diagnostic:scaling:missing-table-family",
+        commitIndex: 0,
+        frontier: 0,
+        sourcePrefix: "",
+        message: `Expected one complete table boundary measurement; observed ${result.measurements.length}`,
+      });
+    }
+    return summarizeFocusedSection(section, startTime, result.divergences, options.jsonPath, result.measurements);
+  }
+  const selectedFixtureId =
+    section === "engine-fixture" ? (options.fixtureId ?? "fence-indent-multiline") : options.fixtureId;
+  const targetFixtures = selectedFixtureId
+    ? DENSE_FIXTURES.filter((fixture) => fixture.id === selectedFixtureId)
+    : DENSE_FIXTURES;
+  if (targetFixtures.length === 0) {
+    throw new Error(`Fixture not found: ${selectedFixtureId}`);
+  }
+  const highlighter = await getHighlighter();
 
   const allDivergences: DivergenceReport[] = [];
   let passedFixtures = 0;
   let failedFixtures = 0;
+  let rootTraceFixtures = 0;
 
-  console.log(`\n=== StreamMDX P1 Dense Replay Oracle ===`);
+  console.log(`\n=== StreamMDX ${section === "all" ? "P1 Dense Replay" : "P2 Engine Fixture"} Oracle ===`);
   console.log(`Fixtures: ${targetFixtures.length} | Seed: ${seed} | Environment: In-Process Node`);
 
   // Phase 1: Engine Layer Replay across seeded chunkings
@@ -705,8 +1423,22 @@ export async function runReplayOracle(options: {
     }
   }
 
+  const initializedRootFixture = targetFixtures.find((fixture) => fixture.id === "fence-indent-multiline");
+  if (initializedRootFixture) {
+    rootTraceFixtures = 1;
+    const rootTraceDivergences = await runRootCodeInitializationTrace(initializedRootFixture, highlighter);
+    if (rootTraceDivergences.length === 0) {
+      passedFixtures += 1;
+      console.log("  ✓ [PASS] initialized-root-code-trace");
+    } else {
+      failedFixtures += 1;
+      console.log(`  ✗ [FAIL] initialized-root-code-trace - ${rootTraceDivergences.length} divergence(s)`);
+      allDivergences.push(...rootTraceDivergences);
+    }
+  }
+
   // Phase 2: Generation, Reset, and Disposal Invariants
-  if (!options.bail || allDivergences.length === 0) {
+  if (section === "all" && (!options.bail || allDivergences.length === 0)) {
     console.log(`\n=== Generation & Reset Invariant Proofs ===`);
     try {
       const genDivergences = await runGenerationAndResetInvariants();
@@ -736,7 +1468,7 @@ export async function runReplayOracle(options: {
   }
 
   // Phase 3: Live Mounted React Layer under JSDOM createRoot
-  if (!options.bail || allDivergences.length === 0) {
+  if (section === "all" && (!options.bail || allDivergences.length === 0)) {
     console.log(`\n=== Live React Layer (JSDOM createRoot) ===`);
     try {
       const reactDivergences = await runLiveReactLayer();
@@ -767,7 +1499,7 @@ export async function runReplayOracle(options: {
 
   // Phase 4: Diagnostic Path: N-vs-4N Bounded Equal-Append Scaling
   let scalingMeasurements: ScalingMeasurement[] | undefined;
-  if (!options.bail || allDivergences.length === 0) {
+  if (section === "all" && (!options.bail || allDivergences.length === 0)) {
     console.log(`\n=== Diagnostic Path: N-vs-4N Bounded Equal-Append Scaling ===`);
     try {
       const scalingResult = await runScalingDiagnostics();
@@ -809,12 +1541,12 @@ export async function runReplayOracle(options: {
 
   console.log(`\n=== Replay Oracle Summary ===`);
   console.log(`Total Duration: ${durationMs}ms (target < 60,000ms)`);
-  console.log(`Fixtures: ${passedFixtures}/${targetFixtures.length} passed`);
+  console.log(`Fixtures: ${passedFixtures}/${targetFixtures.length + rootTraceFixtures} passed`);
   console.log(`Divergences: ${allDivergences.length}`);
 
   const summary: OracleSummary = {
     passed,
-    totalFixtures: targetFixtures.length,
+    totalFixtures: targetFixtures.length + rootTraceFixtures,
     passedFixtures,
     failedFixtures,
     divergenceCount: allDivergences.length,
@@ -834,16 +1566,23 @@ export async function runReplayOracle(options: {
 // --- CLI Execution ---
 
 function parseCliArgs(): {
+  section?: ReplaySection;
   fixtureId?: string;
   seed?: number;
   bail?: boolean;
   jsonPath?: string;
 } {
   const args = process.argv.slice(2);
-  const options: { fixtureId?: string; seed?: number; bail?: boolean; jsonPath?: string } = {};
+  const options: { section?: ReplaySection; fixtureId?: string; seed?: number; bail?: boolean; jsonPath?: string } = {};
 
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === "--fixture" && args[i + 1]) {
+    if (args[i] === "--section" && args[i + 1]) {
+      const section = args[++i];
+      if (section !== "all" && section !== "engine-fixture" && section !== "mounted-code" && section !== "code-scaling" && section !== "table-scaling") {
+        throw new Error(`Unknown replay section: ${section}`);
+      }
+      options.section = section;
+    } else if (args[i] === "--fixture" && args[i + 1]) {
       options.fixtureId = args[++i];
     } else if (args[i] === "--seed" && args[i + 1]) {
       options.seed = Number.parseInt(args[++i], 10);

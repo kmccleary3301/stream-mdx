@@ -529,9 +529,38 @@ export const defaultBlockComponents: BlockComponents = {
     );
   },
 
-  code: ({ html, meta, lines, lang, preAttrs, codeAttrs }) => {
+  code: ({ html, meta, lines, children, lang, preAttrs, codeAttrs }) => {
     const rawLanguage = typeof lang === "string" ? lang : typeof meta?.lang === "string" ? String(meta.lang) : "";
     const language = rawLanguage.trim();
+    if (children !== undefined) {
+      const preAttributes = attrsToProps(preAttrs);
+      const codeAttributes = attrsToProps(codeAttrs);
+      const preClassName = [preAttributes.className, "markdown-code-block", language ? `language-${language}` : ""]
+        .filter(Boolean)
+        .join(" ");
+      const codeClassName = [codeAttributes.className, language ? `language-${language}` : ""]
+        .filter(Boolean)
+        .join(" ");
+      return React.createElement(
+        "div",
+        { className: language ? `markdown-code-block language-${language}` : "markdown-code-block" },
+        React.createElement(
+          "pre",
+          {
+            ...preAttributes,
+            className: preClassName,
+          },
+          React.createElement(
+            "code",
+            {
+              ...codeAttributes,
+              ...(codeClassName ? { className: codeClassName } : {}),
+            },
+            children,
+          ),
+        ),
+      );
+    }
     if (html) {
       return React.createElement("div", {
         className: language ? `markdown-code-block language-${language}` : "markdown-code-block",
@@ -1967,8 +1996,10 @@ function parseStyleAttribute(value: string): React.CSSProperties {
     const prop = part.slice(0, separator).trim();
     const val = part.slice(separator + 1).trim();
     if (!isSafeStyleDeclaration(prop, val)) continue;
-    const camelProp = prop.replace(/-([a-z])/g, (_, char: string) => char.toUpperCase());
-    (style as Record<string, string>)[camelProp] = val;
+    const cssProperty = prop.startsWith("--")
+      ? prop
+      : prop.replace(/-([a-z])/g, (_, char: string) => char.toUpperCase());
+    (style as Record<string, string>)[cssProperty] = val;
   }
   return style;
 }

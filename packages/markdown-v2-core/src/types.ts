@@ -1,3 +1,10 @@
+import type { CodeLineDecorationUpdate, CodeLineRecord } from "./code-records";
+import type { TableBlockSnapshot, TableBlockSourceMetadata, TableHeaderRecord, TableRowRecord } from "./table-records";
+import type { TableRowIndexUpdate } from "./table-row-index";
+
+/** Matching worker, renderer and NDJSON schema identity; protocol re-exports this value. */
+export const STREAM_MDX_SCHEMA_VERSION = "2.0";
+
 // Core contracts (public types) - V2 Markdown Renderer
 // Based on final_spec.md architecture
 
@@ -212,6 +219,7 @@ export type LazyTokenizationPriority = "visible" | "prefetch";
 export type WorkerIn =
   | {
       type: "INIT";
+      schemaVersion: typeof STREAM_MDX_SCHEMA_VERSION;
       initialContent?: string;
       prewarmLangs?: string[];
       themes?: CodeHighlightThemes;
@@ -258,8 +266,8 @@ export interface WorkerErrorPayload {
 }
 
 export type WorkerOut =
-  | { type: "INITIALIZED"; blocks: Block[] }
-  | { type: "FINALIZED" }
+  | { type: "INITIALIZED"; schemaVersion: typeof STREAM_MDX_SCHEMA_VERSION; generation: number; snapshot: NodeSnapshot }
+  | { type: "FINALIZED"; generation: number }
   | { type: "PATCH"; tx: number; patches: Patch[]; metrics?: PatchMetrics }
   | { type: "RESET"; reason: string }
   | { type: "METRICS"; metrics: PerformanceMetrics }
@@ -375,6 +383,27 @@ export interface PerformanceMetrics {
  */
 export const PATCH_ROOT_ID = "__root__";
 
+/** Immutable authored-source frontier for one generation-bound code owner. */
+export interface CodeBlockSourceMetadata {
+  readonly codeOwnerId: string;
+  readonly generation: number;
+  readonly revision: number;
+  readonly state: "open" | "closed" | "finalized";
+  readonly processedTo: number;
+  readonly completeLineCount: number;
+  readonly lineCount: number;
+  readonly sourceRange: { readonly from: number; readonly to: number };
+}
+
+/** Cold initial/replacement transport; routine appends carry only their changed tail. */
+export interface CodeBlockSnapshot extends CodeBlockSourceMetadata {
+  readonly configurationRevision: number;
+  readonly info: string;
+  readonly language?: string;
+  readonly lines: readonly CodeLineRecord[];
+  readonly raw: string;
+}
+
 export interface NodeSnapshot {
   id: string;
   type: string;
@@ -382,6 +411,8 @@ export interface NodeSnapshot {
   children?: NodeSnapshot[];
   range?: { from: number; to: number };
   meta?: Record<string, unknown>;
+  code?: CodeBlockSnapshot;
+  table?: TableBlockSnapshot;
 }
 
 export interface NodePath {
@@ -426,6 +457,46 @@ export type Patch =
   | { op: "setPropsBatch"; entries: SetPropsBatchEntry[]; meta?: PatchMeta }
   | { op: "finalize"; at: NodePath; meta?: PatchMeta }
   | { op: "reorder"; at: NodePath; from: number; to: number; count: number; meta?: PatchMeta }
+  | {
+      op: "appendTableRows";
+      at: NodePath;
+      table: TableBlockSourceMetadata;
+      expectedRevision: number;
+      fromRow: number;
+      rows: readonly TableRowRecord[];
+      sourceAppend: string;
+      meta?: PatchMeta;
+    }
+  | {
+      op: "updateTableRows";
+      at: NodePath;
+      tableOwnerId: string;
+      generation: number;
+      expectedRevision: number;
+      revision: number;
+      updates: readonly TableRowIndexUpdate[];
+      header?: TableHeaderRecord;
+      meta?: PatchMeta;
+    }
+  | {
+      op: "appendCode";
+      at: NodePath;
+      code: CodeBlockSourceMetadata;
+      expectedRevision: number;
+      fromLine: number;
+      lines: readonly CodeLineRecord[];
+      sourceAppend: string;
+      meta?: PatchMeta;
+    }
+  | {
+      op: "decorateCode";
+      at: NodePath;
+      codeOwnerId: string;
+      generation: number;
+      configurationRevision: number;
+      decorations: readonly CodeLineDecorationUpdate[];
+      meta?: PatchMeta;
+    }
   | {
       op: "appendLines";
       at: NodePath;

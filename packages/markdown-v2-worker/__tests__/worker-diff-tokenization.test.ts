@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
@@ -10,23 +12,20 @@ import { createWorkerHarness } from "./worker-test-harness";
 async function runDiffTokenizationTest(): Promise<void> {
   const harness = await createWorkerHarness();
 
-  const initMessages = await harness.send({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: ["typescript"],
-    docPlugins: {
-      footnotes: false,
-      html: false,
-      mdx: false,
-      tables: false,
-      callouts: false,
-      codeHighlighting: "incremental",
-      outputMode: "tokens",
-    },
-  });
+  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: ["typescript"],
+  docPlugins: {
+    footnotes: false,
+    html: false,
+    mdx: false,
+    tables: false,
+    callouts: false,
+    codeHighlighting: "incremental",
+    outputMode: "tokens",
+  }, });
   const init = initMessages.find((msg) => msg.type === "INITIALIZED") as Extract<WorkerOut, { type: "INITIALIZED" }> | undefined;
   assert.ok(init, "worker did not emit INITIALIZED message");
-  const snapshot = createInitialSnapshot(init.blocks ?? []);
+  const snapshot = createInitialSnapshot(init.snapshot);
 
   const firstChunk = ["```diff ts", "@@ -1,1 +1,1 @@", "-const a = 1;", ""].join("\n");
   const firstMessages = await harness.send({ type: "APPEND", text: firstChunk });

@@ -91,7 +91,7 @@ export function Example() {
 | `components` | `Partial<BlockComponents>` | Override block renders (wrap code/math without affecting the patch scheduler). |
 | `inlineComponents` | `Partial<InlineComponents>` | Override inline renders. |
 | `tableElements` | `Partial<TableElements>` | Override table tags (e.g. Shadcn table wrappers). |
-| `tableVirtualization` | `boolean \| Partial<TableVirtualizationConfig>` | Opt-in row virtualization for large finalized tables. Default `false`. |
+| `tableVirtualization` | `boolean \| Partial<TableVirtualizationConfig>` | Opt-in row virtualization for large tables while streaming or finalized. Default `false`; configured thresholds and overscan remain in effect during streaming. |
 | `htmlElements` | `Partial<HtmlElements>` | Override HTML tag renders (when HTML is enabled). |
 | `html` | `HtmlOptions` | Per-tag attribute allowlists and opt-in markdown parsing inside raw HTML blocks. Requires `features.html`. |
 | `syntax` | `SyntaxRuleSpec[]` | Serializable regex rules for inline plugin nodes. Map rule names in `inlineComponents`. |
@@ -205,18 +205,18 @@ See `docs/CLI_USAGE.md` for an example that consumes `PATCH` messages into a `Do
 
 ```ts
 import { MarkdownEngine } from "@stream-mdx/worker/engine";
-import type { WorkerOut } from "@stream-mdx/core";
+import { STREAM_MDX_SCHEMA_VERSION, type WorkerOut } from "@stream-mdx/core";
 
 const messages: WorkerOut[] = [];
 const engine = new MarkdownEngine({
   post: (message) => messages.push(message),
 });
 
-await engine.handle({ type: "INIT", docPlugins: { math: false } });
+await engine.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, docPlugins: { math: false } });
 await engine.handle({ type: "APPEND", text: "# Hello\n\nOne document." });
 await engine.handle({ type: "FINALIZE" });
 // A new INIT resets document state and retains this instance's extensions.
-await engine.handle({ type: "INIT", initialContent: "Another document." });
+await engine.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "Another document." });
 engine.dispose();
 ```
 
@@ -398,7 +398,8 @@ import { StreamingMarkdown } from "@stream-mdx/react";
 ### Features
 
 - **Code blocks**: Copy button writes the raw authored code text directly to clipboard via `navigator.clipboard.writeText` (never highlighted HTML). Download saves `snippet.<ext>` matching the authored fence language (e.g. `.ts`, `.py`, `.rs`, `.sql`). Fully compatible with virtualized code.
-- **Tables**: Copy as TSV (ready to paste into spreadsheets) or Markdown. Download as CSV, TSV, or Markdown with strict RFC 4180 escaping (quotes, commas, newlines). Table controls are enabled only once the table block is finalized; streaming tables show disabled controls.
+- **Tables**: Copy as TSV (ready to paste into spreadsheets) or Markdown. Download as CSV, TSV, or Markdown with strict RFC 4180 escaping (quotes, commas, newlines). Table controls become active when the native table closes, even if the surrounding document stream continues. Built-in managed-table controls read row text only when copied or downloaded.
+- **Managed custom table controls**: `ControlsComponentProps` supplies `headers`, `align`, and `getTableData()`. It intentionally omits the full `rows` array so rendering does not materialize the table prefix; call `getTableData()` inside a user action when complete row strings are needed. `onCopy` and `onDownload` retain the built-in action behavior.
 - **Mermaid / Code Fences**: Exposed through `CodeFenceRendererProps` (`controls` flags and `copy()` helper). `MermaidBlock` opts in to source diagram code copying in its toolbar and code view.
 - **Accessibility & SSR**: Buttons are real `<button type="button">` with `aria-label`, `data-stream-mdx-control`, and semantic classes. Rendering is 100% SSR-safe (no `window` access during render).
 - **Replacement slot**: Fully replaceable via `controlsComponent` prop on `<StreamingMarkdown />` or `ComponentRegistry.setControlsComponent()`.

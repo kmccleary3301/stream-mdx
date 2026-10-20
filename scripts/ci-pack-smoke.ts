@@ -430,7 +430,7 @@ module.exports = async function verify(load, format) {
 
   const { STREAM_MDX_PROTOCOL_ID, STREAM_MDX_SCHEMA_VERSION } = await load("@stream-mdx/protocol");
   assert.equal(STREAM_MDX_PROTOCOL_ID, "streammdx");
-  assert.equal(STREAM_MDX_SCHEMA_VERSION, "1.0");
+  assert.equal(STREAM_MDX_SCHEMA_VERSION, "2.0");
   const { createSnapshotStore, encodeNdjsonEvent, encodeNdjsonEvents, decodeNdjson, NdjsonDecoder } =
     await load("@stream-mdx/tui");
   const envelope = {
@@ -452,16 +452,16 @@ module.exports = async function verify(load, format) {
   assert.equal(physicalResult.blocks[1].payload.raw.trim(), "Physical worker body.");
   assert(physicalResult.blocks.every((block) => block.isFinalized),
     "The installed physical worker must finalize every compiled block");
-  assert.deepEqual(physicalResult.snapshot.blocks, physicalResult.blocks);
+  assert.deepEqual(physicalResult.snapshot.getBlocks(), physicalResult.blocks);
   assert.deepEqual(physicalResult.artifact.blocks, physicalResult.blocks);
   console.log("[pack-smoke:" + format + "] Installed physical worker compiled finalized snapshot");
 
   const { createRendererStore } = await load("@stream-mdx/react/renderer/store");
-  const init = { type: "INIT", initialContent: "", prewarmLangs: [], docPlugins: {} };
+  const init = { type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "", prewarmLangs: [], docPlugins: {} };
   const append = { type: "APPEND", text: "# Installed engine\\n\\nEngine body.\\n" };
   const apply = (store, message) => {
     if (message.type === "ERROR") throw new Error(message.error.message);
-    if (message.type === "INITIALIZED") store.reset(message.blocks);
+    if (message.type === "INITIALIZED") store.resetSnapshot(message.snapshot);
     if (message.type === "PATCH") store.applyPatches(message.patches, { captureMetrics: false });
   };
   const assertBlocks = (store) => {
@@ -482,7 +482,7 @@ module.exports = async function verify(load, format) {
     const engine = new MarkdownEngine({ post: (message) => {
       apply(store, message);
       if (message.type === "INITIALIZED") {
-        events.push(JSON.parse(JSON.stringify({ ...envelope, event: "snapshot", blocks: message.blocks })));
+        events.push(JSON.parse(JSON.stringify({ ...envelope, event: "snapshot", snapshot: message.snapshot })));
       }
       if (message.type === "PATCH") {
         // Serialize at emission time so later engine mutations cannot alter the replay.
@@ -494,10 +494,21 @@ module.exports = async function verify(load, format) {
     try {
       await engine.handle(init);
       assert.equal(events[1].event, "snapshot");
-      assert.deepEqual(events[1].blocks, []);
+      assert.deepEqual(events[1].snapshot.children, []);
       await engine.handle(append);
       await engine.handle({ type: "FINALIZE" });
       assertBlocks(store);
+      let replacementSnapshot;
+      const replacementEngine = new MarkdownEngine({ post: (message) => {
+        if (message.type === "INITIALIZED") replacementSnapshot = message.snapshot;
+        if (message.type === "ERROR") throw new Error(message.error.message);
+      } });
+      try {
+        await replacementEngine.handle({ ...init, initialContent: append.text });
+      } finally {
+        replacementEngine.dispose();
+      }
+      assert.ok(replacementSnapshot, "engine must publish a root snapshot for replacement");
       const patches = events.filter((event) => event.event === "patch");
       assert(patches.length > 0, "TUI replay must consume actual engine patches");
       const finalTx = patches[patches.length - 1].tx;
@@ -527,12 +538,13 @@ module.exports = async function verify(load, format) {
       const replayStore = createSnapshotStore();
       replayStore.applyEvents(decodeNdjson(ndjson));
       assert.deepEqual(replayStore.getBlocks(), tuiStore.getBlocks());
-      const finalBlocks = tuiStore.getBlocks();
-      tuiStore.applyEvent({ ...envelope, event: "snapshot", blocks: [] });
+      tuiStore.applyEvent({ ...envelope, event: "snapshot", snapshot: events[1].snapshot });
       assert.deepEqual(tuiStore.getBlocks(), [], "A snapshot must replace previous engine state");
-      tuiStore.applyEvent({ ...envelope, event: "snapshot", blocks: finalBlocks });
-      assertBlocks(tuiStore);
-      assert.deepEqual(tuiStore.getSnapshot().blocks, finalBlocks);
+      tuiStore.applyEvent({ ...envelope, event: "snapshot", snapshot: replacementSnapshot });
+      const replacementBlocks = tuiStore.getBlocks();
+      assert.equal(replacementBlocks.length, 2);
+      assert.equal(replacementBlocks[0].payload.raw.trim(), "Installed engine");
+      assert.match(replacementBlocks[1].payload.raw, /Engine body/);
       console.log("[pack-smoke:" + format + "] " + specifier +
         " protocol envelope and TUI chunked NDJSON patch replay/snapshot replacement passed");
     } finally {

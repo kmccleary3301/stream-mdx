@@ -76,7 +76,7 @@ This is the smallest useful architecture for a Node-based TUI.
 ```ts
 import { createWorkerThread } from "stream-mdx/worker/node";
 import { createSnapshotStore } from "@stream-mdx/tui";
-import type { WorkerOut } from "stream-mdx/core";
+import { STREAM_MDX_SCHEMA_VERSION, type WorkerOut } from "stream-mdx/core";
 
 const worker = createWorkerThread({ stdout: true, stderr: true });
 const store = createSnapshotStore();
@@ -96,6 +96,7 @@ worker.on("message", (msg: WorkerOut) => {
 
 worker.postMessage({
   type: "INIT",
+  schemaVersion: STREAM_MDX_SCHEMA_VERSION,
   initialContent: "",
   prewarmLangs: ["typescript"],
   docPlugins: {
@@ -164,10 +165,18 @@ const blocks = store.getBlocks();
 import { applyPatchBatch, createInitialSnapshot } from "stream-mdx/core";
 
 const snapshot = createInitialSnapshot();
-snapshot.blocks = applyPatchBatch(snapshot, patches);
+applyPatchBatch(snapshot, patches);
+const blocks = snapshot.getBlocks();
 ```
 
 Use the core path only when you need direct access to `DocumentSnapshot` internals. For most terminal apps, the TUI store is the cleaner choice.
+
+The snapshot store applies the complete Core `Patch` union, including managed
+table tail appends and dependency-targeted row/header updates. Do not interpret
+table patch operations as ordinary child-tree edits: use `applyPatchBatch()` or
+`createSnapshotStore()` so owner revisions and atomic stale-command guards are
+preserved. `getBlocks()` returns the cold materialized `Block[]` view for
+terminal rendering.
 
 ## Rendering Strategy In A Terminal
 
@@ -255,20 +264,21 @@ If your terminal consumer lives in a different process, machine, or transport bo
 
 Recommended pattern:
 
-1. producer emits `StreamMdxEventV1`
+1. producer emits `StreamMdxEvent`
 2. transport carries NDJSON
 3. consumer decodes NDJSON with `NdjsonDecoder`
 4. consumer applies events to `createSnapshotStore()`
 
 ```ts
 import { NdjsonDecoder, createSnapshotStore } from "@stream-mdx/tui";
-import type { StreamMdxEventV1 } from "@stream-mdx/protocol";
+import type { StreamMdxEvent } from "@stream-mdx/protocol";
 
-const decoder = new NdjsonDecoder<StreamMdxEventV1>();
+const decoder = new NdjsonDecoder<StreamMdxEvent>();
 const store = createSnapshotStore();
 
 for (const event of decoder.push(chunk)) {
   store.applyEvent(event);
+  // Render from store.getBlocks() at the TUI presentation checkpoint.
 }
 ```
 

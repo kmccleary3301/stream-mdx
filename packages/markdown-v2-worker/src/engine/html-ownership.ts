@@ -1,5 +1,5 @@
 import type { MarkdownParser } from "@lezer/markdown";
-import { dedentIndentedCode, sanitizeHtmlTreeInWorker, stripCodeFence, type Block, type HtmlOptions, type InlineNode } from "@stream-mdx/core";
+import { dedentIndentedCode, sanitizeHtmlTreeInWorker, stripCodeFence, type Block, type HtmlOptions, type InlineNode, type SourceSnapshot } from "@stream-mdx/core";
 import { trimProvisionalFenceTail } from "./parse-extract";
 
 const VOID: Record<string, true> = { area: true, base: true, br: true, col: true, embed: true, hr: true, img: true, input: true, link: true, meta: true, param: true, source: true, track: true, wbr: true };
@@ -101,7 +101,7 @@ function codeCompileSource(block: Block): string {
 }
 
 /** Own balanced HTML regions across native block boundaries, retaining pending MDX roots. */
-export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, content: string, options?: HtmlOptions, sourceOffset = 0, parseInline?: (text: string) => InlineNode[], regionOptions?: { joinLeafRaws?: boolean; forceFinalize?: boolean; mdxComponents?: boolean }): Block[] {
+export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, content: string | SourceSnapshot, options?: HtmlOptions, sourceOffset = 0, parseInline?: (text: string) => InlineNode[], regionOptions?: { joinLeafRaws?: boolean; forceFinalize?: boolean; mdxComponents?: boolean }): Block[] {
   const result: Block[] = [];
   let region: Block[] = [];
   let stack: string[] = [];
@@ -129,7 +129,9 @@ export function groupHtmlOwnership(blocks: Block[], parser: MarkdownParser, cont
       const last = region[region.length - 1];
       const raw = regionOptions?.joinLeafRaws
         ? region.map((block) => (block.type === "code" ? codeCompileSource(block) : (block.payload.raw ?? "").replace(/\n$/, ""))).join("\n\n")
-        : content.slice((first.payload.range?.from ?? sourceOffset) - sourceOffset, (last.payload.range?.to ?? content.length + sourceOffset) - sourceOffset);
+        : typeof content === "string"
+          ? content.slice((first.payload.range?.from ?? sourceOffset) - sourceOffset, (last.payload.range?.to ?? content.length + sourceOffset) - sourceOffset)
+          : content.read((first.payload.range?.from ?? sourceOffset) - sourceOffset, (last.payload.range?.to ?? content.length + sourceOffset) - sourceOffset);
       result.push({
         ...first,
         isFinalized: (stack.length === 0 || regionOptions?.forceFinalize === true) && last.isFinalized,

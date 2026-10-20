@@ -84,6 +84,7 @@ export function useStreamInputSession({
         imperativeActivityRef.current = false;
         setStreamStatus("streaming");
         renderer.restart();
+        await renderer.whenInitialized();
         for await (const chunk of { [Symbol.asyncIterator]: () => iterator }) {
           if (cancelled || activeIteratorRef.current !== iteratorOwner) {
             break;

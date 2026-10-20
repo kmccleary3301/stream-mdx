@@ -140,6 +140,29 @@ const VOID_TAGS: Record<string, true> = {
   wbr: true,
 };
 
+interface HtmlTagShape {
+  tagName?: string;
+  declaration: boolean;
+  invalid: boolean;
+  isClose: boolean;
+  isSelfClosing: boolean;
+}
+
+function parseHtmlTagShape(raw: string): HtmlTagShape {
+  if (raw.startsWith("<!") || raw.startsWith("<?")) {
+    return { declaration: true, invalid: false, isClose: false, isSelfClosing: true };
+  }
+  const tagName = /^<\/?([^\s/>]+)/.exec(raw)?.[1]?.toLowerCase();
+  const isClose = raw.startsWith("</");
+  const invalid = !tagName || /^<\/\s/.test(raw) || /\/\s+>$/.test(raw);
+  return {
+    tagName,
+    declaration: false,
+    invalid,
+    isClose,
+    isSelfClosing: !isClose && (raw.endsWith("/>") || Boolean(tagName && VOID_TAGS[tagName])),
+  };
+}
 
 export class LezerInlineConverter {
   private nodeSet: NodeSet;
@@ -161,6 +184,61 @@ export class LezerInlineConverter {
   convert(elements: readonly MarkdownElement[], text: string, from = 0, to: number = text.length): InlineNode[] {
     const rawNodes = this.convertRange(elements, text, from, to);
     return mergeAdjacentTextNodes(rawNodes);
+  }
+
+  private findMatchingHtmlClose(
+    elements: readonly MarkdownElement[],
+    index: number,
+    text: string,
+    to: number,
+    tagName: string,
+  ): number {
+    let depth = 1;
+    for (let next = index + 1; next < elements.length; next++) {
+      const candidate = elements[next];
+      if (candidate.from >= to) break;
+      if (this.nodeSet.types[candidate.type]?.name !== "HTMLTag") continue;
+      const shape = parseHtmlTagShape(text.slice(candidate.from, candidate.to));
+      if (shape.declaration || shape.invalid || shape.tagName !== tagName) continue;
+      if (shape.isClose) depth--;
+      else if (!shape.isSelfClosing) depth++;
+      if (depth === 0) return next;
+    }
+    return elements.length;
+  }
+
+  findUnsettledHtmlScopeStart(
+    elements: readonly MarkdownElement[],
+    text: string,
+    to: number,
+  ): number {
+    let safeTo = to;
+    const inspect = (siblings: readonly MarkdownElement[], from: number, end: number): void => {
+      for (let index = from; index < end; index++) {
+        const element = siblings[index];
+        if (element.from >= safeTo) break;
+        if (this.nodeSet.types[element.type]?.name === "HTMLTag") {
+          const shape = parseHtmlTagShape(text.slice(element.from, element.to));
+          if (!shape.declaration && !shape.invalid && shape.tagName && !shape.isClose && !shape.isSelfClosing) {
+            const closeIndex = this.findMatchingHtmlClose(siblings, index, text, safeTo, shape.tagName);
+            const close = siblings[closeIndex];
+            if (!close || close.to > safeTo) {
+              safeTo = Math.min(safeTo, element.from);
+            } else {
+              inspect(siblings, index + 1, closeIndex);
+              if (close.to > safeTo) safeTo = Math.min(safeTo, element.from);
+              index = closeIndex;
+            }
+          } else {
+            inspect(element.children, 0, element.children.length);
+          }
+        } else {
+          inspect(element.children, 0, element.children.length);
+        }
+      }
+    };
+    inspect(elements, 0, elements.length);
+    return safeTo;
   }
 
   private convertRange(elements: readonly MarkdownElement[], text: string, from: number, to: number): InlineNode[] {
@@ -185,22 +263,7 @@ export class LezerInlineConverter {
       const converted = this.convertElement(el, nodeName, text);
       if (converted && !Array.isArray(converted) && converted.kind === "html" &&
           !converted.isClose && !converted.isSelfClosing && converted.tagName) {
-        let depth = 1;
-        let closeIndex = elements.length;
-        for (let next = index + 1; next < elements.length; next++) {
-          const candidate = elements[next];
-          if (candidate.from >= to) break;
-          if (this.nodeSet.types[candidate.type]?.name !== "HTMLTag") continue;
-          const raw = text.slice(candidate.from, candidate.to);
-          const name = /^<\/?([^\s/>]+)/.exec(raw)?.[1]?.toLowerCase();
-          if (name !== converted.tagName) continue;
-          if (raw.startsWith("</")) depth--;
-          else if (!raw.endsWith("/>")) depth++;
-          if (depth === 0) {
-            closeIndex = next;
-            break;
-          }
-        }
+        const closeIndex = this.findMatchingHtmlClose(elements, index, text, to, converted.tagName);
         const close = elements[closeIndex];
         const innerTo = close?.from ?? to;
         const end = close?.to ?? to;
@@ -318,24 +381,24 @@ export class LezerInlineConverter {
       case "HTMLTag": {
         // Lezer has already validated this exact range, including quoted '>' and newlines.
         const raw = text.slice(el.from, el.to);
-        const tagName = /^<\/?([^\s/>]+)/.exec(raw)?.[1]?.toLowerCase();
-        if (raw.startsWith("<!") || raw.startsWith("<?")) {
+        const shape = parseHtmlTagShape(raw);
+        if (shape.declaration) {
           const safe = sanitizeHtmlTreeInWorker(raw, this.html);
           return safe.flatMap((node): InlineNode[] => node.kind === "text" ? [{ kind: "text", text: node.text }] : []);
         }
-        if (!tagName || /^<\/\s/.test(raw) || /\/\s+>$/.test(raw)) {
+        if (shape.invalid || !shape.tagName) {
           return { kind: "text", text: raw };
         }
-        if (raw.startsWith("</")) {
-          return { kind: "html", raw, tagName, isClose: true, sanitized: "" };
+        if (shape.isClose) {
+          return { kind: "html", raw, tagName: shape.tagName, isClose: true, sanitized: "" };
         }
         const safe = sanitizeHtmlTreeInWorker(raw, this.html).find((node) => node.kind === "element");
         return {
           kind: "html",
           raw,
           openingRaw: raw,
-          tagName,
-          isSelfClosing: raw.endsWith("/>") || Boolean(VOID_TAGS[tagName]),
+          tagName: shape.tagName,
+          isSelfClosing: shape.isSelfClosing,
           attributes: safe?.kind === "element" ? safe.attributes : undefined,
           sanitized: safe ? undefined : "",
           children: [],

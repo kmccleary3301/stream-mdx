@@ -46,14 +46,14 @@ This is the preferred deployment path for explicit CSP control and predictable s
 
 ```ts
 import { MarkdownEngine } from "@stream-mdx/worker/engine";
-import type { WorkerOut } from "@stream-mdx/core";
+import { STREAM_MDX_SCHEMA_VERSION, type WorkerOut } from "@stream-mdx/core";
 
 const messages: WorkerOut[] = [];
 const engine = new MarkdownEngine({ post: (message) => messages.push(message) });
-await engine.handle({ type: "INIT" });
+await engine.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION });
 await engine.handle({ type: "APPEND", text: "# Hello" });
 await engine.handle({ type: "FINALIZE" });
-await engine.handle({ type: "INIT", initialContent: "A new document" });
+await engine.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "A new document" });
 engine.dispose();
 ```
 

@@ -1,4 +1,7 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
+import { createInitialSnapshot } from "@stream-mdx/core";
 import type { Block, InlineLookaheadPrepareResult, NodeSnapshot, PreparedNestedSnapshot, WorkerOut } from "@stream-mdx/core";
 import { MarkdownEngine } from "../src/engine/engine";
 
@@ -7,7 +10,7 @@ type LookaheadDecisionTrace = InlineLookaheadPrepareResult["trace"][number];
 function initializedBlocks(messages: WorkerOut[]): Block[] {
   const initialized = messages.find((message) => message.type === "INITIALIZED");
   assert.ok(initialized && initialized.type === "INITIALIZED");
-  return initialized.blocks;
+  return createInitialSnapshot(initialized.snapshot).getBlocks();
 }
 
 function owners(blocks: Block[]): Block[] {
@@ -33,12 +36,9 @@ function decisions(block: Block, field: "inlineLookahead" | "mixedLookahead"): L
 async function testNativeOwnersAndFinalization(): Promise<void> {
   const messages: WorkerOut[] = [];
   const engine = new MarkdownEngine({ post: (message) => messages.push(message) });
-  await engine.handle({
-    type: "INIT",
-    initialContent: "> - Parent\n>   - Ref {cite:5\n>\n>   Prefix <kbd>code",
-    prewarmLangs: [],
-    docPlugins: { mdx: false, formatAnticipation: { inline: true, regex: true, html: true } },
-  });
+  await engine.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "> - Parent\n>   - Ref {cite:5\n>\n>   Prefix <kbd>code",
+  prewarmLangs: [],
+  docPlugins: { mdx: false, formatAnticipation: { inline: true, regex: true, html: true } }, });
   const blocks = initializedBlocks(messages);
   const quote = blocks.find((block) => block.type === "blockquote");
   assert.ok(quote);
@@ -81,12 +81,12 @@ async function testInstanceAndDocumentIsolation(): Promise<void> {
   const secondMessages: WorkerOut[] = [];
   const first = new MarkdownEngine({ post: (message) => firstMessages.push(message) });
   const second = new MarkdownEngine({ post: (message) => secondMessages.push(message) });
-  await first.handle({ type: "INIT", initialContent: "Ref {cite:5", prewarmLangs: [], docPlugins: { mdx: false, formatAnticipation: { regex: true } } });
-  await second.handle({ type: "INIT", initialContent: "Ref {cite:5", prewarmLangs: [], docPlugins: { mdx: false, formatAnticipation: false } });
+  await first.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "Ref {cite:5", prewarmLangs: [], docPlugins: { mdx: false, formatAnticipation: { regex: true } } });
+  await second.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "Ref {cite:5", prewarmLangs: [], docPlugins: { mdx: false, formatAnticipation: false } });
   assert.ok(decisions(initializedBlocks(firstMessages)[0], "inlineLookahead").some((decision) => decision.providerId === "regex-provider"));
   assert.ok(!decisions(initializedBlocks(secondMessages)[0], "inlineLookahead").some((decision) => decision.providerId === "regex-provider"));
   firstMessages.length = 0;
-  await first.handle({ type: "INIT", initialContent: "New document", prewarmLangs: [], docPlugins: { formatAnticipation: false } });
+  await first.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "New document", prewarmLangs: [], docPlugins: { formatAnticipation: false } });
   const reset = initializedBlocks(firstMessages)[0];
   assert.ok(!decisions(reset, "inlineLookahead").some((decision) => decision.providerId === "regex-provider"));
   assert.equal(reset.payload.meta?.mixedLookahead, undefined);
@@ -100,7 +100,7 @@ async function testNativeFenceTailPolicy(): Promise<void> {
     const engine = new MarkdownEngine({ post: (message) => messages.push(message) });
     const continuation = prefix === "- " ? "  " : prefix;
     const raw = `${prefix}\`\`\`js\n${continuation}const x = 1;\n${continuation}\``;
-    await engine.handle({ type: "INIT", initialContent: raw, prewarmLangs: [] });
+    await engine.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: raw, prewarmLangs: [] });
     const code = owners(initializedBlocks(messages)).find((block) => block.type === "code");
     assert.ok(code, `expected native code for ${JSON.stringify(prefix)}`);
     assert.equal(code.payload.meta?.code, "const x = 1;");

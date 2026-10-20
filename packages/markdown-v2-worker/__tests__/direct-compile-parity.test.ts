@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 import { execSync } from "node:child_process";
 import { existsSync } from "node:fs";
@@ -103,7 +105,7 @@ async function runDirectTransportIsolationTest(): Promise<void> {
     const first = await compilePublicDirect({ text, init });
     for (const [key, descriptor] of beforeFirst) assert.deepStrictEqual(Object.getOwnPropertyDescriptor(globalThis, key), descriptor, `initial direct compilation must not install ${key}`);
     const harness = await createWorkerHarness();
-    const transportMessages = await harness.send({ type: "INIT", initialContent: "Other transport owns its own document.", prewarmLangs: [] });
+    const transportMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "Other transport owns its own document.", prewarmLangs: [] });
     assert.ok(transportMessages.some((message) => message.type === "INITIALIZED"));
     const beforeSecond = ["self", "postMessage"].map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)] as const);
     const second = await compilePublicDirect({ text, init });

@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 
 import { applyPatchBatch, createInitialSnapshot, type Patch, type WorkerOut } from "@stream-mdx/core";
@@ -7,28 +9,25 @@ async function collectTokenLines(): Promise<Array<{ index: number; tokens: unkno
   const harness = await createWorkerHarness();
   const content = ["```ts", "const alpha = 1;", "const beta = 2;", "```"].join("\n");
 
-  const initMessages = await harness.send({
-    type: "INIT",
-    initialContent: content,
-    prewarmLangs: ["typescript"],
-    docPlugins: {
-      footnotes: false,
-      html: false,
-      mdx: false,
-      tables: false,
-      callouts: false,
-      math: false,
-      codeHighlighting: "final",
-      outputMode: "tokens",
-      emitHighlightTokens: true,
-      liveTokenization: false,
-    },
-  });
+  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: content,
+  prewarmLangs: ["typescript"],
+  docPlugins: {
+    footnotes: false,
+    html: false,
+    mdx: false,
+    tables: false,
+    callouts: false,
+    math: false,
+    codeHighlighting: "final",
+    outputMode: "tokens",
+    emitHighlightTokens: true,
+    liveTokenization: false,
+  }, });
 
   const init = initMessages.find((msg) => msg.type === "INITIALIZED") as Extract<WorkerOut, { type: "INITIALIZED" }> | undefined;
   assert.ok(init, "worker did not emit INITIALIZED message");
 
-  const snapshot = createInitialSnapshot(init.blocks ?? []);
+  const snapshot = createInitialSnapshot(init.snapshot);
   const initPatches = initMessages.filter((msg): msg is Extract<WorkerOut, { type: "PATCH" }> => msg.type === "PATCH");
   for (const message of initPatches) {
     applyPatchBatch(snapshot, message.patches as Patch[]);

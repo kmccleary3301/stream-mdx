@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 
 import { applyPatchBatch, createBlockSnapshot, createInitialSnapshot, type Block, type NodeSnapshot, type Patch, type WorkerOut } from "@stream-mdx/core";
@@ -26,19 +28,16 @@ function buildLargeCodeSnippet(lineCount: number): string {
 async function runLazyTokenizationBoundaryTest(): Promise<void> {
   const harness = await createWorkerHarness();
 
-  await harness.send({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: [],
-    docPlugins: {
-      html: true,
-      mdx: false,
-      math: false,
-      tables: false,
-      callouts: false,
-      lazyTokenization: { enabled: true, thresholdLines: 10 },
-    },
-  });
+  await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: [],
+  docPlugins: {
+    html: true,
+    mdx: false,
+    math: false,
+    tables: false,
+    callouts: false,
+    lazyTokenization: { enabled: true, thresholdLines: 10 },
+  }, });
 
   const snippet = buildLargeCodeSnippet(64);
   await harness.send({ type: "APPEND", text: snippet });
@@ -79,20 +78,17 @@ async function runLazyTokenizationBoundaryTest(): Promise<void> {
 async function runMdxStatusBoundaryTest(): Promise<void> {
   const harness = await createWorkerHarness();
 
-  await harness.send({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: [],
-    docPlugins: {
-      footnotes: true,
-      html: true,
-      mdx: true,
-      tables: true,
-      callouts: true,
-      math: true,
-    },
-    mdx: { compileMode: "server" },
-  });
+  await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: [],
+  docPlugins: {
+    footnotes: true,
+    html: true,
+    mdx: true,
+    tables: true,
+    callouts: true,
+    math: true,
+  },
+  mdx: { compileMode: "server" }, });
 
   const raw = "<Preview message=\"hello\" />";
   await harness.send({ type: "APPEND", text: raw });
@@ -134,20 +130,17 @@ async function runMdxStatusBoundaryTest(): Promise<void> {
 async function runMdxErrorBoundaryTest(): Promise<void> {
   const harness = await createWorkerHarness();
 
-  await harness.send({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: [],
-    docPlugins: {
-      footnotes: true,
-      html: true,
-      mdx: true,
-      tables: true,
-      callouts: true,
-      math: true,
-    },
-    mdx: { compileMode: "server" },
-  });
+  await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: [],
+  docPlugins: {
+    footnotes: true,
+    html: true,
+    mdx: true,
+    tables: true,
+    callouts: true,
+    math: true,
+  },
+  mdx: { compileMode: "server" }, });
 
   const raw = "<Preview message=\"broken\" />";
   await harness.send({ type: "APPEND", text: raw });
@@ -220,7 +213,7 @@ async function runInflightLazyLifecycleTest(): Promise<void> {
     const engine = new MarkdownEngine({ extensions: { documentPlugins: [{
       name: "native-owner-update",
       process(ctx) {
-        if (ctx.content.includes("NEW_SIBLING")) {
+        if (ctx.source.materialize().includes("NEW_SIBLING")) {
           const owner = ctx.blocks.findIndex((block) => block.type === "list");
           assert.ok(owner >= 0);
           const block = ctx.blocks[owner];
@@ -232,9 +225,9 @@ async function runInflightLazyLifecycleTest(): Promise<void> {
       const message = structuredClone(emitted);
       messages.push(message);
       if (message.type === "INITIALIZED") {
-        store.reset(message.blocks);
-        document = createInitialSnapshot(message.blocks);
-        replacementInitialized = JSON.stringify(message.blocks).includes("replacementOnly");
+        store.resetSnapshot(message.snapshot);
+        document = createInitialSnapshot(message.snapshot);
+        replacementInitialized = JSON.stringify(message.snapshot).includes("replacementOnly");
       } else if (message.type === "PATCH") {
         applyPatchBatch(document, message.patches);
         store.applyPatches(message.patches, { captureMetrics: false });
@@ -242,10 +235,10 @@ async function runInflightLazyLifecycleTest(): Promise<void> {
           assert.ok(!JSON.stringify(store.getBlocks()).includes("oldOnlySentinel"), "old asynchronous work must never overwrite a replacement document");
         }
       } else if (message.type === "ERROR") throw new Error(message.error.message);
-      assert.ok(JSON.stringify(document.blocks) === JSON.stringify(store.getBlocks()), "serialized core and React consumers must remain equivalent");
+      assert.ok(JSON.stringify(document.getBlocks()) === JSON.stringify(store.getBlocks()), "serialized core and React consumers must remain equivalent");
       assert.deepStrictEqual(store.getInvariantViolations(), []);
     } });
-    await engine.handle({ type: "INIT", initialContent: oldMarkdown, prewarmLangs: [], docPlugins });
+    await engine.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: oldMarkdown, prewarmLangs: [], docPlugins });
     await engine.handle({ type: "FINALIZE" });
     const oldCode = findNestedCode(store.getBlocks());
     assert.strictEqual(oldCode.payload.meta?.lazyTokenizedUntil, 0);
@@ -256,7 +249,7 @@ async function runInflightLazyLifecycleTest(): Promise<void> {
     await Promise.resolve();
     assert.strictEqual(getPatchMessages(messages.slice(beforeRequest)).length, 0, "real multi-run diff tokenization must still be in flight at the lifecycle transition");
     if (action === "replace") {
-      await engine.handle({ type: "INIT", initialContent: replacement, prewarmLangs: [], docPlugins });
+      await engine.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: replacement, prewarmLangs: [], docPlugins });
       assert.strictEqual(findNestedCode(store.getBlocks()).id, oldCode.id, "replacement must reuse the descendant ID so ID-only guards cannot pass");
       await engine.handle({ type: "FINALIZE" });
     } else if (action === "owner-update") {
@@ -294,7 +287,7 @@ async function runInflightLazyLifecycleTest(): Promise<void> {
           const completed = findNestedCode(findDumpBlocks(messages.slice(tailStart)).blocks);
           const fullMessages: WorkerOut[] = [];
           const full = new MarkdownEngine({ post: (message) => fullMessages.push(structuredClone(message)) });
-          await full.handle({ type: "INIT", initialContent: oldMarkdown, prewarmLangs: [], docPlugins: { ...docPlugins, lazyTokenization: { enabled: false } } });
+          await full.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: oldMarkdown, prewarmLangs: [], docPlugins: { ...docPlugins, lazyTokenization: { enabled: false } } });
           await full.handle({ type: "FINALIZE" });
           await full.handle({ type: "DUMP_BLOCKS" });
           const expected = findNestedCode(findDumpBlocks(fullMessages).blocks);

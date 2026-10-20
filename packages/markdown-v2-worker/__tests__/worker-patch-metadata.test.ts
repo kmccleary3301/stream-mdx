@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 
 import type { Patch, WorkerOut } from "@stream-mdx/core";
@@ -28,19 +30,16 @@ function findPatchMessage(messages: WorkerOut[]): Extract<WorkerOut, { type: "PA
 async function main() {
   const harness = await createWorkerHarness();
 
-  const initMessages = await harness.send({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: [],
-    docPlugins: {
-      footnotes: true,
-      html: true,
-      mdx: true,
-      tables: true,
-      callouts: true,
-      math: true,
-    },
-  });
+  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: [],
+  docPlugins: {
+    footnotes: true,
+    html: true,
+    mdx: true,
+    tables: true,
+    callouts: true,
+    math: true,
+  }, });
   assert.ok(initMessages.some((message) => message.type === "INITIALIZED"), "worker failed to initialize");
 
   const firstAppend = findPatchMessage(await harness.send({ type: "APPEND", text: "Hello" }));

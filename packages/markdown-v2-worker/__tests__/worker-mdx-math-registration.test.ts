@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 import { readFileSync } from "node:fs";
 import { detectMDX, type Block, type InlineNode, type MixedContentSegment, type Patch, type WorkerOut } from "@stream-mdx/core";
@@ -30,15 +32,12 @@ function containsMathNodes(nodes: InlineNode[] | undefined): boolean {
 async function renderSnippetWithPlugins(snippet: string): Promise<Block[]> {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
-  const initMessages = await harness.send({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: [],
-    docPlugins: { html: true, mdx: true, math: true, tables: true, callouts: true },
-  });
+  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: [],
+  docPlugins: { html: true, mdx: true, math: true, tables: true, callouts: true }, });
   const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
   assert.ok(init, "worker did not initialize before streaming snippet");
-  store.reset(init.blocks);
+  store.resetSnapshot(init.snapshot);
 
   const appendMessages = await harness.send({ type: "APPEND", text: snippet });
   appendMessages
@@ -57,13 +56,10 @@ async function testNestedNegativeMathFallback(): Promise<void> {
   const source = readFileSync(new URL("../../../tests/regression/fixtures/math-left-right-nested-negative.md", import.meta.url), "utf8");
   const tex = "\\left( \\frac{\\left[a+b}{c}";
   const harness = await createWorkerHarness();
-  await harness.send({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: [],
-    mdx: { compileMode: "worker" },
-    docPlugins: { html: true, mdx: true, math: true, formatAnticipation: { mathInline: true, mathBlock: true, mdx: true, html: true } },
-  });
+  await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: [],
+  mdx: { compileMode: "worker" },
+  docPlugins: { html: true, mdx: true, math: true, formatAnticipation: { mathInline: true, mathBlock: true, mdx: true, html: true } }, });
   const assertFallback = (blocks: Block[]): void => {
     const math = blocks.find((block) => block.payload.raw.includes(tex));
     assert.ok(math, "the actual nested-negative math source must remain visible");

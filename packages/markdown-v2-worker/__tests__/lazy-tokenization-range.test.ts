@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 import type { Patch, WorkerOut } from "@stream-mdx/core";
 import { createRendererStore } from "../../markdown-v2-react/src/renderer/store";
@@ -22,22 +24,19 @@ async function main() {
   const store = createRendererStore();
   const snippet = buildSnippet(220);
 
-  const initMessages = await harness.send({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: [],
-    docPlugins: {
-      html: true,
-      mdx: false,
-      math: false,
-      tables: false,
-      callouts: false,
-      lazyTokenization: { enabled: true, thresholdLines: 50 },
-    },
-  });
+  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: [],
+  docPlugins: {
+    html: true,
+    mdx: false,
+    math: false,
+    tables: false,
+    callouts: false,
+    lazyTokenization: { enabled: true, thresholdLines: 50 },
+  }, });
   const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
   assert.ok(init, "worker did not initialize");
-  store.reset(init.blocks);
+  store.resetSnapshot(init.snapshot);
 
   const appendMessages = await harness.send({ type: "APPEND", text: snippet });
   appendMessages

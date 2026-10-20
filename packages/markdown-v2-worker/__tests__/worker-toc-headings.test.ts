@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 import type { Patch, TocHeading, WorkerOut } from "@stream-mdx/core";
 import { PATCH_ROOT_ID } from "@stream-mdx/core";
@@ -7,12 +9,9 @@ async function runTocHeadingsTest(): Promise<void> {
   const harness = await createWorkerHarness();
 
   const content = ["# Hello", "", "## Hello", "", "### World"].join("\n");
-  const initMessages = await harness.send({
-    type: "INIT",
-    initialContent: content,
-    prewarmLangs: [],
-    docPlugins: { footnotes: true, html: true, mdx: true, tables: true, callouts: true },
-  });
+  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: content,
+  prewarmLangs: [],
+  docPlugins: { footnotes: true, html: true, mdx: true, tables: true, callouts: true }, });
 
   const patchMessages = initMessages.filter((m): m is Extract<WorkerOut, { type: "PATCH" }> => m.type === "PATCH");
   assert.ok(patchMessages.length > 0, "expected PATCH messages during INIT");

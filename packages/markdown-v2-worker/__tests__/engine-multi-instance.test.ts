@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 import type { Patch, WorkerOut } from "@stream-mdx/core";
 import { createRendererStore } from "../../markdown-v2-react/src/renderer/store";
@@ -6,7 +8,7 @@ import { MarkdownEngine } from "../src/engine/engine";
 function applyPatchMessages(store: ReturnType<typeof createRendererStore>, messages: WorkerOut[]): void {
   for (const msg of messages) {
     if (msg.type === "INITIALIZED") {
-      store.reset(msg.blocks);
+      store.resetSnapshot(msg.snapshot);
     } else if (msg.type === "PATCH") {
       store.applyPatches(msg.patches as Patch[], { captureMetrics: false });
     }
@@ -29,19 +31,13 @@ async function runMultiInstanceEngineTest(): Promise<void> {
   const store2 = createRendererStore();
 
   // Engine 1 has footnotes enabled, Engine 2 does not
-  await engine1.handle({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: [],
-    docPlugins: { footnotes: true },
-  });
+  await engine1.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: [],
+  docPlugins: { footnotes: true }, });
 
-  await engine2.handle({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: [],
-    docPlugins: { footnotes: false },
-  });
+  await engine2.handle({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: [],
+  docPlugins: { footnotes: false }, });
 
   // Interleave chunks to verify state isolation
   await engine1.handle({ type: "APPEND", text: "Text with footnote[^1].\n\n" });

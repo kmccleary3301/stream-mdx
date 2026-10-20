@@ -54,6 +54,18 @@ Nested code contains normalized `meta.code`, normal highlight metadata, and
 `code-line` children before patch emission. Renderers do not need to reparse code
 or repair a line-count mismatch to reconstruct a static snapshot.
 
+Managed native tables travel as `NodeSnapshot.table` metadata, not synthetic
+row/cell children. The cold `Block` projection retains exact authored raw and
+native header, body-row, and alignment records. Header `sourceRange` spans the
+native header through delimiter end (excluding its physical line ending); cell
+and body-row ranges retain their own authored UTF-16 slices.
+
+The reducer keeps one private append-only source log and gives each table view an
+immutable reader bounded to that view's current source frontier. Retracting a
+provisional tail cannot alter older snapshots or truncate completed source;
+later re-extension validates only the overlap with the retained unfinished tail.
+Full source and row materialization remains a cold `getBlocks()` operation.
+
 Nested lazy highlight requests use the code descendant ID on the existing
 `TOKENIZE_RANGE` transport. The owning engine resolves that prepared leaf,
 including markdown block slots in `htmlTree`, and updates its owning root plus

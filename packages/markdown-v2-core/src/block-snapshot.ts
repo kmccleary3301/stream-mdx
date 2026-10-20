@@ -1,6 +1,21 @@
 declare const __STREAM_MDX_COUNTERS__: boolean;
 
 import { parser as baseMdParser, GFM } from "@lezer/markdown";
+import { AppendSourceDocument } from "./source-document";
+import {
+  createCodeLineIndex,
+  type CodeLineDecorationUpdate,
+  type CodeLineIndex,
+  type CodeLineRecord,
+} from "./code-records";
+import {
+  appendManagedTableRows,
+  createManagedTableState,
+  materializeManagedTableSnapshot,
+  updateManagedTableRows,
+  type ManagedTablePatchResult,
+  type ManagedTableViewState,
+} from "./table-block-state";
 import {
   extractCodeLines,
   extractCodeWrapperAttributes,
@@ -12,8 +27,11 @@ import {
 import { InlineParser } from "./inline-parser";
 import { prepareNestedBlockSnapshot, type PreparedNestedSnapshot } from "./nested-block-snapshot";
 import { createBlockCompatibilityExtension } from "./block-compatibility";
+import type { TableBlockSnapshot, TableCellRecord, TableHeaderRecord, TableRowRecord } from "./table-records";
 import type {
   Block,
+  CodeBlockSnapshot,
+  CodeBlockSourceMetadata,
   DiffLineKind,
   HtmlTreeNode,
   InlineNode,
@@ -63,19 +81,68 @@ export function blocksStructurallyEqual(a: Block, b: Block): boolean {
   return true;
 }
 
+function managedTableSnapshot(block: Block): TableBlockSnapshot | undefined {
+  if (block.type !== "table") return undefined;
+  const candidate = block.payload.meta?.table;
+  if (!candidate || typeof candidate !== "object") return undefined;
+  const table = candidate as Partial<TableBlockSnapshot>;
+  return table.tableOwnerId === block.id &&
+    typeof table.raw === "string" &&
+    Boolean(table.header && Array.isArray(table.header.cells) && Array.isArray(table.rows))
+    ? candidate as TableBlockSnapshot
+    : undefined;
+}
+
+function stripManagedTableMetadata(block: Block): Block {
+  const meta = block.payload.meta ? { ...block.payload.meta } : undefined;
+  if (meta) {
+    delete meta.table;
+    delete meta.header;
+    delete meta.rows;
+    delete meta.align;
+  }
+  return { ...block, payload: { ...block.payload, raw: "", meta } };
+}
+
+export function materializeManagedTableBlock(block: Block, state: ManagedTableViewState): Block {
+  const sourceTable = materializeManagedTableSnapshot(state);
+  const table: TableBlockSnapshot = {
+    ...sourceTable,
+    generation: 0,
+    revision: 0,
+    processedTo: sourceTable.sourceRange.to,
+    rows: sourceTable.rows.map((row) => Object.freeze({ ...row, sourceRevision: 0 })),
+  };
+  const result = cloneBlock(block);
+  const meta = { ...(result.payload.meta ?? {}) };
+  meta.table = table;
+  meta.header = table.header.cells.map((cell) => cloneInlineNodes(cell.inline));
+  meta.rows = table.rows.map((row) => row.cells.map((cell) => cloneInlineNodes(cell.inline)));
+  meta.align = [...table.header.align];
+  result.payload.meta = meta;
+  result.payload.raw = table.raw;
+  result.payload.range = { ...table.sourceRange };
+  result.isFinalized = state.source.state !== "open";
+  return result;
+}
+
 export function createBlockSnapshot(block: Block): NodeSnapshot;
 export function createBlockSnapshot(
   block: Block,
   onNodeCreated?: (node: NodeSnapshot) => void,
 ): NodeSnapshot {
+  const table = managedTableSnapshot(block);
+  const blockForSnapshot = cloneBlock(table ? stripManagedTableMetadata(block) : block);
+  const tableSnapshot = table ? structuredCloneIfPossible(table) : undefined;
   const base: NodeSnapshot = {
     id: block.id,
     type: block.type,
     props: {
-      block: cloneBlock(block),
+      block: blockForSnapshot,
     },
-    meta: block.payload.meta ? structuredCloneIfPossible(block.payload.meta) : undefined,
+    meta: blockForSnapshot.payload.meta ? structuredCloneIfPossible(blockForSnapshot.payload.meta) : undefined,
     range: block.payload.range ? { ...block.payload.range } : undefined,
+    table: tableSnapshot,
     children: [],
   };
   if (typeof __STREAM_MDX_COUNTERS__ !== "undefined" && __STREAM_MDX_COUNTERS__) {
@@ -225,6 +292,7 @@ function enrichTableSnapshot(
   snapshot: NodeSnapshot,
   onNodeCreated?: (node: NodeSnapshot) => void,
 ): NodeSnapshot {
+  if (snapshot.table) return snapshot;
   const meta = block.payload.meta as
     | {
         header?: InlineNode[][];
@@ -368,7 +436,7 @@ function enrichCodeSnapshot(
     const props: Record<string, unknown> = {
       index,
       text: line,
-      html: highlightedLines[index] ?? null,
+      html: highlightedLines[index] ?? line,
     };
     if (tokenLines) {
       props.tokens = tokenLines[index] ?? null;
@@ -418,7 +486,7 @@ function normalizeOptionalArray<T>(lines: Array<T | null>, fallbackLength: numbe
   return result;
 }
 
-function cloneInlineNodes(nodes: InlineNode[]): InlineNode[] {
+function cloneInlineNodes(nodes: readonly InlineNode[]): InlineNode[] {
   return nodes.map((node) => {
     if ("children" in node && Array.isArray(node.children)) {
       return { ...node, children: cloneInlineNodes(node.children) };
@@ -514,6 +582,17 @@ function structuredCloneIfPossible<T>(value: T): T {
  * (e.g., TUIs) can apply worker patches and materialize Block arrays.
  */
 
+interface SnapshotCodeState {
+  readonly source: CodeBlockSourceMetadata;
+  readonly configurationRevision: number;
+  readonly info: string;
+  readonly language?: string;
+  readonly lines: CodeLineIndex;
+  readonly document: AppendSourceDocument;
+  readonly managed: boolean;
+}
+
+
 interface SnapshotNode {
   id: string;
   type: string;
@@ -521,15 +600,29 @@ interface SnapshotNode {
   children: string[];
   props: Record<string, unknown>;
   block?: Block;
+  range?: { from: number; to: number };
+  codeState?: SnapshotCodeState;
+  tableState?: ManagedTableViewState;
 }
 
 export interface DocumentSnapshot {
   nodes: Map<string, SnapshotNode>;
   rootId: string;
-  blocks: Block[];
+  getBlocks(): Block[];
 }
 
-export function createInitialSnapshot(initialBlocks: Block[] = []): DocumentSnapshot {
+interface MaterializedBlockCache {
+  blocks: Block[];
+  dirty: boolean;
+}
+
+const materializedBlocksBySnapshot = new WeakMap<DocumentSnapshot, MaterializedBlockCache>();
+const retiredCodeGenerationsBySnapshot = new WeakMap<DocumentSnapshot, Map<string, number>>();
+const retiredTableGenerationsBySnapshot = new WeakMap<DocumentSnapshot, Map<string, number>>();
+
+export function createInitialSnapshot(initialBlocks?: Block[]): DocumentSnapshot;
+export function createInitialSnapshot(rootSnapshot: NodeSnapshot): DocumentSnapshot;
+export function createInitialSnapshot(initial: Block[] | NodeSnapshot = []): DocumentSnapshot {
   const nodes = new Map<string, SnapshotNode>();
   const root: SnapshotNode = {
     id: PATCH_ROOT_ID,
@@ -540,25 +633,34 @@ export function createInitialSnapshot(initialBlocks: Block[] = []): DocumentSnap
   };
   nodes.set(root.id, root);
 
-  const snapshot: DocumentSnapshot = {
+  let snapshot: DocumentSnapshot;
+  snapshot = {
     nodes,
     rootId: root.id,
-    blocks: [],
+    getBlocks: () => materializeBlocks(snapshot),
   };
+  retiredCodeGenerationsBySnapshot.set(snapshot, new Map());
+  retiredTableGenerationsBySnapshot.set(snapshot, new Map());
+  materializedBlocksBySnapshot.set(snapshot, { blocks: [], dirty: true });
 
-  for (const block of initialBlocks) {
-    const blockSnapshot = createBlockSnapshot(cloneBlock(block));
-    insertSnapshotAt(snapshot, root, root.children.length, blockSnapshot);
+  if (Array.isArray(initial)) {
+    for (const block of initial) {
+      const blockSnapshot = createBlockSnapshot(cloneBlock(block));
+      insertSnapshotAt(snapshot, root, root.children.length, blockSnapshot);
+    }
+  } else {
+    if (initial.id !== PATCH_ROOT_ID || initial.type !== "__root__" || !Array.isArray(initial.children)) {
+      throw new TypeError("Initial document snapshot must be the __root__ node");
+    }
+    for (const child of initial.children) {
+      insertSnapshotAt(snapshot, root, root.children.length, child);
+    }
   }
-
-  snapshot.blocks = buildBlocks(snapshot);
   return snapshot;
 }
 
-export function applyPatchBatch(snapshot: DocumentSnapshot, patches: Patch[]): Block[] {
-  if (!snapshot || !Array.isArray(patches) || patches.length === 0) {
-    return snapshot?.blocks ?? [];
-  }
+export function applyPatchBatch(snapshot: DocumentSnapshot, patches: Patch[]): void {
+  if (!Array.isArray(patches) || patches.length === 0) return;
 
   for (const patch of patches) {
     switch (patch.op) {
@@ -582,11 +684,7 @@ export function applyPatchBatch(snapshot: DocumentSnapshot, patches: Patch[]): B
         const parent = resolveParentNode(snapshot, patch.at);
         if (!parent) break;
         if (patch.index < 0 || patch.index >= parent.children.length) break;
-        const targetId = parent.children[patch.index];
-        if (targetId) {
-          removeSubtree(snapshot, targetId);
-        }
-        insertSnapshotAt(snapshot, parent, patch.index, patch.node);
+        replaceSnapshotAt(snapshot, parent, patch.index, patch.node);
         break;
       }
       case "setProps": {
@@ -607,9 +705,17 @@ export function applyPatchBatch(snapshot: DocumentSnapshot, patches: Patch[]): B
       }
       case "finalize": {
         const target = resolveTargetNode(snapshot, patch.at);
-        if (!target?.block) break;
-        target.block = cloneBlock(target.block);
-        target.block.isFinalized = true;
+        if (target?.codeState?.managed) {
+          target.codeState = {
+            ...target.codeState,
+            source: { ...target.codeState.source, state: "finalized" },
+          };
+        }
+        if (target?.tableState) break;
+        if (target?.block) {
+          target.block = cloneBlock(target.block);
+          target.block.isFinalized = true;
+        }
         break;
       }
       case "reorder": {
@@ -626,6 +732,47 @@ export function applyPatchBatch(snapshot: DocumentSnapshot, patches: Patch[]): B
         parent.children.splice(to, 0, ...moved);
         break;
       }
+      case "appendCode": {
+        const target = resolveTargetNode(snapshot, patch.at);
+        if (target) appendCodeState(snapshot, target, patch);
+        break;
+      }
+      case "appendTableRows": {
+        const target = resolveTargetNode(snapshot, patch.at);
+        if (!target?.tableState || target.type !== "table") break;
+        let result: ManagedTablePatchResult;
+        try {
+          result = appendManagedTableRows(target.tableState, target.id, patch);
+        } catch {
+          break;
+        }
+        if (!("state" in result)) break;
+        target.tableState = result.state;
+        const finalized = result.state.source.state !== "open";
+        if (target.block && target.block.isFinalized !== finalized) {
+          target.block = cloneBlock(target.block);
+          target.block.isFinalized = finalized;
+        }
+        break;
+      }
+      case "updateTableRows": {
+        const target = resolveTargetNode(snapshot, patch.at);
+        if (!target?.tableState || target.type !== "table") break;
+        let result: ManagedTablePatchResult;
+        try {
+          result = updateManagedTableRows(target.tableState, target.id, patch);
+        } catch {
+          break;
+        }
+        if (!("state" in result)) break;
+        target.tableState = result.state;
+        break;
+      }
+      case "decorateCode": {
+        const target = resolveTargetNode(snapshot, patch.at);
+        if (target) decorateCodeState(snapshot, target, patch);
+        break;
+      }
       case "appendLines": {
         const parent = resolveTargetNode(snapshot, patch.at);
         if (!parent) break;
@@ -640,6 +787,7 @@ export function applyPatchBatch(snapshot: DocumentSnapshot, patches: Patch[]): B
           patch.oldNo,
           patch.newNo,
         );
+        refreshLegacyCodeTail(snapshot, parent, patch.startIndex);
         break;
       }
       case "setHTML": {
@@ -661,38 +809,575 @@ export function applyPatchBatch(snapshot: DocumentSnapshot, patches: Patch[]): B
     }
   }
 
-  snapshot.blocks = buildBlocks(snapshot);
-  return snapshot.blocks;
+  const cache = materializedBlocksBySnapshot.get(snapshot);
+  if (cache) cache.dirty = true;
+}
+
+function materializeBlocks(snapshot: DocumentSnapshot): Block[] {
+  const cache = materializedBlocksBySnapshot.get(snapshot);
+  if (cache && !cache.dirty) return cache.blocks;
+  const blocks = buildBlocks(snapshot);
+  if (cache) {
+    cache.blocks = blocks;
+    cache.dirty = false;
+  }
+  return blocks;
 }
 
 function buildBlocks(snapshot: DocumentSnapshot): Block[] {
   const root = snapshot.nodes.get(snapshot.rootId);
-  if (!root) {
-    return [];
-  }
+  if (!root) return [];
   const result: Block[] = [];
   for (const childId of root.children) {
     const child = snapshot.nodes.get(childId);
-    if (child?.block) {
+    if (!child) continue;
+    if (child.tableState && child.block) {
+      result.push(materializeManagedTableBlock(child.block, child.tableState));
+    } else if (child.codeState) {
+      result.push(materializeCodeBlock(child));
+    } else if (child.block) {
       result.push(cloneBlock(child.block));
     }
   }
   return result;
 }
 
-function insertSnapshotAt(snapshot: DocumentSnapshot, parent: SnapshotNode, index: number, nodeSnapshot: NodeSnapshot): SnapshotNode | null {
-  if (!parent) return null;
-  removeSubtree(snapshot, nodeSnapshot.id);
-  const node = buildNodeFromSnapshot(snapshot, nodeSnapshot, parent.id);
-  if (!node) return null;
-  const clamped = clamp(index, 0, parent.children.length);
-  parent.children.splice(clamped, 0, node.id);
-  return node;
+function copyCodeSource(source: CodeBlockSourceMetadata): CodeBlockSourceMetadata {
+  return {
+    codeOwnerId: source.codeOwnerId,
+    generation: source.generation,
+    revision: source.revision,
+    state: source.state,
+    processedTo: source.processedTo,
+    completeLineCount: source.completeLineCount,
+    lineCount: source.lineCount,
+    sourceRange: { from: source.sourceRange.from, to: source.sourceRange.to },
+  };
 }
 
-function buildNodeFromSnapshot(snapshot: DocumentSnapshot, snapshotNode: NodeSnapshot, parentId: string | null): SnapshotNode | null {
-  if (!snapshotNode || !snapshotNode.id) {
-    return null;
+function assertCodeSourceMetadata(source: CodeBlockSourceMetadata, rawLength: number): void {
+  const { from, to } = source.sourceRange;
+  if (
+    typeof source.codeOwnerId !== "string" ||
+    source.codeOwnerId.length === 0 ||
+    !Number.isSafeInteger(source.generation) ||
+    source.generation < 0 ||
+    !Number.isSafeInteger(source.revision) ||
+    source.revision < 0 ||
+    !Number.isSafeInteger(source.processedTo) ||
+    source.processedTo < 0 ||
+    !Number.isSafeInteger(source.completeLineCount) ||
+    source.completeLineCount < 0 ||
+    !Number.isSafeInteger(source.lineCount) ||
+    source.lineCount < source.completeLineCount ||
+    (source.state !== "open" && source.state !== "closed" && source.state !== "finalized") ||
+    !Number.isSafeInteger(from) ||
+    !Number.isSafeInteger(to) ||
+    from < 0 ||
+    to < from ||
+    to - from !== rawLength
+  ) {
+    throw new RangeError("Code source metadata is invalid");
+  }
+}
+
+function createManagedCodeState(snapshot: CodeBlockSnapshot, ownerId: string): SnapshotCodeState {
+  if (
+    typeof snapshot.raw !== "string" ||
+    snapshot.codeOwnerId !== ownerId ||
+    !Number.isSafeInteger(snapshot.configurationRevision) ||
+    snapshot.configurationRevision < 0 ||
+    typeof snapshot.info !== "string" ||
+    (snapshot.language !== undefined && typeof snapshot.language !== "string")
+  ) {
+    throw new RangeError("Code snapshot owner or configuration is invalid");
+  }
+  assertCodeSourceMetadata(snapshot, snapshot.raw.length);
+  if (!Array.isArray(snapshot.lines)) throw new TypeError("Code snapshot lines must be an array");
+  const sourceRange = snapshot.sourceRange;
+  const lines = createCodeLineIndex({ lines: snapshot.lines });
+  if (lines.length !== snapshot.lineCount || lines.completeLineCount !== snapshot.completeLineCount) {
+    throw new RangeError("Code snapshot line counts do not match its records");
+  }
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines.get(index);
+    if (
+      !line ||
+      line.index !== index ||
+      line.sourceRange.from < sourceRange.from ||
+      line.sourceRange.to > sourceRange.to
+    ) {
+      throw new RangeError("Code snapshot line range is outside its source range");
+    }
+  }
+  const document = new AppendSourceDocument();
+  document.append(snapshot.raw);
+  return {
+    source: copyCodeSource(snapshot),
+    configurationRevision: snapshot.configurationRevision,
+    info: snapshot.info,
+    language: snapshot.language,
+    lines,
+    document,
+    managed: true,
+  };
+}
+
+function createLegacyCodeState(node: SnapshotNode, nodes: ReadonlyMap<string, SnapshotNode>): SnapshotCodeState {
+  const block = node.block;
+  if (!block) throw new Error("Legacy code block is missing");
+  const raw = block.payload.raw ?? "";
+  const fallbackFrom = block.payload.range?.from ?? node.range?.from ?? 0;
+  const sourceRange =
+    block.payload.range && block.payload.range.to - block.payload.range.from === raw.length
+      ? { from: block.payload.range.from, to: block.payload.range.to }
+      : { from: fallbackFrom, to: fallbackFrom + raw.length };
+  const lineNodes = node.children
+    .map((id) => nodes.get(id))
+    .filter((line): line is SnapshotNode => Boolean(line))
+    .map((line, index) => nodeSnapshotLineRecord(line, index, sourceRange.from));
+  const lines = createCodeLineIndex({ lines: lineNodes });
+  const document = new AppendSourceDocument();
+  document.append(raw);
+  return {
+    source: {
+      codeOwnerId: node.id,
+      generation: 0,
+      revision: 0,
+      state: block.isFinalized ? "finalized" : "open",
+      processedTo: sourceRange.to,
+      completeLineCount: lines.completeLineCount,
+      lineCount: lines.length,
+      sourceRange,
+    },
+    configurationRevision: 0,
+    info: typeof block.payload.meta?.info === "string" ? block.payload.meta.info : "",
+    language: typeof block.payload.meta?.lang === "string" ? block.payload.meta.lang : undefined,
+    lines,
+    document,
+    managed: false,
+  };
+}
+
+function nodeSnapshotLineRecord(line: SnapshotNode, index: number, sourceFrom: number): CodeLineRecord {
+  return {
+    id: line.id,
+    index,
+    text: typeof line.props.text === "string" ? line.props.text : "",
+    ending: "",
+    sourceRange: { from: sourceFrom, to: sourceFrom },
+    sourceRevision: 0,
+    isProvisional: line.props.isProvisional === true,
+  };
+}
+
+function codeLineTokens(line: CodeLineRecord): TokenLineV1 | undefined {
+  const decoration = line.decoration;
+  if (!decoration) return undefined;
+  return {
+    spans: decoration.tokens.spans.map((span) => ({
+      t: span.t,
+      ...(span.v ? { v: {
+        ...(span.v.dark ? { dark: { ...span.v.dark } } : {}),
+        ...(span.v.light ? { light: { ...span.v.light } } : {}),
+      } } : {}),
+      ...(span.s ? { s: { ...span.s } } : {}),
+    })),
+  };
+}
+
+function syncManagedCodeChildren(snapshot: DocumentSnapshot, node: SnapshotNode): void {
+  const state = node.codeState;
+  if (!state?.managed) return;
+  const previousChildren = node.children;
+  const children: string[] = [];
+  for (let index = 0; index < state.lines.length; index++) {
+    const line = state.lines.get(index);
+    if (!line) continue;
+    const id = previousChildren[index] ?? `${node.id}::line:${index}`;
+    const previous = snapshot.nodes.get(id);
+    const props: Record<string, unknown> = {
+      ...(previous?.props ?? {}),
+      index,
+      text: line.text,
+      isProvisional: line.isProvisional,
+    };
+    if (previous?.props.text !== line.text || typeof props.html !== "string") props.html = line.text;
+    const tokens = codeLineTokens(line);
+    if (tokens) props.tokens = tokens;
+    else delete props.tokens;
+    if (line.diffKind !== undefined) props.diffKind = line.diffKind;
+    else delete props.diffKind;
+    if (line.oldNo !== undefined) props.oldNo = line.oldNo;
+    else delete props.oldNo;
+    if (line.newNo !== undefined) props.newNo = line.newNo;
+    else delete props.newNo;
+    const child: SnapshotNode = previous ?? {
+      id,
+      type: "code-line",
+      parentId: node.id,
+      children: [],
+      props,
+    };
+    child.parentId = node.id;
+    child.type = "code-line";
+    child.props = props;
+    child.children = [];
+    snapshot.nodes.set(id, child);
+    children.push(id);
+  }
+  for (const id of previousChildren) {
+    if (!children.includes(id)) snapshot.nodes.delete(id);
+  }
+  node.children = children;
+}
+
+function appendCodeState(
+  snapshot: DocumentSnapshot,
+  node: SnapshotNode,
+  patch: Extract<Patch, { op: "appendCode" }>,
+): void {
+  const current = node.codeState;
+  if (!current?.managed) return;
+  const old = current.source;
+  if (
+    patch.code.codeOwnerId !== node.id ||
+    patch.code.codeOwnerId !== old.codeOwnerId ||
+    patch.code.generation !== old.generation ||
+    patch.expectedRevision !== old.revision
+  ) {
+    return;
+  }
+  if (typeof patch.sourceAppend !== "string" || !Array.isArray(patch.lines)) {
+    throw new TypeError("Code append source and line records are invalid");
+  }
+  if (old.state !== "open" && (
+    old.state !== "closed" ||
+    patch.code.state !== "finalized" ||
+    patch.sourceAppend !== "" ||
+    patch.lines.length !== 0 ||
+    patch.code.processedTo !== old.processedTo ||
+    patch.code.lineCount !== old.lineCount ||
+    patch.code.completeLineCount !== old.completeLineCount
+  )) return;
+  assertCodeSourceMetadata(patch.code, current.document.length + patch.sourceAppend.length);
+  if (
+    !Number.isSafeInteger(patch.expectedRevision) ||
+    patch.expectedRevision !== old.revision ||
+    !Number.isSafeInteger(patch.fromLine) ||
+    patch.fromLine !== old.completeLineCount ||
+    patch.code.revision !== old.revision + 1 ||
+    patch.code.sourceRange.from !== old.sourceRange.from ||
+    patch.code.processedTo < old.processedTo ||
+    patch.code.completeLineCount < old.completeLineCount ||
+    patch.code.lineCount !== patch.fromLine + patch.lines.length ||
+    current.document.length !== old.sourceRange.to - old.sourceRange.from
+  ) {
+    throw new RangeError("Code append does not match the current semantic frontier");
+  }
+  const lines = current.lines.replaceTail(patch.fromLine, patch.lines);
+  if (lines.length !== patch.code.lineCount || lines.completeLineCount !== patch.code.completeLineCount) {
+    throw new RangeError("Code append line records do not match their declared counts");
+  }
+  for (const line of patch.lines) {
+    if (line.sourceRange.from < patch.code.sourceRange.from || line.sourceRange.to > patch.code.sourceRange.to) {
+      throw new RangeError("Changed code line range is outside the updated source range");
+    }
+  }
+  current.document.append(patch.sourceAppend);
+  node.codeState = {
+    ...current,
+    source: copyCodeSource(patch.code),
+    lines,
+  };
+  syncManagedCodeChildren(snapshot, node);
+}
+
+function decorateCodeState(
+  snapshot: DocumentSnapshot,
+  node: SnapshotNode,
+  patch: Extract<Patch, { op: "decorateCode" }>,
+): void {
+  const current = node.codeState;
+  if (
+    !current?.managed ||
+    patch.codeOwnerId !== node.id ||
+    patch.codeOwnerId !== current.source.codeOwnerId ||
+    patch.generation !== current.source.generation ||
+    patch.configurationRevision !== current.configurationRevision
+  ) {
+    return;
+  }
+  if (!Array.isArray(patch.decorations)) throw new TypeError("Code decorations must be an array");
+  const valid: CodeLineDecorationUpdate[] = [];
+  for (const decoration of patch.decorations) {
+    const line = current.lines.get(decoration.index);
+    if (
+      line &&
+      line.id === decoration.lineId &&
+      line.sourceRevision === decoration.sourceRevision &&
+      decoration.configurationRevision === current.configurationRevision
+    ) {
+      valid.push(decoration);
+    }
+  }
+  if (valid.length > 0) {
+    const lines = current.lines.decorate(valid);
+    if (lines !== current.lines) {
+      node.codeState = { ...current, lines };
+      syncManagedCodeChildren(snapshot, node);
+    }
+  }
+}
+
+function materializeCodeBlock(node: SnapshotNode): Block {
+  const state = node.codeState;
+  if (!state) throw new Error("Code state is missing");
+  if (!state.managed && node.block) return cloneBlock(node.block);
+  const raw = state.document.snapshot().materialize();
+  const block: Block = node.block
+    ? cloneBlock(node.block)
+    : {
+        id: node.id,
+        type: "code",
+        isFinalized: state.source.state !== "open",
+        payload: { raw },
+      };
+  block.id = node.id;
+  block.type = "code";
+  block.isFinalized = state.source.state !== "open";
+  block.payload.raw = raw;
+  block.payload.range = { ...state.source.sourceRange };
+  const meta = { ...(block.payload.meta ?? {}) };
+  meta.code = state.lines.materialize().replace(/\r\n?/g, "\n").replace(/\n$/, "");
+  meta.info = state.info;
+  if (state.language !== undefined) meta.lang = state.language;
+  const tokenLines = new Array<TokenLineV1 | null>(state.lines.length).fill(null);
+  let hasTokens = false;
+  for (let index = 0; index < tokenLines.length; index++) {
+    const line = state.lines.get(index);
+    const tokens = line ? codeLineTokens(line) : undefined;
+    if (!tokens) continue;
+    tokenLines[index] = tokens;
+    hasTokens = true;
+  }
+  if (hasTokens) meta.tokenLines = tokenLines;
+  block.payload.meta = meta;
+  return block;
+}
+interface ActiveCodeOwnerReplacement {
+  readonly id: string;
+  readonly generation: number;
+  readonly parentId: string;
+}
+
+interface ActiveTableOwnerReplacement {
+  readonly id: string;
+  readonly generation: number;
+  readonly parentId: string;
+}
+
+function sameTableCellSourceIdentity(prior: TableCellRecord, next: TableCellRecord): boolean {
+  return Boolean(next)
+    && prior.id === next.id
+    && prior.index === next.index
+    && prior.raw === next.raw
+    && prior.sourceRange.from === next.sourceRange.from
+    && prior.sourceRange.to === next.sourceRange.to;
+}
+
+function sameTableHeaderSourceIdentity(prior: TableHeaderRecord, next: TableHeaderRecord): boolean {
+  if (
+    !next ||
+    !Array.isArray(next.cells) ||
+    !Array.isArray(next.align) ||
+    prior.sourceRange.from !== next.sourceRange.from ||
+    prior.sourceRange.to !== next.sourceRange.to ||
+    prior.cells.length !== next.cells.length ||
+    prior.align.length !== next.align.length ||
+    prior.align.some((align, index) => align !== next.align[index])
+  ) return false;
+  for (let index = 0; index < prior.cells.length; index += 1) {
+    const previousCell = prior.cells[index];
+    const nextCell = next.cells[index];
+    if (!previousCell || !nextCell || !sameTableCellSourceIdentity(previousCell, nextCell)) return false;
+  }
+  return true;
+}
+
+function sameTableRowSourceIdentity(prior: TableRowRecord, next: TableRowRecord): boolean {
+  if (
+    !next ||
+    prior.id !== next.id ||
+    prior.index !== next.index ||
+    prior.sourceRevision !== next.sourceRevision ||
+    prior.isProvisional !== next.isProvisional ||
+    prior.sourceRange.from !== next.sourceRange.from ||
+    prior.sourceRange.to !== next.sourceRange.to ||
+    prior.cells.length !== next.cells.length
+  ) return false;
+  for (let index = 0; index < prior.cells.length; index += 1) {
+    const previousCell = prior.cells[index];
+    const nextCell = next.cells[index];
+    if (!previousCell || !nextCell || !sameTableCellSourceIdentity(previousCell, nextCell)) return false;
+  }
+  return true;
+}
+
+function sameCompletedTableRowSources(
+  current: ManagedTableViewState,
+  nextRows: readonly TableRowRecord[],
+): boolean {
+  if (nextRows.length < current.source.completeRowCount) return false;
+  for (let index = 0; index < current.source.completeRowCount; index += 1) {
+    const previousRow = current.rows.get(index);
+    const nextRow = nextRows[index];
+    if (!previousRow || !nextRow || !sameTableRowSourceIdentity(previousRow, nextRow)) return false;
+  }
+  return true;
+}
+
+function canInsertSnapshot(
+  snapshot: DocumentSnapshot,
+  root: NodeSnapshot,
+  activeCodeReplacement?: ActiveCodeOwnerReplacement,
+  activeTableReplacement?: ActiveTableOwnerReplacement,
+): boolean {
+  const retired = retiredCodeGenerationsBySnapshot.get(snapshot);
+  const retiredTables = retiredTableGenerationsBySnapshot.get(snapshot);
+  const visit = (candidate: NodeSnapshot, isRoot: boolean): boolean => {
+    if (candidate.code) {
+      if (candidate.code.codeOwnerId !== candidate.id || !Number.isSafeInteger(candidate.code.generation) || candidate.code.generation < 0) {
+        return false;
+      }
+      const current = snapshot.nodes.get(candidate.id);
+      const currentCode = current?.codeState?.managed ? current.codeState.source : undefined;
+      const currentGeneration = currentCode?.generation ?? -1;
+      const retiredGeneration = retired?.get(candidate.id) ?? -1;
+      const isActiveReplacement = isRoot
+        && activeCodeReplacement !== undefined
+        && activeCodeReplacement.id === candidate.id
+        && activeCodeReplacement.generation === candidate.code.generation
+        && current?.parentId === activeCodeReplacement.parentId
+        && currentCode !== undefined
+        && currentGeneration === candidate.code.generation
+        && candidate.code.revision >= currentCode.revision
+        && candidate.code.processedTo >= currentCode.processedTo
+        && candidate.code.completeLineCount >= currentCode.completeLineCount
+        && candidate.code.sourceRange.from === currentCode.sourceRange.from
+        && candidate.code.sourceRange.to >= currentCode.sourceRange.to
+        && retiredGeneration < candidate.code.generation;
+      if (candidate.code.generation <= Math.max(currentGeneration, retiredGeneration) && !isActiveReplacement) return false;
+    }
+    if (candidate.table) {
+      if (
+        candidate.type !== "table" ||
+        candidate.table.tableOwnerId !== candidate.id ||
+        !Number.isSafeInteger(candidate.table.generation) ||
+        candidate.table.generation < 0 ||
+        (candidate.children?.length ?? 0) > 0
+      ) return false;
+      const current = snapshot.nodes.get(candidate.id);
+      const currentTable = current?.tableState;
+      const currentSource = currentTable?.source;
+      const currentGeneration = currentSource?.generation ?? -1;
+      const retiredGeneration = retiredTables?.get(candidate.id) ?? -1;
+      const isActiveReplacement = isRoot
+        && activeTableReplacement !== undefined
+        && activeTableReplacement.id === candidate.id
+        && activeTableReplacement.generation === candidate.table.generation
+        && current?.parentId === activeTableReplacement.parentId
+        && currentTable !== undefined
+        && currentSource !== undefined
+        && currentGeneration === candidate.table.generation
+        && candidate.table.revision >= currentSource.revision
+        && candidate.table.processedTo >= currentSource.processedTo
+        && candidate.table.completeRowCount >= currentSource.completeRowCount
+        && candidate.table.sourceRange.from === currentSource.sourceRange.from
+        && candidate.table.sourceRange.to >= currentSource.sourceRange.to
+        && sameTableHeaderSourceIdentity(currentTable.header, candidate.table.header)
+        && sameCompletedTableRowSources(currentTable, candidate.table.rows)
+        && retiredGeneration < candidate.table.generation;
+      if (candidate.table.generation <= Math.max(currentGeneration, retiredGeneration) && !isActiveReplacement) return false;
+    }
+    return !candidate.children || candidate.children.every((child) => visit(child, false));
+  };
+  return visit(root, true);
+}
+
+function prepareSnapshotNode(
+  snapshot: DocumentSnapshot,
+  parent: SnapshotNode,
+  nodeSnapshot: NodeSnapshot,
+  activeCodeReplacement?: ActiveCodeOwnerReplacement,
+  activeTableReplacement?: ActiveTableOwnerReplacement,
+): { node: SnapshotNode; nodes: Map<string, SnapshotNode> } | null {
+  if (!parent || !canInsertSnapshot(snapshot, nodeSnapshot, activeCodeReplacement, activeTableReplacement)) return null;
+  const nodes = new Map<string, SnapshotNode>();
+  const node = buildNodeFromSnapshot(snapshot, nodeSnapshot, parent.id, nodes);
+  return node ? { node, nodes } : null;
+}
+
+function commitSnapshotNode(
+  snapshot: DocumentSnapshot,
+  parent: SnapshotNode,
+  index: number,
+  prepared: { node: SnapshotNode; nodes: Map<string, SnapshotNode> },
+): SnapshotNode {
+  removeSubtree(snapshot, prepared.node.id);
+  for (const [id, node] of prepared.nodes) snapshot.nodes.set(id, node);
+  const clamped = clamp(index, 0, parent.children.length);
+  parent.children.splice(clamped, 0, prepared.node.id);
+  return prepared.node;
+}
+
+function insertSnapshotAt(snapshot: DocumentSnapshot, parent: SnapshotNode, index: number, nodeSnapshot: NodeSnapshot): SnapshotNode | null {
+  const prepared = prepareSnapshotNode(snapshot, parent, nodeSnapshot);
+  return prepared ? commitSnapshotNode(snapshot, parent, index, prepared) : null;
+}
+
+function replaceSnapshotAt(snapshot: DocumentSnapshot, parent: SnapshotNode, index: number, nodeSnapshot: NodeSnapshot): SnapshotNode | null {
+  const replacedId = parent.children[index];
+  const replacedNode = replacedId ? snapshot.nodes.get(replacedId) : undefined;
+  const activeCodeReplacement = replacedId === nodeSnapshot.id
+    && nodeSnapshot.code
+    && replacedNode?.parentId === parent.id
+    && replacedNode.codeState?.managed
+    && replacedNode.codeState.source.generation === nodeSnapshot.code.generation
+    ? { id: replacedId, generation: nodeSnapshot.code.generation, parentId: parent.id }
+    : undefined;
+  const activeTableReplacement = replacedId === nodeSnapshot.id
+    && nodeSnapshot.table
+    && replacedNode?.parentId === parent.id
+    && replacedNode.tableState?.source.generation === nodeSnapshot.table.generation
+    ? { id: replacedId, generation: nodeSnapshot.table.generation, parentId: parent.id }
+    : undefined;
+  const prepared = prepareSnapshotNode(snapshot, parent, nodeSnapshot, activeCodeReplacement, activeTableReplacement);
+  if (!prepared) return null;
+  if (replacedId) removeSubtree(snapshot, replacedId, activeCodeReplacement, activeTableReplacement);
+  if (prepared.node.id !== replacedId) removeSubtree(snapshot, prepared.node.id);
+  for (const [id, node] of prepared.nodes) snapshot.nodes.set(id, node);
+  const clamped = clamp(index, 0, parent.children.length);
+  parent.children.splice(clamped, 0, prepared.node.id);
+  return prepared.node;
+}
+
+
+function buildNodeFromSnapshot(
+  snapshot: DocumentSnapshot,
+  snapshotNode: NodeSnapshot,
+  parentId: string | null,
+  targetNodes: Map<string, SnapshotNode>,
+): SnapshotNode | null {
+  if (!snapshotNode || !snapshotNode.id) return null;
+  if (snapshotNode.code && snapshotNode.type !== "code") {
+    throw new TypeError("Code source metadata is only valid on code nodes");
+  }
+  if (snapshotNode.table && snapshotNode.type !== "table") {
+    throw new TypeError("Table source metadata is only valid on table nodes");
+  }
+  if (snapshotNode.table && (snapshotNode.children?.length ?? 0) > 0) {
+    throw new TypeError("Managed table snapshots cannot carry a synthetic child tree");
   }
   const props = { ...(snapshotNode.props ?? {}) };
   let block: Block | undefined;
@@ -700,34 +1385,76 @@ function buildNodeFromSnapshot(snapshot: DocumentSnapshot, snapshotNode: NodeSna
     block = cloneBlock(props.block as Block);
     delete props.block;
   }
-
+  const tableState = snapshotNode.table ? createManagedTableState(snapshotNode.table, snapshotNode.id) : undefined;
+  if (!block && tableState) {
+    block = {
+      id: snapshotNode.id,
+      type: "table",
+      isFinalized: tableState.source.state !== "open",
+      payload: { raw: "", range: { ...tableState.source.sourceRange }, meta: {} },
+    };
+  }
+  if (tableState && block) block.isFinalized = tableState.source.state !== "open";
   const node: SnapshotNode = {
     id: snapshotNode.id,
     type: snapshotNode.type,
     parentId,
     children: [],
     props,
+    range: snapshotNode.range ? { ...snapshotNode.range } : block?.payload.range ? { ...block.payload.range } : undefined,
     block,
+    tableState,
   };
-
-  snapshot.nodes.set(node.id, node);
-
-  const childSnapshots = Array.isArray(snapshotNode.children) ? snapshotNode.children : [];
-  for (const child of childSnapshots) {
-    const built = buildNodeFromSnapshot(snapshot, child, node.id);
-    if (built) {
-      node.children.push(built.id);
+  targetNodes.set(node.id, node);
+  if (snapshotNode.code) {
+    node.codeState = createManagedCodeState(snapshotNode.code, node.id);
+  }
+  if (!tableState) {
+    const childSnapshots = Array.isArray(snapshotNode.children) ? snapshotNode.children : [];
+    for (const child of childSnapshots) {
+      const built = buildNodeFromSnapshot(snapshot, child, node.id, targetNodes);
+      if (built) node.children.push(built.id);
+    }
+    if (snapshotNode.code) syncManagedCodeChildren(snapshot, node);
+    if (node.type === "code" && node.block && !node.codeState) {
+      node.codeState = createLegacyCodeState(node, targetNodes);
     }
   }
-
   return node;
 }
 
-function removeSubtree(snapshot: DocumentSnapshot, nodeId: string) {
+function removeSubtree(
+  snapshot: DocumentSnapshot,
+  nodeId: string,
+  activeCodeReplacement?: ActiveCodeOwnerReplacement,
+  activeTableReplacement?: ActiveTableOwnerReplacement,
+) {
   const node = snapshot.nodes.get(nodeId);
   if (!node) return;
+  if (node.codeState?.managed) {
+    const generation = node.codeState.source.generation;
+    const isPreservedActiveOwner = activeCodeReplacement !== undefined
+      && node.id === activeCodeReplacement.id
+      && node.parentId === activeCodeReplacement.parentId
+      && generation === activeCodeReplacement.generation;
+    if (!isPreservedActiveOwner) {
+      const retired = retiredCodeGenerationsBySnapshot.get(snapshot);
+      if (retired) retired.set(node.id, Math.max(retired.get(node.id) ?? -1, generation));
+    }
+  }
+  if (node.tableState) {
+    const generation = node.tableState.source.generation;
+    const isPreservedActiveOwner = activeTableReplacement !== undefined
+      && node.id === activeTableReplacement.id
+      && node.parentId === activeTableReplacement.parentId
+      && generation === activeTableReplacement.generation;
+    if (!isPreservedActiveOwner) {
+      const retired = retiredTableGenerationsBySnapshot.get(snapshot);
+      if (retired) retired.set(node.id, Math.max(retired.get(node.id) ?? -1, generation));
+    }
+  }
   for (const childId of [...node.children]) {
-    removeSubtree(snapshot, childId);
+    removeSubtree(snapshot, childId, activeCodeReplacement, activeTableReplacement);
   }
   snapshot.nodes.delete(node.id);
   if (node.parentId) {
@@ -818,6 +1545,40 @@ function appendLinesToCodeNode(
     parent.children.splice(currentIndex, 0, child.id);
     currentIndex++;
   }
+}
+
+function refreshLegacyCodeTail(snapshot: DocumentSnapshot, parent: SnapshotNode, fromLine: number): void {
+  const current = parent.codeState;
+  if (parent.type !== "code" || !current || current.managed) return;
+  const start = clamp(fromLine, 0, current.lines.length);
+  const sourceOffset = current.source.sourceRange.to;
+  const tail = parent.children.slice(start).map((id, offset) => {
+    const child = snapshot.nodes.get(id);
+    const index = start + offset;
+    return {
+      id: child?.id ?? `${parent.id}::line:${index}`,
+      index,
+      text: typeof child?.props.text === "string" ? child.props.text : "",
+      ending: "" as const,
+      sourceRange: { from: sourceOffset, to: sourceOffset },
+      sourceRevision: current.source.revision + 1,
+      isProvisional: child?.props.isProvisional === true,
+      diffKind: child?.props.diffKind as CodeLineRecord["diffKind"],
+      oldNo: child?.props.oldNo as CodeLineRecord["oldNo"],
+      newNo: child?.props.newNo as CodeLineRecord["newNo"],
+    };
+  });
+  const lines = current.lines.replaceTail(start, tail);
+  parent.codeState = {
+    ...current,
+    source: {
+      ...current.source,
+      revision: current.source.revision + 1,
+      lineCount: lines.length,
+      completeLineCount: lines.completeLineCount,
+    },
+    lines,
+  };
 }
 
 function clamp(value: number, min: number, max: number): number {

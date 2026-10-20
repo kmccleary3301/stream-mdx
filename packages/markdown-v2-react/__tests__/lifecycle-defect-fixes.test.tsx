@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
-import type { Patch, WorkerIn, WorkerOut } from "@stream-mdx/core";
 import { JSDOM } from "jsdom";
+import type { Block, Patch, WorkerIn, WorkerOut } from "@stream-mdx/core";
+import { createBlockSnapshot, PATCH_ROOT_ID, STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
 import { MarkdownRenderer, StreamingMarkdown, type StreamingMarkdownHandle } from "../src/index";
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
@@ -9,27 +10,35 @@ class TestMockWorker extends EventTarget {
   public terminated = false;
   public messages: WorkerIn[] = [];
   public autoRespondInit = false;
+  private generation = 0;
 
   postMessage(message: WorkerIn): void {
     this.messages.push(message);
     if (this.autoRespondInit && message.type === "INIT") {
       queueMicrotask(() => {
+        const block: Block | undefined = message.initialContent
+          ? {
+              id: "p1",
+              type: "paragraph",
+              isFinalized: true,
+              payload: {
+                raw: message.initialContent,
+                inline: [{ kind: "text", text: message.initialContent }],
+              },
+            }
+          : undefined;
         const initEvent = new Event("message") as MessageEvent<WorkerOut>;
         Object.defineProperty(initEvent, "data", {
           value: {
             type: "INITIALIZED",
-            blocks: message.initialContent
-              ? [
-                  {
-                    id: "p1",
-                    type: "paragraph",
-                    isFinalized: true,
-                    payload: {
-                      inline: [{ kind: "text", text: message.initialContent }],
-                    },
-                  },
-                ]
-              : [],
+            schemaVersion: STREAM_MDX_SCHEMA_VERSION,
+            generation: ++this.generation,
+            snapshot: {
+              id: PATCH_ROOT_ID,
+              type: "__root__",
+              props: {},
+              children: block ? [createBlockSnapshot(block)] : [],
+            },
           },
         });
         void act(() => {

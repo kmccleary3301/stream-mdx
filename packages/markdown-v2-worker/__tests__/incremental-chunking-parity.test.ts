@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
@@ -68,17 +70,14 @@ function createRng(seed = 123456789) {
 
 async function runSession(harness: WorkerHarness, chunks: string[]): Promise<RendererStore> {
   const store = createRendererStore();
-  const initMessages = await harness.send({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: ["typescript"],
-    docPlugins: { footnotes: true, html: true, mdx: true, math: true, tables: true, callouts: true },
-    mdx: { compileMode: "worker" },
-  });
+  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: ["typescript"],
+  docPlugins: { footnotes: true, html: true, mdx: true, math: true, tables: true, callouts: true },
+  mdx: { compileMode: "worker" }, });
   assertNoErrors(initMessages);
   const init = initMessages.find((m): m is Extract<WorkerOut, { type: "INITIALIZED" }> => m.type === "INITIALIZED");
   assert.ok(init, "worker must initialize before applying patches");
-  store.reset(init.blocks);
+  store.resetSnapshot(init.snapshot);
   for (const msg of initMessages) {
     if (msg.type === "PATCH") store.applyPatches(msg.patches, { captureMetrics: false });
   }

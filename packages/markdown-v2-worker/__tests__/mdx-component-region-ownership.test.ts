@@ -1,7 +1,9 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 import { readFile } from "node:fs/promises";
 
-import { createBlockSnapshot, type Block, type InlineNode, type NodeSnapshot, type WorkerIn, type WorkerOut } from "@stream-mdx/core";
+import { createBlockSnapshot, createInitialSnapshot, type Block, type InlineNode, type NodeSnapshot, type WorkerIn, type WorkerOut } from "@stream-mdx/core";
 import { createRendererStore, type RendererStore } from "../../markdown-v2-react/src/renderer/store";
 import { registerInlineMdxModule, registerMDXComponents } from "../../markdown-v2-react/src/mdx-client";
 import { JSDOM } from "jsdom";
@@ -107,13 +109,10 @@ const MULTILINE_COMPONENT = ["<SmokeBox>", "", "native mdx &copy; $x$", "", "</S
 const DOC_PLUGINS = { html: true, math: true, mdx: true, footnotes: false, callouts: false, tables: true };
 
 function initMessage(initialContent: string, mdx = true): WorkerIn {
-  return {
-    type: "INIT",
-    initialContent,
-    prewarmLangs: [],
-    docPlugins: { ...DOC_PLUGINS, mdx },
-    mdx: { compileMode: "worker" },
-  };
+  return { type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent,
+  prewarmLangs: [],
+  docPlugins: { ...DOC_PLUGINS, mdx },
+  mdx: { compileMode: "worker" }, };
 }
 
 function findMessage<T extends WorkerOut["type"]>(messages: WorkerOut[], type: T): Extract<WorkerOut, { type: T }> | undefined {
@@ -184,7 +183,7 @@ async function testIncompleteComponentStaysPending(): Promise<void> {
   assertNoErrors(initMessages, "INIT");
   const initialized = findMessage(initMessages, "INITIALIZED");
   assert.ok(initialized, "worker must initialize");
-  const openBlocks = initialized.blocks;
+  const openBlocks = createInitialSnapshot(initialized.snapshot).getBlocks();
   assert.strictEqual(openBlocks.length, 1, "an incomplete component must remain one pending root");
   assert.strictEqual(openBlocks[0]?.type, "html", "an unclosed container must not be compiled as MDX before its close");
   assert.strictEqual(openBlocks[0]?.isFinalized, false, "an incomplete component must not finalize");
@@ -399,7 +398,7 @@ async function testUnclosedNestedComponentsErrorAtFinalize(): Promise<void> {
   assertNoErrors(streaming, "INIT");
   const initialized = findMessage(streaming, "INITIALIZED");
   assert.ok(initialized, "worker must initialize");
-  const pendingRoot = initialized.blocks[0];
+  const pendingRoot = createInitialSnapshot(initialized.snapshot).getBlocks()[0];
   assert.ok(pendingRoot, "an open quoted component must keep its blockquote root");
   const pendingOwner = nestedBlocks(pendingRoot).find((candidate) => candidate.type === "html");
   assert.ok(pendingOwner, "an open quoted component must stay a native html owner while streaming");
@@ -511,7 +510,7 @@ async function testRegressionFixtureParagraphOwnership(): Promise<void> {
     };
     const initialized = findMessage(await harness.send(init), "INITIALIZED");
     assert.ok(initialized, `${fixture} must initialize`);
-    store.reset(initialized.blocks);
+    store.resetSnapshot(initialized.snapshot);
     const apply = (messages: WorkerOut[]) => {
       assertNoErrors(messages, fixture);
       for (const message of messages) {
@@ -757,7 +756,11 @@ async function testPreparedCustomQuoteStates(): Promise<void> {
   for (const source of ["> streamed quote", ">"]) {
     const harness = await createWorkerHarness();
     const init = initMessage(source);
-    const blocks = source === ">" ? await finalBlocks(harness, init) : findMessage(await harness.send(init), "INITIALIZED")?.blocks;
+    const initialMessages = source === ">" ? undefined : await harness.send(init);
+    const initialized = initialMessages ? findMessage(initialMessages, "INITIALIZED") : undefined;
+    const blocks = source === ">"
+      ? await finalBlocks(harness, init)
+      : initialized ? createInitialSnapshot(initialized.snapshot).getBlocks() : undefined;
     assert.ok(blocks, "quote states require actual worker output");
     const quote = blocks.find((block) => block.type === "blockquote");
     assert.ok(quote, "native quote must own the input");

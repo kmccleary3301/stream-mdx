@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert/strict";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -69,14 +71,14 @@ try {
         };
         const onError = (error: Error) => finish(error);
         const onMessage = (message: WorkerOut) => {
-          if (message.type === "INITIALIZED") store.reset(message.blocks);
+          if (message.type === "INITIALIZED") store.resetSnapshot(message.snapshot);
           else if (message.type === "PATCH") store.applyPatches(message.patches);
           else if (message.type === "ERROR") finish(new Error(message.error.message));
           else if (message.type === "FINALIZED") finish();
         };
         worker.on("message", onMessage);
         worker.on("error", onError);
-        worker.postMessage({ type: "INIT", initialContent: "", ...init });
+        worker.postMessage({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "", ...init });
         for (let index = 0; index < fixture.markdown.length; index += chunkSize) {
           worker.postMessage({ type: "APPEND", text: fixture.markdown.slice(index, index + chunkSize) });
         }

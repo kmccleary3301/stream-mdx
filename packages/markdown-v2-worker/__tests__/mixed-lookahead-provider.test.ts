@@ -1,5 +1,7 @@
-import assert from "node:assert";
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
 
+import assert from "node:assert";
+import { createInitialSnapshot } from "@stream-mdx/core";
 import type { WorkerOut } from "@stream-mdx/core";
 
 import { createWorkerHarness } from "./worker-test-harness";
@@ -7,26 +9,23 @@ import { createWorkerHarness } from "./worker-test-harness";
 function findParagraphMeta(messages: WorkerOut[]) {
   const init = messages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
   if (!init) return null;
-  const paragraph = init.blocks.find((block) => block.type === "paragraph" || block.type === "blockquote" || block.type === "mdx");
+  const paragraph = createInitialSnapshot(init.snapshot).getBlocks().find((block) => block.type === "paragraph" || block.type === "blockquote" || block.type === "mdx");
   return paragraph?.payload.meta as Record<string, unknown> | undefined;
 }
 
 async function testHtmlInlineProviderAppearsInMixedLookahead(): Promise<void> {
   const harness = await createWorkerHarness();
-  const messages = await harness.send({
-    type: "INIT",
-    initialContent: "Prefix <kbd>code",
-    prewarmLangs: [],
-    docPlugins: {
-      footnotes: true,
-      html: true,
-      mdx: true,
-      tables: true,
-      callouts: true,
-      math: true,
-      formatAnticipation: { inline: true, html: true },
-    },
-  });
+  const messages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "Prefix <kbd>code",
+  prewarmLangs: [],
+  docPlugins: {
+    footnotes: true,
+    html: true,
+    mdx: true,
+    tables: true,
+    callouts: true,
+    math: true,
+    formatAnticipation: { inline: true, html: true },
+  }, });
 
   const meta = findParagraphMeta(messages);
   assert.ok(meta, "expected paragraph metadata");
@@ -37,21 +36,18 @@ async function testHtmlInlineProviderAppearsInMixedLookahead(): Promise<void> {
 
 async function testMdxTagProviderAppearsInMixedLookahead(): Promise<void> {
   const harness = await createWorkerHarness();
-  const messages = await harness.send({
-    type: "INIT",
-    initialContent: "Prefix <InlineChip tone=\"warm\"> suffix",
-    prewarmLangs: [],
-    docPlugins: {
-      footnotes: true,
-      html: true,
-      mdx: true,
-      tables: true,
-      callouts: true,
-      math: true,
-      formatAnticipation: { inline: true, mdx: true },
-      mdxComponentNames: ["InlineChip"],
-    },
-  });
+  const messages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "Prefix <InlineChip tone=\"warm\"> suffix",
+  prewarmLangs: [],
+  docPlugins: {
+    footnotes: true,
+    html: true,
+    mdx: true,
+    tables: true,
+    callouts: true,
+    math: true,
+    formatAnticipation: { inline: true, mdx: true },
+    mdxComponentNames: ["InlineChip"],
+  }, });
 
   const meta = findParagraphMeta(messages);
   assert.ok(meta, "expected paragraph metadata");
@@ -62,21 +58,18 @@ async function testMdxTagProviderAppearsInMixedLookahead(): Promise<void> {
 
 async function testMdxExpressionProviderAppearsInMixedLookahead(): Promise<void> {
   const harness = await createWorkerHarness();
-  const messages = await harness.send({
-    type: "INIT",
-    initialContent: "Prefix {expr and trailing prose",
-    prewarmLangs: [],
-    docPlugins: {
-      footnotes: true,
-      html: true,
-      mdx: true,
-      tables: true,
-      callouts: true,
-      math: true,
-      formatAnticipation: { inline: true, mdx: true },
-      mdxComponentNames: ["InlineChip"],
-    },
-  });
+  const messages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "Prefix {expr and trailing prose",
+  prewarmLangs: [],
+  docPlugins: {
+    footnotes: true,
+    html: true,
+    mdx: true,
+    tables: true,
+    callouts: true,
+    math: true,
+    formatAnticipation: { inline: true, mdx: true },
+    mdxComponentNames: ["InlineChip"],
+  }, });
 
   const meta = findParagraphMeta(messages);
   assert.ok(meta, "expected paragraph metadata");

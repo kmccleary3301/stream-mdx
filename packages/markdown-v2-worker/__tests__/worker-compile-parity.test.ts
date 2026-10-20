@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 import { execSync } from "node:child_process";
 import { promises as fs } from "node:fs";
@@ -56,16 +58,13 @@ async function runWorkerCompileParityTest(): Promise<void> {
   };
 
   const harness = await createWorkerHarness();
-  const initMessages = await harness.send({
-    type: "INIT",
-    initialContent: text,
-    prewarmLangs: ["typescript"],
-    docPlugins,
-  });
+  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: text,
+  prewarmLangs: ["typescript"],
+  docPlugins, });
   const init = initMessages.find((msg) => msg.type === "INITIALIZED") as Extract<WorkerOut, { type: "INITIALIZED" }> | undefined;
   assert.ok(init, "worker did not emit INITIALIZED message");
 
-  const snapshot = createInitialSnapshot(init.blocks ?? []);
+  const snapshot = createInitialSnapshot(init.snapshot);
   const initPatches = initMessages.filter((msg): msg is Extract<WorkerOut, { type: "PATCH" }> => msg.type === "PATCH");
   for (const message of initPatches) {
     applyPatchBatch(snapshot, message.patches as Patch[]);
@@ -77,7 +76,7 @@ async function runWorkerCompileParityTest(): Promise<void> {
     applyPatchBatch(snapshot, message.patches as Patch[]);
   }
 
-  const browserSummary = summarizeBlocks(snapshot.blocks);
+  const browserSummary = summarizeBlocks(snapshot.getBlocks());
 
   const nodeResult = await loadCompiler().then((compiler) =>
     compiler.compileMarkdownSnapshot({

@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 import fs from "node:fs/promises";
 
@@ -34,16 +36,13 @@ async function streamFixture(
   const harness = await createWorkerHarness();
   const store = createRendererStore();
 
-  const initMessages = await harness.send({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: [],
-    docPlugins: DOC_PLUGINS,
-    mdx: options.mdxCompileMode ? { compileMode: options.mdxCompileMode } : undefined,
-  });
+  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: [],
+  docPlugins: DOC_PLUGINS,
+  mdx: options.mdxCompileMode ? { compileMode: options.mdxCompileMode } : undefined, });
   const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
   assert.ok(init, "worker failed to initialize");
-  store.reset(init.blocks);
+  store.resetSnapshot(init.snapshot);
 
   for (let index = 0; index < content.length; index += chunkSize) {
     const chunk = content.slice(index, index + chunkSize);
@@ -60,31 +59,44 @@ async function runAppendLinesTailGuardTest(): Promise<void> {
   const content = await loadFixture("code-huge.md");
   const harness = await createWorkerHarness();
 
-  const initMessages = await harness.send({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: [],
-    docPlugins: DOC_PLUGINS,
-  });
+  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: [],
+  docPlugins: { ...DOC_PLUGINS, codeHighlighting: "final", outputMode: "html", lazyTokenization: { enabled: false } }, });
   const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
   assert.ok(init, "worker failed to initialize");
 
-  const snapshot = createInitialSnapshot(init.blocks);
-  let appendLinesCount = 0;
+  const snapshot = createInitialSnapshot(init.snapshot);
+
+  let appendCodeCount = 0;
+  const rootPresentationBlocks: Block[] = [];
+  const codeLinePresentationProps: Record<string, unknown>[] = [];
 
   const applyMessages = (messages: WorkerOut[]) => {
     for (const message of messages) {
       if (message.type !== "PATCH") continue;
       for (const patch of message.patches as Patch[]) {
-        if (patch.op === "appendLines") {
+        if (patch.op === "setProps") {
+          const targetId = patch.at.nodeId ?? patch.at.blockId;
+          const target = snapshot.nodes.get(targetId);
+          if (target?.type === "code" && patch.props.block && typeof patch.props.block === "object") {
+            rootPresentationBlocks.push(patch.props.block as Block);
+          } else if (target?.type === "code-line") {
+            codeLinePresentationProps.push(patch.props);
+          }
+        }
+        if (patch.op === "appendCode") {
           const parentId = patch.at.nodeId ?? patch.at.blockId;
           const parent = snapshot.nodes.get(parentId);
-          assert.ok(parent, `missing code parent for appendLines: ${parentId}`);
-          assert.strictEqual(parent?.type, "code", "appendLines target must remain a code node");
-          assert.strictEqual(patch.startIndex, parent?.children.length ?? -1, "appendLines must be a strict tail append");
-          appendLinesCount += 1;
+          assert.ok(parent, `missing code parent for appendCode: ${parentId}`);
+          assert.strictEqual(parent?.type, "code", "appendCode target must remain a code node");
+          assert.strictEqual(
+            patch.fromLine,
+            parent?.codeState?.source.completeLineCount ?? -1,
+            "appendCode must be a strict append after complete source lines",
+          );
+          appendCodeCount += 1;
         }
-        snapshot.blocks = applyPatchBatch(snapshot, [patch]);
+        applyPatchBatch(snapshot, [patch]);
       }
     }
   };
@@ -95,7 +107,31 @@ async function runAppendLinesTailGuardTest(): Promise<void> {
   }
 
   applyMessages(await harness.send({ type: "FINALIZE" }));
-  assert.ok(appendLinesCount > 0, "expected appendLines patches to be emitted for streaming code");
+  assert.ok(appendCodeCount > 0, "expected appendCode patches to be emitted for streaming code");
+  assert.ok(rootPresentationBlocks.length > 0, "expected finalized code presentation patches");
+  for (const block of rootPresentationBlocks) {
+    assert.strictEqual(block.payload.raw, "", "root presentation patch must not retransmit authored source");
+    assert.strictEqual(block.payload.meta?.code, undefined, "root presentation patch must not retransmit normalized code");
+  }
+  assert.ok(codeLinePresentationProps.length > 0, "expected presentation updates for code line views");
+  assert.ok(
+    codeLinePresentationProps.every((props) => !Object.prototype.hasOwnProperty.call(props, "text")),
+    "code line presentation patches must leave source text to appendCode",
+  );
+  const materializedCode = snapshot.getBlocks().find((block) => block.type === "code");
+  assert.ok(materializedCode?.payload.raw.length, "source remains available from the managed line-record owner");
+  assert.ok(typeof materializedCode?.payload.meta?.code === "string", "managed code metadata remains materialized");
+  assert.ok(
+    typeof materializedCode?.payload.highlightedHtml === "string"
+      && materializedCode.payload.highlightedHtml.includes('class="line"'),
+    "final root code keeps highlighted HTML output",
+  );
+  const codeNode = snapshot.nodes.get(materializedCode?.id ?? "");
+  const firstLine = codeNode?.children[0] ? snapshot.nodes.get(codeNode.children[0]) : undefined;
+  assert.ok(
+    typeof firstLine?.props.html === "string" && firstLine.props.html.includes("<span"),
+    "owned code-line records retain highlighted line HTML in the consumer snapshot",
+  );
 }
 
 async function runFinalizedTableShapeTest(): Promise<void> {
@@ -112,20 +148,18 @@ async function runFinalizedTableShapeTest(): Promise<void> {
   });
 }
 
+
 async function runStreamingTableDeferralTest(): Promise<void> {
   const content = await loadFixture("table-boundary.md");
   const harness = await createWorkerHarness();
   const store = createRendererStore();
 
-  const initMessages = await harness.send({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: [],
-    docPlugins: DOC_PLUGINS,
-  });
+  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: [],
+  docPlugins: DOC_PLUGINS, });
   const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
   assert.ok(init, "worker failed to initialize");
-  store.reset(init.blocks);
+  store.resetSnapshot(init.snapshot);
 
   for (let index = 0; index < content.length; index += 29) {
     const appendMessages = await harness.send({ type: "APPEND", text: content.slice(index, index + 29) });
@@ -159,15 +193,12 @@ async function runCurrencyDoesNotTriggerStreamingMathTest(): Promise<void> {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
 
-  const initMessages = await harness.send({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: [],
-    docPlugins: DOC_PLUGINS,
-  });
+  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: [],
+  docPlugins: DOC_PLUGINS, });
   const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
   assert.ok(init, "worker failed to initialize");
-  store.reset(init.blocks);
+  store.resetSnapshot(init.snapshot);
 
   for (let index = 0; index < content.length; index += 34) {
     const appendMessages = await harness.send({ type: "APPEND", text: content.slice(index, index + 34) });
@@ -231,16 +262,13 @@ async function runMdxTransitionsRendererStoreInvariantTest(): Promise<void> {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
 
-  const initMessages = await harness.send({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: [],
-    docPlugins: DOC_PLUGINS,
-    mdx: { compileMode: "worker" },
-  });
+  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: [],
+  docPlugins: DOC_PLUGINS,
+  mdx: { compileMode: "worker" }, });
   const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
   assert.ok(init, "worker failed to initialize");
-  store.reset(init.blocks);
+  store.resetSnapshot(init.snapshot);
 
   for (let index = 0; index < content.length; index += 31) {
     const appendMessages = await harness.send({ type: "APPEND", text: content.slice(index, index + 31) });
@@ -337,16 +365,13 @@ async function runMdxErrorTransitionArtifactInvariantTest(): Promise<void> {
       const harness = await createWorkerHarness();
       const store = createRendererStore();
 
-      const initMessages = await harness.send({
-        type: "INIT",
-        initialContent: "",
-        prewarmLangs: [],
-        docPlugins: DOC_PLUGINS,
-        mdx: { compileMode: "worker" },
-      });
+      const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+      prewarmLangs: [],
+      docPlugins: DOC_PLUGINS,
+      mdx: { compileMode: "worker" }, });
       const init = initMessages.find((msg): msg is Extract<WorkerOut, { type: "INITIALIZED" }> => msg.type === "INITIALIZED");
       assert.ok(init, "worker failed to initialize");
-      store.reset(init.blocks);
+      store.resetSnapshot(init.snapshot);
 
       for (let index = 0; index < content.length; index += chunkSize) {
         const chunk = content.slice(index, index + chunkSize);

@@ -1,6 +1,7 @@
 import { MarkdownEngine } from "./engine";
 import {
   PATCH_ROOT_ID,
+  STREAM_MDX_SCHEMA_VERSION,
   applyPatchBatch,
   createInitialSnapshot,
   type Block,
@@ -34,7 +35,7 @@ export interface SnapshotArtifactV1 {
 
 export interface CompileMarkdownSnapshotDirectOptions {
   text: string;
-  init?: Omit<WorkerInitMessage, "type" | "initialContent">;
+  init?: Omit<WorkerInitMessage, "type" | "initialContent" | "schemaVersion">;
   hashSalt?: string;
   cache?: {
     dir: string;
@@ -215,13 +216,15 @@ async function sha256Hex(input: string): Promise<string> {
   }
 }
 
-async function buildHashes(text: string, init: Omit<WorkerInitMessage, "type" | "initialContent"> | undefined, hashSalt: string | undefined) {
+async function buildHashes(text: string, init: CompileMarkdownSnapshotDirectOptions["init"], hashSalt: string | undefined) {
   const hashPayload = stableStringify({
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
     text,
     init: init ?? null,
     salt: hashSalt ?? null,
   });
   const configPayload = stableStringify({
+    schemaVersion: STREAM_MDX_SCHEMA_VERSION,
     init: init ?? null,
     salt: hashSalt ?? null,
   });
@@ -311,7 +314,7 @@ export async function compileMarkdownSnapshotDirect(
       if (cached) {
         const snapshot = createInitialSnapshot(cached.blocks);
         return {
-          blocks: snapshot.blocks,
+          blocks: snapshot.getBlocks(),
           snapshot,
           artifact: cached,
           fromCache: true,
@@ -324,6 +327,7 @@ export async function compileMarkdownSnapshotDirect(
       scope,
       {
         type: "INIT",
+        schemaVersion: STREAM_MDX_SCHEMA_VERSION,
         initialContent: text,
         prewarmLangs: init?.prewarmLangs,
         docPlugins: init?.docPlugins,
@@ -344,9 +348,12 @@ export async function compileMarkdownSnapshotDirect(
       throw new Error("[stream-mdx] direct compile failed: worker did not emit INITIALIZED.");
     }
 
-    const snapshot = createInitialSnapshot(initialized.blocks);
+    if (initialized.schemaVersion !== STREAM_MDX_SCHEMA_VERSION) {
+      throw new Error(`Incompatible worker schema: ${initialized.schemaVersion}`);
+    }
+    const snapshot = createInitialSnapshot(initialized.snapshot);
     for (const patch of extractPatches(initMessages)) {
-      snapshot.blocks = applyPatchBatch(snapshot, patch.patches);
+      applyPatchBatch(snapshot, patch.patches);
     }
 
     if (finalize) {
@@ -356,7 +363,7 @@ export async function compileMarkdownSnapshotDirect(
         throw new Error(finalizeError);
       }
       for (const patch of extractPatches(finalizeMessages)) {
-        snapshot.blocks = applyPatchBatch(snapshot, patch.patches);
+        applyPatchBatch(snapshot, patch.patches);
       }
     } else {
       await new Promise((resolve) => setTimeout(resolve, settleMs));
@@ -370,7 +377,7 @@ export async function compileMarkdownSnapshotDirect(
       contentHash,
       configHash,
       hashSalt: hashSalt ?? undefined,
-      blocks: snapshot.blocks,
+      blocks: snapshot.getBlocks(),
       tocHeadings: (() => {
         const root = snapshot.nodes.get(PATCH_ROOT_ID);
         const maybe = root?.props?.tocHeadings;
@@ -393,7 +400,7 @@ export async function compileMarkdownSnapshotDirect(
     }
 
     return {
-      blocks: snapshot.blocks,
+      blocks: snapshot.getBlocks(),
       snapshot,
       artifact,
       fromCache: false,

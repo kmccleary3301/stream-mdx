@@ -37,12 +37,11 @@ export const FootnotesPlugin: DocumentPlugin = {
 
     // 1) Collect definitions from blocks and retag definition blocks
     collectDefinitionsFromBlocks(ctx.blocks, state);
-
-    // 2) Assign numbers based on first reference order (scan content)
     const scopes = assignNumbersFromReferencesInBlocks(ctx.blocks, state);
 
     // 3) Update inline nodes in blocks to include assigned numbers
-    const numbers = numberInlineReferences(ctx.blocks, state, scopes);
+    const numbers = numberInlineReferences(ctx.blocks, state, scopes, ctx.hasProvisionalTail);
+
 
     // 4) Build synthetic footnotes block
     const items = buildFootnoteItems(state, numbers);
@@ -294,12 +293,17 @@ function assignNumbersFromReferencesInBlocks(blocks: Block[], state: FootnoteSta
   return scopes;
 }
 
-function numberInlineReferences(blocks: Block[], state: FootnoteState, scopes: Map<string, FootnoteReferenceScope>): Map<string, number> {
+function numberInlineReferences(
+  blocks: Block[],
+  state: FootnoteState,
+  scopes: Map<string, FootnoteReferenceScope>,
+  hasProvisionalTail: boolean,
+): Map<string, number> {
   const numbers = new Map<string, number>();
   for (const label of state.labelToNumber.keys()) {
     if (state.definitions.has(label) && (state.referenceCounts.get(label) ?? 0) > 0) numbers.set(label, numbers.size + 1);
   }
-  const definitionsPublished = blocks.length === 0 || blocks[blocks.length - 1].isFinalized;
+  const definitionsPublished = !hasProvisionalTail;
   const numberInlineNode = (node: InlineNode, scope: FootnoteReferenceScope, positions: Map<string, number>): InlineNode => {
     let result = node;
     if (hasInlineChildren(node)) {

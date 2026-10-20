@@ -1,3 +1,5 @@
+import { STREAM_MDX_SCHEMA_VERSION } from "@stream-mdx/core";
+
 import assert from "node:assert";
 
 import type { Patch, WorkerOut } from "@stream-mdx/core";
@@ -19,15 +21,12 @@ async function runNestedListCodeHighlightTest(): Promise<void> {
   const harness = await createWorkerHarness();
   const store = createRendererStore();
 
-  const initMessages = await harness.send({
-    type: "INIT",
-    initialContent: "",
-    prewarmLangs: ["python"],
-    docPlugins: { footnotes: false, html: false, mdx: false, tables: false, callouts: false },
-  });
+  const initMessages = await harness.send({ type: "INIT", schemaVersion: STREAM_MDX_SCHEMA_VERSION, initialContent: "",
+  prewarmLangs: ["python"],
+  docPlugins: { footnotes: false, html: false, mdx: false, tables: false, callouts: false }, });
   const init = initMessages.find((m) => m.type === "INITIALIZED") as Extract<WorkerOut, { type: "INITIALIZED" }> | undefined;
   assert.ok(init, "worker did not emit INITIALIZED message");
-  store.reset(init.blocks);
+  store.resetSnapshot(init.snapshot);
 
   const sentinel = 'print("nested-code-block-highlight")';
   const sample = ["*   ```python", `    ${sentinel}`, "    ```", ""].join("\n");

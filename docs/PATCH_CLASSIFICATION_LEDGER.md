@@ -32,6 +32,10 @@ Ambiguous work defaults to `semantic`.
 | `finalize` | `semantic` | No | Changes finalized visible state |
 | `reorder` | `semantic` | No | Changes committed ordering |
 | `appendLines` | `semantic` | No | Changes committed code-line structure and visible content |
+| `appendCode` | `semantic` | No | Atomically replaces the unfinished code tail and advances its exact authored-source frontier; never carries completed-prefix records |
+| `appendTableRows` | `semantic` | No | Atomically replaces only the provisional tail and appends stable table rows under owner generation, source revision and exact source-frontier guards |
+| `updateTableRows` | `semantic` | No | Applies dependency-targeted inline meaning changes to unchanged row/header source identities under one atomic owner revision gate |
+| `decorateCode` | `enrichment` | Only | Revision-matched line decoration; cannot change source, line topology or lifecycle |
 | `setHTML` | `semantic` | Reserved only | `setHTML` carries `patchMeta`; explicit enrichment is reserved and currently not used by the worker |
 
 ## Allowed Explicit Enrichment Families
@@ -42,6 +46,7 @@ The following are the only currently-audited explicit enrichment paths:
 | --- | --- | --- |
 | `setProps` | finalized code lazy tokenization follow-up | updates highlighted line metadata/HTML without reopening finalized block semantics |
 | `setPropsBatch` | future multi-node decoration-only updates | reserved for coalesced decoration-only updates; still defaults to semantic unless explicitly audited |
+| `decorateCode` | owned code highlighting and range follow-up | owner/generation/configuration guards plus each row's identity and source revision prevent stale decoration from changing source |
 
 `setHTML` enrichment is intentionally not part of the current runtime allowlist.
 If a future path needs it, the path must be added here with tests before use.
@@ -63,6 +68,46 @@ always semantic and epoch-guarded.
 `appendLines` is an optimization for code blocks, but it still mutates visible
 line structure. It is semantic and only allowed when append safety is provable.
 Any ambiguity falls back to semantic replace.
+
+### `appendCode` and `decorateCode`
+
+`appendCode` is always semantic, including lifecycle-only changes with no new
+display rows. It validates the expected source revision, unfinished-tail boundary,
+line counts and exact authored `sourceAppend` before committing. Initial or cold
+replacement snapshots may carry full source; routine appends may not.
+
+`decorateCode` is always enrichment. It carries no source or structural replacement.
+A later tail append does not invalidate an unchanged completed row: guard the code
+owner, generation and configuration, then validate each row's identity and last
+source-change revision independently. A stale row may be dropped without discarding
+other valid rows. Patch metadata cannot reclassify either operation.
+
+### `appendTableRows` and `updateTableRows`
+
+`appendTableRows` is always semantic. It carries only the previous provisional
+tail replacement and newly committed rows, plus the exact authored source append.
+Owner generation, expected revision, row frontier and source ranges are checked
+before the index changes; completed prefixes remain immutable.
+
+`updateTableRows` is also semantic, never decoration: reference, footnote or
+numbering invalidation can change rendered meaning after row commitment. It may
+carry only affected rows and an optional changed header. The source identity,
+raw slices, ranges and row revisions remain fixed; a header-only update has an
+empty row update list and never walks or replaces body rows. The entire command
+is rejected when its owner generation or expected revision is stale.
+
+`appendTableRows` advances an append-only private source log while each accepted
+view exposes an immutable prefix bounded to its current `sourceRange`. A valid
+provisional-tail retraction shortens only that view; it never truncates the log.
+Re-extension verifies overlap inside the previously logged unfinished tail and
+appends only bytes not yet present. `processedTo` remains monotonic across both
+transitions.
+
+`closed` means the native table block prefix is committed while document input may
+continue. It is distinct from worker `FINALIZED`; dependency invalidation may
+target a closed table during live input, but same-generation updates to a
+`finalized` table are rejected.
+
 
 ### `setProps`
 

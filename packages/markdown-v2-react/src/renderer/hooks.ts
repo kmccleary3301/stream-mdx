@@ -18,6 +18,11 @@ export function useRendererBlocks(store: RendererStore): ReadonlyArray<Block> {
   );
 }
 
+/** Lifecycle-only subscription; never materializes authored blocks or code lines. */
+export function useRendererHasProvisionalBlocks(store: RendererStore): boolean {
+  return useSyncExternalStore(store.subscribe, store.hasProvisionalBlocks, store.hasProvisionalBlocks);
+}
+
 export function useRendererNode(store: RendererStore, id: string): NodeRecord | undefined {
   useContext(RenderConfigVersionContext);
   const subscribe = useCallback((listener: () => void) => subscribeRendererNode(store, id, listener), [store, id]);
