@@ -966,7 +966,7 @@ export class MarkdownEngine {
               const prefixBlocks = await this.extractBlocks(
                 this.mdParser.parse(prefix),
                 prefix,
-                options,
+                { ...options, forceFinalize: true },
                 sourceOffset + from,
               );
               const suffixBlocks = await this.extractBlocks(
